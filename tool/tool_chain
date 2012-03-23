@@ -60,7 +60,7 @@ MPC_DOWNLOAD_URL     ?= http://www.multiprecision.org/mpc/download
 # Tool versions and install location
 #
 
-GCC_VERSION       = 4.6.1
+GCC_VERSION       = 4.7.0
 BINUTILS_VERSION  = 2.21.1
 GDB_VERSION       = 7.3.1
 GMP_VERSION       = 5.0.2
@@ -89,6 +89,7 @@ VERBOSE     = @
 
 AUTOCONF_gcc_4.4.5 = autoconf2.59
 AUTOCONF_gcc_4.6.1 = autoconf2.64
+AUTOCONF_gcc_4.7.0 = autoconf2.64
 
 AUTOCONF = $(AUTOCONF_gcc_$(GCC_VERSION))
 
@@ -216,6 +217,7 @@ LD_DEFSYM_DUMMY_LIBC = $(addprefix $(LD_PREFIX)--defsym=,$(addsuffix =0,$(DUMMY_
 
 GCC_CONFIG += $(COMMON_CONFIG) \
               --with-gnu-as --with-gnu-ld --disable-tls --disable-threads \
+	      --enable-languages=c,c++,go --disable-libgo \
               --disable-libstdcxx-pch \
               --enable-shared \
               --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
@@ -305,13 +307,9 @@ $(DOWNLOAD_DIR)/$(BINUTILS_DOWNLOAD_TBZ2): $(DOWNLOAD_DIR)
 	$(ECHO) "$(BRIGHT_COL)downloading binutils...$(DEFAULT_COL)"
 	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(BINUTILS_DOWNLOAD_URL)/$(BINUTILS_DOWNLOAD_TBZ2) && touch $@
 
-$(DOWNLOAD_DIR)/gcc-core-$(GCC_VERSION).tar.bz2: $(DOWNLOAD_DIR)
+$(DOWNLOAD_DIR)/gcc-$(GCC_VERSION).tar.bz2: $(DOWNLOAD_DIR)
 	$(ECHO) "$(BRIGHT_COL)downloading gcc...$(DEFAULT_COL)"
-	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(GCC_DOWNLOAD_URL)/gcc-$(GCC_VERSION)/gcc-core-$(GCC_VERSION).tar.bz2 && touch $@
-
-$(DOWNLOAD_DIR)/gcc-g++-$(GCC_VERSION).tar.bz2: $(DOWNLOAD_DIR)
-	$(ECHO) "$(BRIGHT_COL)downloading g++...$(DEFAULT_COL)"
-	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(GCC_DOWNLOAD_URL)/gcc-$(GCC_VERSION)/gcc-g++-$(GCC_VERSION).tar.bz2 && touch $@
+	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(GCC_DOWNLOAD_URL)/gcc-$(GCC_VERSION)/gcc-$(GCC_VERSION).tar.bz2 && touch $@
 
 $(DOWNLOAD_DIR)/gmp-$(GMP_VERSION).tar.bz2: $(DOWNLOAD_DIR)
 	$(ECHO) "$(BRIGHT_COL)downloading gmp...$(DEFAULT_COL)"
@@ -337,8 +335,8 @@ $(CONTRIB_DIR)/mpc-$(MPC_VERSION)/configure: $(DOWNLOAD_DIR)/mpc-$(MPC_VERSION).
 	$(ECHO) "$(BRIGHT_COL)unpacking mpc...$(DEFAULT_COL)"
 	$(VERBOSE)tar xfz $< -C $(CONTRIB_DIR)
 
-$(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure: $(addprefix $(DOWNLOAD_DIR)/,gcc-core-$(GCC_VERSION).tar.bz2 gcc-g++-$(GCC_VERSION).tar.bz2)
-	$(ECHO) "$(BRIGHT_COL)unpacking gcc and g++...$(DEFAULT_COL)"
+$(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure: $(DOWNLOAD_DIR)/gcc-$(GCC_VERSION).tar.bz2
+	$(ECHO) "$(BRIGHT_COL)unpacking gcc...$(DEFAULT_COL)"
 	$(VERBOSE)mkdir -p $(CONTRIB_DIR)
 	$(VERBOSE)for i in $^ ; do tar xfj $$i -C $(CONTRIB_DIR) ;done
 	$(VERBOSE)touch $@
@@ -356,7 +354,7 @@ $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure: $(addprefix $(DOWNLOAD_DIR)/,gcc-co
 	$(VERBOSE)sed -i "/^tmake_file=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
-	$(VERBOSE)sed -i "/^EXTRA_PARTS=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/i386/t-i386elf
+	@#$(VERBOSE)sed -i "/^EXTRA_PARTS=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/i386/t-i386elf
 	$(VERBOSE)sed -i "/^EXTRA_MULTILIB_PARTS *=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/arm/t-arm-elf
 	@#
 	@# Let 'config.gcc' expand our already populated 'tmake_file' variable rather
