@@ -77,13 +77,12 @@ include $(BASE_DIR)/mk/base-libs.mk
 # building a shared library.
 #
 ifdef SHARED_LIB
-LIBS += ldso-startup
-
 ifeq ($(LIB),$(DYNAMIC_LINKER))
 LIBS += $(BASE_LIBS)
 else
 LIBS := $(filter-out $(BASE_LIBS),$(LIBS))
 LIBS += $(DYNAMIC_LINKER)
+LIBS += ldso-startup
 endif
 
 
