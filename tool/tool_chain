@@ -217,7 +217,7 @@ LD_DEFSYM_DUMMY_LIBC = $(addprefix $(LD_PREFIX)--defsym=,$(addsuffix =0,$(DUMMY_
 
 GCC_CONFIG += $(COMMON_CONFIG) \
               --with-gnu-as --with-gnu-ld --disable-tls --disable-threads \
-	      --enable-languages=c,c++,go --disable-libgo \
+              --enable-languages=c,c++,go --disable-libgo \
               --disable-libstdcxx-pch \
               --enable-shared \
               --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
@@ -231,19 +231,23 @@ GCC_CONFIG += $(GCC_CONFIG_$(PLATFORM))
 #
 # Configure options passed to gcc
 #
-# The 't-linux' tmake file is needed to let the tool chain use 'unwind-dw2-fde-glibc',
-# needed for the exception handling on Genode in the presence of shared libraries.
-#
 HOST_CONFIG_ARGS = $(CONFIG_QUIET) \
                    host_xm_include_list=$(LINK_SPEC_H_$(PLATFORM)) \
-                   tmake_file='t-slibgcc-elf-ver t-slibgcc-nolc-override t-linux'
+                   tmake_file='t-slibgcc'
 
+#
 # passed to target components such as libgcc, libstdc++
+#
+# The 't-slibgcc' tmake file is needed to have libgcc_eh.a built.
+# The 't-eh-dw2-dip' tmake file is needed to let the tool chain use 'unwind-dw2-fde-dip.c',
+# needed for the exception handling on Genode in the presence of shared libraries.
+#
 TARGET_CONFIG_ARGS = $(CONFIG_QUIET) \
+                     tmake_file='t-slibgcc t-eh-dw2-dip t-slibgcc-elf-ver t-slibgcc-nolc-override' \
                      extra_parts='crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o'
 
 # compile libsupc++ as position-independent code
-TARGET_CONFIG_ARGS += LIBSUPCXX_PICFLAGS='-prefer-pic'
+TARGET_CONFIG_ARGS += PIC_CXXFLAGS='-prefer-pic'
 
 GCC_INSTALL_RULE = install-strip
 ifeq ($(GCC_VERSION),4.4.5)
@@ -353,7 +357,9 @@ $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure: $(DOWNLOAD_DIR)/gcc-$(GCC_VERSION).
 	@#
 	$(VERBOSE)sed -i "/^tmake_file=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
+	$(VERBOSE)sed -i "/^tmake_file=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
+	$(VERBOSE)sed -i "/extra_parts=\"crt.*\"/s/^/#/g" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
 	@#$(VERBOSE)sed -i "/^EXTRA_PARTS=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/i386/t-i386elf
 	$(VERBOSE)sed -i "/^EXTRA_MULTILIB_PARTS *=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/arm/t-arm-elf
 	@#
@@ -424,10 +430,10 @@ $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure: $(DOWNLOAD_DIR)/gcc-$(GCC_VERSION).
 	@# in text relocations. Because for base tool chains, no 'dynamic_linker'
 	@# is defined (see 'libtool.m4'), 'dynamic_linker' is set to 'no', which
 	@# results in 'can_build_shared = no', which, in turn , results
-	@# in 'enable_shared = no', which, in turn, sets 'LIBSUPCXX_PICFLAGS' to
+	@# in 'enable_shared = no', which, in turn, sets 'PIC_CXXFLAGS' to
 	@# nothing rather then '-prefer-pic'.
 	@#
-	$(VERBOSE)sed -i "/LIBSUPCXX_PICFLAGS=$$/s/LIB/__LIB/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libstdc++-v3/configure.ac
+	$(VERBOSE)sed -i "/PIC_CXXFLAGS=$$/s/PIC/__PIC/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libstdc++-v3/configure.ac
 	@#
 	@# Re-generate configure scripts
 	@#
