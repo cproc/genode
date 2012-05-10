@@ -71,6 +71,13 @@ namespace Genode {
 				/* write integer to buffer */
 				*reinterpret_cast<T *>(&_sndbuf[_write_offset]) = value;
 
+				/*
+				 * Initialize any remaining bytes between the end of the
+				 * written value and the next aligned write offset with 0.
+				 */
+				memset(&_sndbuf[_write_offset + sizeof(T)], 0,
+				       align_natural(sizeof(T)) - sizeof(T));
+
 				/* increment write pointer to next dword-aligned value */
 				_write_offset += align_natural(sizeof(T));
 			}
@@ -85,6 +92,13 @@ namespace Genode {
 
 				/* copy buffer */
 				memcpy(&_sndbuf[_write_offset], src_addr, num_bytes);
+
+				/*
+				 * Initialize any remaining bytes between the end of the
+				 * written buffer and the next aligned write offset with 0.
+				 */
+				memset(&_sndbuf[_write_offset + num_bytes], 0,
+				       align_natural(num_bytes) - num_bytes);
 
 				/* increment write pointer to next dword-aligned value */
 				_write_offset += align_natural(num_bytes);
@@ -111,6 +125,14 @@ namespace Genode {
 					PERR("send buffer overrun");
 
 				memcpy(&_sndbuf[_write_offset], array, sizeof(array));
+
+				/*
+				 * Initialize any remaining bytes between the end of the
+				 * written array and the next aligned write offset with 0.
+				 */
+				memset(&_sndbuf[_write_offset + sizeof(array)], 0,
+				       align_natural(sizeof(array)) - sizeof(array));
+
 				_write_offset += align_natural(sizeof(array));
 			}
 

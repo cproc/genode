@@ -162,8 +162,9 @@ void Ipc_server::_prepare_next_reply_wait()
 	long local_name = Ipc_ostream::_dst.local_name();
 	_write_to_buf(local_name);  /* XXX unused, needed by de/marshaller */
 
-	/* leave space for exc code at the beginning of the msgbuf */
-	_write_offset += align_natural(sizeof(int));
+	/* leave space for and initialize exc code at the beginning of the msgbuf */
+	int exception_code = 0;
+	_write_to_buf(exception_code);
 }
 
 
