@@ -1,0 +1,65 @@
+#
+# \brief  Test for running a Genode process in Valgrind
+# \author Christian Prochaska
+# \date   2012-05-09
+#
+
+#
+# Build
+#
+
+build {
+	core init
+	app/valgrind_wrapper
+	test/valgrind_wrapper
+}
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="valgrind_wrapper">
+			<resource name="RAM" quantum="4M"/>
+			<config>
+				<arg value="valgrind"/>
+				<arg value="./test-valgrind_wrapper"/>
+			</config>
+		</start>
+	</config>
+}
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init
+	valgrind_wrapper
+	test-valgrind_wrapper
+}
+
+build_boot_image $boot_modules
+
+#
+# Execute test case
+#
+
+# qemu config
+append qemu_args "-nographic -m 64 "
+
+run_genode_until "Conditional jump or move depends on uninitialised value\\(s\\).*" 10
+
+puts "\nTest succeeded"
+
+# vi: set ft=tcl :
