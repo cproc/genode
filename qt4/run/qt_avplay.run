@@ -11,6 +11,7 @@ build {
 	drivers/timer
 	drivers/audio_out
 	server/nitpicker
+	server/test_fb_filter
 	app/avplay
 	app/qt_avplay
 }
@@ -90,6 +91,9 @@ append config {
 		<resource name="RAM" quantum="2G"/>
 		<config>
 			<mediafile name="mediafile"/>
+			<framebuffer_filter name="test_fb_filter" ram_quota="10M"/>
+			<framebuffer_filter name="test_fb_filter" ram_quota="10M"/>
+			<framebuffer_filter name="test_fb_filter" ram_quota="10M"/>
 		</config>
 	</start>
 </config>
@@ -133,6 +137,7 @@ set boot_modules {
 	libc_rom.lib.so
 	avplay
 	mediafile
+	test_fb_filter
 }
 
 # platform-specific modules
