@@ -20,6 +20,7 @@ usage:
 	@echo
 	@echo "  <platform>   can be:"
 	@echo "                  'linux_x86'"
+	@echo "                  'linux_arm_v7a'"
 	@echo "                  'fiasco_x86'"
 	@echo "                  'pistachio_x86'"
 	@echo "                  'okl4_x86'"
@@ -165,6 +166,9 @@ mb_ml507::
 lx_hybrid_x86::
 	@echo "CROSS_DEV_PREFIX =" > $(BUILD_DIR)/etc/tools.conf
 	@echo "SPECS += always_hybrid" >> $(BUILD_DIR)/etc/specs.conf
+
+linux_arm_v7a::
+	@echo "SPECS += arm_v7a" > $(BUILD_DIR)/etc/specs.conf
 
 $(PLATFORM)::
 	@echo "successfully created build directory at $(BUILD_DIR)"

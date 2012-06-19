@@ -13,5 +13,5 @@ LD_TEXT_ADDR     ?= 0x01000000
 LD_SCRIPT_STATIC  = $(call select_from_repositories,src/platform/genode.ld) \
                     $(call select_from_repositories,src/platform/context_area.nostdlib.ld)
 else
-LD_SCRIPT_STATIC  =
+LD_SCRIPT_STATIC  ?=
 endif
