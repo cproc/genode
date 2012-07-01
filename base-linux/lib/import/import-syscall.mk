@@ -4,6 +4,7 @@ HOST_INC_DIR += /usr/include
 # needed for Ubuntu 11.04
 HOST_INC_DIR += /usr/include/i386-linux-gnu
 HOST_INC_DIR += /usr/include/x86_64-linux-gnu
+HOST_INC_DIR += /usr/include/arm-linux-gnueabi
 
 #
 # Some header files installed on GNU/Linux test for the GNU compiler. For

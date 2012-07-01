@@ -106,7 +106,7 @@ SHARED_LIBS := $(sort $(wildcard $(SHARED_LIBS)))
 #
 # Use CXX for linking
 #
-LD_CMD := $(CXX) $(CXX_LINK_OPT)
+LD_CMD ?= $(CXX) $(CXX_LINK_OPT)
 
 ifeq ($(SHARED_LIBS),)
 LD_SCRIPTS  := $(LD_SCRIPT_STATIC)

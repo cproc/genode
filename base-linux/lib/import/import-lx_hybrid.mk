@@ -89,16 +89,25 @@ EXT_OBJECTS += $(shell cc $(CC_MARCH) -print-file-name=crtbegin.o)
 EXT_OBJECTS += $(shell cc $(CC_MARCH) -print-file-name=crtend.o)
 endif
 EXT_OBJECTS += $(shell cc $(CC_MARCH) -print-file-name=crtn.o)
+EXT_OBJECTS += -Wl,--start-group
 EXT_OBJECTS += -lgcc -lgcc_s -lsupc++ -lc
 EXT_OBJECTS += -lpthread
+EXT_OBJECTS += -Wl,--end-group
 
 USE_HOST_LD_SCRIPT = yes
 
 ifeq (x86_64,$(findstring x86_64,$(SPECS)))
 CXX_LINK_OPT += -Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2
 else
+ifeq (arm,$(findstring arm,$(SPECS)))
+CXX_LINK_OPT += -Wl,--dynamic-linker=/lib/ld-linux.so.3
+else
 CXX_LINK_OPT += -Wl,--dynamic-linker=/lib/ld-linux.so.2
 endif
+endif
+
+# use the host's linker for compatibility with the host's linker script
+LD_CMD = g++ $(CXX_LINK_OPT)
 
 # because we use the host compiler's libgcc, omit the Genode toolchain's version
 LD_LIBGCC =

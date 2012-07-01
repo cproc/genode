@@ -102,14 +102,20 @@ const char *Process::_priv_pd_args(Parent_capability parent_cap,
 	 */
 	static Lock _priv_pd_args_lock;
 	Lock::Guard _lock_guard(_priv_pd_args_lock);
-	
+
 	/* check for dynamic program header */
 	if (_check_dynamic_elf(elf_data_ds_cap)) {
 		if (!_dynamic_linker_cap.valid()) {
 			PERR("Dynamically linked file found, but no dynamic linker binary present");
 			return 0;
 		}
-		elf_data_ds_cap = _dynamic_linker_cap;
+		/*
+		 * Starting the dynamic linker directly may cause it to be loaded at the
+		 * wrong address on ARM-Linux. But since the dynamically linked
+		 * application has a dynamic linker (by default ld.lib.so) defined as its
+		 * interpreter in the ELF image, it's okay to just start the application
+		 * directly on Linux.
+		 */
 	}
 
 	/* pass parent capability as environment variable to the child */
