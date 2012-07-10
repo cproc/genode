@@ -17,6 +17,7 @@
 /dde_linux/download
 /libports/contrib
 /libports/download
+/libports/include/boost
 /libports/include/EGL/egl.h
 /libports/include/EGL/eglext.h
 /libports/include/GL
