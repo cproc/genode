@@ -1,0 +1,78 @@
+#
+# \brief  Test for using the Boost libraries
+# \author Christian Prochaska
+# \date   2011-10-11
+#
+
+#
+# Build
+#
+
+build {
+	core init
+	drivers/timer
+	test/boost
+}
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="512K"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="test-boost">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+}
+
+append config {
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init timer
+	ld.lib.so libc.lib.so libc_log.lib.so
+	test-boost
+}
+
+build_boot_image $boot_modules
+
+#
+# Qemu
+#
+append qemu_args " -m 128 -nographic "
+
+run_genode_until {.*child exited with exit value 0.*} 40
+
+puts "\ntest succeeded\n"
+
+# vi: set ft=tcl :
