@@ -154,6 +154,7 @@ namespace Noux {
 			{
 				Absolute_path test_path(path);
 				test_path.remove_trailing('/');
+				//PDBG("%s - %s", _match_path.base(), test_path.base());
 				return _match_path.equals(test_path);
 			}
 		};
