@@ -92,6 +92,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_WRITE:
 			{
+				PDBG("write_in.fd = %d", _sysio->write_in.fd);
 				size_t const count_in = _sysio->write_in.count;
 
 				for (size_t count = 0; count != count_in; ) {
@@ -112,6 +113,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READ:
 			{
+				PDBG("read_in.fd = %d", _sysio->read_in.fd);
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio->read_in.fd);
 
 				while (!io->check_unblock(true, false, false))
@@ -146,7 +148,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		case SYSCALL_OPEN:
 			{
 				Absolute_path absolute_path(_sysio->open_in.path, _env.pwd());
-
+PDBG("path = %s", absolute_path.base());
 				Vfs_handle *vfs_handle = _root_dir->open(_sysio, absolute_path.base());
 				if (!vfs_handle)
 					return false;
@@ -168,6 +170,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					        Genode::env()->heap());
 
 				_sysio->open_out.fd = add_io_channel(channel);
+				PDBG("open_out.fd = %d", _sysio->open_out.fd);
 				return true;
 			}
 
@@ -179,7 +182,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				 */
 				if (close_socket)
 					close_socket(_sysio->close_in.fd);
-
+PDBG("close_in.fd = %d", _sysio->close_in.fd);
 				remove_io_channel(_sysio->close_in.fd);
 				return true;
 			}
@@ -425,11 +428,14 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				_sysio->pipe_out.fd[0] = add_io_channel(pipe_source);
 				_sysio->pipe_out.fd[1] = add_io_channel(pipe_sink);
 
+				PDBG("pipe_out.fd[0] = %d, pipe_out.fd[1] = %d", _sysio->pipe_out.fd[0], _sysio->pipe_out.fd[1]);
+
 				return true;
 			}
 
 		case SYSCALL_DUP2:
 			{
+				PDBG("dup2_in.fd = %d, dup2_in.to_fd = %d", _sysio->dup2_in.fd,	_sysio->dup2_in.to_fd);
 				add_io_channel(io_channel_by_fd(_sysio->dup2_in.fd),
 				               _sysio->dup2_in.to_fd);
 				return true;

@@ -220,11 +220,13 @@ namespace Noux {
 			                     Signal_receiver &sig_rec)
 			: _pipe(pipe), _sig_rec(sig_rec)
 			{
+				PDBG("Pipe_sink_io_channel()");
 				pipe->register_write_ready_sigh(_sig_rec.manage(this));
 			}
 
 			~Pipe_sink_io_channel()
 			{
+				PDBG("~Pipe_sink_io_channel()");
 				_sig_rec.dissolve(this);
 				_pipe->writer_close();
 			}
@@ -284,11 +286,13 @@ namespace Noux {
 			Pipe_source_io_channel(Shared_pointer<Pipe> pipe, Signal_receiver &sig_rec)
 			: _pipe(pipe), _sig_rec(sig_rec)
 			{
+				PDBG("Pipe_source_io_channel()");
 				_pipe->register_read_ready_sigh(sig_rec.manage(this));
 			}
 
 			~Pipe_source_io_channel()
 			{
+				PDBG("~Pipe_source_io_channel()");
 				_sig_rec.dissolve(this);
 				_pipe->reader_close();
 			}
