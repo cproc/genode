@@ -399,11 +399,11 @@ class Plugin : public Libc::Plugin
 
 			case SEEK_SET:
 				context(fd)->seek_offset(offset);
-				return 0;
+				return context(fd)->seek_offset();
 
 			case SEEK_CUR:
 				context(fd)->advance_seek_offset(offset);
-				return 0;
+				return context(fd)->seek_offset();
 
 			case SEEK_END:
 				if (offset != 0) {
@@ -411,7 +411,7 @@ class Plugin : public Libc::Plugin
 					return -1;
 				}
 				context(fd)->infinite_seek_offset();
-				return 0;
+				return context(fd)->seek_offset();
 
 			default:
 				errno = EINVAL;
