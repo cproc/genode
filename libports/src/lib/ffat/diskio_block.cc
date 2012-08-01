@@ -23,7 +23,7 @@ extern "C" {
 
 using namespace Genode;
 
-static bool const verbose = false;
+static bool const verbose = /*false*/true;
 
 static Genode::Allocator_avl _block_alloc(Genode::env()->heap());
 static Block::Connection *_block_connection;

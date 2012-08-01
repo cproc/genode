@@ -57,7 +57,7 @@ set config {
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Block"/></provides>
 		<config>
-			<policy label="ffat_fs" partition="1" />
+			<policy label="ffat_fs" partition="2" />
 		</config>
 		<route>
 			<service name="Block"> <child name="atapi_drv"/></service>

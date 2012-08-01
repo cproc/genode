@@ -86,6 +86,7 @@ namespace Partition {
 
 			Sector(unsigned long blk_nr, unsigned long count, bool write = false)
 			{
+PDBG("blk_nr = %lu", blk_nr);
 				using namespace Block;
 				Lock::Guard guard(_lock);
 				Block::Packet_descriptor::Opcode op = write ? Block::Packet_descriptor::WRITE
