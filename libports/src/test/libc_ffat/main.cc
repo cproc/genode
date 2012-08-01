@@ -36,7 +36,6 @@
 		return -1; \
 	}
 
-
 int main(int argc, char *argv[])
 {
 	int ret, fd;
@@ -46,9 +45,9 @@ int main(int argc, char *argv[])
 	char const *file_name     = "test.tst";
 	char const *file_name2    = "test2.tst";
 	char const *file_name3    = "test3.tst";
-	char const *pattern       = "a single line of text";
+	static char const pattern[4480] = "a single line of text";
 
-	size_t      pattern_size  = strlen(pattern) + 1;
+	size_t      pattern_size  = sizeof(pattern);
 
 	unsigned int iterations = 1;
 
@@ -66,7 +65,10 @@ int main(int argc, char *argv[])
 
 		/* write pattern to a file */
 		CALL_AND_CHECK(fd, open(file_name, O_CREAT | O_WRONLY), fd >= 0, "file_name=%s", file_name);
-		CALL_AND_CHECK(count, write(fd, pattern, pattern_size), (size_t)count == pattern_size, "");
+		for (int j = 0; j < 10; j++) {
+			CALL_AND_CHECK(count, write(fd, pattern, pattern_size), (size_t)count == pattern_size, "");
+			CALL_AND_CHECK(count, lseek(fd, j*pattern_size, SEEK_SET), count == j*pattern_size, "");
+		}
 		CALL_AND_CHECK(ret, close(fd), ret == 0, "");
 
 		/* query file status of new file */
@@ -80,8 +82,8 @@ int main(int argc, char *argv[])
 
 		/* read and verify file content */
 		CALL_AND_CHECK(fd, open(file_name, O_RDONLY), fd >= 0, "file_name=%s", file_name);
-		static char buf[512];
-		CALL_AND_CHECK(count, read(fd, buf, sizeof(buf)), (size_t)count == pattern_size, "");
+		static char buf[4480];
+		CALL_AND_CHECK(count, read(fd, buf, sizeof(buf)), (size_t)count == sizeof(buf), "");
 		CALL_AND_CHECK(ret, close(fd), ret == 0, "");
 		printf("content of file: \"%s\"\n", buf);
 		if (strcmp(buf, pattern) != 0) {
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
 		} else {
 			printf("file content is correct\n");
 		}
-
+#if 0
 		/* test 'pread()' and 'pwrite()' */
 		CALL_AND_CHECK(fd, open(file_name2, O_CREAT | O_WRONLY), fd >= 0, "file_name=%s", file_name);
 		/* write "a single line of" */
@@ -156,7 +158,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#endif
 		if (i < (iterations - 1))
 			sleep(2);
 	}

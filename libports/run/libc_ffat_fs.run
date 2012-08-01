@@ -21,6 +21,7 @@ build {
 	drivers/timer
 	drivers/sd_card
 	server/ffat_fs
+	server/part_blk
 	test/libc_fs
 }
 
@@ -52,9 +53,24 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
+	<start name="part_blk">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Block"/></provides>
+		<config>
+			<policy label="ffat_fs" partition="1" />
+		</config>
+		<route>
+			<service name="Block"> <child name="atapi_drv"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
 	<start name="ffat_fs">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
+		<route>
+			<service name="Block"> <child name="part_blk"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 		<config> <policy label="" root="/" writeable="yes" /> </config>
 	</start>
 	<start name="test-libc_fs">
@@ -93,7 +109,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	core init timer ffat_fs
+	core init timer ffat_fs part_blk
 	ld.lib.so libc.lib.so libc_log.lib.so libc_fs.lib.so
 	test-libc_fs
 }
@@ -109,13 +125,13 @@ build_boot_image $boot_modules
 #
 
 set disk_image "bin/test.hda"
-set cmd "dd if=/dev/zero of=$disk_image bs=1024 count=65536"
-puts "creating disk image: $cmd"
-catch { exec sh -c $cmd }
+#set cmd "dd if=/dev/zero of=$disk_image bs=1024 count=65536"
+#puts "creating disk image: $cmd"
+#catch { exec sh -c $cmd }
 
-set cmd "mkfs.vfat -F32 $disk_image"
-puts "formating disk image with vfat file system: $cmd"
-catch { exec sh -c $cmd }
+#set cmd "mkfs.vfat -F32 $disk_image"
+#puts "formating disk image with vfat file system: $cmd"
+#catch { exec sh -c $cmd }
 
 #
 # Qemu
@@ -126,7 +142,7 @@ append_if [have_spec pl180] qemu_args " -drive file=$disk_image,if=sd,cache=writ
 
 run_genode_until {.*child exited with exit value 0.*} 60
 
-exec rm -f $disk_image
+#exec rm -f $disk_image
 
 puts "\ntest succeeded\n"
 
