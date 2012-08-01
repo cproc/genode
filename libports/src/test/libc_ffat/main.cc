@@ -46,9 +46,9 @@ int main(int argc, char *argv[])
 	char const *file_name     = "test.tst";
 	char const *file_name2    = "test2.tst";
 	char const *file_name3    = "test3.tst";
-	char const *pattern       = "a single line of text";
+	static char const pattern[4480] = "a single line of text";
 
-	size_t      pattern_size  = strlen(pattern) + 1;
+	size_t      pattern_size  = sizeof(pattern);
 
 	unsigned int iterations = 1;
 
@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
 
 		/* read and verify file content */
 		CALL_AND_CHECK(fd, open(file_name, O_RDONLY), fd >= 0, "file_name=%s", file_name);
-		static char buf[512];
-		CALL_AND_CHECK(count, read(fd, buf, sizeof(buf)), (size_t)count == pattern_size, "");
+		static char buf[4480];
+		CALL_AND_CHECK(count, read(fd, buf, sizeof(buf)), (size_t)count == sizeof(buf), "");
 		CALL_AND_CHECK(ret, close(fd), ret == 0, "");
 		printf("content of file: \"%s\"\n", buf);
 		if (strcmp(buf, pattern) != 0) {
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 		} else {
 			printf("file content is correct\n");
 		}
-
+#if 0
 		/* test 'pread()' and 'pwrite()' */
 		CALL_AND_CHECK(fd, open(file_name2, O_CREAT | O_WRONLY), fd >= 0, "file_name=%s", file_name);
 		/* write "a single line of" */
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-
+#endif
 		if (i < (iterations - 1))
 			sleep(2);
 	}
