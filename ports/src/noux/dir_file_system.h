@@ -483,6 +483,25 @@ namespace Noux {
 
 				/* path does not match directory name */
 				if (!path) {
+					sysio->error.symlink = Sysio::SYMLINK_ERR_NO_ENTRY;
+					return false;
+				}
+
+				/* path refers to any of our sub file systems */
+				for (File_system *fs = _first_file_system; fs; fs = fs->next)
+					if (fs->symlink(sysio, path))
+						return true;
+
+				/* none of our file systems could create the symlink */
+				return false;
+			}
+
+			bool symlink(Sysio *sysio, char const *path)
+			{
+				path = _sub_path(path);
+
+				/* path does not match directory name */
+				if (!path) {
 					sysio->error.mkdir = Sysio::MKDIR_ERR_NO_ENTRY;
 					return false;
 				}

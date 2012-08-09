@@ -76,5 +76,9 @@ Plugin *Plugin_registry::get_plugin_for_stat(const char *path, struct stat *) {
 	GET_PLUGIN_FOR(stat, path) }
 
 
+Plugin *Plugin_registry::get_plugin_for_symlink(const char *oldpath, const char *newpath) {
+	GET_PLUGIN_FOR(symlink, oldpath, newpath) }
+
+
 Plugin *Plugin_registry::get_plugin_for_unlink(const char *path) {
 	GET_PLUGIN_FOR(unlink, path) }

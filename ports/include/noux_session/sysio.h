@@ -285,6 +285,8 @@ namespace Noux {
 		enum Mkdir_error     { MKDIR_ERR_EXISTS,   MKDIR_ERR_NO_ENTRY,
 		                       MKDIR_ERR_NO_SPACE, MKDIR_ERR_NO_PERM,
 		                       MKDIR_ERR_NAME_TOO_LONG};
+		enum Symlink_error   { SYMLINK_ERR_EXISTS, SYMLINK_ERR_NO_ENTRY,
+		                       SYMLINK_ERR_NAME_TOO_LONG};
 
 		union {
 			General_error   general;
@@ -297,6 +299,7 @@ namespace Noux {
 			Unlink_error    unlink;
 			Rename_error    rename;
 			Mkdir_error     mkdir;
+			Symlink_error   symlink;
 		} error;
 
 		union {
@@ -307,6 +310,8 @@ namespace Noux {
 			                        { size_t count; });
 
 			SYSIO_DECL(stat,        { Path path; }, { Stat st; });
+
+			SYSIO_DECL(symlink,     { Path oldpath; Path newpath; }, { });
 
 			SYSIO_DECL(fstat,       { int fd; }, { Stat st; });
 

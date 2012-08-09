@@ -462,6 +462,11 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			return _root_dir->mkdir(_sysio, Absolute_path(_sysio->mkdir_in.path,
 			                                              _env.pwd()).base());
 
+		case SYSCALL_SYMLINK:
+
+			return _root_dir->symlink(_sysio, Absolute_path(_sysio->symlink_in.newpath,
+			                                                _env.pwd()).base());
+
 		case SYSCALL_SOCKET:
 		case SYSCALL_GETSOCKOPT:
 		case SYSCALL_SETSOCKOPT:

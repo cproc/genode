@@ -474,6 +474,10 @@ extern "C" int stat(const char *path, struct stat *buf) {
 	FNAME_FUNC_WRAPPER(stat, path, buf) }
 
 
+extern "C" int symlink(const char *oldpath, const char *newpath) {
+	FNAME_FUNC_WRAPPER(symlink, oldpath, newpath) }
+
+
 extern "C" int unlink(const char *path) {
 	FNAME_FUNC_WRAPPER(unlink, path) }
 

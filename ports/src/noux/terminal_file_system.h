@@ -181,6 +181,12 @@ namespace Noux {
 				return false;
 			}
 
+			bool symlink(Sysio *sysio, char const *path)
+			{
+				/* not supported */
+				return false;
+			}
+
 			/***************************
 			 ** File_system interface **
 			 ***************************/

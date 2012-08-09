@@ -392,6 +392,8 @@ namespace Noux {
 
 			bool mkdir(Sysio *, char const *) { return false; }
 
+			bool symlink(Sysio *, char const *) { return false; }
+
 			size_t num_dirent(char const *path)
 			{
 				return _cached_num_dirent.num_dirent(path);

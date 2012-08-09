@@ -111,8 +111,8 @@ $(BUILD_DIR)/etc/build.conf::
 endif
 
 $(BUILD_DIR)/Makefile:
-	#@ln -sf $(GENODE_ABS_DIR)/tool/builddir/build.mk $@
-	@cp -f $(GENODE_ABS_DIR)/tool/builddir/build.mk $@
+	@ln -sf $(GENODE_ABS_DIR)/tool/builddir/build.mk $@
+	#@cp -f $(GENODE_ABS_DIR)/tool/builddir/build.mk $@
 
 #
 # Add 'ports-foc' repository to Fiasco.OC build directory

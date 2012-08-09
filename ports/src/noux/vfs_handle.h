@@ -59,6 +59,7 @@ namespace Noux {
 					bool        unlink(Sysio *, char const *)               { return _msg("unlink"); }
 					bool        rename(Sysio *, char const *, char const *) { return _msg("rename"); }
 					bool        mkdir(Sysio *, char const *)                { return _msg("mkdir"); }
+					bool        symlink(Sysio *, char const *)              { return _msg("symlink"); }
 					size_t      num_dirent(char const *)                    { return 0; }
 					bool        is_directory(char const *)                  { return false; }
 					char const *leaf_path(char const *path)                 { return 0; }

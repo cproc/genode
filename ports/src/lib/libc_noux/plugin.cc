@@ -536,6 +536,7 @@ namespace {
 			bool supports_chdir(char const *)                { return true; }
 			bool supports_open(char const *, int)            { return true; }
 			bool supports_stat(char const *)                 { return true; }
+			bool supports_symlink(char const *, char const*) { return true; }
 			bool supports_pipe()                             { return true; }
 			bool supports_unlink(char const *)               { return true; }
 			bool supports_rename(const char *, const char *) { return true; }
@@ -559,6 +560,7 @@ namespace {
 			int fchdir(Libc::File_descriptor *);
 			ssize_t read(Libc::File_descriptor *, void *, ::size_t);
 			int stat(char const *, struct stat *);
+			int symlink(const char *, const char *);
 			int ioctl(Libc::File_descriptor *, int request, char *argp);
 			int pipe(Libc::File_descriptor *pipefd[2]);
 			int unlink(char const *path);
@@ -647,6 +649,29 @@ namespace {
 		if ((flags & O_TRUNC) && (ftruncate(fd, 0) == -1))
 			return 0;
 		return fd;
+	}
+
+
+	int Plugin::symlink(const char *oldpath, const char *newpath)
+	{
+		PDBG("%s -> %s", newpath, oldpath);
+
+		if ((Genode::strlen(oldpath) + 1 > sizeof(sysio()->symlink_in.oldpath)) ||
+		    (Genode::strlen(newpath) + 1 > sizeof(sysio()->symlink_in.newpath))) {
+			PDBG("ENAMETOOLONG");
+			errno = ENAMETOOLONG;
+			return 0;
+		}
+
+		Genode::strncpy(sysio()->symlink_in.oldpath, oldpath, sizeof(sysio()->symlink_in.oldpath));
+		Genode::strncpy(sysio()->symlink_in.newpath, newpath, sizeof(sysio()->symlink_in.newpath));
+		if (!noux()->syscall(Noux::Session::SYSCALL_SYMLINK)) {
+			PERR("symlink error");
+			/* XXX set errno */
+			return -1;
+		}
+
+		return 0;
 	}
 
 

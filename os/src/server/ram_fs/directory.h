@@ -141,6 +141,18 @@ namespace File_system {
 				throw Lookup_failed();
 			}
 
+			Symlink *lookup_and_lock_symlink(char const *path)
+			{
+				Node *node = lookup_and_lock(path);
+
+				Symlink *symlink = dynamic_cast<Symlink *>(node);
+				if (symlink)
+					return symlink;
+
+				node->unlock();
+				throw Lookup_failed();
+			}
+
 			/**
 			 * Lookup parent directory of the specified path
 			 *

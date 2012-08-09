@@ -335,6 +335,32 @@ namespace Noux {
 				return false;
 			}
 
+			bool symlink(Sysio *sysio, char const *path)
+			{
+				PDBG("newpath = %s", path);
+
+				/*
+				 * Canonicalize path (i.e., path must start with '/')
+				 */
+				Absolute_path abs_path(path);
+
+#if 0
+				Sysio::Symlink_error error = Sysio::SYMLINK_ERR_NO_PERM;
+				try {
+					_fs.symlink(abs_path.base(), true);
+					return true;
+				}
+				catch (::File_system::Permission_denied)   { error = Sysio::MKDIR_ERR_NO_PERM; }
+				catch (::File_system::Node_already_exists) { error = Sysio::MKDIR_ERR_EXISTS; }
+				catch (::File_system::Lookup_failed)       { error = Sysio::MKDIR_ERR_NO_ENTRY; }
+				catch (::File_system::Name_too_long)       { error = Sysio::MKDIR_ERR_NAME_TOO_LONG; }
+				catch (::File_system::No_space)            { error = Sysio::MKDIR_ERR_NO_SPACE; }
+
+				sysio->error.mkdir = error;
+#endif
+				return false;
+			}
+
 			size_t num_dirent(char const *path)
 			{
 				if (strcmp(path, "") == 0)
