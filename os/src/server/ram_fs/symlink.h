@@ -16,19 +16,21 @@ namespace File_system {
 	{
 		private:
 
-			Name _link_to;
+			char _link_to[MAX_PATH_LEN];
 
 		public:
 
+			Symlink(char const *name) { Node::name(name); }
+
 			size_t read(char *dst, size_t len, seek_off_t seek_offset)
 			{
-				PDBG("not implemented");
+				strncpy(dst, _link_to, min(len, sizeof(_link_to)));
 				return 0;
 			}
 
 			size_t write(char const *src, size_t len, seek_off_t seek_offset)
 			{
-				PDBG("not implemented");
+				strncpy(_link_to, src, min(len, sizeof(_link_to)));
 				return 0;
 			}
 	};

@@ -57,6 +57,7 @@ namespace Libc {
 			                             struct timeval *timeout);
 			virtual bool supports_socket(int domain, int type, int protocol);
 			virtual bool supports_stat(const char *path);
+			virtual bool supports_symlink(const char *oldpath, const char *newpath);
 			virtual bool supports_unlink(const char *path);
 
 			virtual File_descriptor *accept(File_descriptor *,
@@ -118,6 +119,7 @@ namespace Libc {
 			virtual int shutdown(File_descriptor *, int how);
 			virtual File_descriptor *socket(int domain, int type, int protocol);
 			virtual int stat(const char *path, struct stat *buf);
+			virtual int symlink(const char *oldpath, const char *newpath);
 			virtual int unlink(const char *path);
 			virtual ssize_t write(File_descriptor *, const void *buf, ::size_t count);
 	};

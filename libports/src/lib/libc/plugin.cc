@@ -105,6 +105,12 @@ bool Plugin::supports_stat(const char*)
 }
 
 
+bool Plugin::supports_symlink(const char*, const char *)
+{
+	return false;
+}
+
+
 bool Plugin::supports_unlink(const char*)
 {
 	return false;
@@ -184,4 +190,5 @@ DUMMY(int, -1, pipe,         (File_descriptor*[2]));
 DUMMY(int, -1, rename,       (const char *, const char *));
 DUMMY(int, -1, select,       (int, fd_set *, fd_set *, fd_set *, struct timeval *));
 DUMMY(int, -1, stat,         (const char*, struct stat*));
+DUMMY(int, -1, symlink,      (const char*, const char*));
 DUMMY(int, -1, unlink,       (const char*));
