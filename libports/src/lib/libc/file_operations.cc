@@ -23,6 +23,7 @@
 
 /* libc includes */
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -311,8 +312,35 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+	static char symlink_target[PATH_MAX];
+	static Lock symlink_target_lock;
+	Lock_guard<Lock> symlink_target_lock_guard(symlink_target_lock);
+
 	Plugin *plugin;
 	File_descriptor *new_fdo;
+
+	/* follow symbolic links */
+	if (!((flags & O_CREAT) && (flags & O_EXCL))) {
+		enum { FOLLOW_LIMIT = 10 };
+		for(int i = 0;;i++) {
+			if (i == FOLLOW_LIMIT) {
+				errno = ELOOP;
+				return -1;
+			}
+			struct stat stat_buf;
+			if (stat(pathname, &stat_buf) == -1)
+				break;
+			if (!S_ISLNK(stat_buf.st_mode))
+				break;
+			if (flags & O_NOFOLLOW) {
+				errno = ELOOP;
+				return -1;
+			}
+			if (readlink(pathname, symlink_target, sizeof(symlink_target)) == -1)
+				break;
+			pathname = symlink_target;
+		}
+	}
 
 	plugin = plugin_registry()->get_plugin_for_open(pathname, flags);
 
@@ -373,6 +401,10 @@ extern "C" ssize_t read(int libc_fd, void *buf, ::size_t count)
 {
 	return _read(libc_fd, buf, count);
 }
+
+
+extern "C" ssize_t readlink(const char *path, char *buf, size_t bufsiz) {
+	FNAME_FUNC_WRAPPER(readlink, path, buf, bufsiz); }
 
 
 extern "C" ssize_t recv(int libc_fd, void *buf, ::size_t len, int flags) {
@@ -472,6 +504,10 @@ extern "C" int _socket(int domain, int type, int protocol)
 
 extern "C" int stat(const char *path, struct stat *buf) {
 	FNAME_FUNC_WRAPPER(stat, path, buf) }
+
+
+extern "C" int symlink(const char *oldpath, const char *newpath) {
+	FNAME_FUNC_WRAPPER(symlink, oldpath, newpath) }
 
 
 extern "C" int unlink(const char *path) {
