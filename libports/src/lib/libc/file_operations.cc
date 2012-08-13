@@ -309,9 +309,11 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 	return fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 }
 
-
+#include <x86/l4/sys/kdebug.h>
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+	PDBG("pathname = %s", pathname);
+	//enter_kdebug();
 	static char symlink_target[PATH_MAX];
 	static Lock symlink_target_lock;
 	Lock_guard<Lock> symlink_target_lock_guard(symlink_target_lock);
@@ -341,7 +343,8 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 			pathname = symlink_target;
 		}
 	}
-
+PDBG("pathname2 = %s", pathname);
+//enter_kdebug();
 	plugin = plugin_registry()->get_plugin_for_open(pathname, flags);
 
 	if (!plugin) {
@@ -502,7 +505,7 @@ extern "C" int _socket(int domain, int type, int protocol)
 }
 
 
-extern "C" int stat(const char *path, struct stat *buf) {
+extern "C" int stat(const char *path, struct stat *buf) {PDBG("path = %s", path);
 	FNAME_FUNC_WRAPPER(stat, path, buf) }
 
 

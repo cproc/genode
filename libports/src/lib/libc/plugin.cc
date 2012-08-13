@@ -14,6 +14,10 @@
 /* Genode includes */
 #include <base/printf.h>
 
+/* libc includes */
+#include <fcntl.h>
+#include <unistd.h>
+
 /* libc plugin interface */
 #include <libc-plugin/fd_alloc.h>
 #include <libc-plugin/plugin_registry.h>
@@ -128,10 +132,11 @@ bool Plugin::supports_unlink(const char*)
 
 int Plugin::chdir(const char *path)
 {
-	Libc::File_descriptor *fd = open(path, 0 /* no rights necessary */);
-	bool success = ((fd != NULL)
-			and (fchdir(fd) == 0)
-			and (close(fd)  == 0));
+	PDBG("path = %s", path);
+	int fd = ::open(path, 0 /* no rights necessary */);
+	bool success = ((fd != -1)
+			and (::fchdir(fd) == 0)
+			and (::close(fd)  == 0));
 	return success ? 0 : -1;
 }
 
