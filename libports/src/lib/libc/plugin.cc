@@ -14,6 +14,10 @@
 /* Genode includes */
 #include <base/printf.h>
 
+/* libc includes */
+#include <fcntl.h>
+#include <unistd.h>
+
 /* libc plugin interface */
 #include <libc-plugin/fd_alloc.h>
 #include <libc-plugin/plugin_registry.h>
@@ -80,6 +84,12 @@ bool Plugin::supports_pipe()
 }
 
 
+bool Plugin::supports_readlink(const char *path, char *buf, size_t bufsiz)
+{
+	return false;
+}
+
+
 bool Plugin::supports_rename(const char *, const char *)
 {
 	return false;
@@ -105,6 +115,12 @@ bool Plugin::supports_stat(const char*)
 }
 
 
+bool Plugin::supports_symlink(const char*, const char *)
+{
+	return false;
+}
+
+
 bool Plugin::supports_unlink(const char*)
 {
 	return false;
@@ -116,10 +132,11 @@ bool Plugin::supports_unlink(const char*)
 
 int Plugin::chdir(const char *path)
 {
-	Libc::File_descriptor *fd = open(path, 0 /* no rights necessary */);
-	bool success = ((fd != NULL)
-			and (fchdir(fd) == 0)
-			and (close(fd)  == 0));
+	PDBG("path = %s", path);
+	int fd = ::open(path, 0 /* no rights necessary */);
+	bool success = ((fd != -1)
+			and (::fchdir(fd) == 0)
+			and (::close(fd)  == 0));
 	return success ? 0 : -1;
 }
 
@@ -176,13 +193,15 @@ DUMMY(ssize_t, -1, write,         (File_descriptor *, const void *, ::size_t));
 /*
  * Misc
  */
-DUMMY(void,  , freeaddrinfo, (struct ::addrinfo *));
-DUMMY(int, -1, getaddrinfo,  (const char *, const char *, const struct ::addrinfo *, struct ::addrinfo **));
-DUMMY(int, -1, mkdir,        (const char*, mode_t));
+DUMMY(void,      , freeaddrinfo, (struct ::addrinfo *));
+DUMMY(int,     -1, getaddrinfo,  (const char *, const char *, const struct ::addrinfo *, struct ::addrinfo **));
+DUMMY(int,     -1, mkdir,        (const char*, mode_t));
 DUMMY(void *, (void *)(-1), mmap, (void *addr, ::size_t length, int prot, int flags,
                                    File_descriptor *, ::off_t offset));
-DUMMY(int, -1, pipe,         (File_descriptor*[2]));
-DUMMY(int, -1, rename,       (const char *, const char *));
-DUMMY(int, -1, select,       (int, fd_set *, fd_set *, fd_set *, struct timeval *));
-DUMMY(int, -1, stat,         (const char*, struct stat*));
-DUMMY(int, -1, unlink,       (const char*));
+DUMMY(int,     -1, pipe,         (File_descriptor*[2]));
+DUMMY(ssize_t, -1, readlink,     (const char *, char *, size_t));
+DUMMY(int,     -1, rename,       (const char *, const char *));
+DUMMY(int,     -1, select,       (int, fd_set *, fd_set *, fd_set *, struct timeval *));
+DUMMY(int,     -1, stat,         (const char*, struct stat*));
+DUMMY(int,     -1, symlink,      (const char*, const char*));
+DUMMY(int,     -1, unlink,       (const char*));
