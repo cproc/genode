@@ -65,7 +65,7 @@ close $vimrc_fd
 # strip all binaries prior archiving
 set find_args ""
 foreach pkg $noux_pkgs { append find_args " bin/$pkg/" }
-exec sh -c "find $find_args -type f | (xargs [cross_dev_prefix]strip || true) 2>/dev/null"
+#exec sh -c "find $find_args -type f | (xargs [cross_dev_prefix]strip || true) 2>/dev/null"
 
 exec ln -sf bash bin/bash/bin/sh
 
@@ -172,6 +172,8 @@ append config {
 							cp /bin/echo /usr/bin/
 							cp /bin/mkdir /usr/bin/
 							/genode/tool/create_builddir fiasco_x86 BUILD_DIR=/home/build
+							cd /home
+							ln -s build build2
 						</inline>
 					</dir>
 				</dir>

@@ -29,6 +29,7 @@
 
 /* libc includes */
 #include <errno.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <sys/dirent.h>
@@ -92,6 +93,7 @@ enum { FS_BLOCK_SIZE = 1024 };
 
 extern "C" int __getcwd(char *dst, Genode::size_t dst_size)
 {
+	::fprintf(stderr, "__getcwd()\n");
 	noux()->syscall(Noux::Session::SYSCALL_GETCWD);
 	Genode::size_t path_size = Genode::strlen(sysio()->getcwd_out.path);
 
@@ -607,6 +609,7 @@ namespace {
 
 	Libc::File_descriptor *Plugin::open(char const *pathname, int flags)
 	{
+		PDBG("pathname = %s", pathname);
 		if (Genode::strlen(pathname) + 1 > sizeof(sysio()->open_in.path)) {
 			PDBG("ENAMETOOLONG");
 			errno = ENAMETOOLONG;
@@ -1010,7 +1013,7 @@ namespace {
 
 		Genode::strncpy(dirent->d_name, sysio()->dirent_out.entry.name,
 		                sizeof(dirent->d_name));
-
+PDBG("found dir entry %s", dirent->d_name);
 		dirent->d_namlen = Genode::strlen(dirent->d_name);
 
 		*basep += sizeof(struct dirent);
