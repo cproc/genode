@@ -15,6 +15,7 @@
 /* Genode includes */
 #include <base/printf.h>
 #include <base/env.h>
+#include <os/path.h>
 
 /* Genode-specific libc interfaces */
 #include <libc-plugin/fd_alloc.h>
@@ -23,8 +24,10 @@
 
 /* libc includes */
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -287,6 +290,11 @@ extern "C" ::off_t lseek(int libc_fd, ::off_t offset, int whence) {
 	FD_FUNC_WRAPPER(lseek, libc_fd, offset, whence); }
 
 
+extern "C" int lstat(const char *path, struct stat *buf) {
+	PDBG("path = %s", path);
+	FNAME_FUNC_WRAPPER(stat, path, buf) }
+
+
 extern "C" int mkdir(const char *path, mode_t mode) {
 	FNAME_FUNC_WRAPPER(mkdir, path, mode) }
 
@@ -308,20 +316,84 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 	return fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 }
 
+typedef Path<PATH_MAX> Absolute_path;
+
+static bool resolve_path(Absolute_path &absolute_path, Absolute_path &resolved_path)
+{
+	PDBG("absolute_path = %s", absolute_path.base());
+
+	static char symlink_target[PATH_MAX];
+	static Lock symlink_target_lock;
+	Lock_guard<Lock> symlink_target_lock_guard(symlink_target_lock);
+
+	/* currently only the leaf path gets resolved */
+
+	::strncpy(symlink_target, absolute_path.base(), PATH_MAX);
+
+	enum { FOLLOW_LIMIT = 10 };
+	for(int i = 0;;i++) {
+		if (i == FOLLOW_LIMIT) {
+			errno = ELOOP;
+			return false;
+		}
+		struct stat stat_buf;
+		if (lstat(absolute_path.base(), &stat_buf) == -1)
+			break;
+		if (!S_ISLNK(stat_buf.st_mode))
+			break;
+		if (readlink(absolute_path.base(), symlink_target, sizeof(symlink_target)) == -1)
+			break;
+	}
+	resolved_path.import(symlink_target);
+	PDBG("resolved_path = %s", resolved_path.base());
+	return true;
+}
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+	PDBG("pathname = %s", pathname);
+
+	static Lock path_lock;
+	Lock_guard<Lock> resolved_path_lock_guard(path_lock);
+	static Absolute_path absolute_path;
+	static Absolute_path resolved_path;
+
+	char *cwd = getcwd(0, 0);
+	PDBG("cwd = %s", cwd);
+
+	absolute_path.import(pathname, cwd);
+
+	free(cwd);
+
+	PDBG("absolute_path = %s", absolute_path.base());
+
 	Plugin *plugin;
 	File_descriptor *new_fdo;
 
-	plugin = plugin_registry()->get_plugin_for_open(pathname, flags);
+	/* follow symbolic links */
+	if (!((flags & O_CREAT) && (flags & O_EXCL))) {
+		if (flags & O_NOFOLLOW) {
+			static Absolute_path absolute_path_without_last_element(absolute_path.base());
+			absolute_path_without_last_element.strip_last_element();
+			static Absolute_path last_element(absolute_path.base());
+			last_element.keep_only_last_element();
+			resolve_path(absolute_path_without_last_element, resolved_path);
+			resolved_path.append(last_element.base());
+		} else
+			resolve_path(absolute_path, resolved_path);
+	} else
+		resolved_path.import(absolute_path.base());
+
+	PDBG("resolved path = %s", resolved_path.base());
+
+	plugin = plugin_registry()->get_plugin_for_open(resolved_path.base(), flags);
 
 	if (!plugin) {
 		PERR("no plugin found for open(\"%s\", int)", pathname, flags);
 		return -1;
 	}
 
-	new_fdo = plugin->open(pathname, flags);
+	new_fdo = plugin->open(resolved_path.base(), flags);
 	if (!new_fdo) {
 		PERR("plugin()->open(\"%s\") failed", pathname);
 		return -1;
@@ -373,6 +445,10 @@ extern "C" ssize_t read(int libc_fd, void *buf, ::size_t count)
 {
 	return _read(libc_fd, buf, count);
 }
+
+
+extern "C" ssize_t readlink(const char *path, char *buf, size_t bufsiz) {
+	FNAME_FUNC_WRAPPER(readlink, path, buf, bufsiz); }
 
 
 extern "C" ssize_t recv(int libc_fd, void *buf, ::size_t len, int flags) {
@@ -471,7 +547,12 @@ extern "C" int _socket(int domain, int type, int protocol)
 
 
 extern "C" int stat(const char *path, struct stat *buf) {
+	PDBG("path = %s", path);
 	FNAME_FUNC_WRAPPER(stat, path, buf) }
+
+
+extern "C" int symlink(const char *oldpath, const char *newpath) {
+	FNAME_FUNC_WRAPPER(symlink, oldpath, newpath) }
 
 
 extern "C" int unlink(const char *path) {
