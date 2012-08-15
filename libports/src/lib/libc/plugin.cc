@@ -80,6 +80,12 @@ bool Plugin::supports_pipe()
 }
 
 
+bool Plugin::supports_readlink(const char *path, char *buf, size_t bufsiz)
+{
+	return false;
+}
+
+
 bool Plugin::supports_rename(const char *, const char *)
 {
 	return false;
@@ -100,6 +106,12 @@ bool Plugin::supports_socket(int, int, int)
 
 
 bool Plugin::supports_stat(const char*)
+{
+	return false;
+}
+
+
+bool Plugin::supports_symlink(const char*, const char *)
 {
 	return false;
 }
@@ -176,13 +188,15 @@ DUMMY(ssize_t, -1, write,         (File_descriptor *, const void *, ::size_t));
 /*
  * Misc
  */
-DUMMY(void,  , freeaddrinfo, (struct ::addrinfo *));
-DUMMY(int, -1, getaddrinfo,  (const char *, const char *, const struct ::addrinfo *, struct ::addrinfo **));
-DUMMY(int, -1, mkdir,        (const char*, mode_t));
+DUMMY(void,      , freeaddrinfo, (struct ::addrinfo *));
+DUMMY(int,     -1, getaddrinfo,  (const char *, const char *, const struct ::addrinfo *, struct ::addrinfo **));
+DUMMY(int,     -1, mkdir,        (const char*, mode_t));
 DUMMY(void *, (void *)(-1), mmap, (void *addr, ::size_t length, int prot, int flags,
                                    File_descriptor *, ::off_t offset));
-DUMMY(int, -1, pipe,         (File_descriptor*[2]));
-DUMMY(int, -1, rename,       (const char *, const char *));
-DUMMY(int, -1, select,       (int, fd_set *, fd_set *, fd_set *, struct timeval *));
-DUMMY(int, -1, stat,         (const char*, struct stat*));
-DUMMY(int, -1, unlink,       (const char*));
+DUMMY(int,     -1, pipe,         (File_descriptor*[2]));
+DUMMY(ssize_t, -1, readlink,     (const char *, char *, size_t));
+DUMMY(int,     -1, rename,       (const char *, const char *));
+DUMMY(int,     -1, select,       (int, fd_set *, fd_set *, fd_set *, struct timeval *));
+DUMMY(int,     -1, stat,         (const char*, struct stat*));
+DUMMY(int,     -1, symlink,      (const char*, const char*));
+DUMMY(int,     -1, unlink,       (const char*));
