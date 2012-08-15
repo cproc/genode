@@ -64,6 +64,10 @@ Plugin *Plugin_registry::get_plugin_for_pipe() {
 	GET_PLUGIN_FOR(pipe) }
 
 
+Plugin *Plugin_registry::get_plugin_for_readlink(const char *path, char *buf, size_t bufsiz) {
+	GET_PLUGIN_FOR(readlink, path, buf, bufsiz) }
+
+
 Plugin *Plugin_registry::get_plugin_for_rename(const char *oldpath, const char *newpath) {
 	GET_PLUGIN_FOR(rename, oldpath, newpath) }
 
@@ -74,6 +78,10 @@ Plugin *Plugin_registry::get_plugin_for_socket(int domain, int type, int protoco
 
 Plugin *Plugin_registry::get_plugin_for_stat(const char *path, struct stat *) {
 	GET_PLUGIN_FOR(stat, path) }
+
+
+Plugin *Plugin_registry::get_plugin_for_symlink(const char *oldpath, const char *newpath) {
+	GET_PLUGIN_FOR(symlink, oldpath, newpath) }
 
 
 Plugin *Plugin_registry::get_plugin_for_unlink(const char *path) {

@@ -133,7 +133,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_STAT:
 		case SYSCALL_LSTAT: /* XXX implement difference between 'lstat' and 'stat' */
-
+PDBG("SYSCALL_STAT: path = %s", _sysio->stat_in.path);
 			return _root_dir->stat(_sysio, Absolute_path(_sysio->stat_in.path,
 			                                             _env.pwd()).base());
 
@@ -450,6 +450,12 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			return _root_dir->unlink(_sysio, Absolute_path(_sysio->unlink_in.path,
 			                                               _env.pwd()).base());
 
+		case SYSCALL_READLINK:
+
+			return _root_dir->readlink(_sysio, Absolute_path(_sysio->readlink_in.path,
+			                                                 _env.pwd()).base());
+
+
 		case SYSCALL_RENAME:
 
 			return _root_dir->rename(_sysio, Absolute_path(_sysio->rename_in.from_path,
@@ -461,6 +467,11 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 			return _root_dir->mkdir(_sysio, Absolute_path(_sysio->mkdir_in.path,
 			                                              _env.pwd()).base());
+
+		case SYSCALL_SYMLINK:
+
+			return _root_dir->symlink(_sysio, Absolute_path(_sysio->symlink_in.newpath,
+			                                                _env.pwd()).base());
 
 		case SYSCALL_SOCKET:
 		case SYSCALL_GETSOCKOPT:

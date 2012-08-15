@@ -281,6 +281,13 @@ class Plugin : public Libc::Plugin
 			return true;
 		}
 
+		bool supports_symlink(const char *oldpath, const char *newpath)
+		{
+			if (verbose)
+				PDBG("oldpath = %s, newpath = %s", oldpath, newpath);
+			return true;
+		}
+
 		bool supports_unlink(const char *path)
 		{
 			if (verbose)
@@ -653,6 +660,48 @@ class Plugin : public Libc::Plugin
 				errno = ENOENT;
 			}
 			return -1;
+		}
+
+		int symlink(const char *oldpath, const char *newpath)
+		{
+			Canonical_path path(newpath);
+
+			/*
+			 * Determine directory path that contains the node to open
+			 */
+			unsigned last_slash = 0;
+			for (unsigned i = 0; path.str[i]; i++)
+				if (path.str[i] == '/')
+					last_slash = i;
+
+			char dir_path[256] = "/";
+			if (last_slash > 0)
+				Genode::strncpy(dir_path, path.str,
+				                Genode::min(sizeof(dir_path), last_slash + 1));
+
+			/*
+			 * Determine base name
+			 */
+			char const *basename = path.str + last_slash + 1;
+
+			try {
+				/*
+				 * Open directory that contains the file to be opened/created
+				 */
+				File_system::Dir_handle const dir_handle =
+				    file_system()->dir(dir_path, false);
+
+				Node_handle_guard guard(dir_handle);
+
+				File_system::Symlink_handle handle;
+
+				handle = file_system()->symlink(dir_handle, basename, true);
+				file_system()->close(handle);
+			}
+			catch (File_system::Lookup_failed) {
+				PERR("symlink(%s) lookup failed", newpath); }
+
+			return 0;
 		}
 
 		int unlink(const char *path)
