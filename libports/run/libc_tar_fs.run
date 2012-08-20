@@ -1,0 +1,91 @@
+#
+# \brief  Test for using the libc_fs plugin with the TAR file system
+# \author Christian Prochaska
+# \date   2012-08-20
+#
+
+#
+# Build
+#
+
+build {
+	core init
+	drivers/timer
+	server/tar_fs
+	test/libc_tar_fs
+}
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="CAP"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="tar_fs">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<archive name="test.tar" />
+			<policy label="" root="/" />
+		</config>
+	</start>
+	<start name="test-libc_tar_fs">
+		<resource name="RAM" quantum="2M"/>
+	</start>
+}
+
+append config {
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init timer tar_fs
+	ld.lib.so libc.lib.so libc_log.lib.so libc_fs.lib.so
+	test-libc_tar_fs test.tar
+}
+
+build_boot_image $boot_modules
+
+#
+# Execute test case
+#
+
+#
+# Qemu
+#
+append qemu_args " -m 128 -nographic "
+
+run_genode_until {.*child exited with exit value 0.*} 60
+
+puts "\ntest succeeded\n"
+
+# vi: set ft=tcl :
