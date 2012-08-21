@@ -62,6 +62,8 @@ append config {
 						<inline name="lighttpd.conf">
 # lighttpd configuration
 server.port          = 80
+server.event-handler = "poll"
+server.network-backend = "writev"
 server.document-root = "/website"
 index-file.names     = (
   "index.xhtml", "index.html", "index.htm"
