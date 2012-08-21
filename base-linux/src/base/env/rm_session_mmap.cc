@@ -49,7 +49,7 @@ static void *map_local(Dataspace_capability ds, Genode::size_t size,
 	Linux_dataspace::Filename fname = Linux_dataspace_client(ds).fname();
 	fname.buf[sizeof(fname.buf) - 1] = 0;
 
-	bool writable = Dataspace_client(ds).writable();
+	bool writable = /*Dataspace_client(ds).writable()*/true;
 	int fd = lx_open(fname.buf, (writable ? O_RDWR : O_RDONLY) | LX_O_CLOEXEC);
 	if (fd < 0) {
 		PERR("map_local: Could not open file \"%s\"", fname.buf);
