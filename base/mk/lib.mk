@@ -64,6 +64,7 @@ include $(BASE_DIR)/mk/global.mk
 #
 # Name of <libname>.lib.a or <libname>.lib.so file to create
 #
+ifndef STATIC_BUILD
 ifndef SHARED_LIB
 LIB_A        := $(addsuffix .lib.a,$(LIB))
 LIB_FILENAME := $(LIB_A)
@@ -71,6 +72,11 @@ else
 LIB_SO       := $(addsuffix .lib.so,$(LIB))
 INSTALL_SO   := $(INSTALL_DIR)/$(LIB_SO)
 LIB_FILENAME := $(LIB_SO)
+endif
+else
+# STATIC_BUILD
+LIB_A        := $(addsuffix .lib.a,$(LIB))
+LIB_FILENAME := $(LIB_A)
 endif
 LIB_TAG := $(addsuffix .lib.tag,$(LIB))
 

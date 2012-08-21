@@ -76,6 +76,7 @@ include $(BASE_DIR)/mk/base-libs.mk
 # For shared libraries, we have to make sure to build ldso support before
 # building a shared library.
 #
+ifndef STATIC_BUILD
 ifdef SHARED_LIB
 LIBS += ldso-startup
 
@@ -89,6 +90,10 @@ endif
 
 DEP_VAR_NAME := DEP_$(LIB).lib.so
 else
+DEP_VAR_NAME := DEP_$(LIB).lib
+endif
+else
+# STATIC_BUILD
 DEP_VAR_NAME := DEP_$(LIB).lib
 endif
 
@@ -144,8 +149,9 @@ endif
 	  echo "") >> $(LIB_DEP_FILE)
 	@for i in $(LIBS_TO_VISIT); do \
 	  $(MAKE) $(VERBOSE_DIR) -f $(BASE_DIR)/mk/dep_lib.mk REP_DIR=$(REP_DIR) LIB=$$i; done
+ifndef STATIC_BUILD
 ifdef SHARED_LIB
 	@(echo "SHARED_LIBS += $(LIB)"; \
 	  echo "") >> $(LIB_DEP_FILE)
 endif
-
+endif

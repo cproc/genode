@@ -60,6 +60,10 @@ export ECHO             ?= echo -e
 REPOSITORIES := $(realpath $(shell echo $(REPOSITORIES)))
 BASE_DIR     := $(realpath $(shell echo $(BASE_DIR)))
 
+ifdef STATIC_BUILD
+export STATIC_BUILD
+endif
+
 #
 # Configure shell program before executing any shell commands. On Ubuntu the
 # standard shell is dash, which breaks colored output via its built-in echo
