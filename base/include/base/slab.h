@@ -16,7 +16,7 @@
 
 #include <base/allocator.h>
 #include <base/stdint.h>
-
+extern "C" void raw_write_str(const char *str);
 namespace Genode {
 
 	class Slab;
@@ -82,7 +82,7 @@ namespace Genode {
 			 * Normally, Slab_blocks are constructed by a Slab allocator
 			 * that specifies itself as constructor argument.
 			 */
-			explicit Slab_block(Slab *s = 0) { if (s) slab(s); }
+			explicit Slab_block(Slab *s = 0) { if (s) slab(s); else raw_write_str("Slab_block(0)\n"); }
 
 			/**
 			 * Configure block to be managed by the specified slab allocator

@@ -98,7 +98,9 @@ class Ring_buffer
 				_sem.down();
 				time = Genode::Timeout_thread::alarm_timer()->time() - time;
 			} else {
-				time = _sem.down(t);
+				PDBG("calling _sem.down()");
+				time = _sem.down(10000000);
+				PDBG("_sem.down() returned");
 			}
 
 			Genode::Lock::Guard lock_guard(_head_lock);

@@ -15,7 +15,7 @@
 #include <os/timed_semaphore.h>
 
 #include <sys/time.h>
-
+extern "C" void wait_for_continue();
 extern "C" __attribute__((weak))
 int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {

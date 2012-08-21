@@ -262,16 +262,21 @@ extern "C" {
 	}
 } /* extern "C" */
 
-
+#include <base/sleep.h>
 void Nic_receiver_thread::entry()
 {
+	static int count = 0;
 	while(true)
 	{
 		/*
 		 * Block until we receive a packet,
 		 * then call input function.
 		 */
-		_rx_packet = _nic->rx()->get_packet();
-		genode_netif_input(_netif);
+		if (count < 5) {
+			_rx_packet = _nic->rx()->get_packet();
+			genode_netif_input(_netif);
+			count++;
+		} else
+			Genode::sleep_forever();
 	}
 }

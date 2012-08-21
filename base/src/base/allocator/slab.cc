@@ -13,10 +13,11 @@
 
 #include <base/slab.h>
 #include <util/misc_math.h>
-
+#include <base/snprintf.h>
 using namespace Genode;
 
-
+extern "C" void raw_write_str(const char *str);
+extern "C" void wait_for_continue();
 /****************
  ** Slab block **
  ****************/
@@ -25,10 +26,12 @@ using namespace Genode;
  * Placement operator - tool for directly calling a constructor
  */
 inline void *operator new(size_t, void *at) { return at; }
-
-
+extern int lx_gettid();
 void Slab_block::slab(Slab *slab)
 {
+	char buf[128];
+	Genode::snprintf(buf, sizeof(buf), "%d: Slab_block::slab(): this = %p, &_slab = %p, slab = %p\n", lx_gettid(), this, &_slab, slab);
+	raw_write_str(buf);
 	_slab  = slab;
 	_avail = _slab->num_elem();
 	next   = prev = 0;
@@ -56,6 +59,16 @@ int Slab_block::slab_entry_idx(Slab_entry *e) {
 
 void *Slab_block::alloc()
 {
+	char buf[128];
+
+	if (!_slab) {
+		Genode::snprintf(buf, sizeof(buf), "%d: *** %p: _slab is 0 ***\n", lx_gettid(), this);
+		raw_write_str(buf);
+		while(1);
+	}
+	//Genode::snprintf(buf, sizeof(buf), "%d: Slab_block::alloc(): this = %p\n", lx_gettid(), this);
+	//raw_write_str(buf);
+
 	size_t num_elem = _slab->num_elem();
 	for (unsigned i = 0; i < num_elem; i++)
 		if (state(i) == FREE) {
@@ -255,14 +268,21 @@ bool Slab::alloc(size_t size, void **out_addr)
 		 */
 		insert_sb(sb);
 	}
-
+//raw_write_str("Slab::alloc(): ");
 	*out_addr = _first_sb->alloc();
+//	char buf[128];
+//	Genode::snprintf(buf, sizeof(buf), "addr = %p\n", *out_addr);
+//	raw_write_str(buf);
 	return *out_addr == 0 ? false : true;
 }
 
 
 void Slab::free(void *addr)
 {
+	//char buf[128];
+	//Genode::snprintf(buf, sizeof(buf), "Slab::free(): addr = %p\n", addr);
+	//raw_write_str(buf);
+
 	Slab_entry *e = addr ? Slab_entry::slab_entry(addr) : 0;
 
 	if (e) e->free();

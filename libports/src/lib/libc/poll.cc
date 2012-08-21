@@ -45,6 +45,7 @@ using namespace Libc;
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+extern "C" void wait_for_continue();
 extern "C" int
 __attribute__((weak))
 poll(struct pollfd fds[], nfds_t nfds, int timeout)
@@ -63,8 +64,10 @@ poll(struct pollfd fds[], nfds_t nfds, int timeout)
 		}
 		maxfd = MAX(maxfd, fd);
 	}
-
+PDBG("maxfd = %d, nfds = %d", maxfd, nfds);
 	nmemb = howmany(maxfd + 1 , NFDBITS);
+	PDBG("nmemb = %zu", nmemb);
+	wait_for_continue();
 	if ((readfds = (fd_set *) calloc(nmemb, sizeof(fd_mask))) == NULL ||
 	    (writefds = (fd_set *) calloc(nmemb, sizeof(fd_mask))) == NULL ||
 	    (exceptfds = (fd_set *) calloc(nmemb, sizeof(fd_mask))) == NULL) {
@@ -115,7 +118,8 @@ poll(struct pollfd fds[], nfds_t nfds, int timeout)
 		}
 	}
 
-out:    
+out:
+PDBG("readfds = %p, writefds = %p, exceptfds = %p", readfds, writefds, exceptfds);
 	if (readfds != NULL)
 		free(readfds);
 	if (writefds != NULL)

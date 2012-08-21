@@ -112,10 +112,15 @@ install_config $config
 #
 
 # generic modules
+#set boot_modules {
+#	core init timer ld.lib.so nic_drv ram_fs
+#	libc.lib.so libm.lib.so libc_fs.lib.so libc_log.lib.so
+#	lwip.lib.so zlib.lib.so libcrypto.lib.so libssl.lib.so
+#	lighttpd
+#}
+
 set boot_modules {
-	core init timer ld.lib.so nic_drv ram_fs
-	libc.lib.so libm.lib.so libc_fs.lib.so libc_log.lib.so
-	lwip.lib.so zlib.lib.so libcrypto.lib.so libssl.lib.so
+	core init timer nic_drv ram_fs
 	lighttpd
 }
 
