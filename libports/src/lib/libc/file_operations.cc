@@ -15,6 +15,8 @@
 /* Genode includes */
 #include <base/printf.h>
 #include <base/env.h>
+#include <os/path.h>
+#include <util/token.h>
 
 /* Genode-specific libc interfaces */
 #include <libc-plugin/fd_alloc.h>
@@ -23,8 +25,10 @@
 
 /* libc includes */
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -95,6 +99,175 @@ inline File_descriptor *libc_fd_to_fd(int libc_fd, const char *func_name)
 	return plugin->func_name(path, ##__VA_ARGS__);
 
 
+/*
+ *  Plugin wrapper functions which don't resolve any symbolic links.
+ */
+
+static int _chdir(const char *path) {
+	FNAME_FUNC_WRAPPER(chdir, path) }
+
+
+static int _lstat(const char *path, struct stat *buf) {
+	FNAME_FUNC_WRAPPER(stat, path, buf) }
+
+
+static int _mkdir(const char *path, mode_t mode) {
+	FNAME_FUNC_WRAPPER(mkdir, path, mode) }
+
+
+static ssize_t _readlink(const char *path, char *buf, size_t bufsiz) {
+	FNAME_FUNC_WRAPPER(readlink, path, buf, bufsiz); }
+
+
+static int _rename(const char *oldpath, const char *newpath) {
+	FNAME_FUNC_WRAPPER(rename, oldpath, newpath); }
+
+
+static int _symlink(const char *oldpath, const char *newpath) {
+	FNAME_FUNC_WRAPPER(symlink, oldpath, newpath) }
+
+
+static int _unlink(const char *path) {
+	FNAME_FUNC_WRAPPER(unlink, path) }
+
+
+/**
+ * path element token
+ */
+
+struct Scanner_policy_path_element
+{
+	static bool identifier_char(char c, unsigned /* i */)
+	{
+		return (c != '/') && (c != 0);
+	}
+};
+
+typedef Genode::Token<Scanner_policy_path_element> Path_element_token;
+
+
+/**
+ * Resolve symbolic links in a given absolute path
+ */
+
+typedef Genode::Path<PATH_MAX> Absolute_path;
+
+/* exception */
+class Symlink_resolve_error { };
+
+static char const *resolve_symlinks(char const *path, Absolute_path &resolved_path)
+{
+	PDBG("path = %s", path);
+
+	Absolute_path current_iteration_working_path;
+	Absolute_path next_iteration_working_path;
+	char cwd[PATH_MAX];
+	char path_element[PATH_MAX];
+	char symlink_target[PATH_MAX];
+
+	getcwd(cwd, sizeof(cwd));
+	PDBG("cwd = %s", cwd);
+
+	next_iteration_working_path.import(path, cwd);
+	PDBG("absolute_path = %s", next_iteration_working_path.base());
+
+	enum { FOLLOW_LIMIT = 10 };
+	int follow_count = 0;
+	bool symlink_resolved_in_this_iteration;
+	do {
+		PDBG("new iteration");
+		if (follow_count++ == FOLLOW_LIMIT) {
+			errno = ELOOP;
+			throw Symlink_resolve_error();
+		}
+
+		current_iteration_working_path.import(next_iteration_working_path.base());
+		PDBG("current_iteration_working_path = %s", current_iteration_working_path.base());
+
+		next_iteration_working_path.import("");
+		symlink_resolved_in_this_iteration = false;
+
+		Path_element_token t(current_iteration_working_path.base());
+
+		while (t) {
+			if (t.type() != Path_element_token::IDENT) {
+					t = t.next();
+					continue;
+			}
+
+			t.string(path_element, sizeof(path_element));
+			PDBG("path_element = %s", path_element);
+
+			try {
+				next_iteration_working_path.append("/");
+				next_iteration_working_path.append(path_element);
+			} catch (Genode::Path_base::Path_too_long) {
+				errno = ENAMETOOLONG;
+				throw Symlink_resolve_error();
+			}
+
+			PDBG("working_path_new = %s", next_iteration_working_path.base());
+
+			/*
+			 * If a symlink has been resolved in this iteration, the remaining
+			 * path elements get added and a new iteration starts.
+			 */
+			if (!symlink_resolved_in_this_iteration) {
+				struct stat stat_buf;
+				if (_lstat(next_iteration_working_path.base(), &stat_buf) == -1)
+					throw Symlink_resolve_error();
+				if (S_ISLNK(stat_buf.st_mode)) {
+					PDBG("found symlink: %s", next_iteration_working_path.base());
+					if (_readlink(next_iteration_working_path.base(), symlink_target, sizeof(symlink_target)) == -1)
+						throw Symlink_resolve_error();
+					next_iteration_working_path.import(symlink_target, cwd);
+					PDBG("resolved symlink to: %s", next_iteration_working_path.base());
+					symlink_resolved_in_this_iteration = true;
+				}
+			}
+
+			t = t.next();
+		}
+		PDBG("token end");
+
+	} while (symlink_resolved_in_this_iteration);
+
+	resolved_path.import(next_iteration_working_path.base());
+	PDBG("resolved_path = %s", resolved_path.base());
+	return resolved_path.base();
+}
+
+
+static char const *resolve_symlinks_except_last_element(char const *path, Absolute_path &resolved_path)
+{
+	PDBG("path = %s", path);
+
+	Absolute_path absolute_path_without_last_element;
+	Absolute_path absolute_path_last_element;
+	char cwd[PATH_MAX];
+
+	getcwd(cwd, sizeof(cwd));
+	PDBG("cwd = %s", cwd);
+
+	absolute_path_without_last_element.import(path, cwd);
+	absolute_path_without_last_element.strip_last_element();
+
+	resolve_symlinks(absolute_path_without_last_element.base(), resolved_path);
+
+	/* append last element to resolved path */
+	absolute_path_last_element.import(path, cwd);
+	absolute_path_last_element.keep_only_last_element();
+	try {
+		resolved_path.append(absolute_path_last_element.base());
+	} catch (Genode::Path_base::Path_too_long) {
+		errno = ENAMETOOLONG;
+		throw Symlink_resolve_error();
+	}
+
+	return resolved_path.base();
+}
+
+
 /********************
  ** Libc functions **
  ********************/
@@ -125,8 +298,15 @@ extern "C" int bind(int libc_fd, const struct sockaddr *addr,
 	FD_FUNC_WRAPPER(bind, libc_fd, addr, addrlen); }
 
 
-extern "C" int chdir(const char *path) {
-	FNAME_FUNC_WRAPPER(chdir, path) }
+extern "C" int chdir(const char *path)
+{
+	try {
+		Absolute_path resolved_path;
+		return _chdir(resolve_symlinks(path, resolved_path));
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
 
 
 extern "C" int _close(int libc_fd) {
@@ -295,8 +475,26 @@ extern "C" ::off_t lseek(int libc_fd, ::off_t offset, int whence) {
 	FD_FUNC_WRAPPER(lseek, libc_fd, offset, whence); }
 
 
-extern "C" int mkdir(const char *path, mode_t mode) {
-	FNAME_FUNC_WRAPPER(mkdir, path, mode) }
+extern "C" int lstat(const char *path, struct stat *buf)
+{
+	try {
+		Absolute_path resolved_path;
+		return _lstat(resolve_symlinks_except_last_element(path, resolved_path), buf);
+	} catch (Symlink_resolve_error) {
+		return -1;
+	}
+}
+
+
+extern "C" int mkdir(const char *path, mode_t mode)
+{
+	try {
+		Absolute_path resolved_path;
+		return _mkdir(resolve_symlinks_except_last_element(path, resolved_path), mode);
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
 
 
 extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
@@ -351,17 +549,46 @@ extern "C" int munmap(void *start, ::size_t length)
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+	PDBG("pathname = %s", pathname);
+
+	Absolute_path resolved_path;
+	char cwd[PATH_MAX];
+
+	getcwd(cwd, sizeof(cwd));
+	PDBG("cwd = %s", cwd);
+
 	Plugin *plugin;
 	File_descriptor *new_fdo;
 
-	plugin = plugin_registry()->get_plugin_for_open(pathname, flags);
+	try {
+		resolve_symlinks_except_last_element(pathname, resolved_path);
+	} catch (Symlink_resolve_error) {
+		return -1;
+	}
+
+	if (!(flags & O_NOFOLLOW)) {
+		/* resolve last element */
+		try {
+			resolve_symlinks(resolved_path.base(), resolved_path);
+		} catch (Symlink_resolve_error) {
+			if (errno == ENOENT) {
+				if (!(flags & O_CREAT))
+					return -1;
+			} else
+				return -1;
+		}
+	}
+
+	PDBG("resolved path = %s", resolved_path.base());
+
+	plugin = plugin_registry()->get_plugin_for_open(resolved_path.base(), flags);
 
 	if (!plugin) {
 		PERR("no plugin found for open(\"%s\", int)", pathname, flags);
 		return -1;
 	}
 
-	new_fdo = plugin->open(pathname, flags);
+	new_fdo = plugin->open(resolved_path.base(), flags);
 	if (!new_fdo) {
 		PERR("plugin()->open(\"%s\") failed", pathname);
 		return -1;
@@ -415,6 +642,17 @@ extern "C" ssize_t read(int libc_fd, void *buf, ::size_t count)
 }
 
 
+extern "C" ssize_t readlink(const char *path, char *buf, size_t bufsiz)
+{
+	try {
+		Absolute_path resolved_path;
+		return _readlink(resolve_symlinks_except_last_element(path, resolved_path), buf, bufsiz);
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
+
+
 extern "C" ssize_t recv(int libc_fd, void *buf, ::size_t len, int flags) {
 	FD_FUNC_WRAPPER(recv, libc_fd, buf, len, flags); }
 
@@ -435,8 +673,17 @@ extern "C" ssize_t recvmsg(int libc_fd, struct msghdr *msg, int flags) {
 	FD_FUNC_WRAPPER(recvmsg, libc_fd, msg, flags); }
 
 
-extern "C" int rename(const char *oldpath, const char *newpath) {
-	FNAME_FUNC_WRAPPER(rename, oldpath, newpath); }
+extern "C" int rename(const char *oldpath, const char *newpath)
+{
+	try {
+		Absolute_path resolved_oldpath, resolved_newpath;
+		resolve_symlinks_except_last_element(oldpath, resolved_oldpath);
+		resolve_symlinks_except_last_element(newpath, resolved_newpath);
+		return _rename(resolved_oldpath.base(), resolved_newpath.base());
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
 
 
 extern "C" ssize_t send(int libc_fd, const void *buf, ::size_t len, int flags) {
@@ -510,12 +757,40 @@ extern "C" int _socket(int domain, int type, int protocol)
 }
 
 
-extern "C" int stat(const char *path, struct stat *buf) {
-	FNAME_FUNC_WRAPPER(stat, path, buf) }
+extern "C" int stat(const char *path, struct stat *buf)
+{
+	PDBG("path = %s", path);
+	try {
+		Absolute_path resolved_path;
+		return _lstat(resolve_symlinks(path, resolved_path), buf);
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
 
 
-extern "C" int unlink(const char *path) {
-	FNAME_FUNC_WRAPPER(unlink, path) }
+extern "C" int symlink(const char *oldpath, const char *newpath)
+{
+	try {
+		Absolute_path resolved_path;
+		return _symlink(oldpath,
+		                resolve_symlinks_except_last_element(newpath,
+		                                                     resolved_path));
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
+
+
+extern "C" int unlink(const char *path)
+{
+	try {
+		Absolute_path resolved_path;
+		return _unlink(resolve_symlinks_except_last_element(path, resolved_path));
+	} catch(Symlink_resolve_error) {
+		return -1;
+	}
+}
 
 
 extern "C" ssize_t _write(int libc_fd, const void *buf, ::size_t count) {

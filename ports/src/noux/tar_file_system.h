@@ -388,9 +388,13 @@ namespace Noux {
 
 			bool unlink(Sysio *, char const *) { return false; }
 
+			bool readlink(Sysio *, char const *) { return false; }
+
 			bool rename(Sysio *, char const *, char const *) { return false; }
 
 			bool mkdir(Sysio *, char const *) { return false; }
+
+			bool symlink(Sysio *, char const *) { return false; }
 
 			size_t num_dirent(char const *path)
 			{

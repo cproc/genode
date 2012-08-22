@@ -49,6 +49,7 @@ namespace Libc {
 			                                  struct ::addrinfo **res);
 			virtual bool supports_open(const char *pathname, int flags);
 			virtual bool supports_pipe();
+			virtual bool supports_readlink(const char *path, char *buf, size_t bufsiz);
 			virtual bool supports_rename(const char *oldpath, const char *newpath);
 			virtual bool supports_select(int nfds,
 			                             fd_set *readfds,
@@ -57,6 +58,7 @@ namespace Libc {
 			                             struct timeval *timeout);
 			virtual bool supports_socket(int domain, int type, int protocol);
 			virtual bool supports_stat(const char *path);
+			virtual bool supports_symlink(const char *oldpath, const char *newpath);
 			virtual bool supports_unlink(const char *path);
 			virtual bool supports_mmap();
 
@@ -103,6 +105,7 @@ namespace Libc {
 			virtual File_descriptor *open(const char *pathname, int flags);
 			virtual int pipe(File_descriptor *pipefd[2]);
 			virtual ssize_t read(File_descriptor *, void *buf, ::size_t count);
+			virtual ssize_t readlink(const char *path, char *buf, ::size_t bufsiz);
 			virtual ssize_t recv(File_descriptor *, void *buf, ::size_t len, int flags);
 			virtual ssize_t recvfrom(File_descriptor *, void *buf, ::size_t len, int flags,
 			                         struct sockaddr *src_addr, socklen_t *addrlen);
@@ -121,6 +124,7 @@ namespace Libc {
 			virtual int shutdown(File_descriptor *, int how);
 			virtual File_descriptor *socket(int domain, int type, int protocol);
 			virtual int stat(const char *path, struct stat *buf);
+			virtual int symlink(const char *oldpath, const char *newpath);
 			virtual int unlink(const char *path);
 			virtual ssize_t write(File_descriptor *, const void *buf, ::size_t count);
 	};

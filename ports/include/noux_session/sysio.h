@@ -293,11 +293,14 @@ namespace Noux {
 		                       OPEN_ERR_EXISTS };
 		enum Execve_error    { EXECVE_NONEXISTENT    = NUM_GENERAL_ERRORS };
 		enum Unlink_error    { UNLINK_ERR_NO_ENTRY, UNLINK_ERR_NO_PERM };
+		enum Readlink_error  { READLINK_ERR_NO_ENTRY };
 		enum Rename_error    { RENAME_ERR_NO_ENTRY, RENAME_ERR_CROSS_FS,
 		                       RENAME_ERR_NO_PERM };
 		enum Mkdir_error     { MKDIR_ERR_EXISTS,   MKDIR_ERR_NO_ENTRY,
 		                       MKDIR_ERR_NO_SPACE, MKDIR_ERR_NO_PERM,
 		                       MKDIR_ERR_NAME_TOO_LONG};
+		enum Symlink_error   { SYMLINK_ERR_EXISTS, SYMLINK_ERR_NO_ENTRY,
+		                       SYMLINK_ERR_NAME_TOO_LONG};
 
 		union {
 			General_error   general;
@@ -308,8 +311,10 @@ namespace Noux {
 			Open_error      open;
 			Execve_error    execve;
 			Unlink_error    unlink;
+			Readlink_error  readlink;
 			Rename_error    rename;
 			Mkdir_error     mkdir;
+			Symlink_error   symlink;
 		} error;
 
 		union {
@@ -320,6 +325,8 @@ namespace Noux {
 			                        { size_t count; });
 
 			SYSIO_DECL(stat,        { Path path; }, { Stat st; });
+
+			SYSIO_DECL(symlink,     { Path oldpath; Path newpath; }, { });
 
 			SYSIO_DECL(fstat,       { int fd; }, { Stat st; });
 
@@ -343,6 +350,9 @@ namespace Noux {
 
 			SYSIO_DECL(read,        { int fd; size_t count; },
 			                        { Chunk chunk; size_t count; });
+
+			SYSIO_DECL(readlink,    { Path path; size_t bufsiz; },
+			                        { Chunk chunk; ssize_t count; });
 
 			SYSIO_DECL(execve,      { Path filename; Args args; Env env; }, { });
 

@@ -15,6 +15,7 @@
 #include <base/env.h>
 #include <base/printf.h>
 #include <file_system_session/connection.h>
+#include <os/path.h>
 
 /* libc includes */
 #include <errno.h>
@@ -62,25 +63,7 @@ static Cwd *cwd()
 }
 
 
-struct Canonical_path
-{
-	char str[PATH_MAX_LEN];
-
-	Canonical_path(char const *pathname)
-	{
-		/*
-		 * If pathname is a relative path, prepend the current working
-		 * directory.
-		 *
-		 * XXX we might consider using Noux' 'Path' class here
-		 */
-		if (pathname[0] != '/') {
-			snprintf(str, sizeof(str), "%s/%s", cwd()->path, pathname);
-		} else {
-			strncpy(str, pathname, sizeof(str));
-		}
-	}
-};
+typedef Genode::Path<PATH_MAX_LEN> Canonical_path;
 
 
 static File_system::Session *file_system()
@@ -271,6 +254,13 @@ class Plugin : public Libc::Plugin
 			return true;
 		}
 
+		bool supports_readlink(const char *path, char *, size_t)
+		{
+			if (verbose)
+				PDBG("path = %s", path);
+			return true;
+		}
+
 		bool supports_rename(const char *oldpath, const char *newpath)
 		{
 			if (verbose)
@@ -282,6 +272,13 @@ class Plugin : public Libc::Plugin
 		{
 			if (verbose)
 				PDBG("path = %s", path);
+			return true;
+		}
+
+		bool supports_symlink(const char *oldpath, const char *newpath)
+		{
+			if (verbose)
+				PDBG("oldpath = %s, newpath = %s", oldpath, newpath);
 			return true;
 		}
 
@@ -320,8 +317,12 @@ class Plugin : public Libc::Plugin
 				PDBG("wait_for_acknowledgement");
 				wait_for_acknowledgement(*file_system()->tx());
 			}
-
+PDBG("close()");
 			file_system()->close(context(fd)->node_handle());
+
+			Genode::destroy(Genode::env()->heap(), context(fd));
+			Libc::file_descriptor_allocator()->free(fd);
+
 			return 0;
 		}
 
@@ -462,7 +463,7 @@ class Plugin : public Libc::Plugin
 
 			try {
 				File_system::Dir_handle const handle =
-					file_system()->dir(canonical_path.str, true);
+					file_system()->dir(canonical_path.base(), true);
 				file_system()->close(handle);
 				return 0;
 			}
@@ -491,9 +492,9 @@ class Plugin : public Libc::Plugin
 			 * Probe for an existing directory to open
 			 */
 			try {
-				PDBG("open dir '%s'", path.str);
+				PDBG("open dir '%s'", path.base());
 				File_system::Dir_handle const handle =
-					file_system()->dir(path.str, false);
+					file_system()->dir(path.base(), false);
 
 				Plugin_context *context = new (Genode::env()->heap())
 					Plugin_context(handle);
@@ -505,26 +506,22 @@ class Plugin : public Libc::Plugin
 			 * Determine directory path that contains the node to open
 			 */
 			unsigned last_slash = 0;
-			for (unsigned i = 0; path.str[i]; i++)
-				if (path.str[i] == '/')
+			for (unsigned i = 0; path.base()[i]; i++)
+				if (path.base()[i] == '/')
 					last_slash = i;
 
-			char dir_path[256] = "/";
-			if (last_slash > 0)
-				Genode::strncpy(dir_path, path.str,
-				                Genode::min(sizeof(dir_path), last_slash + 1));
+			Canonical_path dir_path(pathname);
+			dir_path.strip_last_element();
 
-			/*
-			 * Determine base name
-			 */
-			char const *basename = path.str + last_slash + 1;
+			Canonical_path basename(pathname);
+			basename.keep_only_last_element();
 
 			try {
 				/*
 				 * Open directory that contains the file to be opened/created
 				 */
 				File_system::Dir_handle const dir_handle =
-				    file_system()->dir(dir_path, false);
+				    file_system()->dir(dir_path.base(), false);
 
 				Node_handle_guard guard(dir_handle);
 
@@ -538,14 +535,14 @@ class Plugin : public Libc::Plugin
 				bool opened = false;
 				while (!opened) {
 					try {
-						handle = file_system()->file(dir_handle, basename, mode, create);
+						handle = file_system()->file(dir_handle, basename.base() + 1, mode, create);
 						opened = true;
 					} catch (File_system::Node_already_exists) {
 						if (flags & O_EXCL)
 							throw File_system::Node_already_exists();
 						/* try to open the existing file */
 						try {
-							handle = file_system()->file(dir_handle, basename, mode, false);
+							handle = file_system()->file(dir_handle, basename.base() + 1, mode, false);
 							opened = true;
 						} catch (File_system::Lookup_failed) {
 							/* the file got deleted in the meantime */
@@ -574,6 +571,8 @@ class Plugin : public Libc::Plugin
 
 		ssize_t read(Libc::File_descriptor *fd, void *buf, ::size_t count)
 		{
+			PDBG("count = %zu", count);
+
 			File_system::Session::Tx::Source &source = *file_system()->tx();
 
 			size_t const max_packet_size = source.bulk_buffer_size() / 2;
@@ -641,6 +640,38 @@ class Plugin : public Libc::Plugin
 			return count - remaining_count;
 		}
 
+		ssize_t readlink(const char *path, char *buf, size_t bufsiz)
+		{
+			PDBG("path = %s, bufsiz = %zu", path, bufsiz);
+
+			Canonical_path abs_path(path);
+			abs_path.strip_last_element();
+
+			Canonical_path symlink_name(path);
+			symlink_name.keep_only_last_element();
+
+			try {
+				::File_system::Dir_handle dir_handle = file_system()->dir(abs_path.base(), false);
+
+				::File_system::Symlink_handle symlink_handle =
+				    file_system()->symlink(dir_handle, symlink_name.base() + 1, false);
+
+				Plugin_context *context = new (Genode::env()->heap())
+					Plugin_context(symlink_handle);
+
+				Libc::File_descriptor *fd = Libc::file_descriptor_allocator()->alloc(this, context);
+
+				ssize_t result = read(fd, buf, bufsiz);
+PDBG("result = %zd, buf = %s", result, buf);
+				close(fd);
+
+				return result;
+			} catch (...) { }
+
+			errno = ENOENT;
+			return -1;
+		}
+
 		int stat(const char *pathname, struct stat *buf)
 		{
 			PDBG("stat %s", pathname);
@@ -648,7 +679,7 @@ class Plugin : public Libc::Plugin
 
 			try {
 				File_system::Node_handle const node_handle =
-					file_system()->node(path.str);
+					file_system()->node(path.base());
 				Node_handle_guard guard(node_handle);
 
 				obtain_stat_for_node(node_handle, buf);
@@ -658,6 +689,48 @@ class Plugin : public Libc::Plugin
 				PERR("lookup failed");
 				errno = ENOENT;
 			}
+			return -1;
+		}
+
+		int symlink(const char *oldpath, const char *newpath)
+		{
+			Canonical_path abs_path(newpath);
+			abs_path.strip_last_element();
+
+			Canonical_path symlink_name(newpath);
+			symlink_name.keep_only_last_element();
+
+			try {
+				/*
+				 * Open directory that contains the file to be opened/created
+				 */
+				File_system::Dir_handle const dir_handle =
+				    file_system()->dir(abs_path.base(), false);
+
+				Node_handle_guard guard(dir_handle);
+
+				File_system::Symlink_handle symlink_handle =
+				    file_system()->symlink(dir_handle, symlink_name.base() + 1, true);
+
+				Plugin_context *context = new (Genode::env()->heap())
+					Plugin_context(symlink_handle);
+
+				Libc::File_descriptor *fd =
+				    Libc::file_descriptor_allocator()->alloc(this, context);
+
+				if (write(fd, oldpath, strlen(oldpath) + 1) == -1) {
+					errno = EIO;
+					return -1;
+				}
+
+				close(fd);
+
+				return 0;
+			}
+			catch (File_system::Lookup_failed) {
+				PERR("symlink(%s) lookup failed", newpath); }
+
+			errno = ENOENT;
 			return -1;
 		}
 
@@ -750,6 +823,17 @@ class Plugin : public Libc::Plugin
 
 
 } /* unnamed namespace */
+
+
+/***********************************************
+ ** Overrides of libc default implementations **
+ ***********************************************/
+
+extern "C" int __getcwd(char *dst, Genode::size_t dst_size)
+{
+	Genode::strncpy(dst, cwd()->path, dst_size);
+	return 0;
+}
 
 
 void __attribute__((constructor)) init_libc_fs(void)
