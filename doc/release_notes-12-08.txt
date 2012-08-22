@@ -58,8 +58,8 @@ Well, this is what happened. So we traded the work on the tiled window manager,
 the Intel wireless driver, and SMP support for the work on the platform topics
 outlined above. Nevertheless, we stick to our overall plan to turn Genode into
 a general-purpose OS that is fit for use by its developers by the end of the
-year. If looking closely at the additions that come with current release, it
-will become apparent how well they fit into the big picture.
+year. If looking closely at the additions that come with the current release,
+it will become apparent how well they fit into the big picture.
 
 
 Genode on naked ARM hardware
@@ -106,7 +106,7 @@ solution for the management of in-kernel resources and are consequently prone
 to resource exhaustion problems.
 
 Out of these observations, the idea was born to explore the opportunities of
-merging both programs into one and thereby eliminate the redundancies. Our
+merging both programs into one and thereby eliminating the redundancies. Our
 first attempt to go into this direction was the 'base-mb' platform, which
 enabled us to run Genode on the Xilinx MicroBlaze softcore CPU. With this
 experiment, we gained confidence that the approach is generally feasible. So we
@@ -203,13 +203,13 @@ any other kind of globally meaningful names. Each process has a local view on
 (a small part of) the system only. If a process interacts with another process,
 the kernel translates the references to remote objects from one namespace to
 the other. The security implications are eminent. First, a process can only
-interact or refer to objects for which it has a name, which vastly reduces
+interact with or refer to objects for which it has a name, which vastly reduces
 problems of ambient authority. Second, because the kernel translates names, it
 becomes impossible to forge object identities. If a process tried to pass a
 forged object reference to another process, the translation would simply fail,
 rendering the attack ineffective.
 
-The described changes do not come without issues through. To make the NOVA
+The described changes do not come without issues, though. To make the NOVA
 kernel fit with Genode's requirements, minor patches of the hypervisor are
 needed. The patches are located at 'base-nova/patches/'. However, those patches
 are meant as interim solutions until we find mechanisms that fit well with the
@@ -248,7 +248,7 @@ provided by 'util/register.h' and 'util/mmio.h' for dealing with memory-mapped
 devices, we extended the utilities with support for 64-bit registers and a new
 interface for polling bit states. The latter functionality is provided by the
 new 'wait_for' function template. To decouple the MMIO-related utility code
-from an actual timer facility, the function takes so-called 'delayer' functor
+from an actual timer facility, the function takes a so-called 'delayer' functor
 as argument. This way the user of the MMIO framework is able to pick a timer
 facility that fits best with the device.
 
@@ -256,7 +256,7 @@ facility that fits best with the device.
 :New 'memcpy' implementation:
 
 The memory-copy functions provided by 'util/string.h' are extremely simple
-and arguably slow, particular on platforms where byte-wise copy operations
+and arguably slow, particularly on platforms where byte-wise copy operations
 are not supported by the CPU (i.e., ARM). Hence, we have added a CPU-specific
 memcpy function ('memcpy_cpu') to 'cpu/string.h', which enables us to
 provide optimized implementations. So far, we did so for the ARM architecture.
@@ -328,7 +328,7 @@ on a terminal via a virtual character device. For remote debugging, GDB plays
 the role of a terminal client and the UART driver plays the role of the server.
 But when running GDB monitor on the same machine, GDB monitor will also
 expect to play the role of the client. In order to connect GDB monitor
-to a local instance of GDB, both of them being terminal clients, we need a
+to a local instance of GDB, both of them being terminal clients, we need an
 adapter component. This is where the new terminal cross-link service enters
 the picture. It plays the role of a terminal server between exactly two
 clients. The output of one client ends up as input to the other and vice
@@ -406,7 +406,7 @@ New and updated 3rd-party libraries
 
 :Expat:
 
-[http://expat.sourceforge.net - Expat] is a XML parsing library. The port of
+[http://expat.sourceforge.net - Expat] is an XML parsing library. The port of
 this library was motivated by our goal to use the GNU debugger for on-target
 debugging. GDB depends on this library.
 
@@ -481,7 +481,7 @@ components such as 'part_blk' (for accessing individual partitions) or
 The driver uses the master DMA facility of the OMAP4 SD-card controller, which
 yields to good performance at low CPU utilization. The throughput matches (and
 in some cases outperforms) the Linux kernel driver. In the current version,
-both modes of operation PIO and DMA are functional. However, PIO mode is
+both modes of operation, PIO and DMA, are functional. However, PIO mode is
 retained for benchmarking purposes only and will possibly be removed to further
 simplify the driver.
 
@@ -506,7 +506,7 @@ AVL-tree based allocator with a fast bitmap allocator. For anonymous
 allocations, we introduced a slab-based allocator. Furthermore, we introduced
 the distinction between memory objects that are subjected to DMA operations
 from non-DMA memory objects. The most profound conceptual optimization is the
-use of of transmit bursts by the driver. The Linux kernel, which our driver
+use of transmit bursts by the driver. The Linux kernel, which our driver
 originates from, does not provide an API for transmitting multiple packets as a
 burst. For our driver, however, this optimization opportunity opened up thanks
 to Genode's packet stream interface, which naturally facilitates the batching
@@ -523,7 +523,7 @@ more than one UHCI controller, make sure that the 'PIRQ' bit in the legacy
 support register (PCI config space) of the UHCI controller is enabled and that
 the 'Trap on IRQ' bit is disabled.
 
-With those modifications in place, the USB driver works reliable on the tested
+With those modifications in place, the USB driver works reliably on the tested
 platforms.
 
 
