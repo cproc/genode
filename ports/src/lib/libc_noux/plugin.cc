@@ -176,19 +176,6 @@ extern "C" uid_t geteuid()
 }
 
 
-extern "C" int __getcwd(char *dst, Genode::size_t dst_size)
-{
-	noux()->syscall(Noux::Session::SYSCALL_GETCWD);
-	Genode::size_t path_size = Genode::strlen(sysio()->getcwd_out.path);
-
-	if (dst_size < path_size + 1)
-		return -ERANGE;
-
-	Genode::strncpy(dst, sysio()->getcwd_out.path, dst_size);
-	return 0;
-}
-
-
 /**
  * Utility to copy-out syscall results to buf struct
  *
@@ -636,15 +623,16 @@ namespace {
 				_stderr(Libc::file_descriptor_allocator()->alloc(this, noux_context(2), 2))
 			{ }
 
-			bool supports_chdir(char const *)                { return true; }
-			bool supports_open(char const *, int)            { return true; }
-			bool supports_stat(char const *)                 { return true; }
-			bool supports_pipe()                             { return true; }
-			bool supports_unlink(char const *)               { return true; }
-			bool supports_rename(const char *, const char *) { return true; }
-			bool supports_mkdir(const char *, mode_t)        { return true; }
-			bool supports_socket(int, int, int)              { return true; }
-			bool supports_mmap()                             { return true; }
+			bool supports_open(char const *, int)                { return true; }
+			bool supports_stat(char const *)                     { return true; }
+			bool supports_symlink(char const *, char const*)     { return true; }
+			bool supports_pipe()                                 { return true; }
+			bool supports_unlink(char const *)                   { return true; }
+			bool supports_readlink(const char *, char *, size_t) { return true; }
+			bool supports_rename(const char *, const char *)     { return true; }
+			bool supports_mkdir(const char *, mode_t)            { return true; }
+			bool supports_socket(int, int, int)                  { return true; }
+			bool supports_mmap()                                 { return true; }
 
 			Libc::File_descriptor *open(char const *, int);
 			ssize_t write(Libc::File_descriptor *, const void *, ::size_t);
@@ -657,9 +645,10 @@ namespace {
 			int fcntl(Libc::File_descriptor *, int, long);
 			ssize_t getdirentries(Libc::File_descriptor *, char *, ::size_t, ::off_t *);
 			::off_t lseek(Libc::File_descriptor *, ::off_t offset, int whence);
-			int fchdir(Libc::File_descriptor *);
 			ssize_t read(Libc::File_descriptor *, void *, ::size_t);
+			ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 			int stat(char const *, struct stat *);
+			int symlink(const char *, const char *);
 			int ioctl(Libc::File_descriptor *, int request, char *argp);
 			int pipe(Libc::File_descriptor *pipefd[2]);
 			int unlink(char const *path);
@@ -697,6 +686,7 @@ namespace {
 
 	int Plugin::stat(char const *path, struct stat *buf)
 	{
+		PDBG("path = %s", path);
 		return _stat(path, buf, false);
 	}
 
@@ -748,6 +738,29 @@ namespace {
 		if ((flags & O_TRUNC) && (ftruncate(fd, 0) == -1))
 			return 0;
 		return fd;
+	}
+
+
+	int Plugin::symlink(const char *oldpath, const char *newpath)
+	{
+		PDBG("%s -> %s", newpath, oldpath);
+
+		if ((Genode::strlen(oldpath) + 1 > sizeof(sysio()->symlink_in.oldpath)) ||
+		    (Genode::strlen(newpath) + 1 > sizeof(sysio()->symlink_in.newpath))) {
+			PDBG("ENAMETOOLONG");
+			errno = ENAMETOOLONG;
+			return 0;
+		}
+
+		Genode::strncpy(sysio()->symlink_in.oldpath, oldpath, sizeof(sysio()->symlink_in.oldpath));
+		Genode::strncpy(sysio()->symlink_in.newpath, newpath, sizeof(sysio()->symlink_in.newpath));
+		if (!noux()->syscall(Noux::Session::SYSCALL_SYMLINK)) {
+			PERR("symlink error");
+			/* XXX set errno */
+			return -1;
+		}
+
+		return 0;
 	}
 
 
@@ -1138,21 +1151,6 @@ namespace {
 	}
 
 
-	int Plugin::fchdir(Libc::File_descriptor *fd)
-	{
-		sysio()->fchdir_in.fd = noux_fd(fd->context);
-		if (!noux()->syscall(Noux::Session::SYSCALL_FCHDIR)) {
-			switch (sysio()->error.fchdir) {
-				case Noux::Sysio::FCHDIR_ERR_NOT_DIR: errno = ENOTDIR; break;
-				default:                              errno = EPERM;  break;
-			}
-			return -1;
-		}
-
-		return 0;
-	}
-
-
 	int Plugin::unlink(char const *path)
 	{
 		Genode::strncpy(sysio()->unlink_in.path, path, sizeof(sysio()->unlink_in.path));
@@ -1167,6 +1165,27 @@ namespace {
 		}
 
 		return 0;
+	}
+
+
+	ssize_t Plugin::readlink(const char *path, char *buf, size_t bufsiz)
+	{
+		PDBG("path = %s, bufsiz = %zu", path, bufsiz);
+
+		Genode::strncpy(sysio()->readlink_in.path, path, sizeof(sysio()->readlink_in.path));
+		sysio()->readlink_in.bufsiz = bufsiz;
+
+		if (!noux()->syscall(Noux::Session::SYSCALL_READLINK)) {
+			PWRN("readlink syscall failed for \"%s\"", path);
+			/* XXX set errno */
+			return -1;
+		}
+
+		ssize_t size = Genode::min((size_t)sysio()->readlink_out.count, bufsiz);
+
+		Genode::memcpy(buf, sysio()->readlink_out.chunk, size);
+PDBG("buf = %s", buf);
+		return size;
 	}
 
 
