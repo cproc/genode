@@ -16,6 +16,7 @@
 #define _LIBC_PLUGIN__FD_ALLOC_H_
 
 #include <base/allocator_avl.h>
+#include <os/path.h>
 
 #include <libc-plugin/plugin.h>
 
@@ -28,10 +29,10 @@ namespace Libc {
 	 */
 	class Plugin_context { };
 
-
 	struct File_descriptor
 	{
 		int             libc_fd;
+		char           *path;    /* for 'fchdir()' */
 		Plugin         *plugin;
 		Plugin_context *context;
 	};
@@ -49,7 +50,8 @@ namespace Libc {
 			/**
 			 * Allocate file descriptor
 			 */
-			File_descriptor *alloc(Plugin *plugin, Plugin_context *context, int libc_fd = -1);
+			File_descriptor *alloc(char const *path, Plugin *plugin,
+			                       Plugin_context *context, int libc_fd = -1);
 
 			/**
 			 * Release file descriptor

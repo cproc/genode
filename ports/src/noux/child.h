@@ -155,7 +155,7 @@ namespace Noux {
 
 			Cap_session * const _cap_session;
 
-			enum { STACK_SIZE = 4*1024*sizeof(long) };
+			enum { STACK_SIZE = 5*1024*sizeof(long) };
 			Rpc_entrypoint _entrypoint;
 
 			/**
@@ -296,7 +296,6 @@ namespace Noux {
 			      Dir_file_system  *root_dir,
 			      Args              const &args,
 			      char const       *env,
-			      char const       *pwd,
 			      Cap_session      *cap_session,
 			      Service_registry &parent_services,
 			      Rpc_entrypoint   &resources_ep,
@@ -329,7 +328,6 @@ namespace Noux {
 				_child(_binary_ds, _resources.ram.cap(), _resources.cpu.cap(),
 				       _resources.rm.cap(), &_entrypoint, &_child_policy)
 			{
-				_env.pwd(pwd);
 				_args.dump();
 
 				if (!forked && !_binary_ds.valid()) {

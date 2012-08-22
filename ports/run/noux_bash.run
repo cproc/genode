@@ -33,7 +33,7 @@ close $vimrc_fd
 # strip all binaries prior archiving
 exec sh -c "find bin/bash/ bin/vim/ bin/coreutils/ -type f | (xargs [cross_dev_prefix]strip || true) 2>/dev/null"
 
-exec tar cfv bin/bash.tar      -h -C bin/bash .
+exec tar cfv bin/bash.tar      -C bin/bash .
 exec tar cfv bin/coreutils.tar -h -C bin/coreutils .
 exec tar cfv bin/vim.tar       -h -C bin/vim .
 

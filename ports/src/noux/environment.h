@@ -19,7 +19,6 @@
 
 /* Noux includes */
 #include <path.h>
-#include <pwd.h>
 #include <range_checked_index.h>
 
 namespace Noux {
@@ -27,15 +26,13 @@ namespace Noux {
 	/**
 	 * Front-end for PWD environment variable
 	 */
-	class Environment : private Attached_ram_dataspace, public Pwd
+	class Environment : private Attached_ram_dataspace
 	{
 		private:
 
 			enum { ENV_DS_SIZE = 4096 };
 
 			char *_env;
-
-			Pwd::Path _pwd_path;
 
 		public:
 
@@ -55,39 +52,5 @@ namespace Noux {
 			 * Return list of environment variables as comma-separated list
 			 */
 			char const *env() { return _env; }
-
-
-			/*******************
-			 ** Pwd interface **
-			 *******************/
-
-			char const *pwd() { return _pwd_path.base(); }
-
-			void pwd(char const *pwd)
-			{
-				_pwd_path.import(pwd);
-				_pwd_path.remove_trailing('/');
-
-				char quoted[Sysio::MAX_PATH_LEN];
-				Range_checked_index<unsigned> i(0, sizeof(quoted));
-
-				try {
-					char const *s = _pwd_path.base();
-					quoted[i++] = '"';
-					while (*s) {
-						if (*s == '"')
-							quoted[i++] = '/';
-						quoted[i++] = *s++;
-					}
-					quoted[i++] = '"';
-					quoted[i] = 0;
-				} catch (Index_out_of_range) {
-					PERR("Could not set PWD, buffer too small");
-					return;
-				}
-
-				Arg_string::set_arg(_env, ENV_DS_SIZE, "PWD", quoted);
-				PINF("changed current work directory to %s", _pwd_path.base());
-			}
 	};
 }

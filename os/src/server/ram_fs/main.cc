@@ -134,7 +134,7 @@ namespace File_system {
 
 				/* assume failure by default */
 				packet.succeeded(false);
-
+				PDBG("handle = %d", packet.handle().value);
 				try {
 					Node *node = _handle_registry.lookup_and_lock(packet.handle());
 					Node_lock_guard guard(*node);
@@ -229,6 +229,8 @@ namespace File_system {
 			File_handle file(Dir_handle dir_handle, Name const &name,
 			                 Mode mode, bool create)
 			{
+				PDBG("name = %s", name.string());
+
 				if (!valid_name(name.string()))
 					throw Invalid_name();
 
@@ -258,12 +260,45 @@ namespace File_system {
 
 				File *file = dir->lookup_and_lock_file(name.string());
 				Node_lock_guard file_guard(*file);
-				return _handle_registry.alloc(file);
+				File_handle file_handle = _handle_registry.alloc(file);
+				PDBG("handle = %d", file_handle.value);
+				return file_handle;
+				//return _handle_registry.alloc(file);
 			}
 
-			Symlink_handle symlink(Dir_handle, Name const &name, bool create)
+			Symlink_handle symlink(Dir_handle dir_handle, Name const &name, bool create)
 			{
-				return Symlink_handle(-1);
+				PDBG("name = %s", name.string());
+
+				if (!valid_name(name.string()))
+					throw Invalid_name();
+
+				Directory *dir = _handle_registry.lookup_and_lock(dir_handle);
+				Node_lock_guard dir_guard(*dir);
+
+				if (create) {
+
+					if (!_writable)
+						throw Permission_denied();
+
+					if (dir->has_sub_node_unsynchronized(name.string()))
+						throw Node_already_exists();
+
+					try {
+						Symlink * const symlink = new (env()->heap())
+						                    Symlink(name.string());
+
+						dir->adopt_unsynchronized(symlink);
+					}
+					catch (Allocator::Out_of_memory) { throw No_space(); }
+				}
+
+				Symlink *symlink = dir->lookup_and_lock_symlink(name.string());
+				Node_lock_guard file_guard(*symlink);
+				Symlink_handle symlink_handle = _handle_registry.alloc(symlink);
+				PDBG("handle = %d", symlink_handle.value);
+				return symlink_handle;
+				//return _handle_registry.alloc(symlink);
 			}
 
 			Dir_handle dir(Path const &path, bool create)
@@ -301,21 +336,29 @@ namespace File_system {
 
 				Directory *dir = _root.lookup_and_lock_dir(path_str);
 				Node_lock_guard guard(*dir);
-				return _handle_registry.alloc(dir);
+				Dir_handle dir_handle = _handle_registry.alloc(dir);
+				PDBG("handle = %d", dir_handle.value);
+				return dir_handle;
+				//return _handle_registry.alloc(dir);
 			}
 
 			Node_handle node(Path const &path)
 			{
+				PDBG("path =%s", path.string());
 				_assert_valid_path(path.string());
 
 				Node *node = _root.lookup_and_lock(path.string() + 1);
 
 				Node_lock_guard guard(*node);
-				return _handle_registry.alloc(node);
+				Node_handle node_handle = _handle_registry.alloc(node);
+				PDBG("handle = %d", node_handle.value);
+				return node_handle;
+				//return _handle_registry.alloc(node);
 			}
 
 			void close(Node_handle handle)
 			{
+				PDBG("handle = %d", handle.value);
 				_handle_registry.free(handle);
 			}
 
@@ -323,7 +366,7 @@ namespace File_system {
 			{
 				Node *node = _handle_registry.lookup_and_lock(node_handle);
 				Node_lock_guard guard(*node);
-
+				PDBG("name = %s", node->name());
 				Status s;
 				s.inode = node->inode();
 				s.size  = 0;
@@ -343,6 +386,7 @@ namespace File_system {
 				}
 				Symlink *symlink = dynamic_cast<Symlink *>(node);
 				if (symlink) {
+					s.size = symlink->length();
 					s.mode = File_system::Status::MODE_SYMLINK;
 					return s;
 				}

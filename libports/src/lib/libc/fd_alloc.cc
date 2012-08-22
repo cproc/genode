@@ -16,6 +16,9 @@
 #include <base/env.h>
 #include <base/printf.h>
 
+/* libc includes */
+#include <stdlib.h>
+
 /* libc plugin interface */
 #include <libc-plugin/fd_alloc.h>
 
@@ -40,7 +43,10 @@ File_descriptor_allocator::File_descriptor_allocator()
 }
 
 
-File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin, Plugin_context *context, int libc_fd)
+File_descriptor *File_descriptor_allocator::alloc(char const *path,
+                                                  Plugin *plugin,
+                                                  Plugin_context *context,
+                                                  int libc_fd)
 {
 	enum { ANY_FD = -1 };
 
@@ -62,6 +68,17 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin, Plugin_context
 
 	File_descriptor *fdo = metadata((void*)addr);
 	fdo->libc_fd = (int)addr;
+	if (path) {
+		size_t path_size = strlen(path) + 1;
+		fdo->path = (char*)malloc(path_size);
+		if (!fdo->path) {
+			PERR("could not allocate path buffer for libc_fd %d%s",
+			     libc_fd, libc_fd == ANY_FD ? " (any)" : "");
+			return 0;
+		}
+		memcpy(fdo->path, path, path_size);
+	} else
+		fdo->path = 0;
 	fdo->plugin  = plugin;
 	fdo->context = context;
 	return fdo;
@@ -70,6 +87,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin, Plugin_context
 
 void File_descriptor_allocator::free(File_descriptor *fdo)
 {
+	::free(fdo->path);
 	Allocator_avl_base::free(reinterpret_cast<void*>(fdo->libc_fd));
 }
 
