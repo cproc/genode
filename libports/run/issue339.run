@@ -186,7 +186,8 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/test-issue339 $gdb_cmds"
 
-exec [terminal] -e "[gdb] bin/test-issue339 $gdb_cmds" &
+#exec [terminal] -e "ddd --debugger \"[gdb] bin/test-issue339 $gdb_cmds" &
+exec ddd --debugger "[gdb] bin/test-issue339 $gdb_cmds" &
 
 interact
 
