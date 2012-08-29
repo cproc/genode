@@ -30,7 +30,7 @@ if {[have_spec linux]} {
 
 build {
 	core init
-	drivers/pci drivers/timer drivers/nic
+	drivers/pci drivers/timer drivers/nic drivers/uart app/gdb_monitor
 	test/issue339 server/ram_fs
 }
 
@@ -89,7 +89,7 @@ set config {
 		<resource name="RAM" quantum="5M"/>
 		<config>
 			<target name="test-issue339"/>
-			<preserve name="RAM" quantum="2M"/>
+			<preserve name="RAM" quantum="4M"/>
 		</config>
 	</start> }
 
@@ -114,7 +114,7 @@ set boot_modules {
 	core init timer
 	nic_drv
 	ld.lib.so libc.lib.so libc_log.lib.so lwip.lib.so test-issue339 ram_fs
-	libc_lock_pipe.lib.so libc_terminal.lib.so uart_drv gdb_monitor
+	libc_lock_pipe.lib.so libc_terminal.lib.so uart_drv gdb_monitor libc_fs.lib.so
 }
 
 # platform-specific modules
