@@ -108,7 +108,8 @@ extern "C" void *fwrite(void) {
 }
 
 
-extern "C" int memcmp(const void *p0, const void *p1, size_t size)
+extern "C" __attribute__((weak))
+int memcmp(const void *p0, const void *p1, size_t size)
 {
 	return Genode::memcmp(p0, p1, size);
 }

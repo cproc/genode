@@ -9,7 +9,7 @@ vpath %.cc $(BASE_DIR)/src/base/cxx
 LIBC_SYMBOLS += malloc free calloc realloc \
                 abort fputc fputs fwrite \
                 stderr strcat strcpy strlen \
-                memcmp strncmp strcmp sprintf \
+                strncmp strcmp sprintf \
                 __stderrp
 
 #
