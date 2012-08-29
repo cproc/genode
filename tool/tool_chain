@@ -243,7 +243,7 @@ TARGET_CONFIG_ARGS = $(CONFIG_QUIET) \
 # compile libsupc++ as position-independent code
 TARGET_CONFIG_ARGS += LIBSUPCXX_PICFLAGS='-prefer-pic'
 
-GCC_INSTALL_RULE = install-strip
+GCC_INSTALL_RULE = install
 ifeq ($(GCC_VERSION),4.4.5)
 GCC_INSTALL_RULE = install
 endif
@@ -421,7 +421,7 @@ build/$(PLATFORM)/gcc/Makefile:
 	$(VERBOSE)cd $(dir $@); \
 		host_configargs="$(HOST_CONFIG_ARGS)" \
 		target_configargs="$(TARGET_CONFIG_ARGS)" \
-		../../../$(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure $(GCC_CONFIG)
+		CXXFLAGS="-g3" ../../../$(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure $(GCC_CONFIG)
 
 $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile \
                  $(LINK_SPEC_H_$(PLATFORM)) \
