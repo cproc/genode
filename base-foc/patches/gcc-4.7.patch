@@ -1,0 +1,55 @@
+diff -ur l4/pkg/l4sys/lib/src/errtostr.c l4/pkg/l4sys/lib/src/errtostr.c
+--- l4/pkg/l4sys/lib/src/errtostr.c    2012-03-23 08:19:39.101286009 +0200
++++ l4/pkg/l4sys/lib/src/errtostr.c    2012-03-18 18:20:19.023146965 +0200
+@@ -20,7 +20,6 @@
+ #include <l4/sys/err.h>
+ #include <l4/sys/ipc.h>
+ 
+-char const *l4sys_errtostr(long err);
+ 
+ static char const *const _l4sys_errortab[L4_ERRNOMAX] = {
+     [L4_EOK]           = "OK",
+@@ -60,7 +59,7 @@
+     [L4_IPC_REMAPFAILED]   = "Map operation failed (receive phase)"
+ };
+ 
+-char const *l4sys_errtostr(long err)
++L4_CV char const *l4sys_errtostr(long err) L4_NOTHROW
+ {
+   err = -err;
+   if (err >= 0 && err < L4_ERRNOMAX)
+diff -ur l4/pkg/l4sys/lib/src/utcb.c l4/pkg/l4sys/lib/src/utcb.c
+--- l4/pkg/l4sys/lib/src/utcb.c        2012-03-23 08:19:39.094619342 +0200
++++ l4/pkg/l4sys/lib/src/utcb.c        2012-03-18 18:18:33.533143541 +0200
+@@ -26,7 +26,7 @@
+ 
+ #include <l4/sys/utcb.h>
+ 
+-__attribute__((weak)) l4_utcb_t *l4_utcb_wrap(void)
++L4_CV l4_utcb_t *l4_utcb_wrap(void) L4_NOTHROW
+ {
+   return l4_utcb_direct();
+ }
+diff -ur l4/pkg/l4sys/lib/src/utcb.c l4/pkg/l4sys/lib/src/utcb.c
+--- l4/pkg/l4sys/lib/src/ARCH-x86/utcb-l4x.c        2012-03-23 08:19:39.094619342 +0200
++++ l4/pkg/l4sys/lib/src/ARCH-x86/utcb-l4x.c        2012-03-18 18:18:33.533143541 +0200
+@@ -26,7 +26,7 @@
+ 
+ #include <l4/sys/utcb.h>
+ 
+-l4_utcb_t *l4_utcb_wrap(void)
++L4_CV l4_utcb_t *l4_utcb_wrap(void) L4_NOTHROW
+ {
+   return l4_utcb_direct();
+ }
+--- l4/pkg/l4sys/include/types.h	(revision 38)
++++ l4/pkg/l4sys/include/types.h	(working copy)
+@@ -366,6 +366,6 @@
+ l4_msgtag_t l4_msgtag(long label, unsigned words, unsigned items,
+                       unsigned flags) L4_NOTHROW
+ {
+-  return (l4_msgtag_t){(label << 16) | (words & 0x3f) | ((items & 0x3f) << 6)
+-                       | (flags & 0xf000)};
++	return (l4_msgtag_t){(l4_mword_t)((label << 16) | (words & 0x3f) | ((items & 0x3f) << 6)
++	                                  | (flags & 0xf000))};
+ }
