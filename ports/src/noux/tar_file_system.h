@@ -176,6 +176,7 @@ namespace Noux {
 
 			bool match(char const *path)
 			{
+				PDBG("path = %s", path);
 				Absolute_path test_path(path);
 
 				if (!test_path.strip_prefix(_dir_path.base()))
@@ -325,11 +326,17 @@ namespace Noux {
 
 			bool stat(Sysio *sysio, char const *path)
 			{
+				PDBG("path = %s", path);
 				Lookup_exact lookup_criterion(path);
 				Record *record = _lookup(&lookup_criterion);
 				if (!record) {
-					sysio->error.stat = Sysio::STAT_ERR_NO_ENTRY;
-					return false;
+					Lookup_member_of_path lookup_criterion(path, 0);
+					record = _lookup(&lookup_criterion);
+					if (!record) {
+						PDBG("still no record found for %s", path);
+						sysio->error.stat = Sysio::STAT_ERR_NO_ENTRY;
+						return false;
+					}
 				}
 
 				/* convert TAR record modes to stat modes */
