@@ -187,6 +187,30 @@ int main(int argc, char *argv[])
 		               (ret == 0) && (stat_buf.st_size == 0),
 		               "file_name=%s", file_name4);
 
+		/* test symbolic links */
+		if ((symlink("/", "/symlinks_supported") == 0) || (errno != ENOSYS)) {
+			CALL_AND_CHECK(ret, mkdir("/a", 0777), ((ret == 0) || (errno == EEXIST)), "dir_name=%s", "/a");
+			CALL_AND_CHECK(ret, mkdir("/c", 0777), ((ret == 0) || (errno == EEXIST)), "dir_name=%s", "/c");
+			CALL_AND_CHECK(ret, symlink("/a", "/c/d"),
+			               ((ret == 0) || (errno == EEXIST)), "dir_name=%s", "/c/d");
+			CALL_AND_CHECK(ret, symlink("/c", "/e"), ((ret == 0) || (errno == EEXIST)), "dir_name=%s", "/e");
+
+			CALL_AND_CHECK(fd, open("/a/b", O_CREAT | O_WRONLY), fd >= 0, "file_name=%s", "/a/b");
+			CALL_AND_CHECK(count, write(fd, pattern, pattern_size), (size_t)count == pattern_size, "");
+			CALL_AND_CHECK(ret, close(fd), ret == 0, "");
+
+			CALL_AND_CHECK(fd, open("/e/d/b", O_RDONLY), fd >= 0, "file_name=%s", "/e/d/b");
+			CALL_AND_CHECK(count, read(fd, buf, sizeof(buf)), (size_t)count == pattern_size, "");
+			CALL_AND_CHECK(ret, close(fd), ret == 0, "");
+			printf("content of file: \"%s\"\n", buf);
+			if (strcmp(buf, pattern) != 0) {
+				printf("unexpected content of file\n");
+				return -1;
+			} else {
+				printf("file content is correct\n");
+			}
+		}
+
 		if (i < (iterations - 1))
 			sleep(2);
 	}

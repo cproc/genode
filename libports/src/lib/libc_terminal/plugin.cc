@@ -133,7 +133,8 @@ namespace {
 
 			bool supports_stat(const char *path)
 			{
-				return (Genode::strcmp(path, _dev_name()) == 0);
+				return (Genode::strcmp(path, "/dev") == 0) ||
+				       (Genode::strcmp(path, _dev_name()) == 0);
 			}
 
 			bool supports_open(const char *path, int flags)
@@ -162,7 +163,16 @@ namespace {
 				 * This is important, i.e., to convince the gdbserver code to
 				 * cooperate with us.
 				 */
-				if (buf) buf->st_mode = S_IFCHR;
+				if (buf) {
+					if (Genode::strcmp(path, "/dev") == 0)
+						buf->st_mode = S_IFDIR;
+					else if (Genode::strcmp(path, _dev_name()) == 0)
+						buf->st_mode = S_IFCHR;
+					else {
+						errno = ENOENT;
+						return -1;
+					}
+				}
 				return 0;
 			}
 
