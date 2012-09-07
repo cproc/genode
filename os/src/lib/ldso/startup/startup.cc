@@ -19,6 +19,8 @@ typedef void (*ld_hook)(void);
 static ld_hook _lctors_start[1] SECTION("_mark_ctors_start") = BEG;
 static ld_hook _lctors_end[1]   SECTION("_mark_ctors_end")   = END;
 
+void *__dso_handle __attribute__((__visibility__("hidden"))) = &__dso_handle;
+
 /* called by dynamic linker on library startup (ld-genode.so) */
 extern "C" {
 	void _init(void) __attribute__((used,section(".init")));
