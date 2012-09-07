@@ -12,8 +12,10 @@ $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure:: $(CONTRIB_DIR)/gcc-$(GCC_VERSION)
 	@#
 	$(VERBOSE)sed -i "/^tmake_file=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config.gcc
+	$(VERBOSE)sed -i "/^tmake_file=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
 	$(VERBOSE)sed -i "/^extra_parts=$$/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
-	$(VERBOSE)sed -i "/^EXTRA_PARTS=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/i386/t-i386elf
+	$(VERBOSE)sed -i "/extra_parts=\"crt.*\"/s/^/#/g" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libgcc/config.host
+	@#$(VERBOSE)sed -i "/^EXTRA_PARTS=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/i386/t-i386elf
 	$(VERBOSE)sed -i "/^EXTRA_MULTILIB_PARTS *=/s/^/#/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/gcc/config/arm/t-arm-elf
 	@#
 	@# Let 'config.gcc' expand our already populated 'tmake_file' variable rather
@@ -83,10 +85,10 @@ $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure:: $(CONTRIB_DIR)/gcc-$(GCC_VERSION)
 	@# in text relocations. Because for base tool chains, no 'dynamic_linker'
 	@# is defined (see 'libtool.m4'), 'dynamic_linker' is set to 'no', which
 	@# results in 'can_build_shared = no', which, in turn , results
-	@# in 'enable_shared = no', which, in turn, sets 'LIBSUPCXX_PICFLAGS' to
+	@# in 'enable_shared = no', which, in turn, sets 'PIC_CXXFLAGS' to
 	@# nothing rather then '-prefer-pic'.
 	@#
-	$(VERBOSE)sed -i "/LIBSUPCXX_PICFLAGS=$$/s/LIB/__LIB/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libstdc++-v3/configure.ac
+	$(VERBOSE)sed -i "/PIC_CXXFLAGS=$$/s/PIC/__PIC/" $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/libstdc++-v3/configure.ac
 	@#
 	@# Re-generate configure scripts
 	@#
