@@ -60,7 +60,7 @@ MPC_DOWNLOAD_URL     ?= http://www.multiprecision.org/mpc/download
 # Tool versions and install location
 #
 
-GCC_VERSION       = 4.7.0
+GCC_VERSION       = 4.7.1
 BINUTILS_VERSION  = 2.21.1
 GDB_VERSION       = 7.3.1
 GMP_VERSION       = 5.0.2
@@ -89,7 +89,7 @@ VERBOSE     = @
 
 AUTOCONF_gcc_4.4.5 = autoconf2.59
 AUTOCONF_gcc_4.6.1 = autoconf2.64
-AUTOCONF_gcc_4.7.0 = autoconf2.64
+AUTOCONF_gcc_4.7.1 = autoconf2.64
 
 AUTOCONF = $(AUTOCONF_gcc_$(GCC_VERSION))
 
@@ -473,8 +473,7 @@ clean:
 
 cleanall: clean
 	rm -rf $(DOWNLOAD_DIR)/$(BINUTILS_DOWNLOAD_TBZ2)
-	rm -rf $(DOWNLOAD_DIR)/gcc-core-$(GCC_VERSION).tar.bz2
-	rm -rf $(DOWNLOAD_DIR)/gcc-g++-$(GCC_VERSION).tar.bz2
+	rm -rf $(DOWNLOAD_DIR)/gcc-$(GCC_VERSION).tar.bz2
 
 #
 # Install rules
