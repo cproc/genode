@@ -65,7 +65,8 @@ BASE_DIR     := $(realpath $(shell echo $(BASE_DIR)))
 # standard shell is dash, which breaks colored output via its built-in echo
 # command.
 #
-export SHELL := $(shell which bash)
+#export SHELL := $(shell which bash)
+export SHELL := /bin/bash
 
 select_from_repositories = $(firstword $(foreach REP,$(REPOSITORIES),$(wildcard $(REP)/$(1))))
 
