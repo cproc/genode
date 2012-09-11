@@ -1740,6 +1740,8 @@ void init_libc_noux(void)
 		    (strncmp(env_string, "NOUX_CWD=", strlen("NOUX_CWD=")) == 0)) {
 			noux_cwd.import(&env_string[strlen("NOUX_CWD=")]);
 		} else {
+			//if (verbose)
+				PDBG("env_string[%u]: %s", num_entries, env_string);
 			env_array[num_entries++] = env_string;
 		}
 		env_string += (strlen(env_string) + 1);

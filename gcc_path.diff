@@ -1,0 +1,93 @@
+diff --git a/gcc/gcc.c b/gcc/gcc.c
+index 75f522e..a604fa3 100644
+--- a/gcc/gcc.c
++++ b/gcc/gcc.c
+@@ -2092,7 +2092,7 @@ for_each_path (const struct path_prefix *paths,
+ 	{
+ 	  len = strlen (pl->prefix);
+ 	  memcpy (path, pl->prefix, len);
+-
++fprintf(stderr, "prefix = %s\n", path);
+ 	  /* Look first in MACHINE/VERSION subdirectory.  */
+ 	  if (!skip_multi_dir)
+ 	    {
+@@ -2331,7 +2331,7 @@ find_a_file (const struct path_prefix *pprefix, const char *name, int mode,
+ #endif
+ 
+   /* Determine the filename to execute (special case for absolute paths).  */
+-
++fprintf(stderr, "name = %s\n", name);
+   if (IS_ABSOLUTE_PATH (name))
+     {
+       if (access (name, mode) == 0)
+@@ -2381,7 +2381,7 @@ add_prefix (struct path_prefix *pprefix, const char *prefix,
+ {
+   struct prefix_list *pl, **prev;
+   int len;
+-
++fprintf(stderr, "new prefix = %s, %p\n", prefix, __builtin_return_address (0));
+   for (prev = &pprefix->plist;
+        (*prev) != NULL && (*prev)->priority <= priority;
+        prev = &(*prev)->next)
+@@ -3556,6 +3556,7 @@ process_command (unsigned int decoded_options_count,
+      decoded_options[0].arg.  */
+ 
+   gcc_libexec_prefix = standard_libexec_prefix;
++fprintf(stderr, "standard_libexec_prefix = %s\n", standard_libexec_prefix);
+ #ifndef VMS
+   /* FIXME: make_relative_prefix doesn't yet work for VMS.  */
+   if (!gcc_exec_prefix)
+@@ -3566,6 +3567,8 @@ process_command (unsigned int decoded_options_count,
+       gcc_libexec_prefix = get_relative_prefix (decoded_options[0].arg,
+ 					     standard_bindir_prefix,
+ 					     standard_libexec_prefix);
++fprintf(stderr, "standard_bindir_prefix = %s\n", standard_bindir_prefix);
++fprintf(stderr, "gcc_libexec_prefix = %s\n", gcc_libexec_prefix);
+       if (gcc_exec_prefix)
+ 	xputenv (concat ("GCC_EXEC_PREFIX=", gcc_exec_prefix, NULL));
+     }
+@@ -3579,7 +3582,8 @@ process_command (unsigned int decoded_options_count,
+       gcc_libexec_prefix = get_relative_prefix (tmp_prefix,
+ 						standard_exec_prefix,
+ 						standard_libexec_prefix);
+-
++fprintf(stderr, "gcc_exec_prefix = %s\n", gcc_exec_prefix);
++fprintf(stderr, "gcc_libexec_prefix = %s\n", gcc_libexec_prefix);
+       /* The path is unrelocated, so fallback to the original setting.  */
+       if (!gcc_libexec_prefix)
+ 	gcc_libexec_prefix = standard_libexec_prefix;
+diff --git a/libiberty/make-relative-prefix.c b/libiberty/make-relative-prefix.c
+index 4553a71..75c717a 100644
+--- a/libiberty/make-relative-prefix.c
++++ b/libiberty/make-relative-prefix.c
+@@ -233,16 +233,19 @@ make_relative_prefix_1 (const char *progname, const char *bin_prefix,
+ 
+   if (progname == NULL || bin_prefix == NULL || prefix == NULL)
+     return NULL;
+-
++fprintf(stderr, "progname = %s\n", progname);
++fprintf(stderr, "bin_prefix = %s\n", bin_prefix);
++fprintf(stderr, "prefix = %s\n", prefix);
+   /* If there is no full pathname, try to find the program by checking in each
+      of the directories specified in the PATH environment variable.  */
+   if (lbasename (progname) == progname)
+     {
+       char *temp;
+-
++fprintf(stderr, "lbasename == progname\n");
+       temp = getenv ("PATH");
+       if (temp)
+ 	{
++fprintf(stderr, "temp = %s\n", temp);
+ 	  char *startp, *endp, *nstore;
+ 	  size_t prefixlen = strlen (temp) + 1;
+ 	  if (prefixlen < 2)
+@@ -292,7 +295,7 @@ make_relative_prefix_1 (const char *progname, const char *bin_prefix,
+ 	    }
+ 	}
+     }
+-
++fprintf(stderr, "progname2 = %s\n", progname);
+   if (resolve_links)
+     full_progname = lrealpath (progname);
+   else

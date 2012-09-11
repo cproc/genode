@@ -774,11 +774,18 @@ extern "C" int _socket(int domain, int type, int protocol)
 {
 	return socket(domain, type, protocol);
 }
-
+namespace Fiasco {
+#include <x86/l4/sys/kdebug.h>
+}
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
-	PDBGV("path = %s", path);
+	PDBG("path = %s", path);
+	Absolute_path last_element(path, cwd().base());
+	last_element.keep_only_last_element();
+	PDBG("last element = %s", last_element.base());
+	if (::strcmp(last_element.base(), "/cc1") == 0)
+		enter_kdebug();
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
