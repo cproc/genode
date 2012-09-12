@@ -79,12 +79,12 @@ include $(BASE_DIR)/mk/global.mk
 # of the check in the CC_OPT_CHECKCC variable. The caching improves the build
 # performance by 5 to 10 percent.
 #
-checkcc = $(shell if $(CUSTOM_CC) $(1) -o /dev/null -xc - <<< 'int main(void){return 0;}' &> /dev/null; then echo "$(1)" ; fi ;)
+#checkcc = $(shell if $(CUSTOM_CC) $(1) -o /dev/null -xc - <<< 'int main(void){return 0;}' &> /dev/null; then echo "$(1)" ; fi ;)
 
-CC_OPT_CHECKCC  = $(call checkcc, -static)
-CC_OPT_CHECKCC += $(call checkcc, -fno-stack-protector)
+#CC_OPT_CHECKCC  = $(call checkcc, -static)
+#CC_OPT_CHECKCC += $(call checkcc, -fno-stack-protector)
 
-export CC_OPT_CHECKCC
+#export CC_OPT_CHECKCC
 
 export LIBGCC_INC_DIR = $(shell dirname `$(CUSTOM_CXX_LIB) -print-libgcc-file-name`)/include
 

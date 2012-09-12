@@ -55,6 +55,7 @@ namespace Noux {
 
 		bool fstat(Sysio *sysio)
 		{
+			PDBG("path = %s", _leaf_path.base());
 			/*
 			 * 'sysio.stat_in' is not used in '_fh->ds()->stat()',
 			 * so no 'sysio' member translation is needed here
