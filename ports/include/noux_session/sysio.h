@@ -458,6 +458,8 @@ namespace Noux {
 			SYSIO_DECL(userinfo, { int request; Uid uid; },
 			                     { User name; Uid uid; Uid gid; Shell shell;
 			                       Home home; });
+
+			SYSIO_DECL(gettimeofday, { }, { unsigned long sec; unsigned int usec; });
 		};
 	};
 };

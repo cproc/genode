@@ -558,10 +558,15 @@ extern "C" int clock_gettime(clockid_t clk_id, struct timespec *tp)
 
 extern "C" int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
-	if (verbose)
-		PDBG("gettimeofdaye called - not implemented");
-	errno = EINVAL;
-	return -1;
+	if (!noux()->syscall(Noux::Session::SYSCALL_GETTIMEOFDAY)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	tv->tv_sec  = sysio()->gettimeofday_out.sec;
+	tv->tv_usec = sysio()->gettimeofday_out.usec;
+
+	return 0;
 }
 
 
