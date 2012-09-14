@@ -14,6 +14,7 @@
 /* Genode includes */
 #include <base/env.h>
 #include <base/printf.h>
+#include <os/path.h>
 
 /* libc includes */
 #include <errno.h>
@@ -174,13 +175,6 @@ class Plugin : public Libc::Plugin
 		 * TODO: decide if the file named <path> shall be handled by this plugin
 		 */
 
-		bool supports_chdir(const char *path)
-		{
-			if (verbose)
-				PDBG("path = %s", path);
-			return true;
-		}
-
 		bool supports_mkdir(const char *path, mode_t)
 		{
 			if (verbose)
@@ -214,34 +208,6 @@ class Plugin : public Libc::Plugin
 			if (verbose)
 				PDBG("path = %s", path);
 			return true;
-		}
-
-		int chdir(const char *path)
-		{
-			using namespace Ffat;
-
-			FRESULT res = f_chdir(path);
-
-			switch(res) {
-				case FR_OK:
-					return 0;
-				case FR_NO_PATH:
-				case FR_INVALID_NAME:
-				case FR_INVALID_DRIVE:
-					errno = ENOENT;
-					return -1;
-				case FR_NOT_READY:
-				case FR_DISK_ERR:
-				case FR_INT_ERR:
-				case FR_NOT_ENABLED:
-				case FR_NO_FILESYSTEM:
-					errno = EIO;
-					return -1;
-				default:
-					/* not supposed to occur according to the libffat documentation */
-					PERR("f_chdir() returned an unexpected error code");
-					return -1;
-			}
 		}
 
 		int close(Libc::File_descriptor *fd)
