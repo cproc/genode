@@ -29,7 +29,7 @@
 #include <user_info.h>
 
 
-static bool trace_syscalls = false;
+static bool trace_syscalls = true;
 
 
 namespace Noux {
@@ -129,6 +129,9 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_WRITE:
 			{
+				if ((_sysio->write_in.fd == 1) || (_sysio->write_in.fd == 2))
+					PDBG("%d: SYSCALL_WRITE: %d: %s", pid(), _sysio->write_in.fd, _sysio->write_in.chunk);
+
 				size_t const count_in = _sysio->write_in.count;
 
 				for (size_t count = 0; count != count_in; ) {
@@ -150,6 +153,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READ:
 			{
+				//PDBG("%d: SYSCALL_READ: fd = %d", pid(), _sysio->read_in.fd);
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio->read_in.fd);
 
 				if (!io->is_nonblocking())
@@ -176,6 +180,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		case SYSCALL_STAT:
 		case SYSCALL_LSTAT: /* XXX implement difference between 'lstat' and 'stat' */
 			{
+				PDBG("path = %s", _sysio->stat_in.path);
 				bool result = _root_dir->stat(_sysio, _sysio->stat_in.path);
 
 				/**
@@ -234,6 +239,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_CLOSE:
 			{
+				//PDBG("%d: SYSCALL_CLOSE: fd = %d", pid(), _sysio->close_in.fd);
 				/**
 				 * We have to explicitly close Socket_io_channel fd's because
 				 * these are currently handled separately.
@@ -497,6 +503,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_sysio->fork_out.pid = new_pid;
 
+				PDBG("%d: SYSCALL_FORK: new PID = %d", pid(), new_pid);
+
 				return true;
 			}
 
@@ -511,6 +519,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				Family_member *exited = _sysio->wait4_in.nohang ? poll4() : wait4();
 
 				if (exited) {
+					PDBG("%d: SYSCALL_WAIT4: exited = %d", pid(), exited->pid());
 					_sysio->wait4_out.pid    = exited->pid();
 					_sysio->wait4_out.status = exited->exit_status();
 					Family_member::remove(exited);
@@ -519,6 +528,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					static_cast<Child *>(exited)->submit_exit_signal();
 
 				} else {
+					PDBG("%d: SYSCALL_WAIT4: exited = 0", pid());
 					_sysio->wait4_out.pid    = 0;
 					_sysio->wait4_out.status = 0;
 				}
@@ -537,11 +547,14 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				_sysio->pipe_out.fd[0] = add_io_channel(pipe_source);
 				_sysio->pipe_out.fd[1] = add_io_channel(pipe_sink);
 
+				//PDBG("%d: SYSCALL_PIPE: fds = %d, %d", pid(), _sysio->pipe_out.fd[0], _sysio->pipe_out.fd[1]);
+
 				return true;
 			}
 
 		case SYSCALL_DUP2:
 			{
+				//PDBG("%d: SYSCALL_DUP2: from %d to %d", pid(), _sysio->dup2_in.fd, _sysio->dup2_in.to_fd);
 				add_io_channel(io_channel_by_fd(_sysio->dup2_in.fd),
 				               _sysio->dup2_in.to_fd);
 				return true;
