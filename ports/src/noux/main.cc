@@ -29,7 +29,7 @@
 #include <user_info.h>
 
 
-static bool trace_syscalls = false;
+static bool trace_syscalls = /*false*/true;
 
 
 namespace Noux {
@@ -129,6 +129,9 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_WRITE:
 			{
+				if ((_sysio->write_in.fd == 1) || (_sysio->write_in.fd == 2))
+					PDBG("%d: SYSCALL_WRITE: %d: %s", pid(), _sysio->write_in.fd, _sysio->write_in.chunk);
+
 				size_t const count_in = _sysio->write_in.count;
 
 				for (size_t count = 0; count != count_in; ) {
@@ -176,6 +179,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		case SYSCALL_STAT:
 		case SYSCALL_LSTAT: /* XXX implement difference between 'lstat' and 'stat' */
 			{
+				PDBG("%d: SYSCALL_STAT: path = %s", pid(), _sysio->stat_in.path);
 				bool result = _root_dir->stat(_sysio, _sysio->stat_in.path);
 
 				/**
@@ -208,6 +212,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_OPEN:
 			{
+				PDBG("%d: SYSCALL_OPEN: path = %s", pid(), _sysio->open_in.path);
 				Vfs_handle *vfs_handle = _root_dir->open(_sysio, _sysio->open_in.path);
 				if (!vfs_handle)
 					return false;

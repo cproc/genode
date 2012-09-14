@@ -61,6 +61,7 @@ namespace Noux {
 			 */
 			bool result = _fh->ds()->stat(sysio, _leaf_path.base());
 			sysio->fstat_out.st = sysio->stat_out.st;
+			PDBG("result = %d", result);
 			return result;
 		}
 
@@ -116,7 +117,7 @@ namespace Noux {
 
 			if (!_fh->ds()->dirent(sysio, _path.base(), index - 2))
 				return false;
-
+PDBG("found dir entry: %s", sysio->dirent_out.entry.name);
 			_fh->_seek += sizeof(Sysio::Dirent);
 			return true;
 		}

@@ -355,7 +355,7 @@ namespace Noux {
 			bool dirent(Sysio *sysio, char const *path, off_t index)
 			{
 				Lock::Guard guard(_lock);
-
+PDBG("path = %s, index = %d", path, index);
 				Lookup_member_of_path lookup_criterion(path, index);
 				Record *record = _lookup(&lookup_criterion);
 				if (!record) {
@@ -374,7 +374,7 @@ namespace Noux {
 					if (verbose)
 						PDBG("unhandled record type %d", record->type());
 				}
-
+PDBG("record->name() = %s", record->name());
 				Absolute_path absolute_path(record->name());
 				absolute_path.keep_only_last_element();
 				absolute_path.remove_trailing('/');
