@@ -187,6 +187,13 @@ int main(int argc, char *argv[])
 		               (ret == 0) && (stat_buf.st_size == 0),
 		               "file_name=%s", file_name4);
 
+		/* test 'fchdir()' */
+		CALL_AND_CHECK(ret, chdir("/"), ret == 0, "");
+		CALL_AND_CHECK(fd, open(dir_name, O_RDONLY), fd >= 0, "dir_name=%s", dir_name);
+		CALL_AND_CHECK(ret, fchdir(fd), ret == 0, "");
+		CALL_AND_CHECK(ret, close(fd), ret == 0, "");
+		CALL_AND_CHECK(ret, stat(file_name, &stat_buf), ret == 0, "file_name=%s", file_name);
+
 		/* test symbolic links */
 		if ((symlink("/", "/symlinks_supported") == 0) || (errno != ENOSYS)) {
 			CALL_AND_CHECK(ret, mkdir("/a", 0777), ((ret == 0) || (errno == EEXIST)), "dir_name=%s", "/a");
