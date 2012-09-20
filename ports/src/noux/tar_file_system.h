@@ -119,6 +119,56 @@ namespace Noux {
 
 		struct Lookup_criterion { virtual bool match(char const *path) = 0; };
 
+		/**
+		 * path element token
+		 */
+
+		struct Scanner_policy_path_element
+		{
+			static bool identifier_char(char c, unsigned /* i */)
+			{
+				return (c != '/') && (c != 0);
+			}
+		};
+
+		typedef Genode::Token<Scanner_policy_path_element> Path_element_token;
+
+		struct Node : List<Node>, List<Node>::Element
+		{
+			char const *name;
+			Record const *record;
+
+			Node(char const *name, Record const *record) : name(name), record(record) { }
+			Node *lookup(char const *name)
+			{
+				static Absolute_path lookup_path(name);
+				PDBG("lookup_path = %s", lookup_path.base());
+
+				static char path_element[Sysio::MAX_PATH_LEN];
+
+				Path_element_token t(lookup_path.base());
+
+				while (t.type() != Path_element_token::IDENT)
+					t = t.next();
+
+				t.string(path_element, sizeof(path_element));
+
+				for (Node *node = first(); node; node = node->next()) {
+					PDBG("comparing with node %s", node->name);
+					if (strcmp(node->name, path_element) == 0) {
+						PDBG("found node");
+						if (lookup_path.has_single_element())
+							return node;
+						else
+							return lookup(t.next().start());
+					}
+				}
+
+				return 0;
+			}
+		};
+
+		Node _root_node;
 
 		/**
 		 * Return portion of 'path' without leading slashes and dots
@@ -267,10 +317,104 @@ namespace Noux {
 				_rom_name(config), _rom(_rom_name.name),
 				_tar_base(env()->rm_session()->attach(_rom.dataspace())),
 				_tar_size(Dataspace_client(_rom.dataspace()).size()),
+				_root_node("/", 0),
 				_cached_num_dirent(*this)
 			{
 				PINF("tar archive '%s' local at %p, size is %zd",
 				     _rom_name.name, _tar_base, _tar_size);
+
+				/* TODO: create a dedicated function for the tar record iteration */
+
+				/* measure size of archive in blocks */
+				unsigned block_id = 0, block_cnt = _tar_size/Record::BLOCK_LEN;
+
+				/* scan metablocks of archive */
+				while (block_id < block_cnt) {
+
+					Record *record = (Record *)(_tar_base + block_id*Record::BLOCK_LEN);
+
+					/****************************************************/
+					/* TODO: create a dedicated function for the action */
+
+					Absolute_path current_path(record->name());
+					PDBG("current_path = %s", current_path.base());
+
+					char path_element[Sysio::MAX_PATH_LEN];
+
+					Path_element_token t(current_path.base());
+
+					Node *parent_node = &_root_node;
+					Node *child_node;
+
+					while(t) {
+
+						if (t.type() != Path_element_token::IDENT) {
+								t = t.next();
+								continue;
+						}
+
+						Absolute_path remaining_path(t.start());
+
+						t.string(path_element, sizeof(path_element));
+
+						PDBG("path_element = %s", path_element);
+
+						for (child_node = parent_node->first(); child_node; child_node = child_node->next()) {
+							PDBG("comparing path_element with node %s", child_node->name);
+							if (strcmp(child_node->name, path_element) == 0)
+								break;
+						}
+
+						if (child_node) {
+							PDBG("found node for %s", path_element);
+							if (remaining_path.has_single_element()) {
+								/* Found a node for the record to be inserted.
+								 * This is usually a directory node without
+								 * record. */
+								child_node->record = record;
+							}
+						} else {
+							if (remaining_path.has_single_element()) {
+								PDBG("creating node for %s", path_element);
+								/* TODO: find 'path_element' in 'record->name' and use the location in the record as name pointer */
+								size_t name_size = strlen(path_element) + 1;
+								char *name = (char*)env()->heap()->alloc(name_size);
+								strncpy(name, path_element, name_size);
+								child_node = new (env()->heap()) Node(name, record);
+							} else {
+								PDBG("creating node without record for %s", path_element);
+								/* create a directory node without record */
+								size_t name_size = strlen(path_element) + 1;
+								char *name = (char*)env()->heap()->alloc(name_size);
+								strncpy(name, path_element, name_size);
+								child_node = new (env()->heap()) Node(name, 0);
+							}
+							parent_node->insert(child_node);
+						}
+
+						parent_node = child_node;
+						t = t.next();
+					}
+
+					/****************************************************/
+
+					size_t file_size = record->size();
+
+					/* some datablocks */       /* one metablock */
+					block_id = block_id + (file_size / Record::BLOCK_LEN) + 1;
+
+					/* round up */
+					if (file_size % Record::BLOCK_LEN != 0) block_id++;
+
+					/* check for end of tar archive */
+					if (block_id*Record::BLOCK_LEN >= _tar_size)
+						break;
+
+					/* lookout for empty eof-blocks */
+					if (*(_tar_base + (block_id*Record::BLOCK_LEN)) == 0x00)
+						if (*(_tar_base + (block_id*Record::BLOCK_LEN + 1)) == 0x00)
+							break;
+				}
 			}
 
 
