@@ -1,0 +1,21 @@
+u_boot_linaro_stable_omap3_beagle_bootelf.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/configs/omap3_beagle.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/omap3_beagle.h b/include/configs/omap3_beagle.h
+index 75f6dd9..171170e 100644
+--- a/include/configs/omap3_beagle.h
++++ b/include/configs/omap3_beagle.h
+@@ -163,6 +163,7 @@
+ #define CONFIG_CMD_ASKENV
+ 
+ #define CONFIG_CMD_CACHE
++#define CONFIG_CMD_ELF
+ #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
+ #define CONFIG_CMD_FAT		/* FAT support			*/
+ #define CONFIG_CMD_JFFS2	/* JFFS2 Support		*/
