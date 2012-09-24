@@ -72,6 +72,12 @@ append_if [have_spec omap4] config {
 		<provides><service name="Framebuffer"/></provides>
 	</start>}
 
+append_if [have_spec omap3] config {
+	<start name="omap3_fb_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>}
+
 append_if [have_spec ps2] config {
 	<start name="ps2_drv">
 		<resource name="RAM" quantum="1M"/>
@@ -120,6 +126,7 @@ lappend_if [have_spec vesa]  boot_modules vesa_drv
 lappend_if [have_spec ps2]   boot_modules ps2_drv
 lappend_if [have_spec pl11x] boot_modules pl11x_drv
 lappend_if [have_spec omap4] boot_modules omap4_fb_drv
+lappend_if [have_spec omap3] boot_modules omap3_fb_drv
 lappend_if [have_spec usb]   boot_modules usb_drv
 
 build_boot_image $boot_modules
