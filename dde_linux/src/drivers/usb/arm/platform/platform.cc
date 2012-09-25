@@ -24,11 +24,13 @@ using namespace Genode;
  * Base addresses
  */
 enum {
-	EHCI_BASE = 0x4a064c00,
-	UHH_BASE  = 0x4a064000,
-	TLL_BASE  = 0x4a062000,
+	EHCI_BASE = 0x48064800,
+	UHH_BASE  = 0x48064000,
+	TLL_BASE  = 0x48062000,
+#if 0
 	SCRM_BASE = 0x4a30a000,
 	CAM_BASE  = 0x4a009000, /* used for L3INIT_CM2 */
+#endif
 };
 
 
@@ -36,8 +38,11 @@ enum {
  * Inerrupt numbers
  */
 enum {
+#if 0
  IRQ_GIC_START = 32,
  IRQ_EHCI      = IRQ_GIC_START + 77,
+#endif
+ IRQ_EHCI      = 77,
 };
 
 
@@ -60,7 +65,7 @@ static struct ehci_hcd_omap_platform_data _ehci_data
 	{ 0, 0 }
 };
 
-
+#if 0
 /**
  * Enables USB clocks
  */
@@ -129,7 +134,7 @@ struct Aux3 : Genode::Mmio
 		write<Aux_src>(0xd);
 	}
 };
-
+#endif
 
 /**
  * ULPI transceiverless link
@@ -181,20 +186,31 @@ struct Uhh : Genode::Mmio
 		write<Sys_config::Standby>(1);
 
 		/* set ports to external phy */
+#if 0
 		write<Host_config::P1_mode>(0);
 		write<Host_config::P2_mode>(0);
+#endif
+		write<Host_config::P1_ulpi_bypass>(0);
+		write<Host_config::P2_ulpi_bypass>(0);
+		write<Host_config::P3_ulpi_bypass>(0);
+
 	}
 
 	struct Sys_config : Register<0x10, 32>
 	{
-		struct Idle : Bitfield<2, 2> { };
-		struct Standby : Bitfield<4, 2> { };
+		struct Idle : Bitfield<3, 2> { };
+		struct Standby : Bitfield<12, 2> { };
 	};
 
 	struct Host_config : Register<0x40, 32>
 	{
+#if 0
 		struct P1_mode : Bitfield<16, 2> { };
 		struct P2_mode : Bitfield<18, 2> { };
+#endif
+		struct P1_ulpi_bypass : Bitfield<1, 1> { };
+		struct P2_ulpi_bypass : Bitfield<11, 1> { };
+		struct P3_ulpi_bypass : Bitfield<12, 1> { };
 	};
 };
 
@@ -227,7 +243,7 @@ struct Ehci : Genode::Mmio
  */
 static addr_t omap44xx_gpio_base[] =
 {
-		0x4A310000, 0x48055000, 0x48057000, 0x48059000, 0x4805B000, 0x4805D000
+		0x48310000, 0x49050000, 0x49052000, 0x49054000, 0x49056000, 0x49058000
 };
 
 
@@ -269,13 +285,13 @@ struct Gpio
 
 		void _set_data_out(addr_t base, unsigned gpio, bool enable)
 		{
-			enum { SETDATAOUT = 0x194, CLEARDATAOUT = 0x190 };
+			enum { SETDATAOUT = 0x94, CLEARDATAOUT = 0x90 };
 			writel(1U << gpio, base + (enable ? SETDATAOUT : CLEARDATAOUT));
 		}
 
 		void _set_gpio_direction(addr_t base, unsigned gpio, bool input)
 		{
-			enum { OE = 0x134 };
+			enum { OE = 0x34 };
 			base += OE;
 
 			u32 val = readl(base);
@@ -306,7 +322,7 @@ struct Gpio
 
 		unsigned get_value(int gpio)
 		{
-			enum  { DATAIN = 0x138 };
+			enum  { DATAIN = 0x38 };
 			return (readl(base(gpio) + DATAIN) & (1 << index(gpio))) != 0;
 		}
 };
@@ -318,29 +334,36 @@ struct Gpio
  */
 static void omap_ehci_init()
 {
+#if 0
 	/* taken from the Panda board manual */
 	enum { HUB_POWER = 1, HUB_NRESET = 62, ULPI_PHY_TYPE = 182 };
-
+#endif
+	/* taken from the Beagle board manual */
+	enum { PHY1_RESET = 147 };
+#if 0
 	/* SCRM */
 	Io_mem_connection io_scrm(SCRM_BASE, 0x1000);
 	addr_t scrm_base = (addr_t)env()->rm_session()->attach(io_scrm.dataspace());
 
 	/* enable reference clock */
 	Aux3 aux3(scrm_base);
-
+#endif
 	/* init GPIO */
 	Gpio gpio;
 	/* disable the hub power and reset before init */
+#if 0
 	gpio.direction_output(HUB_POWER, false);
 	gpio.direction_output(HUB_NRESET, false);
 	gpio.set_value(HUB_POWER, 0);
 	gpio.set_value(HUB_NRESET, 1);
-
+#endif
+	gpio.direction_output(PHY1_RESET, true);
+#if 0
 	/* enable clocks */
 	Io_mem_connection io_clock(CAM_BASE, 0x1000);
 	addr_t clock_base = (addr_t)env()->rm_session()->attach(io_clock.dataspace());
 	Clocks c(clock_base);
-
+#endif
 	/* reset TLL */
 	Io_mem_connection io_tll(TLL_BASE, 0x1000);
 	addr_t tll_base = (addr_t)env()->rm_session()->attach(io_tll.dataspace());
@@ -350,15 +373,15 @@ static void omap_ehci_init()
 	Io_mem_connection io_uhh(UHH_BASE, 0x1000);
 	addr_t uhh_base = (addr_t)env()->rm_session()->attach(io_uhh.dataspace());
 	Uhh uhh(uhh_base);
-
+#if 0
 	/* enable hub power */
 	gpio.set_value(HUB_POWER, 1);
-
+#endif
 	/* reset EHCI */
-	addr_t ehci_base = uhh_base + 0xc00;
+	addr_t ehci_base = uhh_base + 0x800;
 	Ehci ehci(ehci_base);
 
-	addr_t base[] = { scrm_base, clock_base, tll_base, uhh_base, 0 };
+	addr_t base[] = { /*scrm_base, clock_base,*/ tll_base, uhh_base, 0 };
 	for (int i = 0; base[i]; i++)
 		env()->rm_session()->detach(base[i]);
 }

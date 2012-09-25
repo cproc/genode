@@ -63,7 +63,7 @@ GEN_INCLUDES := $(shell grep -rh "^\#include .*\/" $(CONTRIB_DIR) |\
 ## Platform specifics ##
 ########################
 
-SUPPORTED = x86_32 platform_panda
+SUPPORTED = x86_32 platform_panda platform_beagle
 
 
 #
@@ -79,6 +79,19 @@ SRC_CC  += pci_driver.cc
 # Panda board
 #
 else ifeq ($(filter-out $(SPECS),platform_panda),)
+CC_OPT  += -DCONFIG_USB_EHCI_HCD_OMAP -DCONFIG_USB_EHCI_TT_NEWSCHED -DVERBOSE_DEBUG
+INC_DIR += $(PRG_DIR)/arm
+INC_DIR += $(CONTRIB_DIR)/arch/arm/plat-omap/include
+SRC_C   += platform_device.c usbnet.c smsc95xx.c
+SRC_CC  += platform.cc
+vpath %.c  $(PRG_DIR)/arm/platform
+vpath %.cc $(PRG_DIR)/arm/platform
+vpath %.c  $(CONTRIB_DIR)/drivers/net/usb
+
+#
+# Beagle board
+#
+else ifeq ($(filter-out $(SPECS),platform_beagle),)
 CC_OPT  += -DCONFIG_USB_EHCI_HCD_OMAP -DCONFIG_USB_EHCI_TT_NEWSCHED -DVERBOSE_DEBUG
 INC_DIR += $(PRG_DIR)/arm
 INC_DIR += $(CONTRIB_DIR)/arch/arm/plat-omap/include

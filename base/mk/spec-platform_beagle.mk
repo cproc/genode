@@ -1,7 +1,7 @@
 #
 # Enable peripherals of the platform
 #
-SPECS += omap3
+SPECS += omap3 usb
 
 #
 # Pull in CPU specifics
