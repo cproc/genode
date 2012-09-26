@@ -36,7 +36,10 @@ using namespace Genode;
  */
 void Thread_base::_thread_start()
 {
-	Genode::Thread_base::myself()->entry();
+	Thread_base::myself()->entry();
+
+	env()->cpu_session()->kill_thread(Thread_base::myself()->cap());
+
 	Genode::sleep_forever();
 }
 

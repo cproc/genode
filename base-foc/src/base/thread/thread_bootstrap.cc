@@ -13,6 +13,7 @@
 
 #include <base/sleep.h>
 #include <base/thread.h>
+#include <base/env.h>
 
 
 void Genode::Thread_base::_thread_bootstrap() { }
@@ -24,6 +25,7 @@ void Genode::Thread_base::_thread_start()
 
 	Thread_base::myself()->_thread_bootstrap();
 	Thread_base::myself()->entry();
+	env()->cpu_session()->kill_thread(Thread_base::myself()->cap());
 	sleep_forever();
 }
 
