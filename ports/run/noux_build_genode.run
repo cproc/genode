@@ -74,7 +74,7 @@ foreach pkg $noux_pkgs {
 
 #exec tar cfv bin/usr.tar -C bin/usr .
 
-set genode_repositories "tool base base-nova"
+set genode_repositories "tool base base-nova os"
 foreach rep $genode_repositories { append genode_repositories_filter_out_find " -not -name $rep " }
 set genode_repositories_filter_out [exec sh -c "find $genode_dir -mindepth 1 -maxdepth 1 $genode_repositories_filter_out_find -printf \"%f \""]
 foreach rep $genode_repositories_filter_out { append genode_repositories_filter_out_tar " --exclude=$rep " }
@@ -148,7 +148,7 @@ append config {
 		</config>
 	</start>
 	<start name="ram_fs">
-		<resource name="RAM" quantum="10M"/>
+		<resource name="RAM" quantum="100M"/>
 		<provides><service name="File_system"/></provides>
 		<config>
 
@@ -266,7 +266,7 @@ build_boot_image $boot_modules
 if {[have_spec x86_64]} {
 	append qemu_args " -m 500 "
 } else {
-        append qemu_args " -m 500 "
+        append qemu_args " -m 1500 "
 }
 
 run_genode_until forever
