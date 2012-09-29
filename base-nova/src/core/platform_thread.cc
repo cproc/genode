@@ -107,7 +107,10 @@ int Platform_thread::start(void *ip, void *sp)
 	                 Native_config::context_area_virtual_size() -
 	                 get_page_size();
 
-	_pager->initial_esp(pd_utcb + get_page_size());
+	if (sp)
+		_pager->initial_esp(reinterpret_cast<addr_t>(sp));
+	else
+		_pager->initial_esp(pd_utcb + get_page_size());
 
 	_sel_exc_base = cap_selector_allocator()->alloc(NUM_INITIAL_PT_LOG2);
 
