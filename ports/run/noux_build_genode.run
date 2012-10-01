@@ -266,7 +266,7 @@ build_boot_image $boot_modules
 if {[have_spec x86_64]} {
 	append qemu_args " -m 500 "
 } else {
-        append qemu_args " -m 320 "
+        append qemu_args " -m 500 "
 }
 
 run_genode_until forever
