@@ -122,6 +122,9 @@ namespace Genode {
 
 			bool supports_direct_unmap() const { return true; }
 
+			void add_local_services(Rpc_entrypoint*, Sliced_heap*,
+			                        Core_env*, Service_registry*);
+
 
 			/**************************************
 			 ** OKL4-specific platform interface **

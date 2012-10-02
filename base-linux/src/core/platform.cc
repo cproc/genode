@@ -13,10 +13,12 @@
 
 /* Genode includes */
 #include <base/lock.h>
+#include <base/service.h>
 
 /* local includes */
 #include "platform.h"
 #include "core_env.h"
+#include <io_port_root.h>
 
 /* Linux includes */
 #include <linux_syscalls.h>
@@ -55,6 +57,17 @@ void Platform::wait_for_exit()
 	try { _wait_for_exit_lock.lock(); }
 	catch (Blocking_canceled) { };
 }
+
+
+void Platform::add_local_services(Rpc_entrypoint *e, Sliced_heap *sliced_heap,
+                                  Core_env *env, Service_registry *local_services)
+{
+	/* add x86 specific ioport service */
+	static Io_port_root io_port_root(env->cap_session(), io_port_alloc(), sliced_heap);
+	static Local_service io_port_ls(Io_port_session::service_name(), &io_port_root);
+	local_services->insert(&io_port_ls);
+}
+
 
 void Core_parent::exit(int exit_value)
 {

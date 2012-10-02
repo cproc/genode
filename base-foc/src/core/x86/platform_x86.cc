@@ -15,9 +15,13 @@
 /* Genode includes */
 #include <base/printf.h>
 #include <irq_session/irq_session.h>
+#include <base/service.h>
 
-#include "platform.h"
-#include "util.h"
+/* Core includes */
+#include <platform.h>
+#include <util.h>
+#include <io_port_root.h>
+#include <core_env.h>
 
 /* Fiasco.OC includes */
 namespace Fiasco {
@@ -70,4 +74,18 @@ void Genode::Platform::setup_irq_mode(unsigned irq_number, unsigned trigger,
 	 */
 	if (l4_error(l4_icu_set_mode(L4_BASE_ICU_CAP, irq_number, mode)))
 		PERR("Setting mode for  IRQ%u failed", irq_number);
+}
+
+
+void Genode::Platform::add_local_services(Genode::Rpc_entrypoint *e,
+                                          Genode::Sliced_heap *sliced_heap,
+                                          Genode::Core_env *env,
+                                          Genode::Service_registry *local_services)
+{
+	using namespace Genode;
+
+	/* add x86 specific ioport service */
+	static Io_port_root io_port_root(env->cap_session(), io_port_alloc(), sliced_heap);
+	static Local_service io_port_ls(Io_port_session::service_name(), &io_port_root);
+	local_services->insert(&io_port_ls);
 }

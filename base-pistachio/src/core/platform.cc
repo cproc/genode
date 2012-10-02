@@ -17,16 +17,19 @@
 #include <base/crt0.h>
 #include <base/sleep.h>
 #include <base/capability.h>
+#include <base/service.h>
 #include <util/misc_math.h>
 
 /* core includes */
 #include <core_parent.h>
+#include <core_env.h>
 #include <platform.h>
 #include <platform_thread.h>
 #include <platform_pd.h>
 #include <util.h>
 #include <pistachio/thread_helper.h>
 #include <pistachio/kip.h>
+#include <io_port_root.h>
 
 /* Pistachio includes */
 namespace Pistachio {
@@ -642,6 +645,16 @@ void Platform::wait_for_exit()
 	 * On Pistachio, core never exits. So let us sleep forever.
 	 */
 	sleep_forever();
+}
+
+
+void Platform::add_local_services(Rpc_entrypoint *e, Sliced_heap *sliced_heap,
+                                  Core_env *env, Service_registry *local_services)
+{
+	/* add x86 specific ioport service */
+	static Io_port_root io_port_root(env->cap_session(), io_port_alloc(), sliced_heap);
+	static Local_service io_port_ls(Io_port_session::service_name(), &io_port_root);
+	local_services->insert(&io_port_ls);
 }
 
 

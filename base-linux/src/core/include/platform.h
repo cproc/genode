@@ -56,6 +56,8 @@ namespace Genode {
 			Rom_fs          *rom_fs()         { return 0; }
 
 			void wait_for_exit();
+			void add_local_services(Rpc_entrypoint*, Sliced_heap*,
+			                        Core_env*, Service_registry*);
 	};
 }
 

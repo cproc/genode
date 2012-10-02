@@ -65,6 +65,8 @@ namespace Genode {
 
 			void wait_for_exit();
 			bool supports_unmap() { return true; }
+			void add_local_services(Rpc_entrypoint*, Sliced_heap*,
+			                        Core_env*, Service_registry*);
 
 
 			/*******************
