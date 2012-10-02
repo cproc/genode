@@ -80,3 +80,6 @@ Native_region * Platform::_core_only_mmio_regions(unsigned const i)
 	return i < sizeof(_regions)/sizeof(_regions[0]) ? &_regions[i] : 0;
 }
 
+
+void Platform::add_local_services(Rpc_entrypoint*, Sliced_heap*,
+                                  Core_env *env, Service_registry*) {}
