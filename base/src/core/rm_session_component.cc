@@ -29,7 +29,7 @@
 using namespace Genode;
 
 
-static const bool verbose             = false;
+static const bool verbose             = /*false*/true;
 static const bool verbose_page_faults = false;
 
 

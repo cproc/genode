@@ -22,7 +22,7 @@
 
 using namespace Genode;
 
-static const bool verbose = false;
+static const bool verbose = /*false*/true;
 
 void Rm_client::unmap(addr_t core_local_base, addr_t virt_base, size_t size)
 {
