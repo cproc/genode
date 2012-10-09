@@ -128,7 +128,10 @@ class Context_area_ram_session : public Ram_session
 					break;
 				}
 
+			void *phys_addr = (void*)dataspace_component->phys_addr();
+			size_t size = dataspace_component->size();
 			destroy(platform()->core_mem_alloc(), dataspace_component);
+			platform_specific()->ram_alloc()->free(phys_addr, size);
 		}
 
 		int ref_account(Ram_session_capability ram_session) { return 0; }
