@@ -117,7 +117,19 @@ class Context_area_ram_session : public Ram_session
 			return static_cap_cast<Ram_dataspace>(cap);
 		}
 
-		void free(Ram_dataspace_capability ds) { PDBG("not yet implemented"); }
+		void free(Ram_dataspace_capability ds)
+		{
+			Dataspace_component *dataspace_component =
+				dynamic_cast<Dataspace_component*>(Dataspace_capability::deref(ds));
+
+			for (unsigned i = 0; i < MAX_CORE_CONTEXTS; i++)
+				if (context_ds[i] == dataspace_component) {
+					context_ds[i] = 0;
+					break;
+				}
+
+			destroy(platform()->core_mem_alloc(), dataspace_component);
+		}
 
 		int ref_account(Ram_session_capability ram_session) { return 0; }
 
