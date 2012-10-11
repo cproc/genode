@@ -1,0 +1,15 @@
+diff --git a/src/ec.cpp b/src/ec.cpp
+index 5d5a66c..c84db3e 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -333,5 +335,10 @@ void Ec::die (char const *reason, Exc_regs *r)
+     if (ec)
+         ec->cont = ec->cont == ret_user_sysexit ? static_cast<void (*)()>(sys_finish<Sys_regs::COM_ABT>) : dead;
+ 
++	if (current->utcb) {
++		delete current->utcb;
++		current->utcb = nullptr;
++	}
++
+     reply (dead);
+ }
