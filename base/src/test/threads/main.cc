@@ -28,7 +28,6 @@ struct Test_thread : Thread<STACK_SIZE>
 	void entry()
 	{
 		ready_lock.unlock();
-		sleep_forever();
 	};
 
 	void wait_until_ready()
