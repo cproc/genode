@@ -11,6 +11,7 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+#include <base/printf.h>
 #include <base/slab.h>
 #include <util/misc_math.h>
 
@@ -228,6 +229,7 @@ bool Slab::num_free_entries_higher_than(int n)
 
 bool Slab::alloc(size_t size, void **out_addr)
 {
+	PDBG("_first_sb = %p, size = %zu", _first_sb, size);
 	/* sanity check if first slab block is gone */
 	if (!_first_sb) return false;
 

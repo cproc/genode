@@ -275,7 +275,7 @@ bool Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align)
 		return false;
 	}
 	_add_block(new_block, new_addr, size, Block::USED);
-
+PDBG("addr = %lx", new_addr);
 	*out_addr = reinterpret_cast<void *>(new_addr);
 	return true;
 }
@@ -313,7 +313,7 @@ Range_allocator::Alloc_return Allocator_avl_base::alloc_addr(size_t size, addr_t
 		return Range_allocator::OUT_OF_METADATA;
 	}
 	_add_block(new_block, addr, size, Block::USED);
-
+	PDBG("addr = %lx", addr);
 	return Range_allocator::ALLOC_OK;
 }
 
@@ -331,6 +331,7 @@ void Allocator_avl_base::free(void *addr)
 	_destroy_block(b);
 
 	add_range(new_addr, new_size);
+	PDBG("addr = %lx", new_addr);
 }
 
 

@@ -15,6 +15,7 @@
  */
 
 #include <base/env.h>
+#include <base/printf.h>
 #include <util/string.h>
 
 using namespace Genode;
@@ -34,11 +35,13 @@ extern "C" void *malloc(unsigned size)
 	 * the size information when freeing the block.
 	 */
 	unsigned long real_size = size + sizeof(Block_header);
+	PDBG("cxx malloc(): size = %lu", real_size);
 	void *addr = 0;
 	if (!Genode::env()->heap()->alloc(real_size, &addr))
 		return 0;
 
 	*(Block_header *)addr = real_size;
+	PDBG("cxx malloc(): finished, addr = %p", addr);
 	return (Block_header *)addr + 1;
 }
 
@@ -56,7 +59,9 @@ extern "C" void free(void *ptr)
 	if (!ptr) return;
 
 	unsigned long *addr = ((unsigned long *)ptr) - 1;
+	PDBG("cxx free(): addr = %p, size = %lu", addr, *addr);
 	Genode::env()->heap()->free(addr, *addr);
+	PDBG("cxx free(): finished");
 }
 
 

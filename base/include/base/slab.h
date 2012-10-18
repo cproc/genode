@@ -16,6 +16,7 @@
 
 #include <base/allocator.h>
 #include <base/stdint.h>
+#include <base/printf.h>
 
 namespace Genode {
 
@@ -82,7 +83,7 @@ namespace Genode {
 			 * Normally, Slab_blocks are constructed by a Slab allocator
 			 * that specifies itself as constructor argument.
 			 */
-			explicit Slab_block(Slab *s = 0) { if (s) slab(s); }
+			explicit Slab_block(Slab *s = 0) { PDBG("this = %p, slab = %p", this, s); if (s) slab(s); }
 
 			/**
 			 * Configure block to be managed by the specified slab allocator

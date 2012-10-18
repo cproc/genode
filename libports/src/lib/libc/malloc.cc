@@ -97,7 +97,7 @@ class Malloc : public Genode::Allocator
 		bool alloc(size_t size, void **out_addr)
 		{
 			Genode::Lock::Guard lock_guard(_lock);
-
+			PDBG("size = %zu", size);
 			/* enforce size to be a multiple of 4 bytes */
 			size = (size + 3) & ~3;
 
@@ -123,6 +123,7 @@ class Malloc : public Genode::Allocator
 
 			*(Block_header *)addr = real_size;
 			*out_addr = (Block_header *)addr + 1;
+			PDBG("finished, addr = %p", addr);
 			return true;
 		}
 
@@ -139,6 +140,8 @@ class Malloc : public Genode::Allocator
 				unsigned long msb = _slab_log2(real_size);
 				_allocator[msb - SLAB_START]->free(addr);
 			}
+
+			PDBG("ptr = %p, size = %zu", ptr, real_size);
 		}
 
 		size_t overhead(size_t size)
