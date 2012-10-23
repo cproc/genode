@@ -16,6 +16,7 @@
 
 #include <base/cap_map.h>
 #include <base/native_types.h>
+#include <base/snprintf.h>
 #include <util/assert.h>
 
 namespace Genode {
@@ -44,6 +45,17 @@ namespace Genode {
 				START_IDX = Fiasco::USER_BASE_CAP >> Fiasco::L4_CAP_SHIFT
 			};
 
+			void _show_avail() {
+				unsigned int count = 0;
+				for (unsigned i = START_IDX; i < SZ; i++) {
+					if (!_indices[i].used())
+						count++;
+				}
+				char buf[128];
+				snprintf(buf, sizeof(buf), "free cap indices: %u\n", count);
+				Fiasco::outstring(buf);
+			}
+
 		protected:
 
 			unsigned char _data[SZ*sizeof(T)];
@@ -62,7 +74,7 @@ namespace Genode {
 			Cap_index* alloc_range(size_t cnt)
 			{
 				Lock_guard<Spin_lock> guard(_lock);
-
+				_show_avail();
 				/*
 				 * iterate through array and find unused, consecutive entries
 				 */
@@ -85,7 +97,7 @@ namespace Genode {
 			Cap_index* alloc(addr_t addr)
 			{
 				Lock_guard<Spin_lock> guard(_lock);
-
+				_show_avail();
 				/*
 				 * construct the Cap_index pointer from the given
 				 * address in capability space
@@ -103,7 +115,7 @@ namespace Genode {
 			void free(Cap_index* idx, size_t cnt)
 			{
 				Lock_guard<Spin_lock> guard(_lock);
-
+				_show_avail();
 				T* obj = static_cast<T*>(idx);
 				for (size_t i = 0; i < cnt; obj++, i++) {
 					/* range check given pointer address */
