@@ -15,6 +15,7 @@
 
 #include <base/cap_map.h>
 #include <base/native_types.h>
+#include <base/snprintf.h>
 
 #include <util/assert.h>
 
@@ -24,8 +25,22 @@
 namespace Fiasco {
 #include <l4/sys/consts.h>
 #include <l4/sys/task.h>
+#include <l4/sys/kdebug.h>
 }
 
+unsigned int gettid()
+{
+	unsigned int tid = 0;
+	if (Genode::Thread_base::myself()) {
+		tid = (unsigned int)&tid;
+		tid >>= 20;
+		tid &= ~0x400;
+		tid++;
+	}
+	return tid;
+}
+
+static int counts[256];
 
 /***********************
  **  Cap_index class  **
@@ -100,10 +115,16 @@ Genode::Cap_index* Genode::Capability_map::insert(int id)
 	       "Double insertion in cap_map()!");
 
 	Cap_index *i = cap_idx_alloc()->alloc_range(1);
+
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%u: insert(id): count = %d, i = %p\n", gettid(), counts[gettid()]++, i);
+	Fiasco::outstring(buf);
+
 	if (i) {
 		i->id(id);
 		_tree.insert(i);
 	}
+
 	return i;
 }
 
@@ -120,10 +141,16 @@ Genode::Cap_index* Genode::Capability_map::insert(int id, addr_t kcap)
 		_tree.remove(i);
 
 	i = cap_idx_alloc()->alloc(kcap);
+
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%u: insert(id,kcap): count = %d, i = %p\n", gettid(), counts[gettid()]++, i);
+	Fiasco::outstring(buf);
+
 	if (i) {
 		i->id(id);
 		_tree.insert(i);
 	}
+
 	return i;
 }
 
@@ -159,6 +186,14 @@ Genode::Cap_index* Genode::Capability_map::insert_map(int id, addr_t kcap)
 
 	/* the capability doesn't exists in the map so allocate a new one */
 	i = cap_idx_alloc()->alloc_range(1);
+
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%u: insert_map: count = %d, i = %p\n", gettid(), counts[gettid()]++, i);
+	Fiasco::outstring(buf);
+	//if ((gettid() == 5) && (counts[gettid()] >= 13)) {
+	//	ASSERT(0, "trigger");
+	//}
+
 	if (!i)
 		return 0;
 

@@ -14,12 +14,22 @@
  */
 
 #include <base/cap_map.h>
+#include <base/snprintf.h>
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+#include <l4/sys/debugger.h>
+}
+extern unsigned int gettid();
 void Genode::Capability_map::remove(Genode::Cap_index* i)
 {
 	using namespace Genode;
+	using namespace Fiasco;
 
 	Lock_guard<Spin_lock> guard(_lock);
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%lx %u: remove: i = %p\n", l4_debugger_global_id(L4_BASE_TASK_CAP),  gettid(), i);
+	Fiasco::outstring(buf);
 
 	if (i) {
 		Cap_index* e = _tree.first() ? _tree.first()->find_by_id(i->id()) : 0;
