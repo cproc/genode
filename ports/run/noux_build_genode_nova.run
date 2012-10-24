@@ -16,12 +16,14 @@
 #
 #exec rm -rf noux-pkg/make bin/make
 
-set build_components {
+set build_components2 {
 	core init drivers/timer noux/minimal lib/libc_noux
 	drivers/framebuffer drivers/pci drivers/input
 	server/terminal server/ram_fs
 	test/libports/ncurses
 }
+
+set build_components { noux/minimal }
 
 set cc_march ""
 
