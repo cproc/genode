@@ -12,7 +12,12 @@
  */
 
 #include <util/avl_tree.h>
+#include <base/snprintf.h>
 #include <base/printf.h>
+
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
 
 using namespace Genode;
 
@@ -126,8 +131,15 @@ void Avl_node_base::remove(Policy &policy)
 		/* isolate right-most node in left sub tree */
 		if (l == _child[0])
 			_adopt(l->_child[0], LEFT, policy);
-		else
+		else {
+			if (!l->_parent) {
+				char buf[128];
+				snprintf(buf, sizeof(buf), "l = %p\n", l);
+				Fiasco::outstring(buf);
+				enter_kdebug();
+			}
 			l->_parent->_adopt(l->_child[0], RIGHT, policy);
+		}
 
 		/* consistent state */
 
