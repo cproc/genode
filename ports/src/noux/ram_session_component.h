@@ -29,6 +29,7 @@
 #include <base/env.h>
 
 /* Noux includes */
+#include <dataspace_flush.h>
 #include <dataspace_registry.h>
 
 namespace Noux {
@@ -111,14 +112,16 @@ namespace Noux {
 			size_t _used_quota;
 
 			Dataspace_registry &_registry;
+			Dataspace_flush    &_flush;
 
 		public:
 
 			/**
 			 * Constructor
 			 */
-			Ram_session_component(Dataspace_registry &registry)
-			: _used_quota(0), _registry(registry) { }
+			Ram_session_component(Dataspace_registry &registry,
+			                      Dataspace_flush &flush)
+			: _used_quota(0), _registry(registry), _flush(flush) { }
 
 			/**
 			 * Destructor
@@ -153,6 +156,8 @@ namespace Noux {
 
 			void free(Ram_dataspace_capability ds_cap)
 			{
+				_flush.flush(ds_cap);
+
 				Ram_dataspace_info *ds_info =
 					dynamic_cast<Ram_dataspace_info *>(_registry.lookup_info(ds_cap));
 
