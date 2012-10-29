@@ -195,7 +195,7 @@ void PluginStarter::_start_plugin(QString &file_name, QByteArray const &file_buf
 	Signal_wait_thread signal_wait_thread(sig_rec, view_ready_semaphore);
 	signal_wait_thread.start();
 	try {
-		view_ready_semaphore.down(10000);
+		view_ready_semaphore.down(/*10000*/);
 		_plugin_loading_state = LOADED;
 	} catch (Timeout_exception) {
 		_plugin_loading_state = TIMEOUT_EXCEPTION;
