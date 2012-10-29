@@ -1,7 +1,7 @@
 include ports/stdcxx.inc
 
 STDCXX_TBZ2 = $(STDCXX).tar.bz2
-STDCXX_URL  = ftp://ftp.fu-berlin.de/gnu/gcc/gcc-$(STDCXX_VERSION)/gcc-g++-$(STDCXX_VERSION).tar.bz2
+STDCXX_URL  = ftp://ftp.fu-berlin.de/gnu/gcc/gcc-$(STDCXX_VERSION)/gcc-$(STDCXX_VERSION).tar.bz2
 
 #
 # Interface to top-level prepare Makefile
@@ -16,6 +16,7 @@ STDCXX_GEN_INCLUDES := \
                 include/stdcxx-genode/bits/hash_bytes.h \
                 include/stdcxx-genode/bits/error_constants.h \
                 include/stdcxx-genode/bits/cxxabi_forced.h \
+                include/stdcxx-genode/bits/atomic_lockfree_defines.h \
                 include/stdcxx-genode/bits/basic_file.h \
                 include/stdcxx-genode/bits/c++io.h \
                 include/stdcxx-genode/bits/atomic_word.h \
@@ -58,6 +59,8 @@ include/stdcxx-genode/bits/nested_exception.h:
 	$(VERBOSE)ln -s ../../../$(CONTRIB_DIR)/$(STDCXX)/libsupc++/nested_exception.h $@
 include/stdcxx-genode/bits/cxxabi_forced.h:
 	$(VERBOSE)ln -s ../../../$(CONTRIB_DIR)/$(STDCXX)/libsupc++/cxxabi_forced.h $@
+include/stdcxx-genode/bits/atomic_lockfree_defines.h:
+	$(VERBOSE)ln -s ../../../$(CONTRIB_DIR)/$(STDCXX)/libsupc++/atomic_lockfree_defines.h $@
 include/stdcxx-genode/bits/c++locale.h:
 	$(VERBOSE)ln -s ../../../$(CONTRIB_DIR)/$(STDCXX)/config/locale/generic/c_locale.h $@
 include/stdcxx-genode/bits/error_constants.h:
