@@ -33,6 +33,7 @@ Rom_session_component::Rom_session_component(Rom_fs         *rom_fs,
 		throw Root::Invalid_args();
 
 	_ds_cap = static_cap_cast<Rom_dataspace>(_ds_ep->manage(&_ds));
+	PDBG("_ds_cap.local_name() = %d", _ds_cap.local_name());
 }
 
 

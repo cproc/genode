@@ -42,8 +42,10 @@ namespace Genode {
 			                  bool executable = false)
 			{
 				Dataspace_component *ds = static_cast<Dataspace_component *>(_ds_ep->obj_by_cap(ds_cap));
-				if (!ds)
+				if (!ds) {
+					PERR("could not find dataspace component for cap %d", ds_cap.local_name());
 					throw Invalid_dataspace();
+				}
 
 				return (void *)ds->phys_addr();
 			}

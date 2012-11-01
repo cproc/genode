@@ -25,7 +25,11 @@ namespace Genode {
 		: Rpc_client<Rom_session>(session) { }
 
 		Rom_dataspace_capability dataspace() {
-			return call<Rpc_dataspace>(); }
+			PDBG("calling call<Rpc_dataspace>()");
+			Rom_dataspace_capability ds_cap = call<Rpc_dataspace>();
+			PDBG("call<Rpc_dataspace>() returned, ds_cap.local_name() = %d", ds_cap.local_name());
+			return ds_cap;
+		 }
 
 		void sigh(Signal_context_capability cap) { call<Rpc_sigh>(cap); }
 	};

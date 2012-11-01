@@ -65,7 +65,7 @@ namespace Genode {
 			 ** Rom session interface **
 			 ***************************/
 
-			Rom_dataspace_capability dataspace() { return _ds_cap; }
+			Rom_dataspace_capability dataspace() { PDBG("_ds_cap.local_name() = %d", _ds_cap.local_name()); return _ds_cap; }
 			void sigh(Signal_context_capability) { }
 	};
 }
