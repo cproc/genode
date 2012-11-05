@@ -438,9 +438,10 @@ namespace Noux {
 					/* convert TAR record modes to stat modes */
 					unsigned mode = record->mode();
 					switch (record->type()) {
-					case Record::TYPE_FILE:    mode |= Sysio::STAT_MODE_FILE; break;
-					case Record::TYPE_SYMLINK: mode |= Sysio::STAT_MODE_SYMLINK; break;
-					case Record::TYPE_DIR:     mode |= Sysio::STAT_MODE_DIRECTORY; break;
+					case Record::TYPE_FILE:
+					case Record::TYPE_HARDLINK: mode |= Sysio::STAT_MODE_FILE; break;
+					case Record::TYPE_SYMLINK:  mode |= Sysio::STAT_MODE_SYMLINK; break;
+					case Record::TYPE_DIR:      mode |= Sysio::STAT_MODE_DIRECTORY; break;
 
 					default:
 						if (verbose)
