@@ -69,14 +69,6 @@ index a8a49b7..5359750 100755
  DEBUG_PREFIX_CFLAGS_FOR_TARGET
  SYSROOT_CFLAGS_FOR_TARGET
  stage1_languages
-@@ -2691,7 +2692,6 @@ target_libraries="target-libgcc \
- 		target-newlib \
- 		target-libgomp \
- 		target-libitm \
--		target-libstdc++-v3 \
- 		target-libmudflap \
- 		target-libssp \
- 		target-libquadmath \
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
 index 5c3514d..44f9a3d 100644
 --- a/gcc/Makefile.in
