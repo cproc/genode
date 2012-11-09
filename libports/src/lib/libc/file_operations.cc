@@ -540,6 +540,7 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 	if (!addr && libc_fd == -1) {
 		void *start = Libc::mem_alloc()->alloc(length, PAGE_SHIFT);
 		mmap_registry()->insert(start, length, 0);
+PDBG("start1 = %p, length = %zu", start, length);
 		return start;
 	}
 
@@ -552,12 +553,14 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 	mmap_registry()->insert(start, length, fd->plugin);
+PDBG("start2 = %p, length = %zu", start, length);
 	return start;
 }
 
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+	PDBG("start = %p, length = %zu", start, length);
 	if (!mmap_registry()->is_registered(start)) {
 		PWRN("munmap: could not lookup plugin for address %p", start);
 		errno = EINVAL;
