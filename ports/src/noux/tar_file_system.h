@@ -420,7 +420,7 @@ namespace Noux {
 
 			bool stat(Sysio *sysio, char const *path)
 			{
-				if (verbose)
+				//if (verbose)
 					PDBG("path = %s", path);
 
 				Node *node = _root_node.lookup(path);
@@ -439,7 +439,7 @@ namespace Noux {
 					unsigned mode = record->mode();
 					switch (record->type()) {
 					case Record::TYPE_FILE:
-					case Record::TYPE_HARDLINK: mode |= Sysio::STAT_MODE_FILE; break;
+					case Record::TYPE_HARDLINK: mode |= Sysio::STAT_MODE_FILE; if (record->type() == Record::TYPE_HARDLINK) PDBG("real path = %s", record->linked_name()); break;
 					case Record::TYPE_SYMLINK:  mode |= Sysio::STAT_MODE_SYMLINK; break;
 					case Record::TYPE_DIR:      mode |= Sysio::STAT_MODE_DIRECTORY; break;
 
