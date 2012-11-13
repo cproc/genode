@@ -181,13 +181,13 @@ namespace Noux {
 				/**
 				 * Locally-provided services for accessing platform resources
 				 */
-				Ram_session_component ram;
 				Cpu_session_component cpu;
 				Rm_session_component  rm;
+				Ram_session_component ram;
 
 				Resources(char const *label, Rpc_entrypoint &ep, bool forked)
 				:
-					ep(ep), ram(ds_registry), cpu(label, forked), rm(ds_registry)
+					ep(ep), cpu(label, forked), rm(ds_registry), ram(ds_registry, rm)
 				{
 					ep.manage(&ram);
 					ep.manage(&rm);

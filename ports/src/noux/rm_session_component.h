@@ -22,9 +22,16 @@
 #include <rm_session/connection.h>
 #include <base/rpc_server.h>
 
+/* Noux includes */
+#include <dataspace_flush.h>
+
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 namespace Noux {
 
-	class Rm_session_component : public Rpc_object<Rm_session>
+	class Rm_session_component : public Rpc_object<Rm_session>, public Dataspace_flush
 	{
 		private:
 
@@ -84,8 +91,10 @@ namespace Noux {
 			~Rm_session_component()
 			{
 				Region *curr;
-				while ((curr = _regions.first()))
+				while ((curr = _regions.first())) {
+					PDBG("%p: curr->local_addr = %lx", this, curr->local_addr);
 					detach(curr->local_addr);
+				}
 			}
 
 			/**
@@ -178,6 +187,23 @@ namespace Noux {
 				info->poke(dst_addr - region->local_addr, src, len);
 			}
 
+			void flush(Dataspace_capability ds_cap)
+			{
+				PDBG("%p: start", this);
+				Region *curr = _regions.first();
+				Region *prev = 0;
+				for (; curr; prev = curr, curr = curr ? curr->next() : 0) {
+					PDBG("%p: curr->local_addr = %lx", this, curr->local_addr);
+					if (curr->ds == ds_cap) {
+						PDBG("%p: flushed %lx", this, curr->local_addr);
+						_regions.remove(curr);
+						destroy(env()->heap(), curr);
+						curr = prev;
+					}
+				}
+				PDBG("%p: finished", this);
+			}
+
 
 			/**************************
 			 ** RM session interface **
@@ -200,7 +226,9 @@ namespace Noux {
 				local_addr = _rm.attach(ds, size, offset,
 				                        use_local_addr, local_addr,
 				                        executable);
-
+				PDBG("%p: local_addr = %lx, size = 0x%zx", this, local_addr, size);
+//if ((addr_t)local_addr == 0x1000000)
+	//enter_kdebug();
 				/*
 				 * Record attachement for later replay (needed during
 				 * fork)
@@ -212,6 +240,7 @@ namespace Noux {
 
 			void detach(Local_addr local_addr)
 			{
+				PDBG("%p: local_addr = %lx", this, local_addr);
 				_rm.detach(local_addr);
 
 				Region *region = _lookup_region_by_addr(local_addr);
