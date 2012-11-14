@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
 
-enum { MAX_COUNT = 100 };
+enum { MAX_COUNT = 1 };
 
 int main(int, char **)
 {
@@ -36,6 +37,8 @@ int main(int, char **)
 	for (; i < MAX_COUNT; ) {
 		printf("pid %d: parent i = %d\n", getpid(), i++);
 	}
+
+	wait(0);
 
 	for (;;);
 	return 0;
