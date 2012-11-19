@@ -176,20 +176,6 @@ extern "C" uid_t geteuid()
 }
 
 
-extern "C" int dup(int ofd)
-{
-	sysio()->dup2_in.fd = ofd;
-	sysio()->dup2_in.to_fd = -1;
-
-	if (!noux()->syscall(Noux::Session::SYSCALL_DUP2)) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	return sysio()->dup2_out.fd;
-}
-
-
 /**
  * Utility to copy-out syscall results to buf struct
  *
@@ -251,7 +237,7 @@ static size_t marshal_fds(fd_set *src_fds, int nfds,
 /**
  * Unmarshal result of select syscall into fd set
  */
-static void unmarshal_fds(int *src_fds, size_t src_fds_len, fd_set *dst_fds)
+static void unmarshal_fds(int nfds, int *src_fds, size_t src_fds_len, fd_set *dst_fds)
 {
 	if (!dst_fds) return;
 
@@ -261,8 +247,13 @@ static void unmarshal_fds(int *src_fds, size_t src_fds_len, fd_set *dst_fds)
 	 * it was allocated dynamically. So we will reset the fd_set manually which
 	 * will work fine as long as we are using FreeBSDs libc - another libc however
 	 * might use a different struct.
+	 *
+	 * Note: The fds are actually stored in a bit-array. So we need to calculate
+	 * how many array entries we have to reset. sizeof (fd_mask) will return the
+	 * size of one entry in bytes.
 	 */
-	for (size_t i = 0; i < src_fds_len; i++)
+	int _ = nfds / (sizeof (fd_mask) * 8) + 1;
+	for (int i = 0; i < _; i++)
 		dst_fds->__fds_bits[i] = 0;
 
 	for (size_t i = 0; i < src_fds_len; i++)
@@ -343,19 +334,19 @@ extern "C" int select(int nfds, fd_set *readfds, fd_set *writefds,
 	int total_fds = 0;
 
 	if (readfds != NULL) {
-		unmarshal_fds(src, out_fds.num_rd, readfds);
+		unmarshal_fds(nfds, src, out_fds.num_rd, readfds);
 		src += out_fds.num_rd;
 		total_fds += out_fds.num_rd;
 	}
 
 	if (writefds != NULL) {
-		unmarshal_fds(src, out_fds.num_wr, writefds);
+		unmarshal_fds(nfds, src, out_fds.num_wr, writefds);
 		src += out_fds.num_wr;
 		total_fds += out_fds.num_wr;
 	}
 
 	if (exceptfds != NULL) {
-		unmarshal_fds(src, out_fds.num_ex, exceptfds);
+		unmarshal_fds(nfds, src, out_fds.num_ex, exceptfds);
 		/* exceptfds are currently ignored */
 	}
 
@@ -616,6 +607,7 @@ namespace {
 			Libc::File_descriptor *open(char const *, int);
 			ssize_t write(Libc::File_descriptor *, const void *, ::size_t);
 			int close(Libc::File_descriptor *);
+			Libc::File_descriptor *dup(Libc::File_descriptor*);
 			int dup2(Libc::File_descriptor *, Libc::File_descriptor *);
 			int execve(char const *filename, char *const argv[],
 			           char *const envp[]);
@@ -1022,6 +1014,23 @@ namespace {
 			pipefd[i] = Libc::file_descriptor_allocator()->alloc(this, context, sysio()->pipe_out.fd[i]);
 		}
 		return 0;
+	}
+
+
+	Libc::File_descriptor *Plugin::dup(Libc::File_descriptor* fd)
+	{
+		sysio()->dup2_in.fd    = noux_fd(fd->context);
+		sysio()->dup2_in.to_fd = -1;
+
+		if (!noux()->syscall(Noux::Session::SYSCALL_DUP2)) {
+			PERR("dup error");
+			/* XXX set errno */
+			return 0;
+		}
+
+		Libc::Plugin_context *context = noux_context(sysio()->dup2_out.fd);
+		return Libc::file_descriptor_allocator()->alloc(this, context,
+		                                                sysio()->dup2_out.fd);
 	}
 
 
