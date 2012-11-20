@@ -32,6 +32,8 @@
 #include <child_policy.h>
 #include <io_receptor_registry.h>
 
+#define PROFILE_SYSCALLS 1
+
 
 namespace Noux {
 
@@ -113,6 +115,35 @@ namespace Noux {
 					PINF("quota: avail=%zd, used=%zd",
 					     env()->ram_session()->avail(),
 					     env()->ram_session()->used());
+#ifdef PROFILE_SYSCALLS
+
+					/* show sorted syscall profiling result */
+
+					extern genode_uint64_t tsc[Session::SYSCALL_LAST + 1];
+
+					/* keep track which syscall results have been reported */
+					bool done[Session::SYSCALL_LAST];
+					for (int i = 0; i < Session::SYSCALL_LAST; i++)
+						done[i] = false;
+
+					uint64_t tsc_total = 0;
+					for (int i = 0; i < Session::SYSCALL_LAST; i++)
+						tsc_total += tsc[i];
+
+					PINF("tsc count total: %llu", tsc_total);
+
+					for (int i = 0; i < Session::SYSCALL_LAST; i++) {
+						int syscall_candidate = Session::SYSCALL_LAST; /* tsc[SYSCALL_LAST] = 0 */
+						for (int j = 0; j < Session::SYSCALL_LAST; j++)
+							if (!done[j] && (tsc[j] >= tsc[syscall_candidate]))
+								syscall_candidate = j;
+						PINF("tsc count for %s:\t %llu (~%llu%%)",
+						     Session::syscall_name((Session::Syscall)syscall_candidate),
+						     tsc[syscall_candidate],
+						     (tsc[syscall_candidate] * 100) / tsc_total);
+						done[syscall_candidate] = true;
+					}
+#endif /* PROFILE_SYSCALLS */
 				}
 			}
 	};
@@ -275,6 +306,10 @@ namespace Noux {
 			 */
 
 			bool _syscall_net(Syscall sc);
+
+#ifdef PROFILE_SYSCALLS
+			bool _real_syscall(Syscall syscall);
+#endif /* PROFILE_SYSCALLS */
 
 		public:
 

@@ -40,6 +40,28 @@ namespace Noux {
 	bool is_init_process(Child *child) { return child == init_child; }
 	void init_process_exited() { init_child = 0; }
 
+#ifdef PROFILE_SYSCALLS
+	/* tsc[SYSCALL_LAST] is used as element with a fixed value of 0 */
+	genode_uint64_t tsc[Noux::Session::SYSCALL_LAST + 1];
+
+	/* from base-foc/contrib/l4/pkg/l4util/include/ARCH-x86/rdtsc.h */
+	static genode_uint64_t rdtsc()
+	{
+		genode_uint64_t v;
+
+		__asm__ __volatile__
+			("                              \n\t"
+			 ".byte 0x0f, 0x31              \n\t"
+			/*"rdtsc\n\t"*/
+			:
+			"=A" (v)
+			: /* no inputs */
+			);
+
+		return v;
+	}
+#endif /* PROFILE_SYSCALLS */
+
 };
 
 extern void init_network();
@@ -118,8 +140,30 @@ namespace Noux {
  ** Noux syscall dispatcher **
  *****************************/
 
+#ifdef PROFILE_SYSCALLS
 bool Noux::Child::syscall(Noux::Session::Syscall sc)
 {
+	bool result;
+	genode_uint64_t tsc_start;
+
+	if ((sc == SYSCALL_INVALID) || (sc >= SYSCALL_LAST))
+		return false;
+
+	tsc_start = rdtsc();
+
+	result = _real_syscall(sc);
+
+	tsc[sc] += rdtsc() - tsc_start;
+
+	return result;
+}
+
+bool Noux::Child::_real_syscall(Noux::Session::Syscall sc)
+#else
+bool Noux::Child::syscall(Noux::Session::Syscall sc)
+#endif /* PROFILE_SYSCALLS */
+{
+
 	if (trace_syscalls)
 		Genode::printf("PID %d -> SYSCALL %s\n",
 		               pid(), Noux::Session::syscall_name(sc));
@@ -686,7 +730,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 			return _syscall_net(sc);
 
-		case SYSCALL_INVALID: break;
+		case SYSCALL_INVALID:
+		case SYSCALL_LAST: break;
 		}
 	}
 
