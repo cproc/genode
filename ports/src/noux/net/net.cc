@@ -110,6 +110,7 @@ bool Noux::Child::_syscall_net(Noux::Session::Syscall sc)
 		case SYSCALL_PIPE:
 		case SYSCALL_DUP2:
 		case SYSCALL_INVALID:
+		case SYSCALL_LAST:
 		case SYSCALL_UNLINK:
 		case SYSCALL_RENAME:
 		case SYSCALL_MKDIR:

@@ -32,8 +32,24 @@
 #include <child_policy.h>
 #include <io_receptor_registry.h>
 
+#define PROFILE_SYSCALLS 1
+
 
 namespace Noux {
+
+#ifdef PROFILE_SYSCALLS
+
+struct profiling_data {
+	unsigned int count;
+	genode_uint64_t tsc;
+};
+
+extern struct profiling_data global_prof[Session::SYSCALL_LAST + 1];
+extern Lock global_tsc_lock;
+
+extern genode_uint64_t rdtsc();
+
+#endif /* PROFILE_SYSCALLS */
 
 	/**
 	 * Allocator for process IDs
@@ -108,11 +124,6 @@ namespace Noux {
 				} else {
 					/* destroy 'Noux::Child' */
 					destroy(env()->heap(), _child);
-
-					PINF("destroy %p", _child);
-					PINF("quota: avail=%zd, used=%zd",
-					     env()->ram_session()->avail(),
-					     env()->ram_session()->used());
 				}
 			}
 	};
@@ -276,6 +287,40 @@ namespace Noux {
 
 			bool _syscall_net(Syscall sc);
 
+#ifdef PROFILE_SYSCALLS
+			/* _local_prof[SYSCALL_LAST] is used as element with a fixed value of 0 */
+			struct profiling_data _local_prof[Session::SYSCALL_LAST + 1];
+			bool _real_syscall(Syscall syscall);
+
+			void _show_profiling_report(struct profiling_data prof[Session::SYSCALL_LAST + 1])
+			{
+				uint64_t tsc_total = 0;
+				for (int i = 0; i < Session::SYSCALL_LAST; i++)
+					tsc_total += prof[i].tsc;
+
+				genode_uint64_t current_tsc = rdtsc();
+				PINF("tsc count total / current tsc: %llu / %llu (~%llu%%)", tsc_total, current_tsc, tsc_total * 100 / current_tsc);
+
+				/* keep track which syscall results have been reported */
+				bool done[Session::SYSCALL_LAST];
+				for (int i = 0; i < Session::SYSCALL_LAST; i++)
+					done[i] = false;
+
+				for (int i = 0; i < Session::SYSCALL_LAST; i++) {
+					int syscall_candidate = Session::SYSCALL_LAST; /* prof[SYSCALL_LAST] = 0 */
+					for (int j = 0; j < Session::SYSCALL_LAST; j++)
+						if (!done[j] && (prof[j].tsc >= prof[syscall_candidate].tsc))
+							syscall_candidate = j;
+					PINF("tsc count for %u \tx %s:\t %llu (~%llu%%)",
+					     prof[syscall_candidate].count,
+					     Session::syscall_name((Session::Syscall)syscall_candidate),
+					     prof[syscall_candidate].tsc,
+					     (prof[syscall_candidate].tsc * 100) / tsc_total);
+					done[syscall_candidate] = true;
+				}
+			}
+#endif /* PROFILE_SYSCALLS */
+
 		public:
 
 			struct Binary_does_not_exist : Exception { };
@@ -338,6 +383,10 @@ namespace Noux {
 					PERR("Lookup of executable \"%s\" failed", name);
 					throw Binary_does_not_exist();
 				}
+
+#ifdef PROFILE_SYSCALLS
+				memset(_local_prof, 0, sizeof(_local_prof));
+#endif /* PROFILE_SYSCALLS */
 			}
 
 			~Child()
@@ -348,6 +397,30 @@ namespace Noux {
 				_entrypoint.dissolve(this);
 
 				_root_dir->release(_child_policy.name(), _binary_ds);
+
+#ifdef PROFILE_SYSCALLS
+				/* show all profiling information in one peace */
+				global_tsc_lock.lock();
+#endif /* PROFILE_SYSCALLS */
+
+				PINF("destroyed %p (%s)", this, _child_policy.name());
+				PINF("quota: avail=%zd, used=%zd",
+				     env()->ram_session()->avail(),
+				     env()->ram_session()->used());
+
+#ifdef PROFILE_SYSCALLS
+				PINF("---------------------");
+				PINF("local syscall profile");
+				PINF("---------------------");
+				_show_profiling_report(_local_prof);
+
+				PINF("----------------------");
+				PINF("global syscall profile");
+				PINF("----------------------");
+				_show_profiling_report(global_prof);
+
+				global_tsc_lock.unlock();
+#endif /* PROFILE_SYSCALLS */
 			}
 
 			void start() { _entrypoint.activate(); }

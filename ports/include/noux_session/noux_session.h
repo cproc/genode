@@ -34,6 +34,7 @@ namespace Noux {
 		virtual Dataspace_capability sysio_dataspace() = 0;
 
 		enum Syscall {
+			SYSCALL_INVALID = -1,
 			SYSCALL_WRITE,
 			SYSCALL_READ,
 			SYSCALL_STAT,
@@ -75,7 +76,7 @@ namespace Noux {
 			SYSCALL_GETTIMEOFDAY,
 			SYSCALL_CLOCK_GETTIME,
 			SYSCALL_UTIMES,
-			SYSCALL_INVALID = -1
+			SYSCALL_LAST /* number of syscalls */
 		};
 
 		static char const *syscall_name(Syscall sc)
@@ -122,7 +123,8 @@ namespace Noux {
 			NOUX_DECL_SYSCALL_NAME(GETTIMEOFDAY)
 			NOUX_DECL_SYSCALL_NAME(CLOCK_GETTIME)
 			NOUX_DECL_SYSCALL_NAME(UTIMES)
-			case SYSCALL_INVALID: return 0;
+			case SYSCALL_INVALID:
+			case SYSCALL_LAST: return 0;
 			}
 			return 0;
 		}
