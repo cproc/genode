@@ -85,7 +85,13 @@ Noux_connection *noux_connection()
 }
 
 
-Noux::Session *noux()  { return noux_connection()->session(); }
+Noux::Session *noux()  {
+#ifdef PROFILE_SYSCALLS
+	/* assumption: the 'noux()' function gets called as 'noux()->syscall()' */
+	noux_connection()->sysio()->tsc = rdtsc();
+#endif
+	return noux_connection()->session();
+}
 Noux::Sysio   *sysio() { return noux_connection()->sysio();   }
 
 
