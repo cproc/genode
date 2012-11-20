@@ -22,6 +22,27 @@
 #include <util/misc_math.h>
 
 
+#define PROFILE_SYSCALLS 1
+
+#ifdef PROFILE_SYSCALLS
+	/* from base-foc/contrib/l4/pkg/l4util/include/ARCH-x86/rdtsc.h */
+	static genode_uint64_t rdtsc()
+	{
+		genode_uint64_t v;
+
+		__asm__ __volatile__
+			("                              \n\t"
+			 ".byte 0x0f, 0x31              \n\t"
+			/*"rdtsc\n\t"*/
+			:
+			"=A" (v)
+			: /* no inputs */
+			);
+
+		return v;
+	}
+#endif
+
 #define SYSIO_DECL(syscall_name, args, results) \
 	struct args syscall_name##_in; \
 	struct results syscall_name##_out;
@@ -491,6 +512,10 @@ namespace Noux {
 			SYSIO_DECL(utimes,      { Path path; unsigned long sec; unsigned long usec; },
 			                        { });
 		};
+
+#ifdef PROFILE_SYSCALLS
+		genode_uint64_t tsc;
+#endif
 	};
 };
 

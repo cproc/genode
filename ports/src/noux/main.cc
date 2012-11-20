@@ -40,6 +40,12 @@ namespace Noux {
 	bool is_init_process(Child *child) { return child == init_child; }
 	void init_process_exited() { init_child = 0; }
 
+#ifdef PROFILE_SYSCALLS
+	/* global_prof[SYSCALL_LAST] is used as element with a fixed value of 0 */
+	struct profiling_data global_prof[Noux::Session::SYSCALL_LAST + 1];
+	Lock global_tsc_lock;
+#endif /* PROFILE_SYSCALLS */
+
 };
 
 extern void init_network();
@@ -118,8 +124,42 @@ namespace Noux {
  ** Noux syscall dispatcher **
  *****************************/
 
+#ifdef PROFILE_SYSCALLS
 bool Noux::Child::syscall(Noux::Session::Syscall sc)
 {
+	if ((sc == SYSCALL_INVALID) || (sc >= SYSCALL_LAST))
+		return false;
+
+	/* don't profile syscalls which wait for a syscall from another Noux process */
+	if ((sc == SYSCALL_WAIT4) || (sc == SYSCALL_READ))
+		return _real_syscall(sc);
+
+	bool result;
+	genode_uint64_t tsc_start, tsc_end;
+
+	tsc_start = _sysio->tsc;
+
+	result = _real_syscall(sc);
+
+	tsc_end = rdtsc();
+
+	_local_prof[sc].count++;
+	_local_prof[sc].tsc += tsc_end - tsc_start;
+
+	global_tsc_lock.lock();
+	global_prof[sc].count++;
+	global_prof[sc].tsc += tsc_end - tsc_start;
+	global_tsc_lock.unlock();
+
+	return result;
+}
+
+bool Noux::Child::_real_syscall(Noux::Session::Syscall sc)
+#else
+bool Noux::Child::syscall(Noux::Session::Syscall sc)
+#endif /* PROFILE_SYSCALLS */
+{
+
 	if (trace_syscalls)
 		Genode::printf("PID %d -> SYSCALL %s\n",
 		               pid(), Noux::Session::syscall_name(sc));
@@ -686,7 +726,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 			return _syscall_net(sc);
 
-		case SYSCALL_INVALID: break;
+		case SYSCALL_INVALID:
+		case SYSCALL_LAST: break;
 		}
 	}
 
