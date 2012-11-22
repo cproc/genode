@@ -27,6 +27,7 @@
 #include <cpu/cpu_state.h>
 #include <util/fifo.h>
 #include <util/avl_tree.h>
+#include <base/thread_state.h>
 
 /* core includes */
 #include <kernel_support.h>
@@ -54,6 +55,7 @@ extern Genode::addr_t _mt_master_context_end;
 namespace Kernel
 {
 	/* import Genode types */
+	typedef Genode::Thread_state Thread_state;
 	typedef Genode::size_t size_t;
 	typedef Genode::addr_t addr_t;
 	typedef Genode::umword_t umword_t;
@@ -801,12 +803,11 @@ namespace Kernel
 			Pd(Tlb * const t) : _tlb(t)
 			{
 				/* try to add translation for mode transition region */
-				enum Mtc_attributes { W = 1, X = 1, K = 1, G = 1, D = 0, C = 1 };
+				page_flags_t const flags = Page_flags::mode_transition();
 				unsigned const slog2 =
 					tlb()->insert_translation(mtc()->VIRT_BASE,
 					                          mtc()->phys_base(),
-					                          mtc()->SIZE_LOG2,
-					                          W, X, K, G, D, C);
+					                          mtc()->SIZE_LOG2, flags);
 
 				/* extra space needed to translate mode transition region */
 				if (slog2)
@@ -824,8 +825,7 @@ namespace Kernel
 					/* translate mode transition region globally */
 					tlb()->insert_translation(mtc()->VIRT_BASE,
 					                          mtc()->phys_base(),
-					                          mtc()->SIZE_LOG2,
-					                          W, X, K, G, D, C,
+					                          mtc()->SIZE_LOG2, flags,
 					                          (void *)aligned_es);
 				}
 			}
@@ -1202,7 +1202,10 @@ namespace Kernel
 			 */
 			int resume()
 			{
-				assert (_state == AWAIT_RESUMPTION || _state == ACTIVE)
+				if (_state != AWAIT_RESUMPTION && _state != ACTIVE) {
+					PDBG("Unexpected thread state");
+					return -1;
+				}
 				cpu_scheduler()->insert(this);
 				if (_state == ACTIVE) return 1;
 				_state = ACTIVE;
@@ -1731,6 +1734,31 @@ namespace Kernel
 	/**
 	 * Do specific syscall for 'user', for details see 'syscall.h'
 	 */
+	void do_resume_faulter(Thread * const user)
+	{
+		/* get targeted thread */
+		Thread * const t = Thread::pool()->object(user->user_arg_1());
+		assert(t);
+
+		/* check permissions */
+		assert(user->pd_id() == core_id() || user->pd_id() == t->pd_id());
+
+		/*
+		 * Writeback the TLB entry that resolves the fault.
+		 * This is a substitution for write-through-flagging
+		 * the memory that holds the TLB data, because the latter
+		 * is not feasible in core space.
+		 */
+		Cpu::flush_caches();
+
+		/* resume targeted thread */
+		t->resume();
+	}
+
+
+	/**
+	 * Do specific syscall for 'user', for details see 'syscall.h'
+	 */
 	void do_yield_thread(Thread * const user)
 	{
 		/* get targeted thread */
@@ -1876,37 +1904,26 @@ namespace Kernel
 	/**
 	 * Do specific syscall for 'user', for details see 'syscall.h'
 	 */
-	void do_read_register(Thread * const user)
+	void do_read_thread_state(Thread * const user)
 	{
-		/* check permissions */
 		assert(user->pd_id() == core_id());
-
-		/* get targeted thread */
 		Thread * const t = Thread::pool()->object(user->user_arg_1());
-		assert(t);
-
-		/* return requested register */
-		unsigned gpr;
-		assert(t->get_gpr(user->user_arg_2(), gpr));
-		user->user_arg_0(gpr);
+		if (!t) PDBG("Targeted thread unknown");
+		Thread_state * const ts = (Thread_state *)user->phys_utcb()->base();
+		t->Cpu::Context::read_cpu_state(ts);
 	}
 
 
 	/**
 	 * Do specific syscall for 'user', for details see 'syscall.h'
 	 */
-	void do_write_register(Thread * const user)
+	void do_write_thread_state(Thread * const user)
 	{
-		/* check permissions */
 		assert(user->pd_id() == core_id());
-
-		/* get targeted thread */
 		Thread * const t = Thread::pool()->object(user->user_arg_1());
-		assert(t);
-
-		/* write to requested register */
-		unsigned const gpr = user->user_arg_3();
-		assert(t->set_gpr(user->user_arg_2(), gpr));
+		if (!t) PDBG("Targeted thread unknown");
+		Thread_state * const ts = (Thread_state *)user->phys_utcb()->base();
+		t->Cpu::Context::write_cpu_state(ts);
 	}
 
 
@@ -2067,8 +2084,8 @@ namespace Kernel
 			/* 15         */ do_await_irq,
 			/* 16         */ do_free_irq,
 			/* 17         */ do_print_char,
-			/* 18         */ do_read_register,
-			/* 19         */ do_write_register,
+			/* 18         */ do_read_thread_state,
+			/* 19         */ do_write_thread_state,
 			/* 20         */ do_new_signal_receiver,
 			/* 21         */ do_new_signal_context,
 			/* 22         */ do_await_signal,
@@ -2077,6 +2094,7 @@ namespace Kernel
 			/* 25         */ do_run_vm,
 			/* 26         */ do_delete_thread,
 			/* 27         */ do_signal_pending,
+			/* 28         */ do_resume_faulter,
 		};
 		enum { MAX_SYSCALL = sizeof(handle_sysc)/sizeof(handle_sysc[0]) - 1 };
 
