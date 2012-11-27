@@ -35,7 +35,8 @@ addr_t Io_mem_session_component::_map_local(addr_t base, size_t size)
 
 	/* find appropriate region for mapping */
 	void *local_base = 0;
-	if (!platform()->region_alloc()->alloc_aligned(size, &local_base, alignment))
+	if (platform()->region_alloc()->alloc_aligned(size, &local_base, alignment) !=
+	    Range_allocator::ALLOC_OK)
 		return 0;
 
 	if (!map_local_io(base, (addr_t)local_base, size >> get_page_size_log2())) {

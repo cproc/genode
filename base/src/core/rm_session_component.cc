@@ -381,8 +381,15 @@ Rm_session_component::attach(Dataspace_capability ds_cap, size_t size,
 				continue;
 
 			/* try allocating the align region */
-			if (_map.alloc_aligned(size, &r, align_log2))
+			Range_allocator::Alloc_return alloc_return =
+				_map.alloc_aligned(size, &r, align_log2);
+
+			if (alloc_return == Range_allocator::ALLOC_OK)
 				break;
+			else if (alloc_return == Range_allocator::OUT_OF_METADATA) {
+				_map.free(r);
+				throw Out_of_metadata();
+			}
 		}
 
 		if (align_log2 < get_page_size_log2()) {
@@ -569,7 +576,7 @@ Pager_capability Rm_session_component::add_client(Thread_capability thread)
 
 	Rm_client *cl;
 	try { cl = new(&_client_slab) Rm_client(this, badge); }
-	catch (Allocator::Out_of_memory) { throw Out_of_memory(); }
+	catch (Allocator::Out_of_memory) { throw Out_of_metadata(); }
 
 	_clients.insert(cl);
 

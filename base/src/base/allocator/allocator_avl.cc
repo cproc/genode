@@ -247,11 +247,11 @@ int Allocator_avl_base::remove_range(addr_t base, size_t size)
 }
 
 
-bool Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align)
+Range_allocator::Alloc_return Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align)
 {
 	Block *dst1, *dst2;
 	if (!_alloc_two_blocks_metadata(&dst1, &dst2))
-		return false;
+		return Range_allocator::OUT_OF_METADATA;
 
 	/* find best fitting block */
 	Block *b = _addr_tree.first();
@@ -260,7 +260,7 @@ bool Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align)
 	if (!b) {
 		_md_alloc->free(dst1, sizeof(Block));
 		_md_alloc->free(dst2, sizeof(Block));
-		return false;
+		return Range_allocator::RANGE_CONFLICT;
 	}
 
 	/* calculate address of new (aligned) block */
@@ -273,12 +273,12 @@ bool Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align)
 	Block *new_block = _alloc_block_metadata();
 	if (!new_block) {
 		_md_alloc->free(new_block, sizeof(Block));
-		return false;
+		return Range_allocator::OUT_OF_METADATA;
 	}
 	_add_block(new_block, new_addr, size, Block::USED);
 
 	*out_addr = reinterpret_cast<void *>(new_addr);
-	return true;
+	return Range_allocator::ALLOC_OK;
 }
 
 

@@ -72,8 +72,8 @@ namespace Nic {
 				return 0;
 			}
 
-			bool alloc_aligned(Genode::size_t size, void **out_addr, int) {
-				return alloc(size, out_addr); }
+			Alloc_return alloc_aligned(Genode::size_t size, void **out_addr, int) {
+				return (alloc(size, out_addr) ? ALLOC_OK : RANGE_CONFLICT); }
 
 			bool alloc(Genode::size_t size, void **out_addr)
 			{ 
