@@ -28,17 +28,21 @@ using namespace Genode;
 void Thread_base::_deinit_platform_thread()
 {
 	using namespace Fiasco;
-
-	Cap_index *i = (Cap_index*)l4_utcb_tcr_u(_context->utcb)->user[UTCB_TCR_BADGE];
-	cap_map()->remove(i);
-	env()->cpu_session()->kill_thread(_thread_cap);
+	if (!_thread_cap.valid()) {
+		PDBG("this = %p", this);
+		enter_kdebug("");
+	} else {
+		Cap_index *i = (Cap_index*)l4_utcb_tcr_u(_context->utcb)->user[UTCB_TCR_BADGE];
+		cap_map()->remove(i);
+		env()->cpu_session()->kill_thread(_thread_cap);
+	}
 }
 
 
 void Thread_base::start()
 {
 	using namespace Fiasco;
-
+PDBG("this = %p", this);
 	/* create thread at core */
 	char buf[48];
 	name(buf, sizeof(buf));

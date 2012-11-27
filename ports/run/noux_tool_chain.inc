@@ -90,7 +90,7 @@ append config {
 			<any-service> <any-child/> <parent/> </any-service>
 		</default-route>
 		<start name="timer">
-			<resource name="RAM" quantum="1M"/>
+			<resource name="RAM" quantum="2M"/>
 			<provides><service name="Timer"/></provides>
 		</start> }
 
@@ -105,13 +105,13 @@ append_if [have_spec sdl] config {
 
 append_if [have_spec pci] config {
 	<start name="pci_drv">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides><service name="PCI"/></provides>
 	</start>}
 
 append_if [have_spec vesa] config {
 	<start name="vesa_drv">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Framebuffer"/></provides>
 	</start>}
 
@@ -123,7 +123,7 @@ append_if [have_spec pl11x] config {
 
 append_if [have_spec ps2] config {
 	<start name="ps2_drv">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Input"/></provides>
 	</start> }
 
