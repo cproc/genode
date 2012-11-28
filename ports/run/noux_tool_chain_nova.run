@@ -4,6 +4,11 @@
 # \date   2012-11-26
 #
 
+if {![have_spec x86_32]} {
+        puts "\nThis run script is currently only supported on 32-bit x86 target platforms\n"
+	exit 0
+}
+
 set platform          "nova_x86_32"
 set platform_base_dir "base-nova"
 set platform_pkgs     ""
