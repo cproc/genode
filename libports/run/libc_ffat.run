@@ -94,7 +94,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_log.lib.so libc_ffat.lib.so
+	ld.lib.so libc.lib.so libc_log.lib.so libc_ffat.lib.so libc_stat_cache.lib.so
 	test-libc_ffat
 }
 
