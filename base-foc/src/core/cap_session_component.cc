@@ -66,8 +66,11 @@ void Cap_mapping::map(Native_thread_id task)
 	l4_msgtag_t tag = l4_task_map(task, L4_BASE_TASK_CAP,
 	                              l4_obj_fpage(local.dst(), 0, L4_FPAGE_RWX),
 	                              ((l4_cap_idx_t)remote) | L4_ITEM_MAP);
-	if (l4_msgtag_has_error(tag))
+	if (l4_msgtag_has_error(tag)) {
 		PERR("mapping cap failed");
+		enter_kdebug("");
+		PERR("from = %lx, to = %lx", local.dst(), task);
+	}
 }
 
 
