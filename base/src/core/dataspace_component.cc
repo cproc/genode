@@ -25,10 +25,10 @@ void Dataspace_component::attached_to(Rm_region *region)
 }
 
 
-void Dataspace_component::detached_from(Rm_region *region)
+bool Dataspace_component::detached_from(Rm_region *region)
 {
 	Lock::Guard lock_guard(_lock);
-	_regions.remove(region);
+	return _regions.remove(region);
 }
 
 
@@ -38,13 +38,10 @@ Dataspace_component::~Dataspace_component()
 
 	/* remove from all regions */
 	while (Rm_region *r = _regions.first()) {
+		_regions.remove(r);
 
-		/*
-		 * The 'detach' function calls 'Dataspace_component::detached_from'
-		 * and thereby removes the current region from the '_regions' list.
-		 */
 		_lock.unlock();
-		r->session()->detach((void *)r->base());
+		r->session()->_detach((void *)r->base(), true);
 		_lock.lock();
 	}
 

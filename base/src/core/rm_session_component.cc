@@ -291,13 +291,13 @@ void Rm_faulter::fault(Rm_session_component *faulting_rm_session,
 }
 
 
-void Rm_faulter::dissolve_from_faulting_rm_session()
+void Rm_faulter::dissolve_from_faulting_rm_session(Rm_session_component * caller)
 {
 	/* serialize access */
 	Lock::Guard lock_guard(_lock);
 
 	if (_faulting_rm_session)
-		_faulting_rm_session->discard_faulter(this);
+		_faulting_rm_session->discard_faulter(this, _faulting_rm_session != caller);
 
 	_faulting_rm_session = 0;
 }
@@ -463,7 +463,7 @@ static void unmap_managed(Rm_session_component *session, Rm_region *region, int 
 }
 
 
-void Rm_session_component::detach(Local_addr local_addr)
+void Rm_session_component::_detach(Local_addr local_addr, bool force_region_removal)
 {
 	/* serialize access */
 	Lock::Guard lock_guard(_lock);
@@ -486,7 +486,7 @@ void Rm_session_component::detach(Local_addr local_addr)
 		     region->base(), region->base() + region->size());
 
 	/* inform dataspace about detachment */
-	dsc->detached_from(region);
+	bool removal_succeeded = dsc->detached_from(region);
 
 	/*
 	 * Deallocate region on platforms that support unmap
@@ -499,7 +499,7 @@ void Rm_session_component::detach(Local_addr local_addr)
 	 * make sure that page faults occurring immediately after the unmap
 	 * refer to an empty region not to the dataspace, which we just removed.
 	 */
-	if (platform()->supports_unmap())
+	if (platform()->supports_unmap() && (removal_succeeded || force_region_removal))
 		_map.free(local_addr);
 
 	/*
@@ -554,7 +554,7 @@ void Rm_session_component::detach(Local_addr local_addr)
 	for (; p; p = p->next())
 		if (p->region() == region) break;
 
-	if (p) {
+	if (p && (removal_succeeded || force_region_removal)) {
 		_regions.remove(p);
 		destroy(&_ref_slab, p);
 	}
@@ -659,12 +659,15 @@ void Rm_session_component::fault(Rm_faulter *faulter, addr_t pf_addr,
 }
 
 
-void Rm_session_component::discard_faulter(Rm_faulter *faulter)
+void Rm_session_component::discard_faulter(Rm_faulter *faulter, bool do_lock)
 {
-	/* serialize access */
-	Lock::Guard lock_guard(_lock);
+	if (do_lock)
+		_lock.lock();
 
 	_faulters.remove(faulter);
+
+	if (do_lock)
+		_lock.unlock();
 }
 
 
@@ -699,7 +702,7 @@ void Rm_session_component::dissolve(Rm_client *cl)
 		_clients.remove(cl);
 	}
 
-	/*
+	/**
 	 * Rm_client is derived from Pager_object. If the Pager_object is also
 	 * derived from Thread_base then the Rm_client object must be
 	 * destructed without holding the rm_session_object lock. The native
@@ -750,33 +753,37 @@ Rm_session_component::~Rm_session_component()
 	_ds_ep->dissolve(&_ds);
 
 	/* remove all faulters with pending page faults at this rm session */
-	while (Rm_faulter *faulter = _faulters.head()) {
-		_lock.unlock();
-		faulter->dissolve_from_faulting_rm_session();
-		_lock.lock();
-	}
+	while (Rm_faulter *faulter = _faulters.head())
+		faulter->dissolve_from_faulting_rm_session(this);
 
 	/* remove all clients */
 	while (Rm_client *cl = _client_slab.raw()->first_object()) {
-		Thread_capability thread_cap = cl->thread_cap();                        
-		if (thread_cap.valid()) {                                               
+		Thread_capability thread_cap = cl->thread_cap();
+		if (thread_cap.valid()) {
 			/* lookup thread and reset pager pointer */
 			Cpu_thread_component *cpu_thread = dynamic_cast<Cpu_thread_component *>
 			                                   (_thread_ep->obj_by_cap(thread_cap));
-			if (cpu_thread)                                                     
-				cpu_thread->platform_thread()->pager(0);                        
-		}                                                                       
+			if (cpu_thread)
+				cpu_thread->platform_thread()->pager(0);
+		}
 
+		cl->dissolve_from_faulting_rm_session(this);
+		_pager_ep->dissolve(cl);
+		_clients.remove(cl);
 		_lock.unlock();
-		cl->dissolve_from_faulting_rm_session();
-		this->dissolve(cl);
+
+		destroy(&_client_slab, cl);
+
 		_lock.lock();
 	}
 
 	/* detach all regions */
 	while (Rm_region_ref *r = _ref_slab.first_object()) {
+		void * local_addr = reinterpret_cast<void *>(r->region()->base());
 		_lock.unlock();
-		detach((void *)r->region()->base());
+
+		detach(local_addr);
+
 		_lock.lock();
 	}
 

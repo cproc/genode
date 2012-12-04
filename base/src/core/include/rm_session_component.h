@@ -135,7 +135,7 @@ namespace Genode {
 			 * This function must be called when destructing region-manager
 			 * sessions to prevent dangling pointers in '_faulters' lists.
 			 */
-			void dissolve_from_faulting_rm_session();
+			void dissolve_from_faulting_rm_session(Rm_session_component *);
 
 			/**
 			 * Return true if page fault occurred in specified address range
@@ -322,7 +322,7 @@ namespace Genode {
 			/**
 			 * Dissolve faulter from region-manager session
 			 */
-			void discard_faulter(Rm_faulter *faulter);
+			void discard_faulter(Rm_faulter *faulter, bool do_lock);
 
 			List<Rm_client> *clients() { return &_clients; }
 			
@@ -337,6 +337,17 @@ namespace Genode {
 			void upgrade_ram_quota(size_t ram_quota) { _md_alloc.upgrade(ram_quota); }
 
 			/**
+			 * Detach implementation.
+			 *
+			 * The memory of the internal Rm_region structure belonging to the
+			 * local address will be only freed if and only if the Rm_region
+			 * could be removed from the dataspace it was belonging to.
+			 *
+			 * \param force_rm_region_removal - ignore described restriction
+			 */
+			void _detach(Local_addr, bool force_rm_region_removal = false);
+
+			/**
 			 * Dissolves client from region-manager session
 			 */
 			void dissolve(Rm_client *cl);
@@ -347,7 +358,7 @@ namespace Genode {
 			 **************************************/
 
 			Local_addr       attach        (Dataspace_capability, size_t, off_t, bool, Local_addr, bool);
-			void             detach        (Local_addr);
+			void             detach        (Local_addr addr) { _detach(addr); }
 			Pager_capability add_client    (Thread_capability);
 			void             fault_handler (Signal_context_capability handler);
 			State            state         ();

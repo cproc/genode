@@ -137,7 +137,7 @@ namespace Genode {
 			void assign_core_local_addr(void *addr) { _core_local_addr = (addr_t)addr; }
 
 			void attached_to(Rm_region *region);
-			void detached_from(Rm_region *region);
+			bool detached_from(Rm_region *region);
 
 			/**
 			 * Check if dataspace is owned by a specific owner
