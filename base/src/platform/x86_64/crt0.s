@@ -60,6 +60,6 @@ __EH_FRAME_BEGIN__:
 	.p2align 8
 	.global	_stack_low
 _stack_low:
-	.space	64*1024
+	.space	512*1024
 	.global	_stack_high
 _stack_high:
