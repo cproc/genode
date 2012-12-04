@@ -110,6 +110,17 @@ inline File_descriptor *libc_fd_to_fd(int libc_fd, const char *func_name)
 
 
 /**
+ * stat() cache functions
+ */
+__attribute__((weak)) void stat_to_cache(const char *path, int result, int errno_, struct stat const &buf) { }
+
+__attribute__((weak)) int stat_from_cache(const char *path, struct stat *buf)
+{
+	return -2; /* not in cache */
+}
+
+
+/**
  * Current working directory
  */
 static Absolute_path &cwd()
@@ -194,8 +205,11 @@ static void resolve_symlinks(char const *path, Absolute_path &resolved_path)
 			 */
 			if (!symlink_resolved_in_this_iteration) {
 				struct stat stat_buf;
-				int res;
-				FNAME_FUNC_WRAPPER_GENERIC(res = , stat, next_iteration_working_path.base(), &stat_buf);
+				int res = stat_from_cache(next_iteration_working_path.base(), &stat_buf);
+				if (res == -2) {
+					FNAME_FUNC_WRAPPER_GENERIC(res = , stat, next_iteration_working_path.base(), &stat_buf);
+					stat_to_cache(next_iteration_working_path.base(), res, errno, stat_buf);
+				}
 				if (res == -1) {
 					PDBGV("stat() failed for %s", next_iteration_working_path.base());
 					throw Symlink_resolve_error();
@@ -513,7 +527,12 @@ extern "C" int lstat(const char *path, struct stat *buf)
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks_except_last_element(path, resolved_path);
-		FNAME_FUNC_WRAPPER(stat, resolved_path.base(), buf);
+		int res = stat_from_cache(resolved_path.base(), buf);
+		if (res == -2) {
+			FNAME_FUNC_WRAPPER_GENERIC(res = , stat, resolved_path.base(), buf);
+			stat_to_cache(resolved_path.base(), res, errno, *buf);
+		}
+		return res;
 	} catch (Symlink_resolve_error) {
 		return -1;
 	}
@@ -796,7 +815,12 @@ extern "C" int stat(const char *path, struct stat *buf)
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
-		FNAME_FUNC_WRAPPER(stat, resolved_path.base(), buf);
+		int res = stat_from_cache(resolved_path.base(), buf);
+		if (res == -2) {
+			FNAME_FUNC_WRAPPER_GENERIC(res = , stat, resolved_path.base(), buf);
+			stat_to_cache(resolved_path.base(), res, errno, *buf);
+		}
+		return res;
 	} catch(Symlink_resolve_error) {
 		return -1;
 	}
