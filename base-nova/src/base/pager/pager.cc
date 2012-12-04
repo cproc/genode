@@ -200,6 +200,24 @@ uint8_t Pager_object::client_recall() {
 }
 
 
+void Pager_object::cleanup_call()
+{
+	/**
+	 * Revoke all portals of Pager_object from others.
+	 * The portals will be finally revoked during thread destruction.
+	 */
+	revoke(Obj_crd(exc_pt_sel(), NUM_INITIAL_PT_LOG2), false);
+
+	Utcb *utcb = (Utcb *)Thread_base::myself()->utcb();
+	if (reinterpret_cast<Utcb *>(this->utcb()) == utcb) return;
+
+	utcb->set_msg_word(0);
+	if (uint8_t res = call(_pt_cleanup))
+		PERR("%8p - cleanup call to pager (%8p) failed res=%d",
+	         utcb, this->utcb(), res);
+}
+
+
 Pager_object::Pager_object(unsigned long badge)
 : Thread_base("pager", PF_HANDLER_STACK_SIZE), _badge(badge)
 {
@@ -289,36 +307,24 @@ Pager_object::Pager_object(unsigned long badge)
 
 Pager_object::~Pager_object()
 {
-	/**
-	 * Revoke all portals of Pager_object from others.
-	 * The portals will be finally revoked during thread destruction.
-	 */
-	revoke(Obj_crd(exc_pt_sel(), NUM_INITIAL_PT_LOG2), false);
-
 	/* Revoke semaphore cap to signal valid state after recall */
-	addr_t sm_cap = _sm_state_notify;
+	addr_t sm_cap    = _sm_state_notify;
 	_sm_state_notify = Native_thread::INVALID_INDEX;
+
 	/* If pager is blocked wake him up */
 	sm_ctrl(sm_cap, SEMAPHORE_UP);
 	revoke(Obj_crd(sm_cap, 0));
 
-	/* Make sure nobody is in the handler anymore by doing an IPC to a
-	 * local cap pointing to same serving thread (if not running in the
-	 * context of the serving thread). When the call returns
-	 * we know that nobody is handled by this object anymore, because
-	 * all remotely available portals had been revoked beforehand.
-	 */
-	Utcb *utcb = (Utcb *)Thread_base::myself()->utcb();
-	if (reinterpret_cast<Utcb *>(&_context->utcb) != utcb) {
-		utcb->set_msg_word(0);
-		if (uint8_t res = call(_pt_cleanup))
-			PERR("failure - cleanup call failed res=%d", res);
-	}
+	/* take care nobody is handled anymore by this object */
+	cleanup_call();
 
 	/* Revoke portal used for the cleanup call */
 	revoke(Obj_crd(_pt_cleanup, 0));
+
+	Native_capability pager_obj = ::Object_pool<Pager_object>::Entry::cap();
 	cap_selector_allocator()->free(_pt_cleanup, 0);
 	cap_selector_allocator()->free(sm_cap, 0);
+	cap_selector_allocator()->free(pager_obj.local_name(), 0);
 }
 
 
@@ -341,17 +347,15 @@ Pager_capability Pager_entrypoint::manage(Pager_object *obj)
 
 void Pager_entrypoint::dissolve(Pager_object *obj)
 {
+	Native_capability pager_obj = obj->Object_pool<Pager_object>::Entry::cap();
+
 	/* cleanup at cap session */
-	_cap_session->free(obj->Object_pool<Pager_object>::Entry::cap());
+	_cap_session->free(pager_obj);
 
 	/* cleanup locally */
-	Native_capability pager_pt =
-		obj->Object_pool<Pager_object>::Entry::cap();
-
-	revoke(pager_pt.dst(), true);
-
-	cap_selector_allocator()->free(pager_pt.local_name(), 0);
+	revoke(pager_obj.dst(), true);
 
 	remove_locked(obj);
+	obj->cleanup_call();
 }
 
