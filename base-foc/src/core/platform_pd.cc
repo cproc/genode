@@ -23,6 +23,7 @@
 
 /* Fiasco includes */
 namespace Fiasco {
+#include <l4/sys/debugger.h>
 #include <l4/sys/utcb.h>
 #include <l4/sys/factory.h>
 }
@@ -60,6 +61,8 @@ int Platform_pd::bind_thread(Platform_thread *thread)
 
 		/* if it's no core-thread we have to map parent and pager gate cap */
 		if (!thread->core_thread()) {
+			if (!l4_msgtag_label(l4_task_cap_valid(L4_BASE_TASK_CAP, _task.local.dst())))
+				enter_kdebug("bind_thread error");
 			_task.map(_task.local.dst());
 			_parent.map(_task.local.dst());
 		}
@@ -116,6 +119,8 @@ Platform_pd::Platform_pd()
 	                                         _task.local.dst(), utcb_area);
 	if (l4_msgtag_has_error(tag))
 		PERR("pd creation failed");
+
+	PDBG("%lx (%lx) created", l4_debugger_global_id(_task.local.dst()), _task.local.dst());
 }
 
 
