@@ -33,6 +33,7 @@ set platform_cmds {
                       touch var/libcache/platform/libgcc-pure.tag
                       touch var/libcache/platform/libgcc.tag
                       touch var/libcache/platform/libsigma0.tag
+                      make core
 }
 
 source ${genode_dir}/ports/run/noux_tool_chain.inc
