@@ -1,0 +1,153 @@
+Index: kernel/fiasco/src/Makeconf
+===================================================================
+--- kernel/fiasco/src/Makeconf	(revision 40)
++++ kernel/fiasco/src/Makeconf	(working copy)
+@@ -31,8 +31,8 @@
+ AWKP		?= gawk --posix
+ CFLAGS		:=
+ CXXFLAGS	:= -std=c++0x
+-OPT_CFLAGS	:= -O2
+-OPT_CXXFLAGS	:= -O2
++OPT_CFLAGS	:= -Os
++OPT_CXXFLAGS	:= -Os
+ NOOPT_CFLAGS	:= -Os
+ NOOPT_CXXFLAGS	:= -Os
+ ARFLAGS		:= crs
+Index: kernel/fiasco/src/kern/buddy_alloc.cpp
+===================================================================
+--- kernel/fiasco/src/kern/buddy_alloc.cpp	(revision 40)
++++ kernel/fiasco/src/kern/buddy_alloc.cpp	(working copy)
+@@ -135,6 +135,7 @@
+   Head::link(_free[size_index], block, size_index);
+   _free_map.set_bit(((unsigned long)block - _base) / Min_size);
+   //if (_b && _debug) dump();
++printf("free(): avail: %lu, addr: %p, size: %lu\n", avail(), block, size);
+ }
+ 
+ 
+@@ -192,6 +193,7 @@
+ void *
+ Buddy_t_base<A,B,M>::alloc(unsigned long size)
+ {
++printf("alloc(): avail: %lu", avail());
+   unsigned size_index = 0;
+   while (((unsigned long)Min_size << size_index) < size)
+     ++size_index;
+@@ -211,9 +213,11 @@
+ 	  split(f, size_index, i);
+ 	  _free_map.clear_bit(((unsigned long)f - _base) / Min_size);
+ 	  //printf("[%u]: =%p\n", Proc::cpu_id(), f);
++	  printf(", addr: %p, size: %lu\n", f, size);
+ 	  return f;
+ 	}
+     }
++  WARN("Buddy allocator out of memory\n");
+   return 0;
+ }
+ 
+Index: kernel/fiasco/src/kern/ia32/mem_space-ia32.cpp
+===================================================================
+--- kernel/fiasco/src/kern/ia32/mem_space-ia32.cpp	(revision 40)
++++ kernel/fiasco/src/kern/ia32/mem_space-ia32.cpp	(working copy)
+@@ -195,12 +195,13 @@
+ void
+ Mem_space::dir_shutdown()
+ {
++printf("Mem_space::dir_shutdown()\n");
+   // free all page tables we have allocated for this address space
+   // except the ones in kernel space which are always shared
+   _dir->destroy(Virt_addr(0),
+                 Virt_addr(Kmem::mem_user_max), Pdir::Depth - 1,
+                 Kmem_alloc::q_allocator(_quota));
+-
++printf("Mem_space::dir_shutdown() finished\n");
+ }
+ 
+ IMPLEMENT
+Index: kernel/fiasco/src/kern/ptab_base.cpp
+===================================================================
+--- kernel/fiasco/src/kern/ptab_base.cpp	(revision 40)
++++ kernel/fiasco/src/kern/ptab_base.cpp	(working copy)
+@@ -285,6 +285,7 @@
+ 	return Iter(e, _Head::Shift);
+       else if (!e->valid())
+ 	{
++if (alloc.valid()) printf("Ptab::Walk::walk(): virt = %lx, level = %u\n", virt, level);
+ 	  Next *n;
+ 	  if (alloc.valid() && (n = alloc_next(e, alloc)))
+ 	    return n->walk(virt, level - 1, alloc);
+@@ -338,6 +339,7 @@
+ 	  Next *n;
+ 	  if (!e->valid())
+ 	    {
++if (alloc.valid()) printf("Ptab::Walk::map(): virt = %lx\n", virt);
+ 	      if (alloc.valid() && (n = alloc_next(e, alloc)))
+ 		n->map(phys, virt, size, attr, level - 1, alloc);
+ 
+@@ -373,7 +375,7 @@
+ 	    n->destroy(idx > idx_start ? 0 : start,
+ 	               idx + 1 < idx_end ? 1UL << Next::Traits::Shift : end,
+ 	               level - 1, alloc);
+-
++printf("Ptab::Walk::destroy(): start: %lx, end: %lx, level: %u\n", start, end, level);
+ 	  alloc.free(n, sizeof(Next));
+ 	}
+     }
+@@ -385,7 +387,7 @@
+       if (!level)
+ 	return reinterpret_cast<This*>(this)
+ 	  ->sync(l_a, reinterpret_cast<This const &>(_r), r_a, size, 0, alloc);
+-
++printf("Ptab::Walk::sync(): l_a: %lx, r_a: %lx, size: 0x%lx, level: %u\n", l_a, r_a, size, level);
+       unsigned count = size >> Traits::Shift;
+ 	{
+ 	  unsigned const lx = Vec::idx(l_a);
+Index: kernel/fiasco/src/kern/task.cpp
+===================================================================
+--- kernel/fiasco/src/kern/task.cpp	(revision 40)
++++ kernel/fiasco/src/kern/task.cpp	(working copy)
+@@ -315,6 +315,7 @@
+ Task *
+ Task::create(Ram_quota *quota, L4_fpage const &utcb_area)
+ {
++printf("Task::create()\n");
+   void *t = allocator()->q_alloc(quota);
+   if (!t)
+     return 0;
+@@ -332,7 +333,7 @@
+       if (e < 0)
+         return 0;
+     }
+-
++printf("Task::create() finished\n");
+   return a.release();
+ }
+ 
+Index: kernel/fiasco/src/kern/obj_space-virt.cpp
+===================================================================
+--- kernel/fiasco/src/kern/obj_space-virt.cpp	(revision 40)
++++ kernel/fiasco/src/kern/obj_space-virt.cpp	(working copy)
+@@ -68,6 +68,7 @@
+ typename Generic_obj_space<SPACE>::Entry *
+ Generic_obj_space<SPACE>::caps_alloc(Address virt)
+ {
++printf("Generic_obj_space<SPACE>::caps_alloc(): virt = %lx\n", virt);
+   Address cv = (Address)cap_virt(virt);
+   void *mem = Kmem_alloc::allocator()->q_unaligned_alloc(ram_quota(), Config::PAGE_SIZE);
+ 
+@@ -110,6 +111,7 @@
+ void
+ Generic_obj_space<SPACE>::caps_free()
+ {
++printf("Generic_obj_space<SPACE>::caps_free()\n");
+   Mem_space *ms = mem_space();
+   if (EXPECT_FALSE(!ms || !ms->dir()))
+     return;
+@@ -136,6 +138,7 @@
+                      Virt_addr(Mem_layout::Caps_end), Pdir::Depth - 1,
+                      Kmem_alloc::q_allocator(ram_quota()));
+ #endif
++printf("Generic_obj_space<SPACE>::caps_free() finished\n");
+ }
+ 
+ //

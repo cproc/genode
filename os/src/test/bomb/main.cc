@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 	for (unsigned i = 0; names[i]; i++)
 		parent_services.insert(new (env()->heap()) Parent_service(names[i]));
 
-	const long children = 2;
+	const long children = 1;
 	const long demand   = 1024 * 1024;
 
 	unsigned long avail = env()->ram_session()->avail();
@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 		sleep_forever();
 	}
 
-	for (unsigned round = 1; ; ++round) {
+	for (unsigned round = 1; round < 3; ++round) {
 		for (unsigned i = children; i; --i)
 			start_child("bomb", &cap, amount, &parent_services);
 

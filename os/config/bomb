@@ -17,10 +17,10 @@
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<start name="timer">
-		<resource name="RAM" quantum="512K"/>
+		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
 	<start name="bomb" priority="-1">
-		<resource name="RAM" quantum="2G"/>
+		<resource name="RAM" quantum="3M"/>
 	</start>
 </config>
