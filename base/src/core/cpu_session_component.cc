@@ -53,8 +53,10 @@ void Cpu_session_component::_unsynchronized_kill_thread(Cpu_thread_component *th
 
 	/* If the thread is associated with a rm_session dissolve it */
 	Rm_client *rc = dynamic_cast<Rm_client*>(thread->platform_thread()->pager());
-	if (rc)
+	if (rc) {
+		thread->platform_thread()->pager(0);
 		rc->member_rm_session()->dissolve(rc);
+	}
 
 	destroy(&_thread_alloc, thread);
 }
