@@ -689,7 +689,7 @@ void Rm_session_component::fault(Rm_faulter *faulter, addr_t pf_addr,
 	/* serialize access */
 	Lock::Guard lock_guard(_lock);
 
-	/* remeber fault state in faulting thread */
+	/* remember fault state in faulting thread */
 	faulter->fault(this, Rm_session::State(pf_type, pf_addr));
 
 	/* enqueue faulter */
@@ -739,8 +739,14 @@ void Rm_session_component::dissolve(Rm_client *cl)
 {
 	{
 		Lock::Guard lock_guard(_lock);
-		_pager_ep->dissolve(cl);
-		_clients.remove(cl);
+		if (!_clients.remove(cl)) return;
+	}
+
+	_pager_ep->dissolve(cl);
+
+	{
+		Lock::Guard lock_guard(_lock);
+		cl->dissolve_from_faulting_rm_session(this);
 	}
 
 	/**
@@ -789,8 +795,34 @@ Rm_session_component::Rm_session_component(Rpc_entrypoint   *ds_ep,
 
 Rm_session_component::~Rm_session_component()
 {
-	_lock.lock();
+	/* dissolve all clients from pager entrypoint */
+	Rm_client *cl;
+	do {
+		{
+			Lock::Guard lock_guard(_lock);
+			cl = _clients.first();
+			if (!cl) break;
 
+			_clients.remove(cl);
+		}
+		_pager_ep->dissolve(cl);
+	} while (cl);
+
+	/* detach all regions */
+	Rm_region_ref *ref;
+	do {
+		void * local_addr;
+		{
+			Lock::Guard lock_guard(_lock);
+			ref = _ref_slab.first_object();
+			if (!ref) break;
+			local_addr = reinterpret_cast<void *>(ref->region()->base());
+		}
+		detach(local_addr);
+	} while (ref);
+
+	/* serialize access */
+	_lock.lock();
 	/* revoke dataspace representation */
 	_ds_ep->dissolve(&_ds);
 
@@ -800,41 +832,23 @@ Rm_session_component::~Rm_session_component()
 
 	/* remove all clients */
 	while (Rm_client *cl = _client_slab.raw()->first_object()) {
+		cl->dissolve_from_faulting_rm_session(this);
+
 		Thread_capability thread_cap = cl->thread_cap();
-		if (thread_cap.valid()) {
+		if (thread_cap.valid())
 			/* invalidate thread cap in rm_client object */
 			cl->thread_cap(Thread_capability());
-			/* drop lock, cpu and rm session would take 2 _locks in different order */
-			_lock.unlock();
-			{
-				/* lookup thread and reset pager pointer */
-				Object_guard<Cpu_thread_component>
-					cpu_thread(_thread_ep->lookup_and_lock(thread_cap));
 
-				if (cpu_thread)
-					cpu_thread->platform_thread()->pager(0);
-			}
-			_lock.lock();
-			/* cl became invalid in the meantime by cpu session thread, redo */
-			continue;
+		_lock.unlock();
+
+		{
+			/* lookup thread and reset pager pointer */
+			Object_guard<Cpu_thread_component> cpu_thread(_thread_ep->lookup_and_lock(thread_cap));
+			if (cpu_thread)
+				cpu_thread->platform_thread()->pager(0);
 		}
 
-		cl->dissolve_from_faulting_rm_session(this);
-		_pager_ep->dissolve(cl);
-		_clients.remove(cl);
-		_lock.unlock();
-
 		destroy(&_client_slab, cl);
-
-		_lock.lock();
-	}
-
-	/* detach all regions */
-	while (Rm_region_ref *r = _ref_slab.first_object()) {
-		void * local_addr = reinterpret_cast<void *>(r->region()->base());
-		_lock.unlock();
-
-		detach(local_addr);
 
 		_lock.lock();
 	}
