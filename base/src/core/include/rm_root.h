@@ -40,6 +40,17 @@ namespace Genode {
 
 		protected:
 
+			Session_capability session(Root::Session_args const &args)
+			{
+				Session_capability cap = Root_component<Rm_session_component>::session(args);
+				Object_guard<Rm_session_component> rm_session(ep()->lookup_and_lock(cap));
+				if (!rm_session)
+					return cap;
+
+				rm_session->dataspace_component()->sub_rm_session(rm_session->cap());
+				return cap;
+			}
+
 			Rm_session_component *_create_session(const char *args)
 			{
 				addr_t start     = Arg_string::find_arg(args, "start").ulong_value(~0UL);
@@ -49,10 +60,11 @@ namespace Genode {
 				return new (md_alloc())
 				       Rm_session_component(_ds_ep,
 				                            _thread_ep,
+				                            this->ep(),
 				                            _md_alloc, ram_quota,
-				                           &_pager_ep,
-				                             start == ~0UL ? _vm_start : start,
-				                             size  ==  0   ? _vm_size  : size);
+				                            &_pager_ep,
+				                            start == ~0UL ? _vm_start : start,
+				                            size  ==  0   ? _vm_size  : size);
 			}
 
 			void _upgrade_session(Rm_session_component *rm, const char *args)
