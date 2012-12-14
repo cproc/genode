@@ -83,16 +83,6 @@ namespace Genode {
 			                                                  session */
 
 			/**
-			 * Lookup thread in CPU session by its capability
-			 *
-			 * \retval NULL  thread capability is invalid or
-			 *               does not belong to the CPU session
-			 */
-			Cpu_thread_component *_lookup_thread(Thread_capability thread) {
-				return dynamic_cast<Cpu_thread_component *>
-				       (_thread_ep->obj_by_cap(thread)); }
-
-			/**
 			 * Raw thread-killing functionality
 			 *
 			 * This function is called from the 'kill_thread' function and

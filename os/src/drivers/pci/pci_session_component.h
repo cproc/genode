@@ -156,8 +156,7 @@ namespace Pci {
 				Config_access config_access;
 
 				/* lookup device component for previous device */
-				Device_component *prev = dynamic_cast<Device_component *>
-				                         (_ep->obj_by_cap(prev_device));
+				Genode::Object_guard<Device_component> prev(_ep->lookup_and_lock(prev_device));
 
 				/*
 				 * Start bus scanning after the previous device's location.
@@ -200,7 +199,7 @@ namespace Pci {
 			{
 				/* lookup device component for previous device */
 				Device_component *device = dynamic_cast<Device_component *>
-				                           (_ep->obj_by_cap(device_cap));
+				                           (_ep->lookup_and_lock(device_cap));
 
 				if (!device)
 					return;

@@ -22,7 +22,7 @@ using namespace Genode;
 Native_capability
 Cpu_session_component::native_cap(Thread_capability thread_cap)
 {
-	Cpu_thread_component *thread = _lookup_thread(thread_cap);
+	Object_guard<Cpu_thread_component> thread(_thread_ep->lookup_and_lock(thread_cap));
 	if (!thread || !thread->platform_thread())
 		return Native_capability::invalid_cap();
 
@@ -30,9 +30,9 @@ Cpu_session_component::native_cap(Thread_capability thread_cap)
 }
 
 Native_capability
-Cpu_session_component::pause_sync(Thread_capability target_thread_cap)
+Cpu_session_component::pause_sync(Thread_capability thread_cap)
 {
-	Cpu_thread_component *thread = _lookup_thread(target_thread_cap);
+	Object_guard<Cpu_thread_component> thread(_thread_ep->lookup_and_lock(thread_cap));
 	if (!thread || !thread->platform_thread())
 		return Native_capability::invalid_cap();
 
@@ -44,7 +44,7 @@ Cpu_session_component::single_step(Thread_capability thread_cap, bool enable)
 {
 	using namespace Genode;
 
-	Cpu_thread_component *thread = _lookup_thread(thread_cap);
+	Object_guard<Cpu_thread_component> thread(_thread_ep->lookup_and_lock(thread_cap));
 	if (!thread || !thread->platform_thread())
 		return;
 

@@ -59,7 +59,7 @@ void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 	Nova::revoke(Nova::Obj_crd(obj->cap().local_name(), 0), false);
 
 	/* make sure nobody is able to find this object */
-	remove(obj);
+	remove_locked(obj);
 
 	/*
 	 * The activation may execute a blocking operation
@@ -73,7 +73,7 @@ void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 	_leave_server_object(obj);
 
 	/* wait until nobody is inside dispatch */
-	obj->lock();
+	obj->acquire();
 
 	/* De-announce object from cap_session */
 	_cap_session->free(obj->cap());
@@ -110,32 +110,27 @@ void Rpc_entrypoint::_activation_entry()
 	srv.ret(ERR_INVALID_OBJECT);
 
 	/* atomically lookup and lock referenced object */
-	{
-		Lock::Guard lock_guard(ep->_curr_obj_lock);
+	ep->_curr_obj = ep->lookup_and_lock(id_pt);
+	if (!ep->_curr_obj) {
+		/* Badge is used to suppress error message solely.
+		 * It's non zero during cleanup call of an
+		 * rpc_object_base object, see _leave_server_object.
+		 */
+		if (!srv.badge())
+			PERR("could not look up server object, "
+			     " return from call id_pt=%lx",
+			     id_pt);
 
-		ep->_curr_obj = ep->obj_by_id(id_pt);
-		if (!ep->_curr_obj || !id_pt) {
-			/* Badge is used to suppress error message solely.
-			 * It's non zero during cleanup call of an
-			 * rpc_object_base object, see _leave_server_object.
-			 */
-			if (!srv.badge())
-				PERR("could not look up server object, "
-				     " return from call id_pt=%lx",
-				     id_pt);
-			ep->_curr_obj_lock.unlock();
-			srv << IPC_REPLY;
-		}
-
-		ep->_curr_obj->lock();
+		srv << IPC_REPLY;
 	}
 
 	/* dispatch request */
 	try { srv.ret(ep->_curr_obj->dispatch(opcode, srv, srv)); }
 	catch (Blocking_canceled) { }
 
-	ep->_curr_obj->unlock();
+	Rpc_object_base * tmp = ep->_curr_obj;
 	ep->_curr_obj = 0;
+	tmp->release();
 
 	ep->_rcv_buf.rcv_prepare_pt_sel_window((Nova::Utcb *)ep->utcb());
 	srv << IPC_REPLY;

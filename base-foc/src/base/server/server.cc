@@ -71,22 +71,13 @@ void Rpc_entrypoint::entry()
 		}
 
 		/* atomically lookup and lock referenced object */
-		{
-			Lock::Guard lock_guard(_curr_obj_lock);
-
-			_curr_obj = obj_by_id(srv.badge());
-			if (!_curr_obj)
-				continue;
-
-			_curr_obj->lock();
-		}
+		Object_guard<Rpc_object_base> curr_obj(lookup_and_lock(srv.badge()));
+		if (!curr_obj)
+			continue;
 
 		/* dispatch request */
-		try { srv.ret(_curr_obj->dispatch(opcode, srv, srv)); }
+		try { srv.ret(curr_obj->dispatch(opcode, srv, srv)); }
 		catch (Blocking_canceled) { }
-
-		_curr_obj->unlock();
-		_curr_obj = 0;
 	}
 
 	/* answer exit call, thereby wake up '~Rpc_entrypoint' */

@@ -120,9 +120,7 @@ namespace Noux {
 
 			void close(Genode::Session_capability session)
 			{
-				Rm_session_component *rm_session =
-					dynamic_cast<Rm_session_component *>(_ep.obj_by_cap(session));
-
+				Object_guard<Rm_session_component> rm_session(_ep.lookup_and_lock(session));
 				if (!rm_session) {
 					PWRN("Unexpected call of close with non-RM-session argument");
 					return;
