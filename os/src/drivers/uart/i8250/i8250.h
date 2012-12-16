@@ -111,6 +111,7 @@ class I8250 : public Uart::Driver, public Genode::Irq_handler
 
 		void handle_irq(int irq_number)
 		{
+			PDBG("IRQ %d", irq_number);
 			/* inform client about the availability of data */
 			_char_avail_callback();
 		}
@@ -121,11 +122,13 @@ class I8250 : public Uart::Driver, public Genode::Irq_handler
 
 		void put_char(char c)
 		{
+			//PDBG("sending %c", c);
 			/* wait until serial port is ready */
 			while (!(_inb<LSR>() & 0x60));
 
 			/* output character */
 			_outb<TRB>(c);
+			PDBG("sent %c", c);
 		}
 
 		bool char_avail()
@@ -135,7 +138,10 @@ class I8250 : public Uart::Driver, public Genode::Irq_handler
 
 		char get_char()
 		{
-			return _inb<TRB>();
+			char c = _inb<TRB>();
+			PDBG("received %c", c);
+			return c;
+			//return _inb<TRB>();
 		}
 };
 

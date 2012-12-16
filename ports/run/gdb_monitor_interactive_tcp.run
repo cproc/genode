@@ -11,7 +11,7 @@
 
 build {
 	core init
-	drivers/timer drivers/uart
+	drivers/timer drivers/pci drivers/nic server/tcp_terminal
 	app/gdb_monitor
 	test/gdb_monitor
 }
@@ -44,20 +44,32 @@ set config {
 		<resource name="RAM" quantum="512K"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="uart_drv">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Terminal"/> </provides>
-		<config>
-			<policy label="gdb_monitor" uart="1"/>
-		</config>
-	</start>
+        <start name="nic_drv">
+                <resource name="RAM" quantum="2M"/>
+                <provides> <service name="Nic"/> </provides>
+        </start>
+        <start name="tcp_terminal">
+                <resource name="RAM" quantum="3M"/>
+                <provides> <service name="Terminal"/> </provides>
+                <config>
+                        <policy label="gdb_monitor" port="5555"/>
+                </config>
+        </start>
 	<start name="gdb_monitor">
 		<resource name="RAM" quantum="4M"/>
 		<config>
 			<target name="test-gdb_monitor"/>
 			<preserve name="RAM" quantum="3M"/>
 		</config>
-	</start>
+	</start> }
+
+append_if [have_spec pci] config {
+        <start name="pci_drv">
+                <resource name="RAM" quantum="1M"/>
+                <provides> <service name="PCI"/> </provides>
+        </start> }
+
+append config {
 </config>
 }
 
@@ -70,10 +82,13 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_log.lib.so libc_lock_pipe.lib.so libc_terminal.lib.so
-	uart_drv
+	ld.lib.so libc.lib.so libc_log.lib.so libc_lock_pipe.lib.so libc_terminal.lib.so lwip.lib.so
+	nic_drv tcp_terminal
 	gdb_monitor test-gdb_monitor
 }
+
+# platform-specific modules
+lappend_if [have_spec pci] boot_modules pci_drv
 
 build_boot_image $boot_modules
 
@@ -86,14 +101,20 @@ set local_port 5555
 # qemu config
 append qemu_args " -m 128 -nographic "
 
+append_if [have_spec x86]     qemu_args " -net nic,model=pcnet "
+append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
+
+append qemu_args " -net user -redir tcp:5555::5555 "
+
 # connect comport 0 to stdio
-append qemu_args " -serial mon:stdio "
+#append qemu_args " -serial mon:stdio "
 
 # connect comport 1 with TCP port $local_port
-append qemu_args " -serial chardev:uart "
-append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait "
+#append qemu_args " -serial chardev:uart "
+#append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait "
 
-run_genode_until {.*Remote debugging using /dev/terminal.*} 30
+#run_genode_until {.*add_lwp(1, 1, 0).*} 30
+run_genode_until {.*listening on port 5555.*} 30
 
 puts "GDB monitor is up, starting GDB in a new terminal"
 

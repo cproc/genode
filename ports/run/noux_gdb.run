@@ -184,6 +184,17 @@ append config {
 							c
 							delete 2
 							set interactive-mode auto
+b puts
+c
+bt
+b Test_thread::entry()
+c
+info threads
+step
+c
+thread 1
+bt
+q
 						</inline>
 					</dir>
 				</content>

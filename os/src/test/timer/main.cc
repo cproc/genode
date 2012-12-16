@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 		tc->start();
 	}
 
-	enum { SECONDS_TO_WAIT = 10 };
+	enum { SECONDS_TO_WAIT = 100 };
 	for (unsigned i = 0; i < SECONDS_TO_WAIT; i++) {
 		main_timer.msleep(1000);
 		printf("wait %d/%d\n", i + 1, SECONDS_TO_WAIT);
