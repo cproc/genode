@@ -29,25 +29,17 @@ namespace Genode {
 	 * \return  1 if the value was successfully changed to new_val,
 	 *          0 if cmp_val and the value at dest differ.
 	 */
-	inline int cmpxchg(volatile int *dest, int cmp_val, int new_val)
-	{
-		int tmp;
+	template <typename VAR, typename VALUE>
+	inline bool cmpxchg(VAR *dest, VALUE cmp_val, VALUE new_val) {
+		return cmp_val == __sync_val_compare_and_swap(dest, cmp_val, new_val); }
 
-		__asm__ __volatile__
-		(
-		 "lock cmpxchgl %1, %3 \n\t"
-		 :
-		 "=a" (tmp)      /* 0 EAX, return val */
-		 :
-		 "r"  (new_val), /* 1 reg, new value */
-		 "0"  (cmp_val), /* 2 EAX, compare value */
-		 "m"  (*dest)    /* 3 mem, destination operand */
-		 :
-		 "memory", "cc"
-		);
+	template <typename VAR, typename VALUE>
+	VAR atomic_add(VAR &target, VALUE value) {
+		return __sync_fetch_and_add(&target, value); }
 
-		return tmp == cmp_val;
-	}
+	template <typename VAR, typename VALUE>
+	VAR atomic_sub(VAR &target, VALUE value) {
+		return __sync_fetch_and_sub(&target, value); }
 }
 
 #endif /* _INCLUDE__X86__CPU__ATOMIC_H_ */

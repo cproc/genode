@@ -14,6 +14,7 @@
 /* Genode includes */
 #include <base/printf.h>
 #include <util/arg_string.h>
+#include <cpu/atomic.h>
 
 /* core includes */
 #include <ram_session_component.h>
@@ -39,11 +40,11 @@ void Ram_session_component::_free_ds(Dataspace_component *ds)
 
 	size_t ds_size = ds->size();
 
-	/* destroy native shared memory representation */
-	_revoke_ram_ds(ds);
-
 	/* tell entry point to forget the dataspace */
 	_ds_ep->dissolve(ds);
+
+	/* destroy native shared memory representation */
+	_revoke_ram_ds(ds);
 
 	/* XXX: remove dataspace from all RM sessions */
 
@@ -54,7 +55,7 @@ void Ram_session_component::_free_ds(Dataspace_component *ds)
 	destroy(&_ds_slab, ds);
 
 	/* adjust payload */
-	_payload -= ds_size;
+	atomic_sub(_payload, ds_size);
 }
 
 
@@ -182,7 +183,7 @@ Ram_dataspace_capability Ram_session_component::alloc(size_t ds_size, bool cache
 	_clear_ds(ds);
 
 	/* keep track of the used quota for actual payload */
-	_payload += ds_size;
+	atomic_add(_payload, ds_size);
 
 	if (verbose)
 		PDBG("ds_size=%zd, used_quota=%zd quota_limit=%zd",
