@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
 
 enum { MAX_COUNT = 100 };
 
@@ -20,23 +21,26 @@ int main(int, char **)
 		return -1;
 	}
 
-	printf("pid %d: fork returned %d\n", getpid(), fork_ret);
+	//printf("pid %d: fork returned %d\n", getpid(), fork_ret);
 
 	if (fork_ret == 0) {
+#if 0
 		printf("pid %d: child says hello\n", getpid());
 		for (int j = 0; j < MAX_COUNT; j++) {
 			printf("pid %d: child  i = %d\n", getpid(), i);
 		}
+#endif
 		return 0;
 	}
-
+#if 0
 	printf("pid %d: parent received child pid %d, starts counting...\n",
 	       getpid(), fork_ret);
 
 	for (; i < MAX_COUNT; ) {
 		printf("pid %d: parent i = %d\n", getpid(), i++);
 	}
-
+#endif
+	wait(0);
 	for (;;);
 	return 0;
 }
