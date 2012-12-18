@@ -23,7 +23,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
+namespace Fiasco {
+#include <l4/sys/ktrace.h>
+}
 
 /***********************************
   Constant
@@ -129,10 +131,7 @@ int openServer(char * ip, int port )
 
 	PLOG("Start the server loop ... %d", server);
 
-	if (pthread_create( &thread_id,
-			    0,
-			    server_connector,
-			    (void*)server ) !=0 )
+	if (pthread_create( &thread_id, 0, server_connector, (void*)server ) !=0 )
 	{
 		Genode::printf("error: pthread_create() failed\n");
 		return -1;
@@ -243,13 +242,16 @@ void *listener(void *argv )
 	{
 		FD_ZERO(&socks);
 		FD_SET( conn, &socks);
+
+		//Fiasco::fiasco_tbuf_log("select >>");
 #if 0
-		   int readsocket = select( 10, &socks, 0,0, NULL );
+		   int readsocket = select( conn + 1, &socks, 0,0, NULL );
 		   if( readsocket <= 0 )
 		   {
 		   continue;
 		   }
 #endif
+		//Fiasco::fiasco_tbuf_log("select <<");
 
 		/* receive packet type & size */
 		recv_len = _recv( conn, sizeof(Packet_header), (char*)&packet_header );
@@ -422,21 +424,24 @@ void doServer( char * ip )
 
 void *send_request_packet(void *argv )
 {
+	Fiasco::fiasco_tbuf_log("send rq >>");
 	int                conn =(int)argv;
 	char               send_buffer[ BUFFER_SIZE ];
 	int                i = 0;
 
-	for( i = 0 ; i < 10000 ; i ++ )
+	for( i = 0 ; i < 100000 ; i ++ )
 	{
 		_send( conn,
 		      PACKET_TYPE_REQUEST,
 		      ITEM_PACKET_SIZE,
 		      send_buffer );
 
-		if ((i % 1000) == 0)
-			PINF("i: %d", i);
+		//if ((i % 10000) == 0)
+		//	PINF("i: %d", i);
 	}
 	PINF("DONE");
+
+	Fiasco::fiasco_tbuf_log("send rq <<");
 
 	closeClient(conn);
 
