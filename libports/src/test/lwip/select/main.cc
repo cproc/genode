@@ -1,31 +1,53 @@
+#ifndef NOT_GENODE
 /* Genode includes */
-#include <pthread.h>
-
 #include <base/printf.h>
 #include <base/thread.h>
 #include <util/string.h>
 #include <base/sleep.h>
-#include <assert.h>
 #include <base/env.h>
 #include <timer_session/connection.h>
 #include <os/config.h>
 
 #include <lwip/genode.h>
 
+#else
+#define PDBG(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
+#define PINF(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define PLOG(fmt, ...) fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define PERR(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
+#endif /* NOT_GENODE */
 
 /* libc includes */
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
-#include <errno.h>
-#include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <pthread.h>
+#include <errno.h>
 
 namespace Fiasco {
 #include <l4/sys/ktrace.h>
 }
+
+#ifdef NOT_GENODE
+namespace Timer {
+	class Connection
+	{
+		public:
+			void msleep(int ms) { sleep(ms/1000); }
+	};
+}
+
+namespace Genode {
+	static void sleep_forever() { }
+}
+#endif
 
 /***********************************
   Constant
@@ -36,6 +58,8 @@ const int SERVER_PORTNUM       = 10000;
 const int BUFFER_SIZE          = ( 1024 + 16 );
 const int ITEM_PACKET_SIZE     = 16;
 const int RESPONSE_PACKET_SIZE = 16;
+
+const int Numpackets           = 1000000;
 
 typedef enum Node_type
 {
@@ -133,7 +157,7 @@ int openServer(char * ip, int port )
 
 	if (pthread_create( &thread_id, 0, server_connector, (void*)server ) !=0 )
 	{
-		Genode::printf("error: pthread_create() failed\n");
+		printf("error: pthread_create() failed\n");
 		return -1;
 	}
 
@@ -178,7 +202,7 @@ int openClient(char * ip, int port)
 			    listener,
 			    (void*)conn ) !=0 )
 	{
-		Genode::printf("error: pthread_create() failed\n");
+		printf("error: pthread_create() failed\n");
 		return 0;
 	}
 
@@ -219,7 +243,7 @@ void *server_connector(void *argv )
 				    listener,
 				    (void*)client ) !=0 )
 		{
-			Genode::printf("error: pthread_create() failed\n");
+			printf("error: pthread_create() failed\n");
 			return 0;
 		}
 	}
@@ -240,18 +264,19 @@ void *listener(void *argv )
 
 	while( 1 )
 	{
+		Fiasco::fiasco_tbuf_log("recv >>");
 		FD_ZERO(&socks);
 		FD_SET( conn, &socks);
 
-		//Fiasco::fiasco_tbuf_log("select >>");
-#if 0
+#if 1
+		Fiasco::fiasco_tbuf_log("select >>");
 		   int readsocket = select( conn + 1, &socks, 0,0, NULL );
 		   if( readsocket <= 0 )
 		   {
 		   continue;
 		   }
+		Fiasco::fiasco_tbuf_log("select <<");
 #endif
-		//Fiasco::fiasco_tbuf_log("select <<");
 
 		/* receive packet type & size */
 		recv_len = _recv( conn, sizeof(Packet_header), (char*)&packet_header );
@@ -272,6 +297,7 @@ void *listener(void *argv )
 			PINF("RECV:%d [%d]%d,%d\n",conn, recv_len, packet_header.type, packet_header.size );
 			assert(0);
 		}
+		Fiasco::fiasco_tbuf_log("recv <<");
 	}
 
 	PINF( "Disconnected : %d", conn );
@@ -329,13 +355,13 @@ void print_packet_statistics()
 
 	for( i = 0 ; i < PACKET_TYPE_COUNT ; i ++ )
 	{
-		Genode::printf( "%20s : recv( %d / %d ) send( %d )\n",
+		printf( "%20s : recv( %d / %d ) send( %d )\n",
 				packet_type_name[ i ],
 				Packet_statistics_recv[ i ],
 				Packet_statistics_proc[ i ],
 				Packet_statistics_send[ i ] );
 	}
-	Genode::printf( "\n\n" );
+	printf( "\n\n" );
 }
 
 /*
@@ -348,14 +374,14 @@ void print_message(int conn, Packet_header packet_header )
 
 	recv_len = _recv(conn, packet_header.size, recv_buffer );
 
-	Genode::printf("[%d]", recv_len );
+	printf("[%d]", recv_len );
 	for( int i = 0 ; i < recv_len ; i ++)
 	{
-		Genode::printf("%x", (recv_buffer[ i ] >> 4 ) & 15 );
-		Genode::printf("%x ", (recv_buffer[ i ] >> 0 ) & 15 );
+		printf("%x", (recv_buffer[ i ] >> 4 ) & 15 );
+		printf("%x ", (recv_buffer[ i ] >> 0 ) & 15 );
 	}
-	Genode::printf("\n" );
-	Genode::printf("[%d]%s\n", recv_len, recv_buffer );
+	printf("\n" );
+	printf("[%d]%s\n", recv_len, recv_buffer );
 }
 
 void request(int conn, Packet_header packet_header )
@@ -412,10 +438,10 @@ void doServer( char * ip )
 	{
 		timer.msleep( MONITOR_INTERVAL * 1000);
 
-		Genode::printf("Server      :\n" );
+		printf("Server      :\n" );
 		print_packet_statistics();
 
-		Genode::printf("Performance : %d\n\n",
+		printf("Performance : %d\n\n",
 			       ( Packet_statistics_proc[ PACKET_TYPE_REQUEST ]
 				 - prev_packet_count ) / MONITOR_INTERVAL );
 		prev_packet_count = Packet_statistics_proc[ PACKET_TYPE_REQUEST ];
@@ -424,12 +450,12 @@ void doServer( char * ip )
 
 void *send_request_packet(void *argv )
 {
-	Fiasco::fiasco_tbuf_log("send rq >>");
+	//Fiasco::fiasco_tbuf_log("send rq >>");
 	int                conn =(int)argv;
 	char               send_buffer[ BUFFER_SIZE ];
 	int                i = 0;
 
-	for( i = 0 ; i < 100000 ; i ++ )
+	for( i = 0 ; i < Numpackets ; i ++ )
 	{
 		_send( conn,
 		      PACKET_TYPE_REQUEST,
@@ -441,7 +467,7 @@ void *send_request_packet(void *argv )
 	}
 	PINF("DONE");
 
-	Fiasco::fiasco_tbuf_log("send rq <<");
+	//Fiasco::fiasco_tbuf_log("send rq <<");
 
 	closeClient(conn);
 
@@ -469,7 +495,7 @@ void doClient( char * ip )
 
 	if (pthread_create( &thread_id, 0, send_request_packet, (void*)conn ) !=0 )
 	{
-		Genode::printf("error: pthread_create() failed\n");
+		printf("error: pthread_create() failed\n");
 		return;
 	}
 
@@ -477,10 +503,10 @@ void doClient( char * ip )
 	{
 		timer.msleep( MONITOR_INTERVAL * 1000);
 
-		Genode::printf("Client     :\n" );
+		printf("Client     :\n" );
 		print_packet_statistics();
 
-		Genode::printf("Performance : %d\n\n",
+		printf("Performance : %d\n\n",
 			       ( Packet_statistics_send[ PACKET_TYPE_REQUEST ]
 				 - prev_packet_count ) / MONITOR_INTERVAL );
 		prev_packet_count = Packet_statistics_send[ PACKET_TYPE_REQUEST  ];
@@ -493,6 +519,7 @@ int main(int argc, char *argv[])
 	char              my_ip[16];
 	char              server_ip[16];
 
+#ifndef NOT_GENODE
 	/* Initialize network stack and do DHCP */
 	if (lwip_nic_init(0, 0, 0)) {
 		PERR("We got no IP address!");
@@ -511,7 +538,16 @@ int main(int argc, char *argv[])
 	catch(...)
 	{
 	}
+#else
+	if (argc < 3) {
+		printf("usage: %s <ip> <type>\n", argv[0]);
+		return 1;
+	}
 
+	node_type = (Node_type) atoi(argv[2]);
+	strncpy(server_ip, argv[1], sizeof (server_ip) - 1);
+
+#endif
 	switch( node_type )
 	{
 		case NODE_TYPE_SERVER:
@@ -519,6 +555,9 @@ int main(int argc, char *argv[])
 			break;
 		case NODE_TYPE_CLIENT:
 			doClient( (char*)server_ip );
+			break;
+		default:
+			PERR("wrong node_type: %d", node_type);
 			break;
 	}
 

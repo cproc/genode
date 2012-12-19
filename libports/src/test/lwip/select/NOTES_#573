@@ -1,0 +1,96 @@
+100000 rqs
+
+with select:
+============
+client: (808/1329)
+server: (1089/1794)
+
+client:
+-------
+2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                              + 92.038 s 
+0 ke:  01ed "send rq <<" @ 01003212                                                                     + 69.755 s 
+0 ke:  01ed "send rq >>" @ 01003212                                                                        0       
+
+w/o select:
+===========
+client: (1315/2258)
+server: (1195/3201)
+
+client:
+-------
+2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                                10.775 s 
+0 ke:  01ed "send rq <<" @ 01003212                                                                       48.758 s 
+0 ke:  01ed "send rq >>" @ 01003212                                                                        0       
+
+server tbuf:
+0 ke:  01d6 "select <<" @ 01000390                                                                   1674 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                              2782 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              3332 c
+0 ke:  01d6 "select >>" @ 01000354                                                                  21772 c
+0 ke:  01d6 "select <<" @ 01000390                                                                   1478 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                              2470 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              3282 c
+0 ke:  01d6 "select >>" @ 01000354                                                                  19182 c
+0 ke:  01d6 "select <<" @ 01000390                                                                   1538 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                              2620 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              3120 c
+0 ke:  01d6 "select >>" @ 01000354                                                                  18732 c
+0 ke:  01d6 "select <<" @ 01000390                                                                   1572 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                              2600 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              3004 c
+0 ke:  01d6 "select >>" @ 01000354                                                                  17482 c
+0 ke:  01d6 "select <<" @ 01000390                                                                   1462 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                              2534 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              2920 c
+0 ke:  01d6 "select >>" @ 01000354                                                                  18138 c
+
+7 ke:  01d6 "=== enter jdb ===" @ f003c350                                                     +2439094041 
+0 ke:  01d6 "select <<" @ 01000390                                                                 +63250 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                            +61576 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                            +58794 c
+0 ke:  01d6 "select >>" @ 01000354                                                                 +55462 c
+0 ke:  01d6 "select <<" @ 01000390                                                                 +33690 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                            +32212 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                            +29742 c
+0 ke:  01d6 "select >>" @ 01000354                                                                 +26460 c
+0 ke:  01d6 "select <<" @ 01000390                                                                  +7278 c
+0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                             +5740 c
+0 ke:  01d6 "lwip_select >>" @ 01009cec                                                             +3120 c
+0 ke:  01d6 "select >>" @ 01000354                                                                      0 c
+0 ke:  01d6 "select <<" @ 01000390                                                                --18732 c
+
+
+server:
+-------
+
+w select:
+
+0 ke:  01d6 "recv <<" @ 01000458                                                            +29180 c
+0 ke:  01d6 "select <<" @ 010003c8                                                           +6186 c
+0 ke:  01d6 "select >>" @ 0100038c                                                            +566 c
+0 ke:  01d6 "recv >>" @ 01000340                                                                 0 c
+
+w/o select:
+0 ke:  01d6 "recv <<" @ 0100029c                                                            +18766 c
+0 ke:  01d6 "recv >>" @ 010002b8                                                                 0 c
+
+0 ke:  01d6 "recv <<" @ 01000458                                                            +28692 c
+0 ke:  01d6 "select <<" @ 010003c8                                                          +10388 c
+0 ke:  01d6 "libc select <<" @ 0109ed24                                                      +9794 c
+0 ke:  01d6 "libc_lwip select <<" @ 01009e74                                                 +8932 c
+0 ke:  01d6 "lwip_select <<" @ 010db8f0                                                      +7650 c
+0 ke:  01d6 "lwip_select >>" @ 010db5b0                                                      +4882 c
+0 ke:  01d6 "libc_lwip select >>" @ 01009c00                                                 +3436 c
+0 ke:  01d6 "libc select >>" @ 0109e84c                                                      +1116 c
+0 ke:  01d6 "select >>" @ 0100038c                                                            +568 c
+0 ke:  01d6 "recv >>" @ 01000340                                                                 0 c
+
+complete:         28692 c
+recv w/o select:  18872 c
+select:            9820 c	1142 c
+libc select:       8678 c	3182 c
+libc_lwip select:  5496 c	2728 c
+lwip_select:       2768 c	0 c
+
+select overhead:   7052 c
+
