@@ -575,7 +575,7 @@ Pager_capability Rm_session_component::add_client(Thread_capability thread)
 	unsigned long badge = cpu_thread->platform_thread()->pager_object_badge();
 
 	Rm_client *cl;
-	try { cl = new(&_client_slab) Rm_client(this, badge); }
+	try { cl = new(&_client_slab) Rm_client(this, badge, cpu_thread->platform_thread()); }
 	catch (Allocator::Out_of_memory) { throw Out_of_metadata(); }
 
 	_clients.insert(cl);

@@ -185,6 +185,10 @@ namespace Genode {
 	class Rm_client : public Pager_object, public Rm_member, public Rm_faulter,
 	                  public List<Rm_client>::Element
 	{
+		private:
+
+			Platform_thread *_platform_thread;
+
 		public:
 
 			/**
@@ -194,8 +198,8 @@ namespace Genode {
 			 * \param badge    pager-object badge used of identifying the client
 			 *                 when a page-fault occurs
 			 */
-			Rm_client(Rm_session_component *session, unsigned long badge) :
-				Pager_object(badge), Rm_member(session), Rm_faulter(this) { }
+			Rm_client(Rm_session_component *session, unsigned long badge, Platform_thread *platform_thread) :
+				Pager_object(badge), Rm_member(session), Rm_faulter(this), _platform_thread(platform_thread) { }
 
 			int pager(Ipc_pager &pager);
 

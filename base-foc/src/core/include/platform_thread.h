@@ -151,6 +151,7 @@ namespace Genode {
 			unsigned long pager_object_badge() {
 				return (unsigned long) _thread.local.dst(); }
 
+			Platform_pd  *platform_pd() { return _platform_pd; }
 
 			/*******************************
 			 ** Fiasco-specific Accessors **
