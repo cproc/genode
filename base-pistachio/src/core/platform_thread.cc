@@ -34,7 +34,7 @@ using namespace Genode;
 using namespace Pistachio;
 
 static const bool verbose = false;
-static const bool verbose2 = true;
+static const bool verbose2 = false;
 
 #define PT_DBG(args...) if (verbose) { PDBG(args); } else { }
 
