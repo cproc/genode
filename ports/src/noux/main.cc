@@ -32,6 +32,7 @@
 
 static bool trace_syscalls = false;
 
+static bool verbose_wait4 = false;
 
 namespace Noux {
 
@@ -522,7 +523,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_sysio->wait4_out.status = exited->exit_status();
 					Family_member::remove(exited);
 
-					PINF("submit exit signal for PID %d", exited->pid());
+					if (verbose_wait4)
+						PINF("submit exit signal for PID %d", exited->pid());
 					static_cast<Child *>(exited)->submit_exit_signal();
 
 				} else {

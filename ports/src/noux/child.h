@@ -32,6 +32,11 @@
 #include <child_policy.h>
 #include <io_receptor_registry.h>
 
+/* show arguments of the new process */
+static bool verbose_args = false;
+
+/* show available/used quota at child exit */
+static bool verbose_quota = false;
 
 namespace Noux {
 
@@ -109,10 +114,12 @@ namespace Noux {
 					/* destroy 'Noux::Child' */
 					destroy(env()->heap(), _child);
 
-					PINF("destroy %p", _child);
-					PINF("quota: avail=%zd, used=%zd",
-					     env()->ram_session()->avail(),
-					     env()->ram_session()->used());
+					if (verbose_quota) {
+						PINF("destroy %p", _child);
+						PINF("quota: avail=%zd, used=%zd",
+							 env()->ram_session()->avail(),
+							 env()->ram_session()->used());
+					}
 				}
 			}
 	};
@@ -332,7 +339,8 @@ namespace Noux {
 				_child(_binary_ds, _resources.ram.cap(), _resources.cpu.cap(),
 				       _resources.rm.cap(), &_entrypoint, &_child_policy)
 			{
-				_args.dump();
+				if (verbose_args)
+					_args.dump();
 
 				if (!forked && !_binary_ds.valid()) {
 					PERR("Lookup of executable \"%s\" failed", name);
