@@ -23,6 +23,8 @@
 #include <call_main.h>
 #include "file.h"
 
+static bool verbose = false;
+
 typedef void (*func_ptr_type)();
 
 func_ptr_type
@@ -87,7 +89,9 @@ int main(int argc, char **argv)
 	/* build dummy stack */
 	void *sp =  setup_stack(binary, (long)fd);
 
-	printf("Starting ldso ...\n");
+	if (verbose)
+		printf("Starting ldso ...\n");
+
 	func_ptr_type main_func = _rtld(sp, &exit_proc, &objp);
 
 	/* DEBUGGING
@@ -96,12 +100,15 @@ int main(int argc, char **argv)
 		printf("env: %s\n", *p);
 	*/
 	/* start loaded application */
-	printf("Starting application ... environ: %p\n", lx_environ);
-	
+	if (verbose)
+		printf("Starting application ... environ: %p\n", lx_environ);
+
 	call_main(main_func);
 
 	exit_proc();
-	
-	printf("Exiting ldso\n");
+
+	if (verbose)
+		printf("Exiting ldso\n");
+
 	return 0;
 }
