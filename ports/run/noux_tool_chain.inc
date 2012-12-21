@@ -34,7 +34,7 @@ if {[have_spec x86]} {
 #
 # Build Noux packages only once
 #
-set noux_pkgs "bash coreutils vim findutils make which $binutils $gcc"
+set noux_pkgs "bash coreutils findutils make which $binutils $gcc"
 
 foreach pkg $noux_pkgs {
 	lappend_if [expr ![file exists bin/$pkg]] build_components noux-pkg/$pkg }
@@ -42,15 +42,15 @@ foreach pkg $noux_pkgs {
 build $build_components
 
 # write default vimrc file
-set vimrc_fd [open "bin/vim/share/vim/vimrc" w]
-puts $vimrc_fd {
-set noloadplugins
-set hls
-set nocompatible
-set laststatus=2
-set noswapfile
-set viminfo=}
-close $vimrc_fd
+#set vimrc_fd [open "bin/vim/share/vim/vimrc" w]
+#puts $vimrc_fd {
+#set noloadplugins
+#set hls
+#set nocompatible
+#set laststatus=2
+#set noswapfile
+#set viminfo=}
+#close $vimrc_fd
 
 # strip all binaries prior archiving
 set find_args ""
