@@ -11,7 +11,7 @@ if {![have_spec foc_x86_32]} {
 
 # create a tar archive containing the l4 header files
 build core
-exec tar cfv bin/l4.tar -h --exclude=std_tmpl include l4
+#exec tar cfv bin/l4.tar -h --exclude=std_tmpl include l4
 
 if {[have_spec x86_32]} {
 set platform          "foc_x86_32"

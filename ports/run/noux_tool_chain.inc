@@ -59,15 +59,15 @@ exec sh -c "find $find_args -type f | (xargs [cross_dev_prefix]strip -g || true)
 
 exec ln -sf bash bin/bash/bin/sh
 
-foreach pkg $noux_pkgs {
-	exec tar cfv bin/$pkg.tar -h -C bin/$pkg . }
+#foreach pkg $noux_pkgs {
+#	exec tar cfv bin/$pkg.tar -h -C bin/$pkg . }
 
 set genode_repositories "tool base $platform_base_dir os demo"
 foreach rep $genode_repositories { append genode_repositories_filter_out_find " -not -name $rep " }
 set genode_repositories_filter_out [exec sh -c "find $genode_dir -mindepth 1 -maxdepth 1 $genode_repositories_filter_out_find -printf \"%f \""]
 foreach rep $genode_repositories_filter_out { append genode_repositories_filter_out_tar " --exclude=./$rep " }
 set tar_command "tar cfv bin/genode.tar $genode_repositories_filter_out_tar -C $genode_dir ."
-eval exec $tar_command
+#eval exec $tar_command
 
 create_boot_directory
 
