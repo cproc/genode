@@ -7,9 +7,9 @@ server: (1089/1794)
 
 client:
 -------
-2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                              + 92.038 s 
-0 ke:  01ed "send rq <<" @ 01003212                                                                     + 69.755 s 
-0 ke:  01ed "send rq >>" @ 01003212                                                                        0       
+2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                              + 92.038 s
+0 ke:  01ed "send rq <<" @ 01003212                                                                     + 69.755 s
+0 ke:  01ed "send rq >>" @ 01003212                                                                        0
 
 w/o select:
 ===========
@@ -18,9 +18,9 @@ server: (1195/3201)
 
 client:
 -------
-2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                                10.775 s 
-0 ke:  01ed "send rq <<" @ 01003212                                                                       48.758 s 
-0 ke:  01ed "send rq >>" @ 01003212                                                                        0       
+2 ke:  0005 "=== enter jdb ===" @ f0037acf                                                                10.775 s
+0 ke:  01ed "send rq <<" @ 01003212                                                                       48.758 s
+0 ke:  01ed "send rq >>" @ 01003212                                                                        0
 
 server tbuf:
 0 ke:  01d6 "select <<" @ 01000390                                                                   1674 c
@@ -44,7 +44,7 @@ server tbuf:
 0 ke:  01d6 "lwip_select >>" @ 01009cec                                                              2920 c
 0 ke:  01d6 "select >>" @ 01000354                                                                  18138 c
 
-7 ke:  01d6 "=== enter jdb ===" @ f003c350                                                     +2439094041 
+7 ke:  01d6 "=== enter jdb ===" @ f003c350                                                     +2439094041
 0 ke:  01d6 "select <<" @ 01000390                                                                 +63250 c
 0 ke:  01d6 "lwip_select <<" @ 01009d2c                                                            +61576 c
 0 ke:  01d6 "lwip_select >>" @ 01009cec                                                            +58794 c
@@ -94,3 +94,93 @@ lwip_select:       2768 c	0 c
 
 select overhead:   7052 c
 
+=========================================================================================================
+
+server (qemu foc_x86_32 + dde_ipxe):
+
+0 ke:  01ed "select <<" @ 01003212                                                                         3.296 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                    8.288 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                              17.152 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                   27.936 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                   15.936 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                              19.456 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                    3.488 µ
+0 ke:  01ed "select >>" @ 01003212                                                                         3.968 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           4.192 µ
+0 ke:  01ed "recv <<" @ 01003212                                                                         264.384 µ
+0 ke:  01ed "select <<" @ 01003212                                                                         3.008 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                    7.456 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                              15.680 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                   25.408 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                   14.624 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                              17.696 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                    3.104 µ
+0 ke:  01ed "select >>" @ 01003212                                                                         3.584 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.584 µ
+0 ke:  01ed "recv <<" @ 01003212                                                                         347.136 µ
+0 ke:  01ed "select <<" @ 01003212                                                                         2.944 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                    7.424 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                              15.616 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                   25.088 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                   14.432 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                              17.600 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                    3.040 µ
+0 ke:  01ed "select >>" @ 01003212                                                                         3.552 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.552 µ
+
+0 ke:  01ed "recv <<" @ 01003212                                                                        +506.528 µ
+0 ke:  01ed "select <<" @ 01003212                                                                      +174.624 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                 +170.592 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                            +161.760 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                 +143.392 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                 + 48.832 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                            + 31.872 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                 +  7.424 µ
+0 ke:  01ed "select >>" @ 01003212                                                                      +  3.936 µ
+0 ke:  01ed "recv >>" @ 01003212
+
+0 ke:  01ed "recv <<" @ 01003212                                                                        +385.664 µ
+0 ke:  01ed "select <<" @ 01003212                                                                      +111.840 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                 +108.032 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                            + 99.104 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                 + 81.760 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                 + 51.232 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                            + 32.832 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                 +  8.448 µ
+0 ke:  01ed "select >>" @ 01003212                                                                      +  4.352 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           0
+
+0 ke:  01ed "recv <<" @ 01003212                                                                        +436.000 µ
+0 ke:  01ed "select <<" @ 01003212                                                                      + 90.016 µ
+0 ke:  01ed "libc select <<" @ 01003212                                                                 + 87.008 µ
+0 ke:  01ed "libc_lwip select <<" @ 01003212                                                            + 79.680 µ
+0 ke:  01ed "lwip_select <<" @ 0111608c                                                                 + 64.160 µ
+0 ke:  01ed "lwip_select >>" @ 0111608c                                                                 + 38.464 µ
+0 ke:  01ed "libc_lwip select >>" @ 01003212                                                            + 23.808 µ
+0 ke:  01ed "libc select >>" @ 01003212                                                                 +  6.176 µ
+0 ke:  01ed "select >>" @ 01003212                                                                      +  3.264 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           0
+
+w/o select: 16b pkt
+0 ke:  01ed "recv >>" @ 01003212                                                                           4.736 µ
+0 ke:  01ed "recv <<" @ 01003212                                                                         302.976 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           4.160 µ
+0 ke:  01ed "recv <<" @ 01003212                                                                         260.672 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           4.352 µ
+0 ke:  01ed "recv <<" @ 01003212                                                                         335.328 µ
+0 ke:  01ed "recv >>" @ 01003212                                                                           4.608 µ
+
+w/o select: 1KiB pkt
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.584 µ 
+0 ke:  01ed "recv <<" @ 01003212                                                                         291.648 µ 
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.616 µ 
+0 ke:  01ed "recv <<" @ 01003212                                                                         243.584 µ 
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.584 µ 
+0 ke:  01ed "recv <<" @ 01003212                                                                         385.632 µ 
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.680 µ 
+0 ke:  01ed "recv <<" @ 01003212                                                                         409.888 µ 
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.584 µ 
+0 ke:  01ed "recv <<" @ 01003212                                                                         292.000 µ 
+0 ke:  01ed "recv >>" @ 01003212                                                                           3.648 µ 
+
+w select: 1KiB pkt

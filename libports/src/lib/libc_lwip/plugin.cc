@@ -467,6 +467,7 @@ int Plugin::select(int nfds,
                         fd_set *exceptfds,
                         struct timeval *timeout)
 {
+	Fiasco::fiasco_tbuf_log("libc_lwip select >>");
 	Libc::File_descriptor *fdo;
 	lwip_fd_set lwip_readfds;
 	lwip_fd_set lwip_writefds;
@@ -512,13 +513,11 @@ int Plugin::select(int nfds,
 		}
 	}
 
-	//Fiasco::fiasco_tbuf_log("lwip_select >>");
 	result = lwip_select(highest_lwip_fd + 1,
 			             &lwip_readfds,
 			             &lwip_writefds,
 			             &lwip_exceptfds,
 			             (struct lwip_timeval*)timeout);
-	//Fiasco::fiasco_tbuf_log("lwip_select <<");
 
 	if (result > 0) {
 
@@ -559,6 +558,7 @@ int Plugin::select(int nfds,
 			}
 		}
 	}
+	Fiasco::fiasco_tbuf_log("libc_lwip select <<");
 
 	return result;
 }

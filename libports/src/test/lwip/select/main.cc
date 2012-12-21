@@ -1,3 +1,5 @@
+#define SELECT 1
+
 #ifndef NOT_GENODE
 /* Genode includes */
 #include <base/printf.h>
@@ -31,9 +33,14 @@
 #include <pthread.h>
 #include <errno.h>
 
+#ifndef NOT_GENODE
 namespace Fiasco {
 #include <l4/sys/ktrace.h>
 }
+# define TBUF_LOG(s) Fiasco::fiasco_tbuf_log(s)
+#else
+# define TBUF_LOG(s)
+#endif
 
 #ifdef NOT_GENODE
 namespace Timer {
@@ -55,8 +62,8 @@ namespace Genode {
 const int MONITOR_INTERVAL     = 5;
 const int SERVER_PORTNUM       = 10000;
 
-const int BUFFER_SIZE          = ( 1024 + 16 );
-const int ITEM_PACKET_SIZE     = 16;
+const int BUFFER_SIZE          = ( 4096 + 16 );
+const int ITEM_PACKET_SIZE     = 1024; //16;
 const int RESPONSE_PACKET_SIZE = 16;
 
 const int Numpackets           = 1000000;
@@ -264,18 +271,18 @@ void *listener(void *argv )
 
 	while( 1 )
 	{
-		Fiasco::fiasco_tbuf_log("recv >>");
+		TBUF_LOG("recv >>");
 		FD_ZERO(&socks);
 		FD_SET( conn, &socks);
 
-#if 1
-		Fiasco::fiasco_tbuf_log("select >>");
+#if SELECT
+		TBUF_LOG("select >>");
 		   int readsocket = select( conn + 1, &socks, 0,0, NULL );
 		   if( readsocket <= 0 )
 		   {
 		   continue;
 		   }
-		Fiasco::fiasco_tbuf_log("select <<");
+		TBUF_LOG("select <<");
 #endif
 
 		/* receive packet type & size */
@@ -297,7 +304,7 @@ void *listener(void *argv )
 			PINF("RECV:%d [%d]%d,%d\n",conn, recv_len, packet_header.type, packet_header.size );
 			assert(0);
 		}
-		Fiasco::fiasco_tbuf_log("recv <<");
+		TBUF_LOG("recv <<");
 	}
 
 	PINF( "Disconnected : %d", conn );

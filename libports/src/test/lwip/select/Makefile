@@ -16,4 +16,4 @@ $(TARG): $(OBJ)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 clean:
-	-rm $(TARG)
+	-rm $(TARG) $(OBJ)
