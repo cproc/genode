@@ -223,7 +223,7 @@ namespace Iso {
 			{
 				while (true) {
 					try {
-						Signal signal = _receiver.wait_for_signal();
+						Signal signal(_receiver.wait_for_signal());
 
 						for (int i = 0; i < signal.num(); i++)
 							static_cast<File *>(signal.context())->handle_fault();

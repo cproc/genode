@@ -19,6 +19,9 @@
 
 #include <base/semaphore.h>
 #include <signal_session/signal_session.h>
+#include <util/noncopyable.h>
+
+#include <base/printf.h>
 
 namespace Genode {
 
@@ -44,9 +47,9 @@ namespace Genode {
 	 * can be used by the receiver to distinguish signals coming from different
 	 * transmitters.
 	 */
-	class Signal
+	class Signal_info
 	{
-		private:
+		protected:
 
 			friend class Signal_receiver;
 			friend class Signal_context;
@@ -63,7 +66,7 @@ namespace Genode {
 			 *
 			 * Signal objects are constructed only by signal receivers.
 			 */
-			Signal(Signal_context *context, int num)
+			Signal_info(Signal_context *context, int num)
 			: _context(context), _num(num)
 			{ }
 
@@ -72,7 +75,7 @@ namespace Genode {
 			/**
 			 * Default constructor, creating an invalid signal
 			 */
-			Signal() : _context(0), _num(0) { }
+			Signal_info() : _context(0), _num(0) { }
 
 			/**
 			 * Return signal context
@@ -84,6 +87,18 @@ namespace Genode {
 			 */
 			int num() { return _num; }
 	};
+
+
+	class Signal : public Signal_info, public Noncopyable
+	{
+		public:
+
+			/* implicitly created from Signal_info */
+			Signal(Signal_info si) : Signal_info(si) { }
+			~Signal();
+
+	};
+
 
 	/**
 	 * Signal context
@@ -115,9 +130,11 @@ namespace Genode {
 			 */
 			Signal_receiver *_receiver;
 
-			Lock   _lock;          /* protect '_curr_signal'         */
-			Signal _curr_signal;   /* most-currently received signal */
-			bool   _pending;       /* current signal is valid        */
+			Lock        _lock;          /* protect '_curr_signal'         */
+			Signal_info _curr_signal;   /* most-currently received signal */
+			bool        _pending;       /* current signal is valid        */
+			Lock        _destroy_lock;  /* prevent destruction while the
+			                          context is in use */
 
 			/**
 			 * Capability assigned to this context after being assocated with
@@ -127,6 +144,7 @@ namespace Genode {
 			 */
 			Signal_context_capability _cap;
 
+			friend class Signal;
 			friend class Signal_receiver;
 			friend class Signal_context_registry;
 
@@ -266,12 +284,12 @@ namespace Genode {
 			 *
 			 * \return received signal
 			 */
-			Signal wait_for_signal();
+			Signal_info wait_for_signal();
 
 			/**
 			 * Locally submit signal to the receiver
 			 */
-			void local_submit(Signal signal);
+			void local_submit(Signal_info signal);
 
 			/**
 			 * Framework-internal signal-dispatcher

@@ -37,7 +37,7 @@ namespace Terminal {
 			cap.call<Rpc_connected_sigh>(sig_cap);
 
 			/* wati for signal */
-			sig_rec.wait_for_signal();
+			{ Signal s(sig_rec.wait_for_signal()); }
 			sig_rec.dissolve(&sig_ctx);
 		}
 

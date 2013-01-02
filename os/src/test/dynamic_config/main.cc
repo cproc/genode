@@ -53,7 +53,7 @@ int main(int, char **)
 	for (;;) {
 
 		/* wait for config change */
-		Genode::Signal signal = sig_rec.wait_for_signal();
+		Genode::Signal signal(sig_rec.wait_for_signal());
 
 		for (int i = 0; i < signal.num(); i++)
 			static_cast<Signal_dispatcher *>(signal.context())->dispatch();

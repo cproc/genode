@@ -130,7 +130,7 @@ class Handler : Thread<4096>
 			while (!_stop) {
 
 				if (!_idle) {
-					Signal signal = _receiver->wait_for_signal();
+					Signal signal(_receiver->wait_for_signal());
 
 					if (_verbose)
 						printf("handler %d got %d signal%s with context %p\n",
@@ -456,21 +456,29 @@ static void lazy_receivers_test()
 	transmitter_1.submit();
 	transmitter_2.submit();
 
-	Signal signal = rec_1.wait_for_signal();
-	printf("returned from wait_for_signal for receiver 1\n");
+	{
+		Signal signal(rec_1.wait_for_signal());
+		printf("returned from wait_for_signal for receiver 1\n");
+	}
 
-	signal = rec_2.wait_for_signal();
-	printf("returned from wait_for_signal for receiver 2\n");
+	{
+		Signal signal(rec_2.wait_for_signal());
+		printf("returned from wait_for_signal for receiver 2\n");
+	}
 
 	printf("submit and receive signals with multiple receivers out of order\n");
 	transmitter_1.submit();
 	transmitter_2.submit();
 
-	signal = rec_2.wait_for_signal();
-	printf("returned from wait_for_signal for receiver 2\n");
+	{
+		Signal signal(rec_2.wait_for_signal());
+		printf("returned from wait_for_signal for receiver 2\n");
+	}
 
-	signal = rec_1.wait_for_signal();
-	printf("returned from wait_for_signal for receiver 1\n");
+	{
+		Signal signal(rec_1.wait_for_signal());
+		printf("returned from wait_for_signal for receiver 1\n");
+	}
 
 	printf("TEST %d FINISHED\n", test_cnt);
 }
@@ -499,7 +507,7 @@ static void check_context_management()
 	sender->idle();
 
 	/* collect pending signals and dissolve context from receiver */
-	Signal signal = rec->wait_for_signal();
+	Signal signal(rec->wait_for_signal());
 	printf("got %d signal(s) from %p\n", signal.num(), signal.context());
 	rec->dissolve(context);
 

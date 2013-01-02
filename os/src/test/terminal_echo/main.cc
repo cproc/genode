@@ -31,7 +31,7 @@ int main(int, char **)
 
 	for (;;) {
 
-		sig_rec.wait_for_signal();
+		Signal s(sig_rec.wait_for_signal());
 
 		int num_bytes = terminal.read(read_buffer, sizeof(read_buffer));
 

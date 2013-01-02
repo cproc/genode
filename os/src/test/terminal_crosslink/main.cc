@@ -69,7 +69,7 @@ class Client : public Partner
 
 			/* read server text */
 
-			_sig_rec.wait_for_signal();
+			Signal s(_sig_rec.wait_for_signal());
 			_terminal.read(_read_buffer, sizeof(_read_buffer));
 
 			printf("Client received: %s\n", _read_buffer);
@@ -99,7 +99,7 @@ class Server : public Partner
 		{
 			/* read client text */
 
-			_sig_rec.wait_for_signal();
+			Signal s(_sig_rec.wait_for_signal());
 			_terminal.read(_read_buffer, sizeof(_read_buffer));
 
 			printf("Server received: %s\n", _read_buffer);
@@ -119,7 +119,7 @@ class Server : public Partner
 			size_t num_read_total = 0;
 
 			do {
-				_sig_rec.wait_for_signal();
+				Signal s(_sig_rec.wait_for_signal());
 				num_read = _terminal.read(_read_buffer, sizeof(_read_buffer));
 				num_read_total += num_read;
 

@@ -903,13 +903,16 @@ int main(int argc, char **argv)
 	/* handle asynchronous events */
 	while (init_child) {
 
-		Genode::Signal signal = sig_rec.wait_for_signal();
+		/* limit the scope of the 'Signal' object */
+		{
+			Genode::Signal signal(sig_rec.wait_for_signal());
 
-		Signal_dispatcher *dispatcher =
-			static_cast<Signal_dispatcher *>(signal.context());
+			Signal_dispatcher *dispatcher =
+				static_cast<Signal_dispatcher *>(signal.context());
 
-		for (int i = 0; i < signal.num(); i++)
-			dispatcher->dispatch();
+			for (int i = 0; i < signal.num(); i++)
+				dispatcher->dispatch();
+		}
 
 		destruct_queue.flush();
 		PINF("quota: avail=%zd, used=%zd",

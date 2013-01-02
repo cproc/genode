@@ -72,7 +72,7 @@ namespace Noux {
 				_terminal.connected_sigh(sig_cap);
 
 				/* wati for signal */
-				sig_rec.wait_for_signal();
+				Signal s(sig_rec.wait_for_signal());
 				sig_rec.dissolve(&sig_ctx);
 
 				/*
@@ -212,7 +212,7 @@ namespace Noux {
 
 			bool read(Sysio *sysio, Vfs_handle *vfs_handle)
 			{
-				_read_avail_sig_rec.wait_for_signal();
+				Signal s(_read_avail_sig_rec.wait_for_signal());
 				sysio->read_out.count = _terminal.read(sysio->read_out.chunk, sysio->read_in.count);
 				return true;
 			}
