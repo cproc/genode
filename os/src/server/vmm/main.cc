@@ -316,7 +316,7 @@ namespace Genode {
 				_vm->start(sig_cap);
 				while (true) {
 					_vm->run();
-					Signal s = sig_rcv.wait_for_signal();
+					Signal s(sig_rcv.wait_for_signal());
 					if (s.context() != &sig_cxt) {
 						PWRN("Invalid context");
 						continue;

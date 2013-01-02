@@ -620,7 +620,7 @@ int main(int, char **)
 	env()->parent()->announce(ep.manage(&root));
 
 	for (;;) {
-		Signal s = sig_rec.wait_for_signal();
+		Signal s(sig_rec.wait_for_signal());
 		static_cast<Signal_dispatcher_base *>(s.context())->dispatch(s.num());
 	}
 

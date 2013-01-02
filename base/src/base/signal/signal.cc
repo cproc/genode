@@ -165,6 +165,15 @@ Genode::Signal_context_registry *signal_context_registry()
 }
 
 
+/************
+ ** Signal **
+ ************/
+Signal::~Signal()
+{
+	_context->_destroy_lock.unlock();
+}
+
+
 /************************
  ** Signal transmitter **
  ************************/
@@ -270,6 +279,8 @@ void Signal_receiver::dissolve(Signal_context *context)
 	Lock::Guard list_lock_guard(_contexts_lock);
 
 	_unsynchronized_dissolve(context);
+
+	Lock::Guard context_destroy_lock_guard(context->_destroy_lock);
 }
 
 
@@ -291,7 +302,7 @@ bool Signal_receiver::pending()
 }
 
 
-Signal Signal_receiver::wait_for_signal()
+Signal_info Signal_receiver::wait_for_signal()
 {
 	for (;;) {
 
@@ -311,11 +322,12 @@ Signal Signal_receiver::wait_for_signal()
 			if (!context->_pending)
 				continue;
 
+			context->_destroy_lock.lock();
 			context->_pending = false;
-			Signal result = context->_curr_signal;
+			Signal_info result = context->_curr_signal;
 
 			/* invalidate current signal in context */
-			context->_curr_signal = Signal(0, 0);
+			context->_curr_signal = Signal_info(0, 0);
 
 			if (result.num() == 0)
 				PWRN("returning signal with num == 0");
@@ -334,11 +346,11 @@ Signal Signal_receiver::wait_for_signal()
 		 * the signal-causing context is absent from the list.
 		 */
 	}
-	return Signal(0, 0); /* unreachable */
+	return Signal_info(0, 0); /* unreachable */
 }
 
 
-void Signal_receiver::local_submit(Signal ns)
+void Signal_receiver::local_submit(Signal_info ns)
 {
 	Signal_context *context = ns.context();
 
@@ -348,7 +360,7 @@ void Signal_receiver::local_submit(Signal ns)
 	 * signal with a counter value of zero.
 	 */
 	int num = context->_curr_signal.num() + ns.num();
-	context->_curr_signal = Signal(context, num);
+	context->_curr_signal = Signal_info(context, num);
 
 	/* wake up the receiver if the context becomes pending */
 	if (!context->_pending) {
@@ -372,7 +384,7 @@ void Signal_receiver::dispatch_signals(Signal_source *signal_source)
 		}
 
 		/* construct and locally submit signal object */
-		Signal signal(context, source_signal.num());
+		Signal_info signal(context, source_signal.num());
 		context->_receiver->local_submit(signal);
 
 		/* free context lock that was taken by 'test_and_lock' */

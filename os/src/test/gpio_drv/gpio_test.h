@@ -46,7 +46,7 @@ class Gpio_test
 
 		void wait_for_signal()
 		{
-			sig_rec.wait_for_signal();
+			Signal s(sig_rec.wait_for_signal());
 		}
 
 		bool polling_test();

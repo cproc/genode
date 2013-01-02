@@ -107,7 +107,7 @@ static bool batch_packets(Nic::Session *nic, unsigned num_packets)
 	    || rx_cnt    != num_packets) {
 
 		if (tx_cnt > rx_cnt || tx_cnt > acked_cnt)
-			signal_receiver.wait_for_signal();
+			Signal s(signal_receiver.wait_for_signal());
 
 		/* produce as many packets as possible as one batch */
 		unsigned max_outstanding_requests = Nic::Session::RX_QUEUE_SIZE - 1;

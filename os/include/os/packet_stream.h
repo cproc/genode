@@ -257,7 +257,7 @@ class Packet_descriptor_transmitter
 			do {
 				/* block for signal if tx queue is full */
 				if (_tx_queue->full())
-					_tx_ready.wait_for_signal();
+					Genode::Signal s(_tx_ready.wait_for_signal());
 
 				/*
 				 * It could happen that pending signals do not refer to the
@@ -328,7 +328,7 @@ class Packet_descriptor_receiver
 			bool rx_queue_was_full = _rx_queue->full();
 
 			while (_rx_queue->empty())
-				_rx_ready.wait_for_signal();
+				Genode::Signal s(_rx_ready.wait_for_signal());
 
 			*out_packet = _rx_queue->get();
 

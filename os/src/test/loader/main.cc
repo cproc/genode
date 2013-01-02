@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
 	loader.start("testnit", "test-label");
 
-	sig_rec.wait_for_signal();
+	Signal s(sig_rec.wait_for_signal());
 
 	Nitpicker::View_capability view_cap = loader.view();
 

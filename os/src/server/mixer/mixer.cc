@@ -586,7 +586,7 @@ namespace Audio_out {
 				session_lock.lock();
 				while (!_get_packets()) {
 					session_lock.unlock();
-					avail_recv.wait_for_signal();
+					Signal s(avail_recv.wait_for_signal());
 					session_lock.lock();
 				}
 				_packet_sema.down();
@@ -612,7 +612,7 @@ namespace Audio_out {
 				while (!audio_out_active) {
 
 					while (!_get_packets())
-						avail_recv.wait_for_signal();
+						Signal s(avail_recv.wait_for_signal());
 
 					for (int chn = 0; chn < MAX_CHANNELS; ++chn)
 						for (int i = 0; i < _packets[chn].count; i++)

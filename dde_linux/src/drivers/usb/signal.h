@@ -75,7 +75,7 @@ class Service_handler
 		{
 			while (_receiver->pending() || block) {
 
-				Genode::Signal s = _receiver->wait_for_signal();
+				Genode::Signal s(_receiver->wait_for_signal());
 
 				/* handle signal IRQ, timer, or event signals */
 				Driver_context *ctx = static_cast<Driver_context *>(s.context());
