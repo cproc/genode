@@ -33,6 +33,8 @@
 #include <io_receptor_registry.h>
 #include <destruct_queue.h>
 
+/* show arguments of the new process */
+static bool verbose_args = false;
 
 namespace Noux {
 
@@ -304,7 +306,8 @@ namespace Noux {
 				_child(_binary_ds, _resources.ram.cap(), _resources.cpu.cap(),
 				       _resources.rm.cap(), &_entrypoint, &_child_policy)
 			{
-				_args.dump();
+				if (verbose_args)
+					_args.dump();
 
 				if (!forked && !_binary_ds.valid()) {
 					PERR("Lookup of executable \"%s\" failed", name);

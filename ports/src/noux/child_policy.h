@@ -23,6 +23,8 @@
 #include <local_noux_service.h>
 #include <local_rm_service.h>
 
+static bool verbose_exit = false;
+
 namespace Noux {
 
 	class Child_policy : public Genode::Child_policy
@@ -109,7 +111,8 @@ namespace Noux {
 
 			void exit(int exit_value)
 			{
-				PINF("child %s exited with exit value %d", _name, exit_value);
+				if (verbose_exit)
+					PINF("child %s exited with exit value %d", _name, exit_value);
 
 				/*
 				 * Close all open file descriptors. This is necessary to unblock
