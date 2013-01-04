@@ -28,6 +28,8 @@
 #include <base/rpc_server.h>
 #include <cpu_session/connection.h>
 
+static bool verbose_create_thread = false;
+
 namespace Noux {
 
 	using namespace Genode;
@@ -83,7 +85,8 @@ namespace Noux {
 				}
 				_main_thread = _cpu.create_thread(name, utcb);
 
-				PINF("created main thread");
+				if (verbose_create_thread)
+					PINF("created main thread");
 				return _main_thread;
 			}
 
