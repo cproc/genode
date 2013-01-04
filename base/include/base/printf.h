@@ -62,7 +62,7 @@ namespace Genode {
  *   only appends the comma and arguments if __VA__ARGS__ is not empty,
  *   otherwise nothing (not even the comma) is appended.
  */
-
+#define GENODE_RELEASE 1
 /**
  * Suppress debug messages in release version
  */
@@ -84,24 +84,24 @@ namespace Genode {
  * Print log message
  */
 #define PLOG(fmt, ...) \
-	Genode::printf(ESC_LOG fmt ESC_END "\n", ##__VA_ARGS__ )
+	/*Genode::printf(ESC_LOG fmt ESC_END "\n", ##__VA_ARGS__ )*/
 
 /**
  * Print status-information message
  */
 #define PINF(fmt, ...) \
-	Genode::printf(ESC_INF fmt ESC_END "\n", ##__VA_ARGS__ )
+	/*Genode::printf(ESC_INF fmt ESC_END "\n", ##__VA_ARGS__ )*/
 
 /**
  * Print warning message
  */
 #define PWRN(fmt, ...) \
-	Genode::printf(ESC_WRN fmt ESC_END "\n", ##__VA_ARGS__ )
+	/*Genode::printf(ESC_WRN fmt ESC_END "\n", ##__VA_ARGS__ )*/
 
 /**
  * Print error message
  */
 #define PERR(fmt, ...) \
-	Genode::printf(ESC_ERR fmt ESC_END "\n", ##__VA_ARGS__ )
+	/*Genode::printf(ESC_ERR fmt ESC_END "\n", ##__VA_ARGS__ )*/
 
 #endif /* _INCLUDE__BASE__PRINTF_H_ */
