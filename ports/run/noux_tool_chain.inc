@@ -156,6 +156,7 @@ append config "						echo \"CROSS_DEV_PREFIX=$tool_prefix\" > etc/tools.conf"
 append config "                                         $platform_cmds"
 append config {
 							echo "now you can type, for example, \"make core\""
+							make core
 						</inline>
 					</dir>
 				</dir>
