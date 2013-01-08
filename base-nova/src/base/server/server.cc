@@ -112,6 +112,10 @@ void Rpc_entrypoint::_activation_entry()
 
 	/* atomically lookup and lock referenced object */
 	ep->_curr_obj = ep->lookup_and_lock(id_pt);
+
+	ep->_curr_obj_lock.lock();
+	ep->_curr_obj_lock.unlock();
+
 	if (!ep->_curr_obj) {
 		/* Badge is used to suppress error message solely.
 		 * It's non zero during cleanup call of an
