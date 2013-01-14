@@ -28,7 +28,7 @@ namespace Genode {
 
 
 	/**
-	 * Signal
+	 * Signal_data
 	 *
 	 * A signal represents a number of asynchronous notifications produced by
 	 * one transmitter. If notifications are generated at a higher rate than as
@@ -44,9 +44,9 @@ namespace Genode {
 	 * can be used by the receiver to distinguish signals coming from different
 	 * transmitters.
 	 */
-	class Signal
+	class Signal_data
 	{
-		private:
+		protected:
 
 			friend class Signal_receiver;
 			friend class Signal_context;
@@ -61,9 +61,9 @@ namespace Genode {
 			 *                 capability used for signal transmission
 			 * \param num      number of signals received from the same transmitter
 			 *
-			 * Signal objects are constructed only by signal receivers.
+			 * Signal_data objects are constructed only by signal receivers.
 			 */
-			Signal(Signal_context *context, unsigned num)
+			Signal_data(Signal_context *context, unsigned num)
 			: _context(context), _num(num)
 			{ }
 
@@ -72,7 +72,7 @@ namespace Genode {
 			/**
 			 * Default constructor, creating an invalid signal
 			 */
-			Signal() : _context(0), _num(0) { }
+			Signal_data() : _context(0), _num(0) { }
 
 			/**
 			 * Return signal context
@@ -84,6 +84,26 @@ namespace Genode {
 			 */
 			unsigned num() const { return _num; }
 	};
+
+
+	/**
+	 * Signal
+	 */
+	class Signal : public Signal_data
+	{
+		private:
+
+			Signal(Signal_data sb);
+
+			friend class Signal_receiver;
+
+		public:
+
+			Signal(Signal const &other);
+			Signal &operator=(Signal const &other);
+			~Signal();
+	};
+
 
 	/**
 	 * Signal context
@@ -115,9 +135,13 @@ namespace Genode {
 			 */
 			Signal_receiver *_receiver;
 
-			Lock   _lock;          /* protect '_curr_signal'         */
-			Signal _curr_signal;   /* most-currently received signal */
-			bool   _pending;       /* current signal is valid        */
+			Lock         _lock;          /* protect '_curr_signal'         */
+			Signal_data  _curr_signal;   /* most-currently received signal */
+			bool         _pending;       /* current signal is valid        */
+			unsigned int _ref_cnt;       /* number of references to this context */
+			Lock         _destroy_lock;  /* prevent destruction while the
+			                                context is in use */
+
 
 			/**
 			 * Capability assigned to this context after being assocated with
@@ -127,6 +151,7 @@ namespace Genode {
 			 */
 			Signal_context_capability _cap;
 
+			friend class Signal;
 			friend class Signal_receiver;
 			friend class Signal_context_registry;
 
@@ -137,7 +162,7 @@ namespace Genode {
 			 */
 			Signal_context()
 			: _receiver_le(this), _registry_le(this),
-			  _receiver(0), _pending(0) { }
+			  _receiver(0), _pending(0), _ref_cnt(0) { }
 
 			/**
 			 * Destructor
@@ -271,7 +296,7 @@ namespace Genode {
 			/**
 			 * Locally submit signal to the receiver
 			 */
-			void local_submit(Signal signal);
+			void local_submit(Signal_data signal);
 
 			/**
 			 * Framework-internal signal-dispatcher

@@ -165,6 +165,65 @@ Genode::Signal_context_registry *signal_context_registry()
 }
 
 
+/************
+ ** Signal **
+ ************/
+
+Signal::Signal(Signal_data sd)
+: Signal_data(sd)
+{
+	if (_context) {
+		_context->_ref_cnt = 1;
+		_context->_destroy_lock.lock();
+	}
+}
+
+
+Signal::Signal(Signal const &other)
+: Signal_data(other)
+{
+	if (_context) {
+		Lock::Guard lock_guard(_context->_lock);
+		_context->_ref_cnt++;
+	}
+}
+
+
+Signal::~Signal()
+{
+	if (_context) {
+		Lock::Guard lock_guard(_context->_lock);
+		_context->_ref_cnt--;
+		if (_context->_ref_cnt == 0)
+			_context->_destroy_lock.unlock();
+	}
+}
+
+
+Signal &Signal::operator=(Signal const &other)
+{
+	if ((_context == other._context) && (_num == other._num))
+		return *this;
+
+	if (_context) {
+		Lock::Guard lock_guard(_context->_lock);
+		_context->_ref_cnt--;
+		if (_context->_ref_cnt == 0)
+			_context->_destroy_lock.unlock();
+	}
+
+	_context = other._context;
+	_num     = other._num;
+
+	if (_context) {
+		Lock::Guard lock_guard(_context->_lock);
+		_context->_ref_cnt++;
+	}
+
+	return *this;
+}
+
+
 /************************
  ** Signal transmitter **
  ************************/
@@ -270,6 +329,8 @@ void Signal_receiver::dissolve(Signal_context *context)
 	Lock::Guard list_lock_guard(_contexts_lock);
 
 	_unsynchronized_dissolve(context);
+
+	Lock::Guard context_destroy_lock_guard(context->_destroy_lock);
 }
 
 
@@ -312,10 +373,10 @@ Signal Signal_receiver::wait_for_signal()
 				continue;
 
 			context->_pending = false;
-			Signal result = context->_curr_signal;
+			Signal_data result = context->_curr_signal;
 
 			/* invalidate current signal in context */
-			context->_curr_signal = Signal(0, 0);
+			context->_curr_signal = Signal_data(0, 0);
 
 			if (result.num() == 0)
 				PWRN("returning signal with num == 0");
@@ -334,11 +395,11 @@ Signal Signal_receiver::wait_for_signal()
 		 * the signal-causing context is absent from the list.
 		 */
 	}
-	return Signal(0, 0); /* unreachable */
+	return Signal_data(0, 0); /* unreachable */
 }
 
 
-void Signal_receiver::local_submit(Signal ns)
+void Signal_receiver::local_submit(Signal_data ns)
 {
 	Signal_context *context = ns.context();
 
@@ -348,7 +409,7 @@ void Signal_receiver::local_submit(Signal ns)
 	 * signal with a counter value of zero.
 	 */
 	unsigned num = context->_curr_signal.num() + ns.num();
-	context->_curr_signal = Signal(context, num);
+	context->_curr_signal = Signal_data(context, num);
 
 	/* wake up the receiver if the context becomes pending */
 	if (!context->_pending) {
@@ -372,7 +433,7 @@ void Signal_receiver::dispatch_signals(Signal_source *signal_source)
 		}
 
 		/* construct and locally submit signal object */
-		Signal signal(context, source_signal.num());
+		Signal_data signal(context, source_signal.num());
 		context->_receiver->local_submit(signal);
 
 		/* free context lock that was taken by 'test_and_lock' */
