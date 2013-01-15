@@ -172,9 +172,12 @@ Genode::Signal_context_registry *signal_context_registry()
 Signal::Signal(Signal_data sd)
 : Signal_data(sd)
 {
+	PDBG("Signal(Signal_data)");
+
 	if (_context) {
 		_context->_ref_cnt = 1;
 		_context->_destroy_lock.lock();
+		PDBG("%p: _ref_cnt = %u", _context, _context->_ref_cnt);
 	}
 }
 
@@ -182,18 +185,22 @@ Signal::Signal(Signal_data sd)
 Signal::Signal(Signal const &other)
 : Signal_data(other)
 {
+	PDBG("Signal(other)");
 	if (_context) {
 		Lock::Guard lock_guard(_context->_lock);
 		_context->_ref_cnt++;
+		PDBG("%p: _ref_cnt = %u", _context, _context->_ref_cnt);
 	}
 }
 
 
 Signal::~Signal()
 {
+	PDBG("~Signal()");
 	if (_context) {
 		Lock::Guard lock_guard(_context->_lock);
 		_context->_ref_cnt--;
+		PDBG("%p: _ref_cnt = %u", _context, _context->_ref_cnt);
 		if (_context->_ref_cnt == 0)
 			_context->_destroy_lock.unlock();
 	}
@@ -202,12 +209,15 @@ Signal::~Signal()
 
 Signal &Signal::operator=(Signal const &other)
 {
+	PDBG("Signal::operator=");
+
 	if ((_context == other._context) && (_num == other._num))
 		return *this;
 
 	if (_context) {
 		Lock::Guard lock_guard(_context->_lock);
 		_context->_ref_cnt--;
+		PDBG("%p: _ref_cnt = %u", _context, _context->_ref_cnt);
 		if (_context->_ref_cnt == 0)
 			_context->_destroy_lock.unlock();
 	}
@@ -218,6 +228,7 @@ Signal &Signal::operator=(Signal const &other)
 	if (_context) {
 		Lock::Guard lock_guard(_context->_lock);
 		_context->_ref_cnt++;
+		PDBG("%p: _ref_cnt = %u", _context, _context->_ref_cnt);
 	}
 
 	return *this;
@@ -330,7 +341,9 @@ void Signal_receiver::dissolve(Signal_context *context)
 
 	_unsynchronized_dissolve(context);
 
+	PDBG("trying to get _destroy_lock");
 	Lock::Guard context_destroy_lock_guard(context->_destroy_lock);
+	PDBG("got _destroy_lock");
 }
 
 
