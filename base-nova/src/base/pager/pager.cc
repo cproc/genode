@@ -63,18 +63,7 @@ void Pager_object::_page_fault_handler()
 	int ret = obj->pager(ipc_pager);
 
 	if (ret) {
-		if (obj->submit_exception_signal())
-			/* Somebody takes care don't die - just recall and block */
-			obj->client_recall();
-		else {
-			PWRN("unresolvable page-fault at address 0x%lx, ip=0x%lx",
-		    	 ipc_pager.fault_addr(), ipc_pager.fault_ip());
-
-			/* revoke paging capability, let thread die in kernel */
-			Nova::revoke(Obj_crd(obj->exc_pt_sel() + PT_SEL_PAGE_FAULT, 0));
-			obj->_state.dead = true;
-		}
-
+		obj->client_recall();
 		utcb->set_msg_word(0);
 		utcb->mtd = 0;
 	}
@@ -88,11 +77,15 @@ void Pager_object::_exception_handler(addr_t portal_id)
 	Thread_base  *myself;
 	Pager_object *obj;
 	Utcb         *utcb = _check_handler(myself, obj);
+	addr_t fault_ip    = utcb->ip;
 
 	if (obj->submit_exception_signal()) 
 		/* Somebody takes care don't die - just recall and block */
 		obj->client_recall();
 	else {
+		PWRN("unresolvable exception at ip 0x%lx, exception portal 0x%lx",
+		     fault_ip, portal_id);
+
 		Nova::revoke(Obj_crd(portal_id, 0));
 		obj->_state.dead = true;
 	}
