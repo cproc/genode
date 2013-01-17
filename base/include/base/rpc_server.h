@@ -15,6 +15,7 @@
 #define _INCLUDE__BASE__RPC_SERVER_H_
 
 #include <base/rpc.h>
+#include <base/rpc_tracing.h>
 #include <base/thread.h>
 #include <base/ipc.h>
 #include <base/object_pool.h>
@@ -137,6 +138,8 @@ namespace Genode {
 
 					/* write results to ostream 'os' */
 					_write_results(os, args.data());
+
+					rpc_trace_dispatch(os.dst(), This_rpc_function::name());
 
 					return exc;
 				}

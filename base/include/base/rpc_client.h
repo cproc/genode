@@ -15,6 +15,7 @@
 #define _INCLUDE__BASE__RPC_CLIENT_H_
 
 #include <base/ipc.h>
+#include <base/rpc_tracing.h>
 
 namespace Genode {
 
@@ -97,6 +98,7 @@ namespace Genode {
 	void Capability<RPC_INTERFACE>::
 	_call(typename IF::Client_args &args, typename IF::Ret_type &ret) const
 	{
+		rpc_trace_call(*this, IF::name(), ">");
 		/**
 		 * Message buffer for RPC message
 		 *
@@ -122,6 +124,8 @@ namespace Genode {
 
 		/* perform RPC, unmarshal return value */
 		ipc_client << IPC_CALL >> ret;
+
+		rpc_trace_call(*this, IF::name(), "<");
 
 		/* unmarshal RPC output arguments */
 		_unmarshal_results(ipc_client, args);
