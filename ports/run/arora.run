@@ -6,7 +6,7 @@ set build_components {
 	core init
 	drivers/timer drivers/framebuffer drivers/pci drivers/input drivers/nic
 	server/nitpicker server/nic_bridge
-	server/ram_fs app/lighttpd
+	server/tar_fs app/lighttpd
 	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
 	app/arora
 }
@@ -97,44 +97,12 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-	<start name="ram_fs">
+	<start name="tar_fs">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="File_system"/></provides>
 		<config>
+			<archive name="genode_org.tar" />
 			<policy label="lighttpd" root="/" />
-			<content>
-				<dir name="etc">
-					<dir name="lighttpd">
-						<inline name="lighttpd.conf">
-# lighttpd configuration
-server.port          = 80
-server.document-root = "/website"
-server.event-handler = "select"
-server.network-backend = "write"
-index-file.names     = (
-  "index.xhtml", "index.html", "index.htm"
-)
-mimetype.assign      = (
-  ".html"         =>      "text/html",
-  ".htm"          =>      "text/html"
-)
-						</inline>
-					</dir>
-				</dir>
-				<dir name="website">
-					<inline name="index.html">
-<html>
-	<head>
-		<title>Hello</title>
-	</head>
-	<body>
-		<p>Hello Genode!</p>
-		<b>I am bold ;-)</b>
-	</body>
-</html>
-					</inline>
-				</dir>
-			</content>
 		</config>
 	</start>
 	<start name="lighttpd">
@@ -183,7 +151,8 @@ set boot_modules {
 	timer nic_drv
 	nitpicker
 	nic_bridge
-	ram_fs
+	tar_fs
+	genode_org.tar
 	libc_fs.lib.so
 	libc_log.lib.so
 	lighttpd
