@@ -123,12 +123,12 @@ bool Noux::Child::_syscall_net(Noux::Session::Syscall sc)
 			break;
 		case SYSCALL_SOCKET:
 			{
-				Socket_io_channel *socket_io_channel = new Socket_io_channel();
+				Socket_io_channel *socket_io_channel = new (env()->heap()) Socket_io_channel();
 
 				GET_SOCKET_IO_CHANNEL_BACKEND(socket_io_channel->backend(), backend);
 
 				if (!backend->socket(_sysio)) {
-					delete socket_io_channel;
+					destroy(env()->heap(), socket_io_channel);
 					return false;
 				}
 
@@ -164,7 +164,7 @@ bool Noux::Child::_syscall_net(Noux::Session::Syscall sc)
 				if (socket == -1)
 					return false;
 
-				Socket_io_channel *socket_io_channel = new Socket_io_channel(socket);
+				Socket_io_channel *socket_io_channel = new (env()->heap()) Socket_io_channel(socket);
 				Shared_pointer<Io_channel> io_channel(socket_io_channel, Genode::env()->heap());
 
 				_sysio->accept_out.fd = add_io_channel(io_channel);
