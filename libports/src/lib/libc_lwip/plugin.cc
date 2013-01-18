@@ -15,10 +15,6 @@
 #include <base/env.h>
 #include <base/printf.h>
 
-namespace Fiasco {
-#include <l4/sys/ktrace.h>
-}
-
 #define LWIP_COMPAT_SOCKETS 0
 
 /* rename lwip functions that have the same name in the libc to lwip_*() */
@@ -467,7 +463,6 @@ int Plugin::select(int nfds,
                         fd_set *exceptfds,
                         struct timeval *timeout)
 {
-	Fiasco::fiasco_tbuf_log("libc_lwip select >>");
 	Libc::File_descriptor *fdo;
 	lwip_fd_set lwip_readfds;
 	lwip_fd_set lwip_writefds;
@@ -558,7 +553,6 @@ int Plugin::select(int nfds,
 			}
 		}
 	}
-	Fiasco::fiasco_tbuf_log("libc_lwip select <<");
 
 	return result;
 }

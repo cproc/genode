@@ -34,10 +34,14 @@
 #include <errno.h>
 
 #ifndef NOT_GENODE
+/*
 namespace Fiasco {
 #include <l4/sys/ktrace.h>
 }
+
 # define TBUF_LOG(s) Fiasco::fiasco_tbuf_log(s)
+*/
+# define TBUF_LOG(s)
 #else
 # define TBUF_LOG(s)
 #endif
@@ -63,7 +67,7 @@ const int MONITOR_INTERVAL     = 5;
 const int SERVER_PORTNUM       = 10000;
 
 const int BUFFER_SIZE          = ( 4096 + 16 );
-const int ITEM_PACKET_SIZE     = 1024; //16;
+const int ITEM_PACKET_SIZE     = 1024;
 const int RESPONSE_PACKET_SIZE = 16;
 
 const int Numpackets           = 1000000;
@@ -314,6 +318,7 @@ void *listener(void *argv )
 
 static void _send( int conn, Packet_type packet_type, int size, char * data )
 {
+	static int count = 0;
 	Packet_header packet_header;
 
 	/* send header */
@@ -326,6 +331,7 @@ static void _send( int conn, Packet_type packet_type, int size, char * data )
 	/* send data */
 	if( size > 0 )
 	{
+		PDBG("count: %d", ++count);
 		send(conn, data, size , 0 );
 	}
 }
@@ -457,11 +463,11 @@ void doServer( char * ip )
 
 void *send_request_packet(void *argv )
 {
-	//Fiasco::fiasco_tbuf_log("send rq >>");
 	int                conn =(int)argv;
 	char               send_buffer[ BUFFER_SIZE ];
 	int                i = 0;
 
+	PINF("SEND REQUESTS: %d", Numpackets);
 	for( i = 0 ; i < Numpackets ; i ++ )
 	{
 		_send( conn,
@@ -472,9 +478,8 @@ void *send_request_packet(void *argv )
 		//if ((i % 10000) == 0)
 		//	PINF("i: %d", i);
 	}
-	PINF("DONE");
+	PINF("SEND REQUEST DONE: %d", i + 1);
 
-	//Fiasco::fiasco_tbuf_log("send rq <<");
 
 	closeClient(conn);
 

@@ -25,10 +25,6 @@
 
 using namespace Libc;
 
-namespace Fiasco {
-#include <l4/sys/ktrace.h>
-}
-
 void (*libc_select_notify)() __attribute__((weak));
 
 
@@ -160,7 +156,6 @@ __attribute__((weak))
 select(int nfds, fd_set *readfds, fd_set *writefds,
        fd_set *exceptfds, struct timeval *timeout)
 {
-	Fiasco::fiasco_tbuf_log("libc select >>");
 	int nready;
 	fd_set in_readfds, in_writefds, in_exceptfds;
 	Genode::Alarm::Time msectimeout;
@@ -274,8 +269,6 @@ select(int nfds, fd_set *readfds, fd_set *writefds,
 			*exceptfds = select_cb.exceptset;
 	} else
 		select_cb_list_lock().unlock();
-
-	Fiasco::fiasco_tbuf_log("libc select <<");
 
 	return nready;
 }

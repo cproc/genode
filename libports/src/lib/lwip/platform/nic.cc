@@ -32,10 +32,6 @@ extern "C" {
 #include <nic/packet_allocator.h>
 #include <nic_session/connection.h>
 
-namespace Fiasco {
-#include <l4/sys/ktrace.h>
-}
-
 /*
  * Thread, that receives packets by the nic-session interface.
  */
@@ -298,7 +294,6 @@ void Nic_receiver_thread::entry()
 {
 	while(true)
 	{
-		Fiasco::fiasco_tbuf_log("Nic_receiver_thread");
 		/*
 		 * Block until we receive a packet,
 		 * then call input function.
