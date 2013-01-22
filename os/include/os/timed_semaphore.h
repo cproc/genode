@@ -235,6 +235,7 @@ namespace Genode {
 			 ** Base class implementations **
 			 ********************************/
 
+			int cnt() { return Semaphore::_cnt; }
 			void down() { Semaphore::down(); }
 			void up()   { Semaphore::up();   }
 	};

@@ -66,11 +66,13 @@ namespace Genode {
 const int MONITOR_INTERVAL     = 5;
 const int SERVER_PORTNUM       = 10000;
 
-const int BUFFER_SIZE          = ( 4096 + 16 );
-const int ITEM_PACKET_SIZE     = 1024;
+const int BUFFER_SIZE          = ( 32768 + 16 );
+const int ITEM_PACKET_SIZE     = 2048;
 const int RESPONSE_PACKET_SIZE = 16;
 
-const int Numpackets           = 1000000;
+const int Numpackets           = 2048;
+
+int packetsize;
 
 typedef enum Node_type
 {
@@ -95,6 +97,7 @@ typedef struct Packet_header
 {
 	int type;
 	int size;
+	char data[16384];
 } Packet_header;
 
 int  Packet_statistics_recv[ PACKET_TYPE_COUNT ] = {0};
@@ -110,7 +113,7 @@ int openClient(char * ip, int port);
 int closeClient(int conn);
 void *server_connector(void *argv );
 void *listener(void *argv );
-static void _send( int conn, Packet_type packet_type, int size, char * data );
+static int _send( int conn, Packet_type packet_type, int size, char * data );
 static int  _recv( int conn, int size, char * buffer );
 void print_packet_statistics();
 
@@ -120,11 +123,11 @@ void doClient( char * ip );
 /*************************************
   packet functions
  *************************************/
-typedef void (*Packet_callback)(int conn, Packet_header packet_header );
+typedef int (*Packet_callback)(int conn, Packet_header packet_header );
 
-void print_message(int conn, Packet_header packet_header );
-void request( int conn, Packet_header packet_header );
-void response(int conn, Packet_header packet_header );
+int print_message(int conn, Packet_header packet_header );
+int request( int conn, Packet_header packet_header );
+int response(int conn, Packet_header packet_header );
 
 Packet_callback packet_function_map[]={
 	print_message,
@@ -243,20 +246,16 @@ void *server_connector(void *argv )
 		PINF( "wait..." );
 		client = accept(server, &addr, &len);
 		PINF("Client socket:%d\n",client );
-		if(client < 0)
-		{
+		if(client < 0) {
 			PINF("Invalid socket from accept!");
 			continue;
+		} else {
+			if (pthread_create( &thread_id, 0, listener, (void*)client ) !=0 ) {
+				printf("error: pthread_create() failed\n");
+				return 0;
+			}
 		}
-
-		if (pthread_create( &thread_id,
-				    0,
-				    listener,
-				    (void*)client ) !=0 )
-		{
-			printf("error: pthread_create() failed\n");
-			return 0;
-		}
+		PDBG("create client thread: %d", client);
 	}
 
 	(void)closeServer( server );
@@ -269,95 +268,98 @@ void *listener(void *argv )
 	Packet_header   packet_header;
 	int             recv_len;
 	int             conn = (int)argv;
+	size_t count = 0;
 	fd_set          socks;
+	char buffer[ITEM_PACKET_SIZE];
 
 	PINF( "Establish connection : %d", conn );
 
-	while( 1 )
-	{
-		TBUF_LOG("recv >>");
-		FD_ZERO(&socks);
-		FD_SET( conn, &socks);
-
-#if SELECT
-		TBUF_LOG("select >>");
-		   int readsocket = select( conn + 1, &socks, 0,0, NULL );
-		   if( readsocket <= 0 )
-		   {
-		   continue;
-		   }
-		TBUF_LOG("select <<");
-#endif
-
+	while (1) {
 		/* receive packet type & size */
 		recv_len = _recv( conn, sizeof(Packet_header), (char*)&packet_header );
-		if( recv_len <= 0 )
-		{
+		if( recv_len <= 0 ) {
 			/* Disconnected */
+			PERR("_recv() <= 0, break");
 			break;
 		}
 
-		if( packet_header.type < PACKET_TYPE_COUNT )
-		{
-			Packet_statistics_recv[ packet_header.type ] ++;
-			packet_function_map[ packet_header.type ]( conn, packet_header );
-			Packet_statistics_proc[ packet_header.type ] ++;
+		if (recv_len != sizeof (Packet_header)) {
+			PERR("recv_len too small: %d", recv_len);
+			break;
 		}
-		else
-		{
+
+		if (packet_header.type < PACKET_TYPE_COUNT) {
+			Packet_statistics_recv[ packet_header.type ] ++;
+			/* receive data */
+//			recv_len = packet_function_map[packet_header.type](conn, packet_header);
+
+			Packet_statistics_proc[ packet_header.type ] ++;
+		} else {
 			PINF("RECV:%d [%d]%d,%d\n",conn, recv_len, packet_header.type, packet_header.size );
 			assert(0);
 		}
-		TBUF_LOG("recv <<");
+
+		PDBG("count: %d, recv_len: %d", ++count, recv_len);
 	}
 
 	PINF( "Disconnected : %d", conn );
+	close(conn);
 
 	return 0;
 }
 
-static void _send( int conn, Packet_type packet_type, int size, char * data )
+static int _send( int conn, Packet_type packet_type, int size, char * data )
 {
 	static int count = 0;
+	ssize_t nbytes1, nbytes2;
 	Packet_header packet_header;
 
 	/* send header */
 	packet_header.type = packet_type;
 	packet_header.size = size;
-	send(conn, &packet_header, sizeof( Packet_header ), 0 );
+	nbytes1 = send(conn, &packet_header, sizeof( Packet_header ), 0 );
+	if (nbytes1 <= 0)
+		return nbytes1;
 
 	Packet_statistics_send[ packet_header.type ] ++;
 
 	/* send data */
-	if( size > 0 )
-	{
-		PDBG("count: %d", ++count);
-		send(conn, data, size , 0 );
+	/*
+	nbytes2 = send(conn, data, size , 0 );
+	if (nbytes2 <= 0) {
+		PDBG("send(): <= 0");
+		return nbytes2;
 	}
+	*/
+
+	PDBG("count: %d", ++count);
+
+	return nbytes1;//+ nbytes2;
 }
 
 static int  _recv( int conn, int size, char * buffer )
 {
 	int               recv_len = 0;
 	int               recv_val;
+	size_t count = 0;
 
-	assert( size > 0 );
+	assert(size > 0);
 
-	while( recv_len < size )
-	{
-		recv_val = recv( conn,
-				 buffer + recv_len,
-				 size - recv_len,
-				 0 );
-		if( recv_val < 0 )
-		{
+	while(recv_len < size) {
+		recv_val = recv( conn, buffer + recv_len, size - recv_len, 0 );
+
+		if (recv_val == 0)
+			break;
+		else if (recv_val == -1)
 			return -1;
-		}
+
 		recv_len += recv_val;
+		count++;
 	}
 
 	return recv_len;
 }
+
 void print_packet_statistics()
 {
 	static const char packet_type_name[][ 64 ] = {
@@ -380,7 +382,7 @@ void print_packet_statistics()
 /*
  * callback functions
  */
-void print_message(int conn, Packet_header packet_header )
+int print_message(int conn, Packet_header packet_header )
 {
 	char recv_buffer[ BUFFER_SIZE ];
 	int  recv_len;
@@ -395,44 +397,40 @@ void print_message(int conn, Packet_header packet_header )
 	}
 	printf("\n" );
 	printf("[%d]%s\n", recv_len, recv_buffer );
+
+	return 0;
 }
 
-void request(int conn, Packet_header packet_header )
+int request(int conn, Packet_header packet_header )
 {
 	char              recv_buffer[ BUFFER_SIZE ];
 	int               recv_len;
 
-	assert( node_type == NODE_TYPE_SERVER );
+	assert(node_type == NODE_TYPE_SERVER);
 
-	/* query 수신 */
 	recv_len = _recv(conn, packet_header.size, recv_buffer );
-	if( recv_len < 0 )
-	{
-		/* Disconnected */
-		return;
+	if(recv_len <= 0) {
+		return recv_len;
 	}
-	assert( recv_len == ITEM_PACKET_SIZE );
 
-	//    /* echo */
-	//    send( conn, PACKET_TYPE_RESPONSE, recv_len, recv_buffer );
+	assert(recv_len == ITEM_PACKET_SIZE);
+	return recv_len;
 }
 
-void response(int conn, Packet_header packet_header )
+int response(int conn, Packet_header packet_header )
 {
 	char              recv_buffer[ BUFFER_SIZE ];
 	int               recv_len;
 
 	assert( node_type == NODE_TYPE_CLIENT );
 
-	/* query 수신 */
 	recv_len = _recv(conn, packet_header.size, recv_buffer );
-	if( recv_len < 0 )
-	{
-		/* Disconnected */
-		return;
+	if( recv_len <= 0 ) {
+		return recv_len;
 	}
 
 	assert( recv_len == ITEM_PACKET_SIZE );
+	return recv_len;
 }
 
 void doServer( char * ip )
@@ -447,6 +445,8 @@ void doServer( char * ip )
 		return;
 	}
 
+	Genode::sleep_forever();
+	/*
 	while( 1 )
 	{
 		timer.msleep( MONITOR_INTERVAL * 1000);
@@ -459,27 +459,32 @@ void doServer( char * ip )
 				 - prev_packet_count ) / MONITOR_INTERVAL );
 		prev_packet_count = Packet_statistics_proc[ PACKET_TYPE_REQUEST ];
 	}
+	*/
 }
 
 void *send_request_packet(void *argv )
 {
 	int                conn =(int)argv;
-	char               send_buffer[ BUFFER_SIZE ];
+	char               buffer[ ITEM_PACKET_SIZE ];
 	int                i = 0;
+	ssize_t nbytes, pbytes;
+
+	pbytes = sizeof (Packet_header) + ITEM_PACKET_SIZE;
 
 	PINF("SEND REQUESTS: %d", Numpackets);
 	for( i = 0 ; i < Numpackets ; i ++ )
 	{
-		_send( conn,
-		      PACKET_TYPE_REQUEST,
-		      ITEM_PACKET_SIZE,
-		      send_buffer );
-
-		//if ((i % 10000) == 0)
-		//	PINF("i: %d", i);
+		nbytes = _send( conn, PACKET_TYPE_REQUEST, ITEM_PACKET_SIZE, buffer );
+		if (nbytes <= 0)
+			break;
+		/*
+		if (nbytes != pbytes) {
+			PERR("_send(): %d != %d", nbytes, pbytes);
+			break;
+		}
+		*/
 	}
-	PINF("SEND REQUEST DONE: %d", i + 1);
-
+	PINF("SEND REQUEST DONE: %d from: %d, val: %d", i, Numpackets, nbytes);
 
 	closeClient(conn);
 
@@ -511,6 +516,8 @@ void doClient( char * ip )
 		return;
 	}
 
+	Genode::sleep_forever();
+/*
 	while( 1 )
 	{
 		timer.msleep( MONITOR_INTERVAL * 1000);
@@ -523,6 +530,7 @@ void doClient( char * ip )
 				 - prev_packet_count ) / MONITOR_INTERVAL );
 		prev_packet_count = Packet_statistics_send[ PACKET_TYPE_REQUEST  ];
 	}
+*/
 }
 
 int main(int argc, char *argv[])
@@ -543,6 +551,7 @@ int main(int argc, char *argv[])
 	{
 		argv_node.attribute("I"         ).value(my_ip,     sizeof(my_ip));
 		argv_node.attribute("server_ip" ).value(server_ip, sizeof(server_ip));
+	//	argv_node.attribute("packetsize" ).value(&packetsize);
 
 		argv_node.attribute("job").value( &job );
 		node_type = (Node_type)job;

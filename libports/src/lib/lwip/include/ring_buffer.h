@@ -70,6 +70,7 @@ class Ring_buffer
 		void add(void* ev)
 		{
 			Genode::Lock::Guard lock_guard(_head_lock);
+			PDBG("_sem.cnt(): %d", _sem.cnt());
 
 			if ((_head + 1)%QUEUE_SIZE != _tail) {
 				_queue[_head] = ev;
@@ -91,6 +92,8 @@ class Ring_buffer
 		{
 			Genode::Alarm::Time time;
 
+			PDBG("_sem.cnt(): %d", _sem.cnt());
+
 			if (t == NO_BLOCK) {
 				time = _sem.down(0);
 			} else if (t == 0) {
@@ -100,6 +103,8 @@ class Ring_buffer
 			} else {
 				time = _sem.down(t);
 			}
+
+			PERR("after _sem.down(): %d", _sem.cnt());
 
 			Genode::Lock::Guard lock_guard(_head_lock);
 

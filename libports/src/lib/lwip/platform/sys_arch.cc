@@ -25,7 +25,6 @@
 #include <thread.h>
 #include <verbose.h>
 
-
 namespace Lwip {
 
 	class Mutex
@@ -517,7 +516,15 @@ extern "C" {
 				//PERR("Invalid mailbox pointer at %lx", *mbox->ptr);
 				return EINVAL;
 			}
-			return _mbox->get(msg, timeout);
+			char name[64], *p = 0;
+			if (Genode::Thread_base::myself()) {
+				Genode::Thread_base::myself()->name(name, sizeof (name - 1));
+				p = name;
+			}
+			PDBG("before _mbox->get(): %s", p ? p : "-");
+			u32_t ret =  _mbox->get(msg, timeout);
+			PDBG("after _mbox->get(): %s", p ? p : "-");
+			return ret;
 		} catch (Genode::Timeout_exception) {
 			return SYS_ARCH_TIMEOUT;
 		} catch (Genode::Nonblocking_exception) {
