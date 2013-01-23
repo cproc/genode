@@ -16,15 +16,6 @@
 #
 
 #
-# TODO: Add support for Linux via user-level networking (using the
-#       tun/tap proxy driver at os/src/drivers/nic/linux)
-#
-if {[have_spec linux]} {
-	puts "Run script does not support Linux."; exit 0 }
-
-requires_installation_of lynx
-
-#
 # Build
 #
 

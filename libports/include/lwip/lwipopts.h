@@ -97,5 +97,6 @@
 /* #define SYS_DEBUG       LWIP_DBG_ON */
 /* #define TCP_DEBUG       LWIP_DBG_ON */
 /* #define TCPIP_DEBUG     LWIP_DBG_ON */
+#define USR_DEBUG       LWIP_DBG_ON
 
 #endif /* __LWIP__LWIPOPTS_H__ */

@@ -130,7 +130,7 @@ append config {
 	<start name="noux">
 		<binary name="noux_net" />
 		<resource name="RAM" quantum="1G" />
-		<config trace_syscalls="yes">
+		<config trace_syscalls="no">
 			<user name="inetutils_user" uid="3" gid="3">
 				<shell name="/bin/bash" />
 				<home name="/home" />

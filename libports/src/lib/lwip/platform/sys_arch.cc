@@ -20,7 +20,7 @@
 
 /* LwIP includes */
 #include <lwip/genode.h>
-#include <timer.h>
+//#include <timer.h>
 #include <ring_buffer.h>
 #include <thread.h>
 #include <verbose.h>
@@ -476,15 +476,22 @@ extern "C" {
 	 */
 	err_t sys_mbox_trypost(sys_mbox_t* mbox, void *msg)
 	{
+		char name[32] = { 0 };
+		if (Genode::Thread_base::myself())
+			Genode::Thread_base::myself()->name(name, sizeof (name) - 1);
 		try {
 			Mailbox* _mbox = reinterpret_cast<Mailbox*>(mbox->ptr);
 			if (!_mbox) {
 				//PERR("Invalid mailbox pointer at %lx", *mbox->ptr);
 				return EINVAL;
 			}
+
+			PINF("> _mbox->add(): %s", name);
 			_mbox->add(msg);
+			PINF("< _mbox->add(): %s", name);
 			return ERR_OK;
 		} catch (Mailbox::Overflow) {
+			PINF("> _mbox->add(): %s, OVERFLOW", name);
 			if (verbose)
 				PWRN("Overflow exception!");
 		} catch (...) {
@@ -516,14 +523,13 @@ extern "C" {
 				//PERR("Invalid mailbox pointer at %lx", *mbox->ptr);
 				return EINVAL;
 			}
-			char name[64], *p = 0;
-			if (Genode::Thread_base::myself()) {
-				Genode::Thread_base::myself()->name(name, sizeof (name - 1));
-				p = name;
-			}
-			PDBG("before _mbox->get(): %s", p ? p : "-");
+			char name[32] = { 0 };
+			if (Genode::Thread_base::myself())
+				Genode::Thread_base::myself()->name(name, sizeof (name) - 1);
+
+			PINF("> _mbox->get(): %s, timeout: %u", name, timeout);
 			u32_t ret =  _mbox->get(msg, timeout);
-			PDBG("after _mbox->get(): %s", p ? p : "-");
+			PINF("< _mbox->get(): %s, time: %u", name, ret);
 			return ret;
 		} catch (Genode::Timeout_exception) {
 			return SYS_ARCH_TIMEOUT;

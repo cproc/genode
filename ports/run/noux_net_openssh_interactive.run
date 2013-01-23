@@ -201,7 +201,7 @@ if {[have_spec x86_64]} {
 append_if [have_spec x86]     qemu_args " -net nic,model=e1000"
 append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
 
-append qemu_args " -net user "
+append qemu_args " -net user -net dump "
 
 run_genode_until forever
 

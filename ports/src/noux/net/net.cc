@@ -16,6 +16,7 @@
 #include <cap_session/connection.h>
 #include <dataspace/client.h>
 #include <base/lock.h>
+#include <base/allocator.h>
 
 #include <lwip/genode.h>
 
@@ -128,7 +129,7 @@ bool Noux::Child::_syscall_net(Noux::Session::Syscall sc)
 				GET_SOCKET_IO_CHANNEL_BACKEND(socket_io_channel->backend(), backend);
 
 				if (!backend->socket(_sysio)) {
-					destroy(env()->heap(), socket_io_channel);
+					Genode::destroy(env()->heap(), socket_io_channel);
 					return false;
 				}
 
