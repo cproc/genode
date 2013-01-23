@@ -68,7 +68,9 @@ extern "C" {
 
 	int pthread_cancel(pthread_t thread)
 	{
+		PDBG("destroying pthread");
 		destroy(env()->heap(), thread);
+		PDBG("pthread destroyed");
 		return 0;
 	}
 
