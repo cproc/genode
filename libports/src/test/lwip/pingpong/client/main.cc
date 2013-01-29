@@ -16,6 +16,7 @@
 #include <base/printf.h>
 #include <util/string.h>
 #include <os/config.h>
+#include <timer_session/connection.h>
 
 #include <lwip/genode.h>
 
@@ -36,6 +37,7 @@ dial(const char *addr)
 {
 	int s;
 	struct sockaddr_in in_addr;
+	Timer::Connection timer;
 
 	PLOG("Create new socket...");
 	s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -56,9 +58,11 @@ dial(const char *addr)
 
 	PLOG("Sucessful connected to server.");
 
+	timer.msleep(1000);
+
 	return s;
 }
-
+extern "C" void wait_for_continue();
 int
 sendping(const char *addr, size_t dsize)
 {
@@ -80,6 +84,9 @@ sendping(const char *addr, size_t dsize)
 	}
 
 	PINF("Try to send %d packets...", Numpackets);
+
+	wait_for_continue();
+
 	for (i = 0; i < Numpackets; i++) {
 		forgepacket(&p, i + 1);
 
