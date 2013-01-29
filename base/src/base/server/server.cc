@@ -59,8 +59,9 @@ void Rpc_entrypoint::entry()
 	while (!_exit_handler.exit) {
 
 		int opcode = 0;
+		long local_name = 0;
 
-		srv >> IPC_REPLY_WAIT >> opcode;
+		srv >> IPC_REPLY_WAIT >> local_name >> opcode;
 
 		/* set default return value */
 		srv.ret(ERR_INVALID_OBJECT);
@@ -76,7 +77,7 @@ void Rpc_entrypoint::entry()
 		}
 
 		/* dispatch request */
-		try { srv.ret(_curr_obj->dispatch(opcode, srv, srv)); }
+		try { srv.ret(_curr_obj->dispatch(local_name, opcode, srv, srv)); }
 		catch (Blocking_canceled) { }
 
 		{

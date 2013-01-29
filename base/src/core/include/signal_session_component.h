@@ -155,7 +155,7 @@ namespace Genode {
 			 ** Rpc_object interface **
 			 **************************/
 
-			Rpc_exception_code dispatch(int opcode, Ipc_istream &is, Ipc_ostream &os)
+			Rpc_exception_code dispatch(long local_name, int opcode, Ipc_istream &is, Ipc_ostream &os)
 			{
 				/*
 				 * Make IPC output stream available to the submit function. The
@@ -165,7 +165,7 @@ namespace Genode {
 				_ipc_ostream = &os;
 
 				/* dispatch RPC */
-				return Rpc_object<Signal_session>::dispatch(opcode, is, os);
+				return Rpc_object<Signal_session>::dispatch(local_name, opcode, is, os);
 			}
 	};
 }

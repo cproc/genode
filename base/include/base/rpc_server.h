@@ -98,7 +98,7 @@ namespace Genode {
 			}
 
 			template <typename RPC_FUNCTIONS_TO_CHECK>
-			Rpc_exception_code _do_dispatch(Rpc_opcode opcode, Ipc_istream &is, Ipc_ostream &os,
+			Rpc_exception_code _do_dispatch(long local_name, Rpc_opcode opcode, Ipc_istream &is, Ipc_ostream &os,
 			                                Meta::Overload_selector<RPC_FUNCTIONS_TO_CHECK>)
 			{
 				using namespace Meta;
@@ -139,16 +139,16 @@ namespace Genode {
 					/* write results to ostream 'os' */
 					_write_results(os, args.data());
 
-					rpc_trace_dispatch(os.dst(), This_rpc_function::name());
+					rpc_trace_dispatch(local_name, os.dst(), This_rpc_function::name());
 
 					return exc;
 				}
 
 				typedef typename RPC_FUNCTIONS_TO_CHECK::Tail Tail;
-				return _do_dispatch(opcode, is, os, Overload_selector<Tail>());
+				return _do_dispatch(local_name, opcode, is, os, Overload_selector<Tail>());
 			}
 
-			int _do_dispatch(int opcode, Ipc_istream &, Ipc_ostream &,
+			int _do_dispatch(long local_name, int opcode, Ipc_istream &, Ipc_ostream &,
 			                 Meta::Overload_selector<Meta::Empty>)
 			{
 				PERR("invalid opcode %d\n", opcode);
@@ -158,7 +158,7 @@ namespace Genode {
 			/**
 			 * Handle corner case of having an RPC interface with no RPC functions
 			 */
-			Rpc_exception_code _do_dispatch(int opcode, Ipc_istream &, Ipc_ostream &,
+			Rpc_exception_code _do_dispatch(long local_name, int opcode, Ipc_istream &, Ipc_ostream &,
 			                                Meta::Overload_selector<Meta::Type_list<> >)
 			{
 				return 0;
@@ -173,9 +173,9 @@ namespace Genode {
 
 		public:
 
-			Rpc_exception_code dispatch(int opcode, Ipc_istream &is, Ipc_ostream &os)
+			Rpc_exception_code dispatch(long local_name, int opcode, Ipc_istream &is, Ipc_ostream &os)
 			{
-				return _do_dispatch(opcode, is, os,
+				return _do_dispatch(local_name, opcode, is, os,
 				                    Meta::Overload_selector<Rpc_functions>());
 			}
 	};
@@ -194,7 +194,7 @@ namespace Genode {
 			 * \param is   Ipc_input stream with method arguments
 			 * \param os   Ipc_output stream for storing method results
 			 */
-			virtual int dispatch(int op, Ipc_istream &is, Ipc_ostream &os) = 0;
+			virtual int dispatch(long local_name, int op, Ipc_istream &is, Ipc_ostream &os) = 0;
 	};
 
 
@@ -212,9 +212,9 @@ namespace Genode {
 		 ** Server-object interface **
 		 *****************************/
 
-		Rpc_exception_code dispatch(int opcode, Ipc_istream &is, Ipc_ostream &os)
+		Rpc_exception_code dispatch(long local_name, int opcode, Ipc_istream &is, Ipc_ostream &os)
 		{
-			return Rpc_dispatcher<RPC_INTERFACE, SERVER>::dispatch(opcode, is, os);
+			return Rpc_dispatcher<RPC_INTERFACE, SERVER>::dispatch(local_name, opcode, is, os);
 		}
 
 		Capability<RPC_INTERFACE> const cap() const

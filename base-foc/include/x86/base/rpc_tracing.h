@@ -67,12 +67,12 @@ inline void rpc_trace_call(Native_capability const &cap, const char *rname,
 		_dump_tracebuffer(1024 * 8);
 }
 
-inline void rpc_trace_dispatch(Native_capability const &cap, const char *rname)
+inline void rpc_trace_dispatch(long local_name, Native_capability const &cap, const char *rname)
 {
 	using namespace Fiasco;
 	char buffer[128];
 
-	snprintf(buffer, sizeof (buffer) - 1, " D%s %d", rname, cap.local_name());
+	snprintf(buffer, sizeof (buffer) - 1, " D%s %d %ld", rname, cap.local_name(), local_name);
 
 	fiasco_tbuf_log(buffer);
 }

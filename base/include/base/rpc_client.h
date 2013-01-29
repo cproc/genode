@@ -119,6 +119,7 @@ namespace Genode {
 		Rpc_opcode opcode = static_cast<int>(Meta::Index_of<Rpc_functions, IF>::Value);
 
 		/* marshal opcode and RPC input arguments */
+		ipc_client << local_name();
 		ipc_client << opcode;
 		_marshal_args(ipc_client, args);
 
