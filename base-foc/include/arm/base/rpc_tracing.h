@@ -62,7 +62,8 @@ inline void rpc_trace_call(Native_capability const &cap, const char *rname,
 	snprintf(buffer, sizeof (buffer) - 1, " C%s %d %s", rname, cap.local_name(),
 	         suffix);
 
-	fiasco_tbuf_log(buffer);
+	if (cap.local_name() == 1196)
+		fiasco_tbuf_log(buffer);
 
 	if (*suffix == '<')
 		_dump_tracebuffer(1024 * 8);
@@ -75,7 +76,8 @@ inline void rpc_trace_dispatch(long local_name, Native_capability const &cap, co
 
 	snprintf(buffer, sizeof (buffer) - 1, " D%s %d %ld", rname, cap.local_name(), local_name);
 
-	fiasco_tbuf_log(buffer);
+	if (local_name == 1196)
+		fiasco_tbuf_log(buffer);
 }
 #else
 #define rpc_trace_call(...)
