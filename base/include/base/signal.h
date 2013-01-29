@@ -322,7 +322,7 @@ namespace Genode {
 	 * \param T  type of signal-handling class
 	 */
 	template <typename T>
-	class Signal_dispatcher : private Signal_dispatcher_base,
+	class Signal_dispatcher : public Signal_dispatcher_base,
 	                          public  Signal_context_capability
 	{
 		private:

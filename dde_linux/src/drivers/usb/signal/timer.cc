@@ -17,6 +17,10 @@
 #include <lx_emul.h>
 #include "signal.h"
 
+namespace Fiasco {
+#include <l4/sys/ktrace.h>
+}
+
 static void handler(void *timer);
 
 
@@ -100,7 +104,9 @@ static void handler(void *timer)
 
 	/* set context and submit */
 	_signal->sender()->context(t->cap());
+	Fiasco::fiasco_tbuf_log("timer handler: sending signal");
 	_signal->sender()->submit();
+	Fiasco::fiasco_tbuf_log("timer handler: signal sent");
 }
 
 

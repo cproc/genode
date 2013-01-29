@@ -14,6 +14,9 @@
 #include <signal.h>
 #include <lx_emul.h>
 
+namespace Fiasco {
+#include <l4/sys/ktrace.h>
+}
 
 static Signal_helper *_signal = 0;
 
@@ -39,7 +42,10 @@ class Event_context : public Driver_context
 		}
 
 		void submit() {
-			_signal->sender()->submit(); }
+			Fiasco::fiasco_tbuf_log("Event_context::submit(): sending signal");
+			_signal->sender()->submit();
+			Fiasco::fiasco_tbuf_log("Event_context::submit(): signal sent");
+		}
 
 		void handle() {
 			Routine::schedule_all(); }

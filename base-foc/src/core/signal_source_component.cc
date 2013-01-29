@@ -42,6 +42,8 @@ void Signal_source_component::submit(Signal_context_component *context,
                                      Ipc_ostream              *ostream,
                                      int                       cnt)
 {
+	if (context->imprint() == (long)0x50fc808)
+		PINF("core match");
 	/* enqueue signal to context */
 	context->increment_signal_cnt(cnt);
 

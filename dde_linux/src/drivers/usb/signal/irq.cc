@@ -18,6 +18,10 @@ extern "C" {
 #include <dde_kit/interrupt.h>
 }
 
+namespace Fiasco {
+#include <l4/sys/ktrace.h>
+}
+
 /* our local incarnation of sender and receiver */
 static Signal_helper *_signal = 0;
 static Genode::Lock   _irq_sync(Genode::Lock::LOCKED);
@@ -88,7 +92,9 @@ class Irq_context : public Driver_context,
 
 			/* set context & submit signal */
 			_signal->sender()->context(ctx->_ctx_cap);
+			Fiasco::fiasco_tbuf_log("_dde_handler(): sending signal");
 			_signal->sender()->submit();
+			Fiasco::fiasco_tbuf_log("_dde_handler(): signal sent");
 
 			/* wait for interrupt to get acked at device side */
 			_irq_sync.lock();

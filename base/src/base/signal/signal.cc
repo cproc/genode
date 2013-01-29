@@ -421,6 +421,7 @@ void Signal_receiver::local_submit(Signal::Data ns)
 	}
 }
 
+Genode::Signal_context *global_context;
 
 void Signal_receiver::dispatch_signals(Signal_source *signal_source)
 {
@@ -429,6 +430,9 @@ void Signal_receiver::dispatch_signals(Signal_source *signal_source)
 
 		/* look up context as pointed to by the signal imprint */
 		Signal_context *context = (Signal_context *)(source_signal.imprint());
+
+		if (context == global_context)
+			PINF("context match: %p", context);
 
 		if (!signal_context_registry()->test_and_lock(context)) {
 			PWRN("encountered dead signal context");

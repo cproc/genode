@@ -97,7 +97,8 @@ void Signal_session_component::submit(Signal_context_capability context_cap,
 		PDBG("invalid signal-context capability");
 		return;
 	}
-
+	if (context->imprint() == (long)0x50fc808)
+		PDBG("called: %lx", context->imprint());
 	context->source()->submit(context, _ipc_ostream, cnt);
 }
 

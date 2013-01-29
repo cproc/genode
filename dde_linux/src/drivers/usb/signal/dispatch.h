@@ -17,6 +17,7 @@
 
 #include "signal.h"
 
+extern Genode::Signal_context *global_context;
 
 /**
  * Session components that overrides signal handlers
@@ -48,6 +49,7 @@ class Packet_session_component : public RPC
 			 */
 			RPC::_tx.sigh_packet_avail(_process_packet_dispatcher);
 			RPC::_tx.sigh_ready_to_ack(_process_packet_dispatcher);
+			global_context = &_process_packet_dispatcher;
 		}
 
 		Packet_session_component(Genode::Dataspace_capability  tx_ds,
@@ -66,6 +68,7 @@ class Packet_session_component : public RPC
 			 */
 			RPC::_tx.sigh_packet_avail(_process_packet_dispatcher);
 			RPC::_tx.sigh_ready_to_ack(_process_packet_dispatcher);
+			global_context = &_process_packet_dispatcher;
 		}
 };
 
