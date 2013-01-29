@@ -20,10 +20,6 @@
 #include <timer_session/connection.h>
 #include <signal/dispatch.h>
 
-namespace Fiasco {
-#include <l4/sys/ktrace.h>
-}
-
 #define BENCH 0
 
 namespace Nic {
@@ -134,10 +130,8 @@ namespace Nic {
 
 			void _process_packets(unsigned)
 			{
-				PDBG("started");
 				static sk_buff work_skb; /* dummy skb for fixup calls */
 				static Counter counter("TX");
-				static int packet_counter = -8;
 
 				int tx_cnt         = 0;
 				unsigned size      = 0;
@@ -151,7 +145,6 @@ namespace Nic {
 					addr_t virt = (addr_t)_tx_sink->packet_content(packet);
 
 					if (_device->burst()) {
-						PDBG("burst, ptr = %p", ptr);
 						if (!ptr || !_device->skb_fill(&work_skb, ptr, packet.size(), skb->end)) {
 
 							/* submit batch to device */
@@ -190,12 +183,8 @@ namespace Nic {
 					_tx_sink->acknowledge_packet(packet);
 
 					/* it's cooperative scheduling - be nice */
-					PDBG("tx_cnt = %d", tx_cnt);
-					//if (tx_cnt == 20)
-					if ((tx_cnt % 20) == 0)
+					if (tx_cnt == 20)
 						break;
-
-					PDBG("%d: sent %zu bytes", ++packet_counter, packet.size());
 				}
 
 				/* sumbit last skb */
@@ -210,15 +199,8 @@ namespace Nic {
 				/* release acknowledged packets */
 				_rx_ack(false);
 
-				if (_tx_sink->packet_avail()) {
-					PINF("sending signal");
-					Fiasco::fiasco_tbuf_log("_process_packets(): sending signal");
+				if (_tx_sink->packet_avail())
 					Signal_transmitter(_tx.sigh_packet_avail()).submit();
-					Fiasco::fiasco_tbuf_log("_process_packets(): signal sent");
-					PINF("signal sent");
-				}
-
-				PDBG("finished");
 			}
 
 			void _rx_ack(bool block = true)
@@ -258,7 +240,6 @@ namespace Nic {
 			 */
 			void rx(addr_t virt, size_t size)
 			{
-				//PDBG("received %zu bytes", size);
 				static Counter counter("RX");
 
 				while (true) {
