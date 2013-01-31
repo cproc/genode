@@ -293,6 +293,7 @@ extern "C" {
 extern "C" void raw_write_str(const char *);
 void Nic_receiver_thread::entry()
 {
+	static int count = 0;
 	while(true)
 	{
 		/*
@@ -300,6 +301,7 @@ void Nic_receiver_thread::entry()
 		 * then call input function.
 		 */
 		_rx_packet = _nic->rx()->get_packet();
+		++count;
 		genode_netif_input(_netif);
 	}
 }

@@ -1,0 +1,147 @@
+lwip_contrib_sem_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/api/api_msg.c |   24 ++++++++++++++++++++++--
+ src/api/tcpip.c   |    6 ++++++
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/src/api/api_msg.c b/src/api/api_msg.c
+index d4e44b9..29dbc3c 100644
+--- a/src/api/api_msg.c
++++ b/src/api/api_msg.c
+@@ -53,7 +53,7 @@
+ #include "lwip/dns.h"
+ 
+ #include <string.h>
+-
++int sem_up_count = 0;
+ #define SET_NONBLOCKING_CONNECT(conn, val)  do { if(val) { \
+   (conn)->flags |= NETCONN_FLAG_IN_NONBLOCKING_CONNECT; \
+ } else { \
+@@ -396,6 +396,8 @@ err_tcp(void *arg, err_t err)
+       conn->current_msg->err = err;
+       conn->current_msg = NULL;
+       /* wake up the waiting task */
++      LWIP_DEBUGF(USR_DEBUG, ("err_tcp(): calling sys_sem_signal(%p)\n", &conn->op_completed));
++      ++sem_up_count;
+       sys_sem_signal(&conn->op_completed);
+     }
+   } else {
+@@ -806,6 +808,8 @@ do_close_internal(struct netconn *conn)
+       API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
+     }
+     /* wake up the application task */
++    LWIP_DEBUGF(USR_DEBUG, ("do_close_internal(): calling sys_sem_signal(%p)\n", &conn->op_completed));
++    ++sem_up_count;
+     sys_sem_signal(&conn->op_completed);
+   } else {
+     /* Closing failed, restore some of the callbacks */
+@@ -883,6 +887,8 @@ do_delconn(struct api_msg_msg *msg)
+     API_EVENT(msg->conn, NETCONN_EVT_SENDPLUS, 0);
+   }
+   if (sys_sem_valid(&msg->conn->op_completed)) {
++    LWIP_DEBUGF(USR_DEBUG, ("do_delconn(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++    ++sem_up_count;
+     sys_sem_signal(&msg->conn->op_completed);
+   }
+ }
+@@ -967,6 +973,8 @@ do_connected(void *arg, struct tcp_pcb *pcb, err_t err)
+   API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
+ 
+   if (was_blocking) {
++	++sem_up_count;
++	LWIP_DEBUGF(USR_DEBUG, ("%d: do_connected(): calling sys_sem_signal(%p)\n", sem_up_count, &conn->op_completed));
+     sys_sem_signal(&conn->op_completed);
+   }
+   return ERR_OK;
+@@ -1028,6 +1036,8 @@ do_connect(struct api_msg_msg *msg)
+     break;
+     }
+   }
++  LWIP_DEBUGF(USR_DEBUG, ("do_connect(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&msg->conn->op_completed);
+ }
+ 
+@@ -1192,6 +1202,8 @@ do_recv(struct api_msg_msg *msg)
+   }
+   TCPIP_APIMSG_ACK(msg);
+ }
++int writemore_count = 0;
++int do_writemore_call_count = 0;
+ 
+ /**
+  * See if more data needs to be written from a previous call to netconn_write.
+@@ -1207,6 +1219,7 @@ do_recv(struct api_msg_msg *msg)
+ static err_t
+ do_writemore(struct netconn *conn)
+ {
++++do_writemore_call_count;
+   err_t err;
+   void *dataptr;
+   u16_t len, available;
+@@ -1298,7 +1311,7 @@ err_mem:
+       /* If ERR_MEM, we wait for sent_tcp or poll_tcp to be called
+          we do NOT return to the application thread, since ERR_MEM is
+          only a temporary error! */
+-
++        LWIP_DEBUGF(USR_DEBUG, ("do_writemore(): ERR_MEM\n"));
+       /* tcp_write returned ERR_MEM, try tcp_output anyway */
+       tcp_output(conn->pcb.tcp);
+ 
+@@ -1306,6 +1319,7 @@ err_mem:
+       conn->flags |= NETCONN_FLAG_WRITE_DELAYED;
+ #endif
+     } else {
++    	LWIP_DEBUGF(USR_DEBUG, ("do_writemore(): err != ERR_MEM\n"));
+       /* On errors != ERR_MEM, we don't try writing any more but return
+          the error to the application thread. */
+       write_finished = 1;
+@@ -1322,6 +1336,10 @@ err_mem:
+     if ((conn->flags & NETCONN_FLAG_WRITE_DELAYED) != 0)
+ #endif
+     {
++   	  ++writemore_count;
++   	  do_writemore_call_count = writemore_count;
++   	  ++sem_up_count;
++      //LWIP_DEBUGF(USR_DEBUG, ("%d: do_writemore(): calling sys_sem_signal(%p)\n", sem_up_count, &conn->op_completed));
+       sys_sem_signal(&conn->op_completed);
+     }
+   }
+@@ -1478,6 +1496,8 @@ do_close(struct api_msg_msg *msg)
+   {
+     msg->err = ERR_VAL;
+   }
++  LWIP_DEBUGF(USR_DEBUG, ("do_close(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&msg->conn->op_completed);
+ }
+ 
+diff --git a/src/api/tcpip.c b/src/api/tcpip.c
+index 18d5f67..8447106 100644
+--- a/src/api/tcpip.c
++++ b/src/api/tcpip.c
+@@ -302,6 +302,8 @@ tcpip_untimeout(sys_timeout_handler h, void *arg)
+  * @param apimsg a struct containing the function to call and its parameters
+  * @return ERR_OK if the function was called, another err_t if not
+  */
++int sem_down_count = 0;
++int apimsg_count = -2;
+ err_t
+ tcpip_apimsg(struct api_msg *apimsg)
+ {
+@@ -315,7 +317,11 @@ tcpip_apimsg(struct api_msg *apimsg)
+     msg.type = TCPIP_MSG_API;
+     msg.msg.apimsg = apimsg;
+     sys_mbox_post(&mbox, &msg);
++    ++apimsg_count;
++    ++sem_down_count;
++    //LWIP_DEBUGF(USR_DEBUG, ("%d: tcpip_apimsg(): calling sys_arch_sem_wait(%p)\n", sem_down_count, &apimsg->msg.conn->op_completed));
+     sys_arch_sem_wait(&apimsg->msg.conn->op_completed, 0);
++    //LWIP_DEBUGF(USR_DEBUG, ("%d: tcpip_apimsg(): sys_arch_sem_wait(%p) returned\n", sem_down_count, &apimsg->msg.conn->op_completed));
+     return apimsg->msg.err;
+   }
+   return ERR_VAL;

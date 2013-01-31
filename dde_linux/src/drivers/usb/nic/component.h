@@ -132,6 +132,7 @@ namespace Nic {
 			{
 				static sk_buff work_skb; /* dummy skb for fixup calls */
 				static Counter counter("TX");
+				//static int packet_counter = -8;
 
 				int tx_cnt         = 0;
 				unsigned size      = 0;
@@ -178,6 +179,8 @@ namespace Nic {
 					if (!_tx_sink->ready_to_ack()) {
 						_wait_event(_tx_sink->ready_to_ack());
 					}
+
+//PDBG("%d: sent %zu bytes", ++packet_counter, packet.size());
 
 					/* acknowledge to client */
 					_tx_sink->acknowledge_packet(packet);
@@ -240,6 +243,7 @@ namespace Nic {
 			 */
 			void rx(addr_t virt, size_t size)
 			{
+				//PDBG("received %zu bytes", size);
 				static Counter counter("RX");
 
 				while (true) {
