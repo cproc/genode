@@ -17,7 +17,7 @@
 
 enum {
 	Databuf    = 1024 * 1024, // data buffer for server
-	Numpackets = 1024,
+	Numpackets = 16*1024,
 	Pdata      = 16384,
 	Sport      = 10000,
 	Tping      = 1,

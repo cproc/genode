@@ -49,7 +49,7 @@ set config {
 	<start name="test-ping_client">
 		<resource name="RAM" quantum="16M"/>
 		<config>
-			<argv verbose="1" serverip="10.0.0.59" startsize="1024" endsize="16384" />
+			<argv verbose="1" serverip="10.0.0.59" startsize="1024" endsize="1024" />
 		</config>
 	</start> }
 

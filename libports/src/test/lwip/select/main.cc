@@ -70,7 +70,7 @@ const int BUFFER_SIZE          = ( 32768 + 16 );
 const int ITEM_PACKET_SIZE     = 2048;
 const int RESPONSE_PACKET_SIZE = 16;
 
-const int Numpackets           = 2048;
+const int Numpackets           = 1/*2048*/;
 
 int packetsize;
 
@@ -97,7 +97,7 @@ typedef struct Packet_header
 {
 	int type;
 	int size;
-	char data[16384];
+	char data[1024];
 } Packet_header;
 
 int  Packet_statistics_recv[ PACKET_TYPE_COUNT ] = {0};
@@ -303,6 +303,7 @@ void *listener(void *argv )
 	}
 
 	PINF( "Disconnected : %d", conn );
+	while(1);
 	close(conn);
 
 	return 0;
@@ -317,7 +318,9 @@ static int _send( int conn, Packet_type packet_type, int size, char * data )
 	/* send header */
 	packet_header.type = packet_type;
 	packet_header.size = size;
+	PDBG("calling send()");
 	nbytes1 = send(conn, &packet_header, sizeof( Packet_header ), 0 );
+	PDBG("sent %zd bytes", nbytes1);
 	if (nbytes1 <= 0)
 		return nbytes1;
 
@@ -346,7 +349,9 @@ static int  _recv( int conn, int size, char * buffer )
 	assert(size > 0);
 
 	while(recv_len < size) {
+		PDBG("calling recv()");
 		recv_val = recv( conn, buffer + recv_len, size - recv_len, 0 );
+		PDBG("received %zd bytes", recv_val);
 
 		if (recv_val == 0)
 			break;
@@ -485,7 +490,7 @@ void *send_request_packet(void *argv )
 		*/
 	}
 	PINF("SEND REQUEST DONE: %d from: %d, val: %d", i, Numpackets, nbytes);
-
+while(1);
 	closeClient(conn);
 
 	Genode::sleep_forever();
@@ -509,6 +514,8 @@ void doClient( char * ip )
 	{
 		return;
 	}
+
+	timer.msleep(1000);
 
 	if (pthread_create( &thread_id, 0, send_request_packet, (void*)conn ) !=0 )
 	{
