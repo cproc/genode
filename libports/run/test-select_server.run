@@ -121,6 +121,8 @@ append qemu_args " -m 128 -nographic "
 append_if [have_spec x86]     qemu_args " -net nic,model=e1000 "
 append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
 
+append qemu_args " -net user -redir tcp:10000::10000 "
+
 run_genode_until forever
 
 # vi: set ft=tcl :
