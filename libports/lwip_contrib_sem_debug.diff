@@ -1,0 +1,222 @@
+lwip_contrib_sem_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/api/api_msg.c        |   25 ++++++++++++++++++++++++-
+ src/api/sockets.c        |   11 +++++++++++
+ src/api/tcpip.c          |    8 ++++++++
+ src/include/lwip/tcpip.h |    2 +-
+ 4 files changed, 44 insertions(+), 2 deletions(-)
+
+diff --git a/src/api/api_msg.c b/src/api/api_msg.c
+index d4e44b9..131230a 100644
+--- a/src/api/api_msg.c
++++ b/src/api/api_msg.c
+@@ -36,6 +36,10 @@
+  *
+  */
+ 
++int sem_up_count = 0;
++int do_writemore_call_count = 0;
++int do_writemore_sem_up_count = 0;
++
+ #include "lwip/opt.h"
+ 
+ #if LWIP_NETCONN /* don't build if not configured for use in lwipopts.h */
+@@ -396,6 +400,8 @@ err_tcp(void *arg, err_t err)
+       conn->current_msg->err = err;
+       conn->current_msg = NULL;
+       /* wake up the waiting task */
++      LWIP_DEBUGF(USR_DEBUG, ("err_tcp(): calling sys_sem_signal(%p)\n", &conn->op_completed));
++      ++sem_up_count;
+       sys_sem_signal(&conn->op_completed);
+     }
+   } else {
+@@ -806,6 +812,8 @@ do_close_internal(struct netconn *conn)
+       API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
+     }
+     /* wake up the application task */
++    LWIP_DEBUGF(USR_DEBUG, ("do_close_internal(): calling sys_sem_signal(%p)\n", &conn->op_completed));
++    ++sem_up_count;
+     sys_sem_signal(&conn->op_completed);
+   } else {
+     /* Closing failed, restore some of the callbacks */
+@@ -883,6 +891,8 @@ do_delconn(struct api_msg_msg *msg)
+     API_EVENT(msg->conn, NETCONN_EVT_SENDPLUS, 0);
+   }
+   if (sys_sem_valid(&msg->conn->op_completed)) {
++    LWIP_DEBUGF(USR_DEBUG, ("do_delconn(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++    ++sem_up_count;
+     sys_sem_signal(&msg->conn->op_completed);
+   }
+ }
+@@ -967,6 +977,8 @@ do_connected(void *arg, struct tcp_pcb *pcb, err_t err)
+   API_EVENT(conn, NETCONN_EVT_SENDPLUS, 0);
+ 
+   if (was_blocking) {
++	++sem_up_count;
++	LWIP_DEBUGF(USR_DEBUG, ("%d: do_connected(): calling sys_sem_signal(%p)\n", sem_up_count, &conn->op_completed));
+     sys_sem_signal(&conn->op_completed);
+   }
+   return ERR_OK;
+@@ -1028,6 +1040,8 @@ do_connect(struct api_msg_msg *msg)
+     break;
+     }
+   }
++  LWIP_DEBUGF(USR_DEBUG, ("do_connect(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&msg->conn->op_completed);
+ }
+ 
+@@ -1207,6 +1221,7 @@ do_recv(struct api_msg_msg *msg)
+ static err_t
+ do_writemore(struct netconn *conn)
+ {
++++do_writemore_call_count;
+   err_t err;
+   void *dataptr;
+   u16_t len, available;
+@@ -1298,7 +1313,7 @@ err_mem:
+       /* If ERR_MEM, we wait for sent_tcp or poll_tcp to be called
+          we do NOT return to the application thread, since ERR_MEM is
+          only a temporary error! */
+-
++        LWIP_DEBUGF(USR_DEBUG, ("do_writemore(): ERR_MEM\n"));
+       /* tcp_write returned ERR_MEM, try tcp_output anyway */
+       tcp_output(conn->pcb.tcp);
+ 
+@@ -1306,6 +1321,7 @@ err_mem:
+       conn->flags |= NETCONN_FLAG_WRITE_DELAYED;
+ #endif
+     } else {
++    	LWIP_DEBUGF(USR_DEBUG, ("do_writemore(): err != ERR_MEM\n"));
+       /* On errors != ERR_MEM, we don't try writing any more but return
+          the error to the application thread. */
+       write_finished = 1;
+@@ -1322,6 +1338,10 @@ err_mem:
+     if ((conn->flags & NETCONN_FLAG_WRITE_DELAYED) != 0)
+ #endif
+     {
++   	  ++do_writemore_sem_up_count;
++   	  do_writemore_call_count = do_writemore_sem_up_count;
++      //LWIP_DEBUGF(USR_DEBUG, ("%d: do_writemore(): calling sys_sem_signal(%p)\n", do_writemore_sem_up_count, &conn->op_completed));
++   	  ++sem_up_count;
+       sys_sem_signal(&conn->op_completed);
+     }
+   }
+@@ -1363,6 +1383,7 @@ do_write(struct api_msg_msg *msg)
+         if (do_writemore(msg->conn) != ERR_OK) {
+           LWIP_ASSERT("state!", msg->conn->state == NETCONN_WRITE);
+           UNLOCK_TCPIP_CORE();
++          ++sem_down_count;
+           sys_arch_sem_wait(&msg->conn->op_completed, 0);
+           LOCK_TCPIP_CORE();
+           LWIP_ASSERT("state!", msg->conn->state == NETCONN_NONE);
+@@ -1478,6 +1499,8 @@ do_close(struct api_msg_msg *msg)
+   {
+     msg->err = ERR_VAL;
+   }
++  LWIP_DEBUGF(USR_DEBUG, ("do_close(): calling sys_sem_signal(%p)\n", &msg->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&msg->conn->op_completed);
+ }
+ 
+diff --git a/src/api/sockets.c b/src/api/sockets.c
+index 48705be..54d45ed 100644
+--- a/src/api/sockets.c
++++ b/src/api/sockets.c
+@@ -38,6 +38,9 @@
+  *
+  */
+ 
++extern int sem_down_count;
++extern int sem_up_count;
++
+ #include "lwip/opt.h"
+ 
+ #if LWIP_SOCKET /* don't build if not configured for use in lwipopts.h */
+@@ -1657,6 +1660,8 @@ lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
+   data.optlen = optlen;
+   data.err = err;
+   tcpip_callback(lwip_getsockopt_internal, &data);
++  LWIP_DEBUGF(USR_DEBUG, ("lwip_getsockopt(): calling sys_sem_wait(%p)\n", &sock->conn->op_completed));
++  ++sem_down_count;
+   sys_arch_sem_wait(&sock->conn->op_completed, 0);
+   /* maybe lwip_getsockopt_internal has changed err */
+   err = data.err;
+@@ -1870,6 +1875,8 @@ lwip_getsockopt_internal(void *arg)
+     LWIP_ASSERT("unhandled level", 0);
+     break;
+   } /* switch (level) */
++  LWIP_DEBUGF(USR_DEBUG, ("lwip_getsockopt(): calling sys_sem_signal(%p)\n", &sock->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&sock->conn->op_completed);
+ }
+ 
+@@ -2074,6 +2081,8 @@ lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t opt
+   data.optlen = &optlen;
+   data.err = err;
+   tcpip_callback(lwip_setsockopt_internal, &data);
++  LWIP_DEBUGF(USR_DEBUG, ("lwip_getsockopt(): calling sys_sem_wait(%p)\n", &sock->conn->op_completed));
++  ++sem_down_count;
+   sys_arch_sem_wait(&sock->conn->op_completed, 0);
+   /* maybe lwip_setsockopt_internal has changed err */
+   err = data.err;
+@@ -2288,6 +2297,8 @@ lwip_setsockopt_internal(void *arg)
+     LWIP_ASSERT("unhandled level", 0);
+     break;
+   }  /* switch (level) */
++  LWIP_DEBUGF(USR_DEBUG, ("lwip_getsockopt(): calling sys_sem_signal(%p)\n", &sock->conn->op_completed));
++  ++sem_up_count;
+   sys_sem_signal(&sock->conn->op_completed);
+ }
+ 
+diff --git a/src/api/tcpip.c b/src/api/tcpip.c
+index 18d5f67..edb2951 100644
+--- a/src/api/tcpip.c
++++ b/src/api/tcpip.c
+@@ -36,6 +36,9 @@
+  *
+  */
+ 
++int sem_down_count = 0;
++int tcpip_apimsg_for_do_writemore_sem_down_count = -2;
++
+ #include "lwip/opt.h"
+ 
+ #if !NO_SYS /* don't build if not configured for use in lwipopts.h */
+@@ -302,6 +305,7 @@ tcpip_untimeout(sys_timeout_handler h, void *arg)
+  * @param apimsg a struct containing the function to call and its parameters
+  * @return ERR_OK if the function was called, another err_t if not
+  */
++
+ err_t
+ tcpip_apimsg(struct api_msg *apimsg)
+ {
+@@ -315,7 +319,11 @@ tcpip_apimsg(struct api_msg *apimsg)
+     msg.type = TCPIP_MSG_API;
+     msg.msg.apimsg = apimsg;
+     sys_mbox_post(&mbox, &msg);
++    ++tcpip_apimsg_for_do_writemore_sem_down_count;
++    //LWIP_DEBUGF(USR_DEBUG, ("%d: tcpip_apimsg(): calling sys_arch_sem_wait(%p)\n", tcpip_apimsg_for_do_writemore_sem_down_count, &apimsg->msg.conn->op_completed));
++    ++sem_down_count;
+     sys_arch_sem_wait(&apimsg->msg.conn->op_completed, 0);
++    //LWIP_DEBUGF(USR_DEBUG, ("%d: tcpip_apimsg(): sys_arch_sem_wait(%p) returned\n", tcpip_apimsg_for_do_writemore_sem_down_count, &apimsg->msg.conn->op_completed));
+     return apimsg->msg.err;
+   }
+   return ERR_VAL;
+diff --git a/src/include/lwip/tcpip.h b/src/include/lwip/tcpip.h
+index 637476e..05d789d 100644
+--- a/src/include/lwip/tcpip.h
++++ b/src/include/lwip/tcpip.h
+@@ -67,7 +67,7 @@ extern sys_mutex_t lock_tcpip_core;
+ #define LOCK_TCPIP_CORE()
+ #define UNLOCK_TCPIP_CORE()
+ #define TCPIP_APIMSG(m)       tcpip_apimsg(m)
+-#define TCPIP_APIMSG_ACK(m)   sys_sem_signal(&m->conn->op_completed)
++#define TCPIP_APIMSG_ACK(m)   { ++sem_up_count; sys_sem_signal(&m->conn->op_completed); }
+ #define TCPIP_NETIFAPI(m)     tcpip_netifapi(m)
+ #define TCPIP_NETIFAPI_ACK(m) sys_sem_signal(&m->sem)
+ #endif /* LWIP_TCPIP_CORE_LOCKING */
