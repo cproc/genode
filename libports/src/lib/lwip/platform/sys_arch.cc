@@ -449,16 +449,22 @@ extern "C" {
 	 */
 	void sys_mbox_post(sys_mbox_t* mbox, void *msg)
 	{
+		char name[32] = { 0 };
+		if (Genode::Thread_base::myself())
+			Genode::Thread_base::myself()->name(name, sizeof (name) - 1);
 		while (true) {
 			try {
 				Mailbox* _mbox = reinterpret_cast<Mailbox*>(mbox->ptr);
 				if (!_mbox) {
-					//PERR("Invalid mailbox pointer at %lx", *mbox->ptr);
+					PERR("Invalid mailbox pointer at %p", mbox->ptr);
 					return;
 				}
+				//PINF("> _mbox->add(): %s", name); /* tmp */
 				_mbox->add(msg);
+				//PINF("< _mbox->add(): %s", name);
 				return;
 			} catch (Mailbox::Overflow) {
+				PINF("> _mbox->add(): %s, OVERFLOW", name);
 				if (verbose)
 					PWRN("Overflow exception!");
 			} catch (...) {
@@ -482,11 +488,11 @@ extern "C" {
 		try {
 			Mailbox* _mbox = reinterpret_cast<Mailbox*>(mbox->ptr);
 			if (!_mbox) {
-				//PERR("Invalid mailbox pointer at %lx", *mbox->ptr);
+				PERR("Invalid mailbox pointer at %p", mbox->ptr);
 				return EINVAL;
 			}
 
-			PINF("> _mbox->add(): %s", name);
+			PINF("> _mbox->add(): %s", name); /* tmp */
 			_mbox->add(msg);
 			PINF("< _mbox->add(): %s", name);
 			return ERR_OK;
@@ -529,7 +535,7 @@ extern "C" {
 
 			PINF("> _mbox->get(): %s, timeout: %u", name, timeout);
 			u32_t ret =  _mbox->get(msg, timeout);
-			PINF("< _mbox->get(): %s, time: %u", name, ret);
+			PINF("< _mbox->get(): %s", name); /* tmp */
 			return ret;
 		} catch (Genode::Timeout_exception) {
 			return SYS_ARCH_TIMEOUT;
@@ -554,6 +560,7 @@ extern "C" {
 	 */
 	u32_t sys_arch_mbox_tryfetch(sys_mbox_t* mbox, void **msg)
 	{
+		PDBG("tryfetch()");
 		return sys_arch_mbox_fetch(mbox, msg, Mailbox::NO_BLOCK);
 	}
 

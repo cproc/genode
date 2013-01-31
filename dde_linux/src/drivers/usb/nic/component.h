@@ -132,6 +132,7 @@ namespace Nic {
 			{
 				static sk_buff work_skb; /* dummy skb for fixup calls */
 				static Counter counter("TX");
+				static int packet_counter = -8;
 
 				int tx_cnt         = 0;
 				unsigned size      = 0;
@@ -185,6 +186,33 @@ namespace Nic {
 					/* it's cooperative scheduling - be nice */
 					if (tx_cnt == 20)
 						break;
+#if 0
+					unsigned char tcp_seq[4] = {
+						((unsigned char*)virt)[41],
+						((unsigned char*)virt)[40],
+						((unsigned char*)virt)[39],
+						((unsigned char*)virt)[38]
+					};
+					unsigned char tcp_ack[4] = {
+						((unsigned char*)virt)[45],
+						((unsigned char*)virt)[44],
+						((unsigned char*)virt)[43],
+						((unsigned char*)virt)[42]
+					};
+					PDBG("%d: sent %zu bytes, seq = %u, ack = %u",
+					     ++packet_counter, packet.size(),
+					     *(unsigned int*)tcp_seq, *(unsigned int*)tcp_ack);
+#endif
+#if 0
+					if (packet.size() == 54) {
+						for (int i = 0; i < packet.size(); i++) {
+							//if ((i > 0) && (i % 16 == 0))
+								//Genode::printf("\n");
+							Genode::printf("%2x ", ((unsigned char*)virt)[i]);
+						}
+						Genode::printf("\n");
+					}
+#endif
 				}
 
 				/* sumbit last skb */
@@ -240,6 +268,21 @@ namespace Nic {
 			 */
 			void rx(addr_t virt, size_t size)
 			{
+#if 0
+				unsigned char tcp_seq[4] = {
+					((unsigned char*)virt)[41],
+					((unsigned char*)virt)[40],
+					((unsigned char*)virt)[39],
+					((unsigned char*)virt)[38]
+				};
+				unsigned char tcp_ack[4] = {
+						((unsigned char*)virt)[45],
+						((unsigned char*)virt)[44],
+						((unsigned char*)virt)[43],
+						((unsigned char*)virt)[42]
+				};
+				PDBG("received %zu bytes, seq = %u, ack = %u", size, *(unsigned int*)tcp_seq, *(unsigned int*)tcp_ack);
+#endif
 				static Counter counter("RX");
 
 				while (true) {

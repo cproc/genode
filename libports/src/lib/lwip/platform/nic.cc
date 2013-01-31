@@ -158,6 +158,11 @@ extern "C" {
 		Packet_descriptor rx_packet = th->rx_packet();
 		char *rx_content        = nic->rx()->packet_content(rx_packet);
 		u16_t len               = rx_packet.size();
+//#if 0
+		unsigned char tcp_seq[4] = { rx_content[41], rx_content[40], rx_content[39], rx_content[38] };
+		unsigned char tcp_ack[4] = { rx_content[45], rx_content[44], rx_content[43], rx_content[42] };
+		PDBG("received %d bytes, seq = %u, ack = %u", len, *(unsigned int*)tcp_seq, *(unsigned int*)tcp_ack);
+//#endif
 
 #if ETH_PAD_SIZE
 		len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
@@ -298,7 +303,9 @@ void Nic_receiver_thread::entry()
 		 * Block until we receive a packet,
 		 * then call input function.
 		 */
+		PDBG("waiting for packet");
 		_rx_packet = _nic->rx()->get_packet();
+		PDBG("got packet");
 		genode_netif_input(_netif);
 	}
 }

@@ -1,0 +1,262 @@
+lwip_contrib_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/core/ipv4/ip.c |    2 ++
+ src/core/tcp.c     |   21 ++++++++++++++++-----
+ src/core/tcp_in.c  |    9 ++++++---
+ src/core/tcp_out.c |   31 +++++++++++++++++++++++++++----
+ 4 files changed, 51 insertions(+), 12 deletions(-)
+
+diff --git a/src/core/ipv4/ip.c b/src/core/ipv4/ip.c
+index 95d2db4..e140ffb 100644
+--- a/src/core/ipv4/ip.c
++++ b/src/core/ipv4/ip.c
+@@ -888,6 +888,7 @@ ip_debug_print(struct pbuf *p)
+ {
+   struct ip_hdr *iphdr = (struct ip_hdr *)p->payload;
+ 
++if (ip4_addr4_16(&iphdr->dest) != 255) {
+   LWIP_DEBUGF(IP_DEBUG, ("IP header:\n"));
+   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
+   LWIP_DEBUGF(IP_DEBUG, ("|%2"S16_F" |%2"S16_F" |  0x%02"X16_F" |     %5"U16_F"     | (v, hl, tos, len)\n",
+@@ -920,5 +921,6 @@ ip_debug_print(struct pbuf *p)
+                     ip4_addr3_16(&iphdr->dest),
+                     ip4_addr4_16(&iphdr->dest)));
+   LWIP_DEBUGF(IP_DEBUG, ("+-------------------------------+\n"));
++  }
+ }
+ #endif /* IP_DEBUG */
+diff --git a/src/core/tcp.c b/src/core/tcp.c
+index b710d2e..755ea41 100644
+--- a/src/core/tcp.c
++++ b/src/core/tcp.c
+@@ -583,17 +583,20 @@ u32_t tcp_update_rcv_ann_wnd(struct tcp_pcb *pcb)
+   if (TCP_SEQ_GEQ(new_right_edge, pcb->rcv_ann_right_edge + LWIP_MIN((TCP_WND / 2), pcb->mss))) {
+     /* we can advertise more window */
+     pcb->rcv_ann_wnd = pcb->rcv_wnd;
++    //LWIP_DEBUGF(TCP_DEBUG, ("tcp_update_rcv_ann_wnd(): increasing window size to %u bytes\n", pcb->rcv_ann_wnd));
+     return new_right_edge - pcb->rcv_ann_right_edge;
+   } else {
+     if (TCP_SEQ_GT(pcb->rcv_nxt, pcb->rcv_ann_right_edge)) {
+       /* Can happen due to other end sending out of advertised window,
+        * but within actual available (but not yet advertised) window */
+       pcb->rcv_ann_wnd = 0;
++      //LWIP_DEBUGF(TCP_DEBUG, ("tcp_update_rcv_ann_wnd(): decreasing window size to %u bytes\n", pcb->rcv_ann_wnd));
+     } else {
+       /* keep the right edge of window constant */
+       u32_t new_rcv_ann_wnd = pcb->rcv_ann_right_edge - pcb->rcv_nxt;
+       LWIP_ASSERT("new_rcv_ann_wnd <= 0xffff", new_rcv_ann_wnd <= 0xffff);
+       pcb->rcv_ann_wnd = (u16_t)new_rcv_ann_wnd;
++      //LWIP_DEBUGF(TCP_DEBUG, ("tcp_update_rcv_ann_wnd(): setting window size to %u bytes\n", pcb->rcv_ann_wnd));
+     }
+     return 0;
+   }
+@@ -634,8 +637,8 @@ tcp_recved(struct tcp_pcb *pcb, u16_t len)
+     tcp_output(pcb);
+   }
+ 
+-  LWIP_DEBUGF(TCP_DEBUG, ("tcp_recved: recveived %"U16_F" bytes, wnd %"U16_F" (%"U16_F").\n",
+-         len, pcb->rcv_wnd, TCP_WND - pcb->rcv_wnd));
++  //LWIP_DEBUGF(TCP_DEBUG, ("tcp_recved: recveived %"U16_F" bytes, wnd %"U16_F" (%"U16_F").\n",
++         //len, pcb->rcv_wnd, TCP_WND - pcb->rcv_wnd));
+ }
+ 
+ /**
+@@ -806,7 +809,7 @@ tcp_slowtmr_start:
+     LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: no active pcbs\n"));
+   }
+   while (pcb != NULL) {
+-    LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: processing active pcb\n"));
++    //LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: processing active pcb\n"));
+     LWIP_ASSERT("tcp_slowtmr: active pcb->state != CLOSED\n", pcb->state != CLOSED);
+     LWIP_ASSERT("tcp_slowtmr: active pcb->state != LISTEN\n", pcb->state != LISTEN);
+     LWIP_ASSERT("tcp_slowtmr: active pcb->state != TIME-WAIT\n", pcb->state != TIME_WAIT);
+@@ -984,7 +987,7 @@ tcp_slowtmr_start:
+       ++prev->polltmr;
+       if (prev->polltmr >= prev->pollinterval) {
+         prev->polltmr = 0;
+-        LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: polling application\n"));
++        //LWIP_DEBUGF(TCP_DEBUG, ("tcp_slowtmr: polling application\n"));
+         tcp_active_pcbs_changed = 0;
+         TCP_EVENT_POLL(prev, err);
+         if (tcp_active_pcbs_changed) {
+@@ -1616,6 +1619,13 @@ tcp_debug_state_str(enum tcp_state s)
+ void
+ tcp_debug_print(struct tcp_hdr *tcphdr)
+ {
++  LWIP_DEBUGF(TCP_DEBUG, ("%5"U16_F" -> %5"U16_F", %010"U32_F", %010"U32_F", ",
++                          ntohs(tcphdr->src), ntohs(tcphdr->dest),
++                          ntohl(tcphdr->seqno), ntohl(tcphdr->ackno)
++                         )
++       );
++  tcp_debug_print_flags(TCPH_FLAGS(tcphdr));
++#if 0
+   LWIP_DEBUGF(TCP_DEBUG, ("TCP header:\n"));
+   LWIP_DEBUGF(TCP_DEBUG, ("+-------------------------------+\n"));
+   LWIP_DEBUGF(TCP_DEBUG, ("|    %5"U16_F"      |    %5"U16_F"      | (src port, dest port)\n",
+@@ -1642,6 +1652,7 @@ tcp_debug_print(struct tcp_hdr *tcphdr)
+   LWIP_DEBUGF(TCP_DEBUG, ("|    0x%04"X16_F"     |     %5"U16_F"     | (chksum, urgp)\n",
+          ntohs(tcphdr->chksum), ntohs(tcphdr->urgp)));
+   LWIP_DEBUGF(TCP_DEBUG, ("+-------------------------------+\n"));
++#endif
+ }
+ 
+ /**
+@@ -1652,7 +1663,7 @@ tcp_debug_print(struct tcp_hdr *tcphdr)
+ void
+ tcp_debug_print_state(enum tcp_state s)
+ {
+-  LWIP_DEBUGF(TCP_DEBUG, ("State: %s\n", tcp_state_str[s]));
++ // LWIP_DEBUGF(TCP_DEBUG, ("State: %s\n", tcp_state_str[s]));
+ }
+ 
+ /**
+diff --git a/src/core/tcp_in.c b/src/core/tcp_in.c
+index 4ec971a..0c0ffe9 100644
+--- a/src/core/tcp_in.c
++++ b/src/core/tcp_in.c
+@@ -262,9 +262,9 @@ tcp_input(struct pbuf *p, struct netif *inp)
+   }
+ 
+ #if TCP_INPUT_DEBUG
+-  LWIP_DEBUGF(TCP_INPUT_DEBUG, ("+-+-+-+-+-+-+-+-+-+-+-+-+-+- tcp_input: flags "));
+-  tcp_debug_print_flags(TCPH_FLAGS(tcphdr));
+-  LWIP_DEBUGF(TCP_INPUT_DEBUG, ("-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n"));
++  //LWIP_DEBUGF(TCP_INPUT_DEBUG, ("+-+-+-+-+-+-+-+-+-+-+-+-+-+- tcp_input: flags "));
++  //tcp_debug_print_flags(TCPH_FLAGS(tcphdr));
++  //LWIP_DEBUGF(TCP_INPUT_DEBUG, ("-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n"));
+ #endif /* TCP_INPUT_DEBUG */
+ 
+ 
+@@ -484,6 +484,7 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
+     npcb->rcv_nxt = seqno + 1;
+     npcb->rcv_ann_right_edge = npcb->rcv_nxt;
+     npcb->snd_wnd = tcphdr->wnd;
++    //LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_listen_input(): received tcphdr->wnd: %u\n", tcphdr->wnd));
+     npcb->snd_wnd_max = tcphdr->wnd;
+     npcb->ssthresh = npcb->snd_wnd;
+     npcb->snd_wl1 = seqno - 1;/* initialise to seqno-1 to force window update */
+@@ -636,6 +637,7 @@ tcp_process(struct tcp_pcb *pcb)
+       pcb->rcv_ann_right_edge = pcb->rcv_nxt;
+       pcb->lastack = ackno;
+       pcb->snd_wnd = tcphdr->wnd;
++      //LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_process(): received tcphdr->wnd: %u\n", tcphdr->wnd));
+       pcb->snd_wnd_max = tcphdr->wnd;
+       pcb->snd_wl1 = seqno - 1; /* initialise to seqno - 1 to force window update */
+       pcb->state = ESTABLISHED;
+@@ -871,6 +873,7 @@ tcp_receive(struct tcp_pcb *pcb)
+        (pcb->snd_wl1 == seqno && TCP_SEQ_LT(pcb->snd_wl2, ackno)) ||
+        (pcb->snd_wl2 == ackno && tcphdr->wnd > pcb->snd_wnd)) {
+       pcb->snd_wnd = tcphdr->wnd;
++      //LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_receive(): received tcphdr->wnd: %u\n", tcphdr->wnd));
+       /* keep track of the biggest window announced by the remote host to calculate
+          the maximum segment size */
+       if (pcb->snd_wnd_max < tcphdr->wnd) {
+diff --git a/src/core/tcp_out.c b/src/core/tcp_out.c
+index ee19fe0..929776d 100644
+--- a/src/core/tcp_out.c
++++ b/src/core/tcp_out.c
+@@ -106,6 +106,7 @@ tcp_output_alloc_header(struct tcp_pcb *pcb, u16_t optlen, u16_t datalen,
+     tcphdr->ackno = htonl(pcb->rcv_nxt);
+     TCPH_HDRLEN_FLAGS_SET(tcphdr, (5 + optlen / 4), TCP_ACK);
+     tcphdr->wnd = htons(pcb->rcv_ann_wnd);
++  	//LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output_alloc_header(): setting new tcphdr->wnd: %u\n", tcphdr->wnd));
+     tcphdr->chksum = 0;
+     tcphdr->urgp = 0;
+ 
+@@ -875,6 +876,9 @@ tcp_send_empty_ack(struct tcp_pcb *pcb)
+   tcphdr->chksum = inet_chksum_pseudo(p, &(pcb->local_ip), &(pcb->remote_ip),
+         IP_PROTO_TCP, p->tot_len);
+ #endif
++#if TCP_OUTPUT_DEBUG
++  tcp_debug_print(tcphdr);
++#endif
+ #if LWIP_NETIF_HWADDRHINT
+   ip_output_hinted(p, &(pcb->local_ip), &(pcb->remote_ip), pcb->ttl, pcb->tos,
+       IP_PROTO_TCP, &(pcb->addr_hint));
+@@ -919,6 +923,12 @@ tcp_output(struct tcp_pcb *pcb)
+ 
+   seg = pcb->unsent;
+ 
++#if 0
++  if (seg) {
++	LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output(): pcb->snd_wnd = %u, wnd = %u\n", pcb->snd_wnd, wnd));
++  }
++#endif
++
+   /* If the TF_ACK_NOW flag is set and no data will be sent (either
+    * because the ->unsent queue is empty or because the window does
+    * not allow it), construct an empty ACK segment and send it.
+@@ -939,8 +949,8 @@ tcp_output(struct tcp_pcb *pcb)
+ 
+ #if TCP_OUTPUT_DEBUG
+   if (seg == NULL) {
+-    LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output: nothing to send (%p)\n",
+-                                   (void*)pcb->unsent));
++    //LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output: nothing to send (%p)\n",
++    //                               (void*)pcb->unsent));
+   }
+ #endif /* TCP_OUTPUT_DEBUG */
+ #if TCP_CWND_DEBUG
+@@ -1061,6 +1071,7 @@ tcp_output_segment(struct tcp_seg *seg, struct tcp_pcb *pcb)
+ 
+   /* advertise our receive window size in this TCP segment */
+   seg->tcphdr->wnd = htons(pcb->rcv_ann_wnd);
++  //LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_output_segment(): setting new tcphdr->wnd: %u\n", seg->tcphdr->wnd));
+ 
+   pcb->rcv_ann_right_edge = pcb->rcv_nxt + pcb->rcv_ann_wnd;
+ 
+@@ -1162,6 +1173,10 @@ tcp_output_segment(struct tcp_seg *seg, struct tcp_pcb *pcb)
+ #endif /* CHECKSUM_GEN_TCP */
+   TCP_STATS_INC(tcp.xmit);
+ 
++#if TCP_OUTPUT_DEBUG
++  tcp_debug_print(seg->tcphdr);
++#endif
++
+ #if LWIP_NETIF_HWADDRHINT
+   ip_output_hinted(seg->p, &(pcb->local_ip), &(pcb->remote_ip), pcb->ttl, pcb->tos,
+       IP_PROTO_TCP, &(pcb->addr_hint));
+@@ -1213,6 +1228,7 @@ tcp_rst(u32_t seqno, u32_t ackno,
+   tcphdr->ackno = htonl(ackno);
+   TCPH_HDRLEN_FLAGS_SET(tcphdr, TCP_HLEN/4, TCP_RST | TCP_ACK);
+   tcphdr->wnd = PP_HTONS(TCP_WND);
++  //LWIP_DEBUGF(TCP_OUTPUT_DEBUG, ("tcp_rst(): setting new tcphdr->wnd: %u\n", tcphdr->wnd));
+   tcphdr->chksum = 0;
+   tcphdr->urgp = 0;
+ 
+@@ -1222,6 +1238,9 @@ tcp_rst(u32_t seqno, u32_t ackno,
+ #endif
+   TCP_STATS_INC(tcp.xmit);
+   snmp_inc_tcpoutrsts();
++#if TCP_OUTPUT_DEBUG
++  tcp_debug_print(tcphdr);
++#endif
+    /* Send output with hardcoded TTL since we have no access to the pcb */
+   ip_output(p, local_ip, remote_ip, TCP_TTL, 0, IP_PROTO_TCP);
+   pbuf_free(p);
+@@ -1386,7 +1405,9 @@ tcp_keepalive(struct tcp_pcb *pcb)
+                                       IP_PROTO_TCP, p->tot_len);
+ #endif
+   TCP_STATS_INC(tcp.xmit);
+-
++#if TCP_OUTPUT_DEBUG
++  tcp_debug_print(tcphdr);
++#endif
+   /* Send output to IP */
+ #if LWIP_NETIF_HWADDRHINT
+   ip_output_hinted(p, &pcb->local_ip, &pcb->remote_ip, pcb->ttl, 0, IP_PROTO_TCP,
+@@ -1467,7 +1488,9 @@ tcp_zero_window_probe(struct tcp_pcb *pcb)
+                                       IP_PROTO_TCP, p->tot_len);
+ #endif
+   TCP_STATS_INC(tcp.xmit);
+-
++#if TCP_OUTPUT_DEBUG
++  tcp_debug_print(seg->tcphdr);
++#endif
+   /* Send output to IP */
+ #if LWIP_NETIF_HWADDRHINT
+   ip_output_hinted(p, &pcb->local_ip, &pcb->remote_ip, pcb->ttl, 0, IP_PROTO_TCP,
