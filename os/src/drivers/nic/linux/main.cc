@@ -119,9 +119,11 @@ class Linux_driver : public Nic::Driver
 		void tx(char const *packet, Genode::size_t size)
 		{
 			int ret;
+			//static int packet_counter = -8;
 
 			/* blocking-write packet to TAP */
 			do { ret = write(_tap_fd, packet, size); } while (ret < 0);
+			//PDBG("%d: sent %d bytes", ++packet_counter, ret);
 		}
 
 
@@ -137,7 +139,7 @@ class Linux_driver : public Nic::Driver
 			do {
 				ret = read(_tap_fd, _packet_buffer, sizeof(_packet_buffer));
 			} while (ret < 0);
-
+//PDBG("received %d bytes", ret);
 			void *buffer = _alloc.alloc(ret);
 			Genode::memcpy(buffer, _packet_buffer, ret);
 			_alloc.submit();
