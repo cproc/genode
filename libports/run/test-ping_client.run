@@ -16,7 +16,8 @@ set build_components {
 
 lappend_if [have_spec omap4] build_components drivers/usb
 
-build $build_components
+#build $build_components
+build test/lwip/pingpong/client
 
 create_boot_directory
 
@@ -49,7 +50,7 @@ set config {
 	<start name="test-ping_client">
 		<resource name="RAM" quantum="16M"/>
 		<config>
-			<argv verbose="1" serverip="10.0.0.59" startsize="1024" endsize="1024" />
+			<argv verbose="1" serverip="10.0.0.59" startsize="16" endsize="1024" />
 		</config>
 	</start> }
 

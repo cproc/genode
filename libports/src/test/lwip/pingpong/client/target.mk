@@ -1,5 +1,5 @@
 TARGET   = test-ping_client
-LIBS     = cxx env libc libc_lwip lwip
+LIBS     = cxx env libc libc_lwip lwip thread
 SRC_CC   = main.cc ../pingpong.cc
 
 CC_OPT_main += -fpermissive
