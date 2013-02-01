@@ -24,7 +24,15 @@
 using namespace Genode;
 
 
-static void empty_signal_handler(int) { }
+static void empty_signal_handler(int signum)
+{
+	char name[32] = { 0 };
+	if (Genode::Thread_base::myself())
+		Genode::Thread_base::myself()->name(name, sizeof (name) - 1);
+	char buf[128];
+	Genode::snprintf(buf, sizeof(buf), "%d (%s): empty_signal_handler(%d) called\n", lx_gettid(), name, signum);
+	raw_write_str(buf);
+}
 
 
 static Lock &startup_lock()
