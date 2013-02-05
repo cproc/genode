@@ -55,9 +55,19 @@ namespace Genode {
 		                      'clone' system call */
 		unsigned int pid;  /* process ID (resp. thread-group ID) */
 
-		Native_thread_id() : tid(0), pid(0) { }
-		Native_thread_id(unsigned int tid, unsigned int pid)
-		: tid(tid), pid(pid) { }
+		/*
+		 * TODO: perhaps store the futex counter somewhere else, but it needs
+		 * to be a thread-local variable. Currently, it is part of
+		 * 'Thread_base::_tid'.
+		 */
+		int futex_counter __attribute__((aligned(8)));
+
+		int *uaddr; /* pointer to 'Thread_base::_tid.futex_counter' or to a
+		               separate futex counter for the main thread */
+
+		Native_thread_id() : tid(0), pid(0), futex_counter(0), uaddr(0) { }
+		Native_thread_id(unsigned int tid, unsigned int pid, int *uaddr)
+		: tid(tid), pid(pid), futex_counter(0), uaddr(uaddr) { }
 	};
 
 	struct Thread_meta_data;
