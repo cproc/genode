@@ -167,7 +167,7 @@ int openClient(char * ip, int port)
         close(conn);
         return 0;
     }
-
+//#if 0
     if (pthread_create( &thread_id,
                 0, 
                 listener,
@@ -176,7 +176,7 @@ int openClient(char * ip, int port)
         Genode::printf("error: pthread_create() failed\n");
         return 0;
     }
-
+//#endif
 
     return conn;
 }
@@ -415,7 +415,7 @@ void *send_request_packet(void *argv )
     char               send_buffer[ BUFFER_SIZE ];
     int                i = 0;
 
-    for( i = 0 ; i < 1000000 ; i ++ )
+    for( /*i = 0*/ ; /*i < 1000000*/ ; /*i ++*/ )
     {
         send( conn, 
               PACKET_TYPE_REQUEST,
