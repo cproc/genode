@@ -486,7 +486,7 @@ extern "C" {
 			_mbox->add(msg);
 			return ERR_OK;
 		} catch (Mailbox::Overflow) {
-			if (verbose)
+			//if (verbose)
 				PWRN("Overflow exception!");
 		} catch (...) {
 			PERR("Unknown Exception occured!");

@@ -60,8 +60,13 @@ void Cancelable_lock::lock()
 	spinlock_lock(&_spinlock_state);
 
 	/* reset ownership if one thread 'lock' twice */
-	if (_owner == myself)
+	if (_owner == myself) {
+		//char buf[128];
+		//Genode::snprintf(buf, sizeof(buf), "%d: recursive lock\n", myself.tid().tid);
+		//raw_write_str(buf);
+		_prev_owner = _owner;
 		_owner = Applicant(thread_invalid_id());
+	}
 
 	if (cmpxchg(&_state, UNLOCKED, LOCKED)) {
 
@@ -145,6 +150,7 @@ void Cancelable_lock::unlock()
 	if (next_owner) {
 
 		/* transfer lock ownership to next applicant and wake him up */
+		_prev_owner = _owner;
 		_owner = *next_owner;
 		if (_last_applicant == next_owner)
 			_last_applicant = &_owner;
@@ -156,6 +162,7 @@ void Cancelable_lock::unlock()
 	} else {
 
 		/* there is no further applicant, leave the lock alone */
+		_prev_owner     = _owner;
 		_owner          = Applicant(thread_invalid_id());
 		_last_applicant = 0;
 		_state          = UNLOCKED;
@@ -170,7 +177,8 @@ Cancelable_lock::Cancelable_lock(Cancelable_lock::State initial)
 	_spinlock_state(SPINLOCK_UNLOCKED),
 	_state(UNLOCKED),
 	_last_applicant(0),
-	_owner(thread_invalid_id())
+	_owner(thread_invalid_id()),
+	_prev_owner(thread_invalid_id())
 {
 	if (initial == LOCKED)
 		lock();
