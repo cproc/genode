@@ -62,6 +62,7 @@ namespace Genode {
 
 			Applicant* volatile _last_applicant;
 			Applicant  _owner;
+			Applicant  _prev_owner;
 
 		public:
 

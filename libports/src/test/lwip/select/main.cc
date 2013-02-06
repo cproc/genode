@@ -167,7 +167,7 @@ int openClient(char * ip, int port)
         close(conn);
         return 0;
     }
-//#if 0
+#if 0
     if (pthread_create( &thread_id,
                 0, 
                 listener,
@@ -176,7 +176,7 @@ int openClient(char * ip, int port)
         Genode::printf("error: pthread_create() failed\n");
         return 0;
     }
-//#endif
+#endif
 
     return conn;
 }

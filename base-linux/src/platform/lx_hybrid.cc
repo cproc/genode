@@ -215,6 +215,7 @@ static void adopt_thread(Thread_meta_data *meta_data)
 	native_thread.tid = lx_gettid();
 	native_thread.pid = lx_getpid();
 	native_thread.uaddr = &native_thread.futex_counter;
+	native_thread.uaddr2 = &native_thread.last_wakeup_result;
 }
 
 
@@ -289,6 +290,7 @@ Thread_base *Thread_base::myself()
 void Thread_base::start()
 {
 	_tid.uaddr = &_tid.futex_counter;
+	_tid.uaddr2 = &_tid.last_wakeup_result;
 
 	/*
 	 * Unblock thread that is supposed to slumber in 'thread_start'.

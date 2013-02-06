@@ -290,7 +290,7 @@ extern "C" {
 	}
 } /* extern "C" */
 
-
+extern "C" void raw_write_str(const char *);
 void Nic_receiver_thread::entry()
 {
 	while(true)
