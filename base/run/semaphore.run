@@ -1,0 +1,28 @@
+build { core init test/semaphore }
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="RM"/>
+			<service name="ROM"/>
+			<service name="LOG"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="test-semaphore">
+			<resource name="RAM" quantum="1M"/>
+		</start>
+	</config>
+}
+
+set boot_modules { core init test-semaphore }
+
+build_boot_image $boot_modules
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until forever
+
