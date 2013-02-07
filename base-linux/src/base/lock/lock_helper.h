@@ -25,7 +25,8 @@
 #include <linux_syscalls.h>
 
 
-static int main_thread_futex_counter = 0;
+static int main_thread_futex_counter __attribute__((aligned(8))) = 0;
+static int main_last_wakeup_result = 0;
 
 
 /**
@@ -54,10 +55,11 @@ static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid
 	 * current value at 'tid.uaddr' with the '0' given as argument and
 	 * returns in case of mismatch.
 	 */
+
 	*tid.uaddr = 1;
 
 	/* wake up at most 1 waiting thread */
-	lx_futex(tid.uaddr, FUTEX_WAKE, 1);
+	/**tid.uaddr2 = */lx_futex(tid.uaddr, FUTEX_WAKE, 1);
 
 	return true;
 }
@@ -69,7 +71,8 @@ static inline Genode::Native_thread_id thread_get_my_native_id()
 	return myself
 	       ? myself->tid()
 	       : Genode::Native_thread_id(lx_gettid(), lx_getpid(),
-	                                  &main_thread_futex_counter);
+	                                  &main_thread_futex_counter,
+	                                  &main_last_wakeup_result);
 }
 
 
@@ -100,7 +103,10 @@ static inline void thread_stop_myself()
 	 * anymore or when 'lx_futex(tid.uaddr, FUTEX_WAKE, 1)' gets called
 	 * in 'thread_check_stopped_and_restart()'.
 	 */
-	lx_futex(tid.uaddr, FUTEX_WAIT, 0);
+	int res = lx_futex(tid.uaddr, FUTEX_WAIT, 0);
+	*tid.uaddr2 = res;
+	//if ((res != 0) && (res != -11))
+		//raw_write_str("lx_futex() returned unexpected error\n");
 
 	/* reset the futex counter */
 	*tid.uaddr = 0;

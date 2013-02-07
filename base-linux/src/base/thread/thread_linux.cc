@@ -24,7 +24,7 @@
 using namespace Genode;
 
 
-static void empty_signal_handler(int) { }
+static void empty_signal_handler(int) { raw_write_str("empty_signal_handler()\n"); }
 
 
 static Lock &startup_lock()
@@ -127,6 +127,7 @@ void Thread_base::start()
 	_tid.tid = lx_create_thread(Thread_base::_thread_start, thread_sp, this);
 	_tid.pid = lx_getpid();
 	_tid.uaddr = &_tid.futex_counter;
+	_tid.uaddr2 = &_tid.last_wakeup_result;
 
 	/* wait until the 'thread_start' function got entered */
 	startup_lock().lock();

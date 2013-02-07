@@ -34,7 +34,7 @@ namespace Genode {
 					try {
 						Cancelable_lock::lock();
 						return;
-					} catch (Blocking_canceled) { }
+					} catch (Blocking_canceled) { /*raw_write_str("blocking canceled\n");*/ }
 			}
 
 			/**

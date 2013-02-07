@@ -35,6 +35,7 @@ set build_components {
 lappend_if [have_spec omap4] build_components drivers/usb
 
 build $build_components
+#build test/lwip/select
 
 create_boot_directory
 

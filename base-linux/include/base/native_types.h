@@ -64,10 +64,12 @@ namespace Genode {
 
 		int *uaddr; /* pointer to 'Thread_base::_tid.futex_counter' or to a
 		               separate futex counter for the main thread */
+		int last_wakeup_result;
+		int *uaddr2;
 
-		Native_thread_id() : tid(0), pid(0), futex_counter(0), uaddr(0) { }
-		Native_thread_id(unsigned int tid, unsigned int pid, int *uaddr)
-		: tid(tid), pid(pid), futex_counter(0), uaddr(uaddr) { }
+		Native_thread_id() : tid(0), pid(0), futex_counter(0), uaddr(0), last_wakeup_result(-2), uaddr2(0) { }
+		Native_thread_id(unsigned int tid, unsigned int pid, int *uaddr, int *uaddr2)
+		: tid(tid), pid(pid), futex_counter(0), uaddr(uaddr), last_wakeup_result(-2), uaddr2(uaddr2) { }
 
 		bool operator == (Native_thread_id &t) {
 			bool equal = (tid == t.tid) && (pid == t.pid);
@@ -75,6 +77,7 @@ namespace Genode {
 				raw_write_str("== mismatch\n");
 			return equal;
 		}
+
 		bool operator != (Native_thread_id &t) {
 			bool different = (tid != t.tid) || (pid != t.pid);
 			if (!different && ((futex_counter != t.futex_counter) || (uaddr != t.uaddr)))

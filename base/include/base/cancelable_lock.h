@@ -57,11 +57,19 @@ namespace Genode {
 			 * atomically. Hence, we use the additional spinlock here.
 			 */
 
+			//int _check1;
+
 			volatile int _spinlock_state;
 			volatile int _state;
 
 			Applicant* volatile _last_applicant;
 			Applicant  _owner;
+
+			//int _check2;
+
+			//Applicant  _prev_owner;
+			//int _lock_count;
+			//int _unlock_count;
 
 		public:
 

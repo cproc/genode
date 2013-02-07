@@ -31,7 +31,10 @@ int debug_lock_sleep_race_cnt;
 
 void Cancelable_lock::Applicant::wake_up()
 {
-	if (!thread_id_valid(_tid)) return;
+	if (!thread_id_valid(_tid)) {
+		raw_write_str("Cancelable_lock::Applicant::wake_up(): invalid thread id\n");
+		return;
+	}
 
 	/*
 	 * Deal with the race that may occur in the 'lock' function between
@@ -52,20 +55,25 @@ void Cancelable_lock::Applicant::wake_up()
 /*********************
  ** Cancelable lock **
  *********************/
-
+extern "C" void wait_for_continue();
 void Cancelable_lock::lock()
 {
 	Applicant myself(thread_get_my_native_id());
 
 	spinlock_lock(&_spinlock_state);
 
+	//++_lock_count;
+
 	/* reset ownership if one thread 'lock' twice */
-	if (_owner == myself)
+	if (_owner == myself) {
+		//_prev_owner = _owner;
 		_owner = Applicant(thread_invalid_id());
+	}
 
 	if (cmpxchg(&_state, UNLOCKED, LOCKED)) {
 
 		/* we got the lock */
+		//_prev_owner     = _owner;
 		_owner          =  myself;
 		_last_applicant = &_owner;
 		spinlock_unlock(&_spinlock_state);
@@ -108,7 +116,9 @@ void Cancelable_lock::lock()
 	spinlock_lock(&_spinlock_state);
 	if (_owner != myself) {
 
-
+		//PERR("_owner = %d, myself = %d, %d, %d, %d", _owner.tid().tid, myself.tid().tid, _lock_count, _unlock_count, *_owner.tid().uaddr2);
+		PERR("_owner = %d, myself = %d, last FUTEX_WAIT result = %d", _owner.tid().tid, myself.tid().tid, *_owner.tid().uaddr2);
+		wait_for_continue();
 		/* check if we are the applicant to be waken up next */
 		Applicant *a = _owner.applicant_to_wake_up();
 		if (a && (*a == myself)) {
@@ -140,22 +150,31 @@ void Cancelable_lock::unlock()
 {
 	spinlock_lock(&_spinlock_state);
 
+	//++_unlock_count;
+
 	Applicant *next_owner = _owner.applicant_to_wake_up();
 
 	if (next_owner) {
 
 		/* transfer lock ownership to next applicant and wake him up */
+		//_prev_owner = _owner;
 		_owner = *next_owner;
 		if (_last_applicant == next_owner)
 			_last_applicant = &_owner;
 
+		//Applicant applicant_to_wake_up(_owner.tid());
+		_owner.wake_up();
 		spinlock_unlock(&_spinlock_state);
 
-		_owner.wake_up();
+		//if (_owner != applicant_to_wake_up)
+			//raw_write_str("owner changed!\n");
+
+		//_owner.wake_up();
 
 	} else {
 
 		/* there is no further applicant, leave the lock alone */
+		//_prev_owner     = _owner;
 		_owner          = Applicant(thread_invalid_id());
 		_last_applicant = 0;
 		_state          = UNLOCKED;
@@ -167,10 +186,15 @@ void Cancelable_lock::unlock()
 
 Cancelable_lock::Cancelable_lock(Cancelable_lock::State initial)
 :
+	//_check1(-12345),
 	_spinlock_state(SPINLOCK_UNLOCKED),
 	_state(UNLOCKED),
 	_last_applicant(0),
 	_owner(thread_invalid_id())
+	//_check2(-67890),
+	//_prev_owner(thread_invalid_id()),
+	//_lock_count(0),
+	//_unlock_count(0)
 {
 	if (initial == LOCKED)
 		lock();
