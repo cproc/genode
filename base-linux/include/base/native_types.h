@@ -25,7 +25,7 @@
  * who includes this header file. We want to cleanly separate
  * Genode from POSIX.
  */
-
+extern "C" int raw_write_str(const char *);
 namespace Genode {
 
 	/**
@@ -68,6 +68,19 @@ namespace Genode {
 		Native_thread_id() : tid(0), pid(0), futex_counter(0), uaddr(0) { }
 		Native_thread_id(unsigned int tid, unsigned int pid, int *uaddr)
 		: tid(tid), pid(pid), futex_counter(0), uaddr(uaddr) { }
+
+		bool operator == (Native_thread_id &t) {
+			bool equal = (tid == t.tid) && (pid == t.pid);
+			if (equal && ((futex_counter != t.futex_counter) || (uaddr != t.uaddr)))
+				raw_write_str("== mismatch\n");
+			return equal;
+		}
+		bool operator != (Native_thread_id &t) {
+			bool different = (tid != t.tid) || (pid != t.pid);
+			if (!different && ((futex_counter != t.futex_counter) || (uaddr != t.uaddr)))
+				raw_write_str("!= mismatch\n");
+			return different;
+		}
 	};
 
 	struct Thread_meta_data;
