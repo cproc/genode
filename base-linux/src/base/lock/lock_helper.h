@@ -47,6 +47,7 @@ static inline void thread_yield()
 
 static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
 {
+#if 0
 	/*
 	 * Setting the futex counter to '1' here makes sure that the call of
 	 * 'lx_futex(tid.uaddr, FUTEX_WAIT, 0)' in 'thread_stop_myself()'
@@ -62,11 +63,13 @@ static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid
 	 * for a second time.
 	 */
 	*tid.uaddr = 1;
+#endif
 
 	/* wake up at most 1 waiting thread */
-	lx_futex(tid.uaddr, FUTEX_WAKE, 1);
-
+	return lx_futex(tid.uaddr, FUTEX_WAKE, 1);
+#if 0
 	return true;
+#endif
 }
 
 
@@ -108,7 +111,8 @@ static inline void thread_stop_myself()
 	 * in 'thread_check_stopped_and_restart()'.
 	 */
 	lx_futex(tid.uaddr, FUTEX_WAIT, 0);
-
+#if 0
 	/* reset the futex counter */
 	*tid.uaddr = 0;
+#endif
 }
