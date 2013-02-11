@@ -142,9 +142,9 @@ void Cancelable_lock::unlock()
 		if (_last_applicant == next_owner)
 			_last_applicant = &_owner;
 
-		spinlock_unlock(&_spinlock_state);
-
 		_owner.wake_up();
+
+		spinlock_unlock(&_spinlock_state);
 
 	} else {
 
