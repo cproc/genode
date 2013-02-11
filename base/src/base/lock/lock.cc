@@ -107,6 +107,10 @@ void Cancelable_lock::lock()
 	 */
 	spinlock_lock(&_spinlock_state);
 	if (_owner != myself) {
+
+		raw_write_str("_owner != myself\n");
+		wait_for_continue();
+
 		/*
 		 * Check if we are the applicant to be waken up next,
 		 * otherwise, go through the list of remaining applicants
