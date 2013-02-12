@@ -340,7 +340,7 @@ inline int lx_nanosleep(const struct timespec *req, struct timespec *rem)
 }
 
 
-inline int lx_futex(volatile int *uaddr, int op, int val)
+inline int lx_futex(const int *uaddr, int op, int val)
 {
 	return lx_syscall(SYS_futex, uaddr, op, val, 0, 0, 0);
 }

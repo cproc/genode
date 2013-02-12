@@ -126,7 +126,6 @@ void Thread_base::start()
 	void *thread_sp = (void *)((addr_t)(_context->stack) & ~0xf);
 	_tid.tid = lx_create_thread(Thread_base::_thread_start, thread_sp, this);
 	_tid.pid = lx_getpid();
-	_tid.dummy_futex_counter = (int*)stack_top();
 
 	/* wait until the 'thread_start' function got entered */
 	startup_lock().lock();

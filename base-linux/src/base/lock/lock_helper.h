@@ -25,9 +25,6 @@
 #include <linux_syscalls.h>
 
 
-static int main_thread_dummy_futex_counter __attribute__((aligned(sizeof(Genode::addr_t)))) = 0;
-
-
 /**
  * Resolve 'Thread_base::myself' when not linking the thread library
  *
@@ -45,19 +42,16 @@ static inline void thread_yield()
 }
 
 
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
-	return lx_futex(tid.dummy_futex_counter, FUTEX_WAKE, 1);
+	return lx_futex(applicant.futex_counter_ptr, FUTEX_WAKE, 1);
 }
 
 
 static inline Genode::Native_thread_id thread_get_my_native_id()
 {
-	Genode::Thread_base *myself = Genode::Thread_base::myself();
-	return myself
-	       ? myself->tid()
-	       : Genode::Native_thread_id(lx_gettid(), lx_getpid(),
-	                                  &main_thread_dummy_futex_counter);
+	return Genode::Native_thread_id(lx_gettid(), lx_getpid());
 }
 
 
@@ -79,8 +73,12 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 }
 
 
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
-	Genode::Native_thread_id tid = thread_get_my_native_id();
-	lx_futex(tid.dummy_futex_counter, FUTEX_WAIT, *tid.dummy_futex_counter);
+	/*
+	 * Just go to sleep without making use of the counter value. The
+	 * 'thread_check_stopped_and_restart()' function will get called repeatedly
+	 * until this thread has actually executed the syscall.
+	 */
+	lx_futex(applicant.futex_counter_ptr, FUTEX_WAIT, *applicant.futex_counter_ptr);
 }

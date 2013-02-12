@@ -29,21 +29,6 @@
 namespace Genode {
 
 	/**
-	 * Native lock type
-	 *
-	 * We are using a sleeping spinlock as lock implementation on Linux. This
-	 * is a temporary solution until we have implemented futex-based locking.
-	 * In a previous version, we have relied on POSIX semaphores as provided by
-	 * the glibc. However, relying on the glibc badly interferes with a custom
-	 * libc implementation. The glibc semaphore implementation expects to find
-	 * a valid pthread structure via the TLS pointer. We do not have such a
-	 * structure because we create threads via the 'clone' system call rather
-	 * than 'pthread_create'. Hence we have to keep the base framework clean
-	 * from glibc usage altogether.
-	 */
-	typedef volatile int Native_lock;
-
-	/**
 	 * Thread ID used in lock implementation
 	 *
 	 * Unfortunately, both - PID and TID - are needed for lx_tgkill() in
@@ -55,32 +40,8 @@ namespace Genode {
 		                      'clone' system call */
 		unsigned int pid;  /* process ID (resp. thread-group ID) */
 
-		/*
-		 * The Linux-specific part of the Genode lock implementation uses the
-		 * 'futex' syscall to block and unblock a thread. This syscall uses a
-		 * thread-specific, natively aligned memory location to identify the
-		 * thread to be woken up. Usually, this memory location also gets used
-		 * as a counter variable, but the Genode lock implementation does not
-		 * use it for this purpose and does not write to it. Therefore, no
-		 * extra space needs to be allocated for this variable if there's an
-		 * existing memory location with the correct alignment and whose
-		 * content does not get changed unexpectedly by another thread.
-		 * Currently, the address of the first word on the thread's stack
-		 * gets used.
-		 */
-		int *dummy_futex_counter;
-
-		Native_thread_id() : tid(0), pid(0), dummy_futex_counter(0) { }
-		Native_thread_id(unsigned int tid, unsigned int pid, int *dummy_futex_counter)
-		: tid(tid), pid(pid), dummy_futex_counter(dummy_futex_counter) { }
-
-		bool operator == (Native_thread_id &t) {
-			return ((tid == t.tid) && (pid == t.pid));
-		}
-
-		bool operator != (Native_thread_id &t) {
-			return ((tid != t.tid) || (pid != t.pid));
-		}
+		Native_thread_id() : tid(0), pid(0) { }
+		Native_thread_id(unsigned int tid, unsigned int pid) : tid(tid), pid(pid) { }
 
 	};
 
@@ -203,6 +164,43 @@ namespace Genode {
 			unsigned    uid()  const { return _uid;  }
 			unsigned    gid()  const { return _gid;  }
 	};
+
+	/**
+	 * Applicant used in lock implementation
+	 */
+	class Native_applicant
+	{
+		/*
+		 * The Linux-specific part of the Genode lock implementation uses the
+		 * 'futex' syscall to block and unblock a thread. This syscall uses a
+		 * thread-specific, natively aligned memory location to identify the
+		 * thread to be woken up. Usually, this memory location also gets used
+		 * as a counter variable, but the Genode lock implementation does not
+		 * use it for this purpose.
+		 */
+
+		private:
+
+			const int _futex_counter __attribute__((aligned(sizeof(Genode::addr_t))));
+
+		public:
+
+			const int *futex_counter_ptr;
+
+			Native_applicant() : _futex_counter(0), futex_counter_ptr(&_futex_counter) { }
+
+			Native_applicant &operator=(Native_applicant const &other)
+			{
+				/*
+				 * The value of the futex counter is not important and each
+				 * 'Native_applicant' copy shall point to the original counter
+				 * location.
+				 */
+				futex_counter_ptr = other.futex_counter_ptr;
+				return *this;
+			}
+	};
+
 }
 
 #endif /* _INCLUDE__BASE__NATIVE_TYPES_H_ */

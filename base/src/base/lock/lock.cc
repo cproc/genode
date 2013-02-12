@@ -40,7 +40,7 @@ void Cancelable_lock::Applicant::wake_up()
 
 	for (;;) {
 
-		if (thread_check_stopped_and_restart(_tid))
+		if (thread_check_stopped_and_restart(_tid, *this))
 			return;
 
 		debug_lock_sleep_race_cnt++;  /* only for statistics */
@@ -97,7 +97,7 @@ void Cancelable_lock::lock()
 	 * ! for (int i = 0; i < 10; i++)
 	 * !   thread_yield();
 	 */
-	thread_stop_myself();
+	thread_stop_myself(myself);
 
 	/*
 	 * We expect to be the lock owner when woken up. If this is not

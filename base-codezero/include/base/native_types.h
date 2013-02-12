@@ -132,6 +132,7 @@ namespace Genode {
 	};
 
 	struct Native_pd_args { };
+	struct Native_applicant { };
 }
 
 
