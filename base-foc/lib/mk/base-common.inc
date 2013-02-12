@@ -4,7 +4,7 @@
 # \date   2013-02-14
 #
 
-LIBS += cxx syscall startup
+LIBS += cxx native_types syscall startup
 
 SRC_CC += ipc/ipc.cc ipc/pager.cc
 SRC_CC += pager/pager.cc
