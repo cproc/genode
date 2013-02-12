@@ -24,7 +24,7 @@ namespace Genode {
 	{
 		private:
 
-			class Applicant
+			class Applicant : public Native_applicant
 			{
 				private:
 

@@ -65,6 +65,7 @@ namespace Genode {
 	};
 
 	struct Native_pd_args { };
+	struct Native_applicant { };
 }
 
 #endif /* _INCLUDE__BASE__NATIVE_TYPES_H_ */
