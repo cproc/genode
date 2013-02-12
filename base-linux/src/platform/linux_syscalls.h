@@ -33,6 +33,7 @@
 #endif
 
 /* Linux includes */
+#include <linux/futex.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sched.h>
@@ -336,6 +337,12 @@ struct timespec;
 inline int lx_nanosleep(const struct timespec *req, struct timespec *rem)
 {
 	return lx_syscall(SYS_nanosleep, req, rem);
+}
+
+
+inline int lx_futex(volatile int *uaddr, int op, int val)
+{
+	return lx_syscall(SYS_futex, uaddr, op, val, 0, 0, 0);
 }
 
 

@@ -214,6 +214,7 @@ static void adopt_thread(Thread_meta_data *meta_data)
 	Native_thread &native_thread = meta_data->thread_base->tid();
 	native_thread.tid = lx_gettid();
 	native_thread.pid = lx_getpid();
+	native_thread.dummy_futex_counter = (int*)meta_data->thread_base->stack_top();
 }
 
 

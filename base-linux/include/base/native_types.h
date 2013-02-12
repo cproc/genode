@@ -55,9 +55,33 @@ namespace Genode {
 		                      'clone' system call */
 		unsigned int pid;  /* process ID (resp. thread-group ID) */
 
-		Native_thread_id() : tid(0), pid(0) { }
-		Native_thread_id(unsigned int tid, unsigned int pid)
-		: tid(tid), pid(pid) { }
+		/*
+		 * The Linux-specific part of the Genode lock implementation uses the
+		 * 'futex' syscall to block and unblock a thread. This syscall uses a
+		 * thread-specific, natively aligned memory location to identify the
+		 * thread to be woken up. Usually, this memory location also gets used
+		 * as a counter variable, but the Genode lock implementation does not
+		 * use it for this purpose and does not write to it. Therefore, no
+		 * extra space needs to be allocated for this variable if there's an
+		 * existing memory location with the correct alignment and whose
+		 * content does not get changed unexpectedly by another thread.
+		 * Currently, the address of the first word on the thread's stack
+		 * gets used.
+		 */
+		int *dummy_futex_counter;
+
+		Native_thread_id() : tid(0), pid(0), dummy_futex_counter(0) { }
+		Native_thread_id(unsigned int tid, unsigned int pid, int *dummy_futex_counter)
+		: tid(tid), pid(pid), dummy_futex_counter(dummy_futex_counter) { }
+
+		bool operator == (Native_thread_id &t) {
+			return ((tid == t.tid) && (pid == t.pid));
+		}
+
+		bool operator != (Native_thread_id &t) {
+			return ((tid != t.tid) || (pid != t.pid));
+		}
+
 	};
 
 	struct Thread_meta_data;
