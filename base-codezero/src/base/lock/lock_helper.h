@@ -37,7 +37,8 @@ static inline bool thread_id_valid(Genode::Native_thread_id tid)
 }
 
 
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
 	if (!thread_id_valid(tid))
 		return false;
@@ -81,7 +82,7 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 }
 
 
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
 	Genode::Native_thread_id myself = thread_get_my_native_id();
 	Codezero::l4_mutex_lock(myself.running_lock);

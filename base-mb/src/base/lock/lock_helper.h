@@ -26,7 +26,8 @@
 static inline void thread_yield() { Kernel::thread_yield(); }
 
 
-static bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                             Genode::Native_applicant &applicant)
 {
 	Kernel::thread_wake(tid);
 	return true;
@@ -54,4 +55,7 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 }
 
 
-static inline void thread_stop_myself() { Kernel::thread_sleep(); }
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
+{
+	Kernel::thread_sleep();
+}

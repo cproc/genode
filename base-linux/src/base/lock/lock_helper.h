@@ -42,10 +42,10 @@ static inline void thread_yield()
 }
 
 
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
-	lx_tgkill(tid.pid, tid.tid, LX_SIGUSR1);
-	return true;
+	return lx_futex(applicant.futex_counter_ptr, LX_FUTEX_WAKE, 1);
 }
 
 
@@ -73,8 +73,12 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 }
 
 
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
-	struct timespec ts = { 1000, 0 };
-	while (lx_nanosleep(&ts, 0) == 0);
+	/*
+	 * Just go to sleep without modifying the counter value. The
+	 * 'thread_check_stopped_and_restart()' function will get called
+	 * repeatedly until this thread has actually executed the syscall.
+	 */
+	lx_futex(applicant.futex_counter_ptr, LX_FUTEX_WAIT, 0);
 }

@@ -43,7 +43,8 @@ static inline void thread_yield() { Pistachio::L4_Yield(); }
  *
  * \return true if the thread was in blocking state
  */
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
 	using namespace Pistachio;
 
@@ -96,7 +97,7 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 /**
  * Unconditionally block the calling thread
  */
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
 	Pistachio::L4_Stop(thread_get_my_native_id());
 }

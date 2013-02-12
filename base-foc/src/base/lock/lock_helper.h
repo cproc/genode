@@ -53,7 +53,8 @@ static inline void thread_yield() { Fiasco::l4_thread_yield(); }
  *
  * \return true if the thread was in blocking state
  */
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
 	Genode::Native_thread_id irq = tid + Fiasco::THREAD_IRQ_CAP;
 	Fiasco::l4_irq_trigger(irq);
@@ -97,7 +98,7 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 /**
  * Unconditionally block the calling thread
  */
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
 	using namespace Fiasco;
 

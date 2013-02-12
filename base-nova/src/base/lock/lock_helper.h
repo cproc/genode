@@ -44,7 +44,8 @@ Genode::Thread_base * __attribute__((weak)) Genode::Thread_base::myself()
 static inline void thread_yield() { }
 
 
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                                    Genode::Native_applicant &applicant)
 {
 	Genode::addr_t sem = (tid.ec_sel == 0 && tid.exc_pt_sel == 0) ?
 	               main_thread_running_semaphore() :
@@ -89,7 +90,7 @@ static inline bool thread_id_valid(Genode::Native_thread_id tid)
 static inline void thread_switch_to(Genode::Native_thread_id tid) { }
 
 
-static inline void thread_stop_myself()
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
 {
 	using namespace Genode;
 	using namespace Nova;

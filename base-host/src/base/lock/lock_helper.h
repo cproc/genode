@@ -21,7 +21,8 @@
 static inline void thread_yield() { }
 
 
-static bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static bool thread_check_stopped_and_restart(Genode::Native_thread_id tid,
+                                             Genode::Native_applicant &applicant)
 {
 	return true;
 }
@@ -49,4 +50,7 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 { }
 
 
-static inline void thread_stop_myself() { while (true); }
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
+{
+	while (true);
+}

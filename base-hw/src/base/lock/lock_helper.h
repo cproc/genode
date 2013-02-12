@@ -37,7 +37,8 @@ thread_switch_to(Genode::Native_thread_id const t)
  * Resume another thread 't' and return if it were paused or not
  */
 static inline bool
-thread_check_stopped_and_restart(Genode::Native_thread_id const t)
+thread_check_stopped_and_restart(Genode::Native_thread_id const t,
+                                 Genode::Native_applicant &applicant)
 { return Kernel::resume_thread(t) == 0; }
 
 
@@ -51,7 +52,8 @@ static inline bool thread_id_valid(Genode::Native_thread_id const id)
 /**
  * Exclude ourselves from CPU scheduling for now
  */
-static inline void thread_stop_myself() { Kernel::pause_thread(); }
+static inline void thread_stop_myself(Genode::Native_applicant &applicant)
+{ Kernel::pause_thread(); }
 
 
 #endif /* _SRC__BASE__LOCK__LOCK_HELPER_H_ */
