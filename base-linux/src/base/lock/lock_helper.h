@@ -25,6 +25,8 @@
 #include <linux_syscalls.h>
 
 
+static const int main_thread_futex_counter __attribute__((aligned(sizeof(Genode::addr_t)))) = 0;
+
 /**
  * Resolve 'Thread_base::myself' when not linking the thread library
  *
@@ -42,32 +44,34 @@ static inline void thread_yield()
 }
 
 
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Thread_base *thread_base)
 {
-	lx_tgkill(tid.pid, tid.tid, LX_SIGUSR1);
-	return true;
+	const int *futex_counter_ptr = thread_base ?
+	                               (const int *)thread_base->stack_top() :
+	                               &main_thread_futex_counter;
+	return lx_futex(futex_counter_ptr, LX_FUTEX_WAKE, 1);
 }
 
 
-static inline Genode::Native_thread_id thread_get_my_native_id()
+static inline Genode::Thread_base *thread_get_my_base()
 {
-	return Genode::Native_thread_id(lx_gettid(), lx_getpid());
+	return Genode::Thread_base::myself();
 }
 
 
-static inline Genode::Native_thread_id thread_invalid_id()
+static inline Genode::Thread_base *thread_invalid_base()
 {
-	return Genode::Native_thread_id();
+	return (Genode::Thread_base*)~0;
 }
 
 
-static inline bool thread_id_valid(Genode::Native_thread_id tid)
+static inline bool thread_base_valid(Genode::Thread_base *thread_base)
 {
-	return (tid.pid != 0);
+	return (thread_base != thread_invalid_base());
 }
 
 
-static inline void thread_switch_to(Genode::Native_thread_id tid)
+static inline void thread_switch_to(Genode::Thread_base *thread_base)
 {
 	thread_yield();
 }
@@ -75,6 +79,14 @@ static inline void thread_switch_to(Genode::Native_thread_id tid)
 
 static inline void thread_stop_myself()
 {
-	struct timespec ts = { 1000, 0 };
-	while (lx_nanosleep(&ts, 0) == 0);
+	/*
+	 * Just go to sleep without modifying the counter value. The
+	 * 'thread_check_stopped_and_restart()' function will get called
+	 * repeatedly until this thread has actually executed the syscall.
+	 */
+	Genode::Thread_base *myself = Genode::Thread_base::myself();
+	const int *futex_counter_ptr = myself ?
+	                               (const int *)myself->stack_top() :
+	                               &main_thread_futex_counter;
+	lx_futex(futex_counter_ptr, LX_FUTEX_WAIT, 0);
 }
