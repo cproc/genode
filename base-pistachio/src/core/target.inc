@@ -29,7 +29,8 @@ SRC_CC       = main.cc \
                signal_session_component.cc \
                signal_source_component.cc \
                dump_alloc.cc \
-               context_area.cc
+               context_area.cc \
+               debug.cc
 
 INC_DIR     += $(REP_DIR)/src/core/include \
                $(GEN_CORE_DIR)/include
@@ -50,3 +51,4 @@ vpath context_area.cc             $(GEN_CORE_DIR)
 vpath thread_bootstrap.cc         $(BASE_DIR)/src/base/thread
 vpath thread.cc                   $(BASE_DIR)/src/base/thread
 vpath %.cc                        $(REP_DIR)/src/core
+vpath debug.cc                    $(REP_DIR)/src/base/env
