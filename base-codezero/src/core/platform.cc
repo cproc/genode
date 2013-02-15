@@ -145,6 +145,7 @@ Platform::Platform() :
 	/* init core UTCB */
 	static char main_utcb[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));
 	static struct exregs_data exregs;
+	memset(&exregs, 0, sizeof(exregs));
 	exregs_set_utcb(&exregs, (unsigned long)&main_utcb[0]);
 	l4_exchange_registers(&exregs, thread_myself());
 
