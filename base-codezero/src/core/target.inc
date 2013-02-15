@@ -1,6 +1,6 @@
 TARGET       = core
 LIBS         = cxx ipc heap core_printf child pager lock \
-               raw_signal raw_server
+               raw_signal raw_server debug
 
 GEN_CORE_DIR = $(BASE_DIR)/src/core
 
