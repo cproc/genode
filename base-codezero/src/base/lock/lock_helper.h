@@ -22,6 +22,7 @@
 #include <codezero/syscalls.h>
 
 
+static Genode::Native_thread_id main_thread_tid;
 static Codezero::l4_mutex main_running_lock = { -1 };
 
 
@@ -31,58 +32,53 @@ static inline void thread_yield()
 }
 
 
-static inline bool thread_id_valid(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Thread_base *thread_base)
 {
-	return tid.tid != Codezero::NILTHREAD;
-}
-
-
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
-{
-	if (!thread_id_valid(tid))
-		return false;
-
-	Codezero::l4_mutex_unlock(tid.running_lock);
+	Codezero::l4_mutex *running_lock = thread_base ?
+	                                   thread_base->utcb()->running_lock() :
+	                                   &main_running_lock;
+	Codezero::l4_mutex_unlock(running_lock);
 	return true;
 }
 
 
-static inline Genode::Native_thread_id thread_get_my_native_id()
+static inline Genode::Thread_base *thread_get_my_base()
 {
-	using namespace Genode;
-
-	Codezero::l4_mutex *running_lock = 0;
-
-	/* obtain pointer to running lock of calling thread */
-	if (Thread_base::myself())
-		running_lock = Thread_base::myself()->utcb()->running_lock();
-	else {
-		running_lock = &main_running_lock;
-		if (running_lock->lock == -1) {
-			Codezero::l4_mutex_init(running_lock);
-			Codezero::l4_mutex_lock(running_lock); /* block on first mutex lock */
-		}
+	Genode::Thread_base *myself = Genode::Thread_base::myself();
+	if (!myself && (main_running_lock.lock == -1)) {
+		main_thread_tid = Codezero::thread_myself();
+		Codezero::l4_mutex_init(&main_running_lock);
+		Codezero::l4_mutex_lock(&main_running_lock); /* block on first mutex lock */
 	}
-
-	return Genode::Native_thread_id(Codezero::thread_myself(), running_lock);
+	return myself;
 }
 
 
-static inline Genode::Native_thread_id thread_invalid_id()
+static inline Genode::Thread_base *thread_invalid_base()
 {
-	return Genode::Native_thread_id(Codezero::NILTHREAD, 0);
+	return (Genode::Thread_base*)~0;
 }
 
 
-static inline void thread_switch_to(Genode::Native_thread_id tid)
+static inline bool thread_base_valid(Genode::Thread_base *thread_base)
 {
-	if (thread_id_valid(tid))
-		Codezero::l4_thread_switch(tid.tid);
+	return (thread_base != thread_invalid_base());
+}
+
+
+static inline void thread_switch_to(Genode::Thread_base *thread_base)
+{
+	Genode::Native_thread_id tid = thread_base ?
+	                               thread_base->tid().l4id :
+	                               main_thread_tid;
+	Codezero::l4_thread_switch(tid);
 }
 
 
 static inline void thread_stop_myself()
 {
-	Genode::Native_thread_id myself = thread_get_my_native_id();
-	Codezero::l4_mutex_lock(myself.running_lock);
+	Codezero::l4_mutex *running_lock = Genode::Thread_base::myself() ?
+	                                   Genode::Thread_base::myself()->utcb()->running_lock() :
+	                                   &main_running_lock;
+	Codezero::l4_mutex_lock(running_lock);
 }

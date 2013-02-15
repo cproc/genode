@@ -16,6 +16,11 @@
 
 /* Genode includes */
 #include <base/native_types.h>
+#include <base/thread.h>
+#include <kernel/syscalls.h>
+
+
+static Genode::Native_thread_id main_thread_tid;
 
 
 /**
@@ -29,23 +34,47 @@ static inline void thread_yield()
  * Yield CPU to a specified thread 't'
  */
 static inline void
-thread_switch_to(Genode::Native_thread_id const t)
-{ Kernel::yield_thread(t); }
+thread_switch_to(Genode::Thread_base *thread_base)
+{
+	Genode::Native_thread_id t = thread_base ?
+	                             thread_base->tid().tid :
+	                             main_thread_tid;
+	Kernel::yield_thread(t);
+}
 
 
 /**
  * Resume another thread 't' and return if it were paused or not
  */
 static inline bool
-thread_check_stopped_and_restart(Genode::Native_thread_id const t)
-{ return Kernel::resume_thread(t) == 0; }
+thread_check_stopped_and_restart(Genode::Thread_base *thread_base)
+{
+	Genode::Native_thread_id t = thread_base ?
+	                             thread_base->tid().tid :
+	                             main_thread_tid;
+	return Kernel::resume_thread(t) == 0;
+}
 
 
-/**
- * Validation kernel thread-identifier 'id'
- */
-static inline bool thread_id_valid(Genode::Native_thread_id const id)
-{ return id != Genode::thread_invalid_id(); }
+static inline Genode::Thread_base *thread_get_my_base()
+{
+	Genode::Thread_base *myself = Genode::Thread_base::myself();
+	if (!myself)
+		main_thread_tid = Kernel::current_thread_id();
+	return myself;
+}
+
+
+static inline Genode::Thread_base *thread_invalid_base()
+{
+	return (Genode::Thread_base*)~0;
+}
+
+
+static inline bool thread_base_valid(Genode::Thread_base *thread_base)
+{
+	return (thread_base != thread_invalid_base());
+}
 
 
 /**

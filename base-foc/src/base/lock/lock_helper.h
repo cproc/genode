@@ -53,43 +53,43 @@ static inline void thread_yield() { Fiasco::l4_thread_yield(); }
  *
  * \return true if the thread was in blocking state
  */
-static inline bool thread_check_stopped_and_restart(Genode::Native_thread_id tid)
+static inline bool thread_check_stopped_and_restart(Genode::Thread_base *thread_base)
 {
+	Genode::Native_thread_id tid = thread_base ?
+	                               thread_base->tid() :
+	                               Fiasco::MAIN_THREAD_CAP;
 	Genode::Native_thread_id irq = tid + Fiasco::THREAD_IRQ_CAP;
 	Fiasco::l4_irq_trigger(irq);
 	return true;
 }
 
 
-static inline Genode::Native_thread_id thread_get_my_native_id()
+static inline Genode::Thread_base *thread_get_my_base()
 {
-	Genode::Thread_base *myself = Genode::Thread_base::myself();
-	return myself ? myself->tid() : Fiasco::MAIN_THREAD_CAP;
+	return Genode::Thread_base::myself();
 }
 
 
-static inline Genode::Native_thread_id thread_invalid_id()
+static inline Genode::Thread_base *thread_invalid_base()
 {
-	return Genode::Native_thread();
+	return (Genode::Thread_base*)~0;
 }
 
 
-/**
- * Check if a native thread ID is initialized
- *
- * \return true if ID is initialized
- */
-static inline bool thread_id_valid(Genode::Native_thread_id tid)
+static inline bool thread_base_valid(Genode::Thread_base *thread_base)
 {
-	return Fiasco::Capability::valid(tid);
+	return (thread_base != thread_invalid_base());
 }
 
 
 /**
  * Yield CPU time to the specified thread
  */
-static inline void thread_switch_to(Genode::Native_thread_id tid)
+static inline void thread_switch_to(Genode::Thread_base *thread_base)
 {
+	Genode::Native_thread_id tid = thread_base ?
+	                               thread_base->tid() :
+	                               Fiasco::MAIN_THREAD_CAP;
 	Fiasco::l4_thread_switch(tid);
 }
 
@@ -101,7 +101,11 @@ static inline void thread_stop_myself()
 {
 	using namespace Fiasco;
 
-	Genode::Native_thread_id irq = thread_get_my_native_id() + THREAD_IRQ_CAP;
+	Genode::Thread_base *myself = Genode::Thread_base::myself();
+	Genode::Native_thread_id tid = myself ?
+	                               myself->tid() :
+	                               Fiasco::MAIN_THREAD_CAP;
+	Genode::Native_thread_id irq = tid + THREAD_IRQ_CAP;
 	l4_irq_receive(irq, L4_IPC_NEVER);
 }
 

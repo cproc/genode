@@ -24,6 +24,7 @@
 #include <base/signal.h>
 #include <cap_session/cap_session.h>
 #include <pager/capability.h>
+#include <base/debug.h>
 
 namespace Genode {
 
@@ -201,7 +202,7 @@ namespace Genode {
 		public:
 
 			Pager_activation() : Pager_activation_base("pager", STACK_SIZE)
-			{ start(); }
+			{ raw_printf("Pager_activation()\n"); start(); }
 	};
 }
 
