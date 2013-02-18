@@ -62,3 +62,9 @@ void Thread_base::start()
 
 
 void Thread_base::cancel_blocking() { }
+
+
+Native_utcb *Thread_base::utcb()
+{
+	return (Native_utcb*)stack_top();
+}

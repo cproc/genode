@@ -163,11 +163,16 @@ namespace Genode {
 		pthread_t pt;
 
 		/**
+		 * Natively aligned memory location used in the lock implementation
+		 */
+		int futex_counter __attribute__((aligned(sizeof(Genode::addr_t))));
+
+		/**
 		 * Constructor
 		 *
 		 * \param thread  associated 'Thread_base' object
 		 */
-		Thread_meta_data(Thread_base *thread) : thread_base(thread) { }
+		Thread_meta_data(Thread_base *thread) : thread_base(thread), futex_counter(0) { }
 	};
 }
 
@@ -354,4 +359,10 @@ Thread_base::~Thread_base()
 
 	/* inform core about the killed thread */
 	cpu_session()->kill_thread(_thread_cap);
+}
+
+
+Native_utcb *Thread_base::utcb()
+{
+	return &_tid.meta_data->futex_counter;
 }

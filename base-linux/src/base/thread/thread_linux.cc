@@ -136,3 +136,9 @@ void Thread_base::cancel_blocking()
 {
 	env()->cpu_session()->cancel_blocking(_thread_cap);
 }
+
+
+Native_utcb *Thread_base::utcb()
+{
+	return (Native_utcb*)stack_top();
+}

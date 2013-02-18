@@ -100,9 +100,10 @@ namespace Genode {
 	};
 
 	/**
-	 * Empty UTCB type expected by the thread library, unused on Linux
+	 * Pointer to natively aligned memory location, used as read-only futex
+	 * counter.
 	 */
-	typedef struct { } Native_utcb;
+	typedef const int Native_utcb;
 
 	typedef Native_capability_tpl<Cap_dst_policy> Native_capability;
 
