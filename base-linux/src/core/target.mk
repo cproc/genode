@@ -1,6 +1,6 @@
 TARGET        = core
 REQUIRES      = linux
-LIBS          = cxx ipc heap core_printf child lock raw_server syscall raw_signal
+LIBS          = cxx ipc heap core_printf child lock raw_server syscall raw_signal debug
 
 GEN_CORE_DIR  = $(BASE_DIR)/src/core
 

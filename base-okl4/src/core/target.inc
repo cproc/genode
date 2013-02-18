@@ -1,7 +1,7 @@
 TARGET       = core
 REQUIRES     = okl4
 LIBS         = cxx ipc heap core_printf child pager lock \
-               raw_signal raw_server bootinfo child
+               raw_signal raw_server bootinfo child debug
 
 GEN_CORE_DIR = $(BASE_DIR)/src/core
 

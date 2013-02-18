@@ -1,7 +1,7 @@
 TARGET       = core
 REQUIRES     = pistachio
 LIBS         = cxx ipc heap core_printf child pager lock \
-               raw_signal raw_server kip
+               raw_signal raw_server kip debug
 
 GEN_CORE_DIR = $(BASE_DIR)/src/core
 

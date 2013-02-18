@@ -1,6 +1,6 @@
 TARGET       = core
 REQUIRES     = foc
-LIBS         = cxx ipc heap core_printf child pager lock raw_signal raw_server
+LIBS         = cxx ipc heap core_printf child pager lock raw_signal raw_server debug
 
 LD_TEXT_ADDR = 0x500000
 

@@ -1,5 +1,5 @@
 SRC_CC   = env.cc context_area.cc reload_parent_cap.cc
-LIBS     = ipc heap log_console lock
+LIBS     = ipc heap log_console lock debug
 INC_DIR += $(BASE_DIR)/src/base/env
 
 vpath env.cc                $(REP_DIR)/src/base/env
