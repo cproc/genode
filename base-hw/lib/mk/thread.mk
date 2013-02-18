@@ -9,6 +9,6 @@ SRC_CC += thread.cc thread_bootstrap.cc thread_support.cc
 
 # declare source paths
 vpath thread_support.cc   $(REP_DIR)/src/base/
-vpath thread_bootstrap.cc $(BASE_DIR)/src/base/thread/
+vpath thread_bootstrap.cc $(REP_DIR)/src/base/thread/
 vpath thread.cc           $(BASE_DIR)/src/base/thread/
 
