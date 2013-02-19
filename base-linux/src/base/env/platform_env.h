@@ -29,6 +29,9 @@
 #include <linux_cpu_session/client.h>
 #include <pd_session/client.h>
 
+#include <expanding_cpu_session_client.h>
+#include <expanding_ram_session_client.h>
+
 namespace Genode {
 
 	/**
@@ -284,39 +287,6 @@ namespace Genode {
 
 		private:
 
-			class Expanding_ram_session_client : public Ram_session_client
-			{
-				Ram_session_capability _cap;
-
-				public:
-
-					Expanding_ram_session_client(Ram_session_capability cap)
-					: Ram_session_client(cap), _cap(cap) { }
-
-					Ram_dataspace_capability alloc(size_t size, bool cached) {
-						bool try_again;
-						do {
-							try_again = false;
-							try {
-								return Ram_session_client::alloc(size, cached);
-
-							} catch (Ram_session::Out_of_metadata) {
-
-								/* give up if the error occurred a second time */
-								if (try_again)
-									break;
-
-								PINF("upgrading quota donation for Env::RAM session");
-								env()->parent()->upgrade(_cap, "ram_quota=8K");
-								try_again = true;
-							}
-						} while (try_again);
-
-						return Ram_dataspace_capability();
-					}
-			};
-
-
 			/*******************************
 			 ** Platform-specific members **
 			 *******************************/
@@ -324,7 +294,8 @@ namespace Genode {
 			Ram_session_capability       _ram_session_cap;
 			Expanding_ram_session_client _ram_session_client;
 			Cpu_session_capability       _cpu_session_cap;
-			Linux_cpu_session_client     _cpu_session_client;
+			Expanding_cpu_session_client<Linux_cpu_session_client, Capability<Linux_cpu_session> >
+			                             _cpu_session_client;
 			Rm_session_mmap              _rm_session_mmap;
 			Pd_session_client            _pd_session_client;
 

@@ -29,149 +29,27 @@
 #include <cpu_session/client.h>
 #include <pd_session/client.h>
 
+#include <expanding_cpu_session_client.h>
+#include <expanding_ram_session_client.h>
+#include <expanding_rm_session_client.h>
 
 namespace Genode {
 
 	class Platform_env : public Env
 	{
-		class Expanding_rm_session_client : public Rm_session_client
-		{
-			Rm_session_capability _cap;
-
-			public:
-
-				Expanding_rm_session_client(Rm_session_capability cap)
-				: Rm_session_client(cap), _cap(cap) { }
-
-				Local_addr attach(Dataspace_capability ds,
-				                  size_t size = 0, off_t offset = 0,
-				                  bool use_local_addr = false,
-				                  Local_addr local_addr = (addr_t)0,
-				                  bool executable = false) {
-
-					bool try_again = false;
-					do {
-						try {
-							return Rm_session_client::attach(ds, size, offset,
-							                                 use_local_addr,
-							                                 local_addr,
-							                                 executable);
-
-						} catch (Rm_session::Out_of_metadata) {
-
-							/* give up if the error occurred a second time */
-							if (try_again)
-								break;
-
-							PINF("upgrading quota donation for Env::RM session");
-							env()->parent()->upgrade(_cap, "ram_quota=8K");
-							try_again = true;
-						}
-					} while (try_again);
-
-					return (addr_t)0;
-				}
-
-				Pager_capability add_client(Thread_capability thread)
-				{
-					bool try_again = false;
-					do {
-						try {
-							return Rm_session_client::add_client(thread);
-						} catch (Rm_session::Out_of_metadata) {
-
-							/* give up if the error occurred a second time */
-							if (try_again)
-								break;
-
-							PINF("upgrading quota donation for Env::RM session");
-							env()->parent()->upgrade(_cap, "ram_quota=8K");
-							try_again = true;
-						}
-					} while (try_again);
-
-					return Pager_capability();
-				}
-
-				void remove_client(Pager_capability pager)
-				{
-					Rm_session_client::remove_client(pager);
-				}
-		};
-
-		class Expanding_ram_session_client : public Ram_session_client
-		{
-			Ram_session_capability _cap;
-
-			public:
-
-				Expanding_ram_session_client(Ram_session_capability cap)
-				: Ram_session_client(cap), _cap(cap) { }
-
-				Ram_dataspace_capability alloc(size_t size, bool cached) {
-					bool try_again = false;
-					do {
-						try {
-							return Ram_session_client::alloc(size, cached);
-
-						} catch (Ram_session::Out_of_metadata) {
-
-							/* give up if the error occurred a second time */
-							if (try_again)
-								break;
-
-							PINF("upgrading quota donation for Env::RAM session");
-							env()->parent()->upgrade(_cap, "ram_quota=8K");
-							try_again = true;
-						}
-					} while (try_again);
-
-					return Ram_dataspace_capability();
-				}
-		};
-
-		class Expanding_cpu_session_client : public Cpu_session_client
-		{
-			Cpu_session_capability _cap;
-
-			public:
-
-				Expanding_cpu_session_client(Cpu_session_capability cap)
-				: Cpu_session_client(cap), _cap(cap) { }
-
-				Thread_capability create_thread(Name const &name, addr_t utcb) {
-					bool try_again = false;
-					do {
-						try {
-							return Cpu_session_client::create_thread(name, utcb);
-						} catch (Cpu_session::Out_of_metadata) {
-
-							/* give up if the error occurred a second time */
-							if (try_again)
-								break;
-
-							PINF("upgrading quota donation for Env::CPU session");
-							env()->parent()->upgrade(_cap, "ram_quota=8K");
-							try_again = true;
-						}
-					} while (try_again);
-
-					return Thread_capability();
-				}
-		};
-
 		private:
 
 			Parent_client _parent_client;
 
 			struct Resources
 			{
-				Ram_session_capability       ram_cap;
-				Expanding_ram_session_client ram;
-				Cpu_session_capability       cpu_cap;
-				Expanding_cpu_session_client cpu;
-				Expanding_rm_session_client  rm;
-				Pd_session_client            pd;
+				Ram_session_capability                               ram_cap;
+				Expanding_ram_session_client                         ram;
+				Cpu_session_capability                               cpu_cap;
+				Expanding_cpu_session_client<Cpu_session_client,
+				                             Cpu_session_capability> cpu;
+				Expanding_rm_session_client                          rm;
+				Pd_session_client                                    pd;
 
 				Resources(Parent &parent)
 				:
