@@ -52,6 +52,11 @@ void Ram_session_component::_clear_ds (Dataspace_component *ds)
 	}
 
 	/* clear dataspace */
+	PDBG("clearing %p - %lx (context area: %lx - %lx)",
+	     virt_addr, (addr_t)virt_addr + page_rounded_size - 1,
+	     Native_config::context_area_virtual_base(),
+	     Native_config::context_area_virtual_base() + Native_config::context_area_virtual_size() - 1);
+
 	size_t num_longwords = page_rounded_size/sizeof(long);
 	for (long *dst = (long *)virt_addr; num_longwords--;)
 		*dst++ = 0;

@@ -91,6 +91,11 @@ void Ram_session_component::_clear_ds(Dataspace_component *ds)
 	          ds->phys_addr(), (addr_t)virt_addr,
 	          page_rounded_size >> get_page_size_log2(), rights, true);
 
+	PDBG("clearing %p - %lx (context area: %lx - %lx)",
+	     virt_addr, (addr_t)virt_addr + page_rounded_size - 1,
+	     Native_config::context_area_virtual_base(),
+	     Native_config::context_area_virtual_base() + Native_config::context_area_virtual_size() - 1);
+
 	memset(virt_addr, 0, page_rounded_size);
 
 	ds->assign_core_local_addr(virt_addr);

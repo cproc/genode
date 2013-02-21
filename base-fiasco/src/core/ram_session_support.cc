@@ -23,5 +23,10 @@ void Ram_session_component::_revoke_ram_ds(Dataspace_component *ds) { }
 
 void Ram_session_component::_clear_ds(Dataspace_component *ds)
 {
+	PDBG("clearing %lx - %lx (context area: %lx - %lx)",
+	     ds->phys_addr(), ds->phys_addr() + ds->size() - 1,
+	     Native_config::context_area_virtual_base(),
+	     Native_config::context_area_virtual_base() + Native_config::context_area_virtual_size() - 1);
+
 	memset((void *)ds->phys_addr(), 0, ds->size());
 }
