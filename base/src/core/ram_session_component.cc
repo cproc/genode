@@ -175,6 +175,8 @@ Ram_dataspace_capability Ram_session_component::alloc(size_t ds_size, bool cache
 		throw Out_of_metadata();
 	}
 
+	PDBG("ds = %p, core_local_addr = %lx, phys_addr = %lx, size = 0x%zx", ds, ds->core_local_addr(), ds->phys_addr(), ds->size());
+
 	/*
 	 * Fill new dataspaces with zeros. For non-cached RAM dataspaces, this
 	 * function must also make sure to flush all cache lines related to the
