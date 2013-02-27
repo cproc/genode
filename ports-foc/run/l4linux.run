@@ -44,10 +44,15 @@ set config  {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
-	<start name="uart_drv">
+	<start name="kdb_uart_drv">
 		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Terminal"/></provides>
-		<config><policy label="l4linux" uart="1"/></config>
+		<provides>
+			<service name="Terminal"/>
+			<service name="Uart"/>
+		</provides>
+		<config>
+			<policy label="l4linux" uart="0" detect_size="no"/>
+		</config>
 	</start> }
 
 append_if [have_spec pci] config {
@@ -108,7 +113,7 @@ install_config $config
 #
 # Boot modules
 #
-set boot_modules { core init timer uart_drv l4linux initrd.gz }
+set boot_modules { core init timer kdb_uart_drv l4linux initrd.gz }
 lappend_if [have_spec     pci] boot_modules pci_drv
 lappend_if [have_spec     ps2] boot_modules ps2_drv
 lappend_if [have_spec   pl11x] boot_modules pl11x_drv
@@ -126,14 +131,14 @@ if {![file exists bin/initrd.gz]} {
 	exec >& /dev/null wget -c -O bin/initrd.gz $uri
 }
 
+set fiasco_serial_esc_arg ""
+
 build_boot_image  [join $boot_modules " "]
 
 #
 # Qemu
 #
 append qemu_args " -m 128 -nographic "
-append qemu_args " -serial file:kdb.log "
-append qemu_args " -serial mon:stdio "
 append_if [have_spec     x86] qemu_args " -smp 2,cores=2 "
 append_if [have_spec     x86] qemu_args " -net nic,model=e1000 -net user "
 append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 -net user "
