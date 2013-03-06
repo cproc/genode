@@ -1,0 +1,90 @@
+l4linux_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ arch/l4/include/asm/arch-arm/pgtable.h |    1 +
+ arch/l4/kernel/dispatch.c              |    3 +++
+ arch/l4/kernel/main.c                  |    5 +++--
+ arch/l4/lib/pte.c                      |   10 +++++++++-
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/arch/l4/include/asm/arch-arm/pgtable.h b/arch/l4/include/asm/arch-arm/pgtable.h
+index 1c357e1..543372e 100644
+--- a/arch/l4/include/asm/arch-arm/pgtable.h
++++ b/arch/l4/include/asm/arch-arm/pgtable.h
+@@ -42,6 +42,7 @@
+ 
+ #include <asm/api/api.h>
+ 
++#define VMALLOC_OFFSET  (8*1024*1024)
+ #define VMALLOC_SIZE    128
+ 
+ #define VMALLOC_START   l4x_vmalloc_memory_start
+diff --git a/arch/l4/kernel/dispatch.c b/arch/l4/kernel/dispatch.c
+index f737c04..bb78aa0 100644
+--- a/arch/l4/kernel/dispatch.c
++++ b/arch/l4/kernel/dispatch.c
+@@ -121,6 +121,9 @@ static inline unsigned long l4x_handle_dev_mem(unsigned long phy)
+ {
+ 	unsigned long devmem;
+ 
++	printk("l4x_handle_dev_mem(%lx) called - currently not supported on Genode.\n", phy);
++	return 0;
++
+ #ifdef CONFIG_X86
+ 	if (phy > 0x80000000U) {
+ 		if (!(devmem = find_ioremap_entry(phy))
+diff --git a/arch/l4/kernel/main.c b/arch/l4/kernel/main.c
+index 61ee613..6ac6253 100644
+--- a/arch/l4/kernel/main.c
++++ b/arch/l4/kernel/main.c
+@@ -1307,7 +1307,8 @@ void __init l4x_setup_memory(char *cmdl,
+ 	                    0, "Main memory");
+ 
+ 	/* Reserve some part of the virtual address space for vmalloc */
+-	l4x_vmalloc_memory_start = (unsigned long)l4x_main_memory_start + l4x_mainmem_size;
++	l4x_vmalloc_memory_start = ((((unsigned long)l4x_main_memory_start + l4x_mainmem_size) +
++	                              VMALLOC_OFFSET) & ~(VMALLOC_OFFSET - 1));
+ #ifdef CONFIG_X86_32
+ 	l4x_vmalloc_memory_size  = __VMALLOC_RESERVE;
+ #elif defined(CONFIG_X86_64)
+@@ -1318,7 +1319,7 @@ void __init l4x_setup_memory(char *cmdl,
+ 
+ 	if (l4re_rm_reserve_area(&l4x_vmalloc_memory_start,
+ 	                          l4x_vmalloc_memory_size,
+-	                          L4RE_RM_SEARCH_ADDR, PGDIR_SHIFT)) {
++	                          L4RE_RM_SEARCH_ADDR, ilog2(VMALLOC_OFFSET))) {
+ 		LOG_printf("%s: Error reserving vmalloc memory area!\n", __func__);
+ 		l4x_exit_l4linux();
+ 	}
+diff --git a/arch/l4/lib/pte.c b/arch/l4/lib/pte.c
+index 4f6d4f7..74e3659 100644
+--- a/arch/l4/lib/pte.c
++++ b/arch/l4/lib/pte.c
+@@ -48,6 +48,12 @@ static void l4x_flush_page(struct mm_struct *mm,
+ 		}
+ 	} else
+ #endif
++#ifdef NOT_GENODE
++		/*
++		 * Device memory is currently not supported on Genode. If this changes,
++		 * a check for overlapping 'low memory' and 'device memory' regions
++		 * must get added.
++		 */
+ 		if (address > 0x80000000UL) {
+ 		unsigned long remap;
+ 		remap = find_ioremap_entry(address);
+@@ -60,8 +66,10 @@ static void l4x_flush_page(struct mm_struct *mm,
+ 			return;
+ 
+ 		address = remap;
++	} else
++#endif /* NOT_GENODE */
+ 
+-	} else if ((address & PAGE_MASK) == 0)
++	if ((address & PAGE_MASK) == 0)
+ 		address = PAGE0_PAGE_ADDRESS;
+ 
+ #if 0
