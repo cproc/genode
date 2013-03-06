@@ -57,7 +57,7 @@ set config  {
 
 append_if [have_spec pci] config {
 	<start name="pci_drv">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides><service name="PCI"/></provides>
 	</start>}
 
@@ -93,15 +93,15 @@ append_if [have_spec lan9118] config {
 
 append config {
 	<start name="l4linux">
-		<resource name="RAM" quantum="128M"/>
+		<resource name="RAM" quantum="3G"/>
 }
 
 append_if [have_spec x86] config {
-		<config args="mem=64M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+		<config args="mem=754M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
 }
 
 append_if [have_spec arm] config {
-		<config args="mem=64M console=ttyS0 l4x_rd=initrd.gz"/>
+		<config args="mem=754M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
 }
 
 append config {
@@ -138,7 +138,7 @@ build_boot_image  [join $boot_modules " "]
 #
 # Qemu
 #
-append qemu_args " -m 128 -nographic "
+append qemu_args " -m 1024 -nographic "
 append qemu_args " -serial mon:stdio "
 append qemu_args " -serial file:kdb.log "
 append_if [have_spec     x86] qemu_args " -smp 2,cores=2 "
@@ -148,16 +148,17 @@ append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 -net user "
 #
 # Execute test case
 #
-run_genode_until {.*\/ #.*} 220
+run_genode_until forever
+#run_genode_until {.*\/ #.*} 220
 
 # Wait for network to settle down
-send "sleep 5\n"
-send "wget http://genode.org/\n"
+#send "sleep 5\n"
+#send "wget http://genode.org/\n"
 
-expect {
-	 -re "Connecting to genode.org.*index.html.*\/ #.*" { }
-	timeout { puts stderr "Error: Test execution timed out"; exit -2 }
-}
+#expect {
+#	 -re "Connecting to genode.org.*index.html.*\/ #.*" { }
+#	timeout { puts stderr "Error: Test execution timed out"; exit -2 }
+#}
 
-puts "Test succeeded"
-exec rm bin/initrd.gz kdb.log
+#puts "Test succeeded"
+#exec rm bin/initrd.gz kdb.log
