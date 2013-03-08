@@ -1,0 +1,7 @@
+build "test/stdin"
+
+create_boot_directory
+
+set pid [eval "spawn [run_dir]/../../../test/stdin/test"]
+interact $pid
+#interact
