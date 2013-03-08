@@ -11,8 +11,8 @@ proc use_usb_input { } { return [expr ![have_spec ps2] && [have_spec usb]] }
 
 set build_components {
 	core init drivers/timer noux/minimal lib/libc_noux
-	drivers/framebuffer drivers/pci drivers/input
-	server/terminal server/ram_fs
+	drivers/framebuffer drivers/pci drivers/input drivers/uart
+	server/ram_fs
 	test/libports/ncurses
 }
 
@@ -116,12 +116,14 @@ append_if [use_usb_input] config {
 	</start> }
 
 append config {
-	<start name="terminal">
+	<start name="kdb_uart_drv">
 		<resource name="RAM" quantum="2M"/>
-		<provides><service name="Terminal"/></provides>
+		<provides>
+			<service name="Terminal"/>
+			<service name="Uart"/>
+		</provides>
 		<config>
-			<keyboard layout="de"/>
-			<font size="12" />
+			<policy label="noux" uart="0" detect_size="yes"/>
 		</config>
 	</start>
 	<start name="ram_fs">
@@ -184,7 +186,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	core init timer ld.lib.so noux terminal ram_fs
+	core init timer ld.lib.so noux kdb_uart_drv ram_fs
 	libc.lib.so libm.lib.so libc_noux.lib.so ncurses.lib.so
 	bash.tar coreutils.tar vim.tar
 }
@@ -197,6 +199,10 @@ lappend_if [have_spec ps2]   boot_modules ps2_drv
 lappend_if [have_spec pl11x] boot_modules pl11x_drv
 lappend_if [have_spec omap4] boot_modules omap4_fb_drv
 lappend_if [use_usb_input]   boot_modules usb_drv
+
+if {[have_spec foc] || [have_spec fiasco]} {
+	set fiasco_serial_esc_arg ""
+}
 
 build_boot_image $boot_modules
 
