@@ -51,7 +51,7 @@ set config  {
 			<service name="Uart"/>
 		</provides>
 		<config>
-			<policy label="l4linux" uart="0" detect_size="no"/>
+			<policy label="l4linux" uart="0" detect_size="yes"/>
 		</config>
 	</start> }
 
@@ -93,7 +93,7 @@ append_if [have_spec lan9118] config {
 
 append config {
 	<start name="l4linux">
-		<resource name="RAM" quantum="128M"/>
+		<resource name="RAM" quantum="2G"/>
 }
 
 append_if [have_spec x86] config {
@@ -101,7 +101,7 @@ append_if [have_spec x86] config {
 }
 
 append_if [have_spec arm] config {
-		<config args="mem=64M console=ttyS0 l4x_rd=initrd.gz"/>
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz"/>
 }
 
 append config {
@@ -146,16 +146,4 @@ append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 -net user "
 #
 # Execute test case
 #
-run_genode_until {.*\/ #.*} 220
-
-# Wait for network to settle down
-send "sleep 5\n"
-send "wget http://genode.org/\n"
-
-expect {
-	 -re "Connecting to genode.org.*index.html.*\/ #.*" { }
-	timeout { puts stderr "Error: Test execution timed out"; exit -2 }
-}
-
-puts "Test succeeded"
-exec rm bin/initrd.gz kdb.log
+run_genode_until forever
