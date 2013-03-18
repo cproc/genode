@@ -1,0 +1,554 @@
+assert_spec foc
+
+#
+# Build
+#
+set build_components {
+	core
+	init
+	drivers/timer
+	drivers/uart
+	server/terminal_mux
+	server/terminal_log
+	drivers/framebuffer
+	l4linux }
+
+build $build_components
+create_boot_directory
+
+#
+# Config
+#
+set config  {
+<config prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="kdb_uart_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Terminal"/>
+			<service name="Uart"/>
+		</provides>
+		<config>
+			<policy label="terminal_mux" uart="0" detect_size="yes"/>
+		</config>
+	</start>
+	<start name="terminal_mux">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Terminal"/></provides>
+		<route>
+			<service name="Terminal"> <child name="kdb_uart_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+	<start name="terminal_log">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="LOG"/>
+		</provides>
+		<route>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+}
+
+#
+# l4linux #1
+#
+
+append config {
+	<start name="l4linux">
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+}
+
+#
+# l4linux #2
+#
+
+append config {
+	<start name="l4linux.2">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #3
+#
+
+append config {
+	<start name="l4linux.3">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #4
+#
+
+append config {
+	<start name="l4linux.4">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #5
+#
+
+append config {
+	<start name="l4linux.5">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #6
+#
+
+append config {
+	<start name="l4linux.6">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #7
+#
+
+append config {
+	<start name="l4linux.7">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #8
+#
+
+append config {
+	<start name="l4linux.8">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #9
+#
+
+append config {
+	<start name="l4linux.9">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #10
+#
+
+append config {
+	<start name="l4linux.10">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #11
+#
+
+append config {
+	<start name="l4linux.11">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #12
+#
+
+append config {
+	<start name="l4linux.12">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #13
+#
+
+append config {
+	<start name="l4linux.13">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #14
+#
+
+append config {
+	<start name="l4linux.14">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+#
+# l4linux #15
+#
+
+append config {
+	<start name="l4linux.15">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+
+#
+# l4linux #16
+#
+
+append config {
+	<start name="l4linux.16">
+		<binary name="l4linux" />
+		<resource name="RAM" quantum="124M"/>
+}
+
+append_if [have_spec x86] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append_if [have_spec arm] config {
+		<config args="mem=100M console=ttyS0 l4x_rd=initrd.gz l4x_cpus=2 l4x_cpus_map=0,1"/>
+}
+
+append config {
+		<route>
+			<service name="LOG"> <child name="terminal_log"/> </service>
+			<service name="Terminal"> <child name="terminal_mux"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start> 
+}
+
+
+append config {
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+set boot_modules {
+	core
+	init
+	timer 
+	kdb_uart_drv 
+	terminal_mux 
+	terminal_log
+	ld.lib.so 
+	libc.lib.so 
+	libc_terminal.lib.so 
+	ncurses.lib.so 
+	l4linux 
+	initrd.gz
+}
+
+if {[have_spec x86]} {
+	set uri "http://genode.org/files/release-11.11/l4lx/initrd-ia32.gz"
+} elseif {[have_spec arm]} {
+	set uri "http://genode.org/files/release-11.11/l4lx/initrd-arm.gz"
+}
+if {![file exists bin/initrd.gz]} {
+	puts "Download initramfs ..."
+	exec >& /dev/null wget -c -O bin/initrd.gz $uri
+}
+
+set fiasco_serial_esc_arg ""
+
+build_boot_image  [join $boot_modules " "]
+
+#
+# Qemu
+#
+append qemu_args " -m 2048 -nographic "
+append_if [have_spec     x86] qemu_args " -smp 2,cores=2 "
+
+#
+# Execute test case
+#
+run_genode_until forever
