@@ -47,6 +47,8 @@ class Ncurses
 
 		void do_update();
 
+		void redraw();
+
 		Ncurses();
 
 		void cursor_visible(bool);

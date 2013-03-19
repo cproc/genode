@@ -737,10 +737,19 @@ int main(int, char **)
 	env()->parent()->announce(ep.manage(&root));
 
 	while (1) {
+		static unsigned long count            = 0;
+		static unsigned int  refresh_interval = 50;
+
 		static Timer::Connection timer;
 		timer.msleep(10);
 
 		input_handler_cap.call<Input_handler::Rpc_handle_input>();
+
+		if ((++count % refresh_interval) == 0) {
+			ncurses.redraw();
+			if (refresh_interval < 500)
+				refresh_interval += 50;
+		}
 	}
 	return 0;
 }

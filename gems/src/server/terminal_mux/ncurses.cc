@@ -72,6 +72,12 @@ void Ncurses::do_update()
 }
 
 
+void Ncurses::redraw()
+{
+	endwin();
+	wrefresh(stdscr);
+}
+
 void Ncurses::cursor_visible(bool visible)
 {
 	if (!visible)
