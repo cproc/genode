@@ -25,6 +25,7 @@
 /* Fiasco includes */
 namespace Fiasco {
 #include <l4/sys/types.h>
+#include <l4/sys/kdebug.h>
 }
 
 namespace Genode {
@@ -51,7 +52,13 @@ namespace Genode {
 			        bool rw = true, bool grant = false)
 			: _dst_addr(dst_addr), _src_addr(src_addr),
 			  _write_combined(write_combined), _log2size(l2size),
-			  _rw(rw), _grant(grant) { }
+			  _rw(rw), _grant(grant)
+			{
+				if (src_addr < 0x10000) {
+					PDBG("src_addr = %lx", src_addr);
+					enter_kdebug("src_addr < 0x10000");
+				}
+			}
 
 			/**
 			 * Construct invalid flexpage
