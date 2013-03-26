@@ -27,6 +27,10 @@
 #include <rm_session_component.h>
 #include <dataspace_component.h>
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 using namespace Genode;
 
 
@@ -204,11 +208,20 @@ int Rm_client::pager(Ipc_pager &pager)
 
 	/* traverse potentially nested dataspaces until we hit a leaf dataspace */
 	for (level = 0; level < MAX_NESTING_LEVELS; level++) {
+		if (pf_addr >= 0x40000000)
+			PDBG("calling reverse_lookup(): level = %u, pf_addr = %lx, curr_rm_base = %lx",
+			     level, pf_addr, curr_rm_base);
+
 		lookup = curr_rm_session->reverse_lookup(curr_rm_base,
 		                                        &dst_fault_area,
 		                                        &src_dataspace,
 		                                        &src_fault_area,
 		                                        &sub_rm_session);
+
+		if (lookup && (pf_addr >= 0x40000000))
+			PDBG("lookup succeeded: level = %u, pf_addr = %lx, dst = %lx, src = %lx",
+			     level, pf_addr, dst_fault_area.base(), src_fault_area.base());
+
 		/* check if we need to traverse into a nested dataspace */
 		if (!sub_rm_session)
 			break;
@@ -685,13 +698,17 @@ bool Rm_session_component::reverse_lookup(addr_t                dst_base,
 
 	/* lookup region */
 	Rm_region *region = _map.metadata((void*)fault_addr);
-	if (!region)
+	if (!region) {
+		PDBG("no region found for %lx", dst_fault_area->fault_addr());
 		return false;
+	}
 
 	/* request dataspace  backing the region */
 	*src_dataspace = region->dataspace();
-	if (!*src_dataspace)
+	if (!*src_dataspace) {
+		PDBG("no dataspace found for region for %lx", dst_fault_area->fault_addr());
 		return false;
+	}
 
 	/*
 	 * Constrain destination fault area to region
@@ -731,6 +748,17 @@ bool Rm_session_component::reverse_lookup(addr_t                dst_base,
 	/* lookup and lock nested dataspace if required */
 	Native_capability session_cap = (*src_dataspace)->sub_rm_session();
 	*sub_rm_session = dynamic_cast<Rm_session_component *>(_session_ep->lookup_and_lock(session_cap));
+
+	if ((src_fault_area->base() == 0) && !*sub_rm_session) {
+		PDBG("Sub RM session for %lx is missing", dst_fault_area->fault_addr());
+		enter_kdebug("Missing sub RM session");
+	}
+
+	if (dst_fault_area->fault_addr() >= 0x40000000)
+		PDBG("found region for %lx, src = %lx, *sub_rm_session = %p",
+		     dst_fault_area->fault_addr(),
+		     src_fault_area->base(),
+		     *sub_rm_session);
 
 	return lookup;
 }
@@ -812,6 +840,7 @@ Rm_session_component::Rm_session_component(Rpc_entrypoint   *ds_ep,
 
 Rm_session_component::~Rm_session_component()
 {
+	PDBG("this = %p", this);
 	/* dissolve all clients from pager entrypoint */
 	Rm_client *cl;
 	do {
