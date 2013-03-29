@@ -1,12 +1,12 @@
-SDL_VERSION = 1.2.13
-SDL         = SDL-$(SDL_VERSION)
-SDL_TGZ     = $(SDL).tar.gz
-SDL_URL     = http://www.libsdl.org/release/$(SDL_TGZ)
+include ports/sdl.inc
+
+SDL_TGZ = $(SDL).tar.gz
+SDL_URL = http://www.libsdl.org/release/$(SDL_TGZ)
 
 #
 # Interface to top-level prepare Makefile
 #
-# Register SDL port as lower case to be consitent with the
+# Register SDL port as lower case to be consistent with the
 # other libraries.
 #
 PORTS += sdl-$(SDL_VERSION)
@@ -30,13 +30,16 @@ $(CONTRIB_DIR)/$(SDL): $(DOWNLOAD_DIR)/$(SDL_TGZ)
 #
 # Install SDL headers
 #
-include/SDL:
+include/SDL::  # use :: rule because include/SDL is also targeted by sdl_ttf.mk
 	$(VERBOSE)mkdir -p $@
-	$(VERBOSE)for i in `find $(CONTRIB_DIR)/$(SDL)/include -name *.h`; do \
+	$(VERBOSE)for i in `find $(CONTRIB_DIR)/$(SDL)/include -name "*.h"`; do \
 		ln -fs ../../$$i include/SDL/; done
 	$(VERBOSE)ln -fs ../../src/lib/sdl/SDL_config.h $@
 	$(VERBOSE)ln -fs ../../src/lib/sdl/SDL_config_genode.h $@
 
 clean-sdl:
-	$(VERBOSE)rm -rf include/SDL
+	$(VERBOSE)for i in `find $(CONTRIB_DIR)/$(SDL)/include -name "*.h"`; do \
+		rm -f include/SDL/`basename $$i`; done
+	$(VERBOSE)rm -f $(addprefix include/SDL/,SDL_config_genode.h SDL_config.h)
+	$(VERBOSE)rmdir include/SDL 2>/dev/null || true
 	$(VERBOSE)rm -rf $(CONTRIB_DIR)/$(SDL)
