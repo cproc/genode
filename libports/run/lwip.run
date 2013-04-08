@@ -32,6 +32,7 @@ set build_components {
 	core init
 	drivers/pci drivers/timer drivers/nic
 	test/lwip/http_srv
+	server/nic_bridge
 }
 
 lappend_if [have_spec omap4]   build_components drivers/usb
@@ -69,8 +70,20 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
+	<start name="nic_bridge">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Nic"/></provides>
+		<route>
+			<service name="Nic"> <child name="usb_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
 	<start name="test-lwip_httpsrv">
 		<resource name="RAM" quantum="3M"/>
+		<route>
+			<service name="Nic"> <child name="nic_bridge"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start> }
 
 append_if [expr [have_spec omap4] || [have_spec exynos5]] config {
@@ -80,7 +93,8 @@ append_if [expr [have_spec omap4] || [have_spec exynos5]] config {
 			<service name="Nic"/>
 		</provides>
 		<config>
-			<nic mac="2e:60:90:0c:4e:01" />
+			<!--<nic mac="2e:60:90:0c:4e:01" />-->
+			<nic mac="aa:bb:cc:dd:ee:00" />
 		</config>
 	</start>}
 
@@ -123,7 +137,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_log.lib.so lwip.lib.so test-lwip_httpsrv
+	ld.lib.so libc.lib.so libc_log.lib.so lwip.lib.so test-lwip_httpsrv nic_bridge
 }
 
 # platform-specific modules
