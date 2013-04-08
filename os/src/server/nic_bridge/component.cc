@@ -59,6 +59,11 @@ bool Session_component::Tx_handler::handle_arp(Ethernet_frame *eth, Genode::size
 		new (eth->data()) Arp_packet(size - sizeof(Ethernet_frame));
 	if (arp->ethernet_ipv4() &&
 		arp->opcode() == Arp_packet::REQUEST) {
+
+		/* gratuitous ARP? */
+		if (arp->src_ip() == arp->dst_ip())
+			return false;
+
 		Ipv4_address_node *node = Vlan::vlan()->ip_tree()->first();
 		if (node)
 			node = node->find_by_address(arp->dst_ip());
