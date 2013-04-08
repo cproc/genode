@@ -460,8 +460,8 @@ proc spawn_qemu { wait_for_re timeout_value } {
 	if {[have_spec arm]} { append qemu_args " -kernel [run_dir]/image.elf " }
 
 	set timeout $timeout_value
-	set pid [eval "spawn $qemu $qemu_args"]
-	if {$wait_for_re == "forever"} { interact $pid }
+	eval "spawn $qemu $qemu_args"
+	if {$wait_for_re == "forever"} { interact $spawn_id }
 	expect {
 		-re $wait_for_re { }
 		eof     { puts stderr "Error: Qemu died unexpectedly";   exit -3 }
