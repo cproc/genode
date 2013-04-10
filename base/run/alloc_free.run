@@ -1,0 +1,39 @@
+build "core init test/alloc_free"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<start name="test-alloc_free">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+	</config>
+}
+
+build_boot_image "core init test-alloc_free"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until {Test started.*\n} 500
+
+set time_start [clock milliseconds]
+
+set timeout 500
+expect {
+	-re "Test finished.*\n" { }
+	timeout { puts "Test execution timed out"; exit -1 }
+}
+
+set time_end [clock milliseconds]
+
+set time [expr $time_end - $time_start]
+
+puts "Test succeeded in $time ms"
+
+interact
