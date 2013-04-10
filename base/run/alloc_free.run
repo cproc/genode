@@ -27,6 +27,7 @@ set time_start [clock milliseconds]
 set timeout 500
 expect {
 	-re "Test finished.*\n" { }
+	-re "jdb:" { interact }
 	timeout { puts "Test execution timed out"; exit -1 }
 }
 
