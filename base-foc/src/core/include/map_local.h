@@ -133,10 +133,13 @@ namespace Genode {
 		/*
 		 * XXX divide operation into flexpages greater than page size
 		 */
-		for (; addr < local_base + size; addr += L4_PAGESIZE)
+		for (; addr < local_base + size; addr += L4_PAGESIZE) {
+//PDBG("calling l4_task_unmap()");
 			l4_task_unmap(L4_BASE_TASK_CAP,
 			              l4_fpage(addr, L4_LOG2_PAGESIZE, L4_FPAGE_RW),
 			              L4_FP_OTHER_SPACES);
+//PDBG("l4_task_unmap() returned");
+		}
 			l4_cache_dma_coherent(local_base, local_base + size);
 	}
 }

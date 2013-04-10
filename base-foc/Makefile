@@ -8,8 +8,8 @@
 VERBOSE    ?= @
 ECHO        = @echo
 SVN_URI     = http://svn.tudos.org/repos/oc/tudos/trunk
-GIT_URI     = http://github.com/ssumpf/foc.git
-GIT_BRANCH  = r47
+GIT_URI     = git@github.com:cproc/foc.git
+GIT_BRANCH  = rcu_debug
 CONTRIB_DIR = contrib
 GNU_FIND   ?= find
 
