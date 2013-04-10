@@ -15,6 +15,10 @@
 #include <base/env.h>
 #include <base/printf.h>
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 using namespace Genode;
 
 int main(int argc, char **argv)
@@ -31,6 +35,8 @@ int main(int argc, char **argv)
 	}
 
 	PDBG("Test finished");
+
+	enter_kdebug("finished");
 
 	return 0;
 }
