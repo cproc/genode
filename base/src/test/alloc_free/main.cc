@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
 	PDBG("Test started");
 
-	for (int i = 0; i < 10000; i++) {
+	for (int i = 0; i < 3; i++) {
 		//PDBG("calling alloc()");
 		cap = env()->ram_session()->alloc(4096);
 		//PDBG("calling free()");

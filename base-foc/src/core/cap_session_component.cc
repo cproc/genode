@@ -202,10 +202,11 @@ void Genode::Capability_map::remove(Genode::Cap_index* i)
 	if (i) {
 		Core_cap_index* e = static_cast<Core_cap_index*>(_tree.first() ? _tree.first()->find_by_id(i->id()) : 0);
 		if (e == i) {
-
+PDBG("calling l4_task_unmap()");
 			l4_msgtag_t tag = l4_task_unmap(L4_BASE_TASK_CAP,
 			                                l4_obj_fpage(i->kcap(), 0, L4_FPAGE_RWX),
 			                                L4_FP_ALL_SPACES | L4_FP_DELETE_OBJ);
+PDBG("l4_task_unmap() returned");
 			if (l4_msgtag_has_error(tag))
 				PERR("destruction of ipc-gate %lx failed!", (unsigned long) i->kcap());
 
