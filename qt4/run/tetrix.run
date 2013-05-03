@@ -10,6 +10,7 @@ build {
 	drivers/framebuffer
 	drivers/timer
 	server/nitpicker
+	server/nit_fb
 	app/examples/tetrix
 }
 
@@ -92,6 +93,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	nit_fb
 	tetrix
 	dejavusans.lib.so
 	freetype.lib.so
