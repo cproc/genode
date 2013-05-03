@@ -1,0 +1,48 @@
+#
+# Build
+#
+
+build { core init mem_test_001 }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+	<parent-provides>
+    <service name="ROM"/>
+    <service name="RAM"/>
+    <service name="IRQ"/>
+    <service name="CAP"/>
+    <service name="PD"/>
+    <service name="RM"/>
+    <service name="CPU"/>
+    <service name="LOG"/>
+    <service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="mem_test_001">
+		<resource name="RAM" quantum="2G"/>
+	</start>
+</config>
+}
+
+#
+# Boot image
+#
+
+set boot_modules { 
+  core  
+  init 
+  mem_test_001
+}
+
+append qemu_args " -smp 4,cores=4 -nographic -m 4G "
+build_boot_image $boot_modules
+
+run_genode_until forever
