@@ -361,9 +361,11 @@
 # define QT_USE_MATH_H_FLOATS
 #endif
 
-#ifndef Q_WS_QWS
-# define Q_WS_QWS
+#ifndef Q_WS_QPA
+# define Q_WS_QPA
 #endif
+
+#define QT_QPA_DEFAULT_PLATFORM_NAME "nitpicker"
 
 #define QT_VISIBILITY_AVAILABLE
 

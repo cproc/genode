@@ -5,7 +5,8 @@
     -confirm-license \
     -qconfig genode \
     -xplatform qws/genode-generic-g++ \
-    -embedded x86 \
+    -arch i386 \
+    -qpa minimal \
     -static \
     -no-separate-debug-info \
     -depths 8,16,32 \

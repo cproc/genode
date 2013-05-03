@@ -1,0 +1,125 @@
+qt4_qpa.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/gui/kernel/qapplication_qpa.cpp           |    8 ++++++++
+ src/gui/kernel/qeventdispatcher_qpa.cpp       |    9 +++++++++
+ src/gui/kernel/qeventdispatcher_qpa_p.h       |   10 ++++++++++
+ src/gui/kernel/qwindowsysteminterface_qpa.cpp |    2 ++
+ src/gui/text/qplatformfontdatabase_qpa.cpp    |    4 ++++
+ 5 files changed, 33 insertions(+)
+
+diff --git a/src/gui/kernel/qapplication_qpa.cpp b/src/gui/kernel/qapplication_qpa.cpp
+index 011d81b..8ec903b 100644
+--- a/src/gui/kernel/qapplication_qpa.cpp
++++ b/src/gui/kernel/qapplication_qpa.cpp
+@@ -70,6 +70,10 @@
+ 
+ #include "qdesktopwidget_qpa_p.h"
+ 
++#ifdef Q_OS_GENODE
++#include <QtCore/qplugin.h>
++#endif
++
+ QT_BEGIN_NAMESPACE
+ 
+ static QString appName;
+@@ -527,6 +531,10 @@ void qt_init(QApplicationPrivate *priv, int type)
+ {
+     Q_UNUSED(type);
+ 
++#ifdef Q_OS_GENODE
++    Q_IMPORT_PLUGIN(nitpicker)
++#endif
++
+     qApp->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+     char *p;
+     char **argv = priv->argv;
+diff --git a/src/gui/kernel/qeventdispatcher_qpa.cpp b/src/gui/kernel/qeventdispatcher_qpa.cpp
+index 407ff1e..a4dad3c 100644
+--- a/src/gui/kernel/qeventdispatcher_qpa.cpp
++++ b/src/gui/kernel/qeventdispatcher_qpa.cpp
+@@ -42,7 +42,11 @@
+ #include "qplatformdefs.h"
+ #include "qapplication.h"
+ #include "qeventdispatcher_qpa_p.h"
++#ifdef Q_OS_GENODE
++#include "private/qeventdispatcher_genode_p.h"
++#else
+ #include "private/qeventdispatcher_unix_p.h"
++#endif
+ #include "qapplication_p.h"
+ #include "qplatformeventloopintegration_qpa.h"
+ 
+@@ -60,6 +64,11 @@ QT_BEGIN_NAMESPACE
+ 
+ QT_USE_NAMESPACE
+ 
++#ifdef Q_OS_GENODE
++#define QEventDispatcherUNIX QEventDispatcherGenode
++#define QEventDispatcherUNIXPrivate QEventDispatcherGenodePrivate
++#endif
++
+ class Rendezvous
+ {
+ public:
+diff --git a/src/gui/kernel/qeventdispatcher_qpa_p.h b/src/gui/kernel/qeventdispatcher_qpa_p.h
+index a4983ff..402638c 100644
+--- a/src/gui/kernel/qeventdispatcher_qpa_p.h
++++ b/src/gui/kernel/qeventdispatcher_qpa_p.h
+@@ -53,13 +53,23 @@
+ // We mean it.
+ //
+ 
++#include "qplatformdefs.h"
++
++#ifdef Q_OS_GENODE
++#include "private/qeventdispatcher_genode_p.h"
++#else
+ #include "private/qeventdispatcher_unix_p.h"
++#endif
+ 
+ QT_BEGIN_NAMESPACE
+ 
+ class QEventDispatcherQPAPrivate;
+ 
++#ifdef Q_OS_GENODE
++class QEventDispatcherQPA : public QEventDispatcherGenode
++#else
+ class QEventDispatcherQPA : public QEventDispatcherUNIX
++#endif
+ {
+     Q_OBJECT
+     Q_DECLARE_PRIVATE(QEventDispatcherQPA)
+diff --git a/src/gui/kernel/qwindowsysteminterface_qpa.cpp b/src/gui/kernel/qwindowsysteminterface_qpa.cpp
+index 891ae6e..c0c9129 100644
+--- a/src/gui/kernel/qwindowsysteminterface_qpa.cpp
++++ b/src/gui/kernel/qwindowsysteminterface_qpa.cpp
+@@ -294,7 +294,9 @@ void QWindowSystemInterface::handleLocaleChange()
+     QWindowSystemInterfacePrivate::LocaleChangeEvent *e =
+             new QWindowSystemInterfacePrivate::LocaleChangeEvent();
+ 
++#ifndef QT_NO_SYSTEMLOCALE
+     QLocalePrivate::updateSystemPrivate();
++#endif
+     QWindowSystemInterfacePrivate::queueWindowSystemEvent(e);
+ }
+ 
+diff --git a/src/gui/text/qplatformfontdatabase_qpa.cpp b/src/gui/text/qplatformfontdatabase_qpa.cpp
+index 0763e0d..50eabf85 100644
+--- a/src/gui/text/qplatformfontdatabase_qpa.cpp
++++ b/src/gui/text/qplatformfontdatabase_qpa.cpp
+@@ -238,7 +238,11 @@ bool QSupportedWritingSystems::supported(QFontDatabase::WritingSystem writingSys
+ */
+ void QPlatformFontDatabase::populateFontDatabase()
+ {
++#ifdef Q_OS_GENODE
++    QString fontpath = QLatin1String(":/qt/fonts");
++#else
+     QString fontpath = fontDir();
++#endif
+ 
+     if(!QFile::exists(fontpath)) {
+         qFatal("QFontDatabase: Cannot find font directory %s - is Qt installed correctly?",
