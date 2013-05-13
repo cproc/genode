@@ -352,7 +352,7 @@ void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha)
 	/*
 	 * Initialize server entry point
 	 */
-	enum { STACK_SIZE = 4096 };
+	enum { STACK_SIZE = 2*1024*sizeof(addr_t) };
 	static Cap_connection cap;
 	static Rpc_entrypoint ep(&cap, STACK_SIZE, "liquid_fb_ep");
 
