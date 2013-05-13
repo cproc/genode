@@ -74,7 +74,7 @@ void Platform_env::Rm_session_mmap::_add_to_rmap(Region const &region)
 	}
 }
 
-
+extern "C" void wait_for_continue();
 Rm_session::Local_addr
 Platform_env::Rm_session_mmap::attach(Dataspace_capability ds,
                                       size_t size, off_t offset,
@@ -83,6 +83,11 @@ Platform_env::Rm_session_mmap::attach(Dataspace_capability ds,
                                       bool executable)
 {
 	Lock::Guard lock_guard(_lock);
+
+	if (!ds.valid()) {
+		wait_for_continue();
+		throw Invalid_dataspace();
+	}
 
 	/* only support attach_at for sub RM sessions */
 	if (_sub_rm && !use_local_addr) {

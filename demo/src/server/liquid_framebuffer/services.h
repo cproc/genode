@@ -18,7 +18,8 @@
 #include "elements.h"
 
 extern Element *window_content();
-extern void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha);
+extern void init_window_content(unsigned fb_w, unsigned fb_h, bool config_alpha);
+extern void init_services();
 extern void lock_window_content();
 extern void unlock_window_content();
 

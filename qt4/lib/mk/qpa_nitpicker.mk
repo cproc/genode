@@ -5,12 +5,19 @@ SRC_CC = qbasicunixfontdatabase.cpp \
 
 SRC_CC += main.cpp \
           qnitpickerintegration.cpp \
-          qnitpickerwindowsurface.cpp
+          qnitpickerwindowsurface.cpp \
+          moc_qnitpickerplatformwindow.cpp \
+          qevdevkeyboardhandler.cpp \
+          moc_qevdevkeyboardhandler_p.cpp
 
 INC_DIR += $(REP_DIR)/contrib/$(QT4)/src/plugins/platforms/fontdatabases/basicunix \
            $(REP_DIR)/contrib/$(QT4)/src/3rdparty/harfbuzz/src \
-           $(REP_DIR)/src/lib/qt4/src/plugins/platforms/nitpicker
+           $(REP_DIR)/src/lib/qt4/src/plugins/platforms/nitpicker \
+           $(REP_DIR)/src/lib/qt4/src/platformsupport/input/evdevkeyboard
+
+LIBS += qt_xml
 
 vpath % $(call select_from_repositories,contrib/$(QT4)/src/plugins/platforms/fontdatabases/basicunix)
 vpath % $(call select_from_repositories,contrib/$(QT4)/src/gui/text)
 vpath % $(call select_from_repositories,src/lib/qt4/src/plugins/platforms/nitpicker)
+vpath % $(call select_from_repositories,src/lib/qt4/src/platformsupport/input/evdevkeyboard)

@@ -11,12 +11,15 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+#include <base/signal.h>
 #include <os/config.h>
 
 #include "framebuffer_window.h"
 #include "canvas_rgb565.h"
 #include "user_state.h"
 #include "services.h"
+
+using namespace Genode;
 
 /**
  * Runtime configuration
@@ -97,34 +100,36 @@ static void read_config()
 
 	try {
 		char buf[16];
-		config_node.sub_node("animate").value(buf, sizeof(buf));
+		config_node.attribute("animate").value(buf, sizeof(buf));
 
 		if      (!strcmp("off", buf)) config_animate = false;
 		else if (!strcmp("on",  buf)) config_animate = true;
 		else
 			Genode::printf("Warning: invalid value for animate declaration,\n"
 			               "         valid values are 'on', 'off.\n'");
-	} catch (Xml_node::Nonexistent_sub_node) { }
+	} catch (Xml_node::Nonexistent_attribute) { PDBG("animate missing"); }
 
 	config_alpha = config_animate;
 
-	try { config_node.sub_node("x").value(&config_fb_x); }
-	catch (Xml_node::Nonexistent_sub_node) { }
+	try { config_node.attribute("xpos").value(&config_fb_x); }
+	catch (Xml_node::Nonexistent_attribute) { PDBG("xpos missing");}
 
-	try { config_node.sub_node("y").value(&config_fb_y); }
-	catch (Xml_node::Nonexistent_sub_node) { }
+	try { config_node.attribute("ypos").value(&config_fb_y); }
+	catch (Xml_node::Nonexistent_attribute) { PDBG("ypos missing");}
 
-	try { config_node.sub_node("width").value(&config_fb_width); }
-	catch (Xml_node::Nonexistent_sub_node) { }
+	try { config_node.attribute("width").value(&config_fb_width); }
+	catch (Xml_node::Nonexistent_attribute) { PDBG("width missing");}
 
-	try { config_node.sub_node("height").value(&config_fb_height); }
-	catch (Xml_node::Nonexistent_sub_node) { }
+	try { config_node.attribute("height").value(&config_fb_height); }
+	catch (Xml_node::Nonexistent_attribute) { PDBG("height missing");}
 
 	try {
 		static char buf[64];
-		config_node.sub_node("title").value(buf, sizeof(buf));
+		config_node.attribute("title").value(buf, sizeof(buf));
+		PDBG("title = %s", buf);
 		config_title = buf;
-	} catch (Xml_node::Nonexistent_sub_node) { }
+		PDBG("config_title = %s", config_title);
+	} catch (Xml_node::Nonexistent_attribute) { PDBG("title missing");}
 }
 
 
@@ -137,6 +142,14 @@ int main(int argc, char **argv)
 
 	try { read_config(); } catch (...) { }
 
+	/*
+	 * Register signal handler for config changes
+	 */
+	static Signal_receiver sig_rec;
+	static Signal_context sig_ctx;
+	PDBG("registering config signal handler");
+	try { config()->sigh(sig_rec.manage(&sig_ctx)); } catch (...) { }
+
 	/* heuristic for allocating the double-buffer backing store */
 	enum { WINBORDER_WIDTH = 10, WINBORDER_HEIGHT = 40 };
 
@@ -147,8 +160,8 @@ int main(int argc, char **argv)
 	                   config_fb_width  + WINBORDER_WIDTH,
 	                   config_fb_height + WINBORDER_HEIGHT);
 
-	/* initialize our services and window content */
-	init_services(config_fb_width, config_fb_height, config_alpha);
+	/* initialize our window content */
+	init_window_content(config_fb_width, config_fb_height, config_alpha);
 
 	/* init canvas */
 	static Chunky_canvas<Pixel_rgb565> canvas;
@@ -177,6 +190,9 @@ int main(int argc, char **argv)
 	fb_win.parent(&user_state);
 	fb_win.format(fb_win.min_w(), fb_win.min_h());
 
+	/* initialize our services */
+	init_services();
+
 	/* enter main loop */
 	Event ev;
 	unsigned long curr_time, old_time;
@@ -199,16 +215,34 @@ int main(int argc, char **argv)
 		else
 			user_state.handle_event(ev);
 
-		if (ev.type == Event::REFRESH)
+		if (ev.type == Event::REFRESH) {
+			PDBG("REFRESH event");
 			pf.scr_update(0, 0, pf.scr_w(), pf.scr_h());
+		}
 
-		if (ev.type == Event::TIMER)
+		if (ev.type == Event::TIMER) {
 			Tick::handle(pf.timer_ticks());
+			/* check for configuration changes */
+			if (sig_rec.pending()) {
+				sig_rec.wait_for_signal();
+				config()->reload();
+				/* keep the current values by default */
+				config_fb_x = fb_win.view_x();
+				config_fb_y = fb_win.view_y();
+				config_fb_width = fb_win.view_w();
+				config_fb_height = fb_win.view_h();
+				PDBG("rereading config");
+				try { read_config(); } catch (...) { }
+				PDBG("config_fb_width = %d, config_fb_height = %d", config_fb_width, config_fb_height);
+				fb_win.content_geometry(config_fb_x, config_fb_y, config_fb_width, config_fb_height);
+			}
+		}
 
 		/* perform periodic redraw */
 		curr_time = pf.timer_ticks();
 		if (!pf.event_pending() && ((curr_time - old_time > 20) || (curr_time < old_time))) {
 			old_time = curr_time;
+			//PDBG("performing periodic redraw");
 			redraw.process();
 		}
 	} while (ev.type != Event::QUIT);

@@ -10,6 +10,7 @@ build {
 	drivers/framebuffer
 	drivers/timer
 	server/nitpicker
+	server/liquid_framebuffer
 	app/examples/textedit
 	app/examples/tetrix
 	app/qt_launchpad
@@ -94,6 +95,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	liquid_fb
 	qt_launchpad
 	textedit
 	tetrix

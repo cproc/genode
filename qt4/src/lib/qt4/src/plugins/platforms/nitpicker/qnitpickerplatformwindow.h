@@ -15,29 +15,118 @@
 #ifndef _QNITPICKERPLATFORMWINDOW_H_
 #define _QNITPICKERPLATFORMWINDOW_H_
 
-#include <QtGui/QPlatformWindow>
+/* Genode includes */
+#include <input/keycodes.h>
 
+/* Qt includes */
+#include <QtGui/QPlatformWindow>
+#include <QtGui/QWindowSystemInterface>
+#include <QTimer>
 #include <QDebug>
+#include <qevdevkeyboardhandler_p.h>
+
+/* Qoost includes */
+#include <qoost/qmember.h>
 
 #include "window_slave_policy.h"
 
 QT_BEGIN_NAMESPACE
 
-class QNitpickerPlatformWindow : public QPlatformWindow
+class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 {
+	Q_OBJECT
+
 	private:
 
-		Window_slave_policy  _window_slave_policy;
-		Genode::Slave        _window_slave;
+		Window_slave_policy   _window_slave_policy;
+		Genode::Slave         _window_slave;
+		QMember<QTimer>       _timer;
+		Qt::MouseButtons      _mouse_button_state;
+		QEvdevKeyboardHandler _keyboard_handler;
+		QByteArray            _title;
+
+		void _process_mouse_event(Input::Event *ev)
+		{
+			QPoint position(ev->ax(), ev->ay());
+
+			int wheel = 0;
+
+			switch (ev->type()) {
+
+				case Input::Event::PRESS:
+					switch (ev->code()) {
+						case Input::BTN_LEFT:
+							_mouse_button_state |= Qt::LeftButton;
+							break;
+						case Input::BTN_RIGHT:
+							_mouse_button_state |= Qt::RightButton;
+							break;
+						case Input::BTN_MIDDLE:
+							_mouse_button_state |= Qt::MidButton;
+							break;
+						case Input::BTN_SIDE:
+							_mouse_button_state |= Qt::XButton1;
+							break;
+						case Input::BTN_EXTRA:
+							_mouse_button_state |= Qt::XButton2;
+							break;
+					}
+					break;
+
+				case Input::Event::RELEASE:
+					switch (ev->code()) {
+						case Input::BTN_LEFT:
+							_mouse_button_state &= ~Qt::LeftButton;
+							break;
+						case Input::BTN_RIGHT:
+							_mouse_button_state &= ~Qt::RightButton;
+							break;
+						case Input::BTN_MIDDLE:
+							_mouse_button_state &= ~Qt::MidButton;
+							break;
+						case Input::BTN_SIDE:
+							_mouse_button_state &= ~Qt::XButton1;
+							break;
+						case Input::BTN_EXTRA:
+							_mouse_button_state &= ~Qt::XButton2;
+							break;
+					}
+					break;
+#if 0
+				case Input::Event::WHEEL:
+					wheel = ev->ry() * 120; // WHEEL_DELTA
+					break;
+#endif
+				default:
+					break;
+			}
+
+			QWindowSystemInterface::handleMouseEvent(widget(), position, position, _mouse_button_state);
+		}
+
+		void _process_key_event(Input::Event *ev)
+		{
+			const bool pressed = (ev->type() == Input::Event::PRESS);
+			const int keycode = ev->code();
+			_keyboard_handler.processKeycode(keycode, pressed, false);
+		}
 
 	public:
 
-		QNitpickerPlatformWindow(QWidget *tlw, Genode::Rpc_entrypoint &ep)
+		QNitpickerPlatformWindow(QWidget *tlw, Genode::Rpc_entrypoint &ep,
+		                         int screen_width, int screen_height)
 		: QPlatformWindow(tlw),
-		  _window_slave_policy(ep),
-		  _window_slave(ep, _window_slave_policy, 4*1024*1024)
+		  _window_slave_policy(ep, screen_width, screen_height),
+		  _window_slave(ep, _window_slave_policy, 6*1024*1024),
+		  _timer(this),
+		  _keyboard_handler("", -1, false, false, "")
 		{
 			_window_slave_policy.wait_for_service_announcements();
+
+
+
+			connect(_timer, SIGNAL(timeout()), this, SLOT(handle_events()));
+			_timer->start(10);
 		}
 
 	    QWidget *widget() const
@@ -50,7 +139,7 @@ class QNitpickerPlatformWindow : public QPlatformWindow
 	    {
 	    	qDebug() << "QNitpickerPlatformWindow::setGeometry(" << rect << ")";
 	    	QPlatformWindow::setGeometry(rect);
-	    	_window_slave_policy.geometry(rect.x(), rect.y(), rect.width(), rect.height());
+	    	_window_slave_policy.configure(rect.x(), rect.y(), rect.width(), rect.height(), _title.constData());
 	    }
 
 	    QRect geometry() const
@@ -80,7 +169,7 @@ class QNitpickerPlatformWindow : public QPlatformWindow
 	    WId winId() const
 	    {
 	    	qDebug() << "QNitpickerPlatformWindow::winId()";
-	    	return QPlatformWindow::winId();
+	    	return WId(this);
 	    }
 
 	    void setParent(const QPlatformWindow *window)
@@ -93,6 +182,9 @@ class QNitpickerPlatformWindow : public QPlatformWindow
 	    {
 	    	qDebug() << "QNitpickerPlatformWindow::setWindowTitle(" << title << ")";
 	    	QPlatformWindow::setWindowTitle(title);
+	    	_title = title.toUtf8();
+	    	QRect g = geometry();
+	    	_window_slave_policy.configure(g.x(), g.y(), g.width(), g.height(), _title.constData());
 	    }
 
 	    void raise()
@@ -127,6 +219,59 @@ class QNitpickerPlatformWindow : public QPlatformWindow
 		void refresh(int x, int y, int w, int h)
 		{
 			_window_slave_policy.refresh(x, y, w, h);
+		}
+
+	private slots:
+
+		void handle_events()
+		{
+			/* handle framebuffer mode change events */
+			if (_window_slave_policy.mode_changed()) {
+				int new_width;
+				int new_height;
+				_window_slave_policy.size(new_width, new_height);
+				PDBG("mode change detected: %d, %d", new_width, new_height);
+				QRect geo = geometry();
+				QWindowSystemInterface::handleGeometryChange(widget(),
+				                                             QRect(geo.x(),
+				                                                   geo.y(),
+				                                                   new_width,
+				                                                   new_height));
+			}
+
+			/* handle input events */
+			Input::Session_client input(_window_slave_policy.input_session());
+			if (input.is_pending()) {
+				int num_ev;
+				Input::Event *ev_buf = _window_slave_policy.ev_buf();
+				for (int i = 0, num_ev = input.flush(); i < num_ev; i++) {
+
+					Input::Event *ev = &ev_buf[i];
+
+					bool const is_key_event = ev->type() == Input::Event::PRESS ||
+					                          ev->type() == Input::Event::RELEASE;
+
+					bool const is_mouse_button_event =
+						is_key_event && (ev->code() == Input::BTN_LEFT ||
+					                     ev->code() == Input::BTN_MIDDLE ||
+					                     ev->code() == Input::BTN_RIGHT);
+
+					if (ev->type() == Input::Event::MOTION ||
+					    ev->type() == Input::Event::WHEEL ||
+					    is_mouse_button_event) {
+
+						_process_mouse_event(ev);
+
+					} else if (is_key_event && (ev->code() < 128)) {
+
+						_process_key_event(ev);
+
+					}
+				}
+
+			}
+
+
 		}
 
 };

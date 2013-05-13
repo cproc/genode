@@ -58,7 +58,7 @@ class Framebuffer_window : public Window
 		                   bool            config_alpha)
 		:
 			Window(pf, redraw, content->min_w() + 2, content->min_h() + 1 + _TH),
-			_bg_offset(0), _content(content)
+			_bg_offset(0), _content(content), _config_alpha(config_alpha)
 		{
 			/* titlebar */
 			_titlebar.rgba(TITLEBAR_RGBA);
@@ -76,6 +76,15 @@ class Framebuffer_window : public Window
 
 			_min_w = max_w();
 			_min_h = max_h();
+		}
+
+		/**
+		 * Resize the window according to the new content size
+		 */
+		void content_geometry(int x, int y, int w, int h)
+		{
+			vpos(x, y);
+			format(w + 2, h + 1 + _TH);
 		}
 
 		/**

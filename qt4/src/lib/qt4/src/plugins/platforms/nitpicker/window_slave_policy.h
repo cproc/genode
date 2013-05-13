@@ -16,7 +16,6 @@
 
 /* Qt4 includes */
 #include <QDebug>
-#include <QObject>
 #include <QDomDocument>
 #include <QDomElement>
 #include <QDomText>
@@ -24,23 +23,37 @@
 /* Genode includes */
 #include <cap_session/connection.h>
 #include <framebuffer_session/client.h>
+#include <input/event.h>
+#include <input_session/client.h>
 #include <os/slave.h>
 
-using namespace Genode;
-
-class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
+using Genode::Root_capability;
+using Genode::Allocator;
+using Genode::Server;
+using Genode::env;
+using Genode::Lock_guard;
+using Genode::Lock;
+using Genode::Signal_context;
+using Genode::Signal_receiver;
+using Genode::Signal_context_capability;
+extern "C" void wait_for_continue();
+class Window_slave_policy : public Genode::Slave_policy
 {
-	//Q_OBJECT
-
 	private:
 
 		Framebuffer::Session_capability  _framebuffer_session;
 		Genode::Lock                     _framebuffer_ready_lock;
 		unsigned char                   *_framebuffer;
+		Signal_context                   _mode_change_signal_context;
+		Signal_receiver                  _signal_receiver;
+
+		Input::Session_capability        _input_session;
+		Genode::Lock                     _input_ready_lock;
+		Input::Event                    *_ev_buf;
 
 		QByteArray _config_byte_array;
 
-		const char *_config(int xpos, int ypos, int width, int height)
+		const char *_config(int xpos, int ypos, int width, int height, const char *title)
 		{
 			QDomDocument config_doc;
 
@@ -52,13 +65,26 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 			config_node.setAttribute("width", QString::number(width));
 			config_node.setAttribute("height", QString::number(height));
 			config_node.setAttribute("animate", "off");
-			//config_node.setAttribute("refresh_rate", "25");
+			config_node.setAttribute("refresh_rate", "25");
+			config_node.setAttribute("title", title);
 
 			_config_byte_array = config_doc.toByteArray(4);
 
 			qDebug() << _config_byte_array;
 
 			return _config_byte_array.constData();
+		}
+
+		void _reattach_framebuffer()
+		{
+			Framebuffer::Session_client session_client(_framebuffer_session);
+
+			if (_framebuffer) {
+				Genode::env()->rm_session()->detach(_framebuffer);
+				session_client.release();
+			}
+
+			_framebuffer = Genode::env()->rm_session()->attach(session_client.dataspace());
 		}
 
 	protected:
@@ -74,12 +100,13 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 
 	public:
 
-		Window_slave_policy(Genode::Rpc_entrypoint &ep)
+		Window_slave_policy(Genode::Rpc_entrypoint &ep,
+		                    int screen_width, int screen_height)
 		: Genode::Slave_policy("liquid_fb", ep, env()->ram_session()),
 		  _framebuffer_ready_lock(Genode::Lock::LOCKED),
-		  _framebuffer(0)
+		  _framebuffer(0), _ev_buf(0)
 		{
-			configure(_config(0, 0, 550, 370));
+			Slave_policy::configure(_config(0, 0, screen_width, screen_height, "Qt window"));
 		}
 
 
@@ -87,6 +114,9 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 		{
 			if (_framebuffer)
 				Genode::env()->rm_session()->detach(_framebuffer);
+
+			if (_ev_buf)
+				Genode::env()->rm_session()->detach(_ev_buf);
 		}
 
 		bool announce_service(const char            *name,
@@ -97,16 +127,33 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 			PDBG("name = %s", name);
 
 			if (Genode::strcmp(name, "Input") == 0) {
+				Genode::Session_capability session_cap =
+					Genode::Root_client(root).session("ram_quota=8K");
+				_input_session =
+					Genode::static_cap_cast<Input::Session>(session_cap);
+				Input::Session_client session_client(_input_session);
+				_ev_buf = static_cast<Input::Event *>
+				          (env()->rm_session()->attach(session_client.dataspace()));
+				_input_ready_lock.unlock();
 				return true;
 			}
 
 			if (Genode::strcmp(name, "Framebuffer") == 0) {
+
 				Genode::Session_capability session_cap =
 					Genode::Root_client(root).session("ram_quota=8K");
+
 				_framebuffer_session =
 					Genode::static_cap_cast<Framebuffer::Session>(session_cap);
+
 				Framebuffer::Session_client session_client(_framebuffer_session);
+
 				_framebuffer = Genode::env()->rm_session()->attach(session_client.dataspace());
+
+				Signal_context_capability mode_change_signal_context_capability =
+					_signal_receiver.manage(&_mode_change_signal_context);
+
+				session_client.mode_sigh(mode_change_signal_context_capability);
 
 				Framebuffer::Mode const scr_mode = session_client.mode();
 				PDBG("_framebuffer = %p, width = %d, height = %d", _framebuffer, scr_mode.width(), scr_mode.height());
@@ -122,46 +169,38 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 		void wait_for_service_announcements()
 		{
 			Lock_guard<Lock> framebuffer_ready_lock_guard(_framebuffer_ready_lock);
+			Lock_guard<Lock> input_ready_lock_guard(_input_ready_lock);
 		}
 
 
-		void geometry(int x, int y, int width, int height)
+		void configure(int x, int y, int width, int height, const char *title = "")
 		{
-			Framebuffer::Session_client session_client(_framebuffer_session);
-
-			Signal_context signal_context;
-			Signal_receiver signal_receiver;
-			Signal_context_capability signal_context_capability =
-				signal_receiver.manage(&signal_context);
-
-			session_client.mode_sigh(signal_context_capability);
-
-			configure(_config(x, y, width, height));
-
+			Slave_policy::configure(_config(x, y, width, height, title));
+wait_for_continue();
 			PDBG("waiting for mode change signal");
 
-			//signal_receiver.wait_for_signal();
+			_signal_receiver.wait_for_signal();
 
-			//PDBG("received mode change signal");
+			PDBG("received mode change signal");
 
-			session_client.mode_sigh(Signal_context_capability());
+			_reattach_framebuffer();
+		}
+
+
+		/*
+		 *  Return the current window size
+		 */
+		void size(int &width, int &height)
+		{
+			Framebuffer::Session_client session_client(_framebuffer_session);
+			Framebuffer::Mode const scr_mode = session_client.mode();
+			width = scr_mode.width();
+			height = scr_mode.height();
 		}
 
 
 		unsigned char *framebuffer()
 		{
-			Framebuffer::Session_client session_client(_framebuffer_session);
-
-			if (_framebuffer) {
-				Genode::env()->rm_session()->detach(_framebuffer);
-				session_client.release();
-			}
-
-			_framebuffer = Genode::env()->rm_session()->attach(session_client.dataspace());
-
-			Framebuffer::Mode const scr_mode = session_client.mode();
-			PDBG("_framebuffer = %p, width = %d, height = %d", _framebuffer, scr_mode.width(), scr_mode.height());
-
 			return _framebuffer;
 		}
 
@@ -169,8 +208,38 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 		void refresh(int x, int y, int w, int h)
 		{
 			Framebuffer::Session_client session_client(_framebuffer_session);
+			PDBG("x = %d, y = %d, w = %d, h = %d", x, y, w, h);
 			session_client.refresh(x, y, w, h);
 		}
+
+
+		bool mode_changed()
+		{
+			bool result = false;
+
+			while (_signal_receiver.pending()) {
+				_signal_receiver.wait_for_signal();
+				result = true;
+			}
+
+			if (result == true)
+				_reattach_framebuffer();
+
+			return result;
+		}
+
+
+		Input::Session_capability input_session()
+		{
+			return _input_session;
+		}
+
+
+		Input::Event *ev_buf()
+		{
+			return _ev_buf;
+		}
+
 };
 
 #endif /* _UNDECORATED_WINDOW_POLICY_H_ */
