@@ -259,10 +259,12 @@ class Window_content : public Element
 		void format_fixed_size(int w, int h)
 		{
 			_new_w = w, _new_h = h;
-
+PDBG("w = %d, h = %d", w, h);
 			/* notify framebuffer client about mode change */
-			if (_mode_sigh.valid())
+			if (_mode_sigh.valid()) {
+				PDBG("sending mode change signal");
 				Genode::Signal_transmitter(_mode_sigh).submit();
+			}
 		}
 
 		void lock()   { _lock.lock(); }
@@ -303,6 +305,7 @@ namespace Framebuffer
 
 			Mode mode() const
 			{
+				PDBG("fb_w = %d, fb_h = %d", _window_content.fb_w(), _window_content.fb_h());
 				return Mode(_window_content.fb_w(), _window_content.fb_h(),
 				            Mode::RGB565);
 			}
@@ -342,12 +345,16 @@ namespace Framebuffer
 }
 
 
-void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha)
+void init_window_content(unsigned fb_w, unsigned fb_h, bool config_alpha)
 {
-	using namespace Genode;
-
 	static Window_content content(fb_w, fb_h, &_ev_queue, config_alpha);
 	_window_content = &content;
+}
+
+
+void init_services()
+{
+	using namespace Genode;
 
 	/*
 	 * Initialize server entry point
@@ -359,7 +366,7 @@ void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha)
 	/*
 	 * Let the entry point serve the framebuffer and input root interfaces
 	 */
-	static Framebuffer::Root    fb_root(&ep, env()->heap(), content);
+	static Framebuffer::Root    fb_root(&ep, env()->heap(), *_window_content);
 	static       Input::Root input_root(&ep, env()->heap());
 
 	/*

@@ -60,7 +60,10 @@ QPlatformWindow *QNitpickerIntegration::createPlatformWindow(QWidget *widget, WI
 {
     Q_UNUSED(winId);
     qDebug() << "QNitpickerIntegration::createPlatformWindow(" << widget << "," << winId << ")";
-    return new QNitpickerPlatformWindow(widget, _entrypoint());
+    QRect screen_geometry = _nitpicker_screen->geometry();
+    return new QNitpickerPlatformWindow(widget, _entrypoint(),
+                                        screen_geometry.width(),
+                                        screen_geometry.height());
 }
 
 
