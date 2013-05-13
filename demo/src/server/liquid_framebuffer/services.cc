@@ -259,10 +259,12 @@ class Window_content : public Element
 		void format_fixed_size(int w, int h)
 		{
 			_new_w = w, _new_h = h;
-
+PDBG("w = %d, h = %d", w, h);
 			/* notify framebuffer client about mode change */
-			if (_mode_sigh.valid())
+			if (_mode_sigh.valid()) {
+				PDBG("sending mode change signal");
 				Genode::Signal_transmitter(_mode_sigh).submit();
+			}
 		}
 
 		void lock()   { _lock.lock(); }
@@ -303,6 +305,7 @@ namespace Framebuffer
 
 			Mode mode() const
 			{
+				PDBG("fb_w = %d, fb_h = %d", _window_content.fb_w(), _window_content.fb_h());
 				return Mode(_window_content.fb_w(), _window_content.fb_h(),
 				            Mode::RGB565);
 			}

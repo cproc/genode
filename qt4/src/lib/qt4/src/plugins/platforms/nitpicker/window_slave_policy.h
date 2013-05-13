@@ -79,7 +79,7 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 		  _framebuffer_ready_lock(Genode::Lock::LOCKED),
 		  _framebuffer(0)
 		{
-			configure(_config(0, 0, 550, 370));
+			configure(_config(0, 0, 1, 1));
 		}
 
 
@@ -136,13 +136,13 @@ class Window_slave_policy : /*public QObject,*/ public Genode::Slave_policy
 
 			session_client.mode_sigh(signal_context_capability);
 
-			configure(_config(x, y, width, height));
+			//configure(_config(x, y, width, height));
 
 			PDBG("waiting for mode change signal");
 
-			//signal_receiver.wait_for_signal();
+			signal_receiver.wait_for_signal();
 
-			//PDBG("received mode change signal");
+			PDBG("received mode change signal");
 
 			session_client.mode_sigh(Signal_context_capability());
 		}
