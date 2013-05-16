@@ -342,12 +342,16 @@ namespace Framebuffer
 }
 
 
-void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha)
+void init_window_content(unsigned fb_w, unsigned fb_h, bool config_alpha)
 {
-	using namespace Genode;
-
 	static Window_content content(fb_w, fb_h, &_ev_queue, config_alpha);
 	_window_content = &content;
+}
+
+
+void init_services()
+{
+	using namespace Genode;
 
 	/*
 	 * Initialize server entry point
@@ -359,7 +363,7 @@ void init_services(unsigned fb_w, unsigned fb_h, bool config_alpha)
 	/*
 	 * Let the entry point serve the framebuffer and input root interfaces
 	 */
-	static Framebuffer::Root    fb_root(&ep, env()->heap(), content);
+	static Framebuffer::Root    fb_root(&ep, env()->heap(), *_window_content);
 	static       Input::Root input_root(&ep, env()->heap());
 
 	/*

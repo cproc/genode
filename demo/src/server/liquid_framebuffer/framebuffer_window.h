@@ -55,10 +55,11 @@ class Framebuffer_window : public Window
 		                   Redraw_manager *redraw,
 		                   Element        *content,
 		                   const char     *name,
-		                   bool            config_alpha)
+		                   bool            config_alpha,
+		                   bool            config_resize_handle)
 		:
 			Window(pf, redraw, content->min_w() + 2, content->min_h() + 1 + _TH),
-			_bg_offset(0), _content(content)
+			_bg_offset(0), _content(content), _config_alpha(config_alpha)
 		{
 			/* titlebar */
 			_titlebar.rgba(TITLEBAR_RGBA);
@@ -72,10 +73,21 @@ class Framebuffer_window : public Window
 
 			append(&_titlebar);
 			append(_content);
-			append(&_sizer);
+
+			if (config_resize_handle)
+				append(&_sizer);
 
 			_min_w = max_w();
 			_min_h = max_h();
+		}
+
+		/**
+		 * Resize the window according to the new content size
+		 */
+		void content_geometry(int x, int y, int w, int h)
+		{
+			vpos(x, y);
+			format(w + 2, h + 1 + _TH);
 		}
 
 		/**
