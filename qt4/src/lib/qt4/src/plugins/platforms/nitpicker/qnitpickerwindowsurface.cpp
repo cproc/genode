@@ -37,9 +37,9 @@ QNitpickerWindowSurface::~QNitpickerWindowSurface()
 
 QPaintDevice *QNitpickerWindowSurface::paintDevice()
 {
-    qDebug() << "QNitpickerWindowSurface::paintDevice()";
+    //qDebug() << "QNitpickerWindowSurface::paintDevice()";
     if (_framebuffer_changed) {
-    	PDBG("framebuffer changed");
+    	//PDBG("framebuffer changed");
     	_framebuffer_changed = false;
         QImage::Format format = QApplicationPrivate::platformIntegration()->screens().first()->format();
         _image = QImage(_platform_window->framebuffer(), size().width(), size().height(), 2*size().width(), format);
@@ -57,6 +57,8 @@ void QNitpickerWindowSurface::flush(QWidget *widget, const QRegion &region, cons
     qDebug() << "QNitpickerWindowSurface::flush()";
 
     _platform_window->refresh(0, 0, size().width(), size().height());
+
+    qDebug() << "QNitpickerWindowSurface::flush() finished";
 }
 
 void QNitpickerWindowSurface::resize(const QSize &size)

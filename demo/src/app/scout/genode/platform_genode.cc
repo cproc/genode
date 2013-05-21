@@ -279,6 +279,7 @@ Platform::pixel_format Platform::scr_pixel_format() { return RGB565; }
  */
 void Platform::flip_buf_scr()
 {
+	PDBG("called");
 	char *tmp    = _buf_adr;
 	_buf_adr     = _scr_adr;
 	_scr_adr     = tmp;
@@ -329,7 +330,7 @@ void Platform::scr_update(int x, int y, int w, int h)
 	 * visible.
 	 */
 	view();
-
+PDBG("x = %d, y = %d, w = %d, h = %d", x, y, w, h);
 	/* refresh part of the buffer */
 	_nitpicker->framebuffer()->refresh(x, y, w, h);
 }
