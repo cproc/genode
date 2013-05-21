@@ -45,6 +45,7 @@ class Framebuffer_window : public Window
 		Fade_icon<PT, 32, 32>     _sizer;
 		Element                  *_content;
 		bool                      _config_alpha;
+		bool                      _config_decoration;
 
 	public:
 
@@ -55,10 +56,13 @@ class Framebuffer_window : public Window
 		                   Redraw_manager *redraw,
 		                   Element        *content,
 		                   const char     *name,
-		                   bool            config_alpha)
+		                   bool            config_alpha,
+		                   bool            config_resize_handle,
+		                   bool            config_decoration)
 		:
 			Window(pf, redraw, content->min_w() + 2, content->min_h() + 1 + _TH),
-			_bg_offset(0), _content(content)
+			_bg_offset(0), _content(content), _config_alpha(config_alpha),
+			_config_decoration(config_decoration)
 		{
 			/* titlebar */
 			_titlebar.rgba(TITLEBAR_RGBA);
@@ -70,12 +74,60 @@ class Framebuffer_window : public Window
 			_sizer.event_handler(new Sizer_event_handler(this));
 			_sizer.alpha(100);
 
-			append(&_titlebar);
+			if (config_decoration)
+				append(&_titlebar);
+
 			append(_content);
-			append(&_sizer);
+
+			if (config_resize_handle)
+				append(&_sizer);
 
 			_min_w = max_w();
 			_min_h = max_h();
+		}
+
+		/**
+		 * Set the window title
+		 */
+		void name(const char *name)
+		{
+			_titlebar.text(name);
+		}
+
+		/**
+		 * Set the alpha config option
+		 */
+		void config_alpha(bool alpha)
+		{
+			_config_alpha = alpha;
+		}
+
+		/**
+		 * Set the resize_handle config option
+		 */
+		void config_resize_handle(bool resize_handle)
+		{
+			remove(&_sizer);
+
+			if (resize_handle)
+				append(&_sizer);
+		}
+
+		/**
+		 * Set the decoration config option
+		 */
+		void config_decoration(bool decoration)
+		{
+			_config_decoration = decoration;
+		}
+
+		/**
+		 * Resize the window according to the new content size
+		 */
+		void content_geometry(int x, int y, int w, int h)
+		{
+			vpos(x, y);
+			format(w + 2, h + 1 + _TH);
 		}
 
 		/**
@@ -101,7 +153,13 @@ class Framebuffer_window : public Window
 
 			_sizer.geometry(_w - 32, _h - 32, 32, 32);
 
-			pf()->view_geometry(pf()->vx(), pf()->vy(), _w, _h);
+			pf()->top_view();
+
+			if (_config_decoration)
+				pf()->view_geometry(pf()->vx(), pf()->vy(), _w, _h);
+			else
+				pf()->view_geometry(pf()->vx(), pf()->vy(),
+				                    _w - 2, _h - 1 - _TH, false, -1, -_TH);
 			redraw()->size(_w, _h);
 			refresh();
 		}
