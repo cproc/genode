@@ -31,6 +31,8 @@
 #  define QT_POINTER_SIZE 4
 #endif
 
+#define QT_QPA_DEFAULT_PLATFORM_NAME "nitpicker"
+
 #if defined(QT_LINKED_OPENSSL) && defined(QT_NO_LINKED_OPENSSL)
 # undef QT_LINKED_OPENSSL
 #elif !defined(QT_LINKED_OPENSSL) && !defined(QT_NO_LINKED_OPENSSL)
@@ -41,12 +43,6 @@
 # undef QT_NO_ACCESSIBILITY
 #elif !defined(QT_NO_ACCESSIBILITY) && !defined(QT_ACCESSIBILITY)
 # define QT_NO_ACCESSIBILITY
-#endif
-
-#if defined(QT_NO_ALSA) && defined(QT_ALSA)
-# undef QT_NO_ALSA
-#elif !defined(QT_NO_ALSA) && !defined(QT_ALSA)
-# define QT_NO_ALSA
 #endif
 
 #if defined(QT_NO_CLOCK_MONOTONIC) && defined(QT_CLOCK_MONOTONIC)
@@ -67,22 +63,16 @@
 # define QT_NO_DBUS
 #endif
 
-#if defined(QT_NO_DECLARATIVE) && defined(QT_DECLARATIVE)
-# undef QT_NO_DECLARATIVE
-#elif !defined(QT_NO_DECLARATIVE) && !defined(QT_DECLARATIVE)
-# define QT_NO_DECLARATIVE
-#endif
-
 #if defined(QT_NO_EGL) && defined(QT_EGL)
 # undef QT_NO_EGL
 #elif !defined(QT_NO_EGL) && !defined(QT_EGL)
 # define QT_NO_EGL
 #endif
 
-#if defined(QT_NO_EXCEPTIONS) && defined(QT_EXCEPTIONS)
-# undef QT_NO_EXCEPTIONS
-#elif !defined(QT_NO_EXCEPTIONS) && !defined(QT_EXCEPTIONS)
-# define QT_NO_EXCEPTIONS
+#if defined(QT_NO_FONTCONFIG) && defined(QT_FONTCONFIG)
+# undef QT_NO_FONTCONFIG
+#elif !defined(QT_NO_FONTCONFIG) && !defined(QT_FONTCONFIG)
+# define QT_NO_FONTCONFIG
 #endif
 
 #if defined(QT_NO_GLIB) && defined(QT_GLIB)
@@ -97,16 +87,16 @@
 # define QT_NO_GSTREAMER
 #endif
 
+#if defined(QT_NO_ICD) && defined(QT_ICD)
+# undef QT_NO_ICD
+#elif !defined(QT_NO_ICD) && !defined(QT_ICD)
+# define QT_NO_ICD
+#endif
+
 #if defined(QT_NO_ICONV) && defined(QT_ICONV)
 # undef QT_NO_ICONV
 #elif !defined(QT_NO_ICONV) && !defined(QT_ICONV)
 # define QT_NO_ICONV
-#endif
-
-#if defined(QT_NO_IMAGEFORMAT_JPEG) && defined(QT_IMAGEFORMAT_JPEG)
-# undef QT_NO_IMAGEFORMAT_JPEG
-#elif !defined(QT_NO_IMAGEFORMAT_JPEG) && !defined(QT_IMAGEFORMAT_JPEG)
-# define QT_NO_IMAGEFORMAT_JPEG
 #endif
 
 #if defined(QT_NO_IMAGEFORMAT_MNG) && defined(QT_IMAGEFORMAT_MNG)
@@ -163,124 +153,40 @@
 # define QT_NO_PHONON
 #endif
 
-#if defined(QT_NO_QWS_DIRECTFB) && defined(QT_QWS_DIRECTFB)
-# undef QT_NO_QWS_DIRECTFB
-#elif !defined(QT_NO_QWS_DIRECTFB) && !defined(QT_QWS_DIRECTFB)
-# define QT_NO_QWS_DIRECTFB
+#if defined(QT_NO_PULSEAUDIO) && defined(QT_PULSEAUDIO)
+# undef QT_NO_PULSEAUDIO
+#elif !defined(QT_NO_PULSEAUDIO) && !defined(QT_PULSEAUDIO)
+# define QT_NO_PULSEAUDIO
 #endif
 
-#if defined(QT_NO_QWS_KBD_LINUXINPUT) && defined(QT_QWS_KBD_LINUXINPUT)
-# undef QT_NO_QWS_KBD_LINUXINPUT
-#elif !defined(QT_NO_QWS_KBD_LINUXINPUT) && !defined(QT_QWS_KBD_LINUXINPUT)
-# define QT_NO_QWS_KBD_LINUXINPUT
+#if defined(QT_NO_QWS_QPF) && defined(QT_QWS_QPF)
+# undef QT_NO_QWS_QPF
+#elif !defined(QT_NO_QWS_QPF) && !defined(QT_QWS_QPF)
+# define QT_NO_QWS_QPF
 #endif
 
-#if defined(QT_NO_QWS_KBD_QNX) && defined(QT_QWS_KBD_QNX)
-# undef QT_NO_QWS_KBD_QNX
-#elif !defined(QT_NO_QWS_KBD_QNX) && !defined(QT_QWS_KBD_QNX)
-# define QT_NO_QWS_KBD_QNX
+#if defined(QT_NO_QWS_QPF2) && defined(QT_QWS_QPF2)
+# undef QT_NO_QWS_QPF2
+#elif !defined(QT_NO_QWS_QPF2) && !defined(QT_QWS_QPF2)
+# define QT_NO_QWS_QPF2
 #endif
 
-#if defined(QT_NO_QWS_KBD_QVFB) && defined(QT_QWS_KBD_QVFB)
-# undef QT_NO_QWS_KBD_QVFB
-#elif !defined(QT_NO_QWS_KBD_QVFB) && !defined(QT_QWS_KBD_QVFB)
-# define QT_NO_QWS_KBD_QVFB
-#endif
-
-#if defined(QT_NO_QWS_KBD_TTY) && defined(QT_QWS_KBD_TTY)
-# undef QT_NO_QWS_KBD_TTY
-#elif !defined(QT_NO_QWS_KBD_TTY) && !defined(QT_QWS_KBD_TTY)
-# define QT_NO_QWS_KBD_TTY
-#endif
-
-#if defined(QT_NO_QWS_KBD_UM) && defined(QT_QWS_KBD_UM)
-# undef QT_NO_QWS_KBD_UM
-#elif !defined(QT_NO_QWS_KBD_UM) && !defined(QT_QWS_KBD_UM)
-# define QT_NO_QWS_KBD_UM
-#endif
-
-#if defined(QT_NO_QWS_LINUXFB) && defined(QT_QWS_LINUXFB)
-# undef QT_NO_QWS_LINUXFB
-#elif !defined(QT_NO_QWS_LINUXFB) && !defined(QT_QWS_LINUXFB)
-# define QT_NO_QWS_LINUXFB
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_LINUXINPUT) && defined(QT_QWS_MOUSE_LINUXINPUT)
-# undef QT_NO_QWS_MOUSE_LINUXINPUT
-#elif !defined(QT_NO_QWS_MOUSE_LINUXINPUT) && !defined(QT_QWS_MOUSE_LINUXINPUT)
-# define QT_NO_QWS_MOUSE_LINUXINPUT
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_LINUXTP) && defined(QT_QWS_MOUSE_LINUXTP)
-# undef QT_NO_QWS_MOUSE_LINUXTP
-#elif !defined(QT_NO_QWS_MOUSE_LINUXTP) && !defined(QT_QWS_MOUSE_LINUXTP)
-# define QT_NO_QWS_MOUSE_LINUXTP
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_PC) && defined(QT_QWS_MOUSE_PC)
-# undef QT_NO_QWS_MOUSE_PC
-#elif !defined(QT_NO_QWS_MOUSE_PC) && !defined(QT_QWS_MOUSE_PC)
-# define QT_NO_QWS_MOUSE_PC
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_QNX) && defined(QT_QWS_MOUSE_QNX)
-# undef QT_NO_QWS_MOUSE_QNX
-#elif !defined(QT_NO_QWS_MOUSE_QNX) && !defined(QT_QWS_MOUSE_QNX)
-# define QT_NO_QWS_MOUSE_QNX
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_QVFB) && defined(QT_QWS_MOUSE_QVFB)
-# undef QT_NO_QWS_MOUSE_QVFB
-#elif !defined(QT_NO_QWS_MOUSE_QVFB) && !defined(QT_QWS_MOUSE_QVFB)
-# define QT_NO_QWS_MOUSE_QVFB
-#endif
-
-#if defined(QT_NO_QWS_MOUSE_TSLIB) && defined(QT_QWS_MOUSE_TSLIB)
-# undef QT_NO_QWS_MOUSE_TSLIB
-#elif !defined(QT_NO_QWS_MOUSE_TSLIB) && !defined(QT_QWS_MOUSE_TSLIB)
-# define QT_NO_QWS_MOUSE_TSLIB
-#endif
-
-#if defined(QT_NO_QWS_MULTISCREEN) && defined(QT_QWS_MULTISCREEN)
-# undef QT_NO_QWS_MULTISCREEN
-#elif !defined(QT_NO_QWS_MULTISCREEN) && !defined(QT_QWS_MULTISCREEN)
-# define QT_NO_QWS_MULTISCREEN
-#endif
-
-#if defined(QT_NO_QWS_QNX) && defined(QT_QWS_QNX)
-# undef QT_NO_QWS_QNX
-#elif !defined(QT_NO_QWS_QNX) && !defined(QT_QWS_QNX)
-# define QT_NO_QWS_QNX
-#endif
-
-#if defined(QT_NO_QWS_QVFB) && defined(QT_QWS_QVFB)
-# undef QT_NO_QWS_QVFB
-#elif !defined(QT_NO_QWS_QVFB) && !defined(QT_QWS_QVFB)
-# define QT_NO_QWS_QVFB
-#endif
-
-#if defined(QT_NO_QWS_TRANSFORMED) && defined(QT_QWS_TRANSFORMED)
-# undef QT_NO_QWS_TRANSFORMED
-#elif !defined(QT_NO_QWS_TRANSFORMED) && !defined(QT_QWS_TRANSFORMED)
-# define QT_NO_QWS_TRANSFORMED
-#endif
-
-#if defined(QT_NO_QWS_VNC) && defined(QT_QWS_VNC)
-# undef QT_NO_QWS_VNC
-#elif !defined(QT_NO_QWS_VNC) && !defined(QT_QWS_VNC)
-# define QT_NO_QWS_VNC
-#endif
-
-#if defined(QT_NO_SESSIONMANAGER) && defined(QT_SESSIONMANAGER)
-# undef QT_NO_SESSIONMANAGER
-#elif !defined(QT_NO_SESSIONMANAGER) && !defined(QT_SESSIONMANAGER)
-# define QT_NO_SESSIONMANAGER
+#if defined(QT_NO_S60) && defined(QT_S60)
+# undef QT_NO_S60
+#elif !defined(QT_NO_S60) && !defined(QT_S60)
+# define QT_NO_S60
 #endif
 
 #if defined(QT_NO_STYLE_GTK) && defined(QT_STYLE_GTK)
 # undef QT_NO_STYLE_GTK
 #elif !defined(QT_NO_STYLE_GTK) && !defined(QT_STYLE_GTK)
 # define QT_NO_STYLE_GTK
+#endif
+
+#if defined(QT_NO_STYLE_S60) && defined(QT_STYLE_S60)
+# undef QT_NO_STYLE_S60
+#elif !defined(QT_NO_STYLE_S60) && !defined(QT_STYLE_S60)
+# define QT_NO_STYLE_S60
 #endif
 
 #if defined(QT_NO_SXE) && defined(QT_SXE)
@@ -295,34 +201,10 @@
 # define QT_NO_WEBKIT
 #endif
 
-#if defined(QT_NO_XMLPATTERNS) && defined(QT_XMLPATTERNS)
-# undef QT_NO_XMLPATTERNS
-#elif !defined(QT_NO_XMLPATTERNS) && !defined(QT_XMLPATTERNS)
-# define QT_NO_XMLPATTERNS
-#endif
-
 #if defined(QT_NO_ZLIB) && defined(QT_ZLIB)
 # undef QT_NO_ZLIB
 #elif !defined(QT_NO_ZLIB) && !defined(QT_ZLIB)
 # define QT_NO_ZLIB
-#endif
-
-#if defined(QT_QWS_DEPTH_16) && defined(QT_NO_QWS_DEPTH_16)
-# undef QT_QWS_DEPTH_16
-#elif !defined(QT_QWS_DEPTH_16) && !defined(QT_NO_QWS_DEPTH_16)
-# define QT_QWS_DEPTH_16
-#endif
-
-#if defined(QT_QWS_DEPTH_32) && defined(QT_NO_QWS_DEPTH_32)
-# undef QT_QWS_DEPTH_32
-#elif !defined(QT_QWS_DEPTH_32) && !defined(QT_NO_QWS_DEPTH_32)
-# define QT_QWS_DEPTH_32
-#endif
-
-#if defined(QT_QWS_DEPTH_8) && defined(QT_NO_QWS_DEPTH_8)
-# undef QT_QWS_DEPTH_8
-#elif !defined(QT_QWS_DEPTH_8) && !defined(QT_NO_QWS_DEPTH_8)
-# define QT_QWS_DEPTH_8
 #endif
 
 #if defined(QT_RUNTIME_XCURSOR) && defined(QT_NO_RUNTIME_XCURSOR)
@@ -361,8 +243,8 @@
 # define QT_USE_MATH_H_FLOATS
 #endif
 
-#ifndef Q_WS_QWS
-# define Q_WS_QWS
+#ifndef Q_WS_QPA
+# define Q_WS_QPA
 #endif
 
 #define QT_VISIBILITY_AVAILABLE
