@@ -6,7 +6,7 @@ set build_components {
 	core init
 	drivers/timer drivers/framebuffer drivers/pci drivers/input drivers/nic
 	server/nitpicker
-	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
+	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker server/liquid_framebuffer
 	app/arora
 }
 
@@ -102,6 +102,7 @@ set boot_modules {
 	core init
 	timer nic_drv
 	nitpicker
+	liquid_fb
 	loader
 	tar_rom
 	nit_fb

@@ -42,17 +42,19 @@ QNitpickerViewWidget::~QNitpickerViewWidget()
 void QNitpickerViewWidget::showEvent(QShowEvent *event)
 {
 //	qDebug() << "showEvent()";
+#if 0
 	connect(qwsServer, SIGNAL(windowEvent(QWSWindow*, QWSServer::WindowEvent)),
 			this, SLOT(windowEvent(QWSWindow*, QWSServer::WindowEvent)));
-
+#endif
 	QWidget::showEvent(event);
 }
 
 void QNitpickerViewWidget::hideEvent(QHideEvent *event)
 {
 //	qDebug() << "hideEvent()";
+#if 0
 	disconnect(this, SLOT(windowEvent(QWSWindow*, QWSServer::WindowEvent)));
-
+#endif
 	QWidget::hideEvent(event);
 
 	if (vc)
@@ -225,7 +227,7 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 	QWSNitpickerWindowSurface *ws = static_cast<QWSNitpickerWindowSurface*>(windowSurface());
 	vc->stack(ws->view_cap(), false, true);
 }
-
+#if 0
 void QNitpickerViewWidget::windowEvent(QWSWindow *window,
                                        QWSServer::WindowEvent eventType)
 {
@@ -261,7 +263,7 @@ void QNitpickerViewWidget::windowEvent(QWSWindow *window,
 		}
 	}
 }
-
+#endif
 void QNitpickerViewWidget::valueChanged()
 {
 //	qDebug() << "valueChanged()";

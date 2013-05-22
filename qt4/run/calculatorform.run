@@ -10,6 +10,7 @@ build {
 	drivers/framebuffer
 	drivers/timer
 	server/nitpicker
+	server/liquid_framebuffer
 	app/examples/calculatorform
 }
 
@@ -92,6 +93,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	liquid_fb
 	calculatorform
 	dejavusans.lib.so
 	freetype.lib.so
@@ -103,6 +105,7 @@ set boot_modules {
 	jpeg.lib.so
 	qt_core.lib.so
 	qt_gui.lib.so
+	qt_xml.lib.so
 	zlib.lib.so
 	stdcxx.lib.so
 }
