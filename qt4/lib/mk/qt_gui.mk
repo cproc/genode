@@ -10,14 +10,14 @@ include $(REP_DIR)/lib/mk/qt_gui_generated.inc
 QT_DEFINES += -DQT_NO_QWS_SIGNALHANDLER
 
 # add Genode-specific sources
-QT_SOURCES += qkbdpc101_qws.cpp \
-              qwindowsurface_nitpicker_qws.cpp \
-              moc_qwindowsurface_nitpicker_qws_p.cpp \
-              qscreennitpicker_qws.cpp \
-              qmousenitpicker_qws.cpp \
-              qkbdnitpicker_qws.cpp \
-              qinputnitpicker_qws.cpp \
-              moc_qinputnitpicker_qws.cpp
+#QT_SOURCES += qkbdpc101_qws.cpp \
+#              qwindowsurface_nitpicker_qws.cpp \
+#              moc_qwindowsurface_nitpicker_qws_p.cpp \
+#              qscreennitpicker_qws.cpp \
+#              qmousenitpicker_qws.cpp \
+#              qkbdnitpicker_qws.cpp \
+#              qinputnitpicker_qws.cpp \
+#              moc_qinputnitpicker_qws.cpp
 
 # remove unneeded files to prevent moc warnings
 COMPILER_MOC_HEADER_MAKE_ALL_FILES_FILTER_OUT = \
@@ -54,7 +54,7 @@ include $(REP_DIR)/lib/mk/qt.inc
 INC_DIR += $(REP_DIR)/include/qt4/QtGui/private \
            $(REP_DIR)/contrib/$(QT4)/include/QtGui/private
 
-LIBS += qt_core libpng zlib libc libm freetype jpeg
+LIBS += qt_core qpa_nitpicker libpng zlib libc libm freetype jpeg
 
 vpath % $(REP_DIR)/include/qt4/QtGui
 vpath % $(REP_DIR)/include/qt4/QtGui/private
