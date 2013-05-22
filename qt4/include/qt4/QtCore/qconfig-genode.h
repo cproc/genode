@@ -205,9 +205,9 @@
 //#ifndef QT_NO_PROPERTIES
 //#  define QT_NO_PROPERTIES
 //#endif
-//#ifndef QT_NO_SESSIONMANAGER
-//#  define QT_NO_SESSIONMANAGER
-//#endif
+#ifndef QT_NO_SESSIONMANAGER
+#  define QT_NO_SESSIONMANAGER
+#endif
 #ifndef QT_NO_SHAREDMEMORY
 #  define QT_NO_SHAREDMEMORY
 #endif

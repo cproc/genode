@@ -28,8 +28,10 @@ private:
     QHash<QScrollBar*, bool> _scrollbars;
 
 private slots:
+#if 0
     void windowEvent(QWSWindow *window,
                      QWSServer::WindowEvent eventType);
+#endif
     void valueChanged();
     void destroyed(QObject *obj = 0);
 

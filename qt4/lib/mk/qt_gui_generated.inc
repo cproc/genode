@@ -1,4 +1,4 @@
-QT_DEFINES += -DQT_BUILD_GUI_LIB -DQT_NO_USING_NAMESPACE -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_NO_FONTCONFIG -DQT_NO_OPENTYPE -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_S60 -DQ_INTERNAL_QAPP_SRC -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_BUILD_GUI_LIB -DQT_NO_USING_NAMESPACE -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_NO_FONTCONFIG -DQT_NO_FREETYPE -DQT_NO_OPENTYPE -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_S60 -DQ_INTERNAL_QAPP_SRC -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH = \
   mkspecs/qws/genode-generic-g++ \
@@ -8,39 +8,6 @@ QT_INCPATH = \
   src/gui/image \
 
 QT_SOURCES = \
-  qsoundqss_qws.cpp \
-  qcopchannel_qws.cpp \
-  qdecoration_qws.cpp \
-  qdecorationfactory_qws.cpp \
-  qdecorationplugin_qws.cpp \
-  qdirectpainter_qws.cpp \
-  qlock.cpp \
-  qscreen_qws.cpp \
-  qscreenmulti_qws.cpp \
-  qscreenproxy_qws.cpp \
-  qwindowsystem_qws.cpp \
-  qwscommand_qws.cpp \
-  qwscursor_qws.cpp \
-  qwsevent_qws.cpp \
-  qwsmanager_qws.cpp \
-  qwsproperty_qws.cpp \
-  qtransportauth_qws.cpp \
-  qwslock.cpp \
-  qwssharedmemory.cpp \
-  qwssocket_qws.cpp \
-  qwssignalhandler.cpp \
-  qwsembedwidget.cpp \
-  qdecorationdefault_qws.cpp \
-  qdecorationstyled_qws.cpp \
-  qdecorationwindows_qws.cpp \
-  qscreendriverplugin_qws.cpp \
-  qscreendriverfactory_qws.cpp \
-  qkbd_qws.cpp \
-  qkbddriverplugin_qws.cpp \
-  qkbddriverfactory_qws.cpp \
-  qmouse_qws.cpp \
-  qmousedriverplugin_qws.cpp \
-  qmousedriverfactory_qws.cpp \
   qguivariantanimation.cpp \
   qaction.cpp \
   qactiongroup.cpp \
@@ -75,17 +42,29 @@ QT_SOURCES = \
   qsoftkeymanager.cpp \
   qdesktopwidget.cpp \
   qguiplatformplugin.cpp \
-  qapplication_qws.cpp \
-  qclipboard_qws.cpp \
-  qcursor_qws.cpp \
-  qdesktopwidget_qws.cpp \
+  qapplication_qpa.cpp \
+  qclipboard_qpa.cpp \
+  qcursor_qpa.cpp \
   qdnd_qws.cpp \
-  qeventdispatcher_qws.cpp \
-  qsound_qws.cpp \
-  qwidget_qws.cpp \
+  qdesktopwidget_qpa.cpp \
+  qgenericpluginfactory_qpa.cpp \
+  qgenericplugin_qpa.cpp \
   qkeymapper_qws.cpp \
-  qsessionmanager_qws.cpp \
-  qsound.cpp \
+  qwidget_qpa.cpp \
+  qeventdispatcher_qpa.cpp \
+  qwindowsysteminterface_qpa.cpp \
+  qplatformintegration_qpa.cpp \
+  qplatformscreen_qpa.cpp \
+  qplatformintegrationfactory_qpa.cpp \
+  qplatformintegrationplugin_qpa.cpp \
+  qplatformwindow_qpa.cpp \
+  qplatformwindowformat_qpa.cpp \
+  qplatformeventloopintegration_qpa.cpp \
+  qplatformglcontext_qpa.cpp \
+  qplatformcursor_qpa.cpp \
+  qplatformclipboard_qpa.cpp \
+  qplatformnativeinterface_qpa.cpp \
+  qsessionmanager_qpa.cpp \
   qbitmap.cpp \
   qicon.cpp \
   qiconloader.cpp \
@@ -109,7 +88,7 @@ QT_SOURCES = \
   qnativeimage.cpp \
   qimagepixmapcleanuphooks.cpp \
   qvolatileimage.cpp \
-  qpixmap_qws.cpp \
+  qpixmap_qpa.cpp \
   qvolatileimagedata.cpp \
   qbmphandler.cpp \
   qppmhandler.cpp \
@@ -161,13 +140,11 @@ QT_SOURCES = \
   qgrayraster.c \
   qpaintengine_blitter.cpp \
   qblittable.cpp \
-  qgraphicssystem_qws.cpp \
   qprinterinfo_unix.cpp \
   qbackingstore.cpp \
-  qcolormap_qws.cpp \
-  qpaintdevice_qws.cpp \
+  qcolormap_qpa.cpp \
+  qpaintdevice_qpa.cpp \
   qcups.cpp \
-  qwindowsurface_qws.cpp \
   qfont.cpp \
   qfontengine.cpp \
   qfontsubset.cpp \
@@ -198,12 +175,10 @@ QT_SOURCES = \
   qstatictext.cpp \
   qrawfont.cpp \
   qglyphrun.cpp \
-  qfont_qws.cpp \
-  qfontengine_qws.cpp \
-  qfontengine_ft.cpp \
-  qfontengine_qpf.cpp \
-  qabstractfontengine_qws.cpp \
-  qrawfont_ft.cpp \
+  qfont_qpa.cpp \
+  qfontengine_qpa.cpp \
+  qplatformfontdatabase_qpa.cpp \
+  qrawfont_qpa.cpp \
   qstyle.cpp \
   qstylefactory.cpp \
   qstyleoption.cpp \
@@ -325,7 +300,6 @@ QT_SOURCES = \
   qinputcontextfactory.cpp \
   qinputcontextplugin.cpp \
   qinputcontext.cpp \
-  qwsinputcontext_qws.cpp \
   qgraphicsgridlayout.cpp \
   qgraphicsitem.cpp \
   qgraphicsitemanimation.cpp \
@@ -367,17 +341,6 @@ QT_SOURCES = \
   qvector3d.cpp \
   qvector4d.cpp \
   qgraphicseffect.cpp \
-  moc_qsoundqss_qws.cpp \
-  moc_qcopchannel_qws.cpp \
-  moc_qdecorationplugin_qws.cpp \
-  moc_qdirectpainter_qws.cpp \
-  moc_qwsmanager_qws.cpp \
-  moc_qtransportauth_qws.cpp \
-  moc_qwssocket_qws.cpp \
-  moc_qwsembedwidget.cpp \
-  moc_qscreendriverplugin_qws.cpp \
-  moc_qkbddriverplugin_qws.cpp \
-  moc_qmousedriverplugin_qws.cpp \
   moc_qboxlayout.cpp \
   moc_qclipboard.cpp \
   moc_qdesktopwidget.cpp \
@@ -394,9 +357,11 @@ QT_SOURCES = \
   moc_qkeymapper_p.cpp \
   moc_qsoftkeymanager_p.cpp \
   moc_qguiplatformplugin_p.cpp \
-  moc_qeventdispatcher_qws_p.cpp \
-  moc_qsound.cpp \
-  moc_qsound_p.cpp \
+  moc_qgenericplugin_qpa.cpp \
+  moc_qeventdispatcher_qpa_p.cpp \
+  moc_qplatformscreen_qpa.cpp \
+  moc_qplatformintegrationplugin_qpa.cpp \
+  moc_qdesktopwidget_qpa_p.cpp \
   moc_qiconengineplugin.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
@@ -413,8 +378,6 @@ QT_SOURCES = \
   moc_qtextimagehandler_p.cpp \
   moc_qtexttable.cpp \
   moc_qtextlist.cpp \
-  moc_qabstractfontengine_qws.cpp \
-  moc_qabstractfontengine_p.cpp \
   moc_qstyle.cpp \
   moc_qstyleplugin.cpp \
   moc_qcommonstyle.cpp \
@@ -475,7 +438,6 @@ QT_SOURCES = \
   moc_qcolumnviewgrip_p.cpp \
   moc_qinputcontextplugin.cpp \
   moc_qinputcontext.cpp \
-  moc_qwsinputcontext_p.cpp \
   moc_qgraphicsitemanimation.cpp \
   moc_qgraphicsscenelinearindex_p.cpp \
   moc_qgraphicsanchorlayout.cpp \
@@ -499,7 +461,6 @@ QT_VPATH = \
   src/gui/animation \
   src/gui/dialogs \
   src/gui/effects \
-  src/gui/embedded \
   src/gui/graphicsview \
   src/gui/image \
   src/gui/inputmethod \
@@ -520,19 +481,6 @@ QT_VPATH = \
 # extracted from 'compiler_moc_header_make_all' target
 
 COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
-  moc_qsoundqss_qws.cpp \
-  moc_qcopchannel_qws.cpp \
-  moc_qdecorationplugin_qws.cpp \
-  moc_qdirectpainter_qws.cpp \
-  moc_qwindowsystem_qws.cpp \
-  moc_qwsmanager_qws.cpp \
-  moc_qtransportauth_qws.cpp \
-  moc_qtransportauth_qws_p.cpp \
-  moc_qwssocket_qws.cpp \
-  moc_qwsembedwidget.cpp \
-  moc_qscreendriverplugin_qws.cpp \
-  moc_qkbddriverplugin_qws.cpp \
-  moc_qmousedriverplugin_qws.cpp \
   moc_qaction.cpp \
   moc_qactiongroup.cpp \
   moc_qapplication.cpp \
@@ -556,9 +504,11 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qgesturemanager_p.cpp \
   moc_qsoftkeymanager_p.cpp \
   moc_qguiplatformplugin_p.cpp \
-  moc_qeventdispatcher_qws_p.cpp \
-  moc_qsound.cpp \
-  moc_qsound_p.cpp \
+  moc_qgenericplugin_qpa.cpp \
+  moc_qeventdispatcher_qpa_p.cpp \
+  moc_qplatformscreen_qpa.cpp \
+  moc_qplatformintegrationplugin_qpa.cpp \
+  moc_qdesktopwidget_qpa_p.cpp \
   moc_qiconengineplugin.cpp \
   moc_qimageiohandler.cpp \
   moc_qmovie.cpp \
@@ -580,8 +530,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qtexttable.cpp \
   moc_qtextlist.cpp \
   moc_qsyntaxhighlighter.cpp \
-  moc_qabstractfontengine_qws.cpp \
-  moc_qabstractfontengine_p.cpp \
   moc_qstyle.cpp \
   moc_qstyleplugin.cpp \
   moc_qcommonstyle.cpp \
@@ -702,7 +650,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qstyleditemdelegate.cpp \
   moc_qinputcontextplugin.cpp \
   moc_qinputcontext.cpp \
-  moc_qwsinputcontext_p.cpp \
   moc_qgraphicsitem.cpp \
   moc_qgraphicsitemanimation.cpp \
   moc_qgraphicsproxywidget.cpp \
@@ -733,12 +680,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
 # extracted from 'compiler_moc_source_make_all' rule
 
 COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
-  qsoundqss_qws.moc \
-  qcopchannel_qws.moc \
-  qkbd_qws.moc \
   qtooltip.moc \
   qwhatsthis.moc \
-  qsound_qws.moc \
   qpixmapcache.moc \
   qcalendarwidget.moc \
   qdockwidget.moc \
