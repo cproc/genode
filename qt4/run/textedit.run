@@ -14,6 +14,7 @@ build {
 	drivers/usb
 	server/ffat_fs
 	server/nitpicker
+	server/liquid_framebuffer
 	app/examples/textedit
 }
 
@@ -128,6 +129,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	liquid_fb
 	ffat_fs
 	textedit
 	dejavusans.lib.so
@@ -141,6 +143,7 @@ set boot_modules {
 	jpeg.lib.so
 	qt_core.lib.so
 	qt_gui.lib.so
+	qt_xml.lib.so
 	zlib.lib.so
 	usb_drv
 	stdcxx.lib.so

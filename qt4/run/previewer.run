@@ -10,6 +10,7 @@ build {
 	drivers/framebuffer
 	drivers/timer
 	server/nitpicker
+	server/liquid_framebuffer
 	app/examples/previewer
 }
 
@@ -92,6 +93,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	liquid_fb
 	previewer
 	dejavusans.lib.so
 	freetype.lib.so
@@ -101,8 +103,11 @@ set boot_modules {
 	libm.lib.so
 	libpng.lib.so
 	jpeg.lib.so
+	libcrypto.lib.so
+	libssl.lib.so
 	qt_core.lib.so
 	qt_gui.lib.so
+	qt_xml.lib.so
 	qt_jscore.lib.so
 	qt_network.lib.so
 	qt_webcore.lib.so
