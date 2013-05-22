@@ -10,6 +10,7 @@ build {
 	drivers/framebuffer
 	drivers/timer
 	server/nitpicker
+	server/liquid_framebuffer
 	server/loader
 	server/tar_rom
 	test/nitpicker
@@ -101,6 +102,7 @@ set boot_modules {
 	init
 	timer
 	nitpicker
+	liquid_fb
 	loader
 	tar_rom
 	testnit
@@ -115,6 +117,7 @@ set boot_modules {
 	jpeg.lib.so
 	qt_core.lib.so
 	qt_gui.lib.so
+	qt_xml.lib.so
 	qt_network.lib.so
 	zlib.lib.so
 	qnitpickerviewwidget.lib.so
