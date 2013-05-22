@@ -14,3 +14,4 @@ qt4_webkit_munmap.patch
 qt4_webkit_websockets.patch
 qt4_ssl_peer_verification.patch
 qt4_serialized_dns_lookup.patch
+qt4_qpa.patch

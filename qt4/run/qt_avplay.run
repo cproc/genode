@@ -11,6 +11,7 @@ build {
 	drivers/timer
 	drivers/audio_out
 	server/nitpicker
+	server/liquid_framebuffer
 	app/avplay
 	app/qt_avplay
 }
@@ -112,6 +113,7 @@ set boot_modules {
 	timer
 	audio_out_drv
 	nitpicker
+	liquid_fb
 	qt_avplay
 	dejavusans.lib.so
 	freetype.lib.so
