@@ -1,0 +1,471 @@
+qt4_genode.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/QtCore/qconfig.h                           |    2 -
+ .../JavaScriptCore/runtime/Collector.cpp           |   21 +++++++
+ .../JavaScriptCore/wtf/FastMalloc.cpp              |    2 -
+ .../javascriptcore/JavaScriptCore/wtf/Platform.h   |   19 +++++-
+ .../JavaScriptCore/wtf/TCSystemAlloc.cpp           |   21 +++++++
+ src/3rdparty/webkit/Source/JavaScriptCore/config.h |    2 -
+ .../Source/JavaScriptCore/wtf/FastMalloc.cpp       |    4 +
+ .../webkit/Source/JavaScriptCore/wtf/Platform.h    |   25 +++++++-
+ .../Source/JavaScriptCore/wtf/StackBounds.cpp      |   12 ++++
+ .../Source/JavaScriptCore/wtf/TCSystemAlloc.cpp    |   21 +++++++
+ .../Source/WebCore/generated/JSDOMWindow.cpp       |    4 +
+ .../Source/WebCore/generated/JSWorkerContext.cpp   |    4 +
+ .../webkit/Source/WebCore/loader/icon/IconRecord.h |    2 -
+ src/3rdparty/webkit/Source/WebCore/page/Page.h     |    2 -
+ .../platform/network/ResourceResponseBase.h        |    2 -
+ src/corelib/codecs/qtextcodec.cpp                  |    2 -
+ src/corelib/global/qglobal.cpp                     |    6 ++
+ src/corelib/global/qglobal.h                       |    5 +-
+ src/corelib/io/qprocess.cpp                        |   63 ++++++++++++++++++++
+ src/corelib/io/qprocess_p.h                        |   45 ++++++++++++++
+ src/corelib/io/qresource.cpp                       |    2 -
+ src/corelib/kernel/qcoreapplication.cpp            |   10 +++
+ src/corelib/kernel/qtranslator.cpp                 |    2 -
+ src/corelib/plugin/qpluginloader.cpp               |   43 ++++++++++++--
+ src/corelib/plugin/qpluginloader.h                 |   13 +++-
+ src/corelib/thread/qmutex_p.h                      |   10 +++
+ src/corelib/thread/qthread.cpp                     |    5 ++
+ src/corelib/thread/qthread_p.h                     |   56 +++++++++++++++++-
+ src/corelib/tools/qdatetime.cpp                    |   12 ++++
+ src/gui/dialogs/qfiledialog.cpp                    |    2 -
+ src/gui/image/qpnghandler.cpp                      |   33 +++++++---
+ src/gui/image/qxpmhandler.cpp                      |    8 +++
+ src/network/access/qnetworkaccessfilebackend.cpp   |    5 ++
+ src/network/kernel/qhostinfo_unix.cpp              |    7 ++
+ tools/designer/src/lib/uilib/formbuilder.cpp       |    5 +-
+ tools/designer/src/uitools/quiloader.cpp           |    3 +
+ 36 files changed, 436 insertions(+), 44 deletions(-)
+
+diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/runtime/Collector.cpp b/src/3rdparty/javascriptcore/JavaScriptCore/runtime/Collector.cpp
+index 6af1784..2f3b102 100644
+--- a/src/3rdparty/javascriptcore/JavaScriptCore/runtime/Collector.cpp
++++ b/src/3rdparty/javascriptcore/JavaScriptCore/runtime/Collector.cpp
+@@ -62,6 +62,13 @@
+ 
+ #include <OS.h>
+ 
++#elif OS(GENODE)
++
++#include <base/printf.h>
++#include <base/stdint.h>
++#include <util/misc_math.h>
++#include <thread_qt.h>
++
+ #elif OS(UNIX)
+ 
+ #include <stdlib.h>
+@@ -204,6 +211,15 @@ NEVER_INLINE CollectorBlock* Heap::allocateBlock()
+     void* address = _aligned_malloc(BLOCK_SIZE, BLOCK_SIZE);
+ #endif
+     memset(address, 0, BLOCK_SIZE);
++#elif OS(GENODE)
++    void* real_address = malloc(sizeof(Genode::addr_t) + BLOCK_SIZE + BLOCK_SIZE);
++    Genode::addr_t address = reinterpret_cast<Genode::addr_t>(real_address);
++    address += sizeof(Genode::addr_t);
++    address = Genode::align_addr(address, Genode::log2(BLOCK_SIZE));
++    address -= sizeof(Genode::addr_t);
++    *(Genode::addr_t*)address = (Genode::addr_t)real_address;
++    address += sizeof(Genode::addr_t);
++    memset(reinterpret_cast<void*>(address), 0, BLOCK_SIZE);
+ #elif HAVE(POSIX_MEMALIGN)
+     void* address;
+     posix_memalign(&address, BLOCK_SIZE, BLOCK_SIZE);
+@@ -294,6 +310,9 @@ NEVER_INLINE void Heap::freeBlockPtr(CollectorBlock* block)
+ #else
+     _aligned_free(block);
+ #endif
++#elif OS(GENODE)
++    void *real_address = (void*)*(Genode::addr_t*)((Genode::addr_t)block - sizeof(Genode::addr_t));
++    free(real_address);
+ #elif HAVE(POSIX_MEMALIGN)
+     free(block);
+ #else
+@@ -644,6 +663,8 @@ static inline void* currentThreadStackBase()
+     thread_info threadInfo;
+     get_thread_info(find_thread(NULL), &threadInfo);
+     return threadInfo.stack_end;
++#elif OS(GENODE)
++    return Genode::Thread_qt::myself()->stack_top();
+ #elif OS(UNIX)
+     AtomicallyInitializedStatic(Mutex&, mutex = *new Mutex);
+     MutexLocker locker(mutex);
+diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/FastMalloc.cpp b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/FastMalloc.cpp
+index d95f078..6aa56b6 100644
+--- a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/FastMalloc.cpp
++++ b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/FastMalloc.cpp
+@@ -97,7 +97,7 @@
+ 
+ // Use a background thread to periodically scavenge memory to release back to the system
+ // https://bugs.webkit.org/show_bug.cgi?id=27900: don't turn this on for Tiger until we have figured out why it caused a crash.
+-#if defined(BUILDING_ON_TIGER)
++#if defined(BUILDING_ON_TIGER) || OS(GENODE)
+ #define USE_BACKGROUND_THREAD_TO_SCAVENGE_MEMORY 0
+ #else
+ #define USE_BACKGROUND_THREAD_TO_SCAVENGE_MEMORY 1
+diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
+index e95ac7f..19ad5e2 100644
+--- a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
++++ b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
+@@ -454,6 +454,13 @@
+ #define WTF_OS_UNIX 1
+ #endif
+ 
++/* OS(GENODE) */
++/* Operating system level dependencies for Genode that should */
++/* be used regardless of operating environment */
++#ifdef __GENODE__
++#define WTF_OS_GENODE 1
++#endif
++
+ /* Operating environments */
+ 
+ /* FIXME: these are all mixes of OS, operating environment and policy choices. */
+@@ -698,13 +705,13 @@
+ #endif
+ #endif /* !defined(HAVE_ACCESSIBILITY) */
+ 
+-#if OS(UNIX) && !OS(SYMBIAN)
++#if OS(UNIX) && !OS(SYMBIAN) && !OS(GENODE)
+ #define HAVE_SIGNAL_H 1
+ #endif
+ 
+ #if !OS(WINDOWS) && !OS(SOLARIS) && !OS(QNX) \
+     && !OS(SYMBIAN) && !OS(HAIKU) && !OS(RVCT) \
+-    && !OS(ANDROID) && !OS(AIX) && !OS(HPUX)
++    && !OS(ANDROID) && !OS(AIX) && !OS(HPUX) && !OS(GENODE)
+ #define HAVE_TM_GMTOFF 1
+ #define HAVE_TM_ZONE 1
+ #define HAVE_TIMEGM 1
+@@ -779,6 +786,12 @@
+ #define HAVE_SYS_PARAM_H 1
+ #define HAVE_SYS_TIME_H 1
+ 
++#elif OS(GENODE)
++
++#define HAVE_MMAP 0
++#define HAVE_SBRK 0
++#define HAVE_SYS_TIME_H 1
++
+ #else
+ 
+ /* FIXME: is this actually used or do other platforms generate their own config.h? */
+@@ -929,7 +942,7 @@ on MinGW. See https://bugs.webkit.org/show_bug.cgi?id=29268 */
+ #elif CPU(X86) && OS(WINDOWS) && COMPILER(MSVC)
+     #define ENABLE_JIT 1
+     #define WTF_USE_JIT_STUB_ARGUMENT_REGISTER 1
+-#elif CPU(X86) && OS(LINUX) && GCC_VERSION >= 40100
++#elif CPU(X86) && OS(LINUX) && GCC_VERSION >= 40100 && !OS(GENODE)
+     #define ENABLE_JIT 1
+     #define WTF_USE_JIT_STUB_ARGUMENT_VA_LIST 1
+ #elif CPU(X86_64) && OS(LINUX) && GCC_VERSION >= 40100
+diff --git a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TCSystemAlloc.cpp b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TCSystemAlloc.cpp
+index ff2ac2b..370c600 100644
+--- a/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TCSystemAlloc.cpp
++++ b/src/3rdparty/javascriptcore/JavaScriptCore/wtf/TCSystemAlloc.cpp
+@@ -56,6 +56,12 @@
+ #include <sys/mman.h>
+ #endif
+ 
++#if OS(GENODE)
++#include <base/printf.h>
++#include <base/stdint.h>
++#include <util/misc_math.h>
++#endif
++
+ #ifndef MAP_ANONYMOUS
+ #define MAP_ANONYMOUS MAP_ANON
+ #endif
+@@ -379,6 +385,21 @@ void* TCMalloc_SystemAlloc(size_t size, size_t *actual_size, size_t alignment) {
+     }
+ #endif
+ 
++#if OS(GENODE)
++    if (actual_size)
++      *actual_size = size;
++
++    void* real_address = malloc(sizeof(Genode::addr_t) + size + alignment);
++    Genode::addr_t address = reinterpret_cast<Genode::addr_t>(real_address);
++    address += sizeof(Genode::addr_t);
++    address = Genode::align_addr(address, Genode::log2(alignment));
++    address -= sizeof(Genode::addr_t);
++    *(Genode::addr_t*)address = (Genode::addr_t)real_address;
++    address += sizeof(Genode::addr_t);
++
++    return (void*)address;;
++#endif
++
+     // nothing worked - reset failure flags and try again
+     devmem_failure = false;
+     sbrk_failure = false;
+diff --git a/src/3rdparty/webkit/Source/JavaScriptCore/config.h b/src/3rdparty/webkit/Source/JavaScriptCore/config.h
+index 394bba5..805b01d 100644
+--- a/src/3rdparty/webkit/Source/JavaScriptCore/config.h
++++ b/src/3rdparty/webkit/Source/JavaScriptCore/config.h
+@@ -80,7 +80,7 @@
+ 
+ #endif
+ 
+-#if OS(UNIX) || OS(WINDOWS)
++#if (OS(UNIX) || OS(WINDOWS)) && !OS(GENODE)
+ #define WTF_USE_OS_RANDOMNESS 1
+ #endif
+ 
+diff --git a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/FastMalloc.cpp b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/FastMalloc.cpp
+index 86b123d..fdeb5c9 100644
+--- a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/FastMalloc.cpp
++++ b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/FastMalloc.cpp
+@@ -97,7 +97,11 @@
+ #endif
+ 
+ // Use a background thread to periodically scavenge memory to release back to the system
++#if OS(GENODE)
++#define USE_BACKGROUND_THREAD_TO_SCAVENGE_MEMORY 0
++#else
+ #define USE_BACKGROUND_THREAD_TO_SCAVENGE_MEMORY 1
++#endif /* OS(GENODE) */
+ 
+ #ifndef NDEBUG
+ namespace WTF {
+diff --git a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/Platform.h b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/Platform.h
+index a8298c4..7727df2 100644
+--- a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/Platform.h
++++ b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/Platform.h
+@@ -480,6 +480,13 @@
+ #define WTF_OS_UNIX 1
+ #endif
+ 
++/* OS(GENODE) */
++/* Operating system level dependencies for Genode that should */
++/* be used regardless of operating environment */
++#ifdef __GENODE__
++#define WTF_OS_GENODE 1
++#endif
++
+ /* Operating environments */
+ 
+ /* FIXME: these are all mixes of OS, operating environment and policy choices. */
+@@ -581,7 +588,7 @@
+ #define WTF_USE_PTHREAD_BASED_QT 1
+ #endif
+ 
+-#if (PLATFORM(GTK) || PLATFORM(IOS) || PLATFORM(MAC) || PLATFORM(WIN) || (PLATFORM(QT) && (OS(DARWIN) || USE(PTHREAD_BASED_QT)) && !ENABLE(SINGLE_THREADED))) && !OS(QNX) && !defined(ENABLE_JSC_MULTIPLE_THREADS)
++#if (PLATFORM(GTK) || PLATFORM(IOS) || PLATFORM(MAC) || PLATFORM(WIN) || (PLATFORM(QT) && (OS(DARWIN) || USE(PTHREAD_BASED_QT)) && !ENABLE(SINGLE_THREADED))) && !OS(QNX) && !defined(ENABLE_JSC_MULTIPLE_THREADS) && !OS(GENODE)
+ #define ENABLE_JSC_MULTIPLE_THREADS 1
+ #endif
+ 
+@@ -756,7 +763,7 @@
+ #endif
+ #endif /* !defined(HAVE_ACCESSIBILITY) */
+ 
+-#if OS(UNIX) && !OS(SYMBIAN)
++#if OS(UNIX) && !OS(SYMBIAN) && !OS(GENODE)
+ #define HAVE_SIGNAL_H 1
+ #endif
+ 
+@@ -768,7 +775,7 @@
+ 
+ #if !OS(WINDOWS) && !OS(SOLARIS) && !OS(QNX) \
+     && !OS(SYMBIAN) && !OS(HAIKU) && !OS(RVCT) \
+-    && !OS(ANDROID) && !PLATFORM(BREWMP)
++    && !OS(ANDROID) && !PLATFORM(BREWMP) && !OS(GENODE)
+ #define HAVE_TM_GMTOFF 1
+ #define HAVE_TM_ZONE 1
+ #define HAVE_TIMEGM 1
+@@ -851,6 +858,13 @@
+ #define HAVE_SYS_PARAM_H 1
+ #define HAVE_SYS_TIME_H 1
+ 
++#elif OS(GENODE)
++
++#define HAVE_MMAP 0
++#define HAVE_SBRK 0
++#define HAVE_SYS_TIME_H 1
++#define USE_SYSTEM_MALLOC 1
++
+ #else
+ 
+ /* FIXME: is this actually used or do other platforms generate their own config.h? */
+@@ -1024,6 +1038,11 @@
+ #define ENABLE_JIT 0
+ #endif
+ 
++/* Disable JIT for Genode */
++#if OS(GENODE)
++#define ENABLE_JIT 0
++#endif
++
+ /* The JIT is enabled by default on all x86, x64-64, ARM & MIPS platforms. */
+ #if !defined(ENABLE_JIT) \
+     && (CPU(X86) || CPU(X86_64) || CPU(ARM) || CPU(MIPS)) \
+diff --git a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/StackBounds.cpp b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/StackBounds.cpp
+index 6b61270..f117e48 100644
+--- a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/StackBounds.cpp
++++ b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/StackBounds.cpp
+@@ -48,6 +48,10 @@
+ #include <string.h>
+ #include <sys/procfs.h>
+ 
++#elif OS(GENODE)
++
++#include <base/thread.h>
++
+ #elif OS(UNIX)
+ 
+ #include <pthread.h>
+@@ -154,6 +158,14 @@ void StackBounds::initialize()
+     m_bound = estimateStackBound(m_origin);
+ }
+ 
++#elif OS(GENODE)
++
++void StackBounds::initialize()
++{
++    m_bound = Genode::Thread_base::myself()->stack_base();
++	m_origin = Genode::Thread_base::myself()->stack_top();
++}
++
+ #elif OS(UNIX)
+ 
+ void StackBounds::initialize()
+diff --git a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/TCSystemAlloc.cpp b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/TCSystemAlloc.cpp
+index 3cb59e8..0731d43 100644
+--- a/src/3rdparty/webkit/Source/JavaScriptCore/wtf/TCSystemAlloc.cpp
++++ b/src/3rdparty/webkit/Source/JavaScriptCore/wtf/TCSystemAlloc.cpp
+@@ -56,6 +56,12 @@
+ #include <sys/mman.h>
+ #endif
+ 
++#if OS(GENODE)
++#include <base/printf.h>
++#include <base/stdint.h>
++#include <util/misc_math.h>
++#endif
++
+ #ifndef MAP_ANONYMOUS
+ #define MAP_ANONYMOUS MAP_ANON
+ #endif
+@@ -379,6 +385,21 @@ void* TCMalloc_SystemAlloc(size_t size, size_t *actual_size, size_t alignment) {
+     }
+ #endif
+ 
++#if OS(GENODE)
++    if (actual_size)
++      *actual_size = size;
++
++    void* real_address = malloc(sizeof(Genode::addr_t) + size + alignment);
++    Genode::addr_t address = reinterpret_cast<Genode::addr_t>(real_address);
++    address += sizeof(Genode::addr_t);
++    address = Genode::align_addr(address, Genode::log2(alignment));
++    address -= sizeof(Genode::addr_t);
++    *(Genode::addr_t*)address = (Genode::addr_t)real_address;
++    address += sizeof(Genode::addr_t);
++
++    return (void*)address;;
++#endif
++
+     // nothing worked - reset failure flags and try again
+     devmem_failure = false;
+     sbrk_failure = false;
+diff --git a/src/3rdparty/webkit/Source/WebCore/generated/JSDOMWindow.cpp b/src/3rdparty/webkit/Source/WebCore/generated/JSDOMWindow.cpp
+index 6fa2ad3..d30fcc1 100644
+--- a/src/3rdparty/webkit/Source/WebCore/generated/JSDOMWindow.cpp
++++ b/src/3rdparty/webkit/Source/WebCore/generated/JSDOMWindow.cpp
+@@ -746,7 +746,9 @@ static const HashTableValue JSDOMWindowTableValues[456] =
+     { "MessageChannel", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowMessageChannelConstructor), (intptr_t)setJSDOMWindowMessageChannelConstructor THUNK_GENERATOR(0) },
+     { "Worker", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowWorkerConstructor), (intptr_t)setJSDOMWindowWorkerConstructor THUNK_GENERATOR(0) },
+     { "SharedWorker", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowSharedWorkerConstructor), (intptr_t)setJSDOMWindowSharedWorkerConstructor THUNK_GENERATOR(0) },
++#if ENABLE(WEB_SOCKETS)
+     { "WebSocket", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowWebSocketConstructor), (intptr_t)setJSDOMWindowWebSocketConstructor THUNK_GENERATOR(0) },
++#endif
+     { "Plugin", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowPluginConstructor), (intptr_t)setJSDOMWindowPluginConstructor THUNK_GENERATOR(0) },
+     { "PluginArray", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowPluginArrayConstructor), (intptr_t)setJSDOMWindowPluginArrayConstructor THUNK_GENERATOR(0) },
+     { "MimeType", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsDOMWindowMimeTypeConstructor), (intptr_t)setJSDOMWindowMimeTypeConstructor THUNK_GENERATOR(0) },
+@@ -4442,6 +4444,7 @@ JSValue jsDOMWindowSharedWorkerConstructor(ExecState* exec, JSValue slotBase, co
+ }
+ 
+ 
++#if ENABLE(WEB_SOCKETS)
+ JSValue jsDOMWindowWebSocketConstructor(ExecState* exec, JSValue slotBase, const Identifier&)
+ {
+     JSDOMWindow* castedThis = static_cast<JSDOMWindow*>(asObject(slotBase));
+@@ -4449,6 +4452,7 @@ JSValue jsDOMWindowWebSocketConstructor(ExecState* exec, JSValue slotBase, const
+         return jsUndefined();
+     return castedThis->webSocket(exec);
+ }
++#endif
+ 
+ 
+ JSValue jsDOMWindowPluginConstructor(ExecState* exec, JSValue slotBase, const Identifier&)
+diff --git a/src/3rdparty/webkit/Source/WebCore/generated/JSWorkerContext.cpp b/src/3rdparty/webkit/Source/WebCore/generated/JSWorkerContext.cpp
+index 3a96654..997d192 100644
+--- a/src/3rdparty/webkit/Source/WebCore/generated/JSWorkerContext.cpp
++++ b/src/3rdparty/webkit/Source/WebCore/generated/JSWorkerContext.cpp
+@@ -91,7 +91,9 @@ static const HashTableValue JSWorkerContextTableValues[25] =
+     { "MessageChannel", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextMessageChannelConstructor), (intptr_t)setJSWorkerContextMessageChannelConstructor THUNK_GENERATOR(0) },
+     { "EventSource", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextEventSourceConstructor), (intptr_t)setJSWorkerContextEventSourceConstructor THUNK_GENERATOR(0) },
+     { "XMLHttpRequest", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextXMLHttpRequestConstructor), (intptr_t)setJSWorkerContextXMLHttpRequestConstructor THUNK_GENERATOR(0) },
++#if ENABLE(WEB_SOCKETS)
+     { "WebSocket", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextWebSocketConstructor), (intptr_t)setJSWorkerContextWebSocketConstructor THUNK_GENERATOR(0) },
++#endif
+     { "WebKitBlobBuilder", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextWebKitBlobBuilderConstructor), (intptr_t)setJSWorkerContextWebKitBlobBuilderConstructor THUNK_GENERATOR(0) },
+     { "FileReader", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextFileReaderConstructor), (intptr_t)setJSWorkerContextFileReaderConstructor THUNK_GENERATOR(0) },
+     { "FileReaderSync", DontDelete, (intptr_t)static_cast<PropertySlot::GetValueFunc>(jsWorkerContextFileReaderSyncConstructor), (intptr_t)setJSWorkerContextFileReaderSyncConstructor THUNK_GENERATOR(0) },
+@@ -276,11 +278,13 @@ JSValue jsWorkerContextXMLHttpRequestConstructor(ExecState* exec, JSValue slotBa
+ }
+ 
+ 
++#if ENABLE(WEB_SOCKETS)
+ JSValue jsWorkerContextWebSocketConstructor(ExecState* exec, JSValue slotBase, const Identifier&)
+ {
+     JSWorkerContext* castedThis = static_cast<JSWorkerContext*>(asObject(slotBase));
+     return castedThis->webSocket(exec);
+ }
++#endif
+ 
+ 
+ JSValue jsWorkerContextWebKitBlobBuilderConstructor(ExecState* exec, JSValue slotBase, const Identifier&)
+diff --git a/src/3rdparty/webkit/Source/WebCore/loader/icon/IconRecord.h b/src/3rdparty/webkit/Source/WebCore/loader/icon/IconRecord.h
+index 50ef7f7..9511153 100644
+--- a/src/3rdparty/webkit/Source/WebCore/loader/icon/IconRecord.h
++++ b/src/3rdparty/webkit/Source/WebCore/loader/icon/IconRecord.h
+@@ -38,7 +38,7 @@
+ #include <wtf/OwnPtr.h>
+ #include <wtf/text/StringHash.h>
+ 
+-#if OS(SOLARIS)
++#if OS(SOLARIS) || OS(GENODE)
+ #include <sys/types.h> // For time_t structure.
+ #endif
+ 
+diff --git a/src/3rdparty/webkit/Source/WebCore/page/Page.h b/src/3rdparty/webkit/Source/WebCore/page/Page.h
+index bdea870..6f400be 100644
+--- a/src/3rdparty/webkit/Source/WebCore/page/Page.h
++++ b/src/3rdparty/webkit/Source/WebCore/page/Page.h
+@@ -29,7 +29,7 @@
+ #include <wtf/HashSet.h>
+ #include <wtf/Noncopyable.h>
+ 
+-#if OS(SOLARIS)
++#if OS(SOLARIS) || OS(GENODE)
+ #include <sys/time.h> // For time_t structure.
+ #endif
+ 
+diff --git a/src/3rdparty/webkit/Source/WebCore/platform/network/ResourceResponseBase.h b/src/3rdparty/webkit/Source/WebCore/platform/network/ResourceResponseBase.h
+index 250411c..c2a0fd4 100644
+--- a/src/3rdparty/webkit/Source/WebCore/platform/network/ResourceResponseBase.h
++++ b/src/3rdparty/webkit/Source/WebCore/platform/network/ResourceResponseBase.h
+@@ -35,7 +35,7 @@
+ #include <wtf/PassOwnPtr.h>
+ #include <wtf/RefPtr.h>
+ 
+-#if OS(SOLARIS)
++#if OS(SOLARIS) || OS(GENODE)
+ #include <sys/time.h> // For time_t structure.
+ #endif
+ 
