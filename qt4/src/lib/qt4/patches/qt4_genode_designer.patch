@@ -1,0 +1,95 @@
+qt4_genode.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/QtCore/qconfig.h                           |    2 -
+ .../JavaScriptCore/runtime/Collector.cpp           |   21 +++++++
+ .../JavaScriptCore/wtf/FastMalloc.cpp              |    2 -
+ .../javascriptcore/JavaScriptCore/wtf/Platform.h   |   19 +++++-
+ .../JavaScriptCore/wtf/TCSystemAlloc.cpp           |   21 +++++++
+ src/3rdparty/webkit/Source/JavaScriptCore/config.h |    2 -
+ .../Source/JavaScriptCore/wtf/FastMalloc.cpp       |    4 +
+ .../webkit/Source/JavaScriptCore/wtf/Platform.h    |   25 +++++++-
+ .../Source/JavaScriptCore/wtf/StackBounds.cpp      |   12 ++++
+ .../Source/JavaScriptCore/wtf/TCSystemAlloc.cpp    |   21 +++++++
+ .../Source/WebCore/generated/JSDOMWindow.cpp       |    4 +
+ .../Source/WebCore/generated/JSWorkerContext.cpp   |    4 +
+ .../webkit/Source/WebCore/loader/icon/IconRecord.h |    2 -
+ src/3rdparty/webkit/Source/WebCore/page/Page.h     |    2 -
+ .../platform/network/ResourceResponseBase.h        |    2 -
+ src/corelib/codecs/qtextcodec.cpp                  |    2 -
+ src/corelib/global/qglobal.cpp                     |    6 ++
+ src/corelib/global/qglobal.h                       |    5 +-
+ src/corelib/io/qprocess.cpp                        |   63 ++++++++++++++++++++
+ src/corelib/io/qprocess_p.h                        |   45 ++++++++++++++
+ src/corelib/io/qresource.cpp                       |    2 -
+ src/corelib/kernel/qcoreapplication.cpp            |   10 +++
+ src/corelib/kernel/qtranslator.cpp                 |    2 -
+ src/corelib/plugin/qpluginloader.cpp               |   43 ++++++++++++--
+ src/corelib/plugin/qpluginloader.h                 |   13 +++-
+ src/corelib/thread/qmutex_p.h                      |   10 +++
+ src/corelib/thread/qthread.cpp                     |    5 ++
+ src/corelib/thread/qthread_p.h                     |   56 +++++++++++++++++-
+ src/corelib/tools/qdatetime.cpp                    |   12 ++++
+ src/gui/dialogs/qfiledialog.cpp                    |    2 -
+ src/gui/image/qpnghandler.cpp                      |   33 +++++++---
+ src/gui/image/qxpmhandler.cpp                      |    8 +++
+ src/network/access/qnetworkaccessfilebackend.cpp   |    5 ++
+ src/network/kernel/qhostinfo_unix.cpp              |    7 ++
+ tools/designer/src/lib/uilib/formbuilder.cpp       |    5 +-
+ tools/designer/src/uitools/quiloader.cpp           |    3 +
+ 36 files changed, 436 insertions(+), 44 deletions(-)
+
+diff --git a/tools/designer/src/lib/uilib/formbuilder.cpp b/tools/designer/src/lib/uilib/formbuilder.cpp
+index db9c59d..df797f0 100644
+--- a/tools/designer/src/lib/uilib/formbuilder.cpp
++++ b/tools/designer/src/lib/uilib/formbuilder.cpp
+@@ -44,6 +44,8 @@
+ #include "formbuilderextra_p.h"
+ #include "ui4_p.h"
+ 
++#include "qpluginloader.h"
++
+ #include <QtGui/QtGui>
+ #include <QtCore/QCoreApplication>
+ 
+@@ -493,7 +495,7 @@ static void insertPlugins(QObject *o, QMap<QString, QDesignerCustomWidgetInterfa
+ void QFormBuilder::updateCustomWidgets()
+ {
+     m_customWidgets.clear();
+-
++#ifndef Q_OS_GENODE
+     foreach (const QString &path, m_pluginPaths) {
+         const QDir dir(path);
+         const QStringList candidates = dir.entryList(QDir::Files);
+@@ -511,6 +513,7 @@ void QFormBuilder::updateCustomWidgets()
+                 insertPlugins(loader.instance(), &m_customWidgets);
+         }
+     }
++#endif
+     // Check statically linked plugins
+     const QObjectList staticPlugins = QPluginLoader::staticInstances();
+     if (!staticPlugins.empty())
+diff --git a/tools/designer/src/uitools/quiloader.cpp b/tools/designer/src/uitools/quiloader.cpp
+index 72cc32b..ded1532 100644
+--- a/tools/designer/src/uitools/quiloader.cpp
++++ b/tools/designer/src/uitools/quiloader.cpp
+@@ -630,7 +630,7 @@ QUiLoader::QUiLoader(QObject *parent)
+     Q_D(QUiLoader);
+ 
+     d->builder.loader = this;
+-
++#ifndef Q_OS_GENODE
+     QStringList paths;
+     foreach (const QString &path, QApplication::libraryPaths()) {
+         QString libPath = path;
+@@ -640,6 +640,7 @@ QUiLoader::QUiLoader(QObject *parent)
+     }
+ 
+     d->builder.setPluginPath(paths);
++#endif
+ }
+ 
+ /*!
