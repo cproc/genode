@@ -1,0 +1,57 @@
+qt4_genode.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/QtCore/qconfig.h                           |    2 -
+ .../JavaScriptCore/runtime/Collector.cpp           |   21 +++++++
+ .../JavaScriptCore/wtf/FastMalloc.cpp              |    2 -
+ .../javascriptcore/JavaScriptCore/wtf/Platform.h   |   19 +++++-
+ .../JavaScriptCore/wtf/TCSystemAlloc.cpp           |   21 +++++++
+ src/3rdparty/webkit/Source/JavaScriptCore/config.h |    2 -
+ .../Source/JavaScriptCore/wtf/FastMalloc.cpp       |    4 +
+ .../webkit/Source/JavaScriptCore/wtf/Platform.h    |   25 +++++++-
+ .../Source/JavaScriptCore/wtf/StackBounds.cpp      |   12 ++++
+ .../Source/JavaScriptCore/wtf/TCSystemAlloc.cpp    |   21 +++++++
+ .../Source/WebCore/generated/JSDOMWindow.cpp       |    4 +
+ .../Source/WebCore/generated/JSWorkerContext.cpp   |    4 +
+ .../webkit/Source/WebCore/loader/icon/IconRecord.h |    2 -
+ src/3rdparty/webkit/Source/WebCore/page/Page.h     |    2 -
+ .../platform/network/ResourceResponseBase.h        |    2 -
+ src/corelib/codecs/qtextcodec.cpp                  |    2 -
+ src/corelib/global/qglobal.cpp                     |    6 ++
+ src/corelib/global/qglobal.h                       |    5 +-
+ src/corelib/io/qprocess.cpp                        |   63 ++++++++++++++++++++
+ src/corelib/io/qprocess_p.h                        |   45 ++++++++++++++
+ src/corelib/io/qresource.cpp                       |    2 -
+ src/corelib/kernel/qcoreapplication.cpp            |   10 +++
+ src/corelib/kernel/qtranslator.cpp                 |    2 -
+ src/corelib/plugin/qpluginloader.cpp               |   43 ++++++++++++--
+ src/corelib/plugin/qpluginloader.h                 |   13 +++-
+ src/corelib/thread/qmutex_p.h                      |   10 +++
+ src/corelib/thread/qthread.cpp                     |    5 ++
+ src/corelib/thread/qthread_p.h                     |   56 +++++++++++++++++-
+ src/corelib/tools/qdatetime.cpp                    |   12 ++++
+ src/gui/dialogs/qfiledialog.cpp                    |    2 -
+ src/gui/image/qpnghandler.cpp                      |   33 +++++++---
+ src/gui/image/qxpmhandler.cpp                      |    8 +++
+ src/network/access/qnetworkaccessfilebackend.cpp   |    5 ++
+ src/network/kernel/qhostinfo_unix.cpp              |    7 ++
+ tools/designer/src/lib/uilib/formbuilder.cpp       |    5 +-
+ tools/designer/src/uitools/quiloader.cpp           |    3 +
+ 36 files changed, 436 insertions(+), 44 deletions(-)
+
+diff --git a/src/gui/dialogs/qfiledialog.cpp b/src/gui/dialogs/qfiledialog.cpp
+index 2dd342a..e6a5c17 100644
+--- a/src/gui/dialogs/qfiledialog.cpp
++++ b/src/gui/dialogs/qfiledialog.cpp
+@@ -880,7 +880,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path, bool *expanded
+     if (!path.startsWith(QLatin1Char('~')))
+         return path;
+     QString ret = path;
+-#if !defined(Q_OS_INTEGRITY)
++#if !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
+     QStringList tokens = ret.split(QDir::separator());
+     if (tokens.first() == QLatin1String("~")) {
+         ret.replace(0, 1, QDir::homePath());
