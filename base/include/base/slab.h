@@ -39,6 +39,7 @@ namespace Genode {
 
 			Slab    *_slab;    /* back reference to slab allocator */
 			unsigned _avail;   /* free entries of this block       */
+			unsigned dummy;
 
 			/*
 			 * Each slab block consists of three areas, a fixed-size header

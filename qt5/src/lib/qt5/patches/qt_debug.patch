@@ -1,0 +1,92 @@
+qt_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/corelib/tools/qvector.h             |    7 +++++--
+ qtbase/src/widgets/widgets/qabstractbutton.cpp |    4 +++-
+ qtbase/src/widgets/widgets/qdockwidget.cpp     |    8 ++++++--
+ 3 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/qtbase/src/corelib/tools/qvector.h b/qtbase/src/corelib/tools/qvector.h
+index 94f3008..7720a90 100644
+--- a/qtbase/src/corelib/tools/qvector.h
++++ b/qtbase/src/corelib/tools/qvector.h
+@@ -404,16 +404,19 @@ QVector<T>::QVector(int asize)
+         d = Data::sharedNull();
+     }
+ }
+-
++extern "C" void wait_for_continue();
+ template <typename T>
+ QVector<T>::QVector(int asize, const T &t)
+ {
++	wait_for_continue();
+     if (asize) {
+         d = Data::allocate(asize);
++        wait_for_continue();
+         d->size = asize;
+         T* i = d->end();
+-        while (i != d->begin())
++        while (i != d->begin()) {
+             new (--i) T(t);
++        }
+     } else {
+         d = Data::sharedNull();
+     }
+diff --git a/qtbase/src/widgets/widgets/qabstractbutton.cpp b/qtbase/src/widgets/widgets/qabstractbutton.cpp
+index 5e9d100..b22c5f4 100644
+--- a/qtbase/src/widgets/widgets/qabstractbutton.cpp
++++ b/qtbase/src/widgets/widgets/qabstractbutton.cpp
+@@ -574,7 +574,7 @@ void QAbstractButtonPrivate::emitReleased()
+     }
+ #endif
+ }
+-
++extern "C" void wait_for_continue();
+ /*!
+     Constructs an abstract button with a \a parent.
+ */
+@@ -582,7 +582,9 @@ QAbstractButton::QAbstractButton(QWidget *parent)
+     : QWidget(*new QAbstractButtonPrivate, parent, 0)
+ {
+     Q_D(QAbstractButton);
++    wait_for_continue();
+     d->init();
++    wait_for_continue();
+ }
+ 
+ /*!
+diff --git a/qtbase/src/widgets/widgets/qdockwidget.cpp b/qtbase/src/widgets/widgets/qdockwidget.cpp
+index a2e363f..68b5124 100644
+--- a/qtbase/src/widgets/widgets/qdockwidget.cpp
++++ b/qtbase/src/widgets/widgets/qdockwidget.cpp
+@@ -126,11 +126,13 @@ public:
+     void paintEvent(QPaintEvent *event);
+ };
+ 
+-
++extern "C" void wait_for_continue();
+ QDockWidgetTitleButton::QDockWidgetTitleButton(QDockWidget *dockWidget)
+     : QAbstractButton(dockWidget)
+ {
++	wait_for_continue();
+     setFocusPolicy(Qt::NoFocus);
++    wait_for_continue();
+ }
+ 
+ QSize QDockWidgetTitleButton::sizeHint() const
+@@ -587,9 +589,11 @@ void QDockWidgetPrivate::init()
+     Q_Q(QDockWidget);
+ 
+     QDockWidgetLayout *layout = new QDockWidgetLayout(q);
+-    layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
+ 
++    layout->setSizeConstraint(QLayout::SetMinAndMaxSize);
++wait_for_continue();
+     QAbstractButton *button = new QDockWidgetTitleButton(q);
++wait_for_continue();
+     button->setObjectName(QLatin1String("qt_dockwidget_floatbutton"));
+     QObject::connect(button, SIGNAL(clicked()), q, SLOT(_q_toggleTopLevel()));
+     layout->setWidgetForRole(QDockWidgetLayout::FloatButton, button);

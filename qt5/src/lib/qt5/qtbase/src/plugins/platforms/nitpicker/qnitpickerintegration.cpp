@@ -34,6 +34,7 @@ static Genode::Rpc_entrypoint &_entrypoint()
 	return entrypoint;
 }
 
+
 QNitpickerIntegration::QNitpickerIntegration()
 : _nitpicker_screen(new QNitpickerScreen()),
   _event_dispatcher(new QEventDispatcherGenode())
