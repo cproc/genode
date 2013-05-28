@@ -10,12 +10,13 @@
 
 #include "launch_entry.h"
 #include "child_entry.h"
-
+extern "C" void wait_for_continue();
 Qt_launchpad::Qt_launchpad(unsigned long initial_quota, QWidget *parent)
     : QMainWindow(parent), Launchpad(initial_quota)
 {
+//wait_for_continue();
 	setupUi(this);
-
+	wait_for_continue();
 	// disable minimize and maximize buttons
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowMinMaxButtonsHint;
