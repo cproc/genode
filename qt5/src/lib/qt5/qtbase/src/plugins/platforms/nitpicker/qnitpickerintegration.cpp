@@ -34,10 +34,13 @@ static Genode::Rpc_entrypoint &_entrypoint()
 	return entrypoint;
 }
 
+extern "C" void wait_for_continue();
 QNitpickerIntegration::QNitpickerIntegration()
 : _nitpicker_screen(new QNitpickerScreen()),
   _event_dispatcher(new QEventDispatcherGenode())
 {
+	qDebug() << "QNitpickerIntegration()";
+	wait_for_continue();
     QGuiApplicationPrivate::instance()->setEventDispatcher(_event_dispatcher);
     screenAdded(_nitpicker_screen);
 }
