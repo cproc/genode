@@ -1,0 +1,38 @@
+qt_update.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/mkspecs/genode-g++/qmake.conf       |    1 +
+ qtbase/mkspecs/genode-g++/qplatformdefs.h  |    1 +
+ qtbase/src/corelib/global/qconfig-genode.h |    1 +
+ 3 files changed, 3 insertions(+)
+ create mode 120000 qtbase/mkspecs/genode-g++/qmake.conf
+ create mode 120000 qtbase/mkspecs/genode-g++/qplatformdefs.h
+ create mode 120000 qtbase/src/corelib/global/qconfig-genode.h
+
+diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
+new file mode 120000
+index 0000000..d4c4a25
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qmake.conf
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qmake.conf
+\ No newline at end of file
+diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+new file mode 120000
+index 0000000..7d0c24b
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qplatformdefs.h
+\ No newline at end of file
+diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
+new file mode 120000
+index 0000000..ca3b847
+--- /dev/null
++++ b/qtbase/src/corelib/global/qconfig-genode.h
+@@ -0,0 +1 @@
++../../../../../../src/lib/qt5/qtbase/src/corelib/global/qconfig-genode.h
+\ No newline at end of file
