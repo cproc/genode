@@ -1,0 +1,162 @@
+qt_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/corelib/animation/qabstractanimation.cpp   |    5 ++++-
+ qtbase/src/corelib/tools/qarraydata.cpp            |    4 ++--
+ qtbase/src/corelib/tools/qvector.h                 |    7 +++++--
+ qtbase/src/gui/image/qpixmapcache.cpp              |    2 +-
+ qtbase/src/gui/kernel/qwindowsysteminterface.cpp   |    6 +++++-
+ qtbase/src/widgets/widgets/qwidgetanimator.cpp     |    9 ++++++---
+ 6 files changed, 23 insertions(+), 10 deletions(-)
+
+diff --git a/qtbase/src/corelib/animation/qabstractanimation.cpp b/qtbase/src/corelib/animation/qabstractanimation.cpp
+index f650e58..217581d 100644
+--- a/qtbase/src/corelib/animation/qabstractanimation.cpp
++++ b/qtbase/src/corelib/animation/qabstractanimation.cpp
+@@ -978,6 +978,7 @@ void QAbstractAnimationPrivate::setState(QAbstractAnimation::State newState)
+         if (dura == -1 || loopCount < 0
+             || (oldDirection == QAbstractAnimation::Forward && (oldCurrentTime * (oldCurrentLoop + 1)) == (dura * loopCount))
+             || (oldDirection == QAbstractAnimation::Backward && oldCurrentTime == 0)) {
++        	qDebug() << "finished(): this =" << this;
+                 emit q->finished();
+         }
+         break;
+@@ -1006,7 +1007,7 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+     // Allow auto-add on reparent
+    setParent(parent);
+ }
+-
++extern "C" void wait_for_continue();
+ /*!
+     Stops the animation if it's running, then destroys the
+     QAbstractAnimation. If the animation is part of a QAnimationGroup, it is
+@@ -1014,6 +1015,8 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+ */
+ QAbstractAnimation::~QAbstractAnimation()
+ {
++	qDebug() << "~QAbstractAnimation(): this =" << this;
++	//wait_for_continue();
+     Q_D(QAbstractAnimation);
+     //we can't call stop here. Otherwise we get pure virtual calls
+     if (d->state != Stopped) {
+diff --git a/qtbase/src/corelib/tools/qarraydata.cpp b/qtbase/src/corelib/tools/qarraydata.cpp
+index a61147a..ee9cde3 100644
+--- a/qtbase/src/corelib/tools/qarraydata.cpp
++++ b/qtbase/src/corelib/tools/qarraydata.cpp
+@@ -97,8 +97,8 @@ QArrayData *QArrayData::allocate(size_t objectSize, size_t alignment,
+ 
+     QArrayData *header = static_cast<QArrayData *>(::malloc(allocSize));
+     if (header) {
+-        quintptr data = (quintptr(header) + sizeof(QArrayData) + alignment - 1)
+-                & ~(alignment - 1);
++        quintptr data = (quintptr(header) + sizeof(QArrayData) + /*alignment*/4 - 1)
++                & ~(/*alignment*/4 - 1);
+ 
+         header->ref.atomic.store(bool(!(options & Unsharable)));
+         header->size = 0;
+diff --git a/qtbase/src/corelib/tools/qvector.h b/qtbase/src/corelib/tools/qvector.h
+index 94f3008..b8ce47a 100644
+--- a/qtbase/src/corelib/tools/qvector.h
++++ b/qtbase/src/corelib/tools/qvector.h
+@@ -404,16 +404,19 @@ QVector<T>::QVector(int asize)
+         d = Data::sharedNull();
+     }
+ }
+-
++extern "C" void wait_for_continue();
+ template <typename T>
+ QVector<T>::QVector(int asize, const T &t)
+ {
++	//wait_for_continue();
+     if (asize) {
+         d = Data::allocate(asize);
++        //wait_for_continue();
+         d->size = asize;
+         T* i = d->end();
+-        while (i != d->begin())
++        while (i != d->begin()) {
+             new (--i) T(t);
++        }
+     } else {
+         d = Data::sharedNull();
+     }
+diff --git a/qtbase/src/gui/image/qpixmapcache.cpp b/qtbase/src/gui/image/qpixmapcache.cpp
+index f4d2afe..eb2d27a 100644
+--- a/qtbase/src/gui/image/qpixmapcache.cpp
++++ b/qtbase/src/gui/image/qpixmapcache.cpp
+@@ -191,7 +191,7 @@ public:
+     bool flushDetachedPixmaps(bool nt);
+ 
+ private:
+-    enum { soon_time = 10000, flush_time = 30000 };
++    enum { soon_time = 100000, flush_time = 300000 };
+     int *keyArray;
+     int theid;
+     int ps;
+diff --git a/qtbase/src/gui/kernel/qwindowsysteminterface.cpp b/qtbase/src/gui/kernel/qwindowsysteminterface.cpp
+index 27bb4ba..6e29cc5 100644
+--- a/qtbase/src/gui/kernel/qwindowsysteminterface.cpp
++++ b/qtbase/src/gui/kernel/qwindowsysteminterface.cpp
+@@ -361,13 +361,17 @@ void QWindowSystemInterfacePrivate::removeWindowSystemEvent(WindowSystemEvent *e
+ 
+ void QWindowSystemInterfacePrivate::handleWindowSystemEvent(QWindowSystemInterfacePrivate::WindowSystemEvent *ev)
+ {
++	qDebug() << "QWindowSystemInterfacePrivate::handleWindowSystemEvent()";
+     if (synchronousWindowsSystemEvents) {
++    	qDebug() << "synchronousWindowsSystemEvents";
+         QGuiApplicationPrivate::processWindowSystemEvent(ev);
+     } else {
+         windowSystemEventQueue.append(ev);
+         QAbstractEventDispatcher *dispatcher = QGuiApplicationPrivate::qt_qpa_core_dispatcher();
+-        if (dispatcher)
++        if (dispatcher) {
++        	qDebug() << "dispatcher =" << dispatcher;
+             dispatcher->wakeUp();
++        }
+     }
+ }
+ 
+diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+index c6520a0..e95d715 100644
+--- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
++++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+@@ -44,7 +44,7 @@
+ #include <private/qmainwindowlayout_p.h>
+ 
+ #include "qwidgetanimator_p.h"
+-
++#include <QDebug>
+ QT_BEGIN_NAMESPACE
+ 
+ QWidgetAnimator::QWidgetAnimator(QMainWindowLayout *layout) : m_mainWindowLayout(layout)
+@@ -74,7 +74,9 @@ void QWidgetAnimator::abort(QWidget *w)
+ void QWidgetAnimator::animationFinished()
+ {
+     QPropertyAnimation *anim = qobject_cast<QPropertyAnimation*>(sender());
+-    abort(static_cast<QWidget*>(anim->targetObject()));
++    qDebug() << "abort(): this =" << this << ", sender() =" << sender() << ", anim =" << anim;
++    if (anim)
++    	abort(static_cast<QWidget*>(anim->targetObject()));
+ }
+ #endif //QT_NO_ANIMATION
+ 
+@@ -92,7 +94,7 @@ void QWidgetAnimator::animate(QWidget *widget, const QRect &_final_geometry, boo
+ 
+ #ifndef QT_NO_ANIMATION
+     AnimationMap::const_iterator it = m_animation_map.constFind(widget);
+-    if (it != m_animation_map.constEnd() && (*it)->endValue().toRect() == final_geometry)
++    if (it != m_animation_map.constEnd() && (*it) && (*it)->endValue().toRect() == final_geometry)
+         return;
+ 
+     QPropertyAnimation *anim = new QPropertyAnimation(widget, "geometry", widget);
+@@ -100,6 +102,7 @@ void QWidgetAnimator::animate(QWidget *widget, const QRect &_final_geometry, boo
+     anim->setEasingCurve(QEasingCurve::InOutQuad);
+     anim->setEndValue(final_geometry);
+     m_animation_map[widget] = anim;
++    qDebug() << "animate(): this =" << this << ", anim =" << anim;
+     connect(anim, SIGNAL(finished()), SLOT(animationFinished()));
+     anim->start(QPropertyAnimation::DeleteWhenStopped);
+ #else

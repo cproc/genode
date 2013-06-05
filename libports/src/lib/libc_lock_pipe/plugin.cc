@@ -249,7 +249,7 @@ namespace {
 		pipefdo[1] = Libc::file_descriptor_allocator()->alloc(this,
 		               new (Genode::env()->heap()) Plugin_context(WRITE_END, pipefdo[0]));
 		static_cast<Plugin_context *>(pipefdo[0]->context)->set_partner(pipefdo[1]);
-
+PDBG("p0 = %d, p1 = %d", pipefdo[0]->libc_fd, pipefdo[1]->libc_fd);
 		return 0;
 	}
 
@@ -287,9 +287,10 @@ namespace {
 		FD_ZERO(readfds);
 		in_writefds = *writefds;
 		FD_ZERO(writefds);
-
+PDBG("nfds = %d", nfds);
 		for (int libc_fd = 0; libc_fd < nfds; libc_fd++) {
 			fdo = Libc::file_descriptor_allocator()->find_by_libc_fd(libc_fd);
+PDBG("libc_fd = %d", libc_fd);
 
 			/* handle only libc_fds that belong to this plugin */
 			if (!fdo || (fdo->plugin != this))
@@ -299,15 +300,18 @@ namespace {
 				(is_read_end(fdo)) &&
 				(*context(fdo)->lock_state() == Genode::Lock::UNLOCKED)) {
 				FD_SET(libc_fd, readfds);
+				PDBG("libc_fd %d ready for reading", libc_fd);
 				nready++;
 			}
 
 			/* currently the write end is always ready for writing */
 			if (FD_ISSET(libc_fd, &in_writefds)) {
 				FD_SET(libc_fd, writefds);
+				PDBG("libc_fd %d ready for writing", libc_fd);
 				nready++;
 			}
 		}
+		PDBG("nready = %d", nready);
 		return nready;
 	}
 

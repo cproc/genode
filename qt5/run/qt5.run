@@ -102,6 +102,7 @@ set boot_modules {
 	freetype.lib.so
 	ld.lib.so
 	libc.lib.so
+	libc_log.lib.so
 	libc_lock_pipe.lib.so
 	libm.lib.so
 	libpng.lib.so

@@ -55,7 +55,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <QDebug>
 // VxWorks doesn't correctly set the _POSIX_... options
 #if defined(Q_OS_VXWORKS)
 #  if defined(_POSIX_MONOTONIC_CLOCK) && (_POSIX_MONOTONIC_CLOCK <= 0)
@@ -191,11 +191,13 @@ int QEventDispatcherGenodePrivate::doSelect(QEventLoop::ProcessEventsFlags flags
         int wakeUpFd = initThreadWakeUp();
         highest = qMax(highest, wakeUpFd);
 
+        qDebug() << "this =" << this << ", highest + 1 =" << (highest + 1);
         nsel = q->select(highest + 1,
                          &sn_vec[0].select_fds,
                          &sn_vec[1].select_fds,
                          &sn_vec[2].select_fds,
                          timeout);
+        qDebug() << "this =" << this << ", nsel =" << nsel;
     } while (nsel == -1 && (errno == EINTR || errno == EAGAIN));
 
     if (nsel == -1) {
@@ -249,7 +251,7 @@ int QEventDispatcherGenodePrivate::doSelect(QEventLoop::ProcessEventsFlags flags
     }
 
     int nevents = processThreadWakeUp(nsel);
-
+qDebug() << "nevents =" << nevents;
     // activate socket notifiers
     if (! (flags & QEventLoop::ExcludeSocketNotifiers) && nsel > 0 && sn_highest >= 0) {
         // if select says data is ready on any socket, then set the socket notifier
@@ -322,7 +324,7 @@ int QEventDispatcherGenode::select(int nfds, fd_set *readfds, fd_set *writefds, 
 
     return qt_safe_select(nfds, readfds, writefds, exceptfds, timeout);
 }
-
+extern "C" void wait_for_continue();
 /*!
     \internal
 */
@@ -337,7 +339,8 @@ void QEventDispatcherGenode::registerTimer(int timerId, int interval, Qt::TimerT
         return;
     }
 #endif
-
+qDebug() << "interval =" << interval;
+//wait_for_continue();
     Q_D(QEventDispatcherGenode);
     d->timerList.registerTimer(timerId, interval, timerType, obj);
 }
@@ -606,7 +609,7 @@ bool QEventDispatcherGenode::processEvents(QEventLoop::ProcessEventsFlags flags)
             tm->tv_sec  = 0l;
             tm->tv_usec = 0l;
         }
-
+qDebug() << "sec =" << tm->tv_sec << ", usec =" << tm->tv_usec;
         nevents = d->doSelect(flags, tm);
 
         // activate timers
@@ -639,6 +642,7 @@ int QEventDispatcherGenode::remainingTime(int timerId)
 
 void QEventDispatcherGenode::wakeUp()
 {
+	PDBG("wakeUp()");
     Q_D(QEventDispatcherGenode);
     if (d->wakeUps.testAndSetAcquire(0, 1)) {
         char c = 0;

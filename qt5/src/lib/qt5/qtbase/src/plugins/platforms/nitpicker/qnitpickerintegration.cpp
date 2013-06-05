@@ -39,6 +39,7 @@ QNitpickerIntegration::QNitpickerIntegration()
 : _nitpicker_screen(new QNitpickerScreen()),
   _event_dispatcher(new QEventDispatcherGenode())
 {
+	qDebug() << "_event_dispatcher =" << _event_dispatcher;
     QGuiApplicationPrivate::instance()->setEventDispatcher(_event_dispatcher);
     screenAdded(_nitpicker_screen);
 }
@@ -72,6 +73,7 @@ QPlatformBackingStore *QNitpickerIntegration::createPlatformBackingStore(QWindow
 
 QAbstractEventDispatcher *QNitpickerIntegration::guiThreadEventDispatcher() const
 {
+	qDebug() << "QNitpickerIntegration::guiThreadEventDispatcher()";
 	return _event_dispatcher;
 }
 
