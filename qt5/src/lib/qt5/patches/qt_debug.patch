@@ -1,0 +1,240 @@
+qt_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/corelib/animation/qabstractanimation.cpp   |    5 ++++-
+ qtbase/src/corelib/kernel/qobject.cpp              |    3 ++-
+ qtbase/src/corelib/tools/qarraydata.cpp            |    4 ++--
+ qtbase/src/corelib/tools/qvector.h                 |    7 +++++--
+ qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp   |    4 +++-
+ qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h   |    7 ++++++-
+ qtbase/src/widgets/kernel/qwidgetwindow.cpp        |    7 +++++++
+ qtbase/src/widgets/widgets/qwidgetanimator.cpp     |    9 ++++++---
+ 8 files changed, 35 insertions(+), 11 deletions(-)
+
+diff --git a/qtbase/src/corelib/animation/qabstractanimation.cpp b/qtbase/src/corelib/animation/qabstractanimation.cpp
+index f650e58..217581d 100644
+--- a/qtbase/src/corelib/animation/qabstractanimation.cpp
++++ b/qtbase/src/corelib/animation/qabstractanimation.cpp
+@@ -978,6 +978,7 @@ void QAbstractAnimationPrivate::setState(QAbstractAnimation::State newState)
+         if (dura == -1 || loopCount < 0
+             || (oldDirection == QAbstractAnimation::Forward && (oldCurrentTime * (oldCurrentLoop + 1)) == (dura * loopCount))
+             || (oldDirection == QAbstractAnimation::Backward && oldCurrentTime == 0)) {
++        	qDebug() << "finished(): this =" << this;
+                 emit q->finished();
+         }
+         break;
+@@ -1006,7 +1007,7 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+     // Allow auto-add on reparent
+    setParent(parent);
+ }
+-
++extern "C" void wait_for_continue();
+ /*!
+     Stops the animation if it's running, then destroys the
+     QAbstractAnimation. If the animation is part of a QAnimationGroup, it is
+@@ -1014,6 +1015,8 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+ */
+ QAbstractAnimation::~QAbstractAnimation()
+ {
++	qDebug() << "~QAbstractAnimation(): this =" << this;
++	//wait_for_continue();
+     Q_D(QAbstractAnimation);
+     //we can't call stop here. Otherwise we get pure virtual calls
+     if (d->state != Stopped) {
+diff --git a/qtbase/src/corelib/kernel/qobject.cpp b/qtbase/src/corelib/kernel/qobject.cpp
+index a822429..04252c5 100644
+--- a/qtbase/src/corelib/kernel/qobject.cpp
++++ b/qtbase/src/corelib/kernel/qobject.cpp
+@@ -433,7 +433,7 @@ QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative, QOb
+       nargs_(nargs), types_(types), args_(args), semaphore_(semaphore),
+       callFunction_(callFunction), method_offset_(method_offset), method_relative_(method_relative)
+ { }
+-
++extern "C" void wait_for_continue();
+ /*!
+     \internal
+  */
+@@ -443,6 +443,7 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO, const QObject
+       nargs_(nargs), types_(types), args_(args), semaphore_(semaphore),
+       callFunction_(0), method_offset_(0), method_relative_(ushort(-1))
+ {
++	qDebug() << "QMetaCallEvent2"; wait_for_continue();
+     if (slotObj_)
+         slotObj_->ref();
+ }
+diff --git a/qtbase/src/corelib/tools/qarraydata.cpp b/qtbase/src/corelib/tools/qarraydata.cpp
+index a61147a..ee9cde3 100644
+--- a/qtbase/src/corelib/tools/qarraydata.cpp
++++ b/qtbase/src/corelib/tools/qarraydata.cpp
+@@ -97,8 +97,8 @@ QArrayData *QArrayData::allocate(size_t objectSize, size_t alignment,
+ 
+     QArrayData *header = static_cast<QArrayData *>(::malloc(allocSize));
+     if (header) {
+-        quintptr data = (quintptr(header) + sizeof(QArrayData) + alignment - 1)
+-                & ~(alignment - 1);
++        quintptr data = (quintptr(header) + sizeof(QArrayData) + /*alignment*/4 - 1)
++                & ~(/*alignment*/4 - 1);
+ 
+         header->ref.atomic.store(bool(!(options & Unsharable)));
+         header->size = 0;
+diff --git a/qtbase/src/corelib/tools/qvector.h b/qtbase/src/corelib/tools/qvector.h
+index 94f3008..b8ce47a 100644
+--- a/qtbase/src/corelib/tools/qvector.h
++++ b/qtbase/src/corelib/tools/qvector.h
+@@ -404,16 +404,19 @@ QVector<T>::QVector(int asize)
+         d = Data::sharedNull();
+     }
+ }
+-
++extern "C" void wait_for_continue();
+ template <typename T>
+ QVector<T>::QVector(int asize, const T &t)
+ {
++	//wait_for_continue();
+     if (asize) {
+         d = Data::allocate(asize);
++        //wait_for_continue();
+         d->size = asize;
+         T* i = d->end();
+-        while (i != d->begin())
++        while (i != d->begin()) {
+             new (--i) T(t);
++        }
+     } else {
+         d = Data::sharedNull();
+     }
+diff --git a/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp b/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
+index b71734b..fd452b9 100644
+--- a/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
++++ b/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
+@@ -48,7 +48,7 @@
+ QT_BEGIN_NAMESPACE
+ 
+ QT_USE_NAMESPACE
+-
++extern "C" void wait_for_continue();
+ void QDesktopWidgetPrivate::updateScreenList()
+ {
+     Q_Q(QDesktopWidget);
+@@ -68,6 +68,7 @@ void QDesktopWidgetPrivate::updateScreenList()
+         QDesktopScreenWidget *screen;
+         while (currentLength < targetLength) {
+             screen = new QDesktopScreenWidget(currentLength++);
++            //wait_for_continue();
+             screens.append(screen);
+         }
+     }
+@@ -88,6 +89,7 @@ QDesktopWidget::QDesktopWidget()
+     : QWidget(*new QDesktopWidgetPrivate, 0, Qt::Desktop)
+ {
+     Q_D(QDesktopWidget);
++    qDebug() << "QDesktopWidget(): this =" << this;
+     setObjectName(QLatin1String("desktop"));
+     d->updateScreenList();
+ }
+diff --git a/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h b/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
+index 9f00896..5582891 100644
+--- a/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
++++ b/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
+@@ -55,7 +55,7 @@
+ 
+ #include "QDesktopWidget"
+ #include "private/qwidget_p.h"
+-
++#include <QDebug>
+ QT_BEGIN_NAMESPACE
+ 
+ class QDesktopScreenWidget : public QWidget {
+@@ -63,11 +63,16 @@ class QDesktopScreenWidget : public QWidget {
+ public:
+     QDesktopScreenWidget(int screenNumber = -1)
+     {
++    	qDebug() << "QDesktopScreenWidget(): this =" << this;
+         setWindowFlags(Qt::Desktop);
+         setVisible(false);
+         QTLWExtra *topData = d_func()->topData();
+         topData->screenIndex = screenNumber;
+     }
++    ~QDesktopScreenWidget()
++    {
++    	qDebug() << "~QDesktopScreenWidget()";
++    }
+ };
+ 
+ class QDesktopWidgetPrivate : public QWidgetPrivate {
+diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+index 50b61be..c8d03d7 100644
+--- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
++++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+@@ -79,6 +79,8 @@ QWidgetWindow::QWidgetWindow(QWidget *widget)
+     : QWindow(*new QWidgetWindowPrivate(), 0)
+     , m_widget(widget)
+ {
++	qDebug() << "QWidgetWindow(): this =" << this << ", m_widget =" << m_widget;
++	//wait_for_continue();
+     updateObjectName();
+     connect(m_widget, &QObject::objectNameChanged, this, &QWidgetWindow::updateObjectName);
+ }
+@@ -227,6 +229,9 @@ bool QWidgetWindow::event(QEvent *event)
+     case QEvent::Hide:
+         return QWindow::event(event);
+ 
++    case QEvent::MetaCall:
++    	return QWindow::event(event);
++
+     default:
+         break;
+     }
+@@ -697,6 +702,8 @@ void QWidgetWindow::handleContextMenuEvent(QContextMenuEvent *e)
+ 
+ void QWidgetWindow::updateObjectName()
+ {
++	PDBG("this = %p, m_widget = %p", this, m_widget);
++	qDebug() << "QWidgetWindow::updateObjectName(): m_widget =" << m_widget;
+     QString name = m_widget->objectName();
+     if (name.isEmpty())
+         name = QString::fromUtf8(m_widget->metaObject()->className()) + QStringLiteral("Class");
+diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+index c6520a0..e95d715 100644
+--- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
++++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+@@ -44,7 +44,7 @@
+ #include <private/qmainwindowlayout_p.h>
+ 
+ #include "qwidgetanimator_p.h"
+-
++#include <QDebug>
+ QT_BEGIN_NAMESPACE
+ 
+ QWidgetAnimator::QWidgetAnimator(QMainWindowLayout *layout) : m_mainWindowLayout(layout)
+@@ -74,7 +74,9 @@ void QWidgetAnimator::abort(QWidget *w)
+ void QWidgetAnimator::animationFinished()
+ {
+     QPropertyAnimation *anim = qobject_cast<QPropertyAnimation*>(sender());
+-    abort(static_cast<QWidget*>(anim->targetObject()));
++    qDebug() << "abort(): this =" << this << ", sender() =" << sender() << ", anim =" << anim;
++    if (anim)
++    	abort(static_cast<QWidget*>(anim->targetObject()));
+ }
+ #endif //QT_NO_ANIMATION
+ 
+@@ -92,7 +94,7 @@ void QWidgetAnimator::animate(QWidget *widget, const QRect &_final_geometry, boo
+ 
+ #ifndef QT_NO_ANIMATION
+     AnimationMap::const_iterator it = m_animation_map.constFind(widget);
+-    if (it != m_animation_map.constEnd() && (*it)->endValue().toRect() == final_geometry)
++    if (it != m_animation_map.constEnd() && (*it) && (*it)->endValue().toRect() == final_geometry)
+         return;
+ 
+     QPropertyAnimation *anim = new QPropertyAnimation(widget, "geometry", widget);
+@@ -100,6 +102,7 @@ void QWidgetAnimator::animate(QWidget *widget, const QRect &_final_geometry, boo
+     anim->setEasingCurve(QEasingCurve::InOutQuad);
+     anim->setEndValue(final_geometry);
+     m_animation_map[widget] = anim;
++    qDebug() << "animate(): this =" << this << ", anim =" << anim;
+     connect(anim, SIGNAL(finished()), SLOT(animationFinished()));
+     anim->start(QPropertyAnimation::DeleteWhenStopped);
+ #else

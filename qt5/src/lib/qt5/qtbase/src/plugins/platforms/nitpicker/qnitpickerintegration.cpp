@@ -53,10 +53,11 @@ bool QNitpickerIntegration::hasCapability(QPlatformIntegration::Capability cap) 
 	}
 }
 
-
+extern "C" void wait_for_continue();
 QPlatformWindow *QNitpickerIntegration::createPlatformWindow(QWindow *window) const
 {
     qDebug() << "QNitpickerIntegration::createPlatformWindow(" << window << ")";
+    //wait_for_continue();
     QRect screen_geometry = _nitpicker_screen->geometry();
     return new QNitpickerPlatformWindow(window, _entrypoint(),
                                         screen_geometry.width(),
@@ -73,6 +74,7 @@ QPlatformBackingStore *QNitpickerIntegration::createPlatformBackingStore(QWindow
 
 QAbstractEventDispatcher *QNitpickerIntegration::guiThreadEventDispatcher() const
 {
+	qDebug() << "QNitpickerIntegration::guiThreadEventDispatcher()";
 	return _event_dispatcher;
 }
 

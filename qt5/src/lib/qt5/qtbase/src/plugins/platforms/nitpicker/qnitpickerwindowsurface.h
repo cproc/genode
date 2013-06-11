@@ -21,8 +21,10 @@ class QNitpickerPlatformWindow;
 
 QT_BEGIN_NAMESPACE
 
-class QNitpickerWindowSurface : public QPlatformBackingStore
+class QNitpickerWindowSurface : public QObject, public QPlatformBackingStore
 {
+	Q_OBJECT
+
 	private:
 
 		QNitpickerPlatformWindow *_platform_window;
@@ -37,6 +39,8 @@ class QNitpickerWindowSurface : public QPlatformBackingStore
 		QPaintDevice *paintDevice();
 		void flush(QWindow *window, const QRegion &region, const QPoint &offset);
 		void resize(const QSize &size, const QRegion &staticContents);
+
+	public slots:
 
 		void framebuffer_changed();
 };

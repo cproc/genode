@@ -12,6 +12,7 @@ SRC_CC += main.cpp \
           qnitpickerintegration.cpp \
           qnitpickerwindowsurface.cpp \
           moc_qnitpickerplatformwindow.cpp \
+          moc_qnitpickerwindowsurface.cpp \
           moc_qnitpickerintegrationplugin.cpp \
           qevdevkeyboardhandler.cpp \
           moc_qunixeventdispatcher_qpa_p.cpp \

@@ -28,11 +28,10 @@
 /* Qoost includes */
 #include <qoost/qmember.h>
 
-#include "qnitpickerwindowsurface.h"
 #include "window_slave_policy.h"
 
 QT_BEGIN_NAMESPACE
-
+extern "C" void wait_for_continue();
 class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 {
 	Q_OBJECT
@@ -45,7 +44,6 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		Qt::MouseButtons         _mouse_button_state;
 		QEvdevKeyboardHandler    _keyboard_handler;
 		QByteArray               _title;
-		QNitpickerWindowSurface *_window_surface;
 		bool                     _resize_handle;
 		bool                     _decoration;
 
@@ -137,7 +135,6 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		  _window_slave(ep, _window_slave_policy, 9*1024*1024),
 		  _timer(this),
 		  _keyboard_handler("", -1, false, false, ""),
-		  _window_surface(0),
 		  _resize_handle(true),
 		  _decoration(true)
 		{
@@ -147,15 +144,28 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 			_timer->start(10);
 		}
 
-		void window_surface(QNitpickerWindowSurface *window_surface)
-		{
-			_window_surface = window_surface;
-		}
-
 	    QWindow *window() const
 	    {
 	    	//qDebug() << "QNitpickerPlatformWindow::window()";
 	    	return QPlatformWindow::window();
+	    }
+
+	    QPlatformWindow *parent() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::parent()";
+	    	return QPlatformWindow::parent();
+	    }
+
+	    QPlatformScreen *screen() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::screen()";
+	    	return QPlatformWindow::screen();
+	    }
+
+	    QSurfaceFormat format() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::format()";
+	    	return QPlatformWindow::format();
 	    }
 
 	    void setGeometry(const QRect &rect)
@@ -165,13 +175,19 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	_window_slave_policy.configure(rect.x(), rect.y(), rect.width(),
 	    	                               rect.height(), _title.constData(),
 	    	                               _resize_handle, _decoration);
-			_window_surface->framebuffer_changed();
+	    	emit framebuffer_changed();
 	    }
 
 	    QRect geometry() const
 	    {
 	    	//qDebug() << "QNitpickerPlatformWindow::geometry(): returning" << QPlatformWindow::geometry();
 	    	return QPlatformWindow::geometry();
+	    }
+
+	    QMargins frameMargins() const
+	    {
+	    	//qDebug() << "QNitpickerPlatformWindow::frameMargins()";
+	    	return QPlatformWindow::frameMargins();
 	    }
 
 	    void setVisible(bool visible)
@@ -190,13 +206,14 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    		                               _title.constData(),
 	    		                               _resize_handle, _decoration);
 	    	}
-			_window_surface->framebuffer_changed();
+
+	    	emit framebuffer_changed();
 	    }
 
 	    void setWindowFlags(Qt::WindowFlags flags)
 	    {
 	    	qDebug() << "QNitpickerPlatformWindow::setWindowFlags(" << flags << ")";
-
+//wait_for_continue();
 	    	_resize_handle = true;
 	    	_decoration = true;
 
@@ -211,6 +228,12 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
     		                               _decoration);
 
 	    	QPlatformWindow::setWindowFlags(flags);
+	    }
+
+	    void setWindowState(Qt::WindowState state)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setWindowState(" << state << ")";
+	    	QPlatformWindow::setWindowState(state);
 	    }
 
 	    WId winId() const
@@ -235,7 +258,19 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	                               g.width(), g.height(),
 	    	                               _title.constData(),
 	    	                               _resize_handle, _decoration);
-			_window_surface->framebuffer_changed();
+	    	emit framebuffer_changed();
+	    }
+
+	    void setWindowFilePath(const QString &title)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setWindowFilePath(" << title << ")";
+	    	QPlatformWindow::setWindowFilePath(title);
+	    }
+
+	    void setWindowIcon(const QIcon &icon)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setWindowIcon()";
+	    	QPlatformWindow::setWindowIcon(icon);
 	    }
 
 	    void raise()
@@ -250,10 +285,52 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	QPlatformWindow::lower();
 	    }
 
+	    bool isExposed() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::isExposed()";
+	    	return QPlatformWindow::isExposed();
+	    }
+
+	    bool isActive() const
+	    {
+	    	//qDebug() << "QNitpickerPlatformWindow::isActive()";
+	    	return QPlatformWindow::isActive();
+	    }
+
+	    bool isEmbedded(const QPlatformWindow *parentWindow) const
+	    {
+	    	//qDebug() << "QNitpickerPlatformWindow::isEmbedded()";
+	    	return QPlatformWindow::isEmbedded(parentWindow);
+	    }
+
+	    QPoint mapToGlobal(const QPoint &pos) const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::mapToGlobal(" << pos << ")";
+	    	return QPlatformWindow::mapToGlobal(pos);
+	    }
+
+	    QPoint mapFromGlobal(const QPoint &pos) const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::mapFromGlobal(" << pos << ")";
+	    	return QPlatformWindow::mapFromGlobal(pos);
+	    }
+
+	    void propagateSizeHints()
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::propagateSizeHints()";
+	    	QPlatformWindow::propagateSizeHints();
+	    }
+
 	    void setOpacity(qreal level)
 	    {
 	    	qDebug() << "QNitpickerPlatformWindow::setOpacity(" << level << ")";
 	    	QPlatformWindow::setOpacity(level);
+	    }
+
+	    void setMask(const QRegion &region)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setMask(" << region << ")";
+	    	QPlatformWindow::setMask(region);
 	    }
 
 	    void requestActivateWindow()
@@ -261,6 +338,63 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	qDebug() << "QNitpickerPlatformWindow::requestActivateWindow()";
 	    	QPlatformWindow::requestActivateWindow();
 	    }
+
+	    void handleContentOrientationChange(Qt::ScreenOrientation orientation)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::handleContentOrientationChange()";
+	    	QPlatformWindow::handleContentOrientationChange(orientation);
+	    }
+
+	    qreal devicePixelRatio() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::devicePixelRatio()";
+	    	return QPlatformWindow::devicePixelRatio();
+	    }
+
+	    bool setKeyboardGrabEnabled(bool grab)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setKeyboardGrabEnabled()";
+	    	return QPlatformWindow::setKeyboardGrabEnabled(grab);
+	    }
+
+	    bool setMouseGrabEnabled(bool grab)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setMouseGrabEnabled()";
+	    	return QPlatformWindow::setMouseGrabEnabled(grab);
+	    }
+
+	    bool setWindowModified(bool modified)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setWindowModified()";
+	    	return QPlatformWindow::setWindowModified(modified);
+	    }
+
+	    void windowEvent(QEvent *event)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::windowEvent(" << event->type() << ")";
+	    	//wait_for_continue();
+	    	QPlatformWindow::windowEvent(event);
+	    }
+
+	    bool startSystemResize(const QPoint &pos, Qt::Corner corner)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::startSystemResize()";
+	    	return QPlatformWindow::startSystemResize(pos, corner);
+	    }
+
+	    void setFrameStrutEventsEnabled(bool enabled)
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::setFrameStrutEventsEnabled()";
+	    	QPlatformWindow::setFrameStrutEventsEnabled(enabled);
+	    }
+
+	    bool frameStrutEventsEnabled() const
+	    {
+	    	qDebug() << "QNitpickerPlatformWindow::frameStrutEventsEnabled()";
+	    	return QPlatformWindow::frameStrutEventsEnabled();
+	    }
+
+	    /* functions used by the window surface */
 
 	    unsigned char *framebuffer()
 	    {
@@ -271,6 +405,10 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		{
 			_window_slave_policy.refresh(x, y, w, h);
 		}
+
+	signals:
+
+		void framebuffer_changed();
 
 	private slots:
 
@@ -286,9 +424,9 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 				geo.setWidth(new_width);
 				geo.setHeight(new_height);
 				QPlatformWindow::setGeometry(geo);
+				qDebug() << "calling QWindowSystemInterface::handleGeometryChange(" << geo << ")";
 				QWindowSystemInterface::handleGeometryChange(window(), geo);
-
-				_window_surface->framebuffer_changed();
+				emit framebuffer_changed();
 			}
 
 			/* handle input events */

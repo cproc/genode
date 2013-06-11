@@ -11,7 +11,8 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtbase/src/corelib/io/qprocess.cpp                 |   64 ++++++++++++++++++++
  qtbase/src/corelib/io/qprocess_p.h                 |   45 ++++++++++++++
  qtbase/src/corelib/io/qresource.cpp                |    2 -
- qtbase/src/corelib/kernel/qcoreapplication.cpp     |   10 +++
+ qtbase/src/corelib/kernel/qcoreapplication.cpp     |    2 -
+ .../src/corelib/kernel/qeventdispatcher_unix.cpp   |   14 ++++
  qtbase/src/corelib/kernel/qtranslator.cpp          |    2 -
  qtbase/src/corelib/plugin/qpluginloader.cpp        |   20 +++++-
  qtbase/src/corelib/plugin/qpluginloader.h          |   16 ++++-
@@ -24,7 +25,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  .../network/access/qnetworkaccessfilebackend.cpp   |    5 ++
  qtbase/src/network/kernel/qhostinfo_unix.cpp       |    7 ++
  qtbase/src/widgets/dialogs/qfiledialog.cpp         |    2 -
- 20 files changed, 261 insertions(+), 18 deletions(-)
+ 21 files changed, 267 insertions(+), 18 deletions(-)
 
 diff --git a/qtbase/include/QtCore/qconfig.h b/qtbase/include/QtCore/qconfig.h
 index aa8a3d6..1c65764 100644
@@ -268,36 +269,10 @@ index 0ce3ce3..9436542 100644
  #endif
  
 diff --git a/qtbase/src/corelib/kernel/qcoreapplication.cpp b/qtbase/src/corelib/kernel/qcoreapplication.cpp
-index ec80842..76ca3c1 100644
+index ec80842..cce28ae 100644
 --- a/qtbase/src/corelib/kernel/qcoreapplication.cpp
 +++ b/qtbase/src/corelib/kernel/qcoreapplication.cpp
-@@ -75,8 +75,12 @@
- #    if !defined(QT_NO_GLIB)
- #      include "qeventdispatcher_glib_p.h"
- #    endif
-+#  ifdef Q_OS_GENODE
-+#    include "qeventdispatcher_genode_p.h"
-+#  else
- #    include "qeventdispatcher_unix_p.h"
- #  endif
-+#  endif
- #endif
- 
- #ifdef Q_OS_WIN
-@@ -388,8 +392,12 @@ void QCoreApplicationPrivate::createEventDispatcher()
-         eventDispatcher = new QEventDispatcherGlib(q);
-     else
- #  endif
-+#  ifdef Q_OS_GENODE
-+        eventDispatcher = new QEventDispatcherGenode(q);
-+#  else
-         eventDispatcher = new QEventDispatcherUNIX(q);
- #  endif
-+#  endif
- #elif defined(Q_OS_WIN)
-     eventDispatcher = new QEventDispatcherWin32(q);
- #else
-@@ -449,7 +457,7 @@ void QCoreApplicationPrivate::initLocale()
+@@ -449,7 +449,7 @@ void QCoreApplicationPrivate::initLocale()
      if (qt_locale_initialized)
          return;
      qt_locale_initialized = true;
@@ -306,6 +281,45 @@ index ec80842..76ca3c1 100644
      setlocale(LC_ALL, "");
  #endif
  }
+diff --git a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
+index acdc763..d29b6d4 100644
+--- a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
++++ b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
+@@ -70,6 +70,11 @@
+ #  include <sys/times.h>
+ #endif
+ 
++#ifdef Q_OS_GENODE
++#include <timer_session/connection.h>
++#define perror PERR
++#endif /* Q_OS_GENODE */
++
+ QT_BEGIN_NAMESPACE
+ 
+ #if defined(Q_OS_INTEGRITY) || defined(Q_OS_VXWORKS)
+@@ -278,6 +283,9 @@ int QEventDispatcherUNIXPrivate::processThreadWakeUp(int nsel)
+         char c[16];
+         ::read(thread_pipe[0], c, sizeof(c));
+         ::ioctl(thread_pipe[0], FIOFLUSH, 0);
++#elif defined(Q_OS_GENODE)
++		char c[16];
++        ::read(thread_pipe[0], c, sizeof(c)); // FIXME: the while loop only works in non-blocking mode
+ #else
+         char c[16];
+         while (::read(thread_pipe[0], c, sizeof(c)) > 0)
+@@ -309,6 +317,12 @@ QEventDispatcherUNIX::~QEventDispatcherUNIX()
+ int QEventDispatcherUNIX::select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+                                  timeval *timeout)
+ {
++#ifdef Q_OS_GENODE
++    /* if < 50ms round up to the 50ms minimum granularity supported by
++     * the timed semaphore */
++   if (timeout && (timeout->tv_sec == 0) && (timeout->tv_usec > 0) && (timeout->tv_usec < 10000))
++     timeout->tv_usec = 10000;
++#endif /* Q_OS_GENODE */
+     return qt_safe_select(nfds, readfds, writefds, exceptfds, timeout);
+ }
+ 
 diff --git a/qtbase/src/corelib/kernel/qtranslator.cpp b/qtbase/src/corelib/kernel/qtranslator.cpp
 index 9243d09..d953b20 100644
 --- a/qtbase/src/corelib/kernel/qtranslator.cpp
