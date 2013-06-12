@@ -6,3 +6,5 @@ qt5_qpa.patch
 qt5_qarraydata.patch
 qt5_qwidgetanimator.patch
 qt5_qwidgetwindow.patch
+qt5_qwidgetanimator_debug.patch
+qt5_qwidgetwindow_debug.patch
