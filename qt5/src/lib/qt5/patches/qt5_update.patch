@@ -1,0 +1,80 @@
+qt5_update.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ configure                                  |    2 +-
+ qtbase/mkspecs/genode-g++/qmake.conf       |    1 +
+ qtbase/mkspecs/genode-g++/qplatformdefs.h  |    1 +
+ qtbase/src/corelib/global/qconfig-genode.h |    1 +
+ qtsdk.pro                                  |   18 +++++++++---------
+ 5 files changed, 13 insertions(+), 10 deletions(-)
+ create mode 120000 qtbase/mkspecs/genode-g++/qmake.conf
+ create mode 120000 qtbase/mkspecs/genode-g++/qplatformdefs.h
+ create mode 120000 qtbase/src/corelib/global/qconfig-genode.h
+
+diff --git a/configure b/configure
+index eb488b1..1345806 100755
+--- a/configure
++++ b/configure
+@@ -96,5 +96,5 @@ if ($ret != 0) {
+ 
+ chdir("$outpath");
+ 
+-$ret = system_v("$outpath/qtbase/bin/qmake", "$relpath/qtsdk.pro");
++$ret = system_v("$outpath/qtbase/bin/qmake", "-r", "$relpath/qtsdk.pro");
+ exit ($ret>>8);
+diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
+new file mode 120000
+index 0000000..d4c4a25
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qmake.conf
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qmake.conf
+\ No newline at end of file
+diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+new file mode 120000
+index 0000000..7d0c24b
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qplatformdefs.h
+\ No newline at end of file
+diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
+new file mode 120000
+index 0000000..ca3b847
+--- /dev/null
++++ b/qtbase/src/corelib/global/qconfig-genode.h
+@@ -0,0 +1 @@
++../../../../../../src/lib/qt5/qtbase/src/corelib/global/qconfig-genode.h
+\ No newline at end of file
+diff --git a/qtsdk.pro b/qtsdk.pro
+index 438f417..26cca63 100644
+--- a/qtsdk.pro
++++ b/qtsdk.pro
+@@ -52,15 +52,15 @@ addModule(qtbase)
+ addModule(qtsvg, qtbase)
+ addModule(qtxmlpatterns, qtbase)
+ addModule(qtjsbackend, qtbase)
+-addModule(qtdeclarative, qtjsbackend, qtsvg qtxmlpatterns)
+-addModule(qtmultimedia, qtbase, qtdeclarative)
++#addModule(qtdeclarative, qtjsbackend, qtsvg qtxmlpatterns)
++#addModule(qtmultimedia, qtbase, qtdeclarative)
+ addModule(qtactiveqt, qtbase)
+-addModule(qtwebkit, qtdeclarative, , WebKit.pro)
++addModule(qtwebkit, , , WebKit.pro)
+ addModule(qttools, qtbase, qtdeclarative qtactiveqt qtwebkit)
+-addModule(qtwebkit-examples-and-demos, qtwebkit qttools)
+-addModule(qtimageformats, qtbase)
+-addModule(qtgraphicaleffects, qtdeclarative)
++#addModule(qtwebkit-examples-and-demos, qtwebkit qttools)
++#addModule(qtimageformats, qtbase)
++#addModule(qtgraphicaleffects, qtdeclarative)
+ addModule(qtscript, qtbase)
+-addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit qttools)
+-addModule(qttranslations, qttools)
+-addModule(qtdoc, qtdeclarative)
++#addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit qttools)
++#addModule(qttranslations, qttools)
++#addModule(qtdoc, qtdeclarative)

@@ -1,0 +1,8 @@
+qt5_update.patch
+qt5_tools.patch
+qt5_include.patch
+qt5_qtbase_genode.patch
+qt5_qpa.patch
+qt5_qarraydata.patch
+qt5_qwidgetanimator.patch
+qt5_qwidgetwindow.patch
