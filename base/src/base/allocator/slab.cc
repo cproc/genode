@@ -10,7 +10,7 @@
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
  */
-
+#include <base/printf.h>
 #include <base/slab.h>
 #include <util/misc_math.h>
 
@@ -45,8 +45,14 @@ Slab_entry *Slab_block::slab_entry(int idx)
 	 * of 'num_elem' bytes. We align the first slot to a four-aligned
 	 * address.
 	 */
-	return (Slab_entry *)&_data[align_addr(_slab->num_elem(), 2)
-	                            + _slab->entry_size()*idx];
+	//PDBG("_slab->entry_size() = %zu", _slab->entry_size());
+	Slab_entry *result = (Slab_entry *)&_data[align_addr(_slab->num_elem(), 2)
+	          	                            + _slab->entry_size()*idx];
+	//PDBG("this = %p, _data = %p", this, _data);
+	//PDBG("slab entry = %p", result);
+	//return (Slab_entry *)&_data[align_addr(_slab->num_elem(), 2)
+	  //                          + _slab->entry_size()*idx];
+	return result;
 }
 
 
