@@ -1,0 +1,69 @@
+qt5_qwidgetanimator_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/corelib/animation/qabstractanimation.cpp   |    5 ++++-
+ qtbase/src/widgets/widgets/qwidgetanimator.cpp     |    4 +++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/qtbase/src/corelib/animation/qabstractanimation.cpp b/qtbase/src/corelib/animation/qabstractanimation.cpp
+index f650e58..217581d 100644
+--- a/qtbase/src/corelib/animation/qabstractanimation.cpp
++++ b/qtbase/src/corelib/animation/qabstractanimation.cpp
+@@ -978,6 +978,7 @@ void QAbstractAnimationPrivate::setState(QAbstractAnimation::State newState)
+         if (dura == -1 || loopCount < 0
+             || (oldDirection == QAbstractAnimation::Forward && (oldCurrentTime * (oldCurrentLoop + 1)) == (dura * loopCount))
+             || (oldDirection == QAbstractAnimation::Backward && oldCurrentTime == 0)) {
++        	qDebug() << "finished(): this =" << this;
+                 emit q->finished();
+         }
+         break;
+@@ -1006,7 +1007,7 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+     // Allow auto-add on reparent
+    setParent(parent);
+ }
+-
++extern "C" void wait_for_continue();
+ /*!
+     Stops the animation if it's running, then destroys the
+     QAbstractAnimation. If the animation is part of a QAnimationGroup, it is
+@@ -1014,6 +1015,8 @@ QAbstractAnimation::QAbstractAnimation(QAbstractAnimationPrivate &dd, QObject *p
+ */
+ QAbstractAnimation::~QAbstractAnimation()
+ {
++	qDebug() << "~QAbstractAnimation(): this =" << this;
++	//wait_for_continue();
+     Q_D(QAbstractAnimation);
+     //we can't call stop here. Otherwise we get pure virtual calls
+     if (d->state != Stopped) {
+diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+index 02bf659..a969df1 100644
+--- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
++++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
+@@ -44,7 +44,7 @@
+ #include <private/qmainwindowlayout_p.h>
+ 
+ #include "qwidgetanimator_p.h"
+-
++#include <QDebug>
+ QT_BEGIN_NAMESPACE
+ 
+ QWidgetAnimator::QWidgetAnimator(QMainWindowLayout *layout) : m_mainWindowLayout(layout)
+@@ -74,6 +74,7 @@ void QWidgetAnimator::abort(QWidget *w)
+ void QWidgetAnimator::animationFinished()
+ {
+     QPropertyAnimation *anim = qobject_cast<QPropertyAnimation*>(sender());
++    qDebug() << "QWidgetAnimator::animationFinished(): this =" << this << ", sender() =" << sender() << ", anim =" << anim;
+     if (anim)
+     	abort(static_cast<QWidget*>(anim->targetObject()));
+ }
+@@ -101,6 +102,7 @@ void QWidgetAnimator::animate(QWidget *widget, const QRect &_final_geometry, boo
+     anim->setEasingCurve(QEasingCurve::InOutQuad);
+     anim->setEndValue(final_geometry);
+     m_animation_map[widget] = anim;
++    qDebug() << "animate(): this =" << this << ", anim =" << anim;
+     connect(anim, SIGNAL(finished()), SLOT(animationFinished()));
+     anim->start(QPropertyAnimation::DeleteWhenStopped);
+ #else
