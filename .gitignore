@@ -30,6 +30,7 @@
 /libports/include/freetype
 /libports/include/ft2build.h
 /libports/include/iconv/
+/libports/include/icu/
 /libports/include/jbig2dec
 /libports/include/libc-amd64/
 /libports/include/libc-arm/
@@ -104,6 +105,7 @@
 /libports/include/stdcxx-genode/bits/nested_exception.h
 /libports/include/stdcxx-genode/exception
 /libports/include/stdcxx-genode/new
+/libports/include/stdcxx-genode/typeinfo
 /libports/src/lib/gmp/mpn/asm-defs.m4
 /libports/src/lib/gmp/mpn/arm/hamdist.c
 /libports/src/lib/gmp/mpn/arm/popcount.c
