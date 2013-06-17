@@ -1,0 +1,54 @@
+/*
+ * Copyright (C) 2010 Apple Inc. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1.  Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ * 2.  Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "config.h"
+
+#include "WebNotificationManagerProxy.h"
+
+#include "ArgumentCoders.h"
+#include "HandleMessage.h"
+#include "MessageDecoder.h"
+#include "WebNotificationManagerProxyMessages.h"
+#include <wtf/Vector.h>
+
+namespace WebKit {
+
+void WebNotificationManagerProxy::didReceiveWebNotificationManagerProxyMessage(CoreIPC::Connection*, CoreIPC::MessageID, CoreIPC::MessageDecoder& decoder)
+{
+    if (decoder.messageName() == Messages::WebNotificationManagerProxy::Cancel::name()) {
+        CoreIPC::handleMessage<Messages::WebNotificationManagerProxy::Cancel>(decoder, this, &WebNotificationManagerProxy::cancel);
+        return;
+    }
+    if (decoder.messageName() == Messages::WebNotificationManagerProxy::DidDestroyNotification::name()) {
+        CoreIPC::handleMessage<Messages::WebNotificationManagerProxy::DidDestroyNotification>(decoder, this, &WebNotificationManagerProxy::didDestroyNotification);
+        return;
+    }
+    if (decoder.messageName() == Messages::WebNotificationManagerProxy::ClearNotifications::name()) {
+        CoreIPC::handleMessage<Messages::WebNotificationManagerProxy::ClearNotifications>(decoder, this, &WebNotificationManagerProxy::clearNotifications);
+        return;
+    }
+    ASSERT_NOT_REACHED();
+}
+
+} // namespace WebKit

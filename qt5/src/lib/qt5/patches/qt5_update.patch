@@ -1,0 +1,70 @@
+qt5_update.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ configure                                          |    2 +-
+ qtbase/mkspecs/genode-g++/qmake.conf               |    1 +
+ qtbase/mkspecs/genode-g++/qplatformdefs.h          |    1 +
+ qtbase/src/corelib/global/qconfig-genode.h         |    1 +
+ qtwebkit/Tools/qmake/mkspecs/features/features.prf |    8 ++++----
+ 5 files changed, 8 insertions(+), 5 deletions(-)
+ create mode 120000 qtbase/mkspecs/genode-g++/qmake.conf
+ create mode 120000 qtbase/mkspecs/genode-g++/qplatformdefs.h
+ create mode 120000 qtbase/src/corelib/global/qconfig-genode.h
+
+diff --git a/configure b/configure
+index eb488b1..1345806 100755
+--- a/configure
++++ b/configure
+@@ -96,5 +96,5 @@ if ($ret != 0) {
+ 
+ chdir("$outpath");
+ 
+-$ret = system_v("$outpath/qtbase/bin/qmake", "$relpath/qtsdk.pro");
++$ret = system_v("$outpath/qtbase/bin/qmake", "-r", "$relpath/qtsdk.pro");
+ exit ($ret>>8);
+diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
+new file mode 120000
+index 0000000..d4c4a25
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qmake.conf
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qmake.conf
+\ No newline at end of file
+diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+new file mode 120000
+index 0000000..7d0c24b
+--- /dev/null
++++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
+@@ -0,0 +1 @@
++../../../../../src/lib/qt5/qtbase/mkspecs/genode-g++/qplatformdefs.h
+\ No newline at end of file
+diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
+new file mode 120000
+index 0000000..ca3b847
+--- /dev/null
++++ b/qtbase/src/corelib/global/qconfig-genode.h
+@@ -0,0 +1 @@
++../../../../../../src/lib/qt5/qtbase/src/corelib/global/qconfig-genode.h
+\ No newline at end of file
+diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
+index 6385887..6a85be7 100644
+--- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
++++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
+@@ -81,10 +81,10 @@ defineTest(detectFeatures) {
+ 
+     # Enable the USE(3D_GRAPHICS) flag when QtOpenGL is enabled.
+     # Disable on Windows CE for now, as ANGLE won't compile.
+-    !wince*:contains(QT_CONFIG, opengl) {
+-        # On Windows we require GLES2/EGL through ANGLE.
+-        !win32|contains(QT_CONFIG, opengles2): WEBKIT_CONFIG += use_3d_graphics
+-    }
++    #!wince*:contains(QT_CONFIG, opengl) {
++    #    # On Windows we require GLES2/EGL through ANGLE.
++    #    !win32|contains(QT_CONFIG, opengles2): WEBKIT_CONFIG += use_3d_graphics
++    #}
+ 
+     # Temporarily disable FTPDIR on Windows CE (missing functions from time.h)
+     wince* {
