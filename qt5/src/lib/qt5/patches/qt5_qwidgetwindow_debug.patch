@@ -1,0 +1,114 @@
+qt5_qwidgetwindow_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/corelib/kernel/qobject.cpp            |    3 ++-
+ qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp |    4 +++-
+ qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h |    7 ++++++-
+ qtbase/src/widgets/kernel/qwidgetwindow.cpp      |    4 ++++
+ 4 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/qtbase/src/corelib/kernel/qobject.cpp b/qtbase/src/corelib/kernel/qobject.cpp
+index a822429..f1ff4a3 100644
+--- a/qtbase/src/corelib/kernel/qobject.cpp
++++ b/qtbase/src/corelib/kernel/qobject.cpp
+@@ -433,7 +433,7 @@ QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative, QOb
+       nargs_(nargs), types_(types), args_(args), semaphore_(semaphore),
+       callFunction_(callFunction), method_offset_(method_offset), method_relative_(method_relative)
+ { }
+-
++extern "C" void wait_for_continue();
+ /*!
+     \internal
+  */
+@@ -443,6 +443,7 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO, const QObject
+       nargs_(nargs), types_(types), args_(args), semaphore_(semaphore),
+       callFunction_(0), method_offset_(0), method_relative_(ushort(-1))
+ {
++	//qDebug() << "QMetaCallEvent2"; wait_for_continue();
+     if (slotObj_)
+         slotObj_->ref();
+ }
+diff --git a/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp b/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
+index b71734b..fd452b9 100644
+--- a/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
++++ b/qtbase/src/widgets/kernel/qdesktopwidget_qpa.cpp
+@@ -48,7 +48,7 @@
+ QT_BEGIN_NAMESPACE
+ 
+ QT_USE_NAMESPACE
+-
++extern "C" void wait_for_continue();
+ void QDesktopWidgetPrivate::updateScreenList()
+ {
+     Q_Q(QDesktopWidget);
+@@ -68,6 +68,7 @@ void QDesktopWidgetPrivate::updateScreenList()
+         QDesktopScreenWidget *screen;
+         while (currentLength < targetLength) {
+             screen = new QDesktopScreenWidget(currentLength++);
++            //wait_for_continue();
+             screens.append(screen);
+         }
+     }
+@@ -88,6 +89,7 @@ QDesktopWidget::QDesktopWidget()
+     : QWidget(*new QDesktopWidgetPrivate, 0, Qt::Desktop)
+ {
+     Q_D(QDesktopWidget);
++    qDebug() << "QDesktopWidget(): this =" << this;
+     setObjectName(QLatin1String("desktop"));
+     d->updateScreenList();
+ }
+diff --git a/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h b/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
+index 9f00896..5582891 100644
+--- a/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
++++ b/qtbase/src/widgets/kernel/qdesktopwidget_qpa_p.h
+@@ -55,7 +55,7 @@
+ 
+ #include "QDesktopWidget"
+ #include "private/qwidget_p.h"
+-
++#include <QDebug>
+ QT_BEGIN_NAMESPACE
+ 
+ class QDesktopScreenWidget : public QWidget {
+@@ -63,11 +63,16 @@ class QDesktopScreenWidget : public QWidget {
+ public:
+     QDesktopScreenWidget(int screenNumber = -1)
+     {
++    	qDebug() << "QDesktopScreenWidget(): this =" << this;
+         setWindowFlags(Qt::Desktop);
+         setVisible(false);
+         QTLWExtra *topData = d_func()->topData();
+         topData->screenIndex = screenNumber;
+     }
++    ~QDesktopScreenWidget()
++    {
++    	qDebug() << "~QDesktopScreenWidget()";
++    }
+ };
+ 
+ class QDesktopWidgetPrivate : public QWidgetPrivate {
+diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+index 1fe8896..c8d03d7 100644
+--- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
++++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+@@ -79,6 +79,8 @@ QWidgetWindow::QWidgetWindow(QWidget *widget)
+     : QWindow(*new QWidgetWindowPrivate(), 0)
+     , m_widget(widget)
+ {
++	qDebug() << "QWidgetWindow(): this =" << this << ", m_widget =" << m_widget;
++	//wait_for_continue();
+     updateObjectName();
+     connect(m_widget, &QObject::objectNameChanged, this, &QWidgetWindow::updateObjectName);
+ }
+@@ -700,6 +702,8 @@ void QWidgetWindow::handleContextMenuEvent(QContextMenuEvent *e)
+ 
+ void QWidgetWindow::updateObjectName()
+ {
++	PDBG("this = %p, m_widget = %p", this, m_widget);
++	qDebug() << "QWidgetWindow::updateObjectName(): m_widget =" << m_widget;
+     QString name = m_widget->objectName();
+     if (name.isEmpty())
+         name = QString::fromUtf8(m_widget->metaObject()->className()) + QStringLiteral("Class");
