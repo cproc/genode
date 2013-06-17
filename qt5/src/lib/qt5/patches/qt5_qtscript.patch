@@ -1,0 +1,557 @@
+qt5_qtscript.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../5.0.2/QtScript/private/qscriptable_p.h         |    1 +
+ .../QtScript/private/qscriptactivationobject_p.h   |    1 +
+ .../QtScript/5.0.2/QtScript/private/qscriptast_p.h |    1 +
+ .../5.0.2/QtScript/private/qscriptastfwd_p.h       |    1 +
+ .../5.0.2/QtScript/private/qscriptastvisitor_p.h   |    1 +
+ .../5.0.2/QtScript/private/qscriptclassobject_p.h  |    1 +
+ .../5.0.2/QtScript/private/qscriptcontext_p.h      |    1 +
+ .../QtScript/private/qscriptdeclarativeclass_p.h   |    1 +
+ .../QtScript/private/qscriptdeclarativeobject_p.h  |    1 +
+ .../5.0.2/QtScript/private/qscriptengine_p.h       |    1 +
+ .../5.0.2/QtScript/private/qscriptengineagent_p.h  |    1 +
+ .../5.0.2/QtScript/private/qscriptfunction_p.h     |    1 +
+ .../5.0.2/QtScript/private/qscriptglobalobject_p.h |    1 +
+ .../5.0.2/QtScript/private/qscriptgrammar_p.h      |    1 +
+ .../5.0.2/QtScript/private/qscriptlexer_p.h        |    1 +
+ .../5.0.2/QtScript/private/qscriptobject_p.h       |    1 +
+ .../5.0.2/QtScript/private/qscriptparser_p.h       |    1 +
+ .../5.0.2/QtScript/private/qscriptprogram_p.h      |    1 +
+ .../5.0.2/QtScript/private/qscriptqobject_p.h      |    1 +
+ .../QtScript/private/qscriptstaticscopeobject_p.h  |    1 +
+ .../5.0.2/QtScript/private/qscriptstring_p.h       |    1 +
+ .../QtScript/private/qscriptsyntaxchecker_p.h      |    1 +
+ .../5.0.2/QtScript/private/qscriptvalue_p.h        |    1 +
+ .../5.0.2/QtScript/private/qscriptvariant_p.h      |    1 +
+ qtscript/include/QtScript/QScriptClass             |    1 +
+ .../include/QtScript/QScriptClassPropertyIterator  |    1 +
+ qtscript/include/QtScript/QScriptContext           |    1 +
+ qtscript/include/QtScript/QScriptContextInfo       |    1 +
+ qtscript/include/QtScript/QScriptContextInfoList   |    1 +
+ qtscript/include/QtScript/QScriptEngine            |    1 +
+ qtscript/include/QtScript/QScriptEngineAgent       |    1 +
+ .../include/QtScript/QScriptExtensionInterface     |    1 +
+ qtscript/include/QtScript/QScriptExtensionPlugin   |    1 +
+ qtscript/include/QtScript/QScriptProgram           |    1 +
+ qtscript/include/QtScript/QScriptString            |    1 +
+ qtscript/include/QtScript/QScriptSyntaxCheckResult |    1 +
+ qtscript/include/QtScript/QScriptValue             |    1 +
+ qtscript/include/QtScript/QScriptValueIterator     |    1 +
+ qtscript/include/QtScript/QScriptValueList         |    1 +
+ qtscript/include/QtScript/QScriptable              |    1 +
+ qtscript/include/QtScript/QtScript                 |   20 ++++++++++++++++++++
+ qtscript/include/QtScript/QtScriptVersion          |    1 +
+ qtscript/include/QtScript/headers.pri              |    4 ++++
+ qtscript/include/QtScript/qscriptable.h            |    1 +
+ qtscript/include/QtScript/qscriptclass.h           |    1 +
+ .../QtScript/qscriptclasspropertyiterator.h        |    1 +
+ qtscript/include/QtScript/qscriptcontext.h         |    1 +
+ qtscript/include/QtScript/qscriptcontextinfo.h     |    1 +
+ qtscript/include/QtScript/qscriptengine.h          |    1 +
+ qtscript/include/QtScript/qscriptengineagent.h     |    1 +
+ .../include/QtScript/qscriptextensioninterface.h   |    1 +
+ qtscript/include/QtScript/qscriptextensionplugin.h |    1 +
+ qtscript/include/QtScript/qscriptprogram.h         |    1 +
+ qtscript/include/QtScript/qscriptstring.h          |    1 +
+ qtscript/include/QtScript/qscriptvalue.h           |    1 +
+ qtscript/include/QtScript/qscriptvalueiterator.h   |    1 +
+ qtscript/include/QtScript/qtscriptglobal.h         |    1 +
+ qtscript/include/QtScript/qtscriptversion.h        |    6 ++++++
+ 58 files changed, 85 insertions(+)
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptable_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptactivationobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptast_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastfwd_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastvisitor_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptclassobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptcontext_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeclass_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengine_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengineagent_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptfunction_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptglobalobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptgrammar_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptlexer_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptparser_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptprogram_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptqobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstaticscopeobject_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstring_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptsyntaxchecker_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvalue_p.h
+ create mode 100644 qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvariant_p.h
+ create mode 100644 qtscript/include/QtScript/QScriptClass
+ create mode 100644 qtscript/include/QtScript/QScriptClassPropertyIterator
+ create mode 100644 qtscript/include/QtScript/QScriptContext
+ create mode 100644 qtscript/include/QtScript/QScriptContextInfo
+ create mode 100644 qtscript/include/QtScript/QScriptContextInfoList
+ create mode 100644 qtscript/include/QtScript/QScriptEngine
+ create mode 100644 qtscript/include/QtScript/QScriptEngineAgent
+ create mode 100644 qtscript/include/QtScript/QScriptExtensionInterface
+ create mode 100644 qtscript/include/QtScript/QScriptExtensionPlugin
+ create mode 100644 qtscript/include/QtScript/QScriptProgram
+ create mode 100644 qtscript/include/QtScript/QScriptString
+ create mode 100644 qtscript/include/QtScript/QScriptSyntaxCheckResult
+ create mode 100644 qtscript/include/QtScript/QScriptValue
+ create mode 100644 qtscript/include/QtScript/QScriptValueIterator
+ create mode 100644 qtscript/include/QtScript/QScriptValueList
+ create mode 100644 qtscript/include/QtScript/QScriptable
+ create mode 100644 qtscript/include/QtScript/QtScript
+ create mode 100644 qtscript/include/QtScript/QtScriptVersion
+ create mode 100644 qtscript/include/QtScript/headers.pri
+ create mode 100644 qtscript/include/QtScript/qscriptable.h
+ create mode 100644 qtscript/include/QtScript/qscriptclass.h
+ create mode 100644 qtscript/include/QtScript/qscriptclasspropertyiterator.h
+ create mode 100644 qtscript/include/QtScript/qscriptcontext.h
+ create mode 100644 qtscript/include/QtScript/qscriptcontextinfo.h
+ create mode 100644 qtscript/include/QtScript/qscriptengine.h
+ create mode 100644 qtscript/include/QtScript/qscriptengineagent.h
+ create mode 100644 qtscript/include/QtScript/qscriptextensioninterface.h
+ create mode 100644 qtscript/include/QtScript/qscriptextensionplugin.h
+ create mode 100644 qtscript/include/QtScript/qscriptprogram.h
+ create mode 100644 qtscript/include/QtScript/qscriptstring.h
+ create mode 100644 qtscript/include/QtScript/qscriptvalue.h
+ create mode 100644 qtscript/include/QtScript/qscriptvalueiterator.h
+ create mode 100644 qtscript/include/QtScript/qtscriptglobal.h
+ create mode 100644 qtscript/include/QtScript/qtscriptversion.h
+
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptable_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptable_p.h
+new file mode 100644
+index 0000000..7e79cff
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptable_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptable_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptactivationobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptactivationobject_p.h
+new file mode 100644
+index 0000000..08d896f
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptactivationobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptactivationobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptast_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptast_p.h
+new file mode 100644
+index 0000000..68a5549
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptast_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptast_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastfwd_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastfwd_p.h
+new file mode 100644
+index 0000000..4f6d66e
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastfwd_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptastfwd_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastvisitor_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastvisitor_p.h
+new file mode 100644
+index 0000000..520d657
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptastvisitor_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptastvisitor_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptclassobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptclassobject_p.h
+new file mode 100644
+index 0000000..02cba8e
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptclassobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptclassobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptcontext_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptcontext_p.h
+new file mode 100644
+index 0000000..d554877
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptcontext_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptcontext_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeclass_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeclass_p.h
+new file mode 100644
+index 0000000..88db9c7
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeclass_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptdeclarativeclass_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeobject_p.h
+new file mode 100644
+index 0000000..43281eb
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptdeclarativeobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptdeclarativeobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengine_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengine_p.h
+new file mode 100644
+index 0000000..5c047ec
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengine_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptengine_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengineagent_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengineagent_p.h
+new file mode 100644
+index 0000000..933b17d
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptengineagent_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptengineagent_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptfunction_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptfunction_p.h
+new file mode 100644
+index 0000000..7274a50
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptfunction_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptfunction_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptglobalobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptglobalobject_p.h
+new file mode 100644
+index 0000000..bd32315
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptglobalobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptglobalobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptgrammar_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptgrammar_p.h
+new file mode 100644
+index 0000000..b72ad97
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptgrammar_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptgrammar_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptlexer_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptlexer_p.h
+new file mode 100644
+index 0000000..30e5673
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptlexer_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptlexer_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptobject_p.h
+new file mode 100644
+index 0000000..b129c34
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptparser_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptparser_p.h
+new file mode 100644
+index 0000000..1a4b19a
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptparser_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptparser_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptprogram_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptprogram_p.h
+new file mode 100644
+index 0000000..f1cfd8b
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptprogram_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptprogram_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptqobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptqobject_p.h
+new file mode 100644
+index 0000000..5003184
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptqobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptqobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstaticscopeobject_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstaticscopeobject_p.h
+new file mode 100644
+index 0000000..46a710d
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstaticscopeobject_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptstaticscopeobject_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstring_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstring_p.h
+new file mode 100644
+index 0000000..f6dabc2
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptstring_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptstring_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptsyntaxchecker_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptsyntaxchecker_p.h
+new file mode 100644
+index 0000000..7783da3
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptsyntaxchecker_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/parser/qscriptsyntaxchecker_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvalue_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvalue_p.h
+new file mode 100644
+index 0000000..3abc3b2
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvalue_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptvalue_p.h"
+diff --git a/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvariant_p.h b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvariant_p.h
+new file mode 100644
+index 0000000..01f88c6
+--- /dev/null
++++ b/qtscript/include/QtScript/5.0.2/QtScript/private/qscriptvariant_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/bridge/qscriptvariant_p.h"
+diff --git a/qtscript/include/QtScript/QScriptClass b/qtscript/include/QtScript/QScriptClass
+new file mode 100644
+index 0000000..3477dd2
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptClass
+@@ -0,0 +1 @@
++#include "qscriptclass.h"
+diff --git a/qtscript/include/QtScript/QScriptClassPropertyIterator b/qtscript/include/QtScript/QScriptClassPropertyIterator
+new file mode 100644
+index 0000000..9a760c3
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptClassPropertyIterator
+@@ -0,0 +1 @@
++#include "qscriptclasspropertyiterator.h"
+diff --git a/qtscript/include/QtScript/QScriptContext b/qtscript/include/QtScript/QScriptContext
+new file mode 100644
+index 0000000..944e9da
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptContext
+@@ -0,0 +1 @@
++#include "qscriptcontext.h"
+diff --git a/qtscript/include/QtScript/QScriptContextInfo b/qtscript/include/QtScript/QScriptContextInfo
+new file mode 100644
+index 0000000..e6d9f21
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptContextInfo
+@@ -0,0 +1 @@
++#include "qscriptcontextinfo.h"
+diff --git a/qtscript/include/QtScript/QScriptContextInfoList b/qtscript/include/QtScript/QScriptContextInfoList
+new file mode 100644
+index 0000000..e6d9f21
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptContextInfoList
+@@ -0,0 +1 @@
++#include "qscriptcontextinfo.h"
+diff --git a/qtscript/include/QtScript/QScriptEngine b/qtscript/include/QtScript/QScriptEngine
+new file mode 100644
+index 0000000..5e92c51
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptEngine
+@@ -0,0 +1 @@
++#include "qscriptengine.h"
+diff --git a/qtscript/include/QtScript/QScriptEngineAgent b/qtscript/include/QtScript/QScriptEngineAgent
+new file mode 100644
+index 0000000..3be85c9
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptEngineAgent
+@@ -0,0 +1 @@
++#include "qscriptengineagent.h"
+diff --git a/qtscript/include/QtScript/QScriptExtensionInterface b/qtscript/include/QtScript/QScriptExtensionInterface
+new file mode 100644
+index 0000000..8e3257b
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptExtensionInterface
+@@ -0,0 +1 @@
++#include "qscriptextensioninterface.h"
+diff --git a/qtscript/include/QtScript/QScriptExtensionPlugin b/qtscript/include/QtScript/QScriptExtensionPlugin
+new file mode 100644
+index 0000000..34b9ce9
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptExtensionPlugin
+@@ -0,0 +1 @@
++#include "qscriptextensionplugin.h"
+diff --git a/qtscript/include/QtScript/QScriptProgram b/qtscript/include/QtScript/QScriptProgram
+new file mode 100644
+index 0000000..f4d8895
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptProgram
+@@ -0,0 +1 @@
++#include "qscriptprogram.h"
+diff --git a/qtscript/include/QtScript/QScriptString b/qtscript/include/QtScript/QScriptString
+new file mode 100644
+index 0000000..129e6a8
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptString
+@@ -0,0 +1 @@
++#include "qscriptstring.h"
+diff --git a/qtscript/include/QtScript/QScriptSyntaxCheckResult b/qtscript/include/QtScript/QScriptSyntaxCheckResult
+new file mode 100644
+index 0000000..5e92c51
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptSyntaxCheckResult
+@@ -0,0 +1 @@
++#include "qscriptengine.h"
+diff --git a/qtscript/include/QtScript/QScriptValue b/qtscript/include/QtScript/QScriptValue
+new file mode 100644
+index 0000000..cc54976
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptValue
+@@ -0,0 +1 @@
++#include "qscriptvalue.h"
+diff --git a/qtscript/include/QtScript/QScriptValueIterator b/qtscript/include/QtScript/QScriptValueIterator
+new file mode 100644
+index 0000000..3a2d293
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptValueIterator
+@@ -0,0 +1 @@
++#include "qscriptvalueiterator.h"
+diff --git a/qtscript/include/QtScript/QScriptValueList b/qtscript/include/QtScript/QScriptValueList
+new file mode 100644
+index 0000000..cc54976
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptValueList
+@@ -0,0 +1 @@
++#include "qscriptvalue.h"
+diff --git a/qtscript/include/QtScript/QScriptable b/qtscript/include/QtScript/QScriptable
+new file mode 100644
+index 0000000..b03e8a5
+--- /dev/null
++++ b/qtscript/include/QtScript/QScriptable
+@@ -0,0 +1 @@
++#include "qscriptable.h"
+diff --git a/qtscript/include/QtScript/QtScript b/qtscript/include/QtScript/QtScript
+new file mode 100644
+index 0000000..0814332
+--- /dev/null
++++ b/qtscript/include/QtScript/QtScript
+@@ -0,0 +1,20 @@
++/* This file was generated by qmake with the info from <root>/src/script/script.pro. */
++#ifndef QT_SCRIPT_MODULE_H
++#define QT_SCRIPT_MODULE_H
++#include <QtCore/QtCore>
++#include "qscriptable.h"
++#include "qscriptclass.h"
++#include "qscriptclasspropertyiterator.h"
++#include "qscriptcontext.h"
++#include "qscriptcontextinfo.h"
++#include "qscriptengine.h"
++#include "qscriptengineagent.h"
++#include "qscriptextensioninterface.h"
++#include "qscriptextensionplugin.h"
++#include "qscriptprogram.h"
++#include "qscriptstring.h"
++#include "qscriptvalue.h"
++#include "qscriptvalueiterator.h"
++#include "qtscriptglobal.h"
++#include "qtscriptversion.h"
++#endif
+diff --git a/qtscript/include/QtScript/QtScriptVersion b/qtscript/include/QtScript/QtScriptVersion
+new file mode 100644
+index 0000000..eea9cee
+--- /dev/null
++++ b/qtscript/include/QtScript/QtScriptVersion
+@@ -0,0 +1 @@
++#include "qtscriptversion.h"
+diff --git a/qtscript/include/QtScript/headers.pri b/qtscript/include/QtScript/headers.pri
+new file mode 100644
+index 0000000..545fc7f
+--- /dev/null
++++ b/qtscript/include/QtScript/headers.pri
+@@ -0,0 +1,4 @@
++SYNCQT.HEADER_FILES = api/qscriptable.h api/qscriptclass.h api/qscriptclasspropertyiterator.h api/qscriptcontext.h api/qscriptcontextinfo.h api/qscriptengine.h api/qscriptengineagent.h api/qscriptextensioninterface.h api/qscriptextensionplugin.h api/qscriptprogram.h api/qscriptstring.h api/qscriptvalue.h api/qscriptvalueiterator.h api/qtscriptglobal.h ../../../../build/qtscript/include/QtScript/qtscriptversion.h 
++SYNCQT.HEADER_CLASSES = ../../../../build/qtscript/include/QtScript/QScriptable ../../../../build/qtscript/include/QtScript/QScriptClass ../../../../build/qtscript/include/QtScript/QScriptClassPropertyIterator ../../../../build/qtscript/include/QtScript/QScriptContext ../../../../build/qtscript/include/QtScript/QScriptContextInfo ../../../../build/qtscript/include/QtScript/QScriptContextInfoList ../../../../build/qtscript/include/QtScript/QScriptSyntaxCheckResult ../../../../build/qtscript/include/QtScript/QScriptEngine ../../../../build/qtscript/include/QtScript/QScriptEngineAgent ../../../../build/qtscript/include/QtScript/QScriptExtensionInterface ../../../../build/qtscript/include/QtScript/QScriptExtensionPlugin ../../../../build/qtscript/include/QtScript/QScriptProgram ../../../../build/qtscript/include/QtScript/QScriptString ../../../../build/qtscript/include/QtScript/QScriptValueList ../../../../build/qtscript/include/QtScript/QScriptValue ../../../../build/qtscript/include/QtScript/QScriptValueIterator ../../../../build/qtscript/include/QtScript/QtScriptVersion 
++SYNCQT.PRIVATE_HEADER_FILES = api/qscriptable_p.h api/qscriptcontext_p.h api/qscriptengine_p.h api/qscriptengineagent_p.h api/qscriptprogram_p.h api/qscriptstring_p.h api/qscriptvalue_p.h bridge/qscriptactivationobject_p.h bridge/qscriptclassobject_p.h bridge/qscriptdeclarativeclass_p.h bridge/qscriptdeclarativeobject_p.h bridge/qscriptfunction_p.h bridge/qscriptglobalobject_p.h bridge/qscriptobject_p.h bridge/qscriptqobject_p.h bridge/qscriptstaticscopeobject_p.h bridge/qscriptvariant_p.h parser/qscriptast_p.h parser/qscriptastfwd_p.h parser/qscriptastvisitor_p.h parser/qscriptgrammar_p.h parser/qscriptlexer_p.h parser/qscriptparser_p.h parser/qscriptsyntaxchecker_p.h 
++SYNCQT.QPA_HEADER_FILES = 
+diff --git a/qtscript/include/QtScript/qscriptable.h b/qtscript/include/QtScript/qscriptable.h
+new file mode 100644
+index 0000000..c5dd828
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptable.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptable.h"
+diff --git a/qtscript/include/QtScript/qscriptclass.h b/qtscript/include/QtScript/qscriptclass.h
+new file mode 100644
+index 0000000..6abaac9
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptclass.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptclass.h"
+diff --git a/qtscript/include/QtScript/qscriptclasspropertyiterator.h b/qtscript/include/QtScript/qscriptclasspropertyiterator.h
+new file mode 100644
+index 0000000..0b7a0fe
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptclasspropertyiterator.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptclasspropertyiterator.h"
+diff --git a/qtscript/include/QtScript/qscriptcontext.h b/qtscript/include/QtScript/qscriptcontext.h
+new file mode 100644
+index 0000000..cc53d85
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptcontext.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptcontext.h"
+diff --git a/qtscript/include/QtScript/qscriptcontextinfo.h b/qtscript/include/QtScript/qscriptcontextinfo.h
+new file mode 100644
+index 0000000..c11c55c
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptcontextinfo.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptcontextinfo.h"
+diff --git a/qtscript/include/QtScript/qscriptengine.h b/qtscript/include/QtScript/qscriptengine.h
+new file mode 100644
+index 0000000..ae2ab3d
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptengine.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptengine.h"
+diff --git a/qtscript/include/QtScript/qscriptengineagent.h b/qtscript/include/QtScript/qscriptengineagent.h
+new file mode 100644
+index 0000000..565dbfe
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptengineagent.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptengineagent.h"
+diff --git a/qtscript/include/QtScript/qscriptextensioninterface.h b/qtscript/include/QtScript/qscriptextensioninterface.h
+new file mode 100644
+index 0000000..46611c9
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptextensioninterface.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptextensioninterface.h"
+diff --git a/qtscript/include/QtScript/qscriptextensionplugin.h b/qtscript/include/QtScript/qscriptextensionplugin.h
+new file mode 100644
+index 0000000..d837bb2
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptextensionplugin.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptextensionplugin.h"
+diff --git a/qtscript/include/QtScript/qscriptprogram.h b/qtscript/include/QtScript/qscriptprogram.h
+new file mode 100644
+index 0000000..2ae0fb2
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptprogram.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptprogram.h"
+diff --git a/qtscript/include/QtScript/qscriptstring.h b/qtscript/include/QtScript/qscriptstring.h
+new file mode 100644
+index 0000000..c05e881
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptstring.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptstring.h"
+diff --git a/qtscript/include/QtScript/qscriptvalue.h b/qtscript/include/QtScript/qscriptvalue.h
+new file mode 100644
+index 0000000..785d121
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptvalue.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptvalue.h"
+diff --git a/qtscript/include/QtScript/qscriptvalueiterator.h b/qtscript/include/QtScript/qscriptvalueiterator.h
+new file mode 100644
+index 0000000..8e4f8da
+--- /dev/null
++++ b/qtscript/include/QtScript/qscriptvalueiterator.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qscriptvalueiterator.h"
+diff --git a/qtscript/include/QtScript/qtscriptglobal.h b/qtscript/include/QtScript/qtscriptglobal.h
+new file mode 100644
+index 0000000..de002a9
+--- /dev/null
++++ b/qtscript/include/QtScript/qtscriptglobal.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtscript/src/script/api/qtscriptglobal.h"
+diff --git a/qtscript/include/QtScript/qtscriptversion.h b/qtscript/include/QtScript/qtscriptversion.h
+new file mode 100644
+index 0000000..5eb8860
+--- /dev/null
++++ b/qtscript/include/QtScript/qtscriptversion.h
+@@ -0,0 +1,6 @@
++/* This file was generated by qmake with the info from <root>/src/script/script.pro. */
++#ifndef QT_QTSCRIPT_VERSION_H
++#define QT_QTSCRIPT_VERSION_H
++#define QTSCRIPT_VERSION_STR "5.0.2"
++#define QTSCRIPT_VERSION 0x050002
++#endif // QT_QTSCRIPT_VERSION_H
