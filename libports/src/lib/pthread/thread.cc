@@ -16,6 +16,7 @@
 #include <base/printf.h>
 #include <base/sleep.h>
 #include <base/thread.h>
+#include <util/list.h>
 
 #include <errno.h>
 #include <pthread.h>
@@ -23,6 +24,8 @@
 using namespace Genode;
 
 extern "C" {
+
+	/* Thread */
 
 	enum { STACK_SIZE=64*1024 };
 
@@ -90,4 +93,242 @@ extern "C" {
 		return thread ? thread : &main_thread;
 	}
 
+
+	int pthread_attr_getstack(const pthread_attr_t *attr,
+	                          void **stackaddr,
+	                          size_t *stacksize)
+	{
+		PDBG("not implemented");
+		return -1;
+	}
+
+
+	int pthread_attr_get_np(pthread_t, pthread_attr_t *)
+	{
+		PDBG("not implemented");
+		return -1;
+	}
+
+
+	int pthread_equal(pthread_t t1, pthread_t t2)
+	{
+		return (t1 == t2);
+	}
+
+
+	/* Mutex */
+
+
+	struct pthread_mutex_attr
+	{
+		int type;
+
+		pthread_mutex_attr() : type(PTHREAD_MUTEX_NORMAL) { }
+	};
+
+
+	struct pthread_mutex : Lock
+	{
+		pthread_mutex_attr mutexattr;
+
+		pthread_mutex(const pthread_mutexattr_t *__restrict attr)
+		{
+			if (attr && *attr)
+				mutexattr = **attr;
+		}
+	};
+
+
+	int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+	{
+		if (!attr) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		*attr = new (env()->heap()) pthread_mutex_attr;
+
+		return 0;
+	}
+
+
+	int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+	{
+		if (!attr || !*attr) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		destroy(env()->heap(), *attr);
+		*attr = 0;
+
+		return 0;
+	}
+
+
+	int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+	{
+		if (!attr || !*attr) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		(*attr)->type = type;
+
+		return 0;
+	}
+
+
+	int pthread_mutex_init(pthread_mutex_t *__restrict mutex,
+	                       const pthread_mutexattr_t *__restrict attr)
+	{
+		if (!mutex) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		*mutex = new (env()->heap()) pthread_mutex(attr);
+
+		return 0;
+	}
+
+
+	int pthread_mutex_destroy(pthread_mutex_t *mutex)
+	{
+		if ((!mutex) || (*mutex == PTHREAD_MUTEX_INITIALIZER)) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		destroy(env()->heap(), *mutex);
+		*mutex = PTHREAD_MUTEX_INITIALIZER;
+
+		return 0;
+	}
+
+
+	int pthread_mutex_lock(pthread_mutex_t *mutex)
+	{
+		if (!mutex) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
+			pthread_mutex_init(mutex, 0);
+
+		(*mutex)->lock();
+
+		return 0;
+	}
+
+
+	int pthread_mutex_unlock(pthread_mutex_t *mutex)
+	{
+		if (!mutex) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
+			pthread_mutex_init(mutex, 0);
+
+		(*mutex)->unlock();
+
+		return 0;
+	}
+
+
+	/* Condition variable */
+
+
+	struct pthread_cond { };
+
+
+	int pthread_cond_init(pthread_cond_t *__restrict cond,
+	                      const pthread_condattr_t *__restrict attr)
+	{
+		if (!cond) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		*cond = new (env()->heap()) pthread_cond;
+
+		return 0;
+	}
+
+
+	/* TLS */
+
+
+	struct Key_element : List<Key_element>::Element
+	{
+		const void *thread_base;
+		const void *value;
+
+		Key_element(const void *thread_base, const void *value)
+		: thread_base(thread_base),
+		  value(value) { }
+	};
+
+
+	List<Key_element> key_list[PTHREAD_KEYS_MAX];
+
+
+	int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
+	{
+		static Lock key_list_lock;
+		Lock_guard<Lock> key_list_lock_guard(key_list_lock);
+
+		if (!key) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		for (int k = 0; k < PTHREAD_KEYS_MAX; k++) {
+			/*
+			 * Find an empty key slot and insert an element for the current
+			 * thread to mark the key slot as used.
+			 */
+			if (!key_list[k].first()) {
+				Key_element *key_element = new (env()->heap()) Key_element(Thread_base::myself(), 0);
+				key_list[k].insert(key_element);
+				*key = k;
+				return 0;
+			}
+		}
+
+		errno = EAGAIN;
+		return -1;
+	}
+
+
+	int pthread_setspecific(pthread_key_t key, const void *value)
+	{
+		void *myself = Thread_base::myself();
+		for (Key_element *key_element = key_list[key].first(); key_element;
+		     key_element = key_element->next())
+			if (key_element->thread_base == myself) {
+				key_element->value = value;
+				return 0;
+			}
+
+		/* key element does not exist yet - create a new one */
+		Key_element *key_element = new (env()->heap()) Key_element(Thread_base::myself(), value);
+		key_list[key].insert(key_element);
+		return 0;
+	}
+
+
+	void *pthread_getspecific(pthread_key_t key)
+	{
+		void *myself = Thread_base::myself();
+		for (Key_element *key_element = key_list[key].first(); key_element;
+		     key_element = key_element->next())
+			if (key_element->thread_base == myself)
+				return (void*)(key_element->value);
+
+		return 0;
+	}
 }
