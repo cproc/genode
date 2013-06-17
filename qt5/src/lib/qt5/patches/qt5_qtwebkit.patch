@@ -1,0 +1,1081 @@
+qt5_qtwebkit.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../Source/JavaScriptCore/dfg/DFGOperations.cpp    |    1 +
+ qtwebkit/Source/WTF/wtf/Assertions.h               |   11 ++++++++++
+ qtwebkit/Source/WTF/wtf/ExportMacros.h             |    4 ++--
+ qtwebkit/Source/WTF/wtf/InlineASM.h                |    5 +++--
+ qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp       |   13 ++++++++++++
+ qtwebkit/Source/WTF/wtf/Platform.h                 |   22 ++++++++++++++++++--
+ qtwebkit/Source/WTF/wtf/StackBounds.cpp            |   12 +++++++++++
+ qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp          |   21 +++++++++++++++++++
+ .../platform/graphics/qt/MediaPlayerPrivateQt.cpp  |    3 +++
+ .../5.0.2/QtWebKit/private/bytearraytestdata.h     |    1 +
+ .../5.0.2/QtWebKit/private/qhttpheader_p.h         |    1 +
+ .../5.0.2/QtWebKit/private/qquicknetworkreply_p.h  |    1 +
+ .../QtWebKit/private/qquicknetworkrequest_p.h      |    1 +
+ .../QtWebKit/private/qquickurlschemedelegate_p.h   |    1 +
+ .../5.0.2/QtWebKit/private/qquickwebpage_p.h       |    1 +
+ .../5.0.2/QtWebKit/private/qquickwebpage_p_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qquickwebview_p.h       |    1 +
+ .../5.0.2/QtWebKit/private/qquickwebview_p_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qrawwebview_p.h         |    1 +
+ .../5.0.2/QtWebKit/private/qrawwebview_p_p.h       |    1 +
+ .../5.0.2/QtWebKit/private/qtwebsecurityorigin_p.h |    1 +
+ .../5.0.2/QtWebKit/private/qwebdatabase_p.h        |    1 +
+ .../5.0.2/QtWebKit/private/qwebdownloaditem_p.h    |    1 +
+ .../5.0.2/QtWebKit/private/qwebdownloaditem_p_p.h  |    1 +
+ .../5.0.2/QtWebKit/private/qwebelement_p.h         |    1 +
+ .../5.0.2/QtWebKit/private/qwebhistory_p.h         |    1 +
+ .../QtWebKit/private/qwebiconimageprovider_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qwebkittest_p.h         |    1 +
+ .../5.0.2/QtWebKit/private/qwebloadrequest_p.h     |    1 +
+ .../QtWebKit/private/qwebnavigationhistory_p.h     |    1 +
+ .../QtWebKit/private/qwebnavigationhistory_p_p.h   |    1 +
+ .../QtWebKit/private/qwebnavigationrequest_p.h     |    1 +
+ .../QtWebKit/private/qwebpermissionrequest_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qwebplugindatabase_p.h  |    1 +
+ .../5.0.2/QtWebKit/private/qwebpreferences_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qwebpreferences_p_p.h   |    1 +
+ .../5.0.2/QtWebKit/private/qwebscriptworld.h       |    1 +
+ .../5.0.2/QtWebKit/private/qwebscriptworld_p.h     |    1 +
+ .../5.0.2/QtWebKit/private/qwebsecurityorigin_p.h  |    1 +
+ .../QtWebKit/5.0.2/QtWebKit/private/testwindow.h   |    1 +
+ .../include/QtWebKit/5.0.2/QtWebKit/private/util.h |    1 +
+ qtwebkit/include/QtWebKit/QWebDatabase             |    1 +
+ qtwebkit/include/QtWebKit/QWebElement              |    1 +
+ qtwebkit/include/QtWebKit/QWebElementCollection    |    1 +
+ .../include/QtWebKit/QWebFullScreenVideoHandler    |    1 +
+ qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer |    1 +
+ qtwebkit/include/QtWebKit/QWebHistory              |    1 +
+ qtwebkit/include/QtWebKit/QWebHistoryInterface     |    1 +
+ qtwebkit/include/QtWebKit/QWebHistoryItem          |    1 +
+ qtwebkit/include/QtWebKit/QWebKitPlatformPlugin    |    1 +
+ qtwebkit/include/QtWebKit/QWebNotificationData     |    1 +
+ .../include/QtWebKit/QWebNotificationPresenter     |    1 +
+ qtwebkit/include/QtWebKit/QWebPluginFactory        |    1 +
+ qtwebkit/include/QtWebKit/QWebSecurityOrigin       |    1 +
+ qtwebkit/include/QtWebKit/QWebSelectData           |    1 +
+ qtwebkit/include/QtWebKit/QWebSelectMethod         |    1 +
+ qtwebkit/include/QtWebKit/QWebSettings             |    1 +
+ qtwebkit/include/QtWebKit/QWebSpellChecker         |    1 +
+ qtwebkit/include/QtWebKit/QWebTouchModifier        |    1 +
+ qtwebkit/include/QtWebKit/QtWebKit                 |   17 +++++++++++++++
+ qtwebkit/include/QtWebKit/QtWebKitVersion          |    1 +
+ qtwebkit/include/QtWebKit/headers.pri              |    4 ++++
+ qtwebkit/include/QtWebKit/qtwebkitversion.h        |    6 +++++
+ qtwebkit/include/QtWebKit/qwebdatabase.h           |    1 +
+ qtwebkit/include/QtWebKit/qwebelement.h            |    1 +
+ qtwebkit/include/QtWebKit/qwebhistory.h            |    1 +
+ qtwebkit/include/QtWebKit/qwebhistoryinterface.h   |    1 +
+ qtwebkit/include/QtWebKit/qwebkitglobal.h          |    1 +
+ qtwebkit/include/QtWebKit/qwebkitplatformplugin.h  |    1 +
+ qtwebkit/include/QtWebKit/qwebpluginfactory.h      |    1 +
+ qtwebkit/include/QtWebKit/qwebsecurityorigin.h     |    1 +
+ qtwebkit/include/QtWebKit/qwebsettings.h           |    1 +
+ .../5.0.2/QtWebKitWidgets/private/qwebframe_p.h    |    1 +
+ .../QtWebKitWidgets/private/qwebinspector_p.h      |    1 +
+ .../5.0.2/QtWebKitWidgets/private/qwebpage_p.h     |    1 +
+ .../QtWebKitWidgets/private/qwebviewaccessible_p.h |    1 +
+ qtwebkit/include/QtWebKitWidgets/QGraphicsWebView  |    1 +
+ qtwebkit/include/QtWebKitWidgets/QWebFrame         |    1 +
+ qtwebkit/include/QtWebKitWidgets/QWebHitTestResult |    1 +
+ qtwebkit/include/QtWebKitWidgets/QWebInspector     |    1 +
+ qtwebkit/include/QtWebKitWidgets/QWebPage          |    1 +
+ qtwebkit/include/QtWebKitWidgets/QWebView          |    1 +
+ qtwebkit/include/QtWebKitWidgets/QtWebKitWidgets   |   16 +++++++++++++++
+ .../include/QtWebKitWidgets/QtWebKitWidgetsVersion |    1 +
+ qtwebkit/include/QtWebKitWidgets/headers.pri       |    4 ++++
+ .../include/QtWebKitWidgets/qgraphicswebview.h     |    1 +
+ .../QtWebKitWidgets/qtwebkitwidgetsversion.h       |    6 +++++
+ qtwebkit/include/QtWebKitWidgets/qwebframe.h       |    1 +
+ qtwebkit/include/QtWebKitWidgets/qwebinspector.h   |    1 +
+ qtwebkit/include/QtWebKitWidgets/qwebpage.h        |    1 +
+ qtwebkit/include/QtWebKitWidgets/qwebview.h        |    1 +
+ 91 files changed, 215 insertions(+), 6 deletions(-)
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/bytearraytestdata.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qhttpheader_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkreply_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkrequest_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickurlschemedelegate_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qtwebsecurityorigin_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdatabase_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebelement_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebhistory_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebiconimageprovider_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebkittest_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebloadrequest_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationrequest_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpermissionrequest_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebplugindatabase_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebsecurityorigin_p.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/testwindow.h
+ create mode 100644 qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/util.h
+ create mode 100644 qtwebkit/include/QtWebKit/QWebDatabase
+ create mode 100644 qtwebkit/include/QtWebKit/QWebElement
+ create mode 100644 qtwebkit/include/QtWebKit/QWebElementCollection
+ create mode 100644 qtwebkit/include/QtWebKit/QWebFullScreenVideoHandler
+ create mode 100644 qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer
+ create mode 100644 qtwebkit/include/QtWebKit/QWebHistory
+ create mode 100644 qtwebkit/include/QtWebKit/QWebHistoryInterface
+ create mode 100644 qtwebkit/include/QtWebKit/QWebHistoryItem
+ create mode 100644 qtwebkit/include/QtWebKit/QWebKitPlatformPlugin
+ create mode 100644 qtwebkit/include/QtWebKit/QWebNotificationData
+ create mode 100644 qtwebkit/include/QtWebKit/QWebNotificationPresenter
+ create mode 100644 qtwebkit/include/QtWebKit/QWebPluginFactory
+ create mode 100644 qtwebkit/include/QtWebKit/QWebSecurityOrigin
+ create mode 100644 qtwebkit/include/QtWebKit/QWebSelectData
+ create mode 100644 qtwebkit/include/QtWebKit/QWebSelectMethod
+ create mode 100644 qtwebkit/include/QtWebKit/QWebSettings
+ create mode 100644 qtwebkit/include/QtWebKit/QWebSpellChecker
+ create mode 100644 qtwebkit/include/QtWebKit/QWebTouchModifier
+ create mode 100644 qtwebkit/include/QtWebKit/QtWebKit
+ create mode 100644 qtwebkit/include/QtWebKit/QtWebKitVersion
+ create mode 100644 qtwebkit/include/QtWebKit/headers.pri
+ create mode 100644 qtwebkit/include/QtWebKit/qtwebkitversion.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebdatabase.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebelement.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebhistory.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebhistoryinterface.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebkitglobal.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebkitplatformplugin.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebpluginfactory.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebsecurityorigin.h
+ create mode 100644 qtwebkit/include/QtWebKit/qwebsettings.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebframe_p.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebinspector_p.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebpage_p.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebviewaccessible_p.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QGraphicsWebView
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QWebFrame
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QWebHitTestResult
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QWebInspector
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QWebPage
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QWebView
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QtWebKitWidgets
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsVersion
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/headers.pri
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qgraphicswebview.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qtwebkitwidgetsversion.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qwebframe.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qwebinspector.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qwebpage.h
+ create mode 100644 qtwebkit/include/QtWebKitWidgets/qwebview.h
+
+diff --git a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
+index ad595ae..a8f19a0 100644
+--- a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
++++ b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
+@@ -1566,6 +1566,7 @@ namespace JSC {
+ 
+ #if COMPILER(GCC) && CPU(X86_64)
+ asm (
++".text" "\n" \
+ ".globl " SYMBOL_STRING(getHostCallReturnValue) "\n"
+ HIDE_SYMBOL(getHostCallReturnValue) "\n"
+ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+diff --git a/qtwebkit/Source/WTF/wtf/Assertions.h b/qtwebkit/Source/WTF/wtf/Assertions.h
+index 7e079ab..cac10fc 100644
+--- a/qtwebkit/Source/WTF/wtf/Assertions.h
++++ b/qtwebkit/Source/WTF/wtf/Assertions.h
+@@ -50,6 +50,10 @@
+ #include <inttypes.h>
+ #endif
+ 
++#if OS(GENODE)
++#include <base/printf.h>
++#endif
++
+ #ifdef NDEBUG
+ /* Disable ASSERT* macros in release mode. */
+ #define ASSERTIONS_DISABLED_DEFAULT 1
+@@ -173,6 +177,13 @@ WTF_EXPORT_PRIVATE void WTFInstallReportBacktraceOnCrashHook();
+      WTFInvokeCrashHook(), \
+      (*(int *)(uintptr_t)0xbbadbeef = 0), \
+      __builtin_trap())
++#elif OS(GENODE)
++#define CRASH() ( \
++	PERR("WebKit CRASH in '%s'", WTF_PRETTY_FUNCTION), \
++	PERR("  in %s:%d", __FILE__, __LINE__), \
++    *(int *)(uintptr_t)0xbbadbeef = 0, \
++    ((void(*)())0)() /* More reliable, but doesn't say BBADBEEF */ \
++)
+ #else
+ #define CRASH() \
+     (WTFReportBacktrace(), \
+diff --git a/qtwebkit/Source/WTF/wtf/ExportMacros.h b/qtwebkit/Source/WTF/wtf/ExportMacros.h
+index ef9bd23..37cd7bd 100644
+--- a/qtwebkit/Source/WTF/wtf/ExportMacros.h
++++ b/qtwebkit/Source/WTF/wtf/ExportMacros.h
+@@ -41,7 +41,7 @@
+ #if !PLATFORM(CHROMIUM) && OS(WINDOWS)
+ #define HAVE_INTERNAL_VISIBILITY 1
+ #define WTF_INTERNAL
+-#elif defined(__GNUC__) && !defined(__CC_ARM) && !defined(__ARMCC__)
++#elif defined(__GNUC__) && !defined(__CC_ARM) && !defined(__ARMCC__) && !OS(GENODE)
+ #define HAVE_INTERNAL_VISIBILITY 1
+ #define WTF_INTERNAL __attribute__((visibility("hidden")))
+ #else
+@@ -54,7 +54,7 @@
+ #define WTF_IMPORT_DECLARATION __declspec(dllimport)
+ #define WTF_HIDDEN_DECLARATION
+ 
+-#elif defined(__GNUC__) && !defined(__CC_ARM) && !defined(__ARMCC__)
++#elif defined(__GNUC__) && !defined(__CC_ARM) && !defined(__ARMCC__) && !OS(GENODE)
+ 
+ #define WTF_EXPORT_DECLARATION __attribute__((visibility("default")))
+ #define WTF_IMPORT_DECLARATION WTF_EXPORT_DECLARATION
+diff --git a/qtwebkit/Source/WTF/wtf/InlineASM.h b/qtwebkit/Source/WTF/wtf/InlineASM.h
+index 0a2fe78..fe62990 100644
+--- a/qtwebkit/Source/WTF/wtf/InlineASM.h
++++ b/qtwebkit/Source/WTF/wtf/InlineASM.h
+@@ -62,12 +62,13 @@
+ #elif OS(AIX)
+     // IBM's own file format
+ #define HIDE_SYMBOL(name) ".lglobl " #name
+-#elif   OS(LINUX)               \
++#elif   (OS(LINUX)               \
+      || OS(FREEBSD)             \
+      || OS(OPENBSD)             \
+      || OS(SOLARIS)             \
+      || (OS(HPUX) && CPU(IA64)) \
+-     || OS(NETBSD)
++     || OS(NETBSD))             \
++     && !OS(GENODE)
+     // ELF platform
+ #define HIDE_SYMBOL(name) ".hidden " #name
+ #else
+diff --git a/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp b/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
+index a2f6a79..be8fff9 100644
+--- a/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
++++ b/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
+@@ -120,6 +120,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
+ #endif
+             CRASH();
+     }
++#if !OS(GENODE)
+     if (result && includesGuardPages) {
+         // We use mmap to remap the guardpages rather than using mprotect as
+         // mprotect results in multiple references to the code region.  This
+@@ -128,6 +129,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
+         mmap(result, pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
+         mmap(static_cast<char*>(result) + bytes - pageSize(), pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
+     }
++#endif /* OS(GENODE) */
+     return result;
+ }
+ 
+@@ -179,9 +181,20 @@ void OSAllocator::decommit(void* address, size_t bytes)
+ 
+ void OSAllocator::releaseDecommitted(void* address, size_t bytes)
+ {
++#if OS(GENODE)
++    /*
++     * 'releaseDecommitted()' sometimes gets called with a start address
++     * different than the one returned by 'mmap()' to release only a part of the
++     * allocated memory. This feature is currently not supported by Genode's
++     * 'munmap()' implementation, so we don't crash on purpose if the result of
++     * 'munmap()' is -1.
++     */
++    munmap(address, bytes);
++#else
+     int result = munmap(address, bytes);
+     if (result == -1)
+         CRASH();
++#endif /* OS(GENODE) */
+ }
+ 
+ } // namespace WTF
+diff --git a/qtwebkit/Source/WTF/wtf/Platform.h b/qtwebkit/Source/WTF/wtf/Platform.h
+index 1603019..18a5a45 100644
+--- a/qtwebkit/Source/WTF/wtf/Platform.h
++++ b/qtwebkit/Source/WTF/wtf/Platform.h
+@@ -153,6 +153,7 @@
+     || defined(_M_IX86)  \
+     || defined(_X86_)    \
+     || defined(__THW_INTEL)
++l
+ #define WTF_CPU_X86 1
+ #endif
+ 
+@@ -426,6 +427,12 @@
+ #define WTF_OS_UNIX 1
+ #endif
+ 
++/* OS(GENODE) */
++#ifdef __GENODE__
++/* Note: WTF_OS_FREEBSD is defined, too */
++#define WTF_OS_GENODE 1
++#endif
++
+ /* Operating environments */
+ 
+ /* FIXME: these are all mixes of OS, operating environment and policy choices. */
+@@ -699,7 +706,8 @@
+ 
+ #if !OS(WINDOWS) && !OS(SOLARIS) \
+     && !OS(RVCT) \
+-    && !OS(ANDROID)
++    && !OS(ANDROID) \
++    && !OS(GENODE)
+ #define HAVE_TM_GMTOFF 1
+ #define HAVE_TM_ZONE 1
+ #define HAVE_TIMEGM 1
+@@ -764,6 +772,11 @@
+ #define HAVE_SYS_PARAM_H 1
+ #define HAVE_SYS_TIME_H 1
+ 
++#elif OS(GENODE)
++
++#define HAVE_ERRNO_H 1
++#define HAVE_SYS_TIME_H 1
++
+ #else
+ 
+ /* FIXME: is this actually used or do other platforms generate their own config.h? */
+@@ -782,7 +795,7 @@
+ #if PLATFORM(QT)
+ /* We must not customize the global operator new and delete for the Qt port. */
+ #define ENABLE_GLOBAL_FASTMALLOC_NEW 0
+-#if !OS(UNIX)
++#if !OS(UNIX) || OS(GENODE)
+ #define USE_SYSTEM_MALLOC 1
+ #endif
+ #endif
+@@ -892,6 +905,11 @@
+ #define ENABLE_JIT 1
+ #endif
+ 
++/* Disable LLINT for Genode */
++#if OS(GENODE)
++#define ENABLE_LLINT 0
++#endif
++
+ /* The JIT is enabled by default on all x86, x86-64, ARM & MIPS platforms. */
+ #if !defined(ENABLE_JIT) \
+     && (CPU(X86) || CPU(X86_64) || CPU(ARM) || CPU(MIPS)) \
+diff --git a/qtwebkit/Source/WTF/wtf/StackBounds.cpp b/qtwebkit/Source/WTF/wtf/StackBounds.cpp
+index a272ce3..3c335d3 100644
+--- a/qtwebkit/Source/WTF/wtf/StackBounds.cpp
++++ b/qtwebkit/Source/WTF/wtf/StackBounds.cpp
+@@ -44,6 +44,10 @@
+ #include <string.h>
+ #include <sys/procfs.h>
+ 
++#elif OS(GENODE)
++
++#include <base/thread.h>
++
+ #elif OS(UNIX)
+ 
+ #include <pthread.h>
+@@ -128,6 +132,14 @@ void StackBounds::initialize()
+     m_bound = estimateStackBound(m_origin);
+ }
+ 
++#elif OS(GENODE)
++
++void StackBounds::initialize()
++{
++    m_bound = Genode::Thread_base::myself()->stack_base();
++	m_origin = Genode::Thread_base::myself()->stack_top();
++}
++
+ #elif OS(UNIX)
+ 
+ void StackBounds::initialize()
+diff --git a/qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp b/qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp
+index f547085..07fc9b0 100644
+--- a/qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp
++++ b/qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp
+@@ -49,6 +49,12 @@
+ #include <sys/mman.h>
+ #endif
+ 
++#if OS(GENODE)
++#include <base/printf.h>
++#include <base/stdint.h>
++#include <util/misc_math.h>
++#endif
++
+ #ifndef MAP_ANONYMOUS
+ #define MAP_ANONYMOUS MAP_ANON
+ #endif
+@@ -367,6 +373,21 @@ void* TCMalloc_SystemAlloc(size_t size, size_t *actual_size, size_t alignment) {
+     }
+ #endif
+ 
++#if OS(GENODE)
++    if (actual_size)
++      *actual_size = size;
++
++    void* real_address = malloc(sizeof(Genode::addr_t) + size + alignment);
++    Genode::addr_t address = reinterpret_cast<Genode::addr_t>(real_address);
++    address += sizeof(Genode::addr_t);
++    address = Genode::align_addr(address, Genode::log2(alignment));
++    address -= sizeof(Genode::addr_t);
++    *(Genode::addr_t*)address = (Genode::addr_t)real_address;
++    address += sizeof(Genode::addr_t);
++
++    return (void*)address;;
++#endif
++
+     // nothing worked - reset failure flags and try again
+     devmem_failure = false;
+     sbrk_failure = false;
+diff --git a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
+index e083e29..dc73aac 100644
+--- a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
++++ b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
+@@ -18,6 +18,8 @@
+ */
+ 
+ #include "config.h"
++
++#if ENABLE(VIDEO)
+ #include "MediaPlayerPrivateQt.h"
+ 
+ #include "Frame.h"
+@@ -661,3 +663,4 @@ PlatformMedia MediaPlayerPrivateQt::platformMedia() const
+ } // namespace WebCore
+ 
+ #include "moc_MediaPlayerPrivateQt.cpp"
++#endif /* ENABLE(VIDEO) */
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/bytearraytestdata.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/bytearraytestdata.h
+new file mode 100644
+index 0000000..91a8e3d
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/bytearraytestdata.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/tests/bytearraytestdata.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qhttpheader_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qhttpheader_p.h
+new file mode 100644
+index 0000000..3475287
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qhttpheader_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qhttpheader_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkreply_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkreply_p.h
+new file mode 100644
+index 0000000..8acad2d
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkreply_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquicknetworkreply_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkrequest_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkrequest_p.h
+new file mode 100644
+index 0000000..b29c076
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquicknetworkrequest_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquicknetworkrequest_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickurlschemedelegate_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickurlschemedelegate_p.h
+new file mode 100644
+index 0000000..e754141
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickurlschemedelegate_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquickurlschemedelegate_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p.h
+new file mode 100644
+index 0000000..678227f
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquickwebpage_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p_p.h
+new file mode 100644
+index 0000000..4e3ad5d
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebpage_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquickwebpage_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p.h
+new file mode 100644
+index 0000000..8f14b87
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquickwebview_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p_p.h
+new file mode 100644
+index 0000000..e436751
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qquickwebview_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qquickwebview_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p.h
+new file mode 100644
+index 0000000..30dfab8
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/raw/qrawwebview_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p_p.h
+new file mode 100644
+index 0000000..1946b92
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qrawwebview_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/raw/qrawwebview_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qtwebsecurityorigin_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qtwebsecurityorigin_p.h
+new file mode 100644
+index 0000000..0422db3
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qtwebsecurityorigin_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qtwebsecurityorigin_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdatabase_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdatabase_p.h
+new file mode 100644
+index 0000000..37254c2
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdatabase_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebdatabase_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p.h
+new file mode 100644
+index 0000000..4a75e64
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebdownloaditem_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p_p.h
+new file mode 100644
+index 0000000..76d7308
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebdownloaditem_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebdownloaditem_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebelement_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebelement_p.h
+new file mode 100644
+index 0000000..fb1be90
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebelement_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebelement_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebhistory_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebhistory_p.h
+new file mode 100644
+index 0000000..48fb85d
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebhistory_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebhistory_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebiconimageprovider_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebiconimageprovider_p.h
+new file mode 100644
+index 0000000..57c18ab
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebiconimageprovider_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebiconimageprovider_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebkittest_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebkittest_p.h
+new file mode 100644
+index 0000000..adc5f00
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebkittest_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebkittest_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebloadrequest_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebloadrequest_p.h
+new file mode 100644
+index 0000000..bee5ec7
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebloadrequest_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebloadrequest_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p.h
+new file mode 100644
+index 0000000..5bc156b
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebnavigationhistory_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p_p.h
+new file mode 100644
+index 0000000..000fac6
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationhistory_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebnavigationhistory_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationrequest_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationrequest_p.h
+new file mode 100644
+index 0000000..b58e94c
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebnavigationrequest_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebnavigationrequest_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpermissionrequest_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpermissionrequest_p.h
+new file mode 100644
+index 0000000..d7d27e7
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpermissionrequest_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebpermissionrequest_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebplugindatabase_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebplugindatabase_p.h
+new file mode 100644
+index 0000000..f80f343
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebplugindatabase_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebplugindatabase_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p.h
+new file mode 100644
+index 0000000..f64a101
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebpreferences_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p_p.h
+new file mode 100644
+index 0000000..e1a3527
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebpreferences_p_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/qwebpreferences_p_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld.h
+new file mode 100644
+index 0000000..b081047
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebscriptworld.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld_p.h
+new file mode 100644
+index 0000000..3e0552d
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebscriptworld_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebscriptworld_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebsecurityorigin_p.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebsecurityorigin_p.h
+new file mode 100644
+index 0000000..74c05f3
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/qwebsecurityorigin_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebsecurityorigin_p.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/testwindow.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/testwindow.h
+new file mode 100644
+index 0000000..6f9aeb9
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/testwindow.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/tests/testwindow.h"
+diff --git a/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/util.h b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/util.h
+new file mode 100644
+index 0000000..11ce86f
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/5.0.2/QtWebKit/private/util.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit2/UIProcess/API/qt/tests/util.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebDatabase b/qtwebkit/include/QtWebKit/QWebDatabase
+new file mode 100644
+index 0000000..ec02742
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebDatabase
+@@ -0,0 +1 @@
++#include "qwebdatabase.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebElement b/qtwebkit/include/QtWebKit/QWebElement
+new file mode 100644
+index 0000000..32a17d0
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebElement
+@@ -0,0 +1 @@
++#include "qwebelement.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebElementCollection b/qtwebkit/include/QtWebKit/QWebElementCollection
+new file mode 100644
+index 0000000..32a17d0
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebElementCollection
+@@ -0,0 +1 @@
++#include "qwebelement.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebFullScreenVideoHandler b/qtwebkit/include/QtWebKit/QWebFullScreenVideoHandler
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebFullScreenVideoHandler
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer b/qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebHistory b/qtwebkit/include/QtWebKit/QWebHistory
+new file mode 100644
+index 0000000..35e9da5
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebHistory
+@@ -0,0 +1 @@
++#include "qwebhistory.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebHistoryInterface b/qtwebkit/include/QtWebKit/QWebHistoryInterface
+new file mode 100644
+index 0000000..7352319
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebHistoryInterface
+@@ -0,0 +1 @@
++#include "qwebhistoryinterface.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebHistoryItem b/qtwebkit/include/QtWebKit/QWebHistoryItem
+new file mode 100644
+index 0000000..35e9da5
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebHistoryItem
+@@ -0,0 +1 @@
++#include "qwebhistory.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebKitPlatformPlugin b/qtwebkit/include/QtWebKit/QWebKitPlatformPlugin
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebKitPlatformPlugin
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebNotificationData b/qtwebkit/include/QtWebKit/QWebNotificationData
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebNotificationData
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebNotificationPresenter b/qtwebkit/include/QtWebKit/QWebNotificationPresenter
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebNotificationPresenter
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebPluginFactory b/qtwebkit/include/QtWebKit/QWebPluginFactory
+new file mode 100644
+index 0000000..3e4ee81
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebPluginFactory
+@@ -0,0 +1 @@
++#include "qwebpluginfactory.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebSecurityOrigin b/qtwebkit/include/QtWebKit/QWebSecurityOrigin
+new file mode 100644
+index 0000000..6427a3b
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebSecurityOrigin
+@@ -0,0 +1 @@
++#include "qwebsecurityorigin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebSelectData b/qtwebkit/include/QtWebKit/QWebSelectData
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebSelectData
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebSelectMethod b/qtwebkit/include/QtWebKit/QWebSelectMethod
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebSelectMethod
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebSettings b/qtwebkit/include/QtWebKit/QWebSettings
+new file mode 100644
+index 0000000..f50c1a2
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebSettings
+@@ -0,0 +1 @@
++#include "qwebsettings.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebSpellChecker b/qtwebkit/include/QtWebKit/QWebSpellChecker
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebSpellChecker
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QWebTouchModifier b/qtwebkit/include/QtWebKit/QWebTouchModifier
+new file mode 100644
+index 0000000..958ad35
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QWebTouchModifier
+@@ -0,0 +1 @@
++#include "qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/QtWebKit b/qtwebkit/include/QtWebKit/QtWebKit
+new file mode 100644
+index 0000000..4798643
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QtWebKit
+@@ -0,0 +1,17 @@
++/* This file was generated by qmake with the info from <root>/api.pri. */
++#ifndef QT_WEBKIT_MODULE_H
++#define QT_WEBKIT_MODULE_H
++#include <QtCore/QtCore>
++#include <QtGui/QtGui>
++#include <QtNetwork/QtNetwork>
++#include "qwebdatabase.h"
++#include "qwebelement.h"
++#include "qwebhistory.h"
++#include "qwebhistoryinterface.h"
++#include "qwebkitglobal.h"
++#include "qwebkitplatformplugin.h"
++#include "qwebpluginfactory.h"
++#include "qwebsecurityorigin.h"
++#include "qwebsettings.h"
++#include "qtwebkitversion.h"
++#endif
+diff --git a/qtwebkit/include/QtWebKit/QtWebKitVersion b/qtwebkit/include/QtWebKit/QtWebKitVersion
+new file mode 100644
+index 0000000..7d0a7c3
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/QtWebKitVersion
+@@ -0,0 +1 @@
++#include "qtwebkitversion.h"
+diff --git a/qtwebkit/include/QtWebKit/headers.pri b/qtwebkit/include/QtWebKit/headers.pri
+new file mode 100644
+index 0000000..91a4792
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/headers.pri
+@@ -0,0 +1,4 @@
++SYNCQT.HEADER_FILES = WebKit/qt/Api/qwebdatabase.h WebKit/qt/Api/qwebelement.h WebKit/qt/Api/qwebhistory.h WebKit/qt/Api/qwebhistoryinterface.h WebKit/qt/Api/qwebkitglobal.h WebKit/qt/Api/qwebkitplatformplugin.h WebKit/qt/Api/qwebpluginfactory.h WebKit/qt/Api/qwebsecurityorigin.h WebKit/qt/Api/qwebsettings.h ../../../build/qtwebkit/include/QtWebKit/qtwebkitversion.h 
++SYNCQT.HEADER_CLASSES = ../../../build/qtwebkit/include/QtWebKit/QWebDatabase ../../../build/qtwebkit/include/QtWebKit/QWebElement ../../../build/qtwebkit/include/QtWebKit/QWebElementCollection ../../../build/qtwebkit/include/QtWebKit/QWebHistoryItem ../../../build/qtwebkit/include/QtWebKit/QWebHistory ../../../build/qtwebkit/include/QtWebKit/QWebHistoryInterface ../../../build/qtwebkit/include/QtWebKit/QWebSelectData ../../../build/qtwebkit/include/QtWebKit/QWebSelectMethod ../../../build/qtwebkit/include/QtWebKit/QWebNotificationData ../../../build/qtwebkit/include/QtWebKit/QWebNotificationPresenter ../../../build/qtwebkit/include/QtWebKit/QWebHapticFeedbackPlayer ../../../build/qtwebkit/include/QtWebKit/QWebTouchModifier ../../../build/qtwebkit/include/QtWebKit/QWebFullScreenVideoHandler ../../../build/qtwebkit/include/QtWebKit/QWebSpellChecker ../../../build/qtwebkit/include/QtWebKit/QWebKitPlatformPlugin ../../../build/qtwebkit/include/QtWebKit/QWebPluginFactory ../../../build/qtwebkit/include/QtWebKit/QWebSecurityOrigin ../../../build/qtwebkit/include/QtWebKit/QWebSettings ../../../build/qtwebkit/include/QtWebKit/QtWebKitVersion 
++SYNCQT.PRIVATE_HEADER_FILES = WebKit/qt/Api/qhttpheader_p.h WebKit/qt/Api/qwebdatabase_p.h WebKit/qt/Api/qwebelement_p.h WebKit/qt/Api/qwebhistory_p.h WebKit/qt/Api/qwebplugindatabase_p.h WebKit/qt/Api/qwebscriptworld.h WebKit/qt/Api/qwebscriptworld_p.h WebKit/qt/Api/qwebsecurityorigin_p.h WebKit2/UIProcess/API/qt/qquicknetworkreply_p.h WebKit2/UIProcess/API/qt/qquicknetworkrequest_p.h WebKit2/UIProcess/API/qt/qquickurlschemedelegate_p.h WebKit2/UIProcess/API/qt/qquickwebpage_p.h WebKit2/UIProcess/API/qt/qquickwebpage_p_p.h WebKit2/UIProcess/API/qt/qquickwebview_p.h WebKit2/UIProcess/API/qt/qquickwebview_p_p.h WebKit2/UIProcess/API/qt/qtwebsecurityorigin_p.h WebKit2/UIProcess/API/qt/qwebdownloaditem_p.h WebKit2/UIProcess/API/qt/qwebdownloaditem_p_p.h WebKit2/UIProcess/API/qt/qwebiconimageprovider_p.h WebKit2/UIProcess/API/qt/qwebkittest_p.h WebKit2/UIProcess/API/qt/qwebloadrequest_p.h WebKit2/UIProcess/API/qt/qwebnavigationhistory_p.h WebKit2/UIProcess/API/qt/qwebnavigationhistory_p_p.h WebKit2/UIProcess/API/qt/qwebnavigationrequest_p.h WebKit2/UIProcess/API/qt/qwebpermissionrequest_p.h WebKit2/UIProcess/API/qt/qwebpreferences_p.h WebKit2/UIProcess/API/qt/qwebpreferences_p_p.h WebKit2/UIProcess/API/qt/raw/qrawwebview_p.h WebKit2/UIProcess/API/qt/raw/qrawwebview_p_p.h WebKit2/UIProcess/API/qt/tests/bytearraytestdata.h WebKit2/UIProcess/API/qt/tests/testwindow.h WebKit2/UIProcess/API/qt/tests/util.h 
++SYNCQT.QPA_HEADER_FILES = 
+diff --git a/qtwebkit/include/QtWebKit/qtwebkitversion.h b/qtwebkit/include/QtWebKit/qtwebkitversion.h
+new file mode 100644
+index 0000000..53f6e6c
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qtwebkitversion.h
+@@ -0,0 +1,6 @@
++/* This file was generated by qmake with the info from <root>/api.pri. */
++#ifndef QT_QTWEBKIT_VERSION_H
++#define QT_QTWEBKIT_VERSION_H
++#define QTWEBKIT_VERSION_STR "5.0.2"
++#define QTWEBKIT_VERSION 0x050002
++#endif // QT_QTWEBKIT_VERSION_H
+diff --git a/qtwebkit/include/QtWebKit/qwebdatabase.h b/qtwebkit/include/QtWebKit/qwebdatabase.h
+new file mode 100644
+index 0000000..eb92b71
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebdatabase.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebdatabase.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebelement.h b/qtwebkit/include/QtWebKit/qwebelement.h
+new file mode 100644
+index 0000000..bc73f8a
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebelement.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebelement.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebhistory.h b/qtwebkit/include/QtWebKit/qwebhistory.h
+new file mode 100644
+index 0000000..9524feb
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebhistory.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebhistory.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebhistoryinterface.h b/qtwebkit/include/QtWebKit/qwebhistoryinterface.h
+new file mode 100644
+index 0000000..1a0ba52
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebhistoryinterface.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebhistoryinterface.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebkitglobal.h b/qtwebkit/include/QtWebKit/qwebkitglobal.h
+new file mode 100644
+index 0000000..7a73625
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebkitglobal.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebkitglobal.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebkitplatformplugin.h b/qtwebkit/include/QtWebKit/qwebkitplatformplugin.h
+new file mode 100644
+index 0000000..e725614
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebkitplatformplugin.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebkitplatformplugin.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebpluginfactory.h b/qtwebkit/include/QtWebKit/qwebpluginfactory.h
+new file mode 100644
+index 0000000..a99590a
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebpluginfactory.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebpluginfactory.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebsecurityorigin.h b/qtwebkit/include/QtWebKit/qwebsecurityorigin.h
+new file mode 100644
+index 0000000..46eca18
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebsecurityorigin.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebsecurityorigin.h"
+diff --git a/qtwebkit/include/QtWebKit/qwebsettings.h b/qtwebkit/include/QtWebKit/qwebsettings.h
+new file mode 100644
+index 0000000..beaa5a9
+--- /dev/null
++++ b/qtwebkit/include/QtWebKit/qwebsettings.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/Api/qwebsettings.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebframe_p.h b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebframe_p.h
+new file mode 100644
+index 0000000..a2928e9
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebframe_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebframe_p.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebinspector_p.h b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebinspector_p.h
+new file mode 100644
+index 0000000..8beed3c
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebinspector_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebinspector_p.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebpage_p.h b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebpage_p.h
+new file mode 100644
+index 0000000..cdc438f
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebpage_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebpage_p.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebviewaccessible_p.h b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebviewaccessible_p.h
+new file mode 100644
+index 0000000..7dbc069
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/5.0.2/QtWebKitWidgets/private/qwebviewaccessible_p.h
+@@ -0,0 +1 @@
++#include "../../../../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebviewaccessible_p.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QGraphicsWebView b/qtwebkit/include/QtWebKitWidgets/QGraphicsWebView
+new file mode 100644
+index 0000000..508a397
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QGraphicsWebView
+@@ -0,0 +1 @@
++#include "qgraphicswebview.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QWebFrame b/qtwebkit/include/QtWebKitWidgets/QWebFrame
+new file mode 100644
+index 0000000..0748fde
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QWebFrame
+@@ -0,0 +1 @@
++#include "qwebframe.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QWebHitTestResult b/qtwebkit/include/QtWebKitWidgets/QWebHitTestResult
+new file mode 100644
+index 0000000..0748fde
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QWebHitTestResult
+@@ -0,0 +1 @@
++#include "qwebframe.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QWebInspector b/qtwebkit/include/QtWebKitWidgets/QWebInspector
+new file mode 100644
+index 0000000..0923bb7
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QWebInspector
+@@ -0,0 +1 @@
++#include "qwebinspector.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QWebPage b/qtwebkit/include/QtWebKitWidgets/QWebPage
+new file mode 100644
+index 0000000..e8e8c10
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QWebPage
+@@ -0,0 +1 @@
++#include "qwebpage.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QWebView b/qtwebkit/include/QtWebKitWidgets/QWebView
+new file mode 100644
+index 0000000..3ec1eb9
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QWebView
+@@ -0,0 +1 @@
++#include "qwebview.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgets b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgets
+new file mode 100644
+index 0000000..dd10ae9
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgets
+@@ -0,0 +1,16 @@
++/* This file was generated by qmake with the info from <root>/widgetsapi.pri. */
++#ifndef QT_WEBKITWIDGETS_MODULE_H
++#define QT_WEBKITWIDGETS_MODULE_H
++#include <QtCore/QtCore>
++#include <QtGui/QtGui>
++#include <QtNetwork/QtNetwork>
++#include <QtWidgets/QtWidgets>
++#include <QtPrintSupport/QtPrintSupport>
++#include <QtWebKit/QtWebKit>
++#include "qgraphicswebview.h"
++#include "qwebframe.h"
++#include "qwebinspector.h"
++#include "qwebpage.h"
++#include "qwebview.h"
++#include "qtwebkitwidgetsversion.h"
++#endif
+diff --git a/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsVersion b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsVersion
+new file mode 100644
+index 0000000..3e3bacf
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsVersion
+@@ -0,0 +1 @@
++#include "qtwebkitwidgetsversion.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/headers.pri b/qtwebkit/include/QtWebKitWidgets/headers.pri
+new file mode 100644
+index 0000000..959b4a1
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/headers.pri
+@@ -0,0 +1,4 @@
++SYNCQT.HEADER_FILES = WebKit/qt/WidgetApi/qgraphicswebview.h WebKit/qt/WidgetApi/qwebframe.h WebKit/qt/WidgetApi/qwebinspector.h WebKit/qt/WidgetApi/qwebpage.h WebKit/qt/WidgetApi/qwebview.h ../../../build/qtwebkit/include/QtWebKitWidgets/qtwebkitwidgetsversion.h 
++SYNCQT.HEADER_CLASSES = ../../../build/qtwebkit/include/QtWebKitWidgets/QGraphicsWebView ../../../build/qtwebkit/include/QtWebKitWidgets/QWebHitTestResult ../../../build/qtwebkit/include/QtWebKitWidgets/QWebFrame ../../../build/qtwebkit/include/QtWebKitWidgets/QWebInspector ../../../build/qtwebkit/include/QtWebKitWidgets/QWebPage ../../../build/qtwebkit/include/QtWebKitWidgets/QWebView ../../../build/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsVersion 
++SYNCQT.PRIVATE_HEADER_FILES = WebKit/qt/WidgetApi/qwebframe_p.h WebKit/qt/WidgetApi/qwebinspector_p.h WebKit/qt/WidgetApi/qwebpage_p.h WebKit/qt/WidgetApi/qwebviewaccessible_p.h 
++SYNCQT.QPA_HEADER_FILES = 
+diff --git a/qtwebkit/include/QtWebKitWidgets/qgraphicswebview.h b/qtwebkit/include/QtWebKitWidgets/qgraphicswebview.h
+new file mode 100644
+index 0000000..066b7cf
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qgraphicswebview.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qgraphicswebview.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/qtwebkitwidgetsversion.h b/qtwebkit/include/QtWebKitWidgets/qtwebkitwidgetsversion.h
+new file mode 100644
+index 0000000..2fd1a5b
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qtwebkitwidgetsversion.h
+@@ -0,0 +1,6 @@
++/* This file was generated by qmake with the info from <root>/widgetsapi.pri. */
++#ifndef QT_QTWEBKITWIDGETS_VERSION_H
++#define QT_QTWEBKITWIDGETS_VERSION_H
++#define QTWEBKITWIDGETS_VERSION_STR "5.0.2"
++#define QTWEBKITWIDGETS_VERSION 0x050002
++#endif // QT_QTWEBKITWIDGETS_VERSION_H
+diff --git a/qtwebkit/include/QtWebKitWidgets/qwebframe.h b/qtwebkit/include/QtWebKitWidgets/qwebframe.h
+new file mode 100644
+index 0000000..4faf144
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qwebframe.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebframe.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/qwebinspector.h b/qtwebkit/include/QtWebKitWidgets/qwebinspector.h
+new file mode 100644
+index 0000000..3d689e1
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qwebinspector.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebinspector.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/qwebpage.h b/qtwebkit/include/QtWebKitWidgets/qwebpage.h
+new file mode 100644
+index 0000000..67247ea
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qwebpage.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebpage.h"
+diff --git a/qtwebkit/include/QtWebKitWidgets/qwebview.h b/qtwebkit/include/QtWebKitWidgets/qwebview.h
+new file mode 100644
+index 0000000..fa41340
+--- /dev/null
++++ b/qtwebkit/include/QtWebKitWidgets/qwebview.h
+@@ -0,0 +1 @@
++#include "../../../../qt-everywhere-opensource-src-5.0.2/qtwebkit/Source/WebKit/qt/WidgetApi/qwebview.h"

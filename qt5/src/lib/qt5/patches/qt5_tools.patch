@@ -1,0 +1,161 @@
+Support out-of-tree build of Qt host tools
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/mkspecs/features/qt_build_config.prf |    2 +
+ qtbase/mkspecs/features/qt_functions.prf    |    2 +
+ qtbase/mkspecs/features/qt_module.prf       |    4 +-
+ qtbase/mkspecs/features/qt_tool.prf         |   54 ++++++++++++++-------------
+ qtbase/src/tools/bootstrap/bootstrap.pro    |   30 ++++++++-------
+ 5 files changed, 46 insertions(+), 46 deletions(-)
+
+diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
+index 88c1f3f..59aa4f5 100644
+--- a/qtbase/mkspecs/features/qt_build_config.prf
++++ b/qtbase/mkspecs/features/qt_build_config.prf
+@@ -12,7 +12,7 @@
+ !contains(QMAKE_INTERNAL_INCLUDED_FILES, .*qmodule\\.pri) {
+     QMAKE_QT_MODULE = $$[QT_HOST_DATA/get]/mkspecs/qmodule.pri
+     !exists($$QMAKE_QT_MODULE)|!include($$QMAKE_QT_MODULE, "", true) {
+-        error("Cannot load qmodule.pri!")
++        debug(1, "Cannot load qmodule.pri!")
+     } else {
+         debug(1, "Loaded qmodule.pri from ($$QMAKE_QT_MODULE)")
+     }
+diff --git a/qtbase/mkspecs/features/qt_functions.prf b/qtbase/mkspecs/features/qt_functions.prf
+index 8cd2473..9dbc821 100644
+--- a/qtbase/mkspecs/features/qt_functions.prf
++++ b/qtbase/mkspecs/features/qt_functions.prf
+@@ -167,7 +167,7 @@ defineTest(qtAddModules) {
+ 
+         qtAddModule($$QTLIB, $$eval(QT.$${QTLIB}.want_private), $$2)
+     }
+-    !isEmpty(BAD_QT):error("Unknown module(s) in $$1: $$BAD_QT")
++    !isEmpty(BAD_QT):debug(1, "Unknown module(s) in $$1: $$BAD_QT")
+ 
+     export(using_privates)
+ }
+diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
+index 1132943..7bc0a75 100644
+--- a/qtbase/mkspecs/features/qt_module.prf
++++ b/qtbase/mkspecs/features/qt_module.prf
+@@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already
+ 
+ isEmpty(MODULE):MODULE = $$section($$list($$basename(_PRO_FILE_)), ., 0, 0)
+ isEmpty(VERSION): VERSION = $$MODULE_VERSION
+-isEmpty(VERSION): error("Module does not define version.")
++#isEmpty(VERSION): error("Module does not define version.")
+ 
+ # Compile as shared/DLL or static according to the option given to configure
+ # unless overridden. Host builds are always static
+@@ -40,7 +40,7 @@ else: \
+     MODULE_DEFINE = QT_$${ucmodule}_LIB
+ MODULE_DEFINES = $$MODULE_DEFINE $$MODULE_DEFINES
+ 
+-load(qt_module_pris)
++#load(qt_module_pris)
+ 
+ INCLUDEPATH *= $$eval(QT.$${MODULE}.includes) $$eval(QT.$${MODULE}.private_includes)
+ 
+diff --git a/qtbase/mkspecs/features/qt_tool.prf b/qtbase/mkspecs/features/qt_tool.prf
+index 9d50856..81868b3 100644
+--- a/qtbase/mkspecs/features/qt_tool.prf
++++ b/qtbase/mkspecs/features/qt_tool.prf
+@@ -31,30 +31,30 @@ load(qt_targets)
+ 
+ # If we are doing a prefix build, create a "module" pri which enables
+ # qtPrepareTool() to work with the non-installed build.
+-!build_pass:force_independent {
+-
+-    isEmpty(MODULE):MODULE = $$TARGET
+-
+-    MODULE_DEPENDS = $$replace(QT, -private$, )
+-
+-    load(qt_build_paths)
+-
+-    load(resolve_target)
+-    cmd = $$shell_path($$QMAKE_RESOLVED_TARGET)
+-    !host_build: qtAddTargetEnv(cmd)
+-
+-    TOOL_PRI = $$MODULE_QMAKE_OUTDIR/mkspecs/modules/qt_tool_$${MODULE}.pri
+-
+-    TOOL_PRI_CONT = "QT_TOOL.$${MODULE}.command = $$val_escape(cmd)"
+-    write_file($$TOOL_PRI, TOOL_PRI_CONT)|error("Aborting.")
+-
+-    # Then, inject the new tool into the current cache state
+-    !contains(QMAKE_INTERNAL_INCLUDED_FILES, $$TOOL_PRI) { # before the actual include()!
+-        added = $$TOOL_PRI
+-        cache(QMAKE_INTERNAL_INCLUDED_FILES, add transient, added)
+-        unset(added)
+-    }
+-    include($$TOOL_PRI)
+-    cache(QT_TOOL.$${MODULE}.command, transient)
+-
+-}
++#!build_pass:force_independent {
++#
++#    isEmpty(MODULE):MODULE = $$TARGET
++#
++#    MODULE_DEPENDS = $$replace(QT, -private$, )
++#
++#    load(qt_build_paths)
++#
++#    load(resolve_target)
++#    cmd = $$shell_path($$QMAKE_RESOLVED_TARGET)
++#    !host_build: qtAddTargetEnv(cmd)
++#
++#    TOOL_PRI = $$MODULE_QMAKE_OUTDIR/mkspecs/modules/qt_tool_$${MODULE}.pri
++#
++#    TOOL_PRI_CONT = "QT_TOOL.$${MODULE}.command = $$val_escape(cmd)"
++#    write_file($$TOOL_PRI, TOOL_PRI_CONT)|error("Aborting.")
++#
++#    # Then, inject the new tool into the current cache state
++#    !contains(QMAKE_INTERNAL_INCLUDED_FILES, $$TOOL_PRI) { # before the actual include()!
++#        added = $$TOOL_PRI
++#        cache(QMAKE_INTERNAL_INCLUDED_FILES, add transient, added)
++#        unset(added)
++#    }
++#    include($$TOOL_PRI)
++#    cache(QT_TOOL.$${MODULE}.command, transient)
++#
++#}
+diff --git a/qtbase/src/tools/bootstrap/bootstrap.pro b/qtbase/src/tools/bootstrap/bootstrap.pro
+index 1ec54de..15bcb89 100644
+--- a/qtbase/src/tools/bootstrap/bootstrap.pro
++++ b/qtbase/src/tools/bootstrap/bootstrap.pro
+@@ -129,18 +129,18 @@ win32:LIBS += -luser32 -lole32 -ladvapi32
+ lib.CONFIG = dummy_install
+ INSTALLS += lib
+ 
+-!build_pass {
+-    # We need the forwarding headers before their respective modules are built,
+-    # so do a minimal syncqt run.
+-    qtPrepareTool(QMAKE_SYNCQT, syncqt)
+-    QTDIR = $$[QT_HOST_PREFIX]
+-    exists($$QTDIR/.qmake.cache): \
+-        mod_component_base = $$QTDIR
+-    else: \
+-        mod_component_base = $$dirname(_QMAKE_CACHE_)
+-    QMAKE_SYNCQT += -minimal -module QtCore -module QtDBus -module QtXml \
+-        -version $$VERSION -outdir $$mod_component_base $$dirname(_QMAKE_CONF_)
+-    contains(QT_CONFIG, zlib):QMAKE_SYNCQT += -module QtZlib
+-    !silent:message($$QMAKE_SYNCQT)
+-    system($$QMAKE_SYNCQT)|error("Failed to run: $$QMAKE_SYNCQT")
+-}
++#!build_pass {
++#    # We need the forwarding headers before their respective modules are built,
++#    # so do a minimal syncqt run.
++#    qtPrepareTool(QMAKE_SYNCQT, syncqt)
++#    QTDIR = $$[QT_HOST_PREFIX]
++#    exists($$QTDIR/.qmake.cache): \
++#        mod_component_base = $$QTDIR
++#    else: \
++#        mod_component_base = $$dirname(_QMAKE_CACHE_)
++#    QMAKE_SYNCQT += -minimal -module QtCore -module QtDBus -module QtXml \
++#        -version $$VERSION -outdir $$mod_component_base $$dirname(_QMAKE_CONF_)
++#    contains(QT_CONFIG, zlib):QMAKE_SYNCQT += -module QtZlib
++#    !silent:message($$QMAKE_SYNCQT)
++#    system($$QMAKE_SYNCQT)|error("Failed to run: $$QMAKE_SYNCQT")
++#}
