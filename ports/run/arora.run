@@ -114,16 +114,23 @@ set boot_modules {
 	zlib.lib.so libpng.lib.so jpeg.lib.so libssl.lib.so libcrypto.lib.so
 	dejavusans.lib.so
 	freetype.lib.so
+	icu.lib.so
 	libc_lock_pipe.lib.so
+	pthread.lib.so
 	stdcxx.lib.so
 	qt_core.lib.so
 	qt_gui.lib.so
 	qt_jscore.lib.so
 	qt_network.lib.so
+	qt_printsupport.lib.so
 	qt_script.lib.so
+	qt_sql.lib.so
 	qt_ui_tools.lib.so
 	qt_webcore.lib.so
 	qt_webkit.lib.so
+	qt_webkitwidgets.lib.so
+	qt_widgets.lib.so
+	qt_wtf.lib.so
 	qt_xml.lib.so
 	qnitpickerviewwidget.lib.so
 	qpluginwidget.lib.so
