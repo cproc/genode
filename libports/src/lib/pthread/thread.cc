@@ -90,4 +90,18 @@ extern "C" {
 		return thread ? thread : &main_thread;
 	}
 
+	int pthread_attr_getstack(const pthread_attr_t *attr,
+	                          void **stackaddr,
+	                          size_t *stacksize)
+	{
+		PDBG("not implemented");
+		return -1;
+	}
+
+	int pthread_attr_get_np(pthread_t, pthread_attr_t *)
+	{
+		PDBG("not implemented");
+		return -1;
+	}
+
 }
