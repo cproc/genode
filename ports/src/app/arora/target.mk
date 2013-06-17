@@ -1,10 +1,10 @@
 ARORA = arora-0.11.0
 
 # identify the qt4 repository by searching for a file that is unique for qt4
-QT4_REP_DIR := $(call select_from_repositories,lib/import/import-qt4.inc)
+QT4_REP_DIR := $(call select_from_repositories,lib/import/import-qt5.inc)
 
 ifeq ($(QT4_REP_DIR),)
-REQUIRES += qt4
+REQUIRES += qt5
 endif
 
 QT4_REP_DIR := $(realpath $(dir $(QT4_REP_DIR))../..)
@@ -31,7 +31,7 @@ HEADERS_FILTER_OUT = \
 
 QT_MAIN_STACK_SIZE = 768*1024
 
-LIBS += libm libc_lwip libc_lwip_nic_dhcp libc_log qpluginwidget qnitpickerviewwidget
+LIBS += libm libc_lwip libc_lwip_nic_dhcp libc_log qpluginwidget qnitpickerviewwidget qt_printsupport
 
 RESOURCES += demo_html.qrc
 
