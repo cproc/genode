@@ -1,0 +1,25 @@
+qt5_qtwebkit_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../Source/JavaScriptCore/heap/BlockAllocator.cpp  |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
+index f94025c..282978d 100644
+--- a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
++++ b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
+@@ -103,9 +103,10 @@ void BlockAllocator::blockFreeingThreadStartFunc(void* blockAllocator)
+ {
+     static_cast<BlockAllocator*>(blockAllocator)->blockFreeingThreadMain();
+ }
+-
++extern "C" void wait_for_continue();
+ void BlockAllocator::blockFreeingThreadMain()
+ {
++	wait_for_continue();
+     size_t currentNumberOfEmptyRegions;
+     while (!m_blockFreeingThreadShouldQuit) {
+         // Generally wait for one second before scavenging free blocks. This
