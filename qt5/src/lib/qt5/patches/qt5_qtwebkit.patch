@@ -1,0 +1,101 @@
+qt5_qtwebkit.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../Source/JavaScriptCore/dfg/DFGOperations.cpp    |    6 ++++++
+ qtwebkit/Source/WTF/wtf/Platform.h                 |   13 +++++++++++++
+ .../platform/graphics/qt/MediaPlayerPrivateQt.cpp  |    3 +++
+ 3 files changed, 22 insertions(+)
+
+diff --git a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
+index ad595ae..f27948e 100644
+--- a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
++++ b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
+@@ -1567,7 +1567,9 @@ namespace JSC {
+ #if COMPILER(GCC) && CPU(X86_64)
+ asm (
+ ".globl " SYMBOL_STRING(getHostCallReturnValue) "\n"
++#if !OS(GENODE)
+ HIDE_SYMBOL(getHostCallReturnValue) "\n"
++#endif /* OS(GENODE) */
+ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+     "mov -40(%r13), %r13\n"
+     "mov %r13, %rdi\n"
+@@ -1577,7 +1579,9 @@ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+ asm (
+ ".text" "\n" \
+ ".globl " SYMBOL_STRING(getHostCallReturnValue) "\n"
++#if !OS(GENODE)
+ HIDE_SYMBOL(getHostCallReturnValue) "\n"
++#endif /* OS(GENODE) */
+ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+     "mov -40(%edi), %edi\n"
+     "mov %edi, 4(%esp)\n"
+@@ -1600,7 +1604,9 @@ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+ asm (
+ ".text" "\n"
+ ".globl " SYMBOL_STRING(getHostCallReturnValue) "\n"
++#if !OS(GENODE)
+ HIDE_SYMBOL(getHostCallReturnValue) "\n"
++#endif /* OS(GENODE) */
+ INLINE_ARM_FUNCTION(getHostCallReturnValue)
+ SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
+     "ldr r5, [r5, #-40]" "\n"
+diff --git a/qtwebkit/Source/WTF/wtf/Platform.h b/qtwebkit/Source/WTF/wtf/Platform.h
+index 1603019..f482551 100644
+--- a/qtwebkit/Source/WTF/wtf/Platform.h
++++ b/qtwebkit/Source/WTF/wtf/Platform.h
+@@ -153,6 +153,7 @@
+     || defined(_M_IX86)  \
+     || defined(_X86_)    \
+     || defined(__THW_INTEL)
++l
+ #define WTF_CPU_X86 1
+ #endif
+ 
+@@ -426,6 +427,13 @@
+ #define WTF_OS_UNIX 1
+ #endif
+ 
++/* OS(GENODE) */
++/* Operating system level dependencies for Genode that should */
++/* be used regardless of operating environment */
++#ifdef __GENODE__
++#define WTF_OS_GENODE 1
++#endif
++
+ /* Operating environments */
+ 
+ /* FIXME: these are all mixes of OS, operating environment and policy choices. */
+@@ -892,6 +900,11 @@
+ #define ENABLE_JIT 1
+ #endif
+ 
++/* Disable LLINT for Genode */
++#if OS(GENODE)
++#define ENABLE_LLINT 0
++#endif
++
+ /* The JIT is enabled by default on all x86, x86-64, ARM & MIPS platforms. */
+ #if !defined(ENABLE_JIT) \
+     && (CPU(X86) || CPU(X86_64) || CPU(ARM) || CPU(MIPS)) \
+diff --git a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
+index e083e29..dc73aac 100644
+--- a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
++++ b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
+@@ -18,6 +18,8 @@
+ */
+ 
+ #include "config.h"
++
++#if ENABLE(VIDEO)
+ #include "MediaPlayerPrivateQt.h"
+ 
+ #include "Frame.h"
+@@ -661,3 +663,4 @@ PlatformMedia MediaPlayerPrivateQt::platformMedia() const
+ } // namespace WebCore
+ 
+ #include "moc_MediaPlayerPrivateQt.cpp"
++#endif /* ENABLE(VIDEO) */
