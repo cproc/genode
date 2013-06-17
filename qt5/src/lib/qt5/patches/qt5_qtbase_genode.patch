@@ -1,0 +1,593 @@
+Genode-specific adaptations
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/include/QtCore/qconfig.h                    |    2 -
+ qtbase/src/corelib/codecs/qtextcodec.cpp           |    4 +
+ qtbase/src/corelib/global/qlogging.cpp             |    5 ++
+ qtbase/src/corelib/global/qsystemdetection.h       |    5 +-
+ qtbase/src/corelib/io/qprocess.cpp                 |   64 ++++++++++++++++++++
+ qtbase/src/corelib/io/qprocess_p.h                 |   45 ++++++++++++++
+ qtbase/src/corelib/io/qresource.cpp                |    2 -
+ qtbase/src/corelib/kernel/qcoreapplication.cpp     |    2 -
+ .../src/corelib/kernel/qeventdispatcher_unix.cpp   |   14 ++++
+ qtbase/src/corelib/kernel/qtranslator.cpp          |    2 -
+ qtbase/src/corelib/thread/qmutex.cpp               |    2 +
+ qtbase/src/corelib/thread/qmutex_p.h               |    8 +++
+ qtbase/src/corelib/thread/qthread.cpp              |    5 +-
+ qtbase/src/corelib/thread/qthread_p.h              |   55 +++++++++++++++++
+ qtbase/src/corelib/tools/qdatetime.cpp             |   12 ++++
+ qtbase/src/gui/image/qxpmhandler.cpp               |    8 +++
+ .../network/access/qnetworkaccessfilebackend.cpp   |    5 ++
+ qtbase/src/network/kernel/qhostinfo_unix.cpp       |    7 ++
+ qtbase/src/widgets/dialogs/qfiledialog.cpp         |    2 -
+ 19 files changed, 240 insertions(+), 9 deletions(-)
+
+diff --git a/qtbase/include/QtCore/qconfig.h b/qtbase/include/QtCore/qconfig.h
+index aa8a3d6..1c65764 100644
+--- a/qtbase/include/QtCore/qconfig.h
++++ b/qtbase/include/QtCore/qconfig.h
+@@ -1 +1 @@
+-#include "../../src/corelib/global/qconfig.h"
++#include "../../../src/corelib/global/qconfig.h"
+diff --git a/qtbase/src/corelib/codecs/qtextcodec.cpp b/qtbase/src/corelib/codecs/qtextcodec.cpp
+index 0e67151..2ac84de 100644
+--- a/qtbase/src/corelib/codecs/qtextcodec.cpp
++++ b/qtbase/src/corelib/codecs/qtextcodec.cpp
+@@ -203,7 +203,11 @@ static QTextCodec *setupLocaleMapper()
+         // First part is getting that locale name.  First try setlocale() which
+         // definitely knows it, but since we cannot fully trust it, get ready
+         // to fall back to environment variables.
++#ifdef Q_OS_GENODE
++    	const QByteArray ctype;
++#else
+         const QByteArray ctype = setlocale(LC_CTYPE, 0);
++#endif /* Q_OS_GENODE */
+ 
+         // Get the first nonempty value from $LC_ALL, $LC_CTYPE, and $LANG
+         // environment variables.
+diff --git a/qtbase/src/corelib/global/qlogging.cpp b/qtbase/src/corelib/global/qlogging.cpp
+index 60ba19e..3c30eb4 100644
+--- a/qtbase/src/corelib/global/qlogging.cpp
++++ b/qtbase/src/corelib/global/qlogging.cpp
+@@ -56,6 +56,9 @@
+ #ifdef QT_USE_SLOG2
+ #include <slog2.h>
+ #endif
++#ifdef Q_OS_GENODE
++#include <base/printf.h>
++#endif
+ 
+ #include <stdio.h>
+ 
+@@ -807,6 +810,8 @@ static void qDefaultMessageHandler(QtMsgType type, const QMessageLogContext &con
+ 
+ #if defined(QT_USE_SLOG2)
+     slog2_default_handler(type, logMessage.toLocal8Bit().constData());
++#elif defined(Q_OS_GENODE)
++    PDBG("%s", logMessage.toLocal8Bit().constData());
+ #else
+     fprintf(stderr, "%s", logMessage.toLocal8Bit().constData());
+     fflush(stderr);
+diff --git a/qtbase/src/corelib/global/qsystemdetection.h b/qtbase/src/corelib/global/qsystemdetection.h
+index 5f96719..e6f220d 100644
+--- a/qtbase/src/corelib/global/qsystemdetection.h
++++ b/qtbase/src/corelib/global/qsystemdetection.h
+@@ -49,6 +49,7 @@
+ /*
+    The operating system, must be one of: (Q_OS_x)
+ 
++     GENODE   - Genode
+      DARWIN   - Darwin OS (synonym for Q_OS_MAC)
+      MSDOS    - MS-DOS and Windows
+      OS2      - OS/2
+@@ -80,7 +81,9 @@
+      UNIX     - Any UNIX BSD/SYSV system
+ */
+ 
+-#if defined(__APPLE__) && (defined(__GNUC__) || defined(__xlC__) || defined(__xlc__))
++#if defined(__GENODE__)
++#  define Q_OS_GENODE
++#elif defined(__APPLE__) && (defined(__GNUC__) || defined(__xlC__) || defined(__xlc__))
+ #  define Q_OS_DARWIN
+ #  define Q_OS_BSD4
+ #  ifdef __LP64__
+diff --git a/qtbase/src/corelib/io/qprocess.cpp b/qtbase/src/corelib/io/qprocess.cpp
+index 8409e7e..6357aad 100644
+--- a/qtbase/src/corelib/io/qprocess.cpp
++++ b/qtbase/src/corelib/io/qprocess.cpp
+@@ -98,6 +98,11 @@ QT_END_NAMESPACE
+ #include <qwineventnotifier.h>
+ #endif
+ 
++#ifdef Q_OS_GENODE
++#include <rom_session/connection.h>
++#include <util/xml_node.h>
++#endif
++
+ #ifndef QT_NO_PROCESS
+ 
+ QT_BEGIN_NAMESPACE
+@@ -780,6 +785,65 @@ QProcessPrivate::QProcessPrivate()
+ #ifdef Q_OS_UNIX
+     serial = 0;
+ #endif
++#ifdef Q_OS_GENODE
++    launchpad_child = 0;
++
++    /* request config file from ROM service */
++    Genode::Rom_connection rom("config");
++    rom.on_destruction(Genode::Rom_connection::KEEP_OPEN);
++    void *addr;
++    try {
++        addr = Genode::env()->rm_session()->attach(rom.dataspace());
++    } catch(Genode::Parent::Service_denied) {
++        qWarning("Error: Couldn't open config file.");
++        return;
++    }
++
++    /*
++     * The XML data of a valid config file starts with
++     * a <config> tag.
++     */
++    Genode::Xml_node config_node((const char *)addr);
++
++    if (!config_node.has_type("config")) {
++        qWarning("Error: Root node of config file is not a <config> tag.");
++        return;
++    }
++
++    /*
++     * Iterate through all entries of the config file and start
++     * children as specified.
++     */
++    for (int i = 0; i < config_node.num_sub_nodes(); i++) {
++        Genode::Xml_node program_node = config_node.sub_node(i);
++        if (program_node.has_type("program")) {
++
++            /* add filename and ram_quota to ram_quota_hash */
++            char filename[32];
++            try {
++                program_node.sub_node("filename").value(filename, sizeof(filename));
++            } catch (Genode::Xml_node::Nonexistent_sub_node) {
++                qWarning("Warning: Missing valid <filename> in config-file entry.");
++                return;
++            }
++
++            size_t ram_quota = 0;
++            try {
++                program_node.sub_node("ram_quota").value(&ram_quota);
++            } catch (Genode::Xml_node::Nonexistent_sub_node) {
++                qWarning("Warning: Missing valid <ram_quota> in config-file entry.");
++                return;
++            }
++
++            ram_quota_hash()->insert(QString(filename), ram_quota);
++        } else {
++            char buf[32];
++            program_node.type_name(buf, sizeof(buf));
++            qWarning("Warning: Ignoring unsupported tag <%s>.", buf);
++        }
++    }
++
++#endif
+ }
+ 
+ /*!
+diff --git a/qtbase/src/corelib/io/qprocess_p.h b/qtbase/src/corelib/io/qprocess_p.h
+index f658e54..eedb15b 100644
+--- a/qtbase/src/corelib/io/qprocess_p.h
++++ b/qtbase/src/corelib/io/qprocess_p.h
+@@ -71,6 +71,11 @@ typedef int Q_PIPE;
+ 
+ #ifndef QT_NO_PROCESS
+ 
++#ifdef Q_OS_GENODE
++#include <base/env.h>
++#include <launchpad/launchpad.h>
++#endif
++
+ QT_BEGIN_NAMESPACE
+ 
+ class QSocketNotifier;
+@@ -192,6 +197,28 @@ template<> Q_INLINE_TEMPLATE void QSharedDataPointer<QProcessEnvironmentPrivate>
+     d = x;
+ }
+ 
++#ifdef Q_OS_GENODE
++
++class QProcess_launchpad : public Launchpad
++{
++public:
++    QProcess_launchpad(unsigned long initial_quota) : Launchpad(initial_quota) {}
++
++    virtual void quota(unsigned long quota) {}
++
++    virtual void add_launcher(const char *filename,
++                              unsigned long default_quota) {}
++
++    virtual void add_child(const char *unique_name,
++                           unsigned long quota,
++                           Launchpad_child *launchpad_child,
++                           Genode::Allocator *alloc) {}
++
++    virtual void remove_child(const char *name, Genode::Allocator *alloc) {}
++};
++
++#endif
++
+ class QProcessPrivate : public QIODevicePrivate
+ {
+ public:
+@@ -304,7 +331,7 @@ public:
+ #endif
+ 
+     void startProcess();
+-#if defined(Q_OS_UNIX) && !defined(Q_OS_QNX)
++#if defined(Q_OS_UNIX) && !defined(Q_OS_QNX) && !defined(Q_OS_GENODE)
+     void execChild(const char *workingDirectory, char **path, char **argv, char **envp);
+ #elif defined(Q_OS_QNX)
+     pid_t spawnChild(const char *workingDirectory, char **argv, char **envp);
+@@ -331,6 +358,22 @@ public:
+     int serial;
+ #endif
+ 
++#ifdef Q_OS_GENODE
++    static QProcess_launchpad *launchpad()
++    {
++      static QProcess_launchpad _launchpad(Genode::env()->ram_session()->quota());
++      return &_launchpad;
++    }
++
++    static QHash<QString, size_t> *ram_quota_hash()
++    {
++        static QHash<QString, size_t> _ram_quota_hash;
++        return &_ram_quota_hash;
++    }
++
++    Launchpad_child *launchpad_child;
++#endif
++
+     bool waitForStarted(int msecs = 30000);
+     bool waitForReadyRead(int msecs = 30000);
+     bool waitForBytesWritten(int msecs = 30000);
+diff --git a/qtbase/src/corelib/io/qresource.cpp b/qtbase/src/corelib/io/qresource.cpp
+index 0ce3ce3..9436542 100644
+--- a/qtbase/src/corelib/io/qresource.cpp
++++ b/qtbase/src/corelib/io/qresource.cpp
+@@ -929,7 +929,7 @@ public:
+     }
+ };
+ 
+-#if defined(Q_OS_UNIX) && !defined (Q_OS_NACL) && !defined(Q_OS_INTEGRITY)
++#if defined(Q_OS_UNIX) && !defined (Q_OS_NACL) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
+ #define QT_USE_MMAP
+ #endif
+ 
+diff --git a/qtbase/src/corelib/kernel/qcoreapplication.cpp b/qtbase/src/corelib/kernel/qcoreapplication.cpp
+index ec80842..cce28ae 100644
+--- a/qtbase/src/corelib/kernel/qcoreapplication.cpp
++++ b/qtbase/src/corelib/kernel/qcoreapplication.cpp
+@@ -449,7 +449,7 @@ void QCoreApplicationPrivate::initLocale()
+     if (qt_locale_initialized)
+         return;
+     qt_locale_initialized = true;
+-#ifdef Q_OS_UNIX
++#if defined(Q_OS_UNIX) && !defined(Q_OS_GENODE)
+     setlocale(LC_ALL, "");
+ #endif
+ }
+diff --git a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
+index acdc763..d29b6d4 100644
+--- a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
++++ b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
+@@ -70,6 +70,11 @@
+ #  include <sys/times.h>
+ #endif
+ 
++#ifdef Q_OS_GENODE
++#include <timer_session/connection.h>
++#define perror PERR
++#endif /* Q_OS_GENODE */
++
+ QT_BEGIN_NAMESPACE
+ 
+ #if defined(Q_OS_INTEGRITY) || defined(Q_OS_VXWORKS)
+@@ -278,6 +283,9 @@ int QEventDispatcherUNIXPrivate::processThreadWakeUp(int nsel)
+         char c[16];
+         ::read(thread_pipe[0], c, sizeof(c));
+         ::ioctl(thread_pipe[0], FIOFLUSH, 0);
++#elif defined(Q_OS_GENODE)
++		char c[16];
++        ::read(thread_pipe[0], c, sizeof(c)); // FIXME: the while loop only works in non-blocking mode
+ #else
+         char c[16];
+         while (::read(thread_pipe[0], c, sizeof(c)) > 0)
+@@ -309,6 +317,12 @@ QEventDispatcherUNIX::~QEventDispatcherUNIX()
+ int QEventDispatcherUNIX::select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+                                  timeval *timeout)
+ {
++#ifdef Q_OS_GENODE
++    /* if < 50ms round up to the 50ms minimum granularity supported by
++     * the timed semaphore */
++   if (timeout && (timeout->tv_sec == 0) && (timeout->tv_usec > 0) && (timeout->tv_usec < 10000))
++     timeout->tv_usec = 10000;
++#endif /* Q_OS_GENODE */
+     return qt_safe_select(nfds, readfds, writefds, exceptfds, timeout);
+ }
+ 
+diff --git a/qtbase/src/corelib/kernel/qtranslator.cpp b/qtbase/src/corelib/kernel/qtranslator.cpp
+index 9243d09..d953b20 100644
+--- a/qtbase/src/corelib/kernel/qtranslator.cpp
++++ b/qtbase/src/corelib/kernel/qtranslator.cpp
+@@ -60,7 +60,7 @@
+ #include "qendian.h"
+ #include "qresource.h"
+ 
+-#if defined(Q_OS_UNIX) && !defined(Q_OS_INTEGRITY)
++#if defined(Q_OS_UNIX) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
+ #define QT_USE_MMAP
+ #include "private/qcore_unix_p.h"
+ #endif
+diff --git a/qtbase/src/corelib/thread/qmutex.cpp b/qtbase/src/corelib/thread/qmutex.cpp
+index 45e52d7..83e9870 100644
+--- a/qtbase/src/corelib/thread/qmutex.cpp
++++ b/qtbase/src/corelib/thread/qmutex.cpp
+@@ -651,6 +651,8 @@ QT_END_NAMESPACE
+ #  include "qmutex_mac.cpp"
+ #elif defined(Q_OS_WIN)
+ #  include "qmutex_win.cpp"
++#elif defined(Q_OS_GENODE)
++#  include "qmutex_genode.cpp"
+ #else
+ #  include "qmutex_unix.cpp"
+ #endif
+diff --git a/qtbase/src/corelib/thread/qmutex_p.h b/qtbase/src/corelib/thread/qmutex_p.h
+index 1b8bcd6..ecbfadd 100644
+--- a/qtbase/src/corelib/thread/qmutex_p.h
++++ b/qtbase/src/corelib/thread/qmutex_p.h
+@@ -65,6 +65,12 @@
+ # include <mach/semaphore.h>
+ #endif
+ 
++#include <qplatformdefs.h>
++
++#ifdef Q_OS_GENODE
++#include <os/timed_semaphore.h>
++#endif
++
+ #if defined(Q_OS_LINUX) && !defined(QT_LINUXBASE)
+ // use Linux mutexes everywhere except for LSB builds
+ #  define QT_LINUX_FUTEX
+@@ -126,6 +132,8 @@ public:
+     //platform specific stuff
+ #if defined(Q_OS_MAC)
+     semaphore_t mach_semaphore;
++#elif defined(Q_OS_GENODE)
++    Genode::Timed_semaphore sem;
+ #elif defined(Q_OS_UNIX)
+     bool wakeup;
+     pthread_mutex_t mutex;
+diff --git a/qtbase/src/corelib/thread/qthread.cpp b/qtbase/src/corelib/thread/qthread.cpp
+index bd8c634..bc29376 100644
+--- a/qtbase/src/corelib/thread/qthread.cpp
++++ b/qtbase/src/corelib/thread/qthread.cpp
+@@ -149,7 +149,10 @@ QThreadPrivate::QThreadPrivate(QThreadData *d)
+       stackSize(0), priority(QThread::InheritPriority), data(d)
+ {
+ #if defined (Q_OS_UNIX)
+-    thread_id = 0;
++	thread_id = 0;
++#ifdef Q_OS_GENODE
++	genode_thread = 0;
++#endif /* Q_OS_GENODE */
+ #elif defined (Q_OS_WIN)
+     handle = 0;
+     id = 0;
+diff --git a/qtbase/src/corelib/thread/qthread_p.h b/qtbase/src/corelib/thread/qthread_p.h
+index 526633c..6f6b0e1 100644
+--- a/qtbase/src/corelib/thread/qthread_p.h
++++ b/qtbase/src/corelib/thread/qthread_p.h
+@@ -54,6 +54,10 @@
+ //
+ //
+ 
++#ifdef Q_OS_GENODE
++#include <thread_qt.h>
++#endif
++
+ #include "qplatformdefs.h"
+ #include "QtCore/qthread.h"
+ #include "QtCore/qmutex.h"
+@@ -158,12 +162,63 @@ public:
+     static QThread *threadForId(int id);
+ 
+ #ifdef Q_OS_UNIX
++#ifdef Q_OS_GENODE
++
++    class Genode_thread : public Genode::Thread_qt
++    {
++        private:
++
++    	    /*
++    	     * The '_finished_lock' is necessary because 'QThreadPrivate::mutex'
++    	     * uses a 'Genode::Timed_semaphore' internally and it isn't safe
++    	     * to delete a Genode thread that just called 'Semaphore::up()',
++    	     * because the 'Semaphore::_meta_lock' could still be locked.
++    	     */
++            Genode::Lock _finished_lock;
++            QThread *_qthread;
++
++        public:
++
++            Genode_thread(QThread *qthread)
++            : _finished_lock(Genode::Lock::LOCKED),
++              _qthread(qthread) { }
++
++            virtual void entry()
++            {
++                QThreadPrivate::start(_qthread);
++                QThreadPrivate::finish(_qthread);
++                _finished_lock.unlock();
++            }
++
++            void join()
++            {
++                _finished_lock.lock();
++            }
++    };
++
++    Genode_thread *genode_thread;
++
++    struct tls_struct {
++      QThreadData *data;
++      bool termination_enabled;
++    };
++
++    static QHash<Qt::HANDLE, struct tls_struct> tls;
++
++    Qt::HANDLE thread_id;
++    QWaitCondition thread_done;
++
++    static void *start(void *arg);
++    static void finish(void *arg);
++
++#else // Q_OS_UNIX && !Q_OS_GENODE
+     pthread_t thread_id;
+     QWaitCondition thread_done;
+ 
+     static void *start(void *arg);
+     static void finish(void *);
+ 
++#endif // Q_OS_GENODE
+ #endif // Q_OS_UNIX
+ 
+ #ifdef Q_OS_WIN
+diff --git a/qtbase/src/corelib/tools/qdatetime.cpp b/qtbase/src/corelib/tools/qdatetime.cpp
+index 86a6a02..739d9c6 100644
+--- a/qtbase/src/corelib/tools/qdatetime.cpp
++++ b/qtbase/src/corelib/tools/qdatetime.cpp
+@@ -3077,6 +3077,9 @@ QTime QTime::currentTime()
+     // posix compliant system
+     struct timeval tv;
+     gettimeofday(&tv, 0);
++#ifdef Q_OS_GENODE
++    ct.mds = (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
++#else
+     time_t ltime = tv.tv_sec;
+     struct tm *t = 0;
+ 
+@@ -3091,6 +3094,7 @@ QTime QTime::currentTime()
+     Q_CHECK_PTR(t);
+ 
+     ct.mds = msecsFromDecomposed(t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec / 1000);
++#endif /* Q_OS_GENODE */
+     return ct;
+ }
+ 
+@@ -3972,6 +3976,10 @@ static QDate adjustDate(QDate date)
+ 
+ static QDateTimePrivate::Spec utcToLocal(QDate &date, QTime &time)
+ {
++#ifdef Q_OS_GENODE
++    /* no timezones in Genode */
++    return QDateTimePrivate::LocalUnknown;
++#endif
+     QDate fakeDate = adjustDate(date);
+ 
+     // won't overflow because of fakeDate
+@@ -4025,6 +4033,10 @@ static QDateTimePrivate::Spec utcToLocal(QDate &date, QTime &time)
+ 
+ static void localToUtc(QDate &date, QTime &time, int isdst)
+ {
++#ifdef Q_OS_GENODE
++    /* no timezones in Genode */
++    return;
++#endif
+     if (!date.isValid())
+         return;
+ 
+diff --git a/qtbase/src/gui/image/qxpmhandler.cpp b/qtbase/src/gui/image/qxpmhandler.cpp
+index a7936f9..eee3a87 100644
+--- a/qtbase/src/gui/image/qxpmhandler.cpp
++++ b/qtbase/src/gui/image/qxpmhandler.cpp
+@@ -848,8 +848,16 @@ static bool read_xpm_header(
+ #if defined(_MSC_VER) && _MSC_VER >= 1400 && !defined(Q_OS_WINCE)
+         if (sscanf_s(buf, "%d %d %d %d", w, h, ncols, cpp) < 4)
+ #else
++#ifdef Q_OS_GENODE
++    *w = QString(buf).section(" ", 0, 0, QString::SectionSkipEmpty).toInt();
++    *h = QString(buf).section(" ", 1, 1, QString::SectionSkipEmpty).toInt();
++    *ncols = QString(buf).section(" ", 2, 2, QString::SectionSkipEmpty).toInt();
++    *cpp = QString(buf).section(" ", 3, 3, QString::SectionSkipEmpty).toInt();
++    if (*w <= 0 || *h <= 0 || *ncols <= 0 || *cpp <= 0)
++#else
+     if (sscanf(buf, "%d %d %d %d", w, h, ncols, cpp) < 4)
+ #endif
++#endif
+         return false;                                        // < 4 numbers parsed
+ 
+     return true;
+diff --git a/qtbase/src/network/access/qnetworkaccessfilebackend.cpp b/qtbase/src/network/access/qnetworkaccessfilebackend.cpp
+index a7f3581..a522542 100644
+--- a/qtbase/src/network/access/qnetworkaccessfilebackend.cpp
++++ b/qtbase/src/network/access/qnetworkaccessfilebackend.cpp
+@@ -111,6 +111,7 @@ void QNetworkAccessFileBackend::open()
+         url.setPath(QLatin1String("/"));
+     setUrl(url);
+ 
++#ifndef Q_OS_GENODE
+     QString fileName = url.toLocalFile();
+     if (fileName.isEmpty()) {
+         if (url.scheme() == QLatin1String("qrc"))
+@@ -118,6 +119,10 @@ void QNetworkAccessFileBackend::open()
+         else
+             fileName = url.toString(QUrl::RemoveAuthority | QUrl::RemoveFragment | QUrl::RemoveQuery);
+     }
++#else
++    QString fileName = QLatin1String(":") + url.path();
++#endif
++
+     file.setFileName(fileName);
+ 
+     if (operation() == QNetworkAccessManager::GetOperation) {
+diff --git a/qtbase/src/network/kernel/qhostinfo_unix.cpp b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+index 0e147c4..157debc 100644
+--- a/qtbase/src/network/kernel/qhostinfo_unix.cpp
++++ b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+@@ -144,6 +144,11 @@ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+     QHostAddress address;
+     if (address.setAddress(hostName)) {
+         // Reverse lookup
++#ifdef Q_OS_GENODE
++    results.setError(QHostInfo::HostNotFound);
++    results.setErrorString(tr("Reverse lookup is not implemented because of missing support in lwip."));
++    return results;
++#else
+ // Reverse lookups using getnameinfo are broken on darwin, use gethostbyaddr instead.
+ #if !defined (QT_NO_GETADDRINFO) && !defined (Q_OS_DARWIN)
+         sockaddr_in sa4;
+@@ -174,7 +179,7 @@ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+         if (ent)
+             results.setHostName(QString::fromLatin1(ent->h_name));
+ #endif
+-
++#endif
+         if (results.hostName().isEmpty())
+             results.setHostName(address.toString());
+         results.setAddresses(QList<QHostAddress>() << address);
+diff --git a/qtbase/src/widgets/dialogs/qfiledialog.cpp b/qtbase/src/widgets/dialogs/qfiledialog.cpp
+index c60f247..044e1ab 100644
+--- a/qtbase/src/widgets/dialogs/qfiledialog.cpp
++++ b/qtbase/src/widgets/dialogs/qfiledialog.cpp
+@@ -941,7 +941,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path, bool *expanded
+     } else {
+         QString userName = tokens.first();
+         userName.remove(0, 1);
+-#if defined(_POSIX_THREAD_SAFE_FUNCTIONS) && !defined(Q_OS_OPENBSD)
++#if defined(_POSIX_THREAD_SAFE_FUNCTIONS) && !defined(Q_OS_OPENBSD) && !defined(Q_OS_GENODE)
+         passwd pw;
+         passwd *tmpPw;
+         char buf[200];
