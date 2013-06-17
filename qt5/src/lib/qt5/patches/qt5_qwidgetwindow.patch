@@ -1,0 +1,23 @@
+qt5_qwidgetwindow.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/widgets/kernel/qwidgetwindow.cpp |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+index 50b61be..1fe8896 100644
+--- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
++++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
+@@ -227,6 +227,9 @@ bool QWidgetWindow::event(QEvent *event)
+     case QEvent::Hide:
+         return QWindow::event(event);
+ 
++    case QEvent::MetaCall:
++    	return QWindow::event(event);
++
+     default:
+         break;
+     }
