@@ -242,6 +242,9 @@ exec rm -r bin/etc
 
 if {![regexp {Hello Genode} $output dummy]} {
 	puts stderr "Error: output not as expected"
+	puts "remaining Genode log messages:\n"
+	# show any remaining Genode output occuring until the expect timeout triggers
+	expect "dummy pattern"
 	exit 1
 }
 
