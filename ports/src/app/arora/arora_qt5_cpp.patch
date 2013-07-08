@@ -1,4 +1,4 @@
-arora_qt5.patch
+arora_qt5_cpp.patch
 
 From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
@@ -16,7 +16,6 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  src/history/history.cpp                            |   49 +++++++++++++++++++-
  src/locationbar/locationbar.cpp                    |    2 +
  src/locationbar/locationbarsiteicon.cpp            |    3 +
- src/main.cpp                                       |    4 +-
  src/modelmenu.cpp                                  |    5 ++
  src/modeltoolbar.cpp                               |    3 +
  src/network/cookiejar/cookieexceptionsmodel.cpp    |    5 ++
@@ -34,7 +33,9 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  src/tabwidget.cpp                                  |    2 -
  src/utils/networkaccessmanagerproxy_p.h            |    2 +
  src/webview.cpp                                    |   14 ++++--
- 30 files changed, 209 insertions(+), 15 deletions(-)
+ tools/cacheinfo/main.cpp                           |    5 ++
+ tools/htmlToXBel/main.cpp                          |    5 ++
+ 31 files changed, 217 insertions(+), 13 deletions(-)
 
 diff --git a/src/aboutdialog.cpp b/src/aboutdialog.cpp
 index 42e1c81..ce70df2 100644
@@ -93,7 +94,7 @@ index 1b5ba2d..f17e2a0 100644
  
  Qt::ItemFlags AdBlockModel::flags(const QModelIndex &index) const
 diff --git a/src/adblock/adblocksubscription.cpp b/src/adblock/adblocksubscription.cpp
-index d28c590..7de23b2 100644
+index d28c590..539a9d2 100644
 --- a/src/adblock/adblocksubscription.cpp
 +++ b/src/adblock/adblocksubscription.cpp
 @@ -37,6 +37,10 @@
@@ -112,10 +113,10 @@ index d28c590..7de23b2 100644
          return;
  
 +#if QT_VERSION >= 0x050000
-+    m_title = QUrlQuery(url).queryItemValue("title");
-+    m_enabled = QUrlQuery(url).queryItemValue("enabled") != QLatin1String("false");
-+    m_location = QUrlQuery(url).queryItemValue("location").toUtf8();
-+    QByteArray lastUpdateByteArray = QUrlQuery(url).queryItemValue("lastUpdate").toLatin1();
++    m_title = QUrlQuery(url).queryItemValue(QLatin1String("title"));
++    m_enabled = QUrlQuery(url).queryItemValue(QLatin1String("enabled")) != QLatin1String("false");
++    m_location = QUrlQuery(url).queryItemValue(QLatin1String("location")).toUtf8();
++    QByteArray lastUpdateByteArray = QUrlQuery(url).queryItemValue(QLatin1String("lastUpdate")).toLatin1();
 +#else
      m_title = QUrl::fromPercentEncoding(url.encodedQueryItemValue("title"));
      m_enabled = QUrl::fromPercentEncoding(url.encodedQueryItemValue("enabled")) != QLatin1String("false");
@@ -453,21 +454,6 @@ index f594700..49b2f55 100644
  #include "browserapplication.h"
  #include "webview.h"
  
-diff --git a/src/main.cpp b/src/main.cpp
-index 1be1bf7..5f9e2a1 100644
---- a/src/main.cpp
-+++ b/src/main.cpp
-@@ -31,8 +31,8 @@ int main(int argc, char **argv)
- {
-     Q_INIT_RESOURCE(htmls);
-     Q_INIT_RESOURCE(data);
--    Q_IMPORT_PLUGIN(qgif);
--    Q_IMPORT_PLUGIN(qjpeg);
-+    //Q_IMPORT_PLUGIN(qgif);
-+    //Q_IMPORT_PLUGIN(qjpeg);
- #ifdef Q_WS_X11
-     QApplication::setGraphicsSystem(QString::fromLatin1("raster"));
- #endif
 diff --git a/src/modelmenu.cpp b/src/modelmenu.cpp
 index 4f95d09..0f052c3 100644
 --- a/src/modelmenu.cpp
@@ -842,3 +828,37 @@ index 43eeeb9..ee45475 100644
          QVariant result = page()->mainFrame()->evaluateJavaScript(scriptSource);
          return;
      }
+diff --git a/tools/cacheinfo/main.cpp b/tools/cacheinfo/main.cpp
+index 5e88ebc..46bb048 100644
+--- a/tools/cacheinfo/main.cpp
++++ b/tools/cacheinfo/main.cpp
+@@ -44,8 +44,13 @@ int main(int argc, char **argv)
+     }
+ 
+     NetworkDiskCache diskCache;
++#if QT_VERSION >= 0x050000
++    QString location = QStandardPaths::writableLocation(QStandardPaths::CacheLocation)
++            + QLatin1String("/browser/");
++#else
+     QString location = QDesktopServices::storageLocation(QDesktopServices::CacheLocation)
+             + QLatin1String("/browser/");
++#endif
+     diskCache.setCacheDirectory(location);
+ 
+     QNetworkCacheMetaData metaData;
+diff --git a/tools/htmlToXBel/main.cpp b/tools/htmlToXBel/main.cpp
+index 15c2ea5..40b6b00 100644
+--- a/tools/htmlToXBel/main.cpp
++++ b/tools/htmlToXBel/main.cpp
+@@ -20,6 +20,11 @@
+ #include <QtGui/QtGui>
+ #include <QtWebKit/QtWebKit>
+ 
++#if QT_VERSION >= 0x050000
++#include <QtWidgets/QtWidgets>
++#include <QtWebKitWidgets/QtWebKitWidgets>
++#endif
++
+ /*!
+     A tool to convert html bookmark files into the xbel format.
+ 

@@ -9,3 +9,4 @@ qt5_qwidgetwindow.patch
 qt5_qtscript.patch
 qt5_qttools.patch
 qt5_qtwebkit.patch
+qt5_qtwebkit_debug.diff
