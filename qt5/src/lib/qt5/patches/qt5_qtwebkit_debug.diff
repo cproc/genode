@@ -1,0 +1,128 @@
+qt5_qtwebkit_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../access/qhttpnetworkconnectionchannel.cpp       |    4 ++++
+ qtbase/src/network/access/qhttpthreaddelegate.cpp  |    1 +
+ .../src/network/access/qnetworkreplyhttpimpl.cpp   |    4 +++-
+ .../platform/network/qt/QNetworkReplyHandler.cpp   |   10 ++++++++--
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp b/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
+index 38723a7..e9e5965 100644
+--- a/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
++++ b/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
+@@ -472,6 +472,7 @@ void QHttpNetworkConnectionChannel::_q_receiveReply()
+                    bytes += haveRead;
+                    replyPrivate->totalProgress += haveRead;
+                    // the user will get notified of it via progress signal
++                   qDebug() << "*** QHttpNetworkConnectionChannel::_q_receiveReply()1";
+                    emit reply->dataReadProgress(replyPrivate->totalProgress, replyPrivate->bodyLength);
+                } else if (haveRead == 0) {
+                    // Happens since this called in a loop. Currently no bytes available.
+@@ -484,10 +485,12 @@ void QHttpNetworkConnectionChannel::_q_receiveReply()
+                  // bulk files like images should fulfill these properties and
+                  // we can therefore save on memory copying
+                 qint64 haveRead = replyPrivate->readBodyFast(socket, &replyPrivate->responseData);
++                qDebug() << "*** QHttpNetworkConnectionChannel::_q_receiveReply(): haveRead =" << haveRead << ", bodyLength =" << replyPrivate->bodyLength;
+                 bytes += haveRead;
+                 replyPrivate->totalProgress += haveRead;
+                 if (replyPrivate->shouldEmitSignals()) {
+                     emit reply->readyRead();
++                    qDebug() << "*** QHttpNetworkConnectionChannel::_q_receiveReply()2";
+                     emit reply->dataReadProgress(replyPrivate->totalProgress, replyPrivate->bodyLength);
+                 }
+             }
+@@ -501,6 +504,7 @@ void QHttpNetworkConnectionChannel::_q_receiveReply()
+                     replyPrivate->totalProgress += haveRead;
+                     if (replyPrivate->shouldEmitSignals()) {
+                         emit reply->readyRead();
++                        qDebug() << "*** QHttpNetworkConnectionChannel::_q_receiveReply()3";
+                         emit reply->dataReadProgress(replyPrivate->totalProgress, replyPrivate->bodyLength);
+                     }
+                 } else if (haveRead == -1) {
+diff --git a/qtbase/src/network/access/qhttpthreaddelegate.cpp b/qtbase/src/network/access/qhttpthreaddelegate.cpp
+index 117265d..fe5f3c4 100644
+--- a/qtbase/src/network/access/qhttpthreaddelegate.cpp
++++ b/qtbase/src/network/access/qhttpthreaddelegate.cpp
+@@ -579,6 +579,7 @@ void QHttpThreadDelegate::dataReadProgressSlot(qint64 done, qint64 total)
+         return;
+ 
+     pendingDownloadProgress->fetchAndAddRelease(1);
++    qDebug() << "*** QHttpThreadDelegate::dataReadProgressSlot(): emitting downloadProgress:" << done << "," << total;
+     emit downloadProgress(done, total);
+ }
+ 
+diff --git a/qtbase/src/network/access/qnetworkreplyhttpimpl.cpp b/qtbase/src/network/access/qnetworkreplyhttpimpl.cpp
+index 1520816..bfaca3a 100644
+--- a/qtbase/src/network/access/qnetworkreplyhttpimpl.cpp
++++ b/qtbase/src/network/access/qnetworkreplyhttpimpl.cpp
+@@ -296,6 +296,7 @@ qint64 QNetworkReplyHttpImpl::bytesAvailable() const
+ 
+     // zerocopy buffer
+     if (d->downloadZerocopyBuffer) {
++    	qDebug() << "QNetworkReplyHttpImpl::bytesAvailable():" << QNetworkReply::bytesAvailable() << "," << d->downloadBufferCurrentSize << "," << d->downloadBufferReadPosition;
+         return QNetworkReply::bytesAvailable() + d->downloadBufferCurrentSize - d->downloadBufferReadPosition;
+     }
+ 
+@@ -1182,7 +1183,8 @@ void QNetworkReplyHttpImplPrivate::replyDownloadProgressSlot(qint64 bytesReceive
+     bytesDownloaded = bytesReceived;
+ 
+     downloadBufferCurrentSize = bytesReceived;
+-
++    qDebug() << "*** QNetworkReplyHttpImplPrivate::replyDownloadProgressSlot(): downloadBufferCurrentSize =" << downloadBufferCurrentSize;
++    qDebug() << "*** QNetworkReplyHttpImplPrivate::replyDownloadProgressSlot(): bytesTotal =" << bytesTotal;
+     // Only emit readyRead when actual data is there
+     // emit readyRead before downloadProgress incase this will cause events to be
+     // processed and we get into a recursive call (as in QProgressDialog).
+diff --git a/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp b/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
+index 904e859..2412862 100644
+--- a/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
++++ b/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
+@@ -39,7 +39,7 @@
+ #include <wtf/text/CString.h>
+ 
+ #include <QCoreApplication>
+-
++#include <QDebug>
+ static const int gMaxRedirections = 10;
+ 
+ namespace WebCore {
+@@ -312,6 +312,7 @@ void QNetworkReplyWrapper::resetConnections()
+     QCoreApplication::removePostedEvents(this, QEvent::MetaCall);
+ }
+ 
++extern "C" void wait_for_continue();
+ void QNetworkReplyWrapper::receiveMetaData()
+ {
+     // This slot is only used to receive the first signal from the QNetworkReply object.
+@@ -373,7 +374,7 @@ void QNetworkReplyWrapper::emitMetaDataChanged()
+ {
+     QueueLocker lock(m_queue);
+     m_queue->push(&QNetworkReplyHandler::sendResponseIfNeeded);
+-
++qDebug() << "***" << m_reply->bytesAvailable() << " bytes available ***";
+     if (m_reply->bytesAvailable()) {
+         m_responseContainsData = true;
+         m_queue->push(&QNetworkReplyHandler::forwardData);
+@@ -398,6 +399,9 @@ void QNetworkReplyWrapper::didReceiveReadyRead()
+ 
+ void QNetworkReplyWrapper::didReceiveFinished()
+ {
++	qDebug() << "*** didReceiveFinished() ***";
++	wait_for_continue();
++
+     // Disconnecting will make sure that nothing will happen after emitting the finished signal.
+     resetConnections();
+     m_queue->push(&QNetworkReplyHandler::finish);
+@@ -662,6 +666,8 @@ void QNetworkReplyHandler::forwardData()
+ 
+     QByteArray data = m_replyWrapper->reply()->read(m_replyWrapper->reply()->bytesAvailable());
+ 
++    qDebug() << "*** forwardData():" << data.size() << "bytes:" << data.constData();
++
+     ResourceHandleClient* client = m_resourceHandle->client();
+     if (!client)
+         return;
