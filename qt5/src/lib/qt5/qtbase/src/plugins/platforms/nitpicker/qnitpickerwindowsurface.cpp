@@ -38,7 +38,7 @@ QNitpickerWindowSurface::~QNitpickerWindowSurface()
 
 QPaintDevice *QNitpickerWindowSurface::paintDevice()
 {
-    qDebug() << "QNitpickerWindowSurface::paintDevice()";
+    //qDebug() << "QNitpickerWindowSurface::paintDevice()";
     if (_framebuffer_changed) {
     	PDBG("framebuffer changed");
     	_framebuffer_changed = false;
@@ -51,7 +51,7 @@ QPaintDevice *QNitpickerWindowSurface::paintDevice()
         _image = QImage(_platform_window->framebuffer(), geo.width(), geo.height(), 2*geo.width(), format);
         qDebug() << "QNitpickerWindowSurface::paintDevice(): w =" << geo.width() << ", h =" << geo.height();
     }
-    qDebug() << "QNitpickerWindowSurface::paintDevice() finished";
+    //qDebug() << "QNitpickerWindowSurface::paintDevice() finished";
     return &_image;
 }
 
@@ -61,7 +61,7 @@ void QNitpickerWindowSurface::flush(QWindow *window, const QRegion &region, cons
     Q_UNUSED(region);
     Q_UNUSED(offset);
 
-    qDebug() << "QNitpickerWindowSurface::flush()";
+    //qDebug() << "QNitpickerWindowSurface::flush()";
 
     QRect geo = _platform_window->geometry();
     _platform_window->refresh(0, 0, geo.width(), geo.height());
