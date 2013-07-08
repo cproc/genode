@@ -1,0 +1,58 @@
+qt5_qtwebkit_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../platform/network/qt/QNetworkReplyHandler.cpp   |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp b/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
+index 904e859..2412862 100644
+--- a/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
++++ b/qtwebkit/Source/WebCore/platform/network/qt/QNetworkReplyHandler.cpp
+@@ -39,7 +39,7 @@
+ #include <wtf/text/CString.h>
+ 
+ #include <QCoreApplication>
+-
++#include <QDebug>
+ static const int gMaxRedirections = 10;
+ 
+ namespace WebCore {
+@@ -312,6 +312,7 @@ void QNetworkReplyWrapper::resetConnections()
+     QCoreApplication::removePostedEvents(this, QEvent::MetaCall);
+ }
+ 
++extern "C" void wait_for_continue();
+ void QNetworkReplyWrapper::receiveMetaData()
+ {
+     // This slot is only used to receive the first signal from the QNetworkReply object.
+@@ -373,7 +374,7 @@ void QNetworkReplyWrapper::emitMetaDataChanged()
+ {
+     QueueLocker lock(m_queue);
+     m_queue->push(&QNetworkReplyHandler::sendResponseIfNeeded);
+-
++qDebug() << "***" << m_reply->bytesAvailable() << " bytes available ***";
+     if (m_reply->bytesAvailable()) {
+         m_responseContainsData = true;
+         m_queue->push(&QNetworkReplyHandler::forwardData);
+@@ -398,6 +399,9 @@ void QNetworkReplyWrapper::didReceiveReadyRead()
+ 
+ void QNetworkReplyWrapper::didReceiveFinished()
+ {
++	qDebug() << "*** didReceiveFinished() ***";
++	wait_for_continue();
++
+     // Disconnecting will make sure that nothing will happen after emitting the finished signal.
+     resetConnections();
+     m_queue->push(&QNetworkReplyHandler::finish);
+@@ -662,6 +666,8 @@ void QNetworkReplyHandler::forwardData()
+ 
+     QByteArray data = m_replyWrapper->reply()->read(m_replyWrapper->reply()->bytesAvailable());
+ 
++    qDebug() << "*** forwardData():" << data.size() << "bytes:" << data.constData();
++
+     ResourceHandleClient* client = m_resourceHandle->client();
+     if (!client)
+         return;

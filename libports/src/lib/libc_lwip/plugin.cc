@@ -398,10 +398,20 @@ int Plugin::listen(Libc::File_descriptor *sockfdo, int backlog)
 	return lwip_listen(get_lwip_fd(sockfdo), backlog);
 }
 
-
+extern "C" void wait_for_continue();
 ssize_t Plugin::read(Libc::File_descriptor *fdo, void *buf, ::size_t count)
 {
-	return lwip_read(get_lwip_fd(fdo), buf, count);
+	ssize_t result = lwip_read(get_lwip_fd(fdo), buf, count);
+	static char buf2[32*1024];
+	if (count > sizeof(buf2)) {
+		PERR("*** log buffer overflow ****, count = %zu", count);
+		wait_for_continue();
+	}
+	Genode::strncpy(buf2, (const char*)buf, count + 1);
+	PDBG("received %zd bytes: %s", result, buf2);
+	//wait_for_continue();
+	return result;
+	//return lwip_read(get_lwip_fd(fdo), buf, count);
 }
 
 
@@ -565,6 +575,14 @@ Libc::File_descriptor *Plugin::socket(int domain, int type, int protocol)
 
 ssize_t Plugin::write(Libc::File_descriptor *fdo, const void *buf, ::size_t count)
 {
+	static char buf2[32*1024];
+	if (count > sizeof(buf2)) {
+		PERR("*** log buffer overflow ****");
+		wait_for_continue();
+	}
+	Genode::strncpy(buf2, (const char*)buf, count + 1);
+	PDBG("sending: %s", buf2);
+	//wait_for_continue();
 	return lwip_write(get_lwip_fd(fdo), buf, count);
 }
 
