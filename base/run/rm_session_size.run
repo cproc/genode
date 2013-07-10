@@ -1,0 +1,24 @@
+build "core init test/rm_session_size"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="RM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<start name="test-rm_session_size">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+	</config>
+}
+
+build_boot_image "core init test-rm_session_size"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until "Test succeeded" 10
