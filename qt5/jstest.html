@@ -1,0 +1,31 @@
+<html>
+<head>
+</head>
+<body>
+	<script type="text/javascript">
+	
+		detectHTML5AdsEnable=function() {
+		
+			var a, i;
+
+			var ua = 'Firefox/20';
+
+			document.write('ua = ' + ua); document.write('<br>');
+			
+			var b = {r:/Firefox\/(\d+)/gi, v:17};
+			
+			document.write('b.r = ' + b.r); document.write('<br>');
+			
+			a = b.r.exec(ua);
+			
+			document.write('a = ' + a); document.write('<br>');
+			
+			//if ((a != null) && (a[1] != null) && (a[1] >= b.v));
+			
+		};
+		
+		detectHTML5AdsEnable();
+		
+	</script>
+</body>
+</html>
