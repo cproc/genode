@@ -4,22 +4,74 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../Source/JavaScriptCore/heap/BlockAllocator.cpp  |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ .../Source/JavaScriptCore/heap/BlockAllocator.cpp  |    3 +++
+ .../Source/JavaScriptCore/runtime/Operations.h     |    5 +++--
+ qtwebkit/Source/WTF/wtf/text/StringImpl.h          |    4 ++--
+ 3 files changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
-index f94025c..282978d 100644
+index f94025c..0a6b237 100644
 --- a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
 +++ b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
-@@ -103,9 +103,10 @@ void BlockAllocator::blockFreeingThreadStartFunc(void* blockAllocator)
- {
-     static_cast<BlockAllocator*>(blockAllocator)->blockFreeingThreadMain();
- }
--
-+extern "C" void wait_for_continue();
+@@ -106,6 +106,9 @@ void BlockAllocator::blockFreeingThreadStartFunc(void* blockAllocator)
+ 
  void BlockAllocator::blockFreeingThreadMain()
  {
-+	wait_for_continue();
++	for(;;)
++		waitForRelativeTime(1000.0);
++
      size_t currentNumberOfEmptyRegions;
      while (!m_blockFreeingThreadShouldQuit) {
          // Generally wait for one second before scavenging free blocks. This
+diff --git a/qtwebkit/Source/JavaScriptCore/runtime/Operations.h b/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
+index 8e0a0a3..a45d120 100644
+--- a/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
++++ b/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
+@@ -244,7 +244,7 @@ namespace JSC {
+             return n1 < n2;
+         return codePointCompareLessThan(asString(p1)->value(callFrame), asString(p2)->value(callFrame));
+     }
+-
++extern "C" void wait_for_continue();
+     // See ES5 11.8.3/11.8.4/11.8.5 for definition of leftFirst, this value ensures correct
+     // evaluation ordering for argument conversions for '<=' and '=>'. For '<=' pass the
+     // value true, for leftFirst, for '=>' pass the value false (and reverse operand order).
+@@ -266,6 +266,7 @@ namespace JSC {
+         JSValue p2;
+         bool wasNotString1;
+         bool wasNotString2;
++wait_for_continue();
+         if (leftFirst) {
+             wasNotString1 = v1.getPrimitiveNumber(callFrame, n1, p1);
+             wasNotString2 = v2.getPrimitiveNumber(callFrame, n2, p2);
+@@ -273,7 +274,7 @@ namespace JSC {
+             wasNotString2 = v2.getPrimitiveNumber(callFrame, n2, p2);
+             wasNotString1 = v1.getPrimitiveNumber(callFrame, n1, p1);
+         }
+-
++printf("n1 = %f, n2 = %f\n", n1, n2);
+         if (wasNotString1 | wasNotString2)
+             return n1 <= n2;
+         return !codePointCompareLessThan(asString(p2)->value(callFrame), asString(p1)->value(callFrame));
+diff --git a/qtwebkit/Source/WTF/wtf/text/StringImpl.h b/qtwebkit/Source/WTF/wtf/text/StringImpl.h
+index 2861949..5859acb 100644
+--- a/qtwebkit/Source/WTF/wtf/text/StringImpl.h
++++ b/qtwebkit/Source/WTF/wtf/text/StringImpl.h
+@@ -130,7 +130,7 @@ struct StringStats {
+ #define STRING_STATS_ADD_UPCONVERTED_STRING(length) ((void)0)
+ #define STRING_STATS_REMOVE_STRING(string) ((void)0)
+ #endif
+-
++extern "C" void wait_for_continue();
+ class StringImpl {
+     WTF_MAKE_NONCOPYABLE(StringImpl); WTF_MAKE_FAST_ALLOCATED;
+     friend struct JSC::IdentifierASCIIStringTranslator;
+@@ -457,7 +457,7 @@ public:
+     static PassRefPtr<StringImpl> adopt(QStringData*);
+ #endif
+ 
+-    unsigned length() const { return m_length; }
++    unsigned length() const { qDebug("length = %u", m_length); if (m_length > 100000) wait_for_continue(); return m_length; }
+     bool is8Bit() const { return m_hashAndFlags & s_hashFlag8BitBuffer; }
+     bool hasInternalBuffer() const { return bufferOwnership() == BufferInternal; }
+     bool hasOwnedBuffer() const { return bufferOwnership() == BufferOwned; }

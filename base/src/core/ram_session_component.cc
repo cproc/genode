@@ -105,7 +105,7 @@ void Ram_session_component::_remove_ref_account_member(Ram_session_component *me
 	_unsynchronized_remove_ref_account_member(member);
 }
 
-
+extern "C" void wait_for_continue();
 Ram_dataspace_capability Ram_session_component::alloc(size_t ds_size, bool cached)
 {
 	/* zero-sized dataspaces are not allowed */
@@ -129,7 +129,7 @@ Ram_dataspace_capability Ram_session_component::alloc(size_t ds_size, bool cache
 		PWRN("  ds_size:                       %zd", ds_size);
 		PWRN("  sizeof(Ram_session_component): %zd", sizeof(Ram_session_component));
 		PWRN("  quota_limit:                   %zd", _quota_limit);
-
+wait_for_continue();
 		throw Quota_exceeded();
 	}
 
