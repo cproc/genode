@@ -4,22 +4,156 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../Source/JavaScriptCore/heap/BlockAllocator.cpp  |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ .../JavaScriptCore/interpreter/CallFrame.h         |    7 ++++++-
+ .../javascriptcore/JavaScriptCore/wtf/Assertions.h |    7 +++++++
+ .../Source/JavaScriptCore/heap/BlockAllocator.cpp  |    3 +++
+ .../Source/JavaScriptCore/runtime/Operations.h     |    3 ++-
+ qtwebkit/Source/JavaScriptCore/runtime/RegExp.cpp  |   11 ++++++++---
+ qtwebkit/Source/WTF/wtf/Platform.h                 |    3 ++-
+ 6 files changed, 28 insertions(+), 6 deletions(-)
 
+diff --git a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter/CallFrame.h b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter/CallFrame.h
+index 6432f99..d337ab3 100644
+--- a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter/CallFrame.h
++++ b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter/CallFrame.h
+@@ -26,7 +26,8 @@
+ #include "JSGlobalData.h"
+ #include "RegisterFile.h"
+ #include "ScopeChain.h"
+-
++#include <QDebug>
++extern "C" void wait_for_continue();
+ namespace JSC  {
+ 
+     class Arguments;
+@@ -42,6 +43,10 @@ namespace JSC  {
+         ScopeChainNode* scopeChain() const
+         {
+             ASSERT(this[RegisterFile::ScopeChain].Register::scopeChain());
++            if (!this[RegisterFile::ScopeChain].Register::scopeChain()) {
++            	qDebug() << "scopeChain is 0";
++            	wait_for_continue();
++            }
+             return this[RegisterFile::ScopeChain].Register::scopeChain();
+         }
+         int argumentCount() const { return this[RegisterFile::ArgumentCount].i(); }
+diff --git a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Assertions.h b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Assertions.h
+index 352a74b..015327a 100644
+--- a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Assertions.h
++++ b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Assertions.h
+@@ -156,6 +156,13 @@ void WTFLogVerbose(const char* file, int line, const char* function, WTFLogChann
+     __DEBUGGER(); \
+     User::Panic(_L("Webkit CRASH"),0); \
+     } while(false)
++#elif OS(GENODE)
++#define CRASH() ( \
++	PERR("QtScript CRASH in '%s'", WTF_PRETTY_FUNCTION), \
++	PERR("  in %s:%d", __FILE__, __LINE__), \
++    *(int *)(uintptr_t)0xbbadbeef = 0, \
++    ((void(*)())0)() /* More reliable, but doesn't say BBADBEEF */ \
++)
+ #else
+ #define CRASH() do { \
+     *(int *)(uintptr_t)0xbbadbeef = 0; \
 diff --git a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
-index f94025c..282978d 100644
+index f94025c..0a6b237 100644
 --- a/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
 +++ b/qtwebkit/Source/JavaScriptCore/heap/BlockAllocator.cpp
-@@ -103,9 +103,10 @@ void BlockAllocator::blockFreeingThreadStartFunc(void* blockAllocator)
- {
-     static_cast<BlockAllocator*>(blockAllocator)->blockFreeingThreadMain();
- }
--
-+extern "C" void wait_for_continue();
+@@ -106,6 +106,9 @@ void BlockAllocator::blockFreeingThreadStartFunc(void* blockAllocator)
+ 
  void BlockAllocator::blockFreeingThreadMain()
  {
-+	wait_for_continue();
++	for(;;)
++		waitForRelativeTime(1000.0);
++
      size_t currentNumberOfEmptyRegions;
      while (!m_blockFreeingThreadShouldQuit) {
          // Generally wait for one second before scavenging free blocks. This
+diff --git a/qtwebkit/Source/JavaScriptCore/runtime/Operations.h b/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
+index 8e0a0a3..1de700d 100644
+--- a/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
++++ b/qtwebkit/Source/JavaScriptCore/runtime/Operations.h
+@@ -266,6 +266,7 @@ namespace JSC {
+         JSValue p2;
+         bool wasNotString1;
+         bool wasNotString2;
++
+         if (leftFirst) {
+             wasNotString1 = v1.getPrimitiveNumber(callFrame, n1, p1);
+             wasNotString2 = v2.getPrimitiveNumber(callFrame, n2, p2);
+@@ -273,7 +274,7 @@ namespace JSC {
+             wasNotString2 = v2.getPrimitiveNumber(callFrame, n2, p2);
+             wasNotString1 = v1.getPrimitiveNumber(callFrame, n1, p1);
+         }
+-
++printf("n1 = %f, n2 = %f\n", n1, n2);
+         if (wasNotString1 | wasNotString2)
+             return n1 <= n2;
+         return !codePointCompareLessThan(asString(p2)->value(callFrame), asString(p1)->value(callFrame));
+diff --git a/qtwebkit/Source/JavaScriptCore/runtime/RegExp.cpp b/qtwebkit/Source/JavaScriptCore/runtime/RegExp.cpp
+index 3229f52..c161ac4 100644
+--- a/qtwebkit/Source/JavaScriptCore/runtime/RegExp.cpp
++++ b/qtwebkit/Source/JavaScriptCore/runtime/RegExp.cpp
+@@ -32,7 +32,7 @@
+ #include <string.h>
+ #include <wtf/Assertions.h>
+ #include <wtf/OwnArrayPtr.h>
+-
++#include <QDebug>
+ 
+ #define REGEXP_FUNC_TEST_DATA_GEN 0
+ 
+@@ -439,18 +439,20 @@ void RegExp::compileIfNecessaryMatchOnly(JSGlobalData& globalData, Yarr::YarrCha
+ 
+     compileMatchOnly(&globalData, charSize);
+ }
+-
++extern "C" void wait_for_continue();
+ MatchResult RegExp::match(JSGlobalData& globalData, const String& s, unsigned startOffset)
+ {
+ #if ENABLE(REGEXP_TRACING)
+     m_rtMatchCallCount++;
+ #endif
+-
++    qDebug() << "RegExp::match(): s.length() =" << s.length() << ", startOffset =" << startOffset;
+     ASSERT(m_state != ParseError);
+     compileIfNecessaryMatchOnly(globalData, s.is8Bit() ? Yarr::Char8 : Yarr::Char16);
+ 
+ #if ENABLE(YARR_JIT)
+     if (m_state == JITCode) {
++    	qDebug("s.characters8()[0] = %c", s.characters8()[0]);
++    	wait_for_continue();
+         MatchResult result = s.is8Bit() ?
+             m_regExpJITCode.execute(s.characters8(), startOffset, s.length()) :
+             m_regExpJITCode.execute(s.characters16(), startOffset, s.length());
+@@ -458,6 +460,8 @@ MatchResult RegExp::match(JSGlobalData& globalData, const String& s, unsigned st
+         if (!result)
+             m_rtMatchFoundCount++;
+ #endif
++        qDebug() << "RegExp::match(): result.start =" << result.start << ", result.end =" << result.end;
++    	wait_for_continue();
+         return result;
+     }
+ #endif
+@@ -468,6 +472,7 @@ MatchResult RegExp::match(JSGlobalData& globalData, const String& s, unsigned st
+     nonReturnedOvector.resize(offsetVectorSize);
+     offsetVector = nonReturnedOvector.data();
+     int r = Yarr::interpret(m_regExpBytecode.get(), s, startOffset, reinterpret_cast<unsigned*>(offsetVector));
++
+ #if REGEXP_FUNC_TEST_DATA_GEN
+     RegExpFunctionalTestCollector::get()->outputOneTest(this, s, startOffset, offsetVector, result);
+ #endif
+diff --git a/qtwebkit/Source/WTF/wtf/Platform.h b/qtwebkit/Source/WTF/wtf/Platform.h
+index 2d150fa..34513c2 100644
+--- a/qtwebkit/Source/WTF/wtf/Platform.h
++++ b/qtwebkit/Source/WTF/wtf/Platform.h
+@@ -1023,7 +1023,8 @@ l
+ #define ENABLE_REGEXP_TRACING 0
+ 
+ /* Yet Another Regex Runtime - turned on by default for JIT enabled ports. */
+-#if !defined(ENABLE_YARR_JIT) && (ENABLE(JIT) || ENABLE(LLINT_C_LOOP)) && !PLATFORM(CHROMIUM)
++/* When enabled for Genode, the 'exec()' function returns invalid string objects */
++#if !defined(ENABLE_YARR_JIT) && (ENABLE(JIT) || ENABLE(LLINT_C_LOOP)) && !PLATFORM(CHROMIUM) && !OS(GENODE)
+ #define ENABLE_YARR_JIT 1
+ 
+ /* Setting this flag compares JIT results with interpreter results. */

@@ -6,4 +6,5 @@ qt5_qarraydata.patch
 qt5_qwidgetanimator.patch
 qt5_qwidgetwindow.patch
 qt5_qtwebkit.patch
+qt5_tools.patch
 qt5_qtwebkit_debug.diff
