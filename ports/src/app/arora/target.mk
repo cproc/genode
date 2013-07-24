@@ -1,15 +1,15 @@
 ARORA = arora-0.11.0
 
 # identify the qt4 repository by searching for a file that is unique for qt4
-QT4_REP_DIR := $(call select_from_repositories,lib/import/import-qt4.inc)
+QT5_REP_DIR := $(call select_from_repositories,lib/import/import-qt5.inc)
 
-ifeq ($(QT4_REP_DIR),)
-REQUIRES += qt4
+ifeq ($(QT5_REP_DIR),)
+REQUIRES += qt5
 endif
 
-QT4_REP_DIR := $(realpath $(dir $(QT4_REP_DIR))../..)
+QT5_REP_DIR := $(realpath $(dir $(QT5_REP_DIR))../..)
 
--include $(QT4_REP_DIR)/src/app/tmpl/target_defaults.inc
+-include $(QT5_REP_DIR)/src/app/tmpl/target_defaults.inc
 
 HEADERS_FILTER_OUT = \
   adblockschemeaccesshandler.h \
@@ -31,7 +31,7 @@ HEADERS_FILTER_OUT = \
 
 QT_MAIN_STACK_SIZE = 768*1024
 
-LIBS += libm libc_lwip libc_lwip_nic_dhcp libc_log qpluginwidget qnitpickerviewwidget
+LIBS += libm libc_lwip libc_lwip_nic_dhcp libc_log qpluginwidget qnitpickerviewwidget qt_printsupport
 
 RESOURCES += demo_html.qrc
 
@@ -80,4 +80,4 @@ vpath % $(REP_DIR)/contrib/$(ARORA)/src/qwebplugins/nitpicker
 vpath % $(REP_DIR)/contrib/$(ARORA)/src/useragent
 vpath % $(REP_DIR)/contrib/$(ARORA)/src/utils
 
--include $(QT4_REP_DIR)/src/app/tmpl/target_final.inc
+-include $(QT5_REP_DIR)/src/app/tmpl/target_final.inc
