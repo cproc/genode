@@ -1,15 +1,23 @@
 ARORA = arora-0.11.0
 
 # identify the qt4 repository by searching for a file that is unique for qt4
-QT4_REP_DIR := $(call select_from_repositories,lib/import/import-qt4.inc)
+QT_REP_DIR := $(call select_from_repositories,lib/import/import-qt4.inc)
 
-ifeq ($(QT4_REP_DIR),)
+ifneq ($(QT_REP_DIR),)
+QT_TMPL_DIR = $(QT_REP_DIR)/src/app/tmpl
+else
+QT_REP_DIR := $(call select_from_repositories,lib/import/import-qt5.inc)
+ifneq ($(QT_REP_DIR),)
+QT_TMPL_DIR = $(QT_REP_DIR)/src/app/qt5/tmpl
+LIBS += qt_printsupport
+else
 REQUIRES += qt4
 endif
+endif
 
-QT4_REP_DIR := $(realpath $(dir $(QT4_REP_DIR))../..)
+QT_REP_DIR := $(realpath $(dir $(QT_REP_DIR))../..)
 
--include $(QT4_REP_DIR)/src/app/tmpl/target_defaults.inc
+-include $(QT_TMPL_DIR)/target_defaults.inc
 
 HEADERS_FILTER_OUT = \
   adblockschemeaccesshandler.h \
@@ -80,4 +88,4 @@ vpath % $(REP_DIR)/contrib/$(ARORA)/src/qwebplugins/nitpicker
 vpath % $(REP_DIR)/contrib/$(ARORA)/src/useragent
 vpath % $(REP_DIR)/contrib/$(ARORA)/src/utils
 
--include $(QT4_REP_DIR)/src/app/tmpl/target_final.inc
+-include $(QT_TMPL_DIR)/target_final.inc
