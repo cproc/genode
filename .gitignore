@@ -147,5 +147,17 @@
 /qt4/tool/qmake/qmake
 /qt4/tool/rcc
 /qt4/tool/uic
+/qt5/contrib
+/qt5/download
+/qt5/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated
+/qt5/src/lib/qt5/qtwebkit/Source/WebCore/generated
+/qt5/tool/bootstrap
+/qt5/tool/misc/var
+/qt5/tool/moc
+/qt5/tool/qmake/*.d
+/qt5/tool/qmake/*.o
+/qt5/tool/qmake/qmake
+/qt5/tool/rcc
+/qt5/tool/uic
 /linux_drivers
 
