@@ -85,7 +85,7 @@ binary_$(ICU_DAT).o : $(ICU_DAT)
 
 CC_OPT += -DU_COMMON_IMPLEMENTATION -DU_I18N_IMPLEMENTATION
 
-LIBS = stdcxx
+LIBS = stdcxx pthread
 
 vpath % $(ICU_DIR)/source/common
 vpath % $(ICU_DIR)/source/i18n
