@@ -1,0 +1,30 @@
+qt5_qtnetwork.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/network/access/qhttpnetworkreply.cpp |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/qtbase/src/network/access/qhttpnetworkreply.cpp b/qtbase/src/network/access/qhttpnetworkreply.cpp
+index eb8a886..1150088 100644
+--- a/qtbase/src/network/access/qhttpnetworkreply.cpp
++++ b/qtbase/src/network/access/qhttpnetworkreply.cpp
+@@ -238,8 +238,16 @@ void QHttpNetworkReply::setReadBufferSize(qint64 size)
+ 
+ bool QHttpNetworkReply::supportsUserProvidedDownloadBuffer()
+ {
++#ifdef Q_OS_GENODE
++	/*
++	 * Without this change Arora shows garbage when loading, for example,
++	 * www.genode.org
++	 */
++	return false;
++#else
+     Q_D(QHttpNetworkReply);
+     return (!d->isChunked() && !d->autoDecompress && d->bodyLength > 0 && d->statusCode == 200);
++#endif
+ }
+ 
+ void QHttpNetworkReply::setUserProvidedDownloadBuffer(char* b)
