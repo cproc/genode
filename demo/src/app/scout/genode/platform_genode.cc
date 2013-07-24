@@ -142,7 +142,9 @@ class Eventqueue
  ** Timer thread **
  ******************/
 
-class Timer_thread : public Thread<4096>
+enum { STACK_SIZE = 2*1024*sizeof(addr_t) };
+
+class Timer_thread : public Thread<STACK_SIZE>
 {
 	private:
 
