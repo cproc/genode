@@ -1,0 +1,33 @@
+http_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/network/kernel/qhostinfo_unix.cpp |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/qtbase/src/network/kernel/qhostinfo_unix.cpp b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+index 001354c..bce8212 100644
+--- a/qtbase/src/network/kernel/qhostinfo_unix.cpp
++++ b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+@@ -117,7 +117,7 @@ static void resolveLibrary()
+     }
+ #endif
+ }
+-
++extern "C" void wait_for_continue();
+ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+ {
+     QHostInfo results;
+@@ -207,7 +207,9 @@ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+ #ifdef Q_ADDRCONFIG
+     hints.ai_flags = Q_ADDRCONFIG;
+ #endif
+-
++qDebug() << "looking up" << aceHostname;
++if (aceHostname == "golem.met.vgwort.de")
++	wait_for_continue();
+     int result = getaddrinfo(aceHostname.constData(), 0, &hints, &res);
+ # ifdef Q_ADDRCONFIG
+     if (result == EAI_BADFLAGS) {

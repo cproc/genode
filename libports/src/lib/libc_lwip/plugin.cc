@@ -562,9 +562,16 @@ Libc::File_descriptor *Plugin::socket(int domain, int type, int protocol)
 	return Libc::file_descriptor_allocator()->alloc(this, context);
 }
 
-
+extern "C" void wait_for_continue();
 ssize_t Plugin::write(Libc::File_descriptor *fdo, const void *buf, ::size_t count)
 {
+	static char buf2[32*1024];
+	if (count > sizeof(buf2)) {
+		PERR("buffer too small");
+		wait_for_continue();
+	}
+	Genode::strncpy(buf2, (const char*)buf, count);
+	PDBG("count = %zu, buf = %p: %s", count, buf, buf2);
 	return lwip_write(get_lwip_fd(fdo), buf, count);
 }
 
