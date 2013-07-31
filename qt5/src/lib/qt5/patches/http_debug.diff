@@ -1,0 +1,118 @@
+http_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../access/qhttpnetworkconnectionchannel.cpp       |    2 ++
+ qtbase/src/network/access/qhttpnetworkrequest.cpp  |   21 ++++++++++++++++----
+ qtbase/src/network/kernel/qhostinfo_unix.cpp       |    8 ++++++--
+ 3 files changed, 25 insertions(+), 6 deletions(-)
+
+diff --git a/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp b/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
+index 4b8fe8a..7c9b9cf 100644
+--- a/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
++++ b/qtbase/src/network/access/qhttpnetworkconnectionchannel.cpp
+@@ -236,6 +236,7 @@ bool QHttpNetworkConnectionChannel::sendRequest()
+         if (request.withCredentials())
+             connection->d_func()->createAuthorization(socket, request);
+ #ifndef QT_NO_NETWORKPROXY
++        qDebug() << "check 1";
+         QByteArray header = QHttpNetworkRequestPrivate::header(request,
+             (connection->d_func()->networkProxy.type() != QNetworkProxy::NoProxy));
+ #else
+@@ -912,6 +913,7 @@ void QHttpNetworkConnectionChannel::pipelineInto(HttpMessagePair &pair)
+     reply->d_func()->pipeliningUsed = true;
+ 
+ #ifndef QT_NO_NETWORKPROXY
++    qDebug() << "check 2";
+     pipeline.append(QHttpNetworkRequestPrivate::header(request,
+                                                            (connection->d_func()->networkProxy.type() != QNetworkProxy::NoProxy)));
+ #else
+diff --git a/qtbase/src/network/access/qhttpnetworkrequest.cpp b/qtbase/src/network/access/qhttpnetworkrequest.cpp
+index e5b2ece..ef4612c 100644
+--- a/qtbase/src/network/access/qhttpnetworkrequest.cpp
++++ b/qtbase/src/network/access/qhttpnetworkrequest.cpp
+@@ -121,23 +121,29 @@ QByteArray QHttpNetworkRequestPrivate::uri(bool throughProxy) const
+     QByteArray uri = copy.toEncoded(format);
+     return uri;
+ }
+-
++#include <base/printf.h>
++#include <QDebug>
++extern bool log_malloc;
+ QByteArray QHttpNetworkRequestPrivate::header(const QHttpNetworkRequest &request, bool throughProxy)
+ {
++qDebug() << "***** QHttpNetworkRequestPrivate::header() *****";
++//log_malloc = true;
+     QList<QPair<QByteArray, QByteArray> > fields = request.header();
++    PDBG("***** check 1 *****");
+     QByteArray ba;
++    PDBG("***** check 2 *****");
+     ba.reserve(40 + fields.length()*25); // very rough lower bound estimation
+-
++    PDBG("***** check 3 *****");
+     ba += request.d->methodName();
+     ba += ' ';
+     ba += request.d->uri(throughProxy);
+-
++    PDBG("***** check 4 *****");
+     ba += " HTTP/";
+     ba += QByteArray::number(request.majorVersion());
+     ba += '.';
+     ba += QByteArray::number(request.minorVersion());
+     ba += "\r\n";
+-
++    PDBG("***** check 5 *****");
+     QList<QPair<QByteArray, QByteArray> >::const_iterator it = fields.constBegin();
+     QList<QPair<QByteArray, QByteArray> >::const_iterator endIt = fields.constEnd();
+     for (; it != endIt; ++it) {
+@@ -146,6 +152,7 @@ QByteArray QHttpNetworkRequestPrivate::header(const QHttpNetworkRequest &request
+         ba += it->second;
+         ba += "\r\n";
+     }
++    PDBG("***** check 6 *****");
+     if (request.d->operation == QHttpNetworkRequest::Post) {
+         // add content type, if not set in the request
+         if (request.headerField("content-type").isEmpty()) {
+@@ -165,8 +172,14 @@ QByteArray QHttpNetworkRequestPrivate::header(const QHttpNetworkRequest &request
+             ba += "\r\n";
+         }
+     } else {
++    	PDBG("***** check 7 *****");
+         ba += "\r\n";
++        PDBG("***** check 8 *****");
+     }
++
++    PDBG("ba = %p: %s", ba.constData(), ba.constData());
++    //log_malloc = false;
++qDebug() << "***** QHttpNetworkRequestPrivate::header() finished *****";
+      return ba;
+ }
+ 
+diff --git a/qtbase/src/network/kernel/qhostinfo_unix.cpp b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+index 001354c..18e9dfe 100644
+--- a/qtbase/src/network/kernel/qhostinfo_unix.cpp
++++ b/qtbase/src/network/kernel/qhostinfo_unix.cpp
+@@ -117,7 +117,7 @@ static void resolveLibrary()
+     }
+ #endif
+ }
+-
++extern "C" void wait_for_continue();
+ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+ {
+     QHostInfo results;
+@@ -207,7 +207,11 @@ QHostInfo QHostInfoAgent::fromName(const QString &hostName)
+ #ifdef Q_ADDRCONFIG
+     hints.ai_flags = Q_ADDRCONFIG;
+ #endif
+-
++qDebug() << "looking up" << aceHostname;
++extern bool log_malloc;
++log_malloc = true;
++//if (aceHostname == "golem.met.vgwort.de")
++	//wait_for_continue();
+     int result = getaddrinfo(aceHostname.constData(), 0, &hints, &res);
+ # ifdef Q_ADDRCONFIG
+     if (result == EAI_BADFLAGS) {

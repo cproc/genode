@@ -159,11 +159,15 @@ static Genode::Allocator *allocator()
 	return &_m;
 }
 
-
+bool log_malloc = false;
 extern "C" void *malloc(unsigned size)
 {
 	void *addr;
-	return allocator()->alloc(size, &addr) ? addr : 0;
+	bool result = allocator()->alloc(size, &addr);
+	if (log_malloc)
+		PDBG("%p - %lx", addr, (Genode::addr_t)addr + size - 1);
+	return result ? addr : 0;
+	//return allocator()->alloc(size, &addr) ? addr : 0;
 }
 
 
@@ -178,7 +182,8 @@ extern "C" void *calloc(unsigned nmemb, unsigned size)
 extern "C" void free(void *ptr)
 {
 	if (!ptr) return;
-
+	if (log_malloc)
+		PDBG("ptr = %p", ptr);
 	allocator()->free(ptr, 0);
 }
 
