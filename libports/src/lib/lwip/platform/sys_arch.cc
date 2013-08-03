@@ -630,6 +630,8 @@ extern "C" {
 #endif
 
 	void genode_memcpy(void * dst, const void *src, unsigned long size) {
+		PDBG("dst = %p - %lx, size = %lu",
+		     dst, (Genode::addr_t)dst + size - 1, size);
 		Genode::memcpy(dst, src, size);
 	}
 } /* extern "C" */
