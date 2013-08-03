@@ -1,0 +1,57 @@
+lwip_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/core/pbuf.c    |   17 +++++++++++++++++
+ src/core/tcp_out.c |    1 +
+ 2 files changed, 18 insertions(+)
+
+diff --git a/src/core/pbuf.c b/src/core/pbuf.c
+index 1e5e53b..905ad5b 100644
+--- a/src/core/pbuf.c
++++ b/src/core/pbuf.c
+@@ -304,13 +304,30 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
+ 
+     break;
+   case PBUF_RAM:
++	printf("pbuf_alloc(): offset = %u, length = %u\n", offset, length);
++	printf("pbuf_alloc(): SIZEOF_STRUCT_PBUF = %zu\n", SIZEOF_STRUCT_PBUF);
++	printf("pbuf_alloc(): aligned pbuf+offset = %zu\n", LWIP_MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset));
++	printf("pbuf_alloc(): aligned length = %u\n", LWIP_MEM_ALIGN_SIZE(length));
++	size_t malloc_size = LWIP_MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset) + LWIP_MEM_ALIGN_SIZE(length);
++	printf("malloc_size = %zu\n", malloc_size);
++
+     /* If pbuf is to be allocated in RAM, allocate memory for it. */
+     p = (struct pbuf*)mem_malloc(LWIP_MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset) + LWIP_MEM_ALIGN_SIZE(length));
+     if (p == NULL) {
+       return NULL;
+     }
++
++    printf("pbuf_alloc(): p = %p - %lx\n", p, (unsigned long)p + malloc_size - 1);
++
+     /* Set up internal structure of the pbuf. */
+     p->payload = LWIP_MEM_ALIGN((void *)((u8_t *)p + SIZEOF_STRUCT_PBUF + offset));
++
++    printf("pbuf_alloc(): p->payload = %p\n", p->payload);
++
++	if (((unsigned long)p->payload + length - 1) > ((unsigned long)p + malloc_size - 1)) {
++		printf("*** payload error ***\n");
++	}
++
+     p->len = p->tot_len = length;
+     p->next = NULL;
+     p->type = type;
+diff --git a/src/core/tcp_out.c b/src/core/tcp_out.c
+index d6473c2..7d7cbc1 100644
+--- a/src/core/tcp_out.c
++++ b/src/core/tcp_out.c
+@@ -547,6 +547,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
+     if (apiflags & TCP_WRITE_FLAG_COPY) {
+       /* If copy is set, memory should be allocated and data copied
+        * into pbuf */
++    printf("tcp_write(): seglen = %u, optlen = %u\n", seglen, optlen);
+       if ((p = tcp_pbuf_prealloc(PBUF_TRANSPORT, seglen + optlen, mss_local, &oversize, pcb, apiflags, queue == NULL)) == NULL) {
+         LWIP_DEBUGF(TCP_OUTPUT_DEBUG | 2, ("tcp_write : could not allocate memory for pbuf copy size %"U16_F"\n", seglen));
+         goto memerr;
