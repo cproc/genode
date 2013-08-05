@@ -24,6 +24,8 @@
 
 typedef unsigned long Block_header;
 
+extern "C" void wait_for_continue();
+
 namespace Genode {
 
 	class Slab_alloc : public Slab
@@ -113,13 +115,22 @@ class Malloc : public Genode::Allocator
 
 			/* use backing store if requested memory is larger than largest slab */
 			if (msb > SLAB_STOP) {
-
+PDBG("calling _backing_store->alloc()");
 				if (!(_backing_store->alloc(real_size, &addr)))
 					return false;
+PDBG("_backing_store->alloc() returned");
 			}
-			else
+			else {
+PDBG("calling slab alloc()");
 				if (!(addr = _allocator[msb - SLAB_START]->alloc()))
 					return false;
+PDBG("slab alloc() returned");
+			}
+PDBG("%p: addr = %p", &addr, addr);
+if ((Genode::addr_t)addr & 7) {
+	PERR("addr is not natively aligned");
+	wait_for_continue();
+}
 
 			*(Block_header *)addr = real_size;
 			*out_addr = (Block_header *)addr + 1;
@@ -162,8 +173,15 @@ static Genode::Allocator *allocator()
 
 extern "C" void *malloc(unsigned size)
 {
-	void *addr;
-	return allocator()->alloc(size, &addr) ? addr : 0;
+	void *addr = 0;
+	allocator()->alloc(size, &addr);
+	//PDBG("addr = %p, size = %u", addr, size);
+	if ((Genode::addr_t)addr & 7) {
+		//PERR("addr is not natively aligned");
+		//wait_for_continue();
+	}
+	return addr;
+	//return allocator()->alloc(size, &addr) ? addr : 0;
 }
 
 
@@ -178,7 +196,7 @@ extern "C" void *calloc(unsigned nmemb, unsigned size)
 extern "C" void free(void *ptr)
 {
 	if (!ptr) return;
-
+//PDBG("ptr = %p", ptr);
 	allocator()->free(ptr, 0);
 }
 
