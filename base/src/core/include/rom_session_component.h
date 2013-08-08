@@ -26,7 +26,7 @@ namespace Genode {
 		private:
 
 			Rom_module              *_rom_module;
-			char                     _fname[32];
+			char                     _fname[64];
 			Dataspace_component      _ds;
 			Rpc_entrypoint          *_ds_ep;
 			Rom_dataspace_capability _ds_cap;
