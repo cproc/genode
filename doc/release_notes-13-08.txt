@@ -14,7 +14,7 @@
 Qt5 available on all kernels
 ############################
 
-Since its integration with Genode version 9.2, Qt4 is regarded as
+Since its integration with Genode version 9.02, Qt4 is regarded as
 one of the most prominent features of the framework. For users, combining Qt
 with Genode makes the world of sophisticated GUI-based end-user applications
 available on various microkernels. For Genode developers, Qt represents by far
@@ -24,7 +24,7 @@ keeping an eye on Qt version 5 for a while and highly anticipate the direction
 where Qt is heading. We think that the time is right to leave Qt4 behind to
 embrace Qt5 for Genode.
 
-For the time being, both Qt4 and Qt5 are available for Genode but Qt4 is
+For the time being, both Qt4 and Qt5 are available for Genode, but Qt4 is
 declared as deprecated and will be removed with the upcoming version 13.11.
 Since Qt5 is almost API compatible to Qt4, the migration path is relatively
 smooth. So we recommend to move your applications over to Qt5 during the
@@ -44,12 +44,12 @@ Moving from QWS to QPA
 ======================
 
 With Qt4, we relied on QWS
-to perform the window handing. A Qt4 application used to create a session to
+to perform the window handling. A Qt4 application used to create a session to
 Genode's GUI server (called nitpicker) and applied its graphical output onto a
 virtual framebuffer. The virtual framebuffer was not visible per se. To make
 portions of the virtual framebuffer visible on screen, the application had to
 create so-called nitpicker views. A view is a rectangular area of the physical
-screen that displays a (portion of) the virtual framebuffer. The position,
+screen that displays (a portion of) the virtual framebuffer. The position,
 size, and stacking order of views is managed by the application. For each Qt
 window, the application would simply create a corresponding nitpicker view and
 maintain the consistency of the view with the geometry of the Qt window. Even
@@ -64,7 +64,7 @@ old-generation GUIs relied on a tight interplay of the application with the
 window server in order to re-generate newly exposed window regions whenever
 needed (e.g., revealing the window content previously covered by another
 window), the modern model of a GUI server keeps all pixels of all windows in
-memory regardless of whether the window is visible to covered by other
+memory regardless of whether the window is visible or covered by other
 windows. The use of one pixel buffer per window seems wasteful with respect to
 memory usage when many large windows are overlapping each other. On the other
 hand, this technique largely simplifies GUI servers and makes the
@@ -121,17 +121,17 @@ generate all Makefiles, which could be inspected and processed at once. In
 contrast, Qt5 generates Makefiles during the build process whenever needed.
 When having configured Qt for Genode, however, the build on Linux will
 ultimately fail. So the much-desired intermediate Makefiles won't be created.
-The solution was to invoke 'configure' with 'qmake -r' instead of 'qmake'.
+The solution was to have 'configure' invoke 'qmake -r' instead of 'qmake'.
 This way, qmake project files will be processed recursively. A few additional
 tweaks were needed to avoid qmake from backing out because of missing
 dependencies (qt5_configuration.patch). To enable the build of the Qt tools
 out of tree, qmake-specific files had to be slightly adapted
-(qt4_tools.patch). Furthermore, qtwebkit turned out to use code-generation
+(qt5_tools.patch). Furthermore, qtwebkit turned out to use code-generation
 tools quite extensively during the build process. On Genode, we perform this
 step during the 'make prepare' phase when downloading and integrating the Qt
 source code with the Genode source tree.
 
-For building Qt5 on Genode, we hit a two problems. First, qtwebkit depends on
+For building Qt5 on Genode, we hit two problems. First, qtwebkit depends on
 the ICU (International Components for Unicode) library, which was promptly
 ported and can be found in the libports repository. Second, qtwebkit
 apparently dropped the support for using of the 'QThread' API in favor for
@@ -143,7 +143,7 @@ Once built, we entered the territory of debugging problems at runtime.
   with regard to the alignment of memory allocated via malloc. As a
   work-around, we weakened the assumptions to 4-byte alignment
   (qt5_qarraydata.patch).
-* Page faults in QWidgetAnimator caused by the
+* Page faults in QWidgetAnimator caused by
   use-after-free problems. Those could be alleviated by adding pointer
   checks (qt5_qwidgetanimator.patch).
 * Page faults caused by the slot function 'QWidgetWindow::updateObjectName()'
@@ -172,7 +172,7 @@ differences compared to Qt4. First, the use of one liquid_fb instance per
 window consumes more memory compared to the use of QWS in Qt4. Furthermore,
 external window movements are not recognized by our QPA implementation yet.
 This can cause popup menus to appear at unexpected positions. Key repeat is
-not yet handed. The 'QNitpickerViewWidget' is not yet adapted to Qt5. For this
+not yet handled. The 'QNitpickerViewWidget' is not yet adapted to Qt5. For this
 reason, qt_avplay is not working yet.
 
 
@@ -183,8 +183,8 @@ Unlike Qt4, which was hosted in the dedicated 'qt4' repository, Qt5 is
 integrated in the libports repository. It can be downloaded and integrated
 into the Genode build system by issuing 'make prepare' from within the
 libports repository. The Qt5 versions of the known Qt examples are located at
-libports/src/qt5. Ready-to-use run scripts for those examples are available at
-libports/run.
+libports/src/app/qt5. Ready-to-use run scripts for those examples are available
+at libports/run.
 
 
 Migration away from Qt4 to Qt5
