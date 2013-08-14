@@ -219,7 +219,7 @@ attack points:
   the access patterns?
 * TCP/IP stack: How flows the data from the raw packet level to the
   socket level? How dominant are synchronization costs between the involved
-  threads? Are there costly in-band operation performed, e.g., dynamic
+  threads? Are there costly in-band operations performed, e.g., dynamic
   memory allocations per packet?
 * C runtime: How does integration of the TCP/IP stack with the C runtime
   work, for example how does the socket API interfere with timeout
@@ -233,7 +233,7 @@ attack points:
 
 This example is just an illustration. Most real-world performance-critical
 scenarios have a similar or even larger scope. With our traditional
-tools, is hardly possible to gather a holistic view of the scenario. Hence,
+tools, it is hardly possible to gather a holistic view of the scenario. Hence,
 finding performance bottlenecks tends to be a series of hit-and-miss
 experiments, which is a tiresome and costly endeavour.
 
@@ -243,7 +243,7 @@ facility for Genode one year ago with posing the following requirements:
 
 * Negligible impact on the performance, no
   side effects: For example, performing a system call per traced event
-  is out of question because this would severe influence the flow of
+  is out of question because this would severely influence the flow of
   control (as the system call may trigger the kernel to take a scheduling
   decision) and the execution time of the traced code, not to speak of
   the TLB and cache footprint.
@@ -251,7 +251,7 @@ facility for Genode one year ago with posing the following requirements:
 * Kernel independence: We want to use the same tracing facility across
   all supported base platforms.
 
-* Accountability of resources: It must be clearly defined from where the
+* Accountability of resources: It must be clearly defined where the
   resources for trace buffers come from. Ideally, the tracing tool should be
   able to dimension the buffers according to its needs and, in turn, pay for
   the buffers.
@@ -262,18 +262,18 @@ facility for Genode one year ago with posing the following requirements:
   which logs kernel-internal object names and a few message words when tracing
   IPC messages, but makes it almost impossible to map this low-level
   information to the abstraction of the control flow of RPC calls. In
-  contrast, we'd like capture the names of invoked RPC calls (which is an
-  abstraction level the kernel is not aware of). This requirements implies the
+  contrast, we'd like to capture the names of invoked RPC calls (which is an
+  abstraction level the kernel is not aware of). This requirement implies the
   need to have useful trace points generated automatically. Ideally those
-  trace point should cover all interactions of a component with the outside
+  trace points should cover all interactions of a component with the outside
   world.
 
-* (Re-)definition of tracing policies at runtime. The
+* (Re-)definition of tracing policies at runtime: The
   question of which information to gather when a trace point is passed
   should not be solely defined at compile time. Instead of changing static
   instrumentations in the code, we'd prefer to have a way to configure
   the level of detail and possible conditions for capturing events at runtime,
-  similar to dtrace. This way, a series of different hypothesis could be
+  similar to dtrace. This way, a series of different hypotheses could be
   tested by just changing the tracing policy instead of re-building and
   rebooting the entire scenario.
 
@@ -287,7 +287,7 @@ facility for Genode one year ago with posing the following requirements:
 
 * Support for both online and offline analysis of traces.
 
-We are happy to report to have came up with a design that meets all those
+We are happy to report to have come up with a design that meets all those
 requirements thanks to the architecture of Genode. In the following, we
 present the key aspects of the design.
 
@@ -298,7 +298,7 @@ define trace buffers and policies and assign those to tracing subjects,
 obtain access to trace-buffer contents, and control the tracing state
 of tracing subjects. Figure [trace_core_service] shows the interaction of
 the TRACE service with the CPU service within core. When a new thread
-is created via a CPU session, the threads gets registered at a global
+is created via a CPU session, the thread gets registered at a global
 registry of potential tracing sources. Each TRACE service manages a
 session-local registry of so-called trace subjects. When requested by the
 TRACE client, it queries new tracing sources from the source registry
@@ -309,7 +309,7 @@ TRACE session becomes able to control the thread's tracing state.
 
 To keep the tracing overhead as low as possible, we assign a separate trace
 buffer to each individually traced thread. The trace buffer is a shared memory
-block mapped to the virtual address space to the thread's process. Capturing
+block mapped to the virtual address space of the thread's process. Capturing
 an event comes down to a write operation into the thread-local buffer. Because
 of the use of shared memory for the trace buffer, no system call in needed.
 Because the buffer is local to the traced thread, there is no need for
@@ -318,7 +318,7 @@ has no trace buffer. The buffer gets installed only when tracing is started.
 The buffer is not installed magically from the outside of the traced process
 but from the traced thread itself when passing a trace point. To detect
 whether to install a new trace buffer, there exists a so-called trace-control
-dataspace shared between the traced process and it's CPU service. This
+dataspace shared between the traced process and its CPU service. This
 dataspace contains control bits for each thread created via the CPU session.
 The control bits are evaluated each time a trace point is passed by the
 thread. When the thread detects a change of the tracing state, it actively
@@ -345,14 +345,14 @@ enables the TRACE client to define trace buffers and policies of arbitrary
 sizes, limited only by its own RAM quota.
 
 In Genode, the interaction of a process with its outside world is
-characterized by it's use of inter-process communication, namely synchronous
+characterized by its use of inter-process communication, namely synchronous
 RPC, signals, and access to shared memory. For the former two types of
 inter-process communication, Genode generates trace points automatically. RPC
 clients generate trace points when an RPC call is issued and when a call
 returned. RPC servers generate trace points in the RPC dispatcher, capturing
 incoming RPC requests as well as RPC replies. Thanks to Genode's RPC
 framework, we are able to capture the names of the RPC functions in the RPC
-trace points. Those information is obtained from the declarations of the RPC
+trace points. This information is obtained from the declarations of the RPC
 interfaces. For signals, trace points are generated for submitting and
 receiving signals. Those trace points form a useful base line for gathering
 tracing data. In addition, manual trace points can be inserted into the code.
@@ -370,7 +370,7 @@ traced thread, the TRACE client imposes ultimate control over the traced
 thread. In contrast to dtrace, which sandboxes the trace policy, we express
 the policy module in the form of code executed in the context of the traced
 thread. However, in contrast to dtrace, such code is never loaded into a large
-monolithic kernel but solely into the individually traced processes. So the
+monolithic kernel, but solely into the individually traced processes. So the
 risk of a misbehaving policy is constrained to the traced process.
 
 In the current form, the TRACE service of core should be considered as a
