@@ -410,7 +410,7 @@ user processes, a microkernel is pretty clueless when it comes to the roles
 and behaviours of individual user-level threads. Not knowing whether a thread
 works as a device driver, an interactive program, or a batch process, the
 microkernel is not in the position to form a reasonably useful model of the
-world, on which intelligently apply scheduling and affinity heuristics. In
+world, on which to intelligently apply scheduling and affinity heuristics. In
 fact, from the perspective of a microkernel, each thread does nothing else
 than sending and receiving messages, and causing page faults.
 
@@ -427,7 +427,7 @@ explains our solution.
 When it comes to inter-process communication on MP systems, there is a
 certain diversity among the kernel designs. Some kernels allow the user land
 to use synchronous IPC between arbitrary threads, regardless of whether both
-communication partners reside on the same CPU or two different CPUs. This
+communication partners reside on the same CPU or on two different CPUs. This
 convenient model is provided by Fiasco.OC. However, other kernels do not offer
 any synchronous IPC mechanism across CPU cores at all, NOVA being a poster
 child of this school of thought. If a user land is specifically designed for
@@ -450,7 +450,7 @@ options:
   users of the Genode API. Whereas this approach would facilitate that
   programs behave consistently across all base platforms, the restrictions
   would be artificially imposed onto all Genode users, in particular the
-  users of kernels with a less restrictions. Of course, we don't change
+  users of kernels with less restrictions. Of course, we don't change
   the Genode API lightheartedly, which attributes to our hesitance to go
   into this direction.
 
@@ -479,7 +479,7 @@ In line with our experience with supporting
 [http://www.genode.org/documentation/release-notes/10.02#Real-time_priorities - real-time priorities]
 in version 10.02, we were seeking a way to express CPU affinities such that
 Genode's recursive nature gets preserved and facilitated. Dealing with
-physical CPU numbers or would contradict with this mission. Our solution
+physical CPU numbers would contradict with this mission. Our solution
 is based on the observation that most MP systems have topologies that can
 be represented on a two-dimensional coordinate system. CPU nodes close
 to each other are expected to have closer relationship than distant nodes.
@@ -498,7 +498,7 @@ session.
 Following from the expression of affinities as a rectangular location within a
 process-local affinity space, the assignment of subsystems to CPU nodes
 consists of two parts, the definition of the affinity space dimensions as used
-for the process, and the association sub systems with affinity locations
+for the process, and the association of sub systems with affinity locations
 (relative to the affinity space). For the init process, the affinity space is
 configured as a sub node of the config node. For example, the following
 declaration describes an affinity space of 4x2:
@@ -529,14 +529,14 @@ with 16x16 CPUs, the loader would obtain 8x8 CPUs with the upper-left
 CPU at position 4,0. Once a CPU session got created, the CPU client can
 request the physical affinity space that was assigned to the CPU session
 via the 'Cpu_session::affinity()' function. Threads of this CPU session
-can be assigned to those physical CPUs by via the 'Cpu_session::affinity()'
+can be assigned to those physical CPUs via the 'Cpu_session::affinity()'
 function, specifying a location relative to the CPU-session's affinity space.
 
 
 Adding multiprocessor support to Genode on NOVA
 ===============================================
 
-The NOVA kernel supports a MP systems for a long time. However
+The NOVA kernel supports MP systems for a long time. However
 Genode did not leverage this capability until now. The main reason was that
 the kernel does not provide - intentionally by the kernel developer - the
 possibility to perform synchronous IPC between threads residing on different
@@ -547,10 +547,10 @@ sure to have at least one thread on a common CPU in order to communicate.
 Additionally, shared memory and semaphores could be used to communicate across
 CPU cores. Both options would require rather fundamental changes to the Genode
 base framework and the API. An exploration of this direction should in any
-case be pursued in evolutionary steps rather that as one big change, also
-taking into account that other kernels not imposing such hard requirements on
+case be pursued in evolutionary steps rather than as one big change, also
+taking into account that other kernels do not impose such hard requirements on
 inter-CPU communication. To tackle the challenge, we conducted a series of
-experiments to add some kind of cross CPU IPC support to Genode/NOVA.
+experiments to add some kind of cross-CPU IPC support to Genode/NOVA.
 
 As a general implication of the missing inter-CPU IPC, messages between
 communication partners that use disjoint CPUs must take an indirection through
@@ -576,12 +576,12 @@ For options 1 and 2 where core provides this service: If a client can not
 issue a local CPU IPC, it asks core - actually the pager of the client
 thread - to perform the IPC request. Core then spawns or reuses a proxy thread
 on the target CPU and performs the actual IPC on behalf of the client. Option
-1 and 2 only differs in respect to code size and the question to whom to
+1 and 2 only differ in respect to code size and the question to whom to
 account the required resources - since a proxy thread needs a stack and some
 capability selectors.
 
 As one big issue for option 1 and 2, we found that in order to delegate
-capabilities during the cross CPU IPC, core has to receive capability mappings
+capabilities during the cross-CPU IPC, core has to receive capability mappings
 to delegate them to the target thread. However, core has no means to know
 whether the capabilities must be maintained in core or not. If a capability is
 already present in the target process, the kernel would just translate the
@@ -604,14 +604,14 @@ gets suspended by blocking on the created semaphore until the remote EC has
 finished the IPC. The remote proxy EC reuses the UTCB of the suspended caller
 thread as is and issues the IPC call. When the proxy EC returns, it wakes up
 the caller via the semaphore. Finally, the proxy EC and SC de-schedule
-themselves and the resources get to be destroyed later on by the kernels RCU
+themselves and the resources get to be destroyed later on by the kernel's RCU
 mechanism. Finally, when the caller thread got woken up, it takes care to
 initiate the deconstruction of the semaphore.
 
 The main advantage of option 3 compared to options 1 and 2 is that we don't
-have to keep and track the capability delegations during a cross CPU IPC.
+have to keep and track the capability delegations during a cross-CPU IPC.
 Furthermore, we do not have potentially up to two additional address space
-switches per cross CPU IPC (from client to core and core to the server).
+switches per cross-CPU IPC (from client to core and core to the server).
 Additionally, the UTCB of the caller is reused by the proxy EC and does not
 need to be allocated separately as for option 1 and 2.
 
