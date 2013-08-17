@@ -1,0 +1,4 @@
+#!/bin/sh
+
+#CFLAGS=-DTE_GNU ../contrib/binutils-2.22/configure --prefix=$HOME/opt/genode-gcc --target=arm-genode-eabi
+CFLAGS=-DTE_GNU ../contrib/binutils-2.22/configure --prefix=$HOME/opt/genode-gcc --target=x86_64-genode-elf

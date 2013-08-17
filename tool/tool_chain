@@ -34,7 +34,7 @@ $(SUPPORTED_PLATFORMS): install
 # Enable parallel build for 2nd-level $(MAKE) by default
 #
 
-MAKE_OPT ?= -j4
+MAKE_OPT ?= -j16
 
 #
 # Determine Genode base directory based on the known location of the
@@ -60,7 +60,7 @@ MPC_DOWNLOAD_URL     ?= http://www.multiprecision.org/mpc/download
 # Tool versions and install location
 #
 
-GCC_VERSION       = 4.7.2
+GCC_VERSION       = 4.7.3
 BINUTILS_VERSION  = 2.22
 GDB_VERSION       = 7.3.1
 GMP_VERSION       = 5.0.2
@@ -104,7 +104,7 @@ VERBOSE     = @
 #
 AUTOCONF_VERSION_gcc_4.4.5 = 2.59
 AUTOCONF_VERSION_gcc_4.6.1 = 2.64
-AUTOCONF_VERSION_gcc_4.7.2 = 2.64
+AUTOCONF_VERSION_gcc_4.7.3 = 2.64
 
 AUTOCONF_VERSION = $(AUTOCONF_VERSION_gcc_$(GCC_VERSION))
 
@@ -255,16 +255,23 @@ LD_PREFIX            = -Wl,
 LD_DEFSYM_DUMMY_LIBC = $(addprefix $(LD_PREFIX)--defsym=,$(addsuffix =0,$(DUMMY_LIBC_SYMS)))
 
 GCC_CONFIG += $(COMMON_CONFIG) \
-              --enable-languages=c,c++,go --disable-libgo \
+              --enable-languages=c,c++,go \
+              --disable-libgo \
+              --disable-libssp \
+              --disable-libquadmath \
+              --disable-libffi \
               --enable-targets=all \
-              --with-gnu-as --with-gnu-ld --disable-tls --disable-threads \
-              --disable-libstdcxx-pch \
+              --with-gnu-as \
+              --with-gnu-ld \
+              --disable-tls \
+              --disable-threads \
+              --disable-hosted-libstdcxx \
               --enable-shared \
               --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
               --with-mpfr=$(LOCAL_LIB_INSTALL_LOCATION) \
               --with-mpc=$(LOCAL_LIB_INSTALL_LOCATION) \
               CPPFLAGS_FOR_TARGET=-I$(LIBC_DIR) \
-              CFLAGS_FOR_TARGET="-I$(LIBC_DIR) -nostdlib $(LD_DEFSYM_DUMMY_LIBC) -fPIC"
+              CFLAGS_FOR_TARGET="-I$(LIBC_DIR) -nostdlib $(LD_DEFSYM_DUMMY_LIBC) -fPIC -DUSE_PT_GNU_EH_FRAME"
 
 GCC_CONFIG += $(GCC_CONFIG_$(PLATFORM))
 
