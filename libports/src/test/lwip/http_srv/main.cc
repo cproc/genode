@@ -34,9 +34,10 @@ extern "C" {
 const static char http_html_hdr[] =
 	"HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n"; /* HTTP response header */
 
-const static char http_index_html[] =
-	"<html><head><title>Congrats!</title></head><body><h1>Welcome to our lwIP HTTP server!</h1><p>This is a small test page.</body></html>"; /* HTML page */
+//const static char http_index_html[] =
+//	"<html><head><title>Congrats!</title></head><body><h1>Welcome to our lwIP HTTP server!</h1><p>This is a small test page.</body></html>"; /* HTML page */
 
+static char http_index_html[1024*1024];
 
 /**
  * Handle a single client's request.
@@ -69,8 +70,11 @@ void http_server_serve(int conn) {
 			/* Send http header */
 			lwip_send(conn, http_html_hdr, Genode::strlen(http_html_hdr), 0);
 
+for (int i = 0; i < 1000000; i++) {
 			/* Send our HTML page */
-			lwip_send(conn, http_index_html, Genode::strlen(http_index_html), 0);
+			//lwip_send(conn, http_index_html, Genode::strlen(http_index_html), 0);
+			lwip_send(conn, http_index_html, sizeof(http_index_html), 0);
+}
 		}
 	}
 }
