@@ -41,7 +41,7 @@
 #define LWIP_WND_SCALE              1  /* enable window scaling */
 #define TCP_RCV_SCALE               2  /* receive scale factor IETF RFC 1323 */
 
-#define LWIP_CHECKSUM_ON_COPY       1  /* calculate checksum during memcpy */
+#define LWIP_CHECKSUM_ON_COPY       0  /* calculate checksum during memcpy */
 
 #if LWIP_DHCP
 #define LWIP_NETIF_STATUS_CALLBACK  1  /* callback function used by DHCP init */
