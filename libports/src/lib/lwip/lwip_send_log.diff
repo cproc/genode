@@ -1,0 +1,149 @@
+lwip_send_log.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/api/api_lib.c  |    2 +-
+ src/api/api_msg.c  |    1 +
+ src/api/tcpip.c    |   11 +++++++++++
+ src/core/tcp_out.c |   13 ++++++++++++-
+ 4 files changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/src/api/api_lib.c b/src/api/api_lib.c
+index adaaad4..627869d 100644
+--- a/src/api/api_lib.c
++++ b/src/api/api_lib.c
+@@ -611,7 +611,7 @@ netconn_write_partly(struct netconn *conn, const void *dataptr, size_t size,
+   struct api_msg msg;
+   err_t err;
+   u8_t dontblock;
+-
++printf("netconn_write_partly(): size = %zu\n", size);
+   LWIP_ERROR("netconn_write: invalid conn",  (conn != NULL), return ERR_ARG;);
+   LWIP_ERROR("netconn_write: invalid conn->type",  (NETCONNTYPE_GROUP(conn->type)== NETCONN_TCP), return ERR_VAL;);
+   if (size == 0) {
+diff --git a/src/api/api_msg.c b/src/api/api_msg.c
+index 0297338..5900329 100644
+--- a/src/api/api_msg.c
++++ b/src/api/api_msg.c
+@@ -1274,6 +1274,7 @@ lwip_netconn_do_writemore(struct netconn *conn)
+       len = (u16_t)diff;
+     }
+     available = tcp_sndbuf(conn->pcb.tcp);
++    printf("lwip_netconn_do_writemore(): len = %u, available = %u\n", len, available);
+     if (available < len) {
+       /* don't try to write more than sendbuf */
+       len = available;
+diff --git a/src/api/tcpip.c b/src/api/tcpip.c
+index 7c1c9ca..73f38b6 100644
+--- a/src/api/tcpip.c
++++ b/src/api/tcpip.c
+@@ -59,6 +59,10 @@ static sys_mbox_t mbox;
+ sys_mutex_t lock_tcpip_core;
+ #endif /* LWIP_TCPIP_CORE_LOCKING */
+ 
++extern int inhibit_nic_receiver_wakeup;
++extern int data_sent;
++extern void genode_wakeup_nic_receiver();
++
+ 
+ /**
+  * The main lwIP thread. This thread has exclusive access to lwIP core functions
+@@ -81,9 +85,16 @@ tcpip_thread(void *arg)
+   }
+ 
+   LOCK_TCPIP_CORE();
++
++  inhibit_nic_receiver_wakeup = 1;
++
+   while (1) {                          /* MAIN Loop */
+     UNLOCK_TCPIP_CORE();
+     LWIP_TCPIP_THREAD_ALIVE();
++
++    if (data_sent)
++    	genode_wakeup_nic_receiver();
++//printf("tcpip_thread(): calling sys_timeouts_mbox_fetch()\n");
+     /* wait for a message, timeouts are processed while waiting */
+     sys_timeouts_mbox_fetch(&mbox, (void **)&msg);
+     LOCK_TCPIP_CORE();
+diff --git a/src/core/tcp_out.c b/src/core/tcp_out.c
+index d6473c2..3d11d77 100644
+--- a/src/core/tcp_out.c
++++ b/src/core/tcp_out.c
+@@ -364,6 +364,7 @@ tcp_write_checks(struct tcp_pcb *pcb, u16_t len)
+ err_t
+ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
+ {
++	printf("tcp_write(): len = %u\n", len);
+   struct pbuf *concat_p = NULL;
+   struct tcp_seg *last_unsent = NULL, *seg = NULL, *prev_seg = NULL, *queue = NULL;
+   u16_t pos = 0; /* position in 'arg' data */
+@@ -386,7 +387,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
+   err_t err;
+   /* don't allocate segments bigger than half the maximum window we ever received */
+   u16_t mss_local = LWIP_MIN(pcb->mss, pcb->snd_wnd_max/2);
+-
++printf("tcp_write(): pcb->mss = %u, pcb->snd_wnd_max = %zu, mss_local = %u\n", pcb->mss, pcb->snd_wnd_max, mss_local);
+ #if LWIP_NETIF_TX_SINGLE_PBUF
+   /* Always copy to try to create single pbufs for TX */
+   apiflags |= TCP_WRITE_FLAG_COPY;
+@@ -399,6 +400,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
+ 
+   err = tcp_write_checks(pcb, len);
+   if (err != ERR_OK) {
++	  printf("***** error ****\n");
+     return err;
+   }
+   queuelen = pcb->snd_queuelen;
+@@ -535,6 +537,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
+    * variable, ready to be appended to pcb->unsent.
+    */
+   while (pos < len) {
++	  printf("pos = %u, len = %u\n", pos, len);
+     struct pbuf *p;
+     u16_t left = len - pos;
+     u16_t max_len = mss_local - optlen;
+@@ -968,6 +971,8 @@ tcp_output(struct tcp_pcb *pcb)
+     return ERR_OK;
+   }
+ 
++	printf("tcp_output()\n");
++
+   wnd = LWIP_MIN(pcb->snd_wnd, pcb->cwnd);
+ 
+   LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_output: snd_wnd %"U32_F", cwnd %"U32_F
+@@ -1019,6 +1024,7 @@ tcp_output(struct tcp_pcb *pcb)
+          ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len <= wnd) {
+     LWIP_ASSERT("RST not expected here!", 
+                 (TCPH_FLAGS(seg->tcphdr) & TCP_RST) == 0);
++    printf("1: seq: %u, lastack: %u, data available: %u, wnd: %u\n", ntohl(seg->tcphdr->seqno), pcb->lastack, ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len, wnd);
+     /* Stop sending if the nagle algorithm would prevent it
+      * Don't stop:
+      * - if tcp_write had a memory error before (prevent delayed ACK timeout) or
+@@ -1049,6 +1055,7 @@ tcp_output(struct tcp_pcb *pcb)
+ #if TCP_OVERSIZE_DBGCHECK
+     seg->oversize_left = 0;
+ #endif /* TCP_OVERSIZE_DBGCHECK */
++    printf("tcp_output(): calling tcp_output_segment()\n");
+     tcp_output_segment(seg, pcb);
+     snd_nxt = ntohl(seg->tcphdr->seqno) + TCP_TCPLEN(seg);
+     if (TCP_SEQ_LT(pcb->snd_nxt, snd_nxt)) {
+@@ -1086,6 +1093,9 @@ tcp_output(struct tcp_pcb *pcb)
+       tcp_seg_free(seg);
+     }
+     seg = pcb->unsent;
++    printf("seg = %p\n", seg);
++    if (seg != NULL)
++    	printf("2: seq: %u, lastack: %u, data available: %u, wnd: %u\n", ntohl(seg->tcphdr->seqno), pcb->lastack, ntohl(seg->tcphdr->seqno) - pcb->lastack + seg->len, wnd);
+   }
+ #if TCP_OVERSIZE
+   if (pcb->unsent == NULL) {
+@@ -1095,6 +1105,7 @@ tcp_output(struct tcp_pcb *pcb)
+ #endif /* TCP_OVERSIZE */
+ 
+   pcb->flags &= ~TF_NAGLEMEMERR;
++printf("tcp_output(): finished\n");
+   return ERR_OK;
+ }
+ 

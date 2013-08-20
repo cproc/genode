@@ -33,6 +33,8 @@ extern "C" {
 #include <nic_session/connection.h>
 
 
+extern "C" int inhibit_nic_receiver_wakeup;
+
 /*
  * Thread, that receives packets by the nic-session interface.
  */
@@ -78,9 +80,24 @@ class Nic_receiver_thread : public Genode::Thread<8192>
 
 		void submit_tx_packet(Packet_descriptor packet)
 		{
-			nic()->tx()->submit_packet(packet);
+			nic()->tx()->submit_packet(packet, inhibit_nic_receiver_wakeup);
 			/* check for acknowledgements */
 			_tx_ack();
+
+			if (nic()->tx()->submit_transmitter().tx_count() % 10000 == 0)
+				PDBG("tx_count = %zu, rx_ready_count = %zu",
+				     nic()->tx()->submit_transmitter().tx_count(),
+				     nic()->tx()->submit_transmitter().rx_ready_count());
+		}
+
+		void wakeup_receiver()
+		{
+			nic()->tx()->wakeup_receiver();
+		}
+
+		void wakeup_transmitter()
+		{
+			nic()->rx()->wakeup_transmitter();
 		}
 
 		char *content(Packet_descriptor packet) {
@@ -93,8 +110,22 @@ class Nic_receiver_thread : public Genode::Thread<8192>
  */
 extern "C" {
 
-	static void  genode_netif_input(struct netif *netif);
+	static void  genode_netif_input(struct netif *netif, bool inhibit_wakeup);
 
+	int data_sent = 0; 	/* used to decide if a submit signal should get sent */
+	int inhibit_nic_receiver_wakeup = 0;
+	Nic_receiver_thread *nic_receiver_thread = 0;
+
+	void genode_wakeup_nic_receiver()
+	{
+		nic_receiver_thread->wakeup_receiver();
+		data_sent = 0;
+	}
+
+	void genode_wakeup_nic_transmitter()
+	{
+		nic_receiver_thread->wakeup_transmitter();
+	}
 
 	/**
 	 * This function should do the actual transmission of the packet. The packet is
@@ -115,6 +146,7 @@ extern "C" {
 	low_level_output(struct netif *netif, struct pbuf *p)
 	{
 		Nic_receiver_thread *th = reinterpret_cast<Nic_receiver_thread*>(netif->state);
+		nic_receiver_thread = th;
 
 #if ETH_PAD_SIZE
 		pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
@@ -139,6 +171,9 @@ extern "C" {
 		pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
 #endif
 		LINK_STATS_INC(link.xmit);
+
+		data_sent = 1;
+
 		return ERR_OK;
 	}
 
@@ -152,7 +187,7 @@ extern "C" {
 	 *         NULL on memory error
 	 */
 	static struct pbuf *
-	low_level_input(struct netif *netif)
+	low_level_input(struct netif *netif, bool inhibit_wakeup)
 	{
 		Nic_receiver_thread *th = reinterpret_cast<Nic_receiver_thread*>(netif->state);
 		Nic::Connection *nic    = th->nic();
@@ -191,7 +226,7 @@ extern "C" {
 		}
 
 		/* Acknowledge the packet */
-		nic->rx()->acknowledge_packet(rx_packet);
+		nic->rx()->acknowledge_packet(rx_packet, inhibit_wakeup);
 		return p;
 	}
 
@@ -206,13 +241,13 @@ extern "C" {
 	 * @param netif the lwip network interface structure for this genode_netif
 	 */
 	static void
-	genode_netif_input(struct netif *netif)
+	genode_netif_input(struct netif *netif, bool inhibit_wakeup)
 	{
 		/*
 		 * Move received packet into a new pbuf,
 		 * if something went wrong, return silently
 		 */
-		struct pbuf *p = low_level_input(netif);
+		struct pbuf *p = low_level_input(netif, inhibit_wakeup);
 
 		/* No packet could be read, silently ignore this */
 		if (p == NULL) return;
@@ -295,11 +330,13 @@ void Nic_receiver_thread::entry()
 {
 	while(true)
 	{
-		/*
-		 * Block until we receive a packet,
-		 * then call input function.
-		 */
 		_rx_packet = _nic->rx()->get_packet();
-		genode_netif_input(_netif);
+		genode_netif_input(_netif, true);
+		//PDBG("got a packet");
+
+		if (!_nic->rx()->packet_avail()) {
+			//PDBG("no more packets available, waking up the transmitter");
+			genode_wakeup_nic_transmitter();
+		}
 	}
 }

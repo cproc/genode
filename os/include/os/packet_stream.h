@@ -224,6 +224,8 @@ class Packet_descriptor_transmitter
 
 		/* facility to send ready-to-receive signals */
 		Genode::Signal_transmitter         _rx_ready;
+		Genode::size_t                     _tx_count;
+		Genode::size_t                     _rx_ready_count;
 
 		Genode::Lock _tx_queue_lock;
 		TX_QUEUE    *_tx_queue;
@@ -236,6 +238,7 @@ class Packet_descriptor_transmitter
 		Packet_descriptor_transmitter(TX_QUEUE *tx_queue)
 		:
 			_tx_ready_cap(_tx_ready.manage(&_tx_ready_context)),
+			_tx_count(0), _rx_ready_count(0),
 			_tx_queue(tx_queue)
 		{ }
 
@@ -255,12 +258,19 @@ class Packet_descriptor_transmitter
 			return !_tx_queue->full();
 		}
 
-		void tx(typename TX_QUEUE::Packet_descriptor packet)
+		void wakeup_rx()
+		{
+			_rx_ready_count++;
+			_rx_ready.submit();
+		}
+
+		void tx(typename TX_QUEUE::Packet_descriptor packet, bool inhibit_wakeup)
 		{
 			Genode::Lock::Guard lock_guard(_tx_queue_lock);
 
 			do {
 				/* block for signal if tx queue is full */
+				/* TODO: call wakeup_rx() if not done already */
 				if (_tx_queue->full())
 					_tx_ready.wait_for_signal();
 
@@ -272,9 +282,14 @@ class Packet_descriptor_transmitter
 
 			} while (_tx_queue->add(packet) == false);
 
-			if (_tx_queue->single_element())
-				_rx_ready.submit();
+			_tx_count++;
+
+			if (_tx_queue->single_element() && !inhibit_wakeup)
+				wakeup_rx();
 		}
+
+		Genode::size_t tx_count() const { return _tx_count; }
+		Genode::size_t rx_ready_count() const { return _rx_ready_count; }
 };
 
 
@@ -610,9 +625,19 @@ class Packet_stream_source : private Packet_stream_base
 		/**
 		 * Tell sink about a packet to process
 		 */
-		void submit_packet(Packet_descriptor packet)
+		void submit_packet(Packet_descriptor packet, bool inhibit_wakeup = false)
 		{
-			_submit_transmitter.tx(packet);
+			_submit_transmitter.tx(packet, inhibit_wakeup);
+		}
+
+		void wakeup_receiver()
+		{
+			_submit_transmitter.wakeup_rx();
+		}
+
+		Packet_descriptor_transmitter<Submit_queue> const &submit_transmitter() const
+		{
+			return _submit_transmitter;
 		}
 
 		/**
@@ -770,9 +795,14 @@ class Packet_stream_sink : private Packet_stream_base
 		 *
 		 * This function blocks if the acknowledgement queue is full.
 		 */
-		void acknowledge_packet(Packet_descriptor packet)
+		void acknowledge_packet(Packet_descriptor packet, bool inhibit_wakeup = false)
 		{
-			_ack_transmitter.tx(packet);
+			_ack_transmitter.tx(packet, inhibit_wakeup);
+		}
+
+		void wakeup_transmitter()
+		{
+			_ack_transmitter.wakeup_rx();
 		}
 
 		void debug_print_buffers() {
