@@ -155,7 +155,7 @@ extern "C" {
 		 */
 		for(struct pbuf *q = p; q != NULL; q = q->next) {
 			char *src = (char*) q->payload;
-			Genode::memcpy(tx_content, src, q->len);
+			genode_memcpy(tx_content, src, q->len);
 			tx_content += q->len;
 		}
 
@@ -207,7 +207,7 @@ extern "C" {
 			 */
 			for(struct pbuf *q = p; q != 0; q = q->next) {
 				char *dst = (char*)q->payload;
-				Genode::memcpy(dst, rx_content, q->len);
+				genode_memcpy(dst, rx_content, q->len);
 				rx_content += q->len;
 			}
 
