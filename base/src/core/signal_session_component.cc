@@ -86,12 +86,12 @@ void Signal_session_component::free_context(Signal_context_capability context_ca
 void Signal_session_component::submit(Signal_context_capability context_cap,
                                       unsigned                  cnt)
 {
+#if 0
 	static unsigned long count = 0;
-
 	count++;
 	if ((count % 10000) == 0)
 		PDBG("%lu signals submitted", count);
-
+#endif
 	Object_pool<Signal_context_component>::Guard
 		context(_context_ep->lookup_and_lock(context_cap));
 	if (!context) {

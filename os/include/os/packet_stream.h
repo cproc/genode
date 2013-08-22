@@ -284,11 +284,11 @@ class Packet_descriptor_transmitter
 			} while (_tx_queue->add(packet) == false);
 
 			_tx_count++;
-
+#if 0
 			if (_tx_count % 10000 == 0)
 				PDBG("tx_count = %zu, rx_ready_count = %zu",
 				     _tx_count, _rx_ready_count);
-
+#endif
 			if (_tx_queue->single_element() && !inhibit_wakeup)
 				wakeup_rx();
 		}
@@ -363,11 +363,11 @@ class Packet_descriptor_receiver
 			*out_packet = _rx_queue->get();
 
 			_rx_count++;
-
+#if 0
 			if (_rx_count % 10000 == 0)
 				PDBG("rx_count = %zu, tx_ready_count = %zu",
 				     _rx_count, _tx_ready_count);
-
+#endif
 			if (_rx_queue->single_slot_free() && !inhibit_wakeup)
 				wakeup_tx();
 		}
