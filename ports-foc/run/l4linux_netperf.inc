@@ -174,7 +174,7 @@ set ip_match "(\[0-9]{1,3})\\.(\[0-9]{1,3})\\.(\[0-9]{1,3})\\.(\[0-9]{1,3})"
 #
 # Local IP
 #
-set ip_string [ exec ip addr show dev eth0 ]
+set ip_string [ exec ip addr show dev mybridge ]
 regexp $ip_match $ip_string ip_local
 
 
