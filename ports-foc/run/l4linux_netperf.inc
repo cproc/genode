@@ -196,51 +196,76 @@ puts "Using local IP: $ip_local remote IP: $ip_remote"
 #
 puts "\nTransmission test:"
 
+proc show_kernel_stats { serial_id } {
+	send "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send "Jh50\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "*"
+	run_genode_until "jdb" 10 $serial_id
+	send "idle\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "rcupdate\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "mode\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "lp"
+	run_genode_until "present list" 10 $serial_id
+	send "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send "g"
+	run_genode_until "leave debugger" 10 $serial_id
+}
+
 exec netserver-$version -p 8888 &
+show_kernel_stats $serial_id
 send "netperf -p 8888 -H $ip_local -c -C -t TCP_STREAM && uname\n"
 run_genode_until "Linux.*" 30 $serial_id
+show_kernel_stats $serial_id
 
-puts "\n\n"
+interact -i $serial_id
 
-# get throughput_tx from netperf output
-set throughput_tx [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $output]
-set throughput_tx [regexp -all -inline {[0-9]+\.[0-9]+} $throughput_tx]
-
+#puts "\n\n"
 #
-# RX
+## get throughput_tx from netperf output
+#set throughput_tx [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $output]
+#set throughput_tx [regexp -all -inline {[0-9]+\.[0-9]+} $throughput_tx]
 #
-puts "Receive test:"
-
-set results [exec netperf-$version -p 8888 -H $ip_remote -t TCP_STREAM]
-puts $results
-
-# get throughput from netperf output
-set throughput_rx [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $results]
-set throughput_rx [regexp -all -inline {[0-9]+\.[0-9]+} $throughput_rx]
-
-puts "\n"
-
+##
+## RX
+##
+#puts "Receive test:"
 #
-# format output parseable for post proccessing scripts
+#set results [exec netperf-$version -p 8888 -H $ip_remote -t TCP_STREAM]
+#puts $results
 #
-puts -nonewline "! PERF: TCP_TX"
-if {$use_nic_bridge} { puts -nonewline "_bridge" }
-if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
-if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
-if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
-puts "              [lindex $throughput_tx 1] MBit/s ok"
-
-puts -nonewline "! PERF: TCP_RX"
-if {$use_nic_bridge} { puts -nonewline "_bridge" }
-if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
-if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
-if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
-puts "              [lindex $throughput_rx 1] MBit/s ok"
-
-exec rm bin/initrd.gz bin/initrd.gz.md5
-
-puts "\nTest succeeded"
-close -i $serial_id
-exec killall netserver-$version
-
-# vi: set ft=tcl :
+## get throughput from netperf output
+#set throughput_rx [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $results]
+#set throughput_rx [regexp -all -inline {[0-9]+\.[0-9]+} $throughput_rx]
+#
+#puts "\n"
+#
+##
+## format output parseable for post proccessing scripts
+##
+#puts -nonewline "! PERF: TCP_TX"
+#if {$use_nic_bridge} { puts -nonewline "_bridge" }
+#if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
+#if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
+#if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
+#puts "              [lindex $throughput_tx 1] MBit/s ok"
+#
+#puts -nonewline "! PERF: TCP_RX"
+#if {$use_nic_bridge} { puts -nonewline "_bridge" }
+#if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
+#if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
+#if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
+#puts "              [lindex $throughput_rx 1] MBit/s ok"
+#
+#exec rm bin/initrd.gz bin/initrd.gz.md5
+#
+#puts "\nTest succeeded"
+#close -i $serial_id
+#exec killall netserver-$version
+#
+## vi: set ft=tcl :
