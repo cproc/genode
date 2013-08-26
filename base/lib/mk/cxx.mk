@@ -1,4 +1,4 @@
-CXX_SRC_CC += misc.cc new_delete.cc malloc_free.cc exception.cc guard.cc unwind.cc
+CXX_SRC_CC += misc.cc new_delete.cc malloc_free.cc exception.cc guard.cc unwind.cc instrument_functions.cc
 
 vpath %.cc $(BASE_DIR)/src/base/cxx
 
