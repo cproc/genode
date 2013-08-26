@@ -1,0 +1,50 @@
+packet_stream_signals.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/api/tcpip.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/api/tcpip.c b/src/api/tcpip.c
+index 7c1c9ca..0c8d121 100644
+--- a/src/api/tcpip.c
++++ b/src/api/tcpip.c
+@@ -59,6 +59,8 @@ static sys_mbox_t mbox;
+ sys_mutex_t lock_tcpip_core;
+ #endif /* LWIP_TCPIP_CORE_LOCKING */
+ 
++extern int inhibit_nic_receiver_wakeup;
++extern void genode_wakeup_nic_receiver();
+ 
+ /**
+  * The main lwIP thread. This thread has exclusive access to lwIP core functions
+@@ -81,11 +83,18 @@ tcpip_thread(void *arg)
+   }
+ 
+   LOCK_TCPIP_CORE();
++
+   while (1) {                          /* MAIN Loop */
+     UNLOCK_TCPIP_CORE();
+     LWIP_TCPIP_THREAD_ALIVE();
++
+     /* wait for a message, timeouts are processed while waiting */
+     sys_timeouts_mbox_fetch(&mbox, (void **)&msg);
++
++    /* inhibit wakeup signals from now on, after DHCP has finished */
++    if (!inhibit_nic_receiver_wakeup)
++  	  inhibit_nic_receiver_wakeup = 1;
++
+     LOCK_TCPIP_CORE();
+     switch (msg->type) {
+ #if LWIP_NETCONN
+@@ -151,6 +160,8 @@ tcpip_thread(void *arg)
+       LWIP_ASSERT("tcpip_thread: invalid message", 0);
+       break;
+     }
++
++    genode_wakeup_nic_receiver();
+   }
+ }
+ 
