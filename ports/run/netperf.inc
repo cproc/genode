@@ -218,47 +218,72 @@ if [is_qemu_available] {
 	puts ""
 }
 
+proc show_kernel_stats { serial_id } {
+	send -i $serial_id "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "Jh50\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "*"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "idle\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "rcupdate\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "mode\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "lp"
+	run_genode_until "present list" 10 $serial_id
+	send -i $serial_id "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "g"
+	run_genode_until "leave debugger" 10 $serial_id
+}
+
+show_kernel_stats $serial_id
+	
 # start netperf client connecting to netperf server running native on Genode
 foreach netperf_test $netperf_tests {
-	puts "\n---------------------------- $netperf_test -----------------------"
+	#puts "\n---------------------------- $netperf_test -----------------------"
 
 	spawn netperf-$version -H $ip_addr -P 1 -v 2 -t $netperf_test -c -C -- -m $packet_size $force_ports
 	set netperf_id $spawn_id
 
 	run_genode_until "Segment" 60 $netperf_id
 
+	show_kernel_stats $serial_id
+	
 	# get throughput from netperf output
-	set throughput [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $output]
-	set throughput [regexp -all -inline {[0-9]+\.[0-9]+} $throughput]
+#	set throughput [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+[0-9]+\.[0-9]+} $output]
+#	set throughput [regexp -all -inline {[0-9]+\.[0-9]+} $throughput]
 
 	# calculate packets per second rate
-	set all_bytes [regexp -all -inline {([0-9]+[ ]+){5}} $output]
-	set all_bytes [lindex $all_bytes 0 4]
+#	set all_bytes [regexp -all -inline {([0-9]+[ ]+){5}} $output]
+#	set all_bytes [lindex $all_bytes 0 4]
 
-	set elapsed_time [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+} $output]
-	set elapsed_time [lindex $elapsed_time 0 3]
-	set packets_second [expr $all_bytes / $packet_size / $elapsed_time]
+#	set elapsed_time [regexp -all -inline {([0-9]+[ ]+){3}[0-9]+\.[0-9]+[ ]+} $output]
+#	set elapsed_time [lindex $elapsed_time 0 3]
+#	set packets_second [expr $all_bytes / $packet_size / $elapsed_time]
 
-	puts "\ncalculation: overall bytes / size per packet / time = packets per second"
-	puts -nonewline "             $all_bytes Bytes / $packet_size Bytes / $elapsed_time s = "
-	puts "[format %8.0f $packets_second] packets/s\n"
+#	puts "\ncalculation: overall bytes / size per packet / time = packets per second"
+#	puts -nonewline "             $all_bytes Bytes / $packet_size Bytes / $elapsed_time s = "
+#	puts "[format %8.0f $packets_second] packets/s\n"
 
 	# format output parseable for post proccessing scripts
-	foreach i {0 1} {
-		puts -nonewline "! PERF: $netperf_test"
-		if {$use_nic_bridge} { puts -nonewline "_bridge" }
-		if {$use_usb_driver} {
-			if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
-			if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
-			if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
-		}
-		if {$i == 0} { puts -nonewline "              [lindex $throughput 1] MBit/s ok" }
-		if {$i == 1} { puts -nonewline "_packet_$packet_size [format %6.0f $packets_second] packets/s ok" }
-		if {$i >  1} { puts -nonewline "              0 unknown err" }
-		puts ""
-	}
+#	foreach i {0 1} {
+#		puts -nonewline "! PERF: $netperf_test"
+#		if {$use_nic_bridge} { puts -nonewline "_bridge" }
+#		if {$use_usb_driver} {
+#			if {![string compare $use_usb_11 "yes"]} { puts -nonewline "_uhci" }
+#			if {![string compare $use_usb_20 "yes"]} { puts -nonewline "_ohci" }
+#			if {![string compare $use_usb_30 "yes"]} { puts -nonewline "_xhci" }
+#		}
+#		if {$i == 0} { puts -nonewline "              [lindex $throughput 1] MBit/s ok" }
+#		if {$i == 1} { puts -nonewline "_packet_$packet_size [format %6.0f $packets_second] packets/s ok" }
+#		if {$i >  1} { puts -nonewline "              0 unknown err" }
+#		puts ""
+#	}
+	
 }
-
 
 puts "\nTest succeeded"
 # vi: set ft=tcl :
