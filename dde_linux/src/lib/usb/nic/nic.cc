@@ -264,6 +264,7 @@ class Nic_device : public Nic::Device
 		 * Submit packet for session
 		 */
 		inline void rx(sk_buff *skb) { _session->rx((Genode::addr_t)skb->data, skb->len); }
+		inline void rx_wakeup() { _session->rx_wakeup(); }
 
 		/**
 		 * Return mac address
@@ -375,6 +376,12 @@ int netif_rx(struct sk_buff *skb)
 	return NET_RX_SUCCESS;
 }
 
+extern "C" void usb_drv_submit_packet_wakeup()
+{
+	if (_nic && _nic->session()) {
+		_nic->rx_wakeup();
+	}
+}
 
 /********************
  ** linux/skbuff.h **

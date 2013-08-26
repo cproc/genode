@@ -223,7 +223,8 @@ class Packet_descriptor_transmitter
 		Genode::Signal_context_capability _tx_ready_cap;
 
 		/* facility to send ready-to-receive signals */
-		Genode::Signal_transmitter         _rx_ready;
+		Genode::Signal_transmitter        _rx_ready;
+		bool                              _rx_wakeup_needed;
 
 		Genode::Lock _tx_queue_lock;
 		TX_QUEUE    *_tx_queue;
@@ -236,6 +237,7 @@ class Packet_descriptor_transmitter
 		Packet_descriptor_transmitter(TX_QUEUE *tx_queue)
 		:
 			_tx_ready_cap(_tx_ready.manage(&_tx_ready_context)),
+			_rx_wakeup_needed(false),
 			_tx_queue(tx_queue)
 		{ }
 
@@ -255,7 +257,15 @@ class Packet_descriptor_transmitter
 			return !_tx_queue->full();
 		}
 
-		void tx(typename TX_QUEUE::Packet_descriptor packet)
+		void wakeup_rx()
+		{
+			if (_rx_wakeup_needed) {
+				_rx_ready.submit();
+				_rx_wakeup_needed = false;
+			}
+		}
+
+		void tx(typename TX_QUEUE::Packet_descriptor packet, bool inhibit_wakeup)
 		{
 			Genode::Lock::Guard lock_guard(_tx_queue_lock);
 
@@ -272,8 +282,12 @@ class Packet_descriptor_transmitter
 
 			} while (_tx_queue->add(packet) == false);
 
-			if (_tx_queue->single_element())
-				_rx_ready.submit();
+			if (_tx_queue->single_element()) {
+				if (inhibit_wakeup)
+					_rx_wakeup_needed = true;
+				else
+					_rx_ready.submit();
+			}
 		}
 };
 
@@ -295,6 +309,7 @@ class Packet_descriptor_receiver
 
 		/* facility to send ready-to-transmit signals */
 		Genode::Signal_transmitter         _tx_ready;
+		bool                               _tx_wakeup_needed;
 
 		Genode::Lock _rx_queue_lock;
 		RX_QUEUE    *_rx_queue;
@@ -307,6 +322,7 @@ class Packet_descriptor_receiver
 		Packet_descriptor_receiver(RX_QUEUE *rx_queue)
 		:
 			_rx_ready_cap(_rx_ready.manage(&_rx_ready_context)),
+			_tx_wakeup_needed(false),
 			_rx_queue(rx_queue)
 		{ }
 
@@ -326,7 +342,15 @@ class Packet_descriptor_receiver
 			return !_rx_queue->empty();
 		}
 
-		void rx(typename RX_QUEUE::Packet_descriptor *out_packet)
+		void wakeup_tx()
+		{
+			if (_tx_wakeup_needed) {
+				_tx_ready.submit();
+				_tx_wakeup_needed = false;
+			}
+		}
+
+		void rx(typename RX_QUEUE::Packet_descriptor *out_packet, bool inhibit_wakeup = false)
 		{
 			Genode::Lock::Guard lock_guard(_rx_queue_lock);
 
@@ -335,8 +359,12 @@ class Packet_descriptor_receiver
 
 			*out_packet = _rx_queue->get();
 
-			if (_rx_queue->single_slot_free())
-				_tx_ready.submit();
+			if (_rx_queue->single_slot_free()) {
+				if (inhibit_wakeup)
+					_tx_wakeup_needed = true;
+				else
+					_tx_ready.submit();
+			}
 		}
 };
 
@@ -610,9 +638,18 @@ class Packet_stream_source : private Packet_stream_base
 		/**
 		 * Tell sink about a packet to process
 		 */
-		void submit_packet(Packet_descriptor packet)
+		void submit_packet(Packet_descriptor packet, bool inhibit_wakeup = false)
 		{
-			_submit_transmitter.tx(packet);
+			_submit_transmitter.tx(packet, inhibit_wakeup);
+		}
+
+		/**
+		 * This function must get called if 'submit_packet()' was called with
+		 * 'inhibit_wakeup' set
+		 */
+		void submit_packet_wakeup()
+		{
+			_submit_transmitter.wakeup_rx();
 		}
 
 		/**
@@ -623,11 +660,20 @@ class Packet_stream_source : private Packet_stream_base
 		/**
 		 * Get acknowledged packet
 		 */
-		Packet_descriptor get_acked_packet()
+		Packet_descriptor get_acked_packet(bool inhibit_wakeup = false)
 		{
 			Packet_descriptor packet;
-			_ack_receiver.rx(&packet);
+			_ack_receiver.rx(&packet, inhibit_wakeup);
 			return packet;
+		}
+
+		/**
+		 * This function must get called if 'get_acked_packet()' was called with
+		 * 'inhibit_wakeup' set
+		 */
+		void get_acked_packet_wakeup()
+		{
+			_ack_receiver.wakeup_tx();
 		}
 
 		/**
@@ -739,12 +785,21 @@ class Packet_stream_sink : private Packet_stream_base
 		 *
 		 * This function blocks if no packets are available.
 		 */
-		Packet_descriptor get_packet()
+		Packet_descriptor get_packet(bool inhibit_wakeup = false)
 		{
 			Packet_descriptor packet;
-			do { _submit_receiver.rx(&packet); }
+			do { _submit_receiver.rx(&packet, inhibit_wakeup); }
 			while (!packet_valid(packet));
 			return packet;
+		}
+
+		/**
+		 * This function must get called if 'get_packet()' was called with
+		 * 'inhibit_wakeup' set
+		 */
+		void get_packet_wakeup()
+		{
+			_submit_receiver.wakeup_tx();
 		}
 
 		/**
@@ -770,9 +825,18 @@ class Packet_stream_sink : private Packet_stream_base
 		 *
 		 * This function blocks if the acknowledgement queue is full.
 		 */
-		void acknowledge_packet(Packet_descriptor packet)
+		void acknowledge_packet(Packet_descriptor packet, bool inhibit_wakeup = false)
 		{
-			_ack_transmitter.tx(packet);
+			_ack_transmitter.tx(packet, inhibit_wakeup);
+		}
+
+		/**
+		 * This function must get called if 'acknowledge_packet()' was called with
+		 * 'inhibit_wakeup' set
+		 */
+		void acknowledge_packet_wakeup()
+		{
+			_ack_transmitter.wakeup_rx();
 		}
 
 		void debug_print_buffers() {
