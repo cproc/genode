@@ -62,7 +62,7 @@ namespace Nic {
 						while (true) {
 
 							/* block for packet from client */
-							Packet_descriptor packet = _tx_sink->get_packet();
+							Packet_descriptor packet = _tx_sink->get_packet(true);
 							if (!packet.valid()) {
 								PWRN("received invalid packet");
 								continue;
@@ -74,7 +74,16 @@ namespace Nic {
 							/* acknowledge packet to the client */
 							if (!_tx_sink->ready_to_ack())
 								PDBG("need to wait until ready-for-ack");
-							_tx_sink->acknowledge_packet(packet);
+							_tx_sink->acknowledge_packet(packet, true);
+
+							/*
+							 * Check if more packets are available. If not,
+							 * wake up the transmitter.
+							 */
+							if (!_tx_sink->packet_avail()) {
+								_tx_sink->get_packet_wakeup();
+								_tx_sink->acknowledge_packet_wakeup();
+							}
 						}
 					}
 			} _tx_thread;
@@ -139,24 +148,30 @@ namespace Nic {
 				return _rx.source()->packet_content(_curr_rx_packet);
 			}
 
-			void submit()
+			void submit(bool inhibit_wakeup)
 			{
 				/* check for acknowledgements from the client */
 				while (_rx.source()->ack_avail()) {
-					Packet_descriptor packet = _rx.source()->get_acked_packet();
+					Packet_descriptor packet = _rx.source()->get_acked_packet(true);
 
 					/* free packet buffer */
 					_rx.source()->release_packet(packet);
 				}
 
+				_rx.source()->get_acked_packet_wakeup();
+
 				dump();
 
-				_rx.source()->submit_packet(_curr_rx_packet);
+				_rx.source()->submit_packet(_curr_rx_packet, inhibit_wakeup);
 
 				/* invalidate rx packet descriptor */
 				_curr_rx_packet = Packet_descriptor();
 			}
 
+			void submit_wakeup()
+			{
+				_rx.source()->submit_packet_wakeup();
+			}
 
 			/****************************
 			 ** Nic::Session interface **

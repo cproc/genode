@@ -33,6 +33,8 @@ extern "C" {
 #include <nic_session/connection.h>
 
 
+extern "C" int inhibit_nic_receiver_wakeup;
+
 /*
  * Thread, that receives packets by the nic-session interface.
  */
@@ -48,10 +50,12 @@ class Nic_receiver_thread : public Genode::Thread<8192>
 		{
 			/* check for acknowledgements */
 			while (nic()->tx()->ack_avail() || block) {
-				Packet_descriptor acked_packet = nic()->tx()->get_acked_packet();
+				Packet_descriptor acked_packet = nic()->tx()->get_acked_packet(true);
 				nic()->tx()->release_packet(acked_packet);
 				block = false;
 			}
+
+			nic()->tx()->get_acked_packet_wakeup();
 		}
 
 	public:
@@ -78,9 +82,14 @@ class Nic_receiver_thread : public Genode::Thread<8192>
 
 		void submit_tx_packet(Packet_descriptor packet)
 		{
-			nic()->tx()->submit_packet(packet);
+			nic()->tx()->submit_packet(packet, inhibit_nic_receiver_wakeup);
 			/* check for acknowledgements */
 			_tx_ack();
+		}
+
+		void submit_tx_packet_wakeup()
+		{
+			nic()->tx()->submit_packet_wakeup();
 		}
 
 		char *content(Packet_descriptor packet) {
@@ -95,6 +104,15 @@ extern "C" {
 
 	static void  genode_netif_input(struct netif *netif);
 
+	int inhibit_nic_receiver_wakeup = 0;
+	Nic_receiver_thread *nic_receiver_thread = 0;
+
+	void genode_submit_tx_packet_wakeup()
+	{
+		if (!nic_receiver_thread)
+			PERR("genode_wakeup_nic_receiver(): 0");
+		nic_receiver_thread->submit_tx_packet_wakeup();
+	}
 
 	/**
 	 * This function should do the actual transmission of the packet. The packet is
@@ -139,6 +157,7 @@ extern "C" {
 		pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
 #endif
 		LINK_STATS_INC(link.xmit);
+
 		return ERR_OK;
 	}
 
@@ -190,8 +209,6 @@ extern "C" {
 			LINK_STATS_INC(link.drop);
 		}
 
-		/* Acknowledge the packet */
-		nic->rx()->acknowledge_packet(rx_packet);
 		return p;
 	}
 
@@ -261,11 +278,11 @@ extern "C" {
 		}
 
 		/* Setup receiver thread */
-		Nic_receiver_thread *th = new (env()->heap())
+		nic_receiver_thread = new (env()->heap())
 			Nic_receiver_thread(nic, netif);
 
 		/* Store receiver thread address in user-defined netif struct part */
-		netif->state      = (void*) th;
+		netif->state      = (void*) nic_receiver_thread;
 #if LWIP_NETIF_HOSTNAME
 		netif->hostname   = "lwip";
 #endif /* LWIP_NETIF_HOSTNAME */
@@ -284,7 +301,7 @@ extern "C" {
 		for(int i=0; i<6; ++i)
 			netif->hwaddr[i] = _mac.addr[i];
 
-		th->start();
+		nic_receiver_thread->start();
 
 		return ERR_OK;
 	}
@@ -299,7 +316,18 @@ void Nic_receiver_thread::entry()
 		 * Block until we receive a packet,
 		 * then call input function.
 		 */
-		_rx_packet = _nic->rx()->get_packet();
+		_rx_packet = _nic->rx()->get_packet(true);
+
 		genode_netif_input(_netif);
+
+		_nic->rx()->acknowledge_packet(_rx_packet, true);
+
+		//PDBG("got a packet");
+
+		if (!_nic->rx()->packet_avail()) {
+			//PDBG("no more packets available, waking up the transmitter");
+			_nic->rx()->get_packet_wakeup();
+			_nic->rx()->acknowledge_packet_wakeup();
+		}
 	}
 }

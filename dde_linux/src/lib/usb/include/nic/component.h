@@ -146,7 +146,7 @@ namespace Nic {
 				/* submit received packets to lower layer */
 				while (_tx_sink->packet_avail())
 				{
-					Packet_descriptor packet = _tx_alloc ? _tx_sink->get_packet() : _tx_packet;
+					Packet_descriptor packet = _tx_alloc ? _tx_sink->get_packet(true) : _tx_packet;
 					addr_t virt = (addr_t)_tx_sink->packet_content(packet);
 
 					if (_device->burst()) {
@@ -201,7 +201,7 @@ namespace Nic {
 					counter.inc(packet.size());
 
 					/* acknowledge to client */
-					_tx_sink->acknowledge_packet(packet);
+					_tx_sink->acknowledge_packet(packet, true);
 
 					/* it's cooperative scheduling - be nice */
 					if (tx_cnt == 20)
@@ -222,19 +222,24 @@ namespace Nic {
 
 				if (_tx_sink->packet_avail())
 					_send_packet_avail_signal();
+				else {
+					_tx_sink->get_packet_wakeup();
+					_tx_sink->acknowledge_packet_wakeup();
+				}
 			}
 
 			void _rx_ack(bool block = true)
 			{
 				while (_rx.source()->ack_avail() || block)
 				{
-					
-					Packet_descriptor packet = _rx.source()->get_acked_packet();
+					Packet_descriptor packet = _rx.source()->get_acked_packet(true);
 
 					/* free packet buffer */
 					_rx.source()->release_packet(packet);
 					block = false;
 				}
+
+				_rx.source()->get_acked_packet_wakeup();
 			}
 
 		public:
@@ -268,7 +273,7 @@ namespace Nic {
 					try {
 						Packet_descriptor p =_rx.source()->alloc_packet(size);
 						Genode::memcpy(_rx.source()->packet_content(p), (void*)virt, size);
-						_rx.source()->submit_packet(p);
+						_rx.source()->submit_packet(p, true);
 						counter.inc(size);
 					} catch (...) {
 						/* ack or block */
@@ -279,6 +284,11 @@ namespace Nic {
 				}
 
 				_rx_ack(false);
+			}
+
+			void rx_wakeup()
+			{
+				_rx.source()->submit_packet_wakeup();
 			}
 	};
 

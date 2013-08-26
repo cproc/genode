@@ -216,14 +216,16 @@ extern "C" {
 
 		if (nic()) {
 			while(nic()->rx()->packet_avail()) {
-				Packet_descriptor p = nic()->rx()->get_packet();
+				Packet_descriptor p = nic()->rx()->get_packet(true);
 
 				if (receive_packet && net_device)
 					receive_packet(net_device, nic()->rx()->packet_content(p), p.size());
 				
 				counter.inc(p.size());
-				nic()->rx()->acknowledge_packet(p);
+				nic()->rx()->acknowledge_packet(p, true);
 			}
+			nic()->rx()->get_packet_wakeup();
+			nic()->rx()->acknowledge_packet_wakeup();
 		}
 	}
 

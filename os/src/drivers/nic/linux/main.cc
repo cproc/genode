@@ -37,25 +37,39 @@ class Linux_driver : public Nic::Driver
 
 		struct Rx_thread : Genode::Thread<0x2000>
 		{
-			int          fd;
-			Nic::Driver &driver;
+			int           fd;
+			Linux_driver &driver;
 
-			Rx_thread(int fd, Nic::Driver &driver)
+			Rx_thread(int fd, Linux_driver &driver)
 			: Genode::Thread<0x2000>("rx"), fd(fd), driver(driver) { }
 
 			void entry()
 			{
 				while (true) {
-					/* wait for packet arrival on fd */
+
+					/* receive a package (blocking) */
+					driver.handle_irq(fd);
+
+					/*
+					 * Check if more data is available. If not,
+					 * wake up the receiver.
+					 */
 					int    ret;
 					fd_set rfds;
 
 					FD_ZERO(&rfds);
 					FD_SET(fd, &rfds);
-					do { ret = select(fd + 1, &rfds, 0, 0, 0); } while (ret < 0);
+					/* a timeout of 10us increased the throughput compared to no timeout at all */
+					struct timeval timeout = {0, 10};
+					do {
+						ret = select(fd + 1, &rfds, 0, 0, &timeout);
+					} while (ret < 0);
 
-					/* inform driver about incoming packet */
-					driver.handle_irq(fd);
+					/* no more data available */
+					if (ret == 0) {
+						//PDBG("no more data to read, waking up the receiver");
+						driver.wakeup_receiver();
+					}
 				}
 			}
 		};
@@ -110,6 +124,11 @@ class Linux_driver : public Nic::Driver
 		}
 
 
+		void wakeup_receiver()
+		{
+			_alloc.submit_wakeup();
+		}
+
 		/***************************
 		 ** Nic::Driver interface **
 		 ***************************/
@@ -138,9 +157,11 @@ class Linux_driver : public Nic::Driver
 				ret = read(_tap_fd, _packet_buffer, sizeof(_packet_buffer));
 			} while (ret < 0);
 
+			//PDBG("received %u bytes", ret);
+
 			void *buffer = _alloc.alloc(ret);
 			Genode::memcpy(buffer, _packet_buffer, ret);
-			_alloc.submit();
+			_alloc.submit(true);
 		}
 };
 
