@@ -32,7 +32,13 @@ namespace Nic {
 		/**
 		 * Submit packet to client
 		 */
-		virtual void submit() = 0;
+		virtual void submit(bool inhibit_wakeup = false) = 0;
+
+		/**
+		 * This function must get called if 'submit()' was called with
+		 * 'inhibit_wakeup' set
+		 */
+		virtual void submit_wakeup() { };
 	};
 
 

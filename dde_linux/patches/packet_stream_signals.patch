@@ -1,0 +1,32 @@
+packet_stream_signals.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ drivers/net/usb/ax88179_178a.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/usb/ax88179_178a.c b/drivers/net/usb/ax88179_178a.c
+index 2f27882..0cb6447 100644
+--- a/drivers/net/usb/ax88179_178a.c
++++ b/drivers/net/usb/ax88179_178a.c
+@@ -1106,6 +1106,8 @@ ax88179_rx_checksum(struct sk_buff *skb, u32 *pkt_hdr)
+ 		skb->ip_summed = CHECKSUM_UNNECESSARY;
+ }
+ 
++extern void usb_drv_submit_packet_wakeup();
++
+ static int ax88179_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+ {
+ 	struct sk_buff *ax_skb;
+@@ -1143,6 +1145,9 @@ static int ax88179_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+ 			skb_set_tail_pointer(skb, pkt_len);
+ 			skb->truesize = pkt_len + sizeof(struct sk_buff);
+ 			ax88179_rx_checksum(skb, pkt_hdr);
++
++			usb_drv_submit_packet_wakeup();
++
+ 			return 1;
+ 		}
+ 
