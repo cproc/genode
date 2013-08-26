@@ -630,6 +630,7 @@ extern "C" {
 #endif
 
 	void genode_memcpy(void * dst, const void *src, unsigned long size) {
+		if (size != 1448)
 		Genode::memcpy(dst, src, size);
 	}
 } /* extern "C" */
