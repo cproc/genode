@@ -73,7 +73,7 @@ set config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="test-lwip_httpsrv">
-		<resource name="RAM" quantum="3M"/>
+		<resource name="RAM" quantum="6M"/>
 	</start> }
 
 
@@ -89,8 +89,8 @@ append_if $use_usb_driver config {
 		<provides>
 			<service name="Nic"/>
 		</provides>
-		<config ehci="yes">
-			<nic mac="2e:60:90:0c:4e:01" />
+		<config uhci="no" ehci="no" xhci="yes">
+			<nic mac="2e:60:90:0c:4e:02" />
 		</config>
 	</start>}
 
@@ -160,27 +160,65 @@ append qemu_args " -net user -redir tcp:5555::80 "
 
 run_genode_until {.*Start the server loop \.\.\..*} 30
 
-if [is_qemu_available] {
-	set uri "http://localhost:5555/"
-} else {
-	set match_string "got IP address (.*)\033.*\n"
-	regexp $match_string $output ip_addr
-	regexp {[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} $ip_addr ip_addr 
+set serial_id $spawn_id
 
-	set uri "http://$ip_addr:80/"
+proc show_kernel_stats { serial_id } {
+	send "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send "Jh50\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "*"
+	run_genode_until "jdb" 10 $serial_id
+	send "idle\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "rcupdate\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "mode\r"
+	run_genode_until "jdb" 10 $serial_id
+	send "lp"
+	run_genode_until "present list" 10 $serial_id
+	send "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send "g"
+	run_genode_until "leave debugger" 10 $serial_id
 }
 
-puts "http server is up, try to query website $uri"
+run_genode_until {.*Packet received!} 30 $serial_id
 
-set website [exec lynx -dump $uri]
+show_kernel_stats $serial_id
 
-puts "response:\n$website"
-
-if {![regexp {Welcome to our lwIP HTTP server!} $website dummy]} {
-	puts stderr "Query returned unexpected website"
-	exit 2;
+set timeout 10
+expect {
+	timeout { }
 }
 
-puts "Test succeeded"
+show_kernel_stats $serial_id
+
+interact
+
+#run_genode_until {.*Start the server loop \.\.\..*} 30
+
+#if [is_qemu_available] {
+#	set uri "http://localhost:5555/"
+#} else {
+#	set match_string "got IP address (.*)\033.*\n"
+#	regexp $match_string $output ip_addr
+#	regexp {[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} $ip_addr ip_addr 
+#
+#	set uri "http://$ip_addr:80/"
+#}
+
+#puts "http server is up, try to query website $uri"
+
+#set website [exec lynx -dump $uri]
+
+#puts "response:\n$website"
+
+#if {![regexp {Welcome to our lwIP HTTP server!} $website dummy]} {
+#	puts stderr "Query returned unexpected website"
+#	exit 2;
+#}
+
+#puts "Test succeeded"
 
 # vi: set ft=tcl :
