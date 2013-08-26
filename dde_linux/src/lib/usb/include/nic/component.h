@@ -41,11 +41,12 @@ namespace Nic {
 			int interval = 5;
 			while(1) {
 				_timer.msleep(interval * 1000);
-				PDBG("%s: Packets %d/s (in %d burst packets)  bytes/s: %d",
-				     prefix, cnt / interval, burst / interval,  size / interval);
-				cnt = 0;
-				size = 0;
-				burst = 0;
+				//PDBG("%s: Packets %d/s (in %d burst packets)  bytes/s: %d",
+				     //prefix, cnt / interval, burst / interval,  size / interval);
+				//cnt = 0;
+				//size = 0;
+				//burst = 0;
+				PDBG("%s: packets: %d (%d burst packets), bytes: %d", prefix, cnt, burst, size);
 			}
 		}
 
