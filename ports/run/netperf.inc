@@ -218,6 +218,35 @@ if [is_qemu_available] {
 	puts ""
 }
 
+proc show_kernel_stats { serial_id } {
+	send -i $serial_id "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "Jh50\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "*"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "idle\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "rcupdate\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "mode\r"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "lp"
+	run_genode_until "present list" 10 $serial_id
+	send -i $serial_id "\033"
+	run_genode_until "jdb" 10 $serial_id
+	send -i $serial_id "g"
+	run_genode_until "leave debugger" 10 $serial_id
+}
+
+show_kernel_stats $serial_id
+spawn netperf-$version -H $ip_addr -P 1 -v 2 -t TCP_STREAM -c -C
+set netperf_id $spawn_id
+run_genode_until "Segment" 60 $netperf_id
+show_kernel_stats $serial_id
+
+interact -i $serial_id
+	
 # start netperf client connecting to netperf server running native on Genode
 foreach netperf_test $netperf_tests {
 	puts "\n---------------------------- $netperf_test -----------------------"
@@ -257,8 +286,8 @@ foreach netperf_test $netperf_tests {
 		if {$i >  1} { puts -nonewline "              0 unknown err" }
 		puts ""
 	}
+	
 }
-
 
 puts "\nTest succeeded"
 # vi: set ft=tcl :
