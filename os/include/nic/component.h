@@ -74,7 +74,15 @@ namespace Nic {
 							/* acknowledge packet to the client */
 							if (!_tx_sink->ready_to_ack())
 								PDBG("need to wait until ready-for-ack");
-							_tx_sink->acknowledge_packet(packet);
+							_tx_sink->acknowledge_packet(packet, true);
+
+							/*
+							 * Check if more packets are available. If not,
+							 * wake up the transmitter.
+							 */
+							if (!_tx_sink->packet_avail()) {
+								_tx_sink->wakeup_transmitter();
+							}
 						}
 					}
 			} _tx_thread;
@@ -139,7 +147,7 @@ namespace Nic {
 				return _rx.source()->packet_content(_curr_rx_packet);
 			}
 
-			void submit()
+			void submit(bool inhibit_wakeup)
 			{
 				/* check for acknowledgements from the client */
 				while (_rx.source()->ack_avail()) {
@@ -151,12 +159,16 @@ namespace Nic {
 
 				dump();
 
-				_rx.source()->submit_packet(_curr_rx_packet);
+				_rx.source()->submit_packet(_curr_rx_packet, inhibit_wakeup);
 
 				/* invalidate rx packet descriptor */
 				_curr_rx_packet = Packet_descriptor();
 			}
 
+			void wakeup_receiver()
+			{
+				_rx.source()->wakeup_receiver();
+			}
 
 			/****************************
 			 ** Nic::Session interface **
