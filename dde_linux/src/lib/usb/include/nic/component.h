@@ -201,7 +201,7 @@ namespace Nic {
 					counter.inc(packet.size());
 
 					/* acknowledge to client */
-					_tx_sink->acknowledge_packet(packet);
+					_tx_sink->acknowledge_packet(packet, true);
 
 					/* it's cooperative scheduling - be nice */
 					if (tx_cnt == 20)
@@ -222,6 +222,8 @@ namespace Nic {
 
 				if (_tx_sink->packet_avail())
 					_send_packet_avail_signal();
+				else
+					_tx_sink->wakeup_transmitter();
 			}
 
 			void _rx_ack(bool block = true)
