@@ -201,7 +201,16 @@ namespace Nic {
 					counter.inc(packet.size());
 
 					/* acknowledge to client */
-					_tx_sink->acknowledge_packet(packet);
+					_tx_sink->acknowledge_packet(packet, true);
+
+					/*
+					 * Check if more packets are available. If not,
+					 * wake up the transmitter.
+					 */
+					/* TODO: check more conditions */
+					if (!_tx_sink->packet_avail()) {
+						_tx_sink->wakeup_transmitter();
+					}
 
 					/* it's cooperative scheduling - be nice */
 					if (tx_cnt == 20)

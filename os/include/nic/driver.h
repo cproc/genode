@@ -32,7 +32,12 @@ namespace Nic {
 		/**
 		 * Submit packet to client
 		 */
-		virtual void submit() = 0;
+		virtual void submit(bool inhibit_wakeup = false) = 0;
+
+		/**
+		 * Wake the client
+		 */
+		virtual void wakeup_receiver() { };
 	};
 
 
