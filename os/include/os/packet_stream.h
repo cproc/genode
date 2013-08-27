@@ -134,6 +134,9 @@ class Packet_descriptor_queue
 		int               _head;
 		int               _tail;
 		PACKET_DESCRIPTOR _queue[QUEUE_SIZE];
+		int               _max_amount;
+		int               _add_count;
+		int               _get_count;
 
 	public:
 
@@ -150,6 +153,7 @@ class Packet_descriptor_queue
 		 * those members that are driven by the respective role.
 		 */
 		Packet_descriptor_queue(Role role)
+		: _max_amount(0), _add_count(0), _get_count(0)
 		{
 			if (role == PRODUCER) {
 				_head = 0;
@@ -168,6 +172,16 @@ class Packet_descriptor_queue
 		{
 			if (full()) return false;
 
+			_add_count++;
+			//PDBG("%p: amount = %d", this, _amount);
+			if (_add_count - _get_count > _max_amount) {
+				_max_amount = _add_count - _get_count;
+				//PDBG("%p: new max amount: %d, %d", this, _max_amount, _add_count - _get_count);
+			}
+
+			if (_add_count % 10000 == 0)
+				PDBG("%p: add_count: %d, max amount: %d", this, _add_count, _max_amount);
+
 			_queue[_head%QUEUE_SIZE] = packet;
 			_head = (_head + 1)%QUEUE_SIZE;
 			return true;
@@ -180,6 +194,8 @@ class Packet_descriptor_queue
 		 */
 		PACKET_DESCRIPTOR get()
 		{
+			_get_count++;
+			//PDBG("%p: amount = %d", this, _add_count - _get_count);
 			PACKET_DESCRIPTOR packet = _queue[_tail%QUEUE_SIZE];
 			_tail = (_tail + 1)%QUEUE_SIZE;
 			return packet;
