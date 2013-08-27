@@ -95,6 +95,8 @@ class Packet_descriptor
 		Genode::off_t  _offset;
 		Genode::size_t _size;
 
+		Genode::off_t  _alloc_offset;
+		Genode::off_t  _alloc_size;
 	public:
 
 		/**
@@ -106,16 +108,22 @@ class Packet_descriptor
 		 * Constructor
 		 */
 		Packet_descriptor(Genode::off_t offset, Genode::size_t size) :
-			_offset(offset), _size(size) { }
+			_offset(offset), _size(size), _alloc_offset(offset), _alloc_size(size) { }
+
+		Packet_descriptor(Genode::off_t offset, Genode::size_t size, Genode::off_t alloc_offset, Genode::size_t alloc_size) :
+			_offset(offset), _size(size), _alloc_offset(alloc_offset), _alloc_size(alloc_size) { }
 
 		/**
 		 * Default constructor used for instantiating arrays of
 		 * packet-descriptors used as submit and ack queues.
 		 */
-		Packet_descriptor() : _offset(0), _size(0) { }
+		Packet_descriptor() : _offset(0), _size(0), _alloc_offset(0), _alloc_size(0)  { }
 
 		Genode::off_t  offset() const { return _offset; }
 		Genode::size_t size()   const { return _size; }
+
+		Genode::off_t  alloc_offset() const { return _alloc_offset; }
+		Genode::size_t alloc_size()   const { return _alloc_size; }
 
 		bool valid() { return _size != 0; }
 };
@@ -556,6 +564,9 @@ class Packet_stream_source : private Packet_stream_base
 		Packet_descriptor_transmitter<Submit_queue> _submit_transmitter;
 		Packet_descriptor_receiver<Ack_queue>       _ack_receiver;
 
+		Genode::size_t _packets_allocated;
+		Genode::size_t _packets_freed;
+
 	public:
 
 		/**
@@ -587,7 +598,9 @@ class Packet_stream_source : private Packet_stream_base
 			_submit_transmitter(new (_submit_queue_local_base(), this)
 			                    Submit_queue(Submit_queue::PRODUCER)),
 			_ack_receiver(new (_ack_queue_local_base(), this)
-			              Ack_queue(Ack_queue::CONSUMER))
+			              Ack_queue(Ack_queue::CONSUMER)),
+			_packets_allocated(0),
+			_packets_freed(0)
 		{
 			/* initialize packet allocator */
 			_packet_alloc->add_range(_bulk_buffer_offset,
@@ -647,9 +660,11 @@ class Packet_stream_source : private Packet_stream_base
 		Packet_descriptor alloc_packet(Genode::size_t size, int align = POLICY::Packet_descriptor::PACKET_ALIGNMENT)
 		{
 			void *base = 0;
-			if (_packet_alloc->alloc_aligned(size, &base, align).is_error())
+			if (_packet_alloc->alloc_aligned(size, &base, align).is_error()) {
+				PDBG("packets allocated: %zu, packets freed: %zu", _packets_allocated, _packets_freed);
 				throw Packet_alloc_failed();
-
+			}
+			_packets_allocated++;
 			return Packet_descriptor((Genode::off_t)base, size);
 		}
 
@@ -707,7 +722,8 @@ class Packet_stream_source : private Packet_stream_base
 		 */
 		void release_packet(Packet_descriptor packet)
 		{
-			_packet_alloc->free((void *)packet.offset(), packet.size());
+			_packet_alloc->free((void *)packet.alloc_offset(), packet.alloc_size());
+			_packets_freed++;
 		}
 
 		void debug_print_buffers() {
