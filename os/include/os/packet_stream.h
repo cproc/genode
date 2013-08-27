@@ -242,6 +242,9 @@ class Packet_descriptor_transmitter
 		Genode::Signal_transmitter        _rx_ready;
 		bool                              _rx_wakeup_needed;
 
+		Genode::size_t                     _tx_count;
+		Genode::size_t                     _rx_ready_count;
+
 		Genode::Lock _tx_queue_lock;
 		TX_QUEUE    *_tx_queue;
 
@@ -254,6 +257,7 @@ class Packet_descriptor_transmitter
 		:
 			_tx_ready_cap(_tx_ready.manage(&_tx_ready_context)),
 			_rx_wakeup_needed(false),
+			_tx_count(0), _rx_ready_count(0),
 			_tx_queue(tx_queue)
 		{ }
 
@@ -278,6 +282,7 @@ class Packet_descriptor_transmitter
 			if (_rx_wakeup_needed) {
 				_rx_ready.submit();
 				_rx_wakeup_needed = false;
+				_rx_ready_count++;
 			}
 		}
 
@@ -305,6 +310,12 @@ class Packet_descriptor_transmitter
 				else
 					_rx_ready.submit();
 			}
+
+			_tx_count++;
+
+			if (_tx_count % 10000 == 0)
+				PDBG("tx_count = %zu, rx_ready_count = %zu",
+					 _tx_count, _rx_ready_count);
 		}
 };
 
@@ -328,6 +339,9 @@ class Packet_descriptor_receiver
 		Genode::Signal_transmitter         _tx_ready;
 		bool                               _tx_wakeup_needed;
 
+		Genode::size_t                     _rx_count;
+		Genode::size_t                     _tx_ready_count;
+
 		Genode::Lock _rx_queue_lock;
 		RX_QUEUE    *_rx_queue;
 
@@ -340,6 +354,7 @@ class Packet_descriptor_receiver
 		:
 			_rx_ready_cap(_rx_ready.manage(&_rx_ready_context)),
 			_tx_wakeup_needed(false),
+			_rx_count(0), _tx_ready_count(0),
 			_rx_queue(rx_queue)
 		{ }
 
@@ -364,6 +379,7 @@ class Packet_descriptor_receiver
 			if (_tx_wakeup_needed) {
 				_tx_ready.submit();
 				_tx_wakeup_needed = false;
+				_tx_ready_count++;
 			}
 		}
 
@@ -382,6 +398,12 @@ class Packet_descriptor_receiver
 				else
 					_tx_ready.submit();
 			}
+
+			_rx_count++;
+
+			if (_rx_count % 10000 == 0)
+				PDBG("rx_count = %zu, tx_ready_count = %zu",
+				     _rx_count, _tx_ready_count);
 		}
 };
 
