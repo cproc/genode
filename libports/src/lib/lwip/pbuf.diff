@@ -1,0 +1,140 @@
+pbuf.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/core/pbuf.c         |   39 +++++++++++++++++++++++++++++++++------
+ src/include/lwip/pbuf.h |    4 ++++
+ 2 files changed, 37 insertions(+), 6 deletions(-)
+
+diff --git a/src/core/pbuf.c b/src/core/pbuf.c
+index 1e5e53b..9d92cee 100644
+--- a/src/core/pbuf.c
++++ b/src/core/pbuf.c
+@@ -172,6 +172,12 @@ pbuf_pool_is_empty(void)
+ }
+ #endif /* !LWIP_TCP || !TCP_QUEUE_OOSEQ || !PBUF_POOL_FREE_OOSEQ */
+ 
++extern void *genode_alloc_packet(size_t size, size_t *packet_descriptor_offset, size_t *packet_descriptor_size);
++extern void genode_free_packet(size_t packet_descriptor_offset, size_t packet_descriptor_size);
++
++static int allocated_pbufs = 0;
++static int freed_pbufs = 0;
++
+ /**
+  * Allocates a pbuf of the given type (possibly a chain for PBUF_POOL type).
+  *
+@@ -206,6 +212,11 @@ pbuf_pool_is_empty(void)
+ struct pbuf *
+ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
+ {
++		allocated_pbufs++;
++		//if (allocated_pbufs % 500 == 0)
++			//printf("allocated pbufs: %d, freed pbufs: %d\n", allocated_pbufs, freed_pbufs);
++		//if (type != PBUF_RAM)
++			//printf("pbuf_alloc(): type != PBUF_RAM\n");
+   struct pbuf *p, *q, *r;
+   u16_t offset;
+   s32_t rem_len; /* remaining length */
+@@ -303,21 +314,31 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
+     /*r->next = NULL;*/
+ 
+     break;
+-  case PBUF_RAM:
++  case PBUF_RAM: {
++	  offset += 64;
+     /* If pbuf is to be allocated in RAM, allocate memory for it. */
+-    p = (struct pbuf*)mem_malloc(LWIP_MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF + offset) + LWIP_MEM_ALIGN_SIZE(length));
++    size_t packet_descriptor_offset;
++    size_t packet_descriptor_size;
++    p = (struct pbuf*)mem_malloc(LWIP_MEM_ALIGN_SIZE(SIZEOF_STRUCT_PBUF));
+     if (p == NULL) {
+       return NULL;
+     }
++    //printf("pbuf_alloc(): p = %p\n", p);
+     /* Set up internal structure of the pbuf. */
+-    p->payload = LWIP_MEM_ALIGN((void *)((u8_t *)p + SIZEOF_STRUCT_PBUF + offset));
++    char *packet = genode_alloc_packet(LWIP_MEM_ALIGN_SIZE(offset) + LWIP_MEM_ALIGN_SIZE(length), &packet_descriptor_offset, &packet_descriptor_size);
++    p->packet_descriptor_offset = packet_descriptor_offset;
++    p->packet_descriptor_size = packet_descriptor_size;
++    p->pbuf_submitted = 0;
++    p->payload = LWIP_MEM_ALIGN((void *)((u8_t *)packet + offset));
++    //p->payload = LWIP_MEM_ALIGN((void *)((u8_t *)p + SIZEOF_STRUCT_PBUF + offset));
++    //printf("p->payload = %p\n", p->payload);
+     p->len = p->tot_len = length;
+     p->next = NULL;
+     p->type = type;
+ 
+     LWIP_ASSERT("pbuf_alloc: pbuf->payload properly aligned",
+            ((mem_ptr_t)p->payload % MEM_ALIGNMENT) == 0);
+-    break;
++    break; }
+   /* pbuf references existing (non-volatile static constant) ROM payload? */
+   case PBUF_ROM:
+   /* pbuf references existing (externally allocated) RAM payload? */
+@@ -511,7 +532,7 @@ u8_t
+ pbuf_header(struct pbuf *p, s16_t header_size_increment)
+ {
+   u16_t type;
+-  void *payload;
++  //void *payload;
+   u16_t increment_magnitude;
+ 
+   LWIP_ASSERT("p != NULL", p != NULL);
+@@ -539,12 +560,13 @@ pbuf_header(struct pbuf *p, s16_t header_size_increment)
+ 
+   type = p->type;
+   /* remember current payload pointer */
+-  payload = p->payload;
++  //payload = p->payload;
+ 
+   /* pbuf types containing payloads? */
+   if (type == PBUF_RAM || type == PBUF_POOL) {
+     /* set new payload pointer */
+     p->payload = (u8_t *)p->payload - header_size_increment;
++#if 0
+     /* boundary check fails? */
+     if ((u8_t *)p->payload < (u8_t *)p + SIZEOF_STRUCT_PBUF) {
+       LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
+@@ -555,6 +577,7 @@ pbuf_header(struct pbuf *p, s16_t header_size_increment)
+       /* bail out unsuccesfully */
+       return 1;
+     }
++#endif
+   /* pbuf types refering to external payloads? */
+   } else if (type == PBUF_REF || type == PBUF_ROM) {
+     /* hide a header in the payload? */
+@@ -617,6 +640,7 @@ pbuf_header(struct pbuf *p, s16_t header_size_increment)
+ u8_t
+ pbuf_free(struct pbuf *p)
+ {
++	freed_pbufs++;
+   u16_t type;
+   struct pbuf *q;
+   u8_t count;
+@@ -674,6 +698,9 @@ pbuf_free(struct pbuf *p)
+           memp_free(MEMP_PBUF, p);
+         /* type == PBUF_RAM */
+         } else {
++          if (!p->pbuf_submitted) {
++	        genode_free_packet(p->packet_descriptor_offset, p->packet_descriptor_size);
++          }
+           mem_free(p);
+         }
+       }
+diff --git a/src/include/lwip/pbuf.h b/src/include/lwip/pbuf.h
+index 4f8dca8..569560e 100644
+--- a/src/include/lwip/pbuf.h
++++ b/src/include/lwip/pbuf.h
+@@ -114,6 +114,10 @@ struct pbuf {
+    * the stack itself, or pbuf->next pointers from a chain.
+    */
+   u16_t ref;
++
++  size_t packet_descriptor_offset;
++  size_t packet_descriptor_size;
++  int pbuf_submitted;
+ };
+ 
+ #if LWIP_SUPPORT_CUSTOM_PBUF

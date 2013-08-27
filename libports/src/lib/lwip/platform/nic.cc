@@ -87,6 +87,11 @@ class Nic_receiver_thread : public Genode::Thread<8192>
 			_tx_ack();
 		}
 
+		void release_unsubmitted_tx_packet(Packet_descriptor packet)
+		{
+			nic()->tx()->release_packet(packet);
+		}
+
 		void submit_tx_packet_wakeup()
 		{
 			nic()->tx()->submit_packet_wakeup();
@@ -114,6 +119,24 @@ extern "C" {
 		nic_receiver_thread->submit_tx_packet_wakeup();
 	}
 
+	char *genode_alloc_packet(size_t size, size_t *packet_descriptor_offset, size_t *packet_descriptor_size)
+	{
+		//size += 128;
+		//PDBG("calling alloc_tx_packet()");
+		Packet_descriptor packet = nic_receiver_thread->alloc_tx_packet(size);
+		//PDBG("alloc_tx_packet() returned");
+		*packet_descriptor_offset = packet.offset();
+		*packet_descriptor_size = packet.size();
+		//PDBG("offset = %zu, size = %zu, content = %p", packet.offset(), packet.size(), nic_receiver_thread->content(packet));
+		return nic_receiver_thread->content(packet);
+	}
+
+	void genode_free_packet(size_t packet_descriptor_offset, size_t packet_descriptor_size)
+	{
+		Packet_descriptor packet(packet_descriptor_offset, packet_descriptor_size);
+		nic_receiver_thread->release_unsubmitted_tx_packet(packet);
+	}
+
 	/**
 	 * This function should do the actual transmission of the packet. The packet is
 	 * contained in the pbuf that is passed to the function. This pbuf
@@ -137,21 +160,49 @@ extern "C" {
 #if ETH_PAD_SIZE
 		pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
 #endif
-		Packet_descriptor tx_packet = th->alloc_tx_packet(p->tot_len);
-		char *tx_content            = th->content(tx_packet);
 
-		/*
-		 * Iterate through all pbufs and
-		 * copy payload into packet's payload
-		 */
-		for(struct pbuf *q = p; q != NULL; q = q->next) {
-			char *src = (char*) q->payload;
-			Genode::memcpy(tx_content, src, q->len);
-			tx_content += q->len;
+		static int pbuf_ram_count = 0;
+		static int pbuf_pool_count = 0;
+
+		if (p->type == PBUF_RAM) {
+			pbuf_ram_count++;
+			//if (pbuf_ram_count % 10000 == 0)
+				//PDBG("pbuf_ram_count = %d, pbuf_pool_count = %d", pbuf_ram_count, pbuf_pool_count);
+			Packet_descriptor original_packet(p->packet_descriptor_offset, p->packet_descriptor_size);
+			char *original_content = nic_receiver_thread->content(original_packet);
+			int diff = (char*)p->payload - original_content;
+
+	#if 0
+			PDBG("original offset = %zu, original size = %zu, original content = %p",
+			     p->packet_descriptor_offset,
+			     p->packet_descriptor_size, original_content);
+			PDBG("p->payload = %p, p->tot_len = %u, p->len = %u", p->payload, p->tot_len, p->len);
+	#endif
+			//PDBG("offset = %zu, size = %zu, content = %p", tx_packet.offset(), tx_packet.size(), nic_receiver_thread->content(tx_packet));
+			Packet_descriptor tx_packet(p->packet_descriptor_offset + diff, p->tot_len, p->packet_descriptor_offset, p->packet_descriptor_size);
+			/* Submit packet */
+			th->submit_tx_packet(tx_packet);
+			p->pbuf_submitted = 1;
+		} else if (p->type == PBUF_POOL) {
+			pbuf_pool_count++;
+			Packet_descriptor tx_packet = th->alloc_tx_packet(p->tot_len);
+			char *tx_content            = th->content(tx_packet);
+
+			/*
+			 * Iterate through all pbufs and
+			 * copy payload into packet's payload
+			 */
+			for(struct pbuf *q = p; q != NULL; q = q->next) {
+				char *src = (char*) q->payload;
+				Genode::memcpy(tx_content, src, q->len);
+				tx_content += q->len;
+			}
+
+			/* Submit packet */
+			th->submit_tx_packet(tx_packet);
 		}
 
-		/* Submit packet */
-		th->submit_tx_packet(tx_packet);
+		//PDBG("p = %p", p);
 
 #if ETH_PAD_SIZE
 		pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
@@ -184,7 +235,7 @@ extern "C" {
 #endif
 
 		/* We allocate a pbuf chain of pbufs from the pool. */
-		struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+		struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
 		if (p) {
 #if ETH_PAD_SIZE
 			pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
