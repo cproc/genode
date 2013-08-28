@@ -194,9 +194,19 @@ namespace Genode {
 	};
 }
 
+#include <timer_session/connection.h>
 
 extern "C"int open(const char *pathname, int flags)
 {
+	static int startup_delay_done = false;
+
+	if (!startup_delay_done)
+	{
+		Timer::Connection timer;
+		timer.msleep(1);
+		startup_delay_done = true;
+	}
+
 	using namespace Genode;
 	static int fd = -1;
 
