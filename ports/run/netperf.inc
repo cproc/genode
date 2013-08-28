@@ -66,6 +66,7 @@ create_boot_directory
 
 set config {
 <config verbose="yes">
+	<affinity-space width="2" />
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -151,6 +152,7 @@ append_if [expr ![have_spec acpi] && [have_spec pci]] config {
 append config {
 	<start name="netserver_genode">
 		<resource name="RAM" quantum="16M"/>
+		<affinity xpos="1" width="1" />
 		<config>
 			<arg value="netserver"/>
 			<arg value="-D"/>
