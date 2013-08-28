@@ -66,7 +66,7 @@ map_object(int fd, const char *path, const struct stat *sb)
     Elf_Addr base_vaddr;
     Elf_Addr base_vlimit;
     size_t phsize;
-
+printf("map_object(): path = %s, fd = %d\n", path, fd);
     hdr = get_elf_header(fd, path);
     if (hdr == NULL)
 	return (NULL);
@@ -181,7 +181,7 @@ get_elf_header (int fd, const char *path)
 	char buf[PAGE_SIZE];
     } u;
     ssize_t nbytes;
-
+printf("get_elf_header(): fd = %d, path = %s\n", fd, path);
     if ((nbytes = read(fd, u.buf, PAGE_SIZE)) == -1) {
 	_rtld_error("%s: read error: %s", path, strerror(errno));
 	return NULL;

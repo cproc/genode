@@ -21,6 +21,9 @@
 
 #include "file.h"
 
+#include <l4/sys/kdebug.h>
+#include <dataspace/client.h>
+
 extern int debug;
 
 namespace Genode {
@@ -41,6 +44,7 @@ namespace Genode {
 			Rm_area(addr_t base)
 			: Rm_connection(0, RESERVATION), _range(env()->heap())
 			{
+				PDBG("base = %lx", base);
 				_base = (addr_t) env()->rm_session()->attach_at(dataspace(), base);
 				_range.add_range(base, RESERVATION);
 			}
@@ -208,11 +212,14 @@ extern "C"int open(const char *pathname, int flags)
 
 	try {
 		/* open the file dataspace and attach it */
+		printf("\nldso open(): filename = %s\n", filename);
 		Rom_connection rom(filename);
 		rom.on_destruction(Rom_connection::KEEP_OPEN);
-
+//printf("ldso open: file size = %zu\n", Dataspace_client(rom.dataspace()).size());
 		Fd_handle::file_list()->insert(new(env()->heap())
 		                               Fd_handle(++fd, rom.dataspace()));
+//printf("ldso open: fd handle = %p\n", Fd_handle::find_handle(fd));
+printf("ldso open: fd = %d\n", fd);
 		return fd;
 	}
 	catch (...) {
@@ -239,6 +246,9 @@ extern "C" int find_binary_name(int fd, char *buf, size_t buf_size)
 	return binary_name(h->dataspace(), buf, buf_size);
 }
 
+namespace Fiasco {
+#include <l4/sys/ktrace.h>
+}
 
 extern "C" ssize_t read(int fd, void *buf, size_t count)
 {
@@ -254,9 +264,24 @@ extern "C" ssize_t read(int fd, void *buf, size_t count)
 	}
 	
 	try {
+		printf("ldso read: fd = %d\n", fd);
+		//printf("ldso read: file size = %zu\n", Dataspace_client(h->dataspace()).size());
+		//enter_kdebug("pre-attach");
 		void *base = env()->rm_session()->attach(h->dataspace(), count);
+		printf("ldso read(): attach base = %p, count = %zu\n", base, count);
+
+		for (int i = 0; i < 180; i++)
+			printf("%x ", ((unsigned char*)base)[i]);
+		printf("\n");
+
 		memcpy(buf, base, count);
+		//enter_kdebug("pre-detach");
+		//printf("ldso read(): calling detach()\n");
+		Fiasco::fiasco_tbuf_log_3val("calling detach", (unsigned)base, 0, 0);
 		env()->rm_session()->detach(base);
+		Fiasco::fiasco_tbuf_log_3val("detach returned", (unsigned)base, 0, 0);
+		//printf("ldso read(): detach() returned\n");
+		//enter_kdebug("detach");
 	}
 	catch (...) {
 		return -1;
@@ -353,6 +378,7 @@ extern "C" void *genode_map(int fd, Elf_Phdr **segs)
 		base_vaddr = h->alloc_region(base_vaddr, base_vlimit);
 	} catch (...) {
 		PERR("Region allocation failed: %lx-%lx", base_vaddr, base_vlimit);
+enter_kdebug("ldso");
 		return MAP_FAILED;
 	}
 
