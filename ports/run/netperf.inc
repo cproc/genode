@@ -239,11 +239,12 @@ proc show_kernel_stats { serial_id } {
 	run_genode_until "leave debugger" 10 $serial_id
 }
 
-show_kernel_stats $serial_id
+#show_kernel_stats $serial_id
 spawn netperf-$version -H $ip_addr -P 1 -v 2 -t TCP_STREAM -c -C
+run_genode_until forever
 set netperf_id $spawn_id
 run_genode_until "Segment" 60 $netperf_id
-show_kernel_stats $serial_id
+#show_kernel_stats $serial_id
 
 interact -i $serial_id
 	
