@@ -55,7 +55,7 @@ class Nic_receiver_thread : public Genode::Thread<8192>
 				block = false;
 			}
 
-			nic()->tx()->get_acked_packet_wakeup();
+			//nic()->tx()->get_acked_packet_wakeup();
 		}
 
 	public:
@@ -326,8 +326,8 @@ void Nic_receiver_thread::entry()
 
 		if (!_nic->rx()->packet_avail()) {
 			//PDBG("no more packets available, waking up the transmitter");
-			_nic->rx()->get_packet_wakeup();
-			_nic->rx()->acknowledge_packet_wakeup();
+			//_nic->rx()->get_packet_wakeup();
+			//_nic->rx()->acknowledge_packet_wakeup();
 		}
 	}
 }

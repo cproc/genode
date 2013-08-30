@@ -223,8 +223,8 @@ namespace Nic {
 				if (_tx_sink->packet_avail())
 					_send_packet_avail_signal();
 				else {
-					_tx_sink->get_packet_wakeup();
-					_tx_sink->acknowledge_packet_wakeup();
+					//_tx_sink->get_packet_wakeup();
+					//_tx_sink->acknowledge_packet_wakeup();
 				}
 			}
 
@@ -239,7 +239,7 @@ namespace Nic {
 					block = false;
 				}
 
-				_rx.source()->get_acked_packet_wakeup();
+				//_rx.source()->get_acked_packet_wakeup();
 			}
 
 		public:
