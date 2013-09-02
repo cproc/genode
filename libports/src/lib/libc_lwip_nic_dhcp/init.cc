@@ -18,6 +18,8 @@
 #include <os/config.h>
 #include <util/string.h>
 
+#include <timer_session/connection.h>
+
 #include <lwip/genode.h>
 
 extern "C" {
@@ -33,6 +35,9 @@ extern void create_etc_resolv_conf_plugin();
 void __attribute__((constructor)) init_nic_dhcp(void)
 {
 	PDBG("init_nic_dhcp()\n");
+
+	static Timer::Connection timer;
+	timer.msleep(1);
 
 	bool provide_etc_resolv_conf = true;
 
