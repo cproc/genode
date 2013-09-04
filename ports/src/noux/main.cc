@@ -279,8 +279,15 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_root_dir->release(child_env.binary_name(), binary_ds);
 
+				char label_buf[Parent::Session_args::MAX_SIZE];
+				snprintf(label_buf, sizeof(label_buf), "%s%s%s",
+				         _child_policy.label(),
+				         strcmp(_child_policy.label(), "") == 0 ? "" : " -> ",
+				         child_env.binary_name());
+
 				try {
 					Child *child = new Child(child_env.binary_name(),
+					                         label_buf,
 					                         parent(),
 					                         pid(),
 					                         _sig_rec,
@@ -492,12 +499,19 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				int const new_pid = pid_allocator()->alloc();
 
+				char label_buf[Parent::Session_args::MAX_SIZE];
+				snprintf(label_buf, sizeof(label_buf), "%s%s%s",
+				         _child_policy.label(),
+				         strcmp(_child_policy.label(), "") == 0 ? "" : " -> ",
+				         _child_policy.name());
+
 				/*
 				 * XXX To ease debugging, it would be useful to generate a
 				 *     unique name that includes the PID instead of just
 				 *     reusing the name of the parent.
 				 */
 				Child *child = new Child(_child_policy.name(),
+				                         label_buf,
 				                         this,
 				                         new_pid,
 				                         _sig_rec,
@@ -903,6 +917,7 @@ int main(int argc, char **argv)
 	static Destruct_queue destruct_queue;
 
 	init_child = new Noux::Child(name_of_init_process(),
+	                             "",
 	                             0,
 	                             pid_allocator()->alloc(),
 	                             &sig_rec,

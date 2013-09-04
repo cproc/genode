@@ -258,7 +258,8 @@ namespace Noux {
 			 *                               looked up at the virtual file
 			 *                               system
 			 */
-			Child(char const        *name,
+			Child(char const        *binary_name,
+			      char const        *label,
 			      Family_member     *parent,
 			      int                pid,
 			      Signal_receiver   *sig_rec,
@@ -281,11 +282,11 @@ namespace Noux {
 				_destruct_context_cap(sig_rec->manage(&_destruct_dispatcher)),
 				_cap_session(cap_session),
 				_entrypoint(cap_session, STACK_SIZE, "noux_process", false),
-				_resources(name, resources_ep, false),
+				_resources(label, resources_ep, false),
 				_args(ARGS_DS_SIZE, args),
 				_env(env),
 				_root_dir(root_dir),
-				_binary_ds(root_dir->dataspace(name)),
+				_binary_ds(root_dir->dataspace(binary_name)),
 				_sysio_ds(Genode::env()->ram_session(), SYSIO_DS_SIZE),
 				_sysio(_sysio_ds.local_addr<Sysio>()),
 				_noux_session_cap(Session_capability(_entrypoint.manage(this))),
@@ -300,7 +301,7 @@ namespace Noux {
 				_ldso_ds_info(_resources.ds_registry, ldso_ds_cap()),
 				_args_ds_info(_resources.ds_registry, _args.cap()),
 				_env_ds_info(_resources.ds_registry, _env.cap()),
-				_child_policy(name, _binary_ds, _args.cap(), _env.cap(),
+				_child_policy(binary_name, label, _binary_ds, _args.cap(), _env.cap(),
 				              _entrypoint, _local_noux_service,
 				              _local_rm_service, _local_rom_service,
 				              _parent_services,
@@ -318,7 +319,7 @@ namespace Noux {
 					_args.dump();
 
 				if (!forked && !_binary_ds.valid()) {
-					PERR("Lookup of executable \"%s\" failed", name);
+					PERR("Lookup of executable \"%s\" failed", binary_name);
 					throw Binary_does_not_exist();
 				}
 			}
