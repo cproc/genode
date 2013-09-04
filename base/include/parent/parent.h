@@ -57,7 +57,7 @@ namespace Genode {
 			class Unavailable    : public Exception { };
 
 			typedef Rpc_in_buffer<64>  Service_name;
-			typedef Rpc_in_buffer<160> Session_args;
+			typedef Rpc_in_buffer<320> Session_args;
 			typedef Rpc_in_buffer<160> Upgrade_args;
 
 

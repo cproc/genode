@@ -33,7 +33,7 @@ namespace Genode {
 		class Quota_exceeded : public Exception { };
 		class Invalid_args   : public Exception { };
 
-		typedef Rpc_in_buffer<160> Session_args;
+		typedef Rpc_in_buffer<320> Session_args;
 		typedef Rpc_in_buffer<160> Upgrade_args;
 
 		virtual ~Root() { }
