@@ -33,6 +33,10 @@ namespace Noux {
 			enum { NAME_MAX_LEN = 128 };
 			char                                _name_buf[NAME_MAX_LEN];
 			char                         const *_name;
+			char                                _label_buf[Parent::Session_args::MAX_SIZE];
+			char                         const *_label;
+			char                                _parent_label_buf[Parent::Session_args::MAX_SIZE];
+			char                         const *_parent_label;
 			Init::Child_policy_enforce_labeling _labeling_policy;
 			Init::Child_policy_provide_rom_file _binary_policy;
 			Init::Child_policy_provide_rom_file _args_policy;
@@ -50,6 +54,8 @@ namespace Noux {
 		public:
 
 			Child_policy(char               const *name,
+			             char               const *label,
+			             char               const *parent_label,
 			             Dataspace_capability      binary_ds,
 			             Dataspace_capability      args_ds,
 			             Dataspace_capability      env_ds,
@@ -65,7 +71,9 @@ namespace Noux {
 			             bool                      verbose)
 			:
 				_name(strncpy(_name_buf, name, sizeof(_name_buf))),
-				_labeling_policy(_name),
+				_label(strncpy(_label_buf, label, sizeof(_label_buf))),
+				_parent_label(strncpy(_parent_label_buf, parent_label, sizeof(_parent_label_buf))),
+				_labeling_policy(_label),
 				_binary_policy("binary", binary_ds, &entrypoint),
 				_args_policy(  "args",   args_ds,   &entrypoint),
 				_env_policy(   "env",    env_ds,    &entrypoint),
@@ -81,6 +89,10 @@ namespace Noux {
 			{ }
 
 			const char *name() const { return _name; }
+
+			const char *label() const { return _label; }
+
+			const char *parent_label() const { return _parent_label; }
 
 			Service *resolve_session_request(const char *service_name,
 			                                 const char *args)
@@ -123,7 +135,7 @@ namespace Noux {
 			void exit(int exit_value)
 			{
 				if (_verbose || (exit_value != 0))
-					PERR("child %s exited with exit value %d", _name, exit_value);
+					PERR("child %s exited with exit value %d", _label, exit_value);
 
 				/*
 				 * Close all open file descriptors. This is necessary to unblock
