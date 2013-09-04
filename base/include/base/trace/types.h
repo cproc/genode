@@ -45,7 +45,7 @@ namespace Genode { namespace Trace {
 		char const *string() const { return valid() ? buf : ""; }
 	};
 
-	typedef String<160> Session_label;
+	typedef String<320> Session_label;
 	typedef String<64>  Thread_name;
 
 	struct Policy_id;
