@@ -794,6 +794,7 @@ namespace {
 		    Libc::file_descriptor_allocator()->alloc(this, context, sysio()->open_out.fd);
 		if ((flags & O_TRUNC) && (ftruncate(fd, 0) == -1))
 			return 0;
+
 		return fd;
 	}
 
@@ -922,6 +923,7 @@ namespace {
 			return -1;
 		}
 		Libc::file_descriptor_allocator()->free(fd);
+		PDBG("fd = %d", fd->libc_fd);
 		return 0;
 	}
 
