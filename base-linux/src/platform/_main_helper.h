@@ -51,9 +51,11 @@ static inline void main_thread_bootstrap()
 	/* reserve context area */
 	Genode::addr_t base = Native_config::context_area_virtual_base();
 	Genode::size_t size = Native_config::context_area_virtual_size();
-	if (lx_vm_reserve(base, size) != base)
-		PERR("reservation of context area [%lx,%lx) failed",
-		     (unsigned long) base, (unsigned long) base + size);
+	int ret;
+	if ((ret = lx_munmap((void *)base, size)) < 0)
+		PERR("flushing of context area [%lx,%lx) failed (ret=%d)",
+		     (unsigned long) base, (unsigned long) base + size, ret);
+
 }
 
 #endif /* _PLATFORM___MAIN_HELPER_H_ */
