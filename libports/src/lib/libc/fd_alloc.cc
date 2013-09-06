@@ -65,12 +65,14 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 	fdo->fd_path = 0;
 	fdo->plugin  = plugin;
 	fdo->context = context;
+	PDBG("fd = %d", fdo->libc_fd);
 	return fdo;
 }
 
 
 void File_descriptor_allocator::free(File_descriptor *fdo)
 {
+	PDBG("fd = %d", fdo->libc_fd);
 	::free(fdo->fd_path);
 	Allocator_avl_base::free(reinterpret_cast<void*>(fdo->libc_fd));
 }
