@@ -323,8 +323,15 @@ extern "C" int _connect(int libc_fd, const struct sockaddr *addr,
 
 extern "C" int _dup(int libc_fd)
 {
+	File_descriptor *test_fd = libc_fd_to_fd(libc_fd, "dup");
+	if (!test_fd)
+		PERR("fd %d not in registry", libc_fd);
+	else if (!test_fd->plugin)
+		PERR("no plugin found for fd %d", libc_fd);
 	File_descriptor *ret_fd;
 	FD_FUNC_WRAPPER_GENERIC(ret_fd =, 0, dup, libc_fd);
+	if (ret_fd)
+		PDBG("%d -> %d", libc_fd, ret_fd->libc_fd);
 	return ret_fd ? ret_fd->libc_fd : INVALID_FD;
 }
 
@@ -337,6 +344,7 @@ extern "C" int dup(int libc_fd)
 
 extern "C" int _dup2(int libc_fd, int new_libc_fd)
 {
+	PDBG("%d -> %d", libc_fd, new_libc_fd);
 	File_descriptor *fd = libc_fd_to_fd(libc_fd, "dup2");
 	if (!fd || !fd->plugin) {
 		errno = EBADF;
@@ -635,6 +643,8 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 	}
 	new_fdo->path(resolved_path.base());
 
+	PDBG("path = %s, fd = %d", pathname, new_fdo->libc_fd);
+
 	return new_fdo->libc_fd;
 }
 
@@ -668,7 +678,8 @@ extern "C" int pipe(int pipefd[2])
 
 	pipefd[0] = pipefdo[0]->libc_fd;
 	pipefd[1] = pipefdo[1]->libc_fd;
-
+PDBG("pipefd[0] = %d", pipefd[0]);
+PDBG("pipefd[1] = %d", pipefd[1]);
 	return 0;
 }
 
