@@ -176,7 +176,39 @@ append config "						echo \"CROSS_DEV_PREFIX=$tool_prefix\" > etc/tools.conf"
 append config "                                         $platform_cmds"
 append config {
 							echo "now you can type, for example, \"make core\""
+							cd ..
 						</inline>
+						<inline name="Makefile">
+SUBDIRS := a b c
+
+.PHONY: all $(SUBDIRS)
+all: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) --directory=$@
+
+						</inline>
+						<dir name="a">
+							<inline name="Makefile">
+all:
+	@echo "made a"
+
+							</inline>
+						</dir>
+						<dir name="b">
+							<inline name="Makefile">
+all:
+	@echo "made b"
+
+							</inline>
+						</dir>
+						<dir name="c">
+							<inline name="Makefile">
+all:
+	@echo "made c"
+
+							</inline>
+						</dir>
 					</dir>
 				</dir>
 				<dir name="tmp" />
