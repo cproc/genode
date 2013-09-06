@@ -285,10 +285,10 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				         strcmp(_child_policy.label(), "") == 0 ? "" : " -> ",
 				         child_env.binary_name());
 
-#if 0
-				PDBG("execve: parent label:       %s", _child_policy.parent_label());
+#if 1
+				//PDBG("execve: parent label:       %s", _child_policy.parent_label());
 				PDBG("execve: label:              %s", _child_policy.label());
-				PDBG("execve: child parent label: %s", _child_policy.parent_label());
+				//PDBG("execve: child parent label: %s", _child_policy.parent_label());
 				PDBG("execve: child label:        %s", label_buf);
 #endif
 
@@ -513,10 +513,10 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				         strcmp(_child_policy.label(), "") == 0 ? "" : " -> ",
 				         _child_policy.name());
 
-#if 0
-				PDBG("fork: parent label:       %s", _child_policy.parent_label());
+#if 1
+				//PDBG("fork: parent label:       %s", _child_policy.parent_label());
 				PDBG("fork: label:              %s", _child_policy.label());
-				PDBG("fork: child parent label: %s", _child_policy.label());
+				//PDBG("fork: child parent label: %s", _child_policy.label());
 				PDBG("fork: child label:        %s", label_buf);
 #endif
 
