@@ -1,3 +1,3 @@
 TARGET = test-printf
-SRC_CC = main.cc
-LIBS   = base
+SRC_CC = main.cc 
+LIBS   = base backtrace

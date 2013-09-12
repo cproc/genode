@@ -14,9 +14,21 @@
 
 #include <base/printf.h>
 
+extern void print_backtrace();
+
+void func()
+{
+	PDBG("calling print_backtrace()");
+	print_backtrace();
+	PDBG("print_backtrace() returned");
+}
+
 int main(int argc, char **argv)
 {
-	Genode::printf("-1 = %d = %ld\n", -1, -1L);
-
+	//Genode::printf("-1 = %d = %ld\n", -1, -1L);
+PDBG("&main = %p", &main);
+PDBG("&func = %p", &func);
+func();
 	return 0;
 }
+
