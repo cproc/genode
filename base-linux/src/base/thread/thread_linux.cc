@@ -48,6 +48,15 @@ void Thread_base::_thread_start()
 	 */
 	lx_sigaction(LX_SIGUSR1, empty_signal_handler);
 
+	/*
+	 * When GDB sets a breakpoint in a thread and the breakpoint
+	 * triggers in a different thread which does not have GDB
+	 * attached, the other thread receives a SIGTRAP signal. Without
+	 * a registered signal handler, the process would get killed in
+	 * this case.
+	 */
+	lx_sigaction(LX_SIGTRAP, empty_signal_handler);
+
 	Thread_base * const thread = Thread_base::myself();
 
 	/* inform core about the new thread and process ID of the new thread */
