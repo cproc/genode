@@ -30,6 +30,9 @@ char **lx_environ;
 int main_thread_futex_counter __attribute__((aligned(sizeof(Genode::addr_t))));
 
 
+static void sigint_signal_handler(int) { PDBG("SIGINT in %d", lx_gettid());}
+
+
 static inline void main_thread_bootstrap()
 {
 	using namespace Genode;
@@ -54,6 +57,9 @@ static inline void main_thread_bootstrap()
 	if (lx_vm_reserve(base, size) != base)
 		PERR("reservation of context area [%lx,%lx) failed",
 		     (unsigned long) base, (unsigned long) base + size);
+
+	lx_sigaction(LX_SIGINT, sigint_signal_handler);
+
 }
 
 #endif /* _PLATFORM___MAIN_HELPER_H_ */

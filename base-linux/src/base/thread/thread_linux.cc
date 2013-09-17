@@ -25,7 +25,7 @@ using namespace Genode;
 
 
 static void empty_signal_handler(int) { }
-
+static void sigint_signal_handler(int) { PDBG("SIGINT in %d", lx_gettid());}
 
 static Lock &startup_lock()
 {
@@ -56,6 +56,7 @@ void Thread_base::_thread_start()
 	 * this case.
 	 */
 	lx_sigaction(LX_SIGTRAP, empty_signal_handler);
+	lx_sigaction(LX_SIGINT, sigint_signal_handler);
 
 	Thread_base * const thread = Thread_base::myself();
 

@@ -65,6 +65,8 @@ int main(int argc, char **argv)
 
 	sleep_forever();
 
+	PDBG("main thread returned from sleep_forever()");
+
 	return 0;
 }
 
