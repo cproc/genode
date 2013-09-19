@@ -114,6 +114,14 @@ append config {
 	</start>
 	<start name="launchpad">
 		<resource name="RAM" quantum="32M"/>
+		<config>
+			<launcher name="testnit"   ram_quota="768K" />
+			<launcher name="scout"     ram_quota="11M" />
+			<launcher name="launchpad" ram_quota="6M" />
+			<launcher name="nitlog"    ram_quota="1M" />
+			<launcher name="liquid_fb" ram_quota="7M" />
+			<launcher name="nitpicker" ram_quota="1M" />
+		</config>
 	</start>
 </config>}
 
