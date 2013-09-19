@@ -47,7 +47,7 @@ namespace Genode {
 	{
 		using namespace Fiasco;
 		outstring(s);
-		enter_kdebug("> panic <");
+		enter_kdebug();
 	}
 
 	inline void touch_ro(const void *addr, unsigned size)
