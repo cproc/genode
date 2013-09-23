@@ -83,7 +83,7 @@ void Platform_thread::pause()
 	unsigned exc      = _pager_obj->state.exceptions;
 	_pager_obj->state.ip  = ~0UL;
 	_pager_obj->state.sp  = ~0UL;
-	l4_umword_t flags = L4_THREAD_EX_REGS_TRIGGER_EXCEPTION;
+	l4_umword_t flags = L4_THREAD_EX_REGS_TRIGGER_EXCEPTION | L4_THREAD_EX_REGS_CANCEL;
 
 	/* Mark thread to be stopped */
 	_pager_obj->state.paused = true;

@@ -125,7 +125,7 @@ void Pager_activation_base::entry()
 			{
 				Lock::Guard guard(obj->state.lock);
 				pager.copy_regs(&obj->state);
-
+PDBG("pause exception");
 				obj->state.exceptions++;
 				obj->state.in_exception = true;
 
