@@ -19,6 +19,7 @@
 /* libc includes */
 #include <stdio.h>
 
+//#if 0
 class Test_thread : public Genode::Thread<2*4096>
 {
 	public:
@@ -33,7 +34,7 @@ class Test_thread : public Genode::Thread<2*4096>
 			 */
 			static Timer::Connection timer;
 			timer.msleep(500);
-
+while(1);
 			*(int *)0 = 42;
 		}
 
@@ -44,6 +45,14 @@ class Test_thread : public Genode::Thread<2*4096>
 			Genode::sleep_forever();
 		}
 };
+//#endif
+
+int a = 0;
+
+int four()
+{
+	return 4;
+}
 
 /* this function returns a value to make itself appear in the stack trace when building with -O2 */
 int func2()
@@ -51,7 +60,7 @@ int func2()
 	/* set the first breakpoint here to test the 'backtrace' command for a
 	 * thread which is not in a syscall */
 	puts("in func2()\n");
-
+	four();
 	return 0;
 }
 
@@ -59,7 +68,8 @@ int func2()
 /* this function returns a value to make itself appear in the stack trace when building with -O2 */
 int func1()
 {
-	func2();
+	if (a != 0)
+		func2();
 
 	return 0;
 }
@@ -67,13 +77,22 @@ int func1()
 
 int main(void)
 {
+printf("GDB monitor test\n");
 	Test_thread test_thread;
 
 	func1();
 
 	test_thread.start();
 
-	Genode::sleep_forever();
+	//for (;;)
+		//func1();
+while(1);
+	Genode::Lock lock(Genode::Lock::LOCKED);
+	lock.lock();
+
+	//Genode::sleep_forever();
+
+	while(1);
 
 	return 0;
 }
