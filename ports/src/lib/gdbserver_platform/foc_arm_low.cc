@@ -24,8 +24,8 @@ extern "C" {
 
 #include "gdb_stub_thread.h"
 
-#undef PDBG
-#define PDBG(...)
+//#undef PDBG
+//#define PDBG(...)
 
 using namespace Genode;
 
