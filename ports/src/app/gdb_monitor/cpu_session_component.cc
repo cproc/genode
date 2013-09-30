@@ -65,6 +65,8 @@ Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 
 Thread_capability Cpu_session_component::create_thread(Cpu_session::Name const &name, addr_t utcb)
 {
+	PDBG("name = %s", name.string());
+
 	Thread_capability thread_cap =
 		_parent_cpu_session.create_thread(name.string(), utcb);
 

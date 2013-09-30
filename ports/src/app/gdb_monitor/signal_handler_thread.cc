@@ -51,7 +51,7 @@ void Signal_handler_thread::entry()
 		if (Thread_info *thread_info = dynamic_cast<Thread_info*>(s.context()))
 			/* thread trapped */
 			sig = thread_info->lwpid();
-
+PDBG("lwpid = %lu", sig);
 		write(_pipefd[1], &sig, sizeof(sig));
 	}
 
