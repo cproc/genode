@@ -33,7 +33,7 @@ namespace Gdb_monitor {
 
 			Thread_info(Thread_capability thread_cap, unsigned long lwpid)
 			: _thread_cap(thread_cap),
-			  _lwpid(lwpid) { }
+			  _lwpid(lwpid) { PDBG("lwpid = %lu", lwpid); }
 
 			Thread_capability thread_cap() { return _thread_cap; }
 			unsigned long lwpid() { return _lwpid; }
