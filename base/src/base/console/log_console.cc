@@ -51,6 +51,9 @@ class Log_console : public Console
 			/* ensure enough buffer space for complete escape sequence */
 			if ((c == 27) && (_num_chars + 8 > _BUF_SIZE)) _flush();
 
+			if ((c < 32) && (c != 27) && (c != '\n') && (c != '\t'))
+				c = '?';
+
 			_buf[_num_chars++] = c;
 
 			/* flush immediately on line break */
