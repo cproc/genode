@@ -120,6 +120,7 @@ namespace Noux {
 
 			void exit(int exit_value)
 			{
+			PDBG("exit(%d)", exit_value);
 				if (_verbose || (exit_value != 0))
 					PERR("child %s exited with exit value %d", _name, exit_value);
 
