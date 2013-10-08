@@ -32,7 +32,7 @@
 
 
 static const bool verbose_quota  = false;
-static bool trace_syscalls = false;
+static bool trace_syscalls = true/*false*/;
 static bool verbose = false;
 
 namespace Noux {
@@ -158,7 +158,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				if (!io->is_nonblocking())
 					while (!io->check_unblock(true, false, false))
 						_block_for_io_channel(io);
-
+PDBG("left _block_for_io_channel()");
 				return io->read(_sysio);
 			}
 

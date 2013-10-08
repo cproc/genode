@@ -32,6 +32,7 @@
 #include <io_receptor_registry.h>
 #include <destruct_queue.h>
 #include <destruct_dispatcher.h>
+#include <interrupt_handler.h>
 
 #include <local_cpu_service.h>
 #include <local_ram_service.h>
@@ -95,7 +96,8 @@ namespace Noux {
 	class Child : public Rpc_object<Session>,
 	              public File_descriptor_registry,
 	              public Family_member,
-	              public Destruct_queue::Element<Child>
+	              public Destruct_queue::Element<Child>,
+	              public Interrupt_handler
 	{
 		private:
 
@@ -196,6 +198,9 @@ namespace Noux {
 			Attached_ram_dataspace _sysio_ds;
 			Sysio * const          _sysio;
 
+			int  _pending_signals_count;
+			Lock _pending_signals_count_lock;
+
 			Session_capability const _noux_session_cap;
 
 			Local_noux_service _local_noux_service;
@@ -244,6 +249,7 @@ namespace Noux {
 
 			void _block_for_io_channel(Shared_pointer<Io_channel> &io)
 			{
+			PDBG("_block_for_io_channel()");
 				Wake_up_notifier notifier(&_blocker);
 				io->register_wake_up_notifier(&notifier);
 				_blocker.down();
@@ -304,6 +310,7 @@ namespace Noux {
 				_elf(binary_name, root_dir, root_dir->dataspace(binary_name)),
 				_sysio_ds(Genode::env()->ram_session(), SYSIO_DS_SIZE),
 				_sysio(_sysio_ds.local_addr<Sysio>()),
+				_pending_signals_count(0),
 				_noux_session_cap(Session_capability(_entrypoint.manage(this))),
 				_local_noux_service(_noux_session_cap),
 				_local_ram_service(_entrypoint),
@@ -395,6 +402,64 @@ namespace Noux {
 							return fd;
 				return -1;
 			}
+
+
+			/****************************************
+			 ** File_descriptor_registry overrides **
+			 ****************************************/
+
+			/* 
+			 * Find out if the IO channel associated with 'fd' has more
+			 * file descriptors associated with it.
+			 */
+			bool _is_the_only_fd_for_io_channel(int fd,
+			                                    Shared_pointer<Io_channel> io_channel)
+			{
+				for (int f = 0; f < MAX_FILE_DESCRIPTORS; f++) {
+					if ((f != fd) &&
+					    fd_in_use(f) &&
+					    (io_channel_by_fd(f) == io_channel))
+					return false;
+				}
+				
+				return true;
+			}
+
+			int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
+			{
+PDBG("fd = %d", fd);
+				fd = File_descriptor_registry::add_io_channel(io_channel, fd);
+PDBG("fd2 = %d", fd);				
+				if (_is_the_only_fd_for_io_channel(fd, io_channel))
+					io_channel->register_interrupt_handler(this);
+
+				return fd;
+			}
+
+			virtual void remove_io_channel(int fd)
+			{
+				Shared_pointer<Io_channel> io_channel = io_channel_by_fd(fd);
+
+				if (_is_the_only_fd_for_io_channel(fd, io_channel))
+					io_channel->unregister_interrupt_handler(this);
+
+				File_descriptor_registry::remove_io_channel(fd);
+			}
+
+
+			/*********************************
+			 ** Interrupt_handler interface **
+			 *********************************/
+
+			void handle_interrupt()
+			{
+				PDBG("handle_interrupt()");
+
+				Lock::Guard pending_signals_count_guard(_pending_signals_count_lock);
+				_pending_signals_count++;
+				_blocker.up();
+			}
+
 	};
 };
 
