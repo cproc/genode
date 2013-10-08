@@ -17,6 +17,7 @@
 /* Genode includes */
 #include <util/string.h>
 #include <base/printf.h>
+#include <os/ring_buffer.h>
 #include <terminal_session/connection.h>
 
 /* Noux includes */
@@ -32,6 +33,8 @@ namespace Noux {
 		bool               eof;
 
 		enum Type { STDIN, STDOUT, STDERR } type;
+
+		Ring_buffer<char, Sysio::CHUNK_SIZE + 1> read_buffer;
 
 		Terminal_io_channel(Terminal::Session &terminal, Type type,
 		                    Signal_receiver &sig_rec)
@@ -68,7 +71,7 @@ namespace Noux {
 				PERR("attempt to read from terminal output channel");
 				return false;
 			}
-
+PDBG("read()");
 			/* deliver EOF observed by the previous 'read' call */
 			if (eof) {
 				sysio->read_out.count = 0;
@@ -80,29 +83,31 @@ namespace Noux {
 				min(sysio->read_in.count,
 				    sizeof(sysio->read_out.chunk));
 
-			sysio->read_out.count =
-				terminal.read(sysio->read_out.chunk, max_count);
+			for (sysio->read_out.count = 0;
+			     (sysio->read_out.count < max_count) && !read_buffer.empty();
+			     sysio->read_out.count++) {
 
-			/* scan received characters for EOF */
-			for (unsigned i = 0; i < sysio->read_out.count; i++) {
-
+				char c = read_buffer.get();
+PDBG("got %x from ring buffer", c);
 				enum { EOF = 4 };
-				if (sysio->read_out.chunk[i] != EOF)
-					continue;
 
-				/* discard EOF character and everything that follows... */
-				sysio->read_out.count = i;
+				if (c == EOF) {
 
-				/*
-				 * If EOF was the only character of the batch, the count has
-				 * reached zero. In this case the read result indicates the EOF
-				 * condition as is. However, if count is greater than zero, we
-				 * deliver the previous characters of the batch and return the
-				 * zero result from the subsequent 'read' call. This condition
-				 * is tracked by the 'eof' variable.
-				 */
-				if (sysio->read_out.count > 0)
-					eof = true;
+					/*
+				 	 * If EOF was the only character of the batch, the count has
+				 	 * reached zero. In this case the read result indicates the EOF
+				 	 * condition as is. However, if count is greater than zero, we
+				 	 * deliver the previous characters of the batch and return the
+				 	 * zero result from the subsequent 'read' call. This condition
+				 	 * is tracked by the 'eof' variable.
+				 	 */
+					if (sysio->read_out.count > 0)
+						eof = true;
+
+					return true;
+				}
+
+				sysio->read_out.chunk[sysio->read_out.count] = c;
 			}
 
 			return true;
@@ -150,7 +155,7 @@ namespace Noux {
 			 * Unblock I/O channel if the terminal has new user input. Channels
 			 * otther than STDIN will never unblock.
 			 */
-			return (rd && (type == STDIN) && terminal.avail());
+			return (rd && (type == STDIN) && !read_buffer.empty());
 		}
 
 		bool ioctl(Sysio *sysio)
@@ -194,7 +199,21 @@ namespace Noux {
 		 */
 		void dispatch(unsigned)
 		{
+		PDBG("dispatch()");
+			while ((read_buffer.avail_capacity() > 0) &&
+			       terminal.avail()) {
+			    char c;
+				terminal.read(&c, 1);
+				if (c == 3) {
+					Io_channel::invoke_all_interrupt_handlers();
+				} else {
+					PDBG("adding %x to ring buffer", c);
+					read_buffer.add(c);
+				}
+			}
+
 			Io_channel::invoke_all_notifiers();
+		PDBG("dispatch() finished");
 		}
 	};
 }

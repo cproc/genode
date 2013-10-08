@@ -32,8 +32,6 @@ namespace Noux {
 		private:
 
 			Terminal::Session_client _terminal;
-			Signal_context _read_avail_sig_ctx;
-			Signal_receiver _read_avail_sig_rec;
 
 			enum { FILENAME_MAX_LEN = 64 };
 			char _filename[FILENAME_MAX_LEN];
@@ -74,11 +72,6 @@ namespace Noux {
 				/* wati for signal */
 				sig_rec.wait_for_signal();
 				sig_rec.dissolve(&sig_ctx);
-
-				/*
-				 * Register "read available" signal handler
-				 */
-				_terminal.read_avail_sigh(_read_avail_sig_rec.manage(&_read_avail_sig_ctx));
 			}
 
 
@@ -160,7 +153,10 @@ namespace Noux {
 					return 0;
 				}
 
-				return new (env()->heap()) Vfs_handle(this, this, 0);
+				Vfs_handle *vfs_handle = new (env()->heap()) Vfs_handle(this, this, 0);
+				//PDBG("VFS handle = %p", vfs_handle);
+				return vfs_handle;
+				//return new (env()->heap()) Vfs_handle(this, this, 0);
 			}
 
 			bool unlink(Sysio *sysio, char const *path)
@@ -212,12 +208,34 @@ namespace Noux {
 
 			bool read(Sysio *sysio, Vfs_handle *vfs_handle)
 			{
-				_read_avail_sig_rec.wait_for_signal();
+			PDBG("VFS handle = %p", vfs_handle);
 				sysio->read_out.count = _terminal.read(sysio->read_out.chunk, sysio->read_in.count);
 				return true;
 			}
 
 			bool ftruncate(Sysio *sysio, Vfs_handle *vfs_handle) { return true; }
+
+			bool check_unblock(Vfs_handle *vfs_handle, bool rd, bool wr, bool ex)
+			{
+				//PDBG("check_unblock(%d, %d, %d)", rd, wr, ex);
+				if (rd && (_terminal.avail() > 0)) {
+					//PDBG("ready for reading");
+					return true;
+				}
+					
+				if (wr) {
+					//PDBG("ready for writing");
+					return true;
+				}
+				//PDBG("not ready");
+				return false;
+			}
+
+			void register_read_ready_sigh(Vfs_handle *vfs_handle,
+			                              Signal_context_capability sigh)
+			{
+				_terminal.read_avail_sigh(sigh);
+			}
 	};
 }
 

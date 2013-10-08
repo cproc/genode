@@ -257,8 +257,9 @@ class Packet_descriptor_transmitter
 
 		void tx(typename TX_QUEUE::Packet_descriptor packet)
 		{
+		PDBG("tx()");
 			Genode::Lock::Guard lock_guard(_tx_queue_lock);
-
+PDBG("got tx queue lock");
 			do {
 				/* block for signal if tx queue is full */
 				if (_tx_queue->full())
@@ -271,9 +272,11 @@ class Packet_descriptor_transmitter
 				 */
 
 			} while (_tx_queue->add(packet) == false);
-
-			if (_tx_queue->single_element())
+PDBG("checking for single tx element");
+			if (_tx_queue->single_element()) {
+				PDBG("calling _rx_ready.submit()");
 				_rx_ready.submit();
+			}
 		}
 };
 
@@ -330,8 +333,11 @@ class Packet_descriptor_receiver
 		{
 			Genode::Lock::Guard lock_guard(_rx_queue_lock);
 
-			while (_rx_queue->empty())
+			while (_rx_queue->empty()) {
+				PDBG("calling _rx_ready.wait_for_signal()");
 				_rx_ready.wait_for_signal();
+				PDBG("got rx ready signal");
+			}
 
 			*out_packet = _rx_queue->get();
 

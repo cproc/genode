@@ -19,6 +19,7 @@
 #define _INCLUDE__NOUX_SESSION__SYSIO_H_
 
 /* Genode includes */
+#include <os/ring_buffer.h>
 #include <util/misc_math.h>
 
 
@@ -33,16 +34,13 @@ namespace Noux {
 
 	struct Sysio
 	{
-		/*
-		 * Information about pending signals
-		 */
-		enum { SIG_MAX = 32 };
-		bool sig_mask[SIG_MAX];
+		enum Signal {
+			SIG_NONE,
+			SIG_INT,
+		};
 
-		/*
-		 * Number of pending signals
-		 */
-		int sig_cnt;
+		Ring_buffer<enum Signal, 32,
+		            Ring_buffer_unsynchronized> signal_queue;
 
 		enum { MAX_PATH_LEN = 512 };
 		typedef char Path[MAX_PATH_LEN];
@@ -295,7 +293,8 @@ namespace Noux {
 		enum General_error   { ERR_FD_INVALID, NUM_GENERAL_ERRORS };
 		enum Stat_error      { STAT_ERR_NO_ENTRY     = NUM_GENERAL_ERRORS };
 		enum Fcntl_error     { FCNTL_ERR_CMD_INVALID = NUM_GENERAL_ERRORS };
-		enum Ftruncate_error { FTRUNCATE_ERR_NO_PERM = NUM_GENERAL_ERRORS };
+		enum Ftruncate_error { FTRUNCATE_ERR_NO_PERM = NUM_GENERAL_ERRORS,
+		                       FTRUNCATE_ERR_INTERRUPT };
 		enum Open_error      { OPEN_ERR_UNACCESSIBLE, OPEN_ERR_NO_PERM,
 		                       OPEN_ERR_EXISTS };
 		enum Execve_error    { EXECVE_NONEXISTENT    = NUM_GENERAL_ERRORS };
@@ -310,10 +309,12 @@ namespace Noux {
 		                       SYMLINK_ERR_NAME_TOO_LONG};
 
 		enum Read_error      { READ_ERR_AGAIN, READ_ERR_WOULD_BLOCK,
-		                       READ_ERR_INVALID, READ_ERR_IO };
+		                       READ_ERR_INVALID, READ_ERR_IO,
+		                       READ_ERR_INTERRUPT };
 
 		enum Write_error     { WRITE_ERR_AGAIN, WRITE_ERR_WOULD_BLOCK,
-		                       WRITE_ERR_INVALID, WRITE_ERR_IO };
+		                       WRITE_ERR_INVALID, WRITE_ERR_IO,
+		                       WRITE_ERR_INTERRUPT };
 
 		enum Ioctl_error     { IOCTL_ERR_INVALID, IOCTL_ERR_NOTTY };
 

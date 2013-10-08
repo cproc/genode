@@ -32,10 +32,12 @@
 #include <io_receptor_registry.h>
 #include <destruct_queue.h>
 #include <destruct_dispatcher.h>
+#include <interrupt_handler.h>
 
 #include <local_cpu_service.h>
 #include <local_ram_service.h>
 #include <local_rom_service.h>
+
 
 namespace Noux {
 
@@ -95,7 +97,8 @@ namespace Noux {
 	class Child : public Rpc_object<Session>,
 	              public File_descriptor_registry,
 	              public Family_member,
-	              public Destruct_queue::Element<Child>
+	              public Destruct_queue::Element<Child>,
+	              public Interrupt_handler
 	{
 		private:
 
@@ -196,6 +199,10 @@ namespace Noux {
 			Attached_ram_dataspace _sysio_ds;
 			Sysio * const          _sysio;
 
+			Ring_buffer<enum Sysio::Signal, 32> _pending_signals;
+			int  _blocker_wakeup_count;
+			Lock _pending_signals_count_lock;
+
 			Session_capability const _noux_session_cap;
 
 			Local_noux_service _local_noux_service;
@@ -242,11 +249,32 @@ namespace Noux {
 						child->add_io_channel(io_channel_by_fd(fd), fd);
 			}
 
-			void _block_for_io_channel(Shared_pointer<Io_channel> &io)
+			/*
+			 * Block until the IO channel is ready for reading or
+			 * writing or an exception occured.
+			 *
+			 * \param io  the IO channel
+			 * \param rd  check for data available for reading
+			 * \param wr  check for readiness for writing
+			 * \param ex  check for exceptions
+			 */
+			void _block_for_io_channel(Shared_pointer<Io_channel> &io,
+			                           bool rd, bool wr, bool ex)
 			{
+			//PDBG("_block_for_io_channel()");
 				Wake_up_notifier notifier(&_blocker);
 				io->register_wake_up_notifier(&notifier);
+
+				if (io->check_unblock(rd, wr, ex) ||
+				    !_pending_signals.empty())
+					_blocker.up();
+
+				/*
+				 * Make sure that _blocker is locked until new data or
+				 * a new signal arrives
+				 */
 				_blocker.down();
+
 				io->unregister_wake_up_notifier(&notifier);
 			}
 
@@ -395,6 +423,66 @@ namespace Noux {
 							return fd;
 				return -1;
 			}
+
+
+			/****************************************
+			 ** File_descriptor_registry overrides **
+			 ****************************************/
+
+			/* 
+			 * Find out if the IO channel associated with 'fd' has more
+			 * file descriptors associated with it.
+			 */
+			bool _is_the_only_fd_for_io_channel(int fd,
+			                                    Shared_pointer<Io_channel> io_channel)
+			{
+				for (int f = 0; f < MAX_FILE_DESCRIPTORS; f++) {
+					if ((f != fd) &&
+					    fd_in_use(f) &&
+					    (io_channel_by_fd(f) == io_channel))
+					return false;
+				}
+				
+				return true;
+			}
+
+			int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
+			{
+PDBG("add_io_channel(%d)", fd);
+				fd = File_descriptor_registry::add_io_channel(io_channel, fd);
+PDBG("add_io_channel(): new fd = %d", fd);				
+				if (_is_the_only_fd_for_io_channel(fd, io_channel))
+					io_channel->register_interrupt_handler(this);
+
+				return fd;
+			}
+
+			virtual void remove_io_channel(int fd)
+			{
+				PDBG("remove_io_channel(%d)", fd);
+				Shared_pointer<Io_channel> io_channel = io_channel_by_fd(fd);
+
+				if (_is_the_only_fd_for_io_channel(fd, io_channel))
+					io_channel->unregister_interrupt_handler(this);
+
+				File_descriptor_registry::remove_io_channel(fd);
+			}
+
+
+			/*********************************
+			 ** Interrupt_handler interface **
+			 *********************************/
+
+			void handle_interrupt()
+			{
+				PDBG("handle_interrupt()");
+
+				/* FIXME: what to do if the queue is full? */
+				_pending_signals.add(Sysio::SIG_INT);
+		
+				_blocker.up();
+			}
+
 	};
 };
 

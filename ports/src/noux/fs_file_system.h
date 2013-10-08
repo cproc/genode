@@ -101,11 +101,12 @@ namespace Noux {
 					       ::File_system::Packet_descriptor::READ,
 					       count,
 					       seek_offset);
-
+PDBG("sending packet to fs server");
 				/* pass packet to server side */
 				source.submit_packet(packet);
+PDBG("calling get_acked_packet()");
 				source.get_acked_packet();
-
+PDBG("got acked packet");
 				memcpy(buf, source.packet_content(packet), count);
 
 				/*
@@ -523,7 +524,7 @@ namespace Noux {
 			Vfs_handle *open(Sysio *sysio, char const *path)
 			{
 				Lock::Guard guard(_lock);
-
+PDBG("path = %s", path);
 				Absolute_path dir_path(path);
 				dir_path.strip_last_element();
 
@@ -608,11 +609,11 @@ namespace Noux {
 				size_t const count = min(file_bytes_left,
 				                         min(sizeof(sysio->read_out.chunk),
 				                             sysio->read_in.count));
-
+PDBG("calling _read()");
 				sysio->read_out.count = _read(handle->file_handle(),
 				                              sysio->read_out.chunk,
 				                              count, handle->seek());
-
+PDBG("read %zu bytes", sysio->read_out.count);
 				return true;
 			}
 
