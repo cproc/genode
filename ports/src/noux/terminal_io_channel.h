@@ -17,6 +17,7 @@
 /* Genode includes */
 #include <util/string.h>
 #include <base/printf.h>
+#include <os/ring_buffer.h>
 #include <terminal_session/connection.h>
 
 /* Noux includes */
@@ -32,6 +33,8 @@ namespace Noux {
 		bool               eof;
 
 		enum Type { STDIN, STDOUT, STDERR } type;
+
+		Ring_buffer<char, 4096> read_buffer;
 
 		Terminal_io_channel(Terminal::Session &terminal, Type type,
 		                    Signal_receiver &sig_rec)
@@ -194,7 +197,18 @@ namespace Noux {
 		 */
 		void dispatch(unsigned)
 		{
+			while ((read_buffer.avail_capacity() > 0) &&
+			       terminal.avail()) {
+			    char c;
+				terminal.read(&c, 1);
+				if (c == 3) {
+					Io_channel::invoke_all_interrupt_handlers();
+				} else
+					read_buffer.put(c);
+			}
+
 			Io_channel::invoke_all_notifiers();
+			PDBG("new stdin input");
 		}
 	};
 }

@@ -32,6 +32,7 @@
 #include <io_receptor_registry.h>
 #include <destruct_queue.h>
 #include <destruct_dispatcher.h>
+#include <interrupt_handler.h>
 
 #include <local_cpu_service.h>
 #include <local_ram_service.h>
@@ -95,7 +96,8 @@ namespace Noux {
 	class Child : public Rpc_object<Session>,
 	              public File_descriptor_registry,
 	              public Family_member,
-	              public Destruct_queue::Element<Child>
+	              public Destruct_queue::Element<Child>,
+	              public Interrupt_handler
 	{
 		private:
 
@@ -395,6 +397,16 @@ namespace Noux {
 							return fd;
 				return -1;
 			}
+
+			/*********************************
+			 ** Interrupt_handler interface **
+			 *********************************/
+
+			void handle_interrupt()
+			{
+				PDBG("handle_interrupt()");
+			}
+
 	};
 };
 
