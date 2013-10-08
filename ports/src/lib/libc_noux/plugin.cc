@@ -945,11 +945,13 @@ namespace {
 			sysio()->read_in.count = curr_count;
 
 			if (!noux()->syscall(Noux::Session::SYSCALL_READ)) {
+				
 				switch (sysio()->error.read) {
 				case Noux::Sysio::READ_ERR_AGAIN:       errno = EAGAIN;      break;
 				case Noux::Sysio::READ_ERR_WOULD_BLOCK: errno = EWOULDBLOCK; break;
 				case Noux::Sysio::READ_ERR_INVALID:     errno = EINVAL;      break;
 				case Noux::Sysio::READ_ERR_IO:          errno = EIO;         break;
+				case Noux::Sysio::READ_ERR_INTERRUPT:   errno = EINTR;       break;
 				default:
 					if (sysio()->error.general == Noux::Sysio::ERR_FD_INVALID)
 						errno = EBADF;

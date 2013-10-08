@@ -60,12 +60,14 @@ class Ring_buffer
 		 */
 		void add(ET ev)
 		{
+		PDBG("called");
 			Genode::Lock::Guard lock_guard(_head_lock);
-
+PDBG("got _head_lock");
 			if ((_head + 1)%QUEUE_SIZE != _tail) {
 				_queue[_head] = ev;
 				_head = (_head + 1)%QUEUE_SIZE;
 				_sem.up();
+				PDBG("added 1 element");
 			} else
 				throw Overflow();
 		}
@@ -80,9 +82,11 @@ class Ring_buffer
 		 */
 		ET get()
 		{
+		PDBG("getting one element");
 			_sem.down();
 			ET e = _queue[_tail];
 			_tail = (_tail + 1)%QUEUE_SIZE;
+		PDBG("got one element");
 			return e;
 		}
 

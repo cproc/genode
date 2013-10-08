@@ -32,7 +32,7 @@
 
 
 static const bool verbose_quota  = false;
-static bool trace_syscalls = false;
+static bool trace_syscalls = true/*false*/;
 static bool verbose = false;
 
 namespace Noux {
@@ -126,6 +126,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		Genode::printf("PID %d -> SYSCALL %s\n",
 		               pid(), Noux::Session::syscall_name(sc));
 
+	bool result = false;
+
 	try {
 		switch (sc) {
 
@@ -156,10 +158,23 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio->read_in.fd);
 
 				if (!io->is_nonblocking())
-					while (!io->check_unblock(true, false, false))
+					while (!io->check_unblock(true, false, false) &&
+					       _pending_signals.empty())
 						_block_for_io_channel(io);
 
-				return io->read(_sysio);
+PDBG("left _block_for_io_channel()");
+
+				if (io->check_unblock(true, false, false)) {
+					PDBG("calling io->read()");
+					result = io->read(_sysio);
+					PDBG("io->read() returned %d", result);
+					}
+				else {
+					PDBG("setting error EINTR");
+					_sysio->error.read = Sysio::READ_ERR_INTERRUPT;
+				}
+
+				break;
 			}
 
 		case SYSCALL_FTRUNCATE:
@@ -446,7 +461,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 						/* block until timeout is reached or we were unblocked */
 						_blocker.down();
-
+PDBG("select() unblocked");
 						if (ts.timed_out) {
 							timeout_reached = 1;
 						}
@@ -721,7 +736,12 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 	catch (...) { PERR("Unexpected exception"); }
 
-	return false;
+	/* handle signals which might have occured */
+	while (!_pending_signals.empty() &&
+		   (_sysio->signal_queue.avail_capacity() > 0))
+		_sysio->signal_queue.add(_pending_signals.get());
+	
+	return result;
 }
 
 

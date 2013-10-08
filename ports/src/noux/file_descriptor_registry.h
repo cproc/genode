@@ -72,7 +72,7 @@ namespace Noux {
 			 *
 			 * \return noux file descriptor used for the I/O channel
 			 */
-			int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
+			virtual int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
 			{
 				if ((fd == -1) && !_find_available_fd(&fd)) {
 					PERR("Could not allocate file descriptor");
@@ -88,7 +88,7 @@ namespace Noux {
 				return fd;
 			}
 
-			void remove_io_channel(int fd)
+			virtual void remove_io_channel(int fd)
 			{
 				if (!_is_valid_fd(fd))
 					PERR("File descriptor %d is out of range", fd);
