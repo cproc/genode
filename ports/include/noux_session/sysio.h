@@ -19,6 +19,7 @@
 #define _INCLUDE__NOUX_SESSION__SYSIO_H_
 
 /* Genode includes */
+#include <os/ring_buffer.h>
 #include <util/misc_math.h>
 
 
@@ -33,11 +34,12 @@ namespace Noux {
 
 	struct Sysio
 	{
-		/*
-		 * Information about pending signals
-		 */
-		enum { SIG_MAX = 32 };
-		bool sig_mask[SIG_MAX];
+		enum Signal {
+			SIG_NONE,
+			SIG_INT,
+		};
+
+		Ring_buffer<enum Signal, 32> signal_queue;
 
 		/*
 		 * Number of pending signals
@@ -310,7 +312,8 @@ namespace Noux {
 		                       SYMLINK_ERR_NAME_TOO_LONG};
 
 		enum Read_error      { READ_ERR_AGAIN, READ_ERR_WOULD_BLOCK,
-		                       READ_ERR_INVALID, READ_ERR_IO };
+		                       READ_ERR_INVALID, READ_ERR_IO,
+		                       READ_ERR_INTERRUPT };
 
 		enum Write_error     { WRITE_ERR_AGAIN, WRITE_ERR_WOULD_BLOCK,
 		                       WRITE_ERR_INVALID, WRITE_ERR_IO };

@@ -32,7 +32,7 @@
 
 
 static const bool verbose_quota  = false;
-static bool trace_syscalls = false;
+static bool trace_syscalls = true/*false*/;
 static bool verbose = false;
 
 namespace Noux {
@@ -126,6 +126,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		Genode::printf("PID %d -> SYSCALL %s\n",
 		               pid(), Noux::Session::syscall_name(sc));
 
+	bool result = false;
+
 	try {
 		switch (sc) {
 
@@ -159,7 +161,14 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					while (!io->check_unblock(true, false, false))
 						_block_for_io_channel(io);
 
-				return io->read(_sysio);
+PDBG("left _block_for_io_channel()");
+
+				if (_pending_signals_count > 0)
+					_sysio->error.read = Sysio::READ_ERR_INTERRUPT;
+				else
+					result = io->read(_sysio);
+
+				break;
 			}
 
 		case SYSCALL_FTRUNCATE:
@@ -446,7 +455,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 						/* block until timeout is reached or we were unblocked */
 						_blocker.down();
-
+PDBG("select() unblocked");
 						if (ts.timed_out) {
 							timeout_reached = 1;
 						}
@@ -721,7 +730,18 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 	catch (...) { PERR("Unexpected exception"); }
 
-	return false;
+	/* handle signals which might have occured */
+	{
+		Lock::Guard pending_signals_count_guard(_pending_signals_count_lock);
+		while ((_pending_signals_count > 0) &&
+		       (_sysio->signal_queue.avail_capacity() > 0)) {
+			_sysio->signal_queue.add(_pending_signals.get());
+			_sysio->sig_cnt++;
+			_pending_signals_count--;
+		}
+	}
+
+	return result;
 }
 
 
