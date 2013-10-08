@@ -17,6 +17,10 @@
 /* Noux includes */
 #include <io_channel.h>
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 namespace Noux {
 
 	class File_descriptor_registry
@@ -72,7 +76,7 @@ namespace Noux {
 			 *
 			 * \return noux file descriptor used for the I/O channel
 			 */
-			int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
+			virtual int add_io_channel(Shared_pointer<Io_channel> io_channel, int fd = -1)
 			{
 				if ((fd == -1) && !_find_available_fd(&fd)) {
 					PERR("Could not allocate file descriptor");
@@ -88,7 +92,7 @@ namespace Noux {
 				return fd;
 			}
 
-			void remove_io_channel(int fd)
+			virtual void remove_io_channel(int fd)
 			{
 				if (!_is_valid_fd(fd))
 					PERR("File descriptor %d is out of range", fd);
@@ -105,6 +109,7 @@ namespace Noux {
 			{
 				if (!fd_in_use(fd)) {
 					PWRN("File descriptor %d is not open", fd);
+					enter_kdebug("noux");
 					return Shared_pointer<Io_channel>();
 				}
 				return _fds[fd].io_channel;
