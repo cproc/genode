@@ -107,6 +107,43 @@ append gdb_cmds "-ex \"target remote localhost:$local_port\" "
 
 append gdb_cmds [gdb_main_breakpoint_cmds $gdb_target_binary]
 
+#
+# Test commands
+#
+
+# test: breakpoint in shared library 
+append gdb_cmds {-ex "b puts" }
+append gdb_cmds {-ex "c" }
+
+# test: stack trace when not in syscall
+append gdb_cmds {-ex "bt" }
+
+# test: modify variable
+append gdb_cmds {-ex "print test_var" }
+append gdb_cmds {-ex "set var test_var=2" }
+append gdb_cmds {-ex "print test_var" }
+
+# test: 'call' command
+if {![have_spec nova]} {
+append gdb_cmds {-ex "call test_var_func()" }
+}
+
+# test: thread info
+append gdb_cmds {-ex "b Test_thread::entry()" }
+append gdb_cmds {-ex "c" }
+append gdb_cmds {-ex "info threads" }
+
+# test: single stepping
+append gdb_cmds {-ex "step" }
+
+# test: catch segmentation fault
+append gdb_cmds {-ex "c" }
+
+# test: stack trace when in syscall
+append gdb_cmds {-ex "thread 1" }
+append gdb_cmds {-ex "bt" }
+
+
 # ask the user for confirmations again
 append gdb_cmds {-ex "set interactive-mode auto" }
 
