@@ -14,6 +14,9 @@
 #ifndef _RAM_H_
 #define _RAM_H_
 
+/* Genode includes */
+#include <ram_session/client.h>
+
 class Ram
 {
 	private:

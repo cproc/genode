@@ -17,8 +17,14 @@
 /* Genode includes */
 #include <util/list.h>
 #include <base/child.h>
+#include <init/child_policy.h>
+#include <os/child_policy_dynamic_rom.h>
 #include <ram_session/connection.h>
 #include <cpu_session/connection.h>
+#include <rom_session/connection.h>
+
+/* local includes */
+#include <ram.h>
 
 class Child : public List<Child>::Element, Genode::Child_policy
 {
