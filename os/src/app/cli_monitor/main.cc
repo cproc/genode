@@ -29,6 +29,7 @@
 #include <help_command.h>
 #include <yield_command.h>
 #include <ram_command.h>
+#include <gdb_command.h>
 
 using Genode::Xml_node;
 
@@ -109,6 +110,10 @@ int main(int argc, char **argv)
 	commands.insert(new Help_command);
 	Kill_command kill_command(children, process_args);
 	commands.insert(&kill_command);
+	commands.insert(new Gdb_command(ram, cap, children,
+	                                Genode::config()->xml_node(),
+	                                process_args,
+	                                yield_response_sig_cap));
 	commands.insert(new Start_command(ram, cap, children,
 	                                  Genode::config()->xml_node(),
 	                                  process_args,
