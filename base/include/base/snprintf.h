@@ -15,7 +15,12 @@
 #define _INCLUDE__BASE__SNPRINTF_H_
 
 #include <base/console.h>
+#include <base/printf.h>
 #include <base/stdint.h>
+
+namespace Fiasco {
+	#include <l4/sys/kdebug.h>
+}
 
 namespace Genode {
 
@@ -52,8 +57,11 @@ namespace Genode {
 			void _out_char(char c)
 			{
 				/* ensure to leave space for null-termination */
-				if (_w_offset + 2 > _dst_len)
+				if (_w_offset + 2 > _dst_len) {
+					PDBG("string buffer full, skipping character, _w_offset = %zu, _dst_len = %zu, c = %c", _w_offset, _dst_len, c);
+					//enter_kdebug("snprintf");
 					return;
+				}
 
 				_dst[_w_offset++] = c;
 				_dst[_w_offset] = 0;
