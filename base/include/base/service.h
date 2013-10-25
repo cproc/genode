@@ -134,7 +134,7 @@ namespace Genode {
 			 * \throw Quota_exceeded
 			 */
 			virtual Session_capability session(char const *args,
-			                                   Affinity const &affinity) = 0;
+			                                   Affinity const &affinity = Affinity()) = 0;
 
 			/**
 			 * Extend resource donation to an existing session
