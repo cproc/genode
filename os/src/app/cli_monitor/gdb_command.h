@@ -290,7 +290,6 @@ struct Gdb_command : Command
 			config_bytes_written += snprintf(&config_buf[config_bytes_written],
 			                                 sizeof(config_buf) - config_bytes_written, "\n \
 				<start name=\"/bin/%sgdb\">\n \
-					<arg value=\"/bin/%sgdb\"/>\n \
 					<arg value=\"/gdb/%s\"/>\n \
 					<arg value=\"-ex\" /><arg value=\"set interactive-mode off\" />\n \
 					<arg value=\"-ex\" /><arg value=\"directory /gdb/src\" />\n \
@@ -298,7 +297,6 @@ struct Gdb_command : Command
 					%s \
 					<arg value=\"-ex\" /><arg value=\"set interactive-mode auto\" />\n \
 				</start>",
-				gdb_prefix,
 				gdb_prefix,
 				binary_name,
 				gdb_main_breakpoint_args_buf);
