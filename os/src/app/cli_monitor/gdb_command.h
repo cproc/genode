@@ -211,7 +211,7 @@ struct Gdb_command : Command
 		try {
 			Genode::Attached_rom_dataspace gdb_command_config_ds("gdb_command_config");
 
-			enum { CONFIG_BUF_SIZE = 3*1024 };
+			enum { CONFIG_BUF_SIZE = 4*1024 };
 			static char config_buf[CONFIG_BUF_SIZE];
 
 			int config_bytes_written = 0;
@@ -223,9 +223,10 @@ struct Gdb_command : Command
 			Xml_node init_config_node(gdb_command_config_ds.local_addr<const char>(),
 				                      gdb_command_config_ds.size());
 
-			Xml_node terminal_gdb_node = init_config_node.sub_node("start");
-
-			Xml_node noux_node = terminal_gdb_node.next("start");
+			Xml_node noux_node = init_config_node.sub_node("start");
+			for (;; noux_node = noux_node.next("start"))
+				if (noux_node.attribute("name").has_value("noux"))
+					break;
 
 			Xml_node noux_config_node = noux_node.sub_node("config");
 

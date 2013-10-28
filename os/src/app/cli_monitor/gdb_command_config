@@ -13,6 +13,9 @@
 		<service name="Timer"/>
 		<service name="Terminal"/>
 	</parent-provides>
+
+	<!-- additional start nodes can be inserted here -->
+
 	<start name="terminal_gdb">
 		<binary name="terminal_crosslink"/>
 		<resource name="RAM" quantum="1M"/>
