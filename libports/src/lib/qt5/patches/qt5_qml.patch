@@ -1,0 +1,669 @@
+qt5_qml.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/gui/opengl/qopengles2ext.h              |    2 
+ qtdeclarative/src/qml/types/qqmldelegatemodel_p.h  |    2 
+ qtjsbackend/src/3rdparty/v8/src/platform-genode.cc |  590 ++++++++++++++++++++
+ qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc |    4 
+ qtjsbackend/src/v8/v8.pri                          |    2 
+ 5 files changed, 597 insertions(+), 3 deletions(-)
+ create mode 100644 qtjsbackend/src/3rdparty/v8/src/platform-genode.cc
+
+diff --git a/qtbase/src/gui/opengl/qopengles2ext.h b/qtbase/src/gui/opengl/qopengles2ext.h
+index 5926d5b..57f7425 100644
+--- a/qtbase/src/gui/opengl/qopengles2ext.h
++++ b/qtbase/src/gui/opengl/qopengles2ext.h
+@@ -22,6 +22,8 @@ extern "C" {
+ #   define GL_APIENTRYP GL_APIENTRY*
+ #endif
+ 
++#include <KHR/khrplatform.h>
++
+ /*------------------------------------------------------------------------*
+  * OES extension tokens
+  *------------------------------------------------------------------------*/
+diff --git a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
+index 5702c59..3d616b5 100644
+--- a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
++++ b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
+@@ -52,6 +52,8 @@
+ #include <private/qv8engine_p.h>
+ #include <private/qqmlglobal_p.h>
+ 
++#include <QtQml/QQmlParserStatus>
++
+ Q_DECLARE_METATYPE(QModelIndex)
+ 
+ QT_BEGIN_NAMESPACE
+diff --git a/qtjsbackend/src/3rdparty/v8/src/platform-genode.cc b/qtjsbackend/src/3rdparty/v8/src/platform-genode.cc
+new file mode 100644
+index 0000000..7899f17
+--- /dev/null
++++ b/qtjsbackend/src/3rdparty/v8/src/platform-genode.cc
+@@ -0,0 +1,590 @@
++// Copyright 2012 the V8 project authors. All rights reserved.
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++//     * Redistributions of source code must retain the above copyright
++//       notice, this list of conditions and the following disclaimer.
++//     * Redistributions in binary form must reproduce the above
++//       copyright notice, this list of conditions and the following
++//       disclaimer in the documentation and/or other materials provided
++//       with the distribution.
++//     * Neither the name of Google Inc. nor the names of its
++//       contributors may be used to endorse or promote products derived
++//       from this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++// Platform specific code for Genode goes here
++
++// Minimal include to get access to abort, fprintf and friends for bootstrapping
++// messages.
++#include <stdio.h>
++#include <stdlib.h>
++
++#include "v8.h"
++
++#include "platform.h"
++#include "vm-state-inl.h"
++
++
++namespace v8 {
++namespace internal {
++
++
++// Give V8 the opportunity to override the default ceil behaviour.
++double ceiling(double x) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++#if 0
++// Give V8 the opportunity to override the default fmod behavior.
++double modulo(double x, double y) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++double fast_sin(double x) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++double fast_cos(double x) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++double fast_tan(double x) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++double fast_log(double x) {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++// Initialize OS class early in the V8 startup.
++void OS::SetUp() {
++  // Seed the random number generator.
++  UNIMPLEMENTED();
++}
++
++
++void OS::PostSetUp() {
++  UNIMPLEMENTED();
++}
++
++
++void OS::TearDown() {
++  UNIMPLEMENTED();
++}
++
++#if 0
++// Returns the accumulated user time for thread.
++int OS::GetUserTime(uint32_t* secs,  uint32_t* usecs) {
++  UNIMPLEMENTED();
++  *secs = 0;
++  *usecs = 0;
++  return 0;
++}
++
++
++// Returns current time as the number of milliseconds since
++// 00:00:00 UTC, January 1, 1970.
++double OS::TimeCurrentMillis() {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++// Returns ticks in microsecond resolution.
++int64_t OS::Ticks() {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++int OS::ActivationFrameAlignment() {
++#ifdef V8_TARGET_ARCH_ARM
++  // On EABI ARM targets this is required for fp correctness in the
++  // runtime system.
++  return 8;
++#elif V8_TARGET_ARCH_MIPS
++  return 8;
++#endif
++  // With gcc 4.4 the tree vectorization optimizer can generate code
++  // that requires 16 byte alignment such as movdqa on x86.
++  return 16;
++}
++
++
++void OS::ReleaseStore(volatile AtomicWord* ptr, AtomicWord value) {
++#if (defined(V8_TARGET_ARCH_ARM) && defined(__arm__)) || \
++    (defined(V8_TARGET_ARCH_MIPS) && defined(__mips__))
++  // Only use on ARM or MIPS hardware.
++  MemoryBarrier();
++#else
++  __asm__ __volatile__("" : : : "memory");
++  // An x86 store acts as a release barrier.
++#endif
++  *ptr = value;
++}
++
++
++// Returns a string identifying the current timezone taking into
++// account daylight saving.
++const char* OS::LocalTimezone(double time) {
++  UNIMPLEMENTED();
++  return "<none>";
++}
++
++#if 0
++// Returns the daylight savings offset in milliseconds for the given time.
++double OS::DaylightSavingsOffset(double time) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++int OS::GetLastError() {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++// Returns the local time offset in milliseconds east of UTC without
++// taking daylight savings time into account.
++double OS::LocalTimeOffset() {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++#if 0
++// Print (debug) message to console.
++void OS::Print(const char* format, ...) {
++  UNIMPLEMENTED();
++}
++
++
++// Print (debug) message to console.
++void OS::VPrint(const char* format, va_list args) {
++  // Minimalistic implementation for bootstrapping.
++  vfprintf(stdout, format, args);
++}
++
++
++void OS::FPrint(FILE* out, const char* format, ...) {
++  va_list args;
++  va_start(args, format);
++  VFPrint(out, format, args);
++  va_end(args);
++}
++
++
++void OS::VFPrint(FILE* out, const char* format, va_list args) {
++  vfprintf(out, format, args);
++}
++
++
++// Print error message to console.
++void OS::PrintError(const char* format, ...) {
++  // Minimalistic implementation for bootstrapping.
++  va_list args;
++  va_start(args, format);
++  VPrintError(format, args);
++  va_end(args);
++}
++
++
++// Print error message to console.
++void OS::VPrintError(const char* format, va_list args) {
++  // Minimalistic implementation for bootstrapping.
++  vfprintf(stderr, format, args);
++}
++
++
++int OS::SNPrintF(Vector<char> str, const char* format, ...) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++int OS::VSNPrintF(Vector<char> str, const char* format, va_list args) {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++uint64_t OS::CpuFeaturesImpliedByPlatform() {
++  return 0;
++}
++
++#if 0
++double OS::nan_value() {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++CpuImplementer OS::GetCpuImplementer() {
++  UNIMPLEMENTED();
++}
++
++
++bool OS::ArmCpuHasFeature(CpuFeature feature) {
++  UNIMPLEMENTED();
++}
++
++
++bool OS::ArmUsingHardFloat() {
++  UNIMPLEMENTED();
++}
++#endif
++
++bool OS::IsOutsideAllocatedSpace(void* address) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++#if 0
++size_t OS::AllocateAlignment() {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++void* OS::Allocate(const size_t requested,
++                   size_t* allocated,
++                   bool executable) {
++  UNIMPLEMENTED();
++  return NULL;
++}
++
++#if 0
++void OS::Free(void* buf, const size_t length) {
++  // TODO(1240712): potential system call return value which is ignored here.
++  UNIMPLEMENTED();
++}
++
++
++void OS::Guard(void* address, const size_t size) {
++  UNIMPLEMENTED();
++}
++#endif
++
++void OS::Sleep(int milliseconds) {
++  UNIMPLEMENTED();
++}
++
++
++void OS::Abort() {
++  // Minimalistic implementation for bootstrapping.
++  abort();
++}
++
++#if 0
++void OS::DebugBreak() {
++  UNIMPLEMENTED();
++}
++#endif
++
++OS::MemoryMappedFile* OS::MemoryMappedFile::open(const char* name) {
++  UNIMPLEMENTED();
++  return NULL;
++}
++
++#if 0
++OS::MemoryMappedFile* OS::MemoryMappedFile::create(const char* name, int size,
++    void* initial) {
++  UNIMPLEMENTED();
++  return NULL;
++}
++#endif
++
++void OS::LogSharedLibraryAddresses() {
++  UNIMPLEMENTED();
++}
++
++
++void OS::SignalCodeMovingGC() {
++  UNIMPLEMENTED();
++}
++
++#if 0
++int OS::StackWalk(Vector<OS::StackFrame> frames) {
++  UNIMPLEMENTED();
++  return 0;
++}
++#endif
++
++VirtualMemory::VirtualMemory() : address_(NULL), size_(0) { }
++
++
++VirtualMemory::VirtualMemory(size_t size) {
++  address_ = ReserveRegion(size);
++  size_ = size;
++}
++
++
++VirtualMemory::VirtualMemory(size_t size, size_t alignment) {
++  UNIMPLEMENTED();
++}
++
++
++VirtualMemory::~VirtualMemory() {
++  UNIMPLEMENTED();
++}
++
++
++bool VirtualMemory::IsReserved() {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++void VirtualMemory::Reset() {
++  address_ = NULL;
++  size_ = 0;
++}
++
++
++bool VirtualMemory::Commit(void* address, size_t size, bool executable) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++bool VirtualMemory::Uncommit(void* address, size_t size) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++bool VirtualMemory::Guard(void* address) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++void* VirtualMemory::ReserveRegion(size_t size) {
++  UNIMPLEMENTED();
++  return 0;
++}
++
++
++bool VirtualMemory::CommitRegion(void* base, size_t size, bool is_executable) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++bool VirtualMemory::UncommitRegion(void* base, size_t size) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++bool VirtualMemory::ReleaseRegion(void* base, size_t size) {
++  UNIMPLEMENTED();
++  return false;
++}
++
++
++bool VirtualMemory::HasLazyCommits() {
++  // TODO(alph): implement for the platform.
++  return false;
++}
++
++
++class Thread::PlatformData : public Malloced {
++ public:
++  PlatformData() {
++    UNIMPLEMENTED();
++  }
++
++  void* pd_data_;
++};
++
++
++Thread::Thread(const Options& options)
++    : data_(new PlatformData()),
++      stack_size_(options.stack_size()) {
++  set_name(options.name());
++  UNIMPLEMENTED();
++}
++
++
++Thread::~Thread() {
++  delete data_;
++  UNIMPLEMENTED();
++}
++
++
++void Thread::set_name(const char* name) {
++  strncpy(name_, name, sizeof(name_));
++  name_[sizeof(name_) - 1] = '\0';
++}
++
++
++void Thread::Start() {
++  UNIMPLEMENTED();
++}
++
++
++void Thread::Join() {
++  UNIMPLEMENTED();
++}
++
++
++Thread::LocalStorageKey Thread::CreateThreadLocalKey() {
++  UNIMPLEMENTED();
++  return static_cast<LocalStorageKey>(0);
++}
++
++#if 0
++void Thread::DeleteThreadLocalKey(LocalStorageKey key) {
++  UNIMPLEMENTED();
++}
++#endif
++
++void* Thread::GetThreadLocal(LocalStorageKey key) {
++  UNIMPLEMENTED();
++  return NULL;
++}
++
++
++void Thread::SetThreadLocal(LocalStorageKey key, void* value) {
++  UNIMPLEMENTED();
++}
++
++
++void Thread::YieldCPU() {
++  UNIMPLEMENTED();
++}
++
++
++class NullMutex : public Mutex {
++ public:
++  NullMutex() : data_(NULL) {
++    UNIMPLEMENTED();
++  }
++
++  virtual ~NullMutex() {
++    UNIMPLEMENTED();
++  }
++
++  virtual int Lock() {
++    UNIMPLEMENTED();
++    return 0;
++  }
++
++  virtual int Unlock() {
++    UNIMPLEMENTED();
++    return 0;
++  }
++
++  virtual bool TryLock() {
++    UNIMPLEMENTED();
++    return false;
++  }
++
++ private:
++  void* data_;
++};
++
++
++Mutex* OS::CreateMutex() {
++  UNIMPLEMENTED();
++  return new NullMutex();
++}
++
++
++class NullSemaphore : public Semaphore {
++ public:
++  explicit NullSemaphore(int count) : data_(NULL) {
++    UNIMPLEMENTED();
++  }
++
++  virtual ~NullSemaphore() {
++    UNIMPLEMENTED();
++  }
++
++  virtual void Wait() {
++    UNIMPLEMENTED();
++  }
++
++  virtual bool Wait(int timeout) {
++    UNIMPLEMENTED();
++    return false;
++  }
++
++  virtual void Signal() {
++    UNIMPLEMENTED();
++  }
++ private:
++  void* data_;
++};
++
++
++Semaphore* OS::CreateSemaphore(int count) {
++  UNIMPLEMENTED();
++  return new NullSemaphore(count);
++}
++
++
++class Sampler::PlatformData  : public Malloced {
++ public:
++  PlatformData() {
++    UNIMPLEMENTED();
++  }
++};
++
++
++Sampler::Sampler(Isolate *isolate, int interval)
++    : isolate_(isolate),
++      interval_(interval),
++      profiling_(false),
++      active_(false),
++      samples_taken_(0) {
++  UNIMPLEMENTED();
++  // Shared setup follows.
++  data_ = new PlatformData;
++}
++
++
++Sampler::~Sampler() {
++  UNIMPLEMENTED();
++  // Shared tear down follows.
++  delete data_;
++}
++
++
++void Sampler::Start() {
++  UNIMPLEMENTED();
++}
++
++
++void Sampler::Stop() {
++  UNIMPLEMENTED();
++}
++
++
++} }  // namespace v8::internal
+diff --git a/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc b/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
+index ccd2123..c2cb3f7 100644
+--- a/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
++++ b/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
+@@ -192,13 +192,13 @@ void OS::VPrintError(const char* format, va_list args) {
+ }
+ 
+ 
+-int OS::SNPrintF(char* str, size_t size, const char* format, ...) {
++int OS::SNPrintF(Vector<char> str, const char* format, ...) {
+   UNIMPLEMENTED();
+   return 0;
+ }
+ 
+ 
+-int OS::VSNPrintF(char* str, size_t size, const char* format, va_list args) {
++int OS::VSNPrintF(Vector<char> str, const char* format, va_list args) {
+   UNIMPLEMENTED();
+   return 0;
+ }
+diff --git a/qtjsbackend/src/v8/v8.pri b/qtjsbackend/src/v8/v8.pri
+index 3a563ff..6a83034 100644
+--- a/qtjsbackend/src/v8/v8.pri
++++ b/qtjsbackend/src/v8/v8.pri
+@@ -265,7 +265,7 @@ SOURCES += \
+ LIBS += -lexecinfo
+ } else:unix:!qnx {
+ SOURCES += \
+-    $$V8SRC/platform-linux.cc \
++    $$V8SRC/platform-genode.cc \
+     $$V8SRC/platform-posix.cc
+ }
+ 
