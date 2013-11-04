@@ -30,6 +30,11 @@ ifeq ($(findstring network, $(QT)), network)
 LIBS += qt5_network
 endif
 
+# QtQuick
+ifeq ($(findstring quick, $(QT)), quick)
+LIBS += qt5_quick qt5_qtquick2plugin
+endif
+
 # QtScript
 ifeq ($(findstring scriptclassic, $(QT)), scriptclassic)
 LIBS += qt5_scriptclassic
