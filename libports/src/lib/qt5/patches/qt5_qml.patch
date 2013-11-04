@@ -1,0 +1,57 @@
+qt5_qml.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtdeclarative/src/qml/types/qqmldelegatemodel_p.h  |    2 ++
+ qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc |    4 ++--
+ qtjsbackend/src/v8/v8.pri                          |    2 +-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
+index 5702c59..3d616b5 100644
+--- a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
++++ b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
+@@ -52,6 +52,8 @@
+ #include <private/qv8engine_p.h>
+ #include <private/qqmlglobal_p.h>
+ 
++#include <QtQml/QQmlParserStatus>
++
+ Q_DECLARE_METATYPE(QModelIndex)
+ 
+ QT_BEGIN_NAMESPACE
+diff --git a/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc b/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
+index ccd2123..c2cb3f7 100644
+--- a/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
++++ b/qtjsbackend/src/3rdparty/v8/src/platform-nullos.cc
+@@ -192,13 +192,13 @@ void OS::VPrintError(const char* format, va_list args) {
+ }
+ 
+ 
+-int OS::SNPrintF(char* str, size_t size, const char* format, ...) {
++int OS::SNPrintF(Vector<char> str, const char* format, ...) {
+   UNIMPLEMENTED();
+   return 0;
+ }
+ 
+ 
+-int OS::VSNPrintF(char* str, size_t size, const char* format, va_list args) {
++int OS::VSNPrintF(Vector<char> str, const char* format, va_list args) {
+   UNIMPLEMENTED();
+   return 0;
+ }
+diff --git a/qtjsbackend/src/v8/v8.pri b/qtjsbackend/src/v8/v8.pri
+index 3a563ff..cdc13d2 100644
+--- a/qtjsbackend/src/v8/v8.pri
++++ b/qtjsbackend/src/v8/v8.pri
+@@ -265,7 +265,7 @@ SOURCES += \
+ LIBS += -lexecinfo
+ } else:unix:!qnx {
+ SOURCES += \
+-    $$V8SRC/platform-linux.cc \
++    $$V8SRC/platform-nullos.cc \
+     $$V8SRC/platform-posix.cc
+ }
+ 
