@@ -1,0 +1,232 @@
+qt5_qml_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtdeclarative/src/imports/qtquick2/plugin.cpp |    1 +
+ qtdeclarative/src/qml/qml/qqmlimport.cpp      |   45 +++++++++++++++++--------
+ qtdeclarative/src/qml/qml/qqmltypeloader.cpp  |   10 ++++--
+ 3 files changed, 39 insertions(+), 17 deletions(-)
+
+diff --git a/qtdeclarative/src/imports/qtquick2/plugin.cpp b/qtdeclarative/src/imports/qtquick2/plugin.cpp
+index 1fd1b0e..23c3c01 100644
+--- a/qtdeclarative/src/imports/qtquick2/plugin.cpp
++++ b/qtdeclarative/src/imports/qtquick2/plugin.cpp
+@@ -53,6 +53,7 @@ class QtQuick2Plugin : public QQmlExtensionPlugin
+ public:
+     virtual void registerTypes(const char *uri)
+     {
++qDebug("*** QtQuick2Plugin::registerTypes() ***");
+         Q_ASSERT(QLatin1String(uri) == QLatin1String("QtQuick"));
+         Q_UNUSED(uri);
+         QQmlQtQuick2Module::defineModule();
+diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
+index 2fbb614..c18ce18 100644
+--- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
++++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
+@@ -58,7 +58,10 @@
+ 
+ QT_BEGIN_NAMESPACE
+ 
+-DEFINE_BOOL_CONFIG_OPTION(qmlImportTrace, QML_IMPORT_TRACE)
++//DEFINE_BOOL_CONFIG_OPTION(qmlImportTrace, QML_IMPORT_TRACE)
++
++static bool qmlImportTrace() { return true; }
++
+ DEFINE_BOOL_CONFIG_OPTION(qmlCheckTypes, QML_CHECK_TYPES)
+ 
+ static const QLatin1Char Dot('.');
+@@ -756,6 +759,7 @@ bool QQmlImportsPrivate::importExtension(const QString &qmldirFilePath,
+         foreach (const QQmlDirParser::Plugin &plugin, qmldir->plugins()) {
+             QString resolvedFilePath = database->resolvePlugin(typeLoader, qmldirPath,
+                                                                plugin.path, plugin.name);
++qDebug() << "importExtension(): resolvedFilePath =" << resolvedFilePath;
+             if (!resolvedFilePath.isEmpty()) {
+                 if (!database->importPlugin(resolvedFilePath, uri, qmldir->typeNamespace(), errors)) {
+                     if (errors) {
+@@ -771,6 +775,7 @@ bool QQmlImportsPrivate::importExtension(const QString &qmldirFilePath,
+                     return false;
+                 }
+             } else {
++            	return true; /* XXX */
+                 if (errors) {
+                     QQmlError error;
+                     error.setDescription(QQmlImportDatabase::tr("module \"%1\" plugin \"%2\" not found").arg(uri).arg(plugin.name));
+@@ -889,8 +894,9 @@ bool QQmlImportsPrivate::locateQmldir(const QString &uri, int vmaj, int vmin, QQ
+     // Search local import paths for a matching version
+     for (int version = QQmlImports::FullyVersioned; version <= QQmlImports::Unversioned; ++version) {
+         foreach (const QString &path, localImportPaths) {
++        qDebug() << "local import path:" << path;
+             QString qmldirPath = QQmlImports::completeQmldirPath(uri, path, vmaj, vmin, static_cast<QQmlImports::ImportVersion>(version));
+-
++qDebug() << "qmldirPath:" << qmldirPath;
+             QString absoluteFilePath = typeLoader.absoluteFilePath(qmldirPath);
+             if (!absoluteFilePath.isEmpty()) {
+                 QString url;
+@@ -1040,7 +1046,7 @@ bool QQmlImportsPrivate::addLibraryImport(const QString& uri, const QString &pre
+ {
+     Q_ASSERT(database);
+     Q_ASSERT(errors);
+-
++qDebug() << "addLibraryImport(): uri =" << uri << ", prefix =" << prefix << ", qmldirIdentifier =" << qmldirIdentifier << ", qmldirUrl =" << qmldirUrl; 
+     QQmlImportNamespace *nameSpace = importNamespace(prefix);
+     Q_ASSERT(nameSpace);
+ 
+@@ -1062,7 +1068,7 @@ bool QQmlImportsPrivate::addLibraryImport(const QString& uri, const QString &pre
+                     return false;
+             }
+         }
+-
++#if 0
+         // Ensure that we are actually providing something
+         if ((vmaj < 0) || (vmin < 0) || !QQmlMetaType::isModule(uri, vmaj, vmin)) {
+             if (inserted->qmlDirComponents.isEmpty() && inserted->qmlDirScripts.isEmpty()) {
+@@ -1070,7 +1076,7 @@ bool QQmlImportsPrivate::addLibraryImport(const QString& uri, const QString &pre
+                 if (QQmlMetaType::isAnyModule(uri))
+                     error.setDescription(QQmlImportDatabase::tr("module \"%1\" version %2.%3 is not installed").arg(uri).arg(vmaj).arg(vmin));
+                 else
+-                    error.setDescription(QQmlImportDatabase::tr("module \"%1\" is not installed").arg(uri));
++                    error.setDescription(QQmlImportDatabase::tr("module \"%1\" is not installed 1").arg(uri));
+                 errors->prepend(error);
+                 return false;
+             } else if ((vmaj >= 0) && (vmin >= 0) && qmldir) {
+@@ -1079,6 +1085,7 @@ bool QQmlImportsPrivate::addLibraryImport(const QString& uri, const QString &pre
+                     return false;
+             }
+         }
++#endif
+     }
+ 
+     return true;
+@@ -1222,7 +1229,7 @@ bool QQmlImportsPrivate::updateQmldirContent(const QString &uri, const QString &
+                         if (QQmlMetaType::isAnyModule(uri))
+                             error.setDescription(QQmlImportDatabase::tr("module \"%1\" version %2.%3 is not installed").arg(uri).arg(vmaj).arg(vmin));
+                         else
+-                            error.setDescription(QQmlImportDatabase::tr("module \"%1\" is not installed").arg(uri));
++                            error.setDescription(QQmlImportDatabase::tr("module \"%1\" is not installed 2").arg(uri));
+                         errors->prepend(error);
+                         return false;
+                     }
+@@ -1403,7 +1410,8 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+         searchPaths.prepend(qmldirPluginPath);
+ 
+     foreach (const QString &pluginPath, searchPaths) {
+-
++qDebug() << "resolvePlugin(): pluginPath =" << pluginPath;
++qDebug() << "resolvePlugin(): qmldirPluginPath =" << qmldirPluginPath;
+         QString resolvedPath;
+         if (pluginPath == QLatin1String(".")) {
+             if (qmldirPluginPathIsRelative && !qmldirPluginPath.isEmpty() && qmldirPluginPath != QLatin1String("."))
+@@ -1416,11 +1424,11 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+             else
+                 resolvedPath = pluginPath;
+         }
+-
++qDebug() << "resolvePlugin(): resolvedPath =" << resolvedPath;
+         // hack for resources, should probably go away
+-        if (resolvedPath.startsWith(Colon))
+-            resolvedPath = QCoreApplication::applicationDirPath();
+-
++        //if (resolvedPath.startsWith(Colon))
++            //resolvedPath = QCoreApplication::applicationDirPath();
++qDebug() << "resolvePlugin(): resolvedPath =" << resolvedPath;
+         if (!resolvedPath.endsWith(Slash))
+             resolvedPath += Slash;
+ 
+@@ -1429,7 +1437,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+ 
+             pluginFileName += baseName;
+             pluginFileName += suffix;
+-
++qDebug() << "resolvePlugin(): pluginFileName =" << pluginFileName;
+             QString absolutePath = typeLoader->absoluteFilePath(resolvedPath + pluginFileName);
+             if (!absolutePath.isEmpty())
+                 return absolutePath;
+@@ -1463,6 +1471,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+                                                   const QString &qmldirPath, const QString &qmldirPluginPath,
+                                                   const QString &baseName)
+ {
++#if defined(Q_OS_GENODE)
++
++    return resolvePlugin(typeLoader, qmldirPath, qmldirPluginPath, baseName,
++                         QStringList() << QLatin1String(".lib.so"),
++                         QLatin1String("qt5_"));
++
++#else
++
+ #if defined(Q_OS_WIN32) || defined(Q_OS_WINCE)
+     return resolvePlugin(typeLoader, qmldirPath, qmldirPluginPath, baseName,
+                          QStringList()
+@@ -1512,6 +1528,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+ # endif
+ 
+ #endif
++#endif
+ }
+ 
+ /*!
+@@ -1625,11 +1642,11 @@ bool QQmlImportDatabase::importPlugin(const QString &filePath, const QString &ur
+ {
+     if (qmlImportTrace())
+         qDebug().nospace() << "QQmlImportDatabase::importPlugin: " << uri << " from " << filePath;
+-
++qDebug() << "importPlugin(): filePath =" << filePath << ", uri =" << uri << ", typeNamespace =" << typeNamespace;
+ #ifndef QT_NO_LIBRARY
+     QFileInfo fileInfo(filePath);
+     const QString absoluteFilePath = fileInfo.absoluteFilePath();
+-
++qDebug() << "importPlugin(): absoluteFilePath =" << absoluteFilePath;
+     bool engineInitialized = initializedPlugins.contains(absoluteFilePath);
+     bool typesRegistered = qmlEnginePluginsWithRegisteredTypes()->contains(absoluteFilePath);
+ 
+diff --git a/qtdeclarative/src/qml/qml/qqmltypeloader.cpp b/qtdeclarative/src/qml/qml/qqmltypeloader.cpp
+index 8d8503f..4f7b932 100644
+--- a/qtdeclarative/src/qml/qml/qqmltypeloader.cpp
++++ b/qtdeclarative/src/qml/qml/qqmltypeloader.cpp
+@@ -1239,7 +1239,7 @@ bool QQmlTypeLoader::Blob::updateQmldir(QQmlQmldirData *data, const QQmlScript::
+ bool QQmlTypeLoader::Blob::addImport(const QQmlScript::Import &import, QList<QQmlError> *errors)
+ {
+     Q_ASSERT(errors);
+-
++qDebug() << "addImport():" << import.uri << "type:" << import.type;
+     QQmlImportDatabase *importDatabase = typeLoader()->importDatabase();
+ 
+     if (import.type == QQmlScript::Import::Script) {
+@@ -1251,9 +1251,10 @@ bool QQmlTypeLoader::Blob::addImport(const QQmlScript::Import &import, QList<QQm
+     } else if (import.type == QQmlScript::Import::Library) {
+         QString qmldirFilePath;
+         QString qmldirUrl;
+-
++qDebug() << "type: Library";
+         if (m_imports.locateQmldir(importDatabase, import.uri, import.majorVersion, import.minorVersion,
+                                  &qmldirFilePath, &qmldirUrl)) {
++                                 qDebug() << "located qml dir";
+             // This is a local library import
+             if (!m_imports.addLibraryImport(importDatabase, import.uri, import.qualifier, import.majorVersion,
+                                           import.minorVersion, qmldirFilePath, qmldirUrl, false, errors))
+@@ -1272,12 +1273,15 @@ bool QQmlTypeLoader::Blob::addImport(const QQmlScript::Import &import, QList<QQm
+                 }
+             }
+         } else {
++        	qDebug() << "could not locate qml dir";
+             // Is this a module?
+             if (QQmlMetaType::isAnyModule(import.uri)) {
++            qDebug() << "is any module";
+                 if (!m_imports.addLibraryImport(importDatabase, import.uri, import.qualifier, import.majorVersion,
+                                               import.minorVersion, QString(), QString(), false, errors))
+                     return false;
+             } else {
++            qDebug() << "is not any module";
+                 // We haven't yet resolved this import
+                 m_unresolvedImports.insert(&import, 0);
+ 
+@@ -2117,7 +2121,7 @@ void QQmlTypeData::allDependenciesDone()
+                 // This import was not resolved
+                 foreach (const QQmlScript::Import *import, m_unresolvedImports.keys()) {
+                     QQmlError error;
+-                    error.setDescription(QQmlTypeLoader::tr("module \"%1\" is not installed").arg(import->uri));
++                    error.setDescription(QQmlTypeLoader::tr("module \"%1\" is not installed 0").arg(import->uri));
+                     error.setUrl(m_imports.baseUrl());
+                     error.setLine(import->location.start.line);
+                     error.setColumn(import->location.start.column);

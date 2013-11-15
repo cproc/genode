@@ -518,6 +518,7 @@ extern "C" ::off_t lseek(int libc_fd, ::off_t offset, int whence) {
 
 extern "C" int lstat(const char *path, struct stat *buf)
 {
+PDBG("path = %s", path);
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks_except_last_element(path, resolved_path);
@@ -590,11 +591,11 @@ extern "C" int munmap(void *start, ::size_t length)
 	return ret;
 }
 
-
+extern "C" void wait_for_continue();
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
-	PDBGV("pathname = %s", pathname);
-
+	PDBG("pathname = %s", pathname);
+//wait_for_continue();
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
@@ -801,7 +802,7 @@ extern "C" int _socket(int domain, int type, int protocol)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
-	PDBGV("path = %s", path);
+	PDBG("path = %s", path);
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
