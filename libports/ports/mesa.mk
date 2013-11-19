@@ -12,7 +12,7 @@ MESA_URL     = ftp://ftp.freedesktop.org/pub/mesa/older-versions/7.x/7.8.1/$(MES
 #
 PORTS += mesa-$(MESA_VERSION)
 
-MESA_INCLUDE_SYMLINKS = $(addprefix include/,GL KHR EGL/egl.h EGL/eglext.h)
+MESA_INCLUDE_SYMLINKS = $(addprefix include/,GL GLES2 KHR EGL/egl.h EGL/eglext.h)
 
 prepare-mesa: $(CONTRIB_DIR)/$(MESA_DIR) tool/mesa/glsl $(MESA_INCLUDE_SYMLINKS)
 

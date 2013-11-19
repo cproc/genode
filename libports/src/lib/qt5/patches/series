@@ -1,3 +1,4 @@
+# This series applies on GIT commit dec2f95967bb265a59be67aa7984966980a0b6ac
 qt5_configuration.patch
 qt5_generated_headers.patch
 qt5_qtbase_genode.patch
@@ -11,4 +12,5 @@ qt5_qtscript.patch
 qt5_qtnetwork.patch
 qt5_qtwebkit.patch
 qt5_textedit_example.patch
+qt5_qml.patch
 qt5_tools.patch

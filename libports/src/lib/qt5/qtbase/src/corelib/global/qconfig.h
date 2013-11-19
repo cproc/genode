@@ -37,12 +37,6 @@
 # define QT_NO_ACCESSIBILITY
 #endif
 
-#if defined(QT_NO_CLOCK_MONOTONIC) && defined(QT_CLOCK_MONOTONIC)
-# undef QT_NO_CLOCK_MONOTONIC
-#elif !defined(QT_NO_CLOCK_MONOTONIC) && !defined(QT_CLOCK_MONOTONIC)
-# define QT_NO_CLOCK_MONOTONIC
-#endif
-
 #if defined(QT_NO_CUPS) && defined(QT_CUPS)
 # undef QT_NO_CUPS
 #elif !defined(QT_NO_CUPS) && !defined(QT_CUPS)
@@ -53,18 +47,6 @@
 # undef QT_NO_DBUS
 #elif !defined(QT_NO_DBUS) && !defined(QT_DBUS)
 # define QT_NO_DBUS
-#endif
-
-#if defined(QT_NO_EGL) && defined(QT_EGL)
-# undef QT_NO_EGL
-#elif !defined(QT_NO_EGL) && !defined(QT_EGL)
-# define QT_NO_EGL
-#endif
-
-#if defined(QT_NO_EGLFS) && defined(QT_EGLFS)
-# undef QT_NO_EGLFS
-#elif !defined(QT_NO_EGLFS) && !defined(QT_EGLFS)
-# define QT_NO_EGLFS
 #endif
 
 #if defined(QT_NO_EVENTFD) && defined(QT_EVENTFD)
@@ -103,12 +85,6 @@
 # define QT_NO_NIS
 #endif
 
-#if defined(QT_NO_OPENGL) && defined(QT_OPENGL)
-# undef QT_NO_OPENGL
-#elif !defined(QT_NO_OPENGL) && !defined(QT_OPENGL)
-# define QT_NO_OPENGL
-#endif
-
 #if defined(QT_NO_OPENVG) && defined(QT_OPENVG)
 # undef QT_NO_OPENVG
 #elif !defined(QT_NO_OPENVG) && !defined(QT_OPENVG)
@@ -131,6 +107,18 @@
 # undef QT_NO_ZLIB
 #elif !defined(QT_NO_ZLIB) && !defined(QT_ZLIB)
 # define QT_NO_ZLIB
+#endif
+
+#if defined(QT_OPENGL_ES) && defined(QT_NO_OPENGL_ES)
+# undef QT_OPENGL_ES
+#elif !defined(QT_OPENGL_ES) && !defined(QT_NO_OPENGL_ES)
+# define QT_OPENGL_ES
+#endif
+
+#if defined(QT_OPENGL_ES_2) && defined(QT_NO_OPENGL_ES_2)
+# undef QT_OPENGL_ES_2
+#elif !defined(QT_OPENGL_ES_2) && !defined(QT_NO_OPENGL_ES_2)
+# define QT_OPENGL_ES_2
 #endif
 
 #if defined(QT_RUNTIME_XCURSOR) && defined(QT_NO_RUNTIME_XCURSOR)

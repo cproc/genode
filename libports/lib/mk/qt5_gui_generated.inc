@@ -63,6 +63,8 @@ QT_SOURCES += \
   qplatformservices.cpp \
   qplatformscreenpageflipper.cpp \
   qplatformsystemtrayicon_qpa.cpp \
+  qplatformopenglcontext.cpp \
+  qopenglcontext.cpp \
   qbitmap.cpp \
   qimage.cpp \
   qimageiohandler.cpp \
@@ -170,6 +172,26 @@ QT_SOURCES += \
   qvector2d.cpp \
   qvector3d.cpp \
   qvector4d.cpp \
+  qopengl.cpp \
+  qopenglfunctions.cpp \
+  qopenglframebufferobject.cpp \
+  qopenglpaintdevice.cpp \
+  qopenglbuffer.cpp \
+  qopenglshaderprogram.cpp \
+  qopenglgradientcache.cpp \
+  qopengltexturecache.cpp \
+  qopenglengineshadermanager.cpp \
+  qopengl2pexvertexarray.cpp \
+  qopenglpaintengine.cpp \
+  qopenglcustomshaderstage.cpp \
+  qtriangulatingstroker.cpp \
+  qopengltextureglyphcache.cpp \
+  qtriangulator.cpp \
+  qopenglversionfunctions.cpp \
+  qopenglversionfunctionsfactory.cpp \
+  qopenglvertexarrayobject.cpp \
+  qopengldebug.cpp \
+  qopenglfunctions_es2.cpp \
   qguivariantanimation.cpp \
   qstandarditemmodel.cpp \
   moc_qgenericplugin.cpp \
@@ -192,6 +214,7 @@ QT_SOURCES += \
   moc_qplatformsharedgraphicscache.cpp \
   moc_qplatformdialoghelper.cpp \
   moc_qplatformscreenpageflipper.cpp \
+  moc_qopenglcontext.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
   moc_qiconengineplugin.cpp \
@@ -207,7 +230,9 @@ QT_SOURCES += \
   moc_qbrush.cpp \
   moc_qpainter.cpp \
   moc_qpdfwriter.cpp \
-  moc_qvalidator.cpp
+  moc_qvalidator.cpp \
+  moc_qopenglshaderprogram.cpp \
+  moc_qopenglengineshadermanager_p.cpp
 
 QT_VPATH += \
   qtbase/src/gui/animation \
@@ -215,6 +240,7 @@ QT_VPATH += \
   qtbase/src/gui/itemmodels \
   qtbase/src/gui/kernel \
   qtbase/src/gui/math3d \
+  qtbase/src/gui/opengl \
   qtbase/src/gui/painting \
   qtbase/src/gui/text \
   qtbase/src/gui/util \
@@ -250,6 +276,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qplatformdialoghelper.cpp \
   moc_qplatformscreenpageflipper.cpp \
   moc_qplatformsystemtrayicon.cpp \
+  moc_qopenglcontext.cpp \
   moc_qimageiohandler.cpp \
   moc_qmovie.cpp \
   moc_qpictureformatplugin.cpp \
@@ -270,6 +297,10 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qpainter.cpp \
   moc_qpdfwriter.cpp \
   moc_qvalidator.cpp \
+  moc_qopenglshaderprogram.cpp \
+  moc_qopenglengineshadermanager_p.cpp \
+  moc_qopenglvertexarrayobject.cpp \
+  moc_qopengldebug.cpp \
   moc_qstandarditemmodel.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
