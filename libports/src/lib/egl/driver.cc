@@ -182,7 +182,11 @@ class Winsys : public pipe_winsys
 	                    void *ptr,
 	                    unsigned bytes)
 	{
-		PDBG("not implemented"); return 0;
+		struct pipe_buffer *buf = _buffer_create(ws, 0, 0, bytes);
+		void *data = _buffer_map(ws, buf, 0);
+		memcpy(data, ptr, bytes);
+		_buffer_unmap(ws, buf);
+		return buf;
 	}
 
 	/*
