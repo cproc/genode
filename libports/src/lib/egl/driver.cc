@@ -182,7 +182,11 @@ class Winsys : public pipe_winsys
 	                    void *ptr,
 	                    unsigned bytes)
 	{
-		PDBG("not implemented"); return 0;
+		struct pipe_buffer *buf = _buffer_create(ws, 0, 0, bytes);
+		void *data = _buffer_map(ws, buf, 0);
+		memcpy(data, ptr, bytes);
+		_buffer_unmap(ws, buf);
+		return buf;
 	}
 
 	/*
@@ -294,7 +298,7 @@ class Surface : public native_surface
 {
 	public:
 
-		enum Surface_type { TYPE_SCANOUT };
+		enum Surface_type { TYPE_SCANOUT, TYPE_WINDOW };
 
 	private:
 
@@ -303,6 +307,7 @@ class Surface : public native_surface
 		Surface_type         _type;
 		const native_config *_config;
 		int                  _width, _height;
+		unsigned char       *_addr; /* only used for TYPE_WINDOW */
 		struct pipe_texture *_textures[NUM_NATIVE_ATTACHMENTS];
 		unsigned int         _sequence_number;
 
@@ -390,10 +395,11 @@ class Surface : public native_surface
 	public:
 
 		Surface(native_display *display, Surface_type t, const native_config *config,
-		        int width, int height)
+		        int width, int height, unsigned char *addr = 0)
 		:
 			_color_format(config->color_format), _display(display), _type(t),
-			_config(config), _width(width), _height(height), _sequence_number(0)
+			_config(config), _width(width), _height(height), _addr(addr),
+			_sequence_number(0)
 		{
 			for (int i = 0; i < NUM_NATIVE_ATTACHMENTS; i++)
 				_textures[i] = 0;
@@ -528,7 +534,7 @@ class Display : public native_display
 		configs[0] = &display->_native_config;
 
 		struct native_config *config = &display->_native_config;
-		config->mode.drawableType    = GLX_PBUFFER_BIT;
+		config->mode.drawableType    = GLX_PBUFFER_BIT | GLX_WINDOW_BIT;
 
 		int r = 5, g = 6, b = 5, a = 0;
 		config->mode.swapMethod       = GLX_SWAP_EXCHANGE_OML;
@@ -591,7 +597,11 @@ class Display : public native_display
 	                       EGLNativeWindowType win,
 	                       const struct native_config *nconf)
 	{
-		PDBG("not implemented"); return 0;
+		return new (Genode::env()->heap())
+			Surface(ndpy,
+			        Surface::TYPE_WINDOW, nconf,
+			        win->width, win->height, win->addr);
+
 	}
 
 	static struct native_surface *
@@ -707,15 +717,21 @@ boolean Surface::_swap_buffers(struct native_surface *nsurf)
 	}
 #endif
 
-	blit(data, transfer->stride, genode_framebuffer()->local_addr(),
-	     transfer->stride, transfer->stride, transfer->height);
+	if (this_surface->_type == TYPE_SCANOUT)
+		blit(data, transfer->stride, genode_framebuffer()->local_addr(),
+		     transfer->stride, transfer->stride, transfer->height);
+	else if (this_surface->_type == TYPE_WINDOW)
+		blit(data, transfer->stride, this_surface->_addr,
+		     transfer->stride, transfer->stride, transfer->height);
 
 	screen->transfer_unmap(screen, transfer);
 	screen->tex_transfer_destroy(transfer);
 
 	this_surface->_sequence_number++;
 
-	genode_framebuffer()->flush();
+	if (this_surface->_type == TYPE_SCANOUT)
+		genode_framebuffer()->flush();
+
 	return TRUE;
 }
 
