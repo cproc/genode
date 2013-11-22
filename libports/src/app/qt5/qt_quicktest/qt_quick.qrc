@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource prefix="/qt/qml/QtQuick.2">
+<file>qmldir</file>
+<file>qtquick2plugin.lib.so</file>
+</qresource>
+</RCC>
