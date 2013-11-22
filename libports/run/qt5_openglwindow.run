@@ -9,21 +9,10 @@ build {
 	drivers/pci
 	drivers/framebuffer
 	drivers/timer
-	drivers/audio_out
 	server/nitpicker
 	server/liquid_framebuffer
-	app/avplay
-	app/qt5/qt_avplay
-}
-
-#
-# Download media file
-#
-
-set media_url "ftp://ftp.untergrund.net/users/ae/dhstv/escape-chotro.mp4"
-if {![file exists bin/mediafile]} {
-	puts "downloading media file from $media_url"
-	catch { exec wget -O bin/mediafile $media_url }
+	server/nit_fb
+	app/qt5/examples/openglwindow
 }
 
 create_boot_directory
@@ -46,6 +35,7 @@ set config {
 		<service name="CPU"/>
 		<service name="LOG"/>
 		<service name="SIGNAL"/>
+		<service name="PCI"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
@@ -83,19 +73,25 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
-	<start name="audio_out_drv">
-		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Audio_out"/></provides>
-	</start>
 	<start name="nitpicker">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Nitpicker"/></provides>
+		<route>
+			<service name="Framebuffer"> <child name="fb_sdl"/> </service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
 	</start>
-	<start name="qt_avplay">
-		<resource name="RAM" quantum="2G"/>
-		<config>
-			<mediafile name="mediafile"/>
-		</config>
+	<start name="nit_fb">
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Framebuffer"/> </provides>
+		<config width="1" height="1"/>
+	</start>
+	<start name="openglwindow">
+		<resource name="RAM" quantum="80M"/>
+		<route>
+			<service name="Framebuffer"> <child name="liquid_fb"/> </service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
 	</start>
 </config>
 }
@@ -111,10 +107,10 @@ set boot_modules {
 	core
 	init
 	timer
-	audio_out_drv
 	nitpicker
 	liquid_fb
-	qt_avplay
+	nit_fb
+	openglwindow
 	freetype.lib.so
 	gallium.lib.so
 	icu.lib.so
@@ -129,21 +125,9 @@ set boot_modules {
 	qt5_core.lib.so
 	qt5_dejavusans.lib.so
 	qt5_gui.lib.so
-	qt5_qnitpickerviewwidget.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
 	zlib.lib.so
-	avcodec.lib.so
-	avformat.lib.so
-	avutil.lib.so
-	avfilter.lib.so
-	swscale.lib.so
-	sdl.lib.so
-	pthread.lib.so
-	libc_log.lib.so
-	libc_rom.lib.so
-	avplay
-	mediafile
 	stdcxx.lib.so
 }
 
@@ -155,7 +139,6 @@ lappend_if [have_spec         ps2] boot_modules ps2_drv
 
 build_boot_image $boot_modules
 
-append qemu_args " -m 768 -soundhw all"
+append qemu_args " -m 128"
 
 run_genode_until forever
-
