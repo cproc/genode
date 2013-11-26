@@ -79,5 +79,5 @@ QT_VPATH += qtjsbackend/generated
 
 include $(REP_DIR)/lib/mk/qt5.inc
 
-LIBS += qt5_network
+LIBS += qt5_network backtrace
 

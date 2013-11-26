@@ -1,0 +1,112 @@
+qt5_qml_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../tutorials/samegame/samegame3/samegame.qml      |    2 +-
+ qtdeclarative/src/qml/qml/v8/qv8engine_p.h         |    6 ++++++
+ qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp |    4 ++++
+ qtjsbackend/src/3rdparty/v8/include/v8.h           |   16 +++++++++++++++-
+ 4 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/qtdeclarative/examples/quick/tutorials/samegame/samegame3/samegame.qml b/qtdeclarative/examples/quick/tutorials/samegame/samegame3/samegame.qml
+index dc840f3..6af5a1b 100644
+--- a/qtdeclarative/examples/quick/tutorials/samegame/samegame3/samegame.qml
++++ b/qtdeclarative/examples/quick/tutorials/samegame/samegame3/samegame.qml
+@@ -45,7 +45,7 @@ import "samegame.js" as SameGame
+ Rectangle {
+     id: screen
+ 
+-    width: 490; height: 720
++    width: 490; height: 600
+ 
+     SystemPalette { id: activePalette }
+ 
+diff --git a/qtdeclarative/src/qml/qml/v8/qv8engine_p.h b/qtdeclarative/src/qml/qml/v8/qv8engine_p.h
+index 5ae0963..5b2e3e7 100644
+--- a/qtdeclarative/src/qml/qml/v8/qv8engine_p.h
++++ b/qtdeclarative/src/qml/qml/v8/qv8engine_p.h
+@@ -83,6 +83,9 @@
+ #include "qv8sequencewrapper_p.h"
+ #include "qv8jsonwrapper_p.h"
+ 
++#include <base/printf.h>
++extern void print_backtrace();
++
+ namespace v8 {
+ 
+ // Needed for V8ObjectSet
+@@ -155,6 +158,9 @@ inline T *v8_resource_cast(v8::Handle<v8::Object> object) {
+ 
+ template<class T>
+ inline T *v8_resource_check(v8::Handle<v8::Object> object) {
++PDBG("object = %p", object);
++	if (object.IsEmpty())
++		return 0;
+     T *resource = static_cast<T *>(object->GetExternalResource());
+     Q_ASSERT(resource && resource->resourceType() == (quint32)T::V8ResourceType);
+     return resource;
+diff --git a/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp b/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
+index 53f70ad..343d480 100644
+--- a/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
++++ b/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
+@@ -273,6 +273,10 @@ static v8::Handle<v8::Value> GenericValueGetter(v8::Local<v8::String>, const v8:
+     v8::Handle<v8::Object> This = info.This();
+     QV8QObjectResource *resource = v8_resource_check<QV8QObjectResource>(This);
+ 
++	/* temporary workaround */
++	if (!resource)
++		return v8::Undefined();
++
+     QObject *object = resource->object;
+     if (QQmlData::wasDeleted(object)) return v8::Undefined();
+ 
+diff --git a/qtjsbackend/src/3rdparty/v8/include/v8.h b/qtjsbackend/src/3rdparty/v8/include/v8.h
+index 27c5855..4254ac8 100644
+--- a/qtjsbackend/src/3rdparty/v8/include/v8.h
++++ b/qtjsbackend/src/3rdparty/v8/include/v8.h
+@@ -40,6 +40,9 @@
+ 
+ #include "v8stdint.h"
+ 
++#include <base/printf.h>
++extern void print_backtrace();
++
+ #ifdef _WIN32
+ 
+ // Setup for Windows DLL export/import. When building the V8 DLL the
+@@ -2117,7 +2120,12 @@ class Arguments {
+ class V8EXPORT AccessorInfo {
+  public:
+   inline AccessorInfo(internal::Object** args)
+-      : args_(args) { }
++      : args_(args), valid_(0x12345678) {
++       PDBG("this = %p, args = %p", this, args);
++ if (args == (void*)1)
++ 	print_backtrace();
++      }
++  inline ~AccessorInfo() { valid_ = 0; }
+   inline Isolate* GetIsolate() const;
+   inline Local<Value> Data() const;
+   inline Local<Object> This() const;
+@@ -2125,6 +2133,7 @@ class V8EXPORT AccessorInfo {
+ 
+  private:
+   internal::Object** args_;
++  unsigned long valid_;
+ };
+ 
+ 
+@@ -4786,6 +4795,11 @@ Local<Value> AccessorInfo::Data() const {
+ 
+ 
+ Local<Object> AccessorInfo::This() const {
++  PDBG("this = %p, valid_ = %lx, args_ = %p", this, valid_, args_);
++  if (valid_ != 0x12345678) {
++  	print_backtrace();
++    return Local<Object>(reinterpret_cast<Object*>(0));
++  }
+   return Local<Object>(reinterpret_cast<Object*>(&args_[0]));
+ }
+ 
