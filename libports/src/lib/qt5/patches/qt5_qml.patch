@@ -5,10 +5,11 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 ---
  qtdeclarative/src/qml/qml/qqmlimport.cpp           |    9 
+ qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp |    4 
  qtdeclarative/src/qml/types/qqmldelegatemodel_p.h  |    2 
  qtjsbackend/src/3rdparty/v8/src/platform-genode.cc |  701 ++++++++++++++++++++
  qtjsbackend/src/v8/v8.pri                          |    2 
- 4 files changed, 713 insertions(+), 1 deletion(-)
+ 5 files changed, 716 insertions(+), 2 deletions(-)
  create mode 100644 qtjsbackend/src/3rdparty/v8/src/platform-genode.cc
 
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
@@ -38,6 +39,28 @@ index 2fbb614..5816e9a 100644
  }
  
  /*!
+diff --git a/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp b/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
+index 53f70ad..0b31aa6 100644
+--- a/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
++++ b/qtdeclarative/src/qml/qml/v8/qv8qobjectwrapper.cpp
+@@ -973,6 +973,8 @@ v8::Local<v8::Object> QQmlPropertyCache::newQObject(QObject *object, QV8Engine *
+         if (checkForDuplicates)
+             uniqueHash.reserve(stringCache.count());
+ 
++/* disabling this code seems to avoid crashes on 32-bit Linux and NOVA */
++#if 0
+         // XXX TODO: Enables fast property accessors.  These more than double the property access 
+         // performance, but the  cost of setting up this structure hasn't been measured so 
+         // its not guaranteed that this is a win overall.  We need to try and measure the cost.
+@@ -1032,7 +1034,7 @@ v8::Local<v8::Object> QQmlPropertyCache::newQObject(QObject *object, QV8Engine *
+                                                     v8::External::New(property));
+             }
+         }
+-
++#endif
+         if (ft.IsEmpty()) {
+             constructor = qPersistentNew<v8::Function>(engine->qobjectWrapper()->m_constructor);
+         } else {
 diff --git a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
 index 5702c59..3d616b5 100644
 --- a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
