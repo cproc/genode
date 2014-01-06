@@ -16,10 +16,7 @@
 #define _QNITPICKERPLATFORMWINDOW_H_
 
 /* Genode includes */
-#include <input/event.h>
 #include <input/keycodes.h>
-#include <nitpicker_session/connection.h>
-#include <nitpicker_view/client.h>
 
 /* EGL includes */
 #include <EGL/egl.h>
@@ -35,9 +32,11 @@
 /* Qoost includes */
 #include <qoost/qmember.h>
 
+#include "window_slave_policy.h"
+
 QT_BEGIN_NAMESPACE
 
-static const bool qnpw_verbose = true;
+static const bool qnpw_verbose = false;
 
 class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 {
@@ -45,32 +44,21 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 
 	private:
 
-		Nitpicker::Connection        _nitpicker_session;
-		Framebuffer::Session_client  _framebuffer_session;
-		unsigned char               *_framebuffer;
-		Nitpicker::View_capability   _view_cap;
-		Input::Session_client        _input_session;
-		Input::Event                *_ev_buf;
-		QMember<QTimer>          	 _timer;
-		Qt::MouseButtons         	 _mouse_button_state;
-		QEvdevKeyboardHandler    	 _keyboard_handler;
-		QByteArray               	 _title;
-		bool                     	 _resize_handle;
-		bool                     	 _decoration;
-		EGLSurface               	 _egl_surface;
+		Window_slave_policy      _window_slave_policy;
+		Genode::Slave            _window_slave;
+		QMember<QTimer>          _timer;
+		Qt::MouseButtons         _mouse_button_state;
+		QEvdevKeyboardHandler    _keyboard_handler;
+		QByteArray               _title;
+		bool                     _resize_handle;
+		bool                     _decoration;
+		EGLSurface               _egl_surface;
 
 		void _process_mouse_event(Input::Event *ev)
 		{
-#if 0
-			/* liquid_fb-specific calculation */
 			QPoint local_position(ev->ax(), ev->ay());
 			QPoint global_position (geometry().x() + local_position.x(),
 			                        geometry().y() + local_position.y());
-#endif
-
-			QPoint global_position(ev->ax(), ev->ay());
-			QPoint local_position(global_position.x() - geometry().x(),
-			                      global_position.y() - geometry().y());
 
 			//qDebug() << "local_position =" << local_position;
 			//qDebug() << "global_position =" << global_position;
@@ -162,22 +150,15 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_entrypoint &ep,
 		                         int screen_width, int screen_height)
 		: QPlatformWindow(window),
-		  _framebuffer_session(_nitpicker_session.framebuffer_session()),
-		  _framebuffer(0),
-		  _view_cap(_nitpicker_session.create_view()),
-		  _input_session(_nitpicker_session.input_session()),
+		  _window_slave_policy(ep, screen_width, screen_height),
+		  _window_slave(ep, _window_slave_policy, 9*1024*1024),
 		  _timer(this),
 		  _keyboard_handler("", -1, false, false, ""),
 		  _resize_handle(!window->flags().testFlag(Qt::Popup)),
 		  _decoration(!window->flags().testFlag(Qt::Popup)),
 		  _egl_surface(EGL_NO_SURFACE)
 		{
-			QRect g(geometry());
-			Framebuffer::Mode mode(g.width(), g.height(), Framebuffer::Mode::RGB565);
-			_nitpicker_session.buffer(mode, false);
-
-			_ev_buf = static_cast<Input::Event *>
-			          (Genode::env()->rm_session()->attach(_input_session.dataspace()));
+			_window_slave_policy.wait_for_service_announcements();
 
 			connect(_timer, SIGNAL(timeout()), this, SLOT(handle_events()));
 			_timer->start(10);
@@ -219,17 +200,20 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	/* limit window size to screen size */
 	    	QRect adjusted_rect(rect.intersected(screen()->geometry()));
 
-			Framebuffer::Mode mode(rect.width(), rect.height(), Framebuffer::Mode::RGB565);
-			_nitpicker_session.buffer(mode, false);
+	    	/* make invisible window invisible by moving it out of the screen */
+	    	if (!window()->isVisible())
+	    		adjusted_rect.moveRight(screen()->geometry().width());
 
-			if (window()->isVisible())
-				Nitpicker::View_client(_view_cap).viewport(rect.x(),
-				                                           rect.y(),
-				                                           rect.width(),
-				                                           rect.height(),
-				                                           0, 0, true);
-
-	    	QPlatformWindow::setGeometry(rect);
+	    	_window_slave_policy.configure(adjusted_rect.x(),
+	    	                               adjusted_rect.y(),
+	    	                               adjusted_rect.width(),
+	    	                               adjusted_rect.height(),
+	    	                               _title.constData(),
+	    	                               _resize_handle, _decoration);
+	    	int final_width, final_height;
+	    	_window_slave_policy.size(final_width, final_height);
+	    	QRect final_geometry(rect.x(), rect.y(), final_width, final_height);
+	    	QPlatformWindow::setGeometry(final_geometry);
 
 	    	emit framebuffer_changed();
 
@@ -256,18 +240,17 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    	if (qnpw_verbose)
 	    		qDebug() << "QNitpickerPlatformWindow::setVisible(" << visible << ")";
 
-			if (visible) {
-		    	QRect g = geometry();
-				Nitpicker::View_client(_view_cap).viewport(g.x(), g.y(),
-				                                           g.width(),
-				                                           g.height(),
-				                                           0, 0, true);
-				Nitpicker::View_client(_view_cap).stack(Nitpicker::View_capability(),
-				                                        true, true);	
-			} else
-				Nitpicker::View_client(_view_cap).viewport(0, 0, 0, 0, 0, 0,
-				                                           false);
-			
+	    	QRect g = geometry();
+	    	int x = g.x();
+	    	if (!visible)
+	    		x += 100000;
+			_window_slave_policy.configure(x, g.y(),
+										   g.width(), g.height(),
+										   _title.constData(),
+										   _resize_handle, _decoration);
+
+	    	emit framebuffer_changed();
+
 	    	QPlatformWindow::setVisible(visible);
 
 			if (qnpw_verbose)
@@ -278,7 +261,7 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    {
 	    	if (qnpw_verbose)
 	    		qDebug() << "QNitpickerPlatformWindow::setWindowFlags(" << flags << ")";
-#if 0
+
 	    	_resize_handle = true;
 	    	_decoration = true;
 
@@ -286,7 +269,15 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    		_resize_handle = false;
 	    		_decoration = false;
 	    	}
-#endif
+
+	    	QRect g = geometry();
+	    	int x = g.x();
+	    	if (!window()->isVisible())
+	    		x += 100000;
+    		_window_slave_policy.configure(x, g.y(), g.width(), g.height(),
+    		                               _title.constData(), _resize_handle,
+    		                               _decoration);
+
 	    	QPlatformWindow::setWindowFlags(flags);
 
 	    	if (qnpw_verbose)
@@ -320,10 +311,16 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 	    		qDebug() << "QNitpickerPlatformWindow::setWindowTitle(" << title << ")";
 
 	    	QPlatformWindow::setWindowTitle(title);
-
-	    	_title = title.toLocal8Bit();
-	    	
-			Nitpicker::View_client(_view_cap).title(_title.constData());
+	    	_title = title.toUtf8();
+	    	QRect g = geometry();
+	    	int x = g.x();
+	    	if (!window()->isVisible())
+	    		x += 100000;
+	    	_window_slave_policy.configure(x, g.y(),
+	    	                               g.width(), g.height(),
+	    	                               _title.constData(),
+	    	                               _resize_handle, _decoration);
+	    	emit framebuffer_changed();
 
 	    	if (qnpw_verbose)
 	    		qDebug() << "QNitpickerPlatformWindow::setWindowTitle() finished";
@@ -487,22 +484,12 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 
 	    unsigned char *framebuffer()
 	    {
-	    	if (qnpw_verbose)
-	    		qDebug() << "QNitpickerPlatformWindow::framebuffer()";
-
-	    	if (_framebuffer)
-	    		Genode::env()->rm_session()->detach(_framebuffer);
-
-			_framebuffer = Genode::env()->rm_session()->attach(_framebuffer_session.dataspace());
-	    	return _framebuffer;
+	    	return _window_slave_policy.framebuffer();
 	    }
 
 		void refresh(int x, int y, int w, int h)
 		{
-	    	if (qnpw_verbose)
-	    		qDebug() << "QNitpickerPlatformWindow::refresh()";
-
-			_framebuffer_session.refresh(x, y, w, h);
+			_window_slave_policy.refresh(x, y, w, h);
 		}
 
 		EGLSurface egl_surface() const
@@ -523,7 +510,6 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 
 		void handle_events()
 		{
-#if 0
 			/* handle framebuffer mode change events */
 			if (_window_slave_policy.mode_changed()) {
 				int new_width;
@@ -544,13 +530,14 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 				QWindowSystemInterface::handleGeometryChange(window(), geo);
 				emit framebuffer_changed();
 			}
-#endif
 
 			/* handle input events */
-			if (_input_session.is_pending()) {
-				for (int i = 0, num_ev = _input_session.flush(); i < num_ev; i++) {
+			Input::Session_client input(_window_slave_policy.input_session());
+			if (input.is_pending()) {
+				Input::Event *ev_buf = _window_slave_policy.ev_buf();
+				for (int i = 0, num_ev = input.flush(); i < num_ev; i++) {
 
-					Input::Event *ev = &_ev_buf[i];
+					Input::Event *ev = &ev_buf[i];
 
 					bool const is_key_event = ev->type() == Input::Event::PRESS ||
 					                          ev->type() == Input::Event::RELEASE;
@@ -574,6 +561,7 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 				}
 
 			}
+
 
 		}
 
