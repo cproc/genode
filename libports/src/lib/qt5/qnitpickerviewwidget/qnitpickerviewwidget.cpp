@@ -88,12 +88,17 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 	qDebug() << "global(x, y): " << mapToGlobal(QPoint(x(), y()));
 	qDebug() << "window =" << window();
 //	qDebug() << "window->geometry() =" << window()->geometry();
-//	qDebug() << "mapToGlobal(window->geometry().topLeft()) =" << mapToGlobal(window()->geometry().topLeft());
+//	qDebug() << "mapToGlobal(window->geometry().topLeft()) =" <<
+                mapToGlobal(window()->geometry().topLeft());
 	qDebug() << "window->rect().topLeft() =" << window()->rect().topLeft();
-	qDebug() << "mapToGlobal(window->rect().topLeft()) =" << mapToGlobal(window()->rect().topLeft());
-	qDebug() << "mapToGlobal(window->childrenRect().topLeft()) =" << mapToGlobal(window()->childrenRect().topLeft());
-	qDebug() << "mapToGlobal(window->contentsRect().topLeft()) =" << mapToGlobal(window()->contentsRect().topLeft());
-	qDebug() << "mapToGlobal(mask().boundingRect().bottomRight()) =" << mapToGlobal(mask().boundingRect().bottomRight());
+	qDebug() << "mapToGlobal(window->rect().topLeft()) =" <<
+	            mapToGlobal(window()->rect().topLeft());
+	qDebug() << "mapToGlobal(window->childrenRect().topLeft()) =" <<
+	            mapToGlobal(window()->childrenRect().topLeft());
+	qDebug() << "mapToGlobal(window->contentsRect().topLeft()) =" <<
+	            mapToGlobal(window()->contentsRect().topLeft());
+	qDebug() << "mapToGlobal(mask().boundingRect().bottomRight()) =" <<
+	            mapToGlobal(mask().boundingRect().bottomRight());
 #endif
 
 //	QPainter painter(this);
@@ -126,17 +131,27 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 		/* start of view = most right window start position */
 //		qDebug() << "parent->geometry() =" << parent->geometry();
 //		qDebug() << "parent->frameGeometry() =" << parent->frameGeometry();
-//		qDebug() << "mapToGlobal(parent->frameGeometry().topLeft()) =" << parent->mapToGlobal(parent->frameGeometry().topLeft());
-		qDebug() << "mapToGlobal(parent->geometry().bottomRight()) =" << parent->mapToGlobal(parent->geometry().bottomRight());
-		qDebug() << "mapToGlobal(parent->rect().topLeft()) =" << parent->mapToGlobal(parent->rect().topLeft());
-		qDebug() << "mapToGlobal(parent->rect().bottomRight()) =" << parent->mapToGlobal(parent->rect().bottomRight());
-		qDebug() << "mapToGlobal(parent->childrenRect().topLeft()) =" << parent->mapToGlobal(parent->childrenRect().topLeft());
-		qDebug() << "mapToGlobal(parent->childrenRect().bottomRight()) =" << parent->mapToGlobal(parent->childrenRect().bottomRight());
-		qDebug() << "mapToGlobal(parent->contentsRect().topLeft()) =" << parent->mapToGlobal(parent->contentsRect().topLeft());
-		qDebug() << "mapToGlobal(parent->contentsRect().bottomRight()) =" << parent->mapToGlobal(parent->contentsRect().bottomRight());
-		qDebug() << "parentWidget()->childAt(" << geometry().topRight() << ") = " << parentWidget()->childAt(geometry().topRight());
+//		qDebug() << "mapToGlobal(parent->frameGeometry().topLeft()) =" <<
+                    parent->mapToGlobal(parent->frameGeometry().topLeft());
+		qDebug() << "mapToGlobal(parent->geometry().bottomRight()) =" <<
+		            parent->mapToGlobal(parent->geometry().bottomRight());
+		qDebug() << "mapToGlobal(parent->rect().topLeft()) =" <<
+		            parent->mapToGlobal(parent->rect().topLeft());
+		qDebug() << "mapToGlobal(parent->rect().bottomRight()) =" <<
+		            parent->mapToGlobal(parent->rect().bottomRight());
+		qDebug() << "mapToGlobal(parent->childrenRect().topLeft()) =" <<
+		            parent->mapToGlobal(parent->childrenRect().topLeft());
+		qDebug() << "mapToGlobal(parent->childrenRect().bottomRight()) =" <<
+		            parent->mapToGlobal(parent->childrenRect().bottomRight());
+		qDebug() << "mapToGlobal(parent->contentsRect().topLeft()) =" <<
+		            parent->mapToGlobal(parent->contentsRect().topLeft());
+		qDebug() << "mapToGlobal(parent->contentsRect().bottomRight()) =" <<
+		            parent->mapToGlobal(parent->contentsRect().bottomRight());
+		qDebug() << "parentWidget()->childAt(" << geometry().topRight() << ") = " <<
+		            parentWidget()->childAt(geometry().topRight());
 		qDebug() << "visibleRegion() = " << visibleRegion();
-		qDebug() << "geometry().contains(" << geometry().topRight() << ") = " << geometry().contains(geometry().topRight());
+		qDebug() << "geometry().contains(" << geometry().topRight() << ") = " <<
+		            geometry().contains(geometry().topRight());
 	    qDebug() << "mask() = " << mask();
 #endif
 
@@ -161,8 +176,10 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 			_scrollbars.insert(scrollbar, true);
 
 //			w = qMin(w, parent->contentsRect().width() + parent->childrenRect().x());
-//			qDebug() << "mapToGlobal(viewport->rect().topLeft()) =" << scrollarea->viewport()->mapToGlobal(scrollarea->viewport()->rect().topLeft());
-//			qDebug() << "mapToGlobal(viewport->rect().bottomRight()) =" << scrollarea->viewport()->mapToGlobal(scrollarea->viewport()->rect().bottomRight());
+/*			qDebug() << "mapToGlobal(viewport->rect().topLeft()) =" <<
+                        scrollarea->viewport()->mapToGlobal(scrollarea->viewport()->rect().topLeft()); */
+/*			qDebug() << "mapToGlobal(viewport->rect().bottomRight()) =" <<
+                        scrollarea->viewport()->mapToGlobal(scrollarea->viewport()->rect().bottomRight()); */
 		}
 
 		x0 = qMax(x0, parent->mapToGlobal(parent->contentsRect().topLeft()).x());
@@ -206,7 +223,8 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 	 * the plugin view starts at (0, 0)
 	 */
 	if (mask().isEmpty()) {
-//		PDBG("x0 = %d, y0 = %d, w = %d, h = %d, buf_x = %d, buf_y = %d", x0, y0, w, h, orig_buf_x + diff_x, orig_buf_y + diff_y);
+/*		PDBG("x0 = %d, y0 = %d, w = %d, h = %d, buf_x = %d, buf_y = %d",
+             x0, y0, w, h, orig_buf_x + diff_x, orig_buf_y + diff_y); */
 		vc->viewport(x0,
 					 y0,
 					 /*qMin(width(), w)*/w,
@@ -215,7 +233,12 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 					 orig_buf_y + diff_y,
 					 true);
 	} else {
-//		PDBG("x = %d, y = %d, w = %d, h = %d, buf_x = %d, buf_y = %d", mapToGlobal(mask().boundingRect().topLeft()).x(), mapToGlobal(mask().boundingRect().topLeft()).y(), mask().boundingRect().width(), mask().boundingRect().height(), orig_buf_x + diff_x, orig_buf_y + diff_y);
+/*		PDBG("x = %d, y = %d, w = %d, h = %d, buf_x = %d, buf_y = %d",
+             mapToGlobal(mask().boundingRect().topLeft()).x(),
+             mapToGlobal(mask().boundingRect().topLeft()).y(),
+             mask().boundingRect().width(),
+             mask().boundingRect().height(),
+             orig_buf_x + diff_x, orig_buf_y + diff_y); */
 		vc->viewport(mapToGlobal(mask().boundingRect().topLeft()).x(),
 					 mapToGlobal(mask().boundingRect().topLeft()).y(),
 					 mask().boundingRect().width(),
@@ -224,6 +247,7 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 					 orig_buf_y + diff_y,
 					 true);
 	}
+	vc->stack(Nitpicker::View_capability(), true, true);
 #if 0
 	/* bring the plugin view to the front of the Qt window */
 	QWSNitpickerWindowSurface *ws = static_cast<QWSNitpickerWindowSurface*>(windowSurface());
