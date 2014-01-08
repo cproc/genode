@@ -18,9 +18,13 @@
 #include <util/list.h>
 #include <base/lock.h>
 
+/* Noux includes */
+#include <parent_execve.h>
+
 namespace Noux {
 
-	class Family_member : public List<Family_member>::Element
+	class Family_member : public List<Family_member>::Element,
+	                      public Parent_execve
 	{
 		private:
 
@@ -64,6 +68,56 @@ namespace Noux {
 			{
 				Lock::Guard guard(_lock);
 				_list.remove(member);
+			}
+
+			/* Called by the parent from 'deliver_kill()' */
+			virtual void submit_signal(Noux::Sysio::Signal sig) = 0;
+
+			/**
+			 * Called by the parent (originates from Kill_broadcaster)
+			 */
+			bool deliver_kill(int pid, Noux::Sysio::Signal sig)
+			{
+				Lock::Guard guard(_lock);
+
+				if (pid == _pid) {
+					submit_signal(sig);
+					return true;
+				}
+
+				bool result = false;
+
+				for (Family_member *child = _list.first(); child; child = child->next())
+					if (child->deliver_kill(pid, sig))
+						result = true;
+
+				return result;
+			}
+
+			/**
+			 * Parent_execve interface
+			 */
+
+			/* Called by the parent from 'execve_child()' */
+			virtual Family_member *do_execve(const char *filename,
+			                                 Args const &args,
+			                                 Sysio::Env const &env,
+			                                 bool verbose) = 0;
+
+			/* Called by the child on the parent (via Parent_execve) */
+			void execve_child(Family_member &child,
+			                  const char *filename,
+			                  Args const &args,
+			                  Sysio::Env const &env,
+			                  bool verbose)
+			{
+				Lock::Guard guard(_lock);
+				Family_member *new_child = child.do_execve(filename,
+				                                           args,
+				                                           env,
+				                                           verbose);
+				_list.insert(new_child);
+				_list.remove(&child);
 			}
 
 			/**

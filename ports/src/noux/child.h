@@ -33,10 +33,16 @@
 #include <destruct_queue.h>
 #include <destruct_dispatcher.h>
 #include <interrupt_handler.h>
+#include <kill_broadcaster.h>
+#include <parent_execve.h>
 
 #include <local_cpu_service.h>
 #include <local_ram_service.h>
 #include <local_rom_service.h>
+
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
 
 namespace Noux {
 
@@ -88,6 +94,11 @@ namespace Noux {
 	 */
 	Dataspace_capability ldso_ds_cap();
 
+	/*
+	 * Return lock for protecting the signal queue
+	 */
+	Genode::Lock &signal_lock();
+
 	class Child;
 
 	bool is_init_process(Child *child);
@@ -100,6 +111,9 @@ namespace Noux {
 	              public Interrupt_handler
 	{
 		private:
+
+			Kill_broadcaster &_kill_broadcaster;
+			Parent_execve    &_parent_execve;
 
 			Signal_receiver *_sig_rec;
 
@@ -311,6 +325,8 @@ namespace Noux {
 			 */
 			Child(char const        *binary_name,
 			      Family_member     *parent,
+			      Kill_broadcaster  &kill_broadcaster,
+			      Parent_execve     &parent_execve,
 			      int                pid,
 			      Signal_receiver   *sig_rec,
 			      Dir_file_system   *root_dir,
@@ -326,6 +342,8 @@ namespace Noux {
 			:
 				Family_member(pid, parent),
 				Destruct_queue::Element<Child>(destruct_alloc),
+				_kill_broadcaster(kill_broadcaster),
+				_parent_execve(parent_execve),
 				_sig_rec(sig_rec),
 				_destruct_queue(destruct_queue),
 				_destruct_dispatcher(_destruct_queue, this),
@@ -486,19 +504,81 @@ namespace Noux {
 			}
 
 
+			/*****************************
+			 ** Family_member interface **
+			 *****************************/
+
+			void submit_signal(Noux::Sysio::Signal sig)
+			{
+				try {
+					PDBG("%d: submit_signal()", pid());
+					_pending_signals.add(sig);
+				} catch (Signal_queue::Overflow) {
+					PERR("signal queue is full - signal dropped");
+				}
+
+				_blocker.unlock();
+			}
+
+			Family_member *do_execve(const char *filename,
+			                         Args const &args,
+			                         Sysio::Env const &env,
+			                         bool verbose)
+			{
+				Lock::Guard signal_lock_guard(signal_lock());
+
+				Child *child = new Child(filename,
+					                     parent(),
+					                     _kill_broadcaster,
+					                     _parent_execve,
+					                     pid(),
+					                     _sig_rec,
+					                     root_dir(),
+					                     args,
+					                     env,
+					                     _cap_session,
+					                     _parent_services,
+					                     _resources.ep,
+					                     false,
+					                     Genode::env()->heap(),
+					                     _destruct_queue,
+					                     verbose);
+PDBG("calling _assign_io_channels_to()");
+				_assign_io_channels_to(child);
+
+				/* move the signal queue */
+				while (!_pending_signals.empty())
+					child->_pending_signals.add(_pending_signals.get());
+
+				/*
+				 * Close all open files.
+				 *
+				 * This action is not part of the child destructor,
+				 * because in the case that a child exits itself,
+				 * it may need to close all files to unblock the
+				 * parent (which might be reading from a pipe) before
+				 * the parent can destroy the child object.
+				 */
+				flush();
+
+				/* signal main thread to remove ourself */
+				Genode::Signal_transmitter(_destruct_context_cap).submit();
+
+				/* start executing the new process */
+				child->start();
+
+				/* this child will be removed by the execve_finalization_dispatcher */
+
+				return child;
+			}
+
 			/*********************************
 			 ** Interrupt_handler interface **
 			 *********************************/
 
 			void handle_interrupt()
 			{
-				try {
-					_pending_signals.add(Sysio::SIG_INT);
-				} catch (Signal_queue::Overflow) {
-					PERR("signal queue is full - signal dropped");
-				}
-
-				_blocker.unlock();
+				submit_signal(Sysio::SIG_INT);
 			}
 
 	};
