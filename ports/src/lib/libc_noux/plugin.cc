@@ -45,7 +45,7 @@
 #include <libc_mem_alloc.h>
 
 enum { verbose = false };
-enum { verbose_signals = false };
+enum { verbose_signals = true/*false*/ };
 
 
 void *operator new (size_t, void *ptr) { return ptr; }
@@ -106,6 +106,7 @@ static bool noux_syscall(Noux::Session::Syscall opcode)
 			signal_action[signal].sa_sigaction(signal, 0, 0);
 		} else {
 			if (signal_action[signal].sa_handler == SIG_DFL) {
+				PDBG("SIG_DFL"); exit((signal << 8) | EXIT_FAILURE);
 				/* do nothing */
 			} else if (signal_action[signal].sa_handler == SIG_IGN) {
 				/* do nothing */
@@ -526,8 +527,13 @@ extern "C" pid_t _wait4(pid_t pid, int *status, int options,
 		return -1;
 	}
 
+	/*
+	 * The libc expects status information in bits 0..6 and the exit value
+	 * in bits 8..15 (according to 'wait.h'). 
+	 */
 	if (status)
-		*status = sysio()->wait4_out.status;
+		*status = ((sysio()->wait4_out.status >> 8) & 0177) |
+		          ((sysio()->wait4_out.status & 0xff) << 8);
 
 	return sysio()->wait4_out.pid;
 }

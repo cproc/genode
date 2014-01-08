@@ -32,7 +32,7 @@
 
 
 static const bool verbose_quota  = false;
-static bool trace_syscalls = false;
+static bool trace_syscalls = true/*false*/;
 static bool verbose = false;
 
 namespace Noux {
@@ -46,6 +46,9 @@ namespace Noux {
 
 extern void init_network();
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
 
 /**
  * Timeout thread for SYSCALL_SELECT
@@ -633,6 +636,9 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_WAIT4:
 			{
+				if (pid() == 28)
+					enter_kdebug("wait4");
+
 				Family_member *exited = _sysio->wait4_in.nohang ? poll4() : wait4();
 
 				if (exited) {
@@ -823,8 +829,10 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 	/* handle signals which might have occured */
 	while (!_pending_signals.empty() &&
-		   (_sysio->pending_signals.avail_capacity() > 0))
+		   (_sysio->pending_signals.avail_capacity() > 0)) {
+		   PDBG("adding signal to sysio");
 		_sysio->pending_signals.add(_pending_signals.get());
+	}
 
 	return result;
 }

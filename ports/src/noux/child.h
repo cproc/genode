@@ -38,6 +38,10 @@
 #include <local_ram_service.h>
 #include <local_rom_service.h>
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
+
 namespace Noux {
 
 	/**
@@ -493,6 +497,8 @@ namespace Noux {
 			void handle_interrupt()
 			{
 				try {
+					PDBG("%d: handle_interrupt()", pid());
+					//enter_kdebug("handle_int");
 					_pending_signals.add(Sysio::SIG_INT);
 				} catch (Signal_queue::Overflow) {
 					PERR("signal queue is full - signal dropped");
