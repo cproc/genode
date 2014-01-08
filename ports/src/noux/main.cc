@@ -29,10 +29,11 @@
 #include <user_info.h>
 #include <io_receptor_registry.h>
 #include <destruct_queue.h>
+#include <kill_broadcaster.h>
 
 
 static const bool verbose_quota  = false;
-static bool trace_syscalls = false;
+static bool trace_syscalls = true/*false*/;
 static bool verbose = false;
 
 namespace Noux {
@@ -46,6 +47,9 @@ namespace Noux {
 
 extern void init_network();
 
+namespace Fiasco {
+#include <l4/sys/kdebug.h>
+}
 
 /**
  * Timeout thread for SYSCALL_SELECT
@@ -219,7 +223,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				size_t   path_len  = strlen(_sysio->stat_in.path);
 				uint32_t path_hash = hash_path(_sysio->stat_in.path, path_len);
 
-				bool result = root_dir()->stat(_sysio, _sysio->stat_in.path);
+				result = root_dir()->stat(_sysio, _sysio->stat_in.path);
 
 				/**
 				 * Instead of using the uid/gid given by the actual file system
@@ -232,14 +236,14 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_sysio->stat_out.st.inode = path_hash;
 				}
 
-				return result;
+				break;
 			}
 
 		case SYSCALL_FSTAT:
 			{
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio->fstat_in.fd);
 
-				bool result = io->fstat(_sysio);
+				result = io->fstat(_sysio);
 
 				if (result) {
 					Sysio::Path path;
@@ -255,7 +259,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					}
 				}
 
-				return result;
+				break;
 			}
 
 		case SYSCALL_FCNTL:
@@ -265,16 +269,18 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				/* we assume that there is only the close-on-execve flag */
 				_lookup_channel(_sysio->fcntl_in.fd)->close_on_execve =
 					!!_sysio->fcntl_in.long_arg;
-				return true;
+				result = true;
+				break;
 			}
 
-			return _lookup_channel(_sysio->fcntl_in.fd)->fcntl(_sysio);
+			result = _lookup_channel(_sysio->fcntl_in.fd)->fcntl(_sysio);
+			break;
 
 		case SYSCALL_OPEN:
 			{
 				Vfs_handle *vfs_handle = root_dir()->open(_sysio, _sysio->open_in.path);
 				if (!vfs_handle)
-					return false;
+					break;
 
 				char const *leaf_path = root_dir()->leaf_path(_sysio->open_in.path);
 
@@ -294,26 +300,31 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					        Genode::env()->heap());
 
 				_sysio->open_out.fd = add_io_channel(channel);
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_CLOSE:
 			{
 				remove_io_channel(_sysio->close_in.fd);
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_IOCTL:
 
-			return _lookup_channel(_sysio->ioctl_in.fd)->ioctl(_sysio);
+			result = _lookup_channel(_sysio->ioctl_in.fd)->ioctl(_sysio);
+			break;
 
 		case SYSCALL_LSEEK:
 
-			return _lookup_channel(_sysio->lseek_in.fd)->lseek(_sysio);
+			result = _lookup_channel(_sysio->lseek_in.fd)->lseek(_sysio);
+			break;
 
 		case SYSCALL_DIRENT:
 
-			return _lookup_channel(_sysio->dirent_in.fd)->dirent(_sysio);
+			result = _lookup_channel(_sysio->dirent_in.fd)->dirent(_sysio);
+			break;
 
 		case SYSCALL_EXECVE:
 			{
@@ -327,7 +338,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				if (!binary_ds.valid()) {
 					_sysio->error.execve = Sysio::EXECVE_NONEXISTENT;
-					return false;
+					break;
 				}
 
 				Child_env<sizeof(_sysio->execve_in.args)>
@@ -340,57 +351,28 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				if (!binary_ds.valid()) {
 					_sysio->error.execve = Sysio::EXECVE_NONEXISTENT;
-					return false;
+					break;
 				}
 
 				root_dir()->release(child_env.binary_name(), binary_ds);
 
 				try {
-					Child *child = new Child(child_env.binary_name(),
-					                         parent(),
-					                         pid(),
-					                         _sig_rec,
-					                         root_dir(),
-					                         child_env.args(),
-					                         child_env.env(),
-					                         _cap_session,
-					                         _parent_services,
-					                         _resources.ep,
-					                         false,
-					                         env()->heap(),
-					                         _destruct_queue,
-					                         verbose);
-
-					/* replace ourself by the new child at the parent */
-					parent()->remove(this);
-					parent()->insert(child);
-
-					_assign_io_channels_to(child);
+					_parent_execve.execve_child(*this,
+					                            child_env.binary_name(),
+					                            child_env.args(),
+					                            child_env.env(),
+					                            verbose);
 
 					/*
-					 * Close all open files.
-					 *
-					 * This action is not part of the child destructor,
-					 * because in the case that a child exits itself,
-					 * it may need to close all files to unblock the
-					 * parent (which might be reading from a pipe) before
-					 * the parent can destroy the child object.
+					 * 'return' instead of 'break' to skip possible signal delivery,
+					 * which might cause the old child process to exit itself
 					 */
-					flush();
-
-					/* signal main thread to remove ourself */
-					Genode::Signal_transmitter(_destruct_context_cap).submit();
-
-					/* start executing the new process */
-					child->start();
-
-					/* this child will be removed by the execve_finalization_dispatcher */
 					return true;
 				}
 				catch (Child::Binary_does_not_exist) {
 					_sysio->error.execve = Sysio::EXECVE_NONEXISTENT; }
 
-				return false;
+				break;
 			}
 
 		case SYSCALL_SELECT:
@@ -593,6 +575,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				 */
 				Child *child = new Child(_child_policy.name(),
 				                         this,
+				                         _kill_broadcaster,
+				                         *this,
 				                         new_pid,
 				                         _sig_rec,
 				                         root_dir(),
@@ -622,7 +606,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_sysio->fork_out.pid = new_pid;
 
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_GETPID:
@@ -633,6 +618,10 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_WAIT4:
 			{
+#if 0
+				if (pid() == 28)
+					enter_kdebug("wait4");
+#endif
 				Family_member *exited = _sysio->wait4_in.nohang ? poll4() : wait4();
 
 				if (exited) {
@@ -648,7 +637,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_sysio->wait4_out.pid    = 0;
 					_sysio->wait4_out.status = 0;
 				}
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_PIPE:
@@ -663,7 +653,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				_sysio->pipe_out.fd[0] = add_io_channel(pipe_source);
 				_sysio->pipe_out.fd[1] = add_io_channel(pipe_sink);
 
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_DUP2:
@@ -673,30 +664,36 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_sysio->dup2_out.fd = fd;
 
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_UNLINK:
 
-			return root_dir()->unlink(_sysio, _sysio->unlink_in.path);
+			result = root_dir()->unlink(_sysio, _sysio->unlink_in.path);
+			break;
 
 		case SYSCALL_READLINK:
 
-			return root_dir()->readlink(_sysio, _sysio->readlink_in.path);
+			result = root_dir()->readlink(_sysio, _sysio->readlink_in.path);
+			break;
 
 
 		case SYSCALL_RENAME:
 
-			return root_dir()->rename(_sysio, _sysio->rename_in.from_path,
-			                                 _sysio->rename_in.to_path);
+			result = root_dir()->rename(_sysio, _sysio->rename_in.from_path,
+			                                    _sysio->rename_in.to_path);
+			break;
 
 		case SYSCALL_MKDIR:
 
-			return root_dir()->mkdir(_sysio, _sysio->mkdir_in.path);
+			result = root_dir()->mkdir(_sysio, _sysio->mkdir_in.path);
+			break;
 
 		case SYSCALL_SYMLINK:
 
-			return root_dir()->symlink(_sysio, _sysio->symlink_in.newpath);
+			result = root_dir()->symlink(_sysio, _sysio->symlink_in.newpath);
+			break;
 
 		case SYSCALL_USERINFO:
 			{
@@ -705,7 +702,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_sysio->userinfo_out.uid = Noux::user_info()->uid;
 					_sysio->userinfo_out.gid = Noux::user_info()->gid;
 
-					return true;
+					result = true;
+					break;
 				}
 
 				/*
@@ -713,16 +711,23 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				 * got a unknown uid.
 				 */
 				if (_sysio->userinfo_in.uid != Noux::user_info()->uid)
-					return false;
+					break;
 
-				Genode::memcpy(_sysio->userinfo_out.name,  Noux::user_info()->name,  sizeof(Noux::user_info()->name));
-				Genode::memcpy(_sysio->userinfo_out.shell, Noux::user_info()->shell, sizeof(Noux::user_info()->shell));
-				Genode::memcpy(_sysio->userinfo_out.home,  Noux::user_info()->home,  sizeof(Noux::user_info()->home));
+				Genode::memcpy(_sysio->userinfo_out.name,
+				               Noux::user_info()->name,
+				               sizeof(Noux::user_info()->name));
+				Genode::memcpy(_sysio->userinfo_out.shell,
+				               Noux::user_info()->shell,
+				               sizeof(Noux::user_info()->shell));
+				Genode::memcpy(_sysio->userinfo_out.home,
+				               Noux::user_info()->home,
+				               sizeof(Noux::user_info()->home));
 
 				_sysio->userinfo_out.uid = user_info()->uid;
 				_sysio->userinfo_out.gid = user_info()->gid;
 
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_GETTIMEOFDAY:
@@ -741,7 +746,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				_sysio->gettimeofday_out.sec  = (time / 1000);
 				_sysio->gettimeofday_out.usec = (time % 1000) * 1000;
 
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_CLOCK_GETTIME:
@@ -759,7 +765,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 						_sysio->clock_gettime_out.sec    = (time / 1000);
 						_sysio->clock_gettime_out.nsec   = 0;
 
-						return true;
+						result = true;
+						break;
 					}
 
 				default:
@@ -768,12 +775,12 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 						_sysio->clock_gettime_out.nsec = 0;
 						_sysio->error.clock            = Sysio::CLOCK_ERR_INVALID;
 
-						return false;
+						break;
 					}
 
 				}
 
-				return false;
+				break;
 
 			}
 
@@ -786,13 +793,15 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				 * But we return true anyway to keep certain programs, e.g. make
 				 * happy.
 				 */
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_SYNC:
 			{
 				root_dir()->sync();
-				return true;
+				result = true;
+				break;
 			}
 
 		case SYSCALL_SOCKET:
@@ -809,7 +818,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		case SYSCALL_SHUTDOWN:
 		case SYSCALL_CONNECT:
 
-			return _syscall_net(sc);
+			result = _syscall_net(sc);
+			break;
 
 		case SYSCALL_INVALID: break;
 		}
@@ -823,8 +833,10 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 	/* handle signals which might have occured */
 	while (!_pending_signals.empty() &&
-		   (_sysio->pending_signals.avail_capacity() > 0))
+		   (_sysio->pending_signals.avail_capacity() > 0)) {
+		   PDBG("adding signal to sysio");
 		_sysio->pending_signals.add(_pending_signals.get());
+	}
 
 	return result;
 }
@@ -1007,8 +1019,22 @@ int main(int argc, char **argv)
 	static Genode::Signal_receiver sig_rec;
 	static Destruct_queue destruct_queue;
 
+	struct Kill_broadcaster_implementation : Kill_broadcaster
+	{
+		Family_member *init_process;
+		
+		void kill(int pid, Noux::Sysio::Signal sig)
+		{
+			init_process->deliver_kill(pid, sig);
+		}
+	};
+	
+	static Kill_broadcaster_implementation kill_broadcaster;
+
 	init_child = new Noux::Child(name_of_init_process(),
 	                             0,
+	                             kill_broadcaster,
+	                             *init_child,
 	                             pid_allocator()->alloc(),
 	                             &sig_rec,
 	                             &root_dir,
@@ -1021,6 +1047,8 @@ int main(int argc, char **argv)
 	                             env()->heap(),
 	                             destruct_queue,
 	                             verbose);
+
+	kill_broadcaster.init_process = init_child;
 
 	/*
 	 * I/O channels must be dynamically allocated to handle cases where the
