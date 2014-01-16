@@ -40,12 +40,14 @@
 #include <termios.h>
 #include <pwd.h>
 #include <string.h>
+#include <signal.h>
 
 /* libc-internal includes */
 #include <libc_mem_alloc.h>
 
+
 enum { verbose = false };
-enum { verbose_signals = false };
+enum { verbose_signals = true/*false*/ };
 
 
 void *operator new (size_t, void *ptr) { return ptr; }
@@ -96,21 +98,47 @@ static struct sigaction signal_action[SIGRTMAX+1];
 
 static bool noux_syscall(Noux::Session::Syscall opcode)
 {
+	/*
+ 	 * Signal handlers currently may not execute syscalls, because this would
+ 	 * overwrite the sysio object, whose original contents are still needed after
+ 	 * the signal handler returns.
+ 	 */
+	static bool in_signal_handler = false;
+
+	if (in_signal_handler) {
+		PERR("error: syscall from a signal handler detected");
+		Genode::sleep_forever();
+	}
+
 	bool ret = noux()->syscall(opcode);
 
 	/* handle signals */
 	while (!sysio()->pending_signals.empty()) {
 		Noux::Sysio::Signal signal = sysio()->pending_signals.get();
+		PDBG("received signal %d", signal);
 		if (signal_action[signal].sa_flags & SA_SIGINFO) {
+			in_signal_handler = true;
 			/* TODO: pass siginfo_t struct */
 			signal_action[signal].sa_sigaction(signal, 0, 0);
+			in_signal_handler = false;
 		} else {
 			if (signal_action[signal].sa_handler == SIG_DFL) {
-				/* do nothing */
+				PDBG("SIG_DFL");
+				switch (signal) {
+					case SIGCHLD:
+						/* ignore */
+						break;
+					default:
+						/* terminate the process */
+						exit((signal << 8) | EXIT_FAILURE);
+				}
 			} else if (signal_action[signal].sa_handler == SIG_IGN) {
 				/* do nothing */
-			} else
+			} else {
+				in_signal_handler = true;
 				signal_action[signal].sa_handler(signal);
+				in_signal_handler = false;
+			}
 		}
 	}
 
@@ -522,13 +550,21 @@ extern "C" pid_t _wait4(pid_t pid, int *status, int options,
 	sysio()->wait4_in.pid    = pid;
 	sysio()->wait4_in.nohang = !!(options & WNOHANG);
 	if (!noux_syscall(Noux::Session::SYSCALL_WAIT4)) {
-		PERR("wait4 error %d", sysio()->error.general);
+		switch (sysio()->error.wait4) {
+			case Noux::Sysio::WAIT4_ERR_INTERRUPT: errno = EINTR; break;
+		}
+		PDBG("EINTR");
 		return -1;
 	}
 
+	/*
+	 * The libc expects status information in bits 0..6 and the exit value
+	 * in bits 8..15 (according to 'wait.h'). 
+	 */
 	if (status)
-		*status = sysio()->wait4_out.status;
-
+		*status = ((sysio()->wait4_out.status >> 8) & 0177) |
+		          ((sysio()->wait4_out.status & 0xff) << 8);
+PDBG("pid = %d", sysio()->wait4_out.pid);
 	return sysio()->wait4_out.pid;
 }
 
@@ -553,6 +589,20 @@ void endpwent(void)
 extern "C" void sync(void)
 {
 	noux_syscall(Noux::Session::SYSCALL_SYNC);
+}
+
+
+extern "C" int kill(int pid, int sig)
+{
+	PDBG("pid = %d, sig = %d", pid, sig);
+	sysio()->kill_in.pid = pid;
+	sysio()->kill_in.sig = Noux::Sysio::Signal(sig);
+	if (!noux_syscall(Noux::Session::SYSCALL_KILL)) {
+		/* TODO: set errno */
+		PERR("kill() error");
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -626,6 +676,23 @@ extern "C" int utimes(const char* path, const struct timeval *times)
 
 extern "C" int sigprocmask(int how, const sigset_t *set, sigset_t *oldset)
 {
+	switch (how) {
+		case SIG_BLOCK:
+			PDBG("SIG_BLOCK");
+			break;
+		case SIG_UNBLOCK:
+			PDBG("SIG_UNBLOCK");
+			break;
+		case SIG_SETMASK:
+			PDBG("SIG_SETMASK");
+			break;
+	}
+
+	if (set)
+		for (int i = 1; i < 21; i++)
+			if (sigismember(set, i))
+				PDBG("signal %d is member of set", i);
+
 	/* XXX todo */
 	errno = ENOSYS;
 	return -1;
