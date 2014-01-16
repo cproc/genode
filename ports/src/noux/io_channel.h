@@ -28,6 +28,8 @@
 
 namespace Noux {
 
+	extern Genode::Lock &signal_lock();
+
 	/**
 	 * Input/output channel backend that is used for calling
 	 * different methos which does not belong to the original
@@ -162,11 +164,16 @@ namespace Noux {
 			 */
 			void invoke_all_interrupt_handlers()
 			{
+				Lock::Guard signal_lock_guard(signal_lock());
 				Lock::Guard guard(_interrupt_handlers_lock);
 
+				PDBG("called");
 				for (Interrupt_handler *h = _interrupt_handlers.first();
-				     h; h = h->next())
+				     h; h = h->next()) {
+				     PDBG("calling handle_interrupt()");
 					h->handle_interrupt();
+				}
+				PDBG("finished");
 			}
 
 			/**
