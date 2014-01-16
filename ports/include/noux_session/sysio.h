@@ -37,6 +37,7 @@ namespace Noux {
 	    /* signal numbers must match with libc signal numbers */
 		enum Signal {
 			SIG_INT = 2,
+			SIG_CHLD = 20,
 		};
 
 		enum { SIGNAL_QUEUE_SIZE = 32 };
@@ -496,6 +497,8 @@ namespace Noux {
 			                        { });
 
 			SYSIO_DECL(sync,        { }, { });
+
+			SYSIO_DECL(kill,        { int pid; Signal sig; }, { });
 		};
 	};
 };
