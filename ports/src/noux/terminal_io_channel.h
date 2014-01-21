@@ -24,6 +24,8 @@
 #include <io_channel.h>
 #include <noux_session/sysio.h>
 
+class Interrupt_handler;
+
 namespace Noux {
 
 	struct Terminal_io_channel : Io_channel, Signal_dispatcher_base
@@ -32,9 +34,45 @@ namespace Noux {
 		Signal_receiver   &sig_rec;
 		bool               eof;
 
+		int                _num_handlers = 0;
+
 		enum Type { STDIN, STDOUT, STDERR } type;
 
 		Ring_buffer<char, Sysio::CHUNK_SIZE + 1> read_buffer;
+
+		void register_interrupt_handler(Interrupt_handler *handler)
+		{
+			for (Interrupt_handler *h = _interrupt_handlers.first();
+				 h; h = h->next())
+				PDBG("%p: before: list contains handler %p", this, h);
+
+			Io_channel::register_interrupt_handler(handler);
+
+			_num_handlers++;
+			PDBG("%p: registered %p, num_handlers = %d", this, handler, _num_handlers);
+
+			for (Interrupt_handler *h = _interrupt_handlers.first();
+				 h; h = h->next())
+				PDBG("%p: after: list contains handler %p", this, h);
+		}
+		
+		void unregister_interrupt_handler(Interrupt_handler *handler)
+		{
+			for (Interrupt_handler *h = _interrupt_handlers.first();
+				 h; h = h->next())
+				PDBG("%p: before: list contains handler %p", this, h);
+
+			Io_channel::unregister_interrupt_handler(handler);
+
+			_num_handlers--;
+			PDBG("%p: unregistered %p, num_handlers = %d", this, handler, _num_handlers);
+
+			for (Interrupt_handler *h = _interrupt_handlers.first();
+				 h; h = h->next())
+				PDBG("%p: after: list contains handler %p", this, h);
+		}
+
+
 
 		Terminal_io_channel(Terminal::Session &terminal, Type type,
 		                    Signal_receiver &sig_rec)
@@ -209,6 +247,7 @@ namespace Noux {
 				enum { INTERRUPT = 3 };
 
 				if (c == INTERRUPT) {
+			PDBG("%p: num_handlers = %d", this, _num_handlers);
 					Io_channel::invoke_all_interrupt_handlers();
 				} else {
 					read_buffer.add(c);

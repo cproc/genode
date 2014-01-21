@@ -790,6 +790,7 @@ namespace {
 				/* register inherited open file descriptors */
 				int fd = 0;
 				while ((fd = noux()->next_open_fd(fd)) != -1) {
+				PDBG("inherited open fd %d", fd);
 					Libc::file_descriptor_allocator()->alloc(this, noux_context(fd), fd);
 					fd++;
 				}

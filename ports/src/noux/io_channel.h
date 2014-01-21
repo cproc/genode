@@ -28,6 +28,8 @@
 
 namespace Noux {
 
+	class Terminal_io_channel;
+
 	extern Genode::Lock &signal_lock();
 
 	/**
@@ -57,6 +59,7 @@ namespace Noux {
 			 */
 			List<Wake_up_notifier>  _notifiers;
 			Lock                    _notifiers_lock;
+protected:
 			List<Interrupt_handler> _interrupt_handlers;
 			Lock                    _interrupt_handlers_lock;
 
@@ -142,20 +145,20 @@ namespace Noux {
 			 * This function is called by Child objects to get woken up if the
 			 * terminal sends, for example, Ctrl-C.
 			 */
-			void register_interrupt_handler(Interrupt_handler *handler)
+			virtual void register_interrupt_handler(Interrupt_handler *handler)
 			{
 				Lock::Guard guard(_interrupt_handlers_lock);
-
+PDBG("%p: inserting %p", this, handler);
 				_interrupt_handlers.insert(handler);
 			}
 
 			/**
 			 * Unregister interrupt handler
 			 */
-			void unregister_interrupt_handler(Interrupt_handler *handler)
+			virtual void unregister_interrupt_handler(Interrupt_handler *handler)
 			{
 				Lock::Guard guard(_interrupt_handlers_lock);
-
+PDBG("%p: removing %p", this, handler);
 				_interrupt_handlers.remove(handler);
 			}
 
@@ -171,7 +174,7 @@ namespace Noux {
 				for (Interrupt_handler *h = _interrupt_handlers.first();
 				     h; h = h->next()) {
 				     PDBG("calling handle_interrupt()");
-					h->handle_interrupt();
+					//h->handle_interrupt();
 				}
 				PDBG("finished");
 			}

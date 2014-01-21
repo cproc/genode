@@ -302,6 +302,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_CLOSE:
 			{
+				PDBG("close_in.fd = %d", _sysio->close_in.fd);
 				remove_io_channel(_sysio->close_in.fd);
 				result = true;
 				break;
@@ -658,6 +659,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			{
 				int fd = add_io_channel(io_channel_by_fd(_sysio->dup2_in.fd),
 				                        _sysio->dup2_in.to_fd);
+
+				PDBG("dup2: to_fd = %d, out_fd = %d", _sysio->dup2_in.to_fd, fd);
 
 				_sysio->dup2_out.fd = fd;
 
