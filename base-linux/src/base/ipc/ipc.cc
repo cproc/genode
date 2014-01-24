@@ -235,6 +235,7 @@ namespace {
 
 			void marshal_socket(int sd)
 			{
+				PRAW("%d: marshalling sd %d", lx_gettid(), sd);
 				*((int *)CMSG_DATA((cmsghdr *)_cmsg_buf) + _num_sds) = sd;
 
 				_num_sds++;
@@ -282,6 +283,7 @@ static void extract_sds_from_message(unsigned start_index, Message const &msg,
 	for (unsigned i = start_index; i < msg.num_sockets(); i++) {
 
 		int const sd = msg.socket_at_index(i);
+		PRAW("%d: extracted sd %d", lx_gettid(), sd);
 		int const id = lookup_tid_by_client_socket(sd);
 
 		int const associated_sd = Genode::ep_sd_registry()->try_associate(sd, id);
@@ -289,7 +291,7 @@ static void extract_sds_from_message(unsigned start_index, Message const &msg,
 		buf.append_cap(associated_sd);
 
 		if ((associated_sd >= 0) && (associated_sd != sd)) {
-
+PRAW("%d: found existing association", lx_gettid());
 			/*
 			 * The association already existed under a different name, use
 			 * already associated socket descriptor and and drop 'sd'.
@@ -307,6 +309,7 @@ static inline void lx_call(int dst_sd,
                            Genode::Msgbuf_base &send_msgbuf, Genode::size_t send_msg_len,
                            Genode::Msgbuf_base &recv_msgbuf)
 {
+PRAW("%d: lx_call()", lx_gettid());
 	int ret;
 	Message send_msg(send_msgbuf.buf, send_msg_len);
 
@@ -344,13 +347,16 @@ static inline void lx_call(int dst_sd,
 
 	/* assemble message */
 
+PRAW("%d: marshalling the reply capability", lx_gettid());
 	/* marshal reply capability */
 	send_msg.marshal_socket(reply_channel.remote_socket());
 
+PRAW("%d: marshalling send capabilities", lx_gettid());
 	/* marshal capabilities contained in 'send_msgbuf' */
 	for (unsigned i = 0; i < send_msgbuf.used_caps(); i++)
 		send_msg.marshal_socket(send_msgbuf.cap(i));
 
+PRAW("%d: sending message", lx_gettid());
 	ret = lx_sendmsg(dst_sd, send_msg.msg(), 0);
 	if (ret < 0) {
 		PRAW("[%d] lx_sendmsg to sd %d failed with %d in lx_call()",
@@ -364,7 +370,7 @@ static inline void lx_call(int dst_sd,
 	recv_msg.accept_sockets(Message::MAX_SDS_PER_MSG);
 
 	ret = lx_recvmsg(reply_channel.local_socket(), recv_msg.msg(), 0);
-
+PRAW("%d: received reply", lx_gettid());
 	/* system call got interrupted by a signal */
 	if (ret == -LX_EINTR)
 		throw Genode::Blocking_canceled();
@@ -375,6 +381,7 @@ static inline void lx_call(int dst_sd,
 	}
 
 	extract_sds_from_message(0, recv_msg, recv_msgbuf);
+	PRAW("%d: lx_call() finished", lx_gettid());
 }
 
 
@@ -416,19 +423,23 @@ static inline void lx_reply(int reply_socket,
                             Genode::Msgbuf_base &send_msgbuf,
                             Genode::size_t msg_len)
 {
+	PRAW("%d: lx_reply() called", lx_gettid());
 	Message msg(send_msgbuf.buf, msg_len);
 
 	/*
 	 * Marshall capabilities to be transferred to the client
 	 */
-	for (unsigned i = 0; i < send_msgbuf.used_caps(); i++)
+	for (unsigned i = 0; i < send_msgbuf.used_caps(); i++) {
+		PRAW("%d: marshalling capability %d", lx_gettid(), i);
 		msg.marshal_socket(send_msgbuf.cap(i));
+	}
 
 	int ret = lx_sendmsg(reply_socket, msg.msg(), 0);
 
 	/* ignore reply send error caused by disappearing client */
 	if (ret >= 0 || ret == -LX_ECONNREFUSED) {
 		lx_close(reply_socket);
+		PRAW("%d: lx_reply() finished", lx_gettid());
 		return;
 	}
 

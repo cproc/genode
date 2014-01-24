@@ -19,6 +19,7 @@
 
 using namespace Genode;
 
+extern "C" int raw_write_str(char const *str);
 
 extern "C" void __cxa_pure_virtual()
 {
@@ -98,7 +99,7 @@ extern "C" __attribute__((weak)) void raise()
 
 extern "C" void *abort(void)
 {
-	PDBG("abort called");
+	raw_write_str("########## abort called ##########\n");
 	sleep_forever();
 	return 0;
 }
@@ -110,7 +111,8 @@ extern "C" void *fputc(void) {
 
 
 extern "C" void *fputs(const char *s, void *) {
-	PWRN("C++ runtime: %s", s);
+//	PWRN("C++ runtime: %s", s);
+	raw_write_str(s);
 	return 0;
 }
 

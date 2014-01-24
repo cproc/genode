@@ -17,6 +17,17 @@
 #include <timer_session/client.h>
 #include <base/connection.h>
 
+extern "C" int raw_write_str(char const *str);
+extern "C" void wait_for_continue();
+
+#define PRAW(fmt, ...)                                             \
+	do {                                                           \
+		char str[128];                                             \
+		Genode::snprintf(str, sizeof(str),                         \
+		                 ESC_ERR fmt ESC_END "\n", ##__VA_ARGS__); \
+		raw_write_str(str);                                        \
+	} while (0)
+
 namespace Timer {
 
 	class Connection : public Genode::Connection<Session>, public Session_client
@@ -37,11 +48,20 @@ namespace Timer {
 				Session_client(cap()),
 				_default_sigh_cap(_sig_rec.manage(&_default_sigh_ctx))
 			{
+				PRAW("Timer::Connection: fd = %d", cap().dst().socket);
+				PRAW("Timer::Connection: registering signal handler");
 				/* register default signal handler */
 				Session_client::sigh(_default_sigh_cap);
+				PRAW("Timer::Connection: registered signal handler");
 			}
 
-			~Connection() { _sig_rec.dissolve(&_default_sigh_ctx); }
+			~Connection()
+			{
+				PRAW("~Timer::Connection() called");
+				_sig_rec.dissolve(&_default_sigh_ctx);
+				PRAW("~Timer::Connection() finished");
+				//wait_for_continue();
+			}
 
 			/*
 			 * Intercept 'sigh' to keep track of customized signal handlers

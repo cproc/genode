@@ -19,6 +19,7 @@ build {
 	server/rom_blk
 	server/part_blk
 	test/blk/cli
+	test/session
 }
 
 if { [file exists bin/ata.raw] == 0 } then {
@@ -58,6 +59,7 @@ install_config {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
+
 	<start name="rom_blk">
 		<resource name="RAM" quantum="32M"/>
 		<provides><service name="Block"/></provides>
@@ -71,7 +73,6 @@ install_config {
 		</route>
 		<config>
 			<policy label="test-part1" partition="6"/>
-			<policy label="test-part2" partition="1"/>
 		</config>
 	</start>
 	<start name="test-part1">
@@ -81,20 +82,26 @@ install_config {
 			<any-service> <child name="part_blk" /> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-	<start name="test-part2">
-		<binary name="test-blk-cli"/>
+
+	<start name="test-session">
+		<binary name="test-session"/>
 		<resource name="RAM" quantum="5M" />
-		<route>
-			<any-service> <child name="part_blk" /> <parent/> <any-child/> </any-service>
-		</route>
 	</start>
+
+<!--
+	<start name="test-session2">
+		<binary name="test-session"/>
+		<resource name="RAM" quantum="5M" />
+	</start>
+-->
+
 </config> }
 
 #
 # Boot modules
 #
 
-build_boot_image { core init timer rom_blk part_blk test-blk-cli ata.raw }
+build_boot_image { core init timer rom_blk part_blk test-blk-cli ata.raw test-session }
 
 #
 # Qemu
@@ -102,6 +109,7 @@ build_boot_image { core init timer rom_blk part_blk test-blk-cli ata.raw }
 
 append qemu_args " -nographic -m 128 "
 
-run_genode_until "Tests finished successfully.*\n.*Tests finished successfully.*\n" 50
+#run_genode_until "Tests finished successfully.*\n.*Tests finished successfully.*\n" 50
+run_genode_until forever
 exec rm bin/ata.raw
 puts "Test succeeded"
