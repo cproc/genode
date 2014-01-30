@@ -1,7 +1,7 @@
-if {![have_spec foc] || ![have_spec 32bit]} {
-	puts "\nThe Noux GDB scenario is supported on 32-bit Fiasco.OC only\n"
-	exit 0
-}
+#if {![have_spec foc] || ![have_spec 32bit]} {
+#	puts "\nThe Noux GDB scenario is supported on 32-bit Fiasco.OC only\n"
+#	exit 0
+#}
 
 source ${genode_dir}/ports/run/noux_gdb.inc
 
@@ -47,7 +47,7 @@ set gdb_target_binaries {
 lappend gdb_target_binaries ${gdb_target_binary_name}
 
 create_gdb_tar
-create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
+#create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
 
 create_boot_directory
 
