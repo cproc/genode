@@ -93,9 +93,17 @@ $(GENERATED_DIR)/i386.c: $(GENERATED_DIR)
 $(GENERATED_DIR)/i386-avx.c: $(GENERATED_DIR)
 	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/i386-avx.dat $(notdir $@)
 
+$(GENERATED_DIR)/amd64.c: $(GENERATED_DIR)
+	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64.dat $(notdir $@)
+
+$(GENERATED_DIR)/amd64-avx.c: $(GENERATED_DIR)
+	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64-avx.dat $(notdir $@)
+
 generated_files: $(CONTRIB_DIR)/$(GDB) \
                  $(GENERATED_DIR)/reg-arm.c \
                  $(GENERATED_DIR)/i386.c \
-                 $(GENERATED_DIR)/i386-avx.c
+                 $(GENERATED_DIR)/i386-avx.c \
+                 $(GENERATED_DIR)/amd64.c \
+                 $(GENERATED_DIR)/amd64-avx.c \
 
 .PHONY: generated_files
