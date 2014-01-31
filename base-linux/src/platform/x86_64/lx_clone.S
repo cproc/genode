@@ -51,12 +51,12 @@ L(thread_start):
 
 	/* Clear the frame pointer.  The ABI suggests this be done, to mark 
 	   the outermost frame obviously.  */
-	xorl	%ebp, %ebp
+	xorq	%rbp, %rbp
 
 	/* Set up arguments for the function call.  */
 	popq	%rax	/* Function to call.  */
 	popq	%rdi	/* Argument.  */
-	call	*%rax
+	jmpq	*%rax
 	/* Call exit with return value from function call. */
 	movq	%rax, %rdi
 	movq    $SYS_exit, %rax
