@@ -13,10 +13,27 @@
  */
 
 #include <base/printf.h>
+#include <base/thread.h>
+
+using namespace Genode;
+
+struct Test_thread : Thread<8192>
+{
+
+	void entry()
+	{
+		Genode::printf("%f\n", 1.0);
+	}
+
+	Test_thread() : Thread<8192>("test") { }
+
+};
 
 int main(int argc, char **argv)
 {
-	Genode::printf("-1 = %d = %ld\n", -1, -1L);
-
+	static Test_thread t;
+	t.start();
+	t.join();
 	return 0;
 }
+
