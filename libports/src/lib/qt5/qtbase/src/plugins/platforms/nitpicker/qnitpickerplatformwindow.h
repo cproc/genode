@@ -151,7 +151,7 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		                         int screen_width, int screen_height)
 		: QPlatformWindow(window),
 		  _window_slave_policy(ep, screen_width, screen_height),
-		  _window_slave(ep, _window_slave_policy, 9*1024*1024),
+		  _window_slave(ep, _window_slave_policy, 16*1024*1024),
 		  _timer(this),
 		  _keyboard_handler("", -1, false, false, ""),
 		  _resize_handle(!window->flags().testFlag(Qt::Popup)),
