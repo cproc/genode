@@ -1,0 +1,36 @@
+es1gears tweaks
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+- use 'glFrustum()' instead of 'glFrustumf()', which is not available yet
+  in Mesa 7.8
+- prevent program exit after 5 seconds
+---
+ src/egl/opengles1/gears.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/egl/opengles1/gears.c b/src/egl/opengles1/gears.c
+index 8462a48..b119cc0 100644
+--- a/src/egl/opengles1/gears.c
++++ b/src/egl/opengles1/gears.c
+@@ -335,7 +335,9 @@ gears_reshape(int width, int height)
+ 
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+-   glFrustumf(-1.0, 1.0, -h, h, 5.0, 60.0);
++
++   /* Mesa 7.8.2 does not implement 'glFrustumf()' yet */
++   glFrustum(-1.0, 1.0, -h, h, 5.0, 60.0);
+ 
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+@@ -369,6 +371,9 @@ main(int argc, char *argv[])
+ 
+    eglutCreateWindow("gears");
+ 
++   /* prevent program exit after 5 seconds */
++   eglutKeyboardFunc(NULL);
++
+    eglutIdleFunc(gears_idle);
+    eglutReshapeFunc(gears_reshape);
+    eglutDisplayFunc(gears_draw);

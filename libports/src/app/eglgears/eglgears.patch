@@ -1,0 +1,106 @@
+eglgears tweaks
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+- rotate on all 3 axes
+- enable alpha blending
+- prevent program exit after 5 seconds
+---
+ src/egl/opengl/eglgears.c |   43 ++++++++++++++++++++++++++++++-------------
+ 1 file changed, 30 insertions(+), 13 deletions(-)
+
+diff --git a/src/egl/opengl/eglgears.c b/src/egl/opengl/eglgears.c
+index 0dd2121..c42dacf 100644
+--- a/src/egl/opengl/eglgears.c
++++ b/src/egl/opengl/eglgears.c
+@@ -179,6 +179,7 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
+ static void
+ draw(void)
+ {
++   GLfloat a;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ 
+    glPushMatrix();
+@@ -194,13 +195,17 @@ draw(void)
+ 
+    glPushMatrix();
+    glTranslatef(3.1, -2.0, 0.0);
+-   glRotatef(-2.0 * angle - 9.0, 0.0, 0.0, 1.0);
++   a = -2.0*angle - 9.0;
++   while (a < 0) a += 360;
++   glRotatef(a, 0.0, 0.0, 1.0);
+    glCallList(gear2);
+    glPopMatrix();
+ 
+    glPushMatrix();
+    glTranslatef(-3.1, 4.2, 0.0);
+-   glRotatef(-2.0 * angle - 25.0, 0.0, 0.0, 1.0);
++   a = -2.0*angle - 25.0;
++   while (a < 0) a += 360;
++   glRotatef(a, 0.0, 0.0, 1.0);
+    glCallList(gear3);
+    glPopMatrix();
+ 
+@@ -211,15 +216,21 @@ draw(void)
+ static void
+ idle(void)
+ {
+-  static double t0 = -1.;
+-  double dt, t = eglutGet(EGLUT_ELAPSED_TIME) / 1000.0;
+-  if (t0 < 0.0)
+-    t0 = t;
+-  dt = t - t0;
+-  t0 = t;
++  angle += 3;
++  if (angle > 360)
++    angle -= 360;
+ 
+-  angle += 70.0 * dt;  /* 70 degrees per second */
+-  angle = fmod(angle, 360.0); /* prevents eventual overflow */
++  view_rotx += 2;
++  if (view_rotx > 360)
++    view_rotx -= 360;
++
++  view_roty += 1.1;
++  if (view_roty > 360)
++    view_roty -= 360;
++
++  view_rotz += 0.77;
++  if (view_rotz > 360)
++    view_rotz -= 360;
+ 
+   eglutPostRedisplay();
+ }
+@@ -247,9 +258,9 @@ static void
+ init(void)
+ {
+    static GLfloat pos[4] = { 5.0, 5.0, 10.0, 0.0 };
+-   static GLfloat red[4] = { 0.8, 0.1, 0.0, 1.0 };
+-   static GLfloat green[4] = { 0.0, 0.8, 0.2, 1.0 };
+-   static GLfloat blue[4] = { 0.2, 0.2, 1.0, 1.0 };
++   static GLfloat red[4] = { 1.5*0.8, 0.1, 0.0, 0.5 };
++   static GLfloat green[4] = { 0.0, 1.5*0.8, 0.2, 0.5 };
++   static GLfloat blue[4] = { 0.2, 0.2, 1.5*1.0, 0.5 };
+ 
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glEnable(GL_CULL_FACE);
+@@ -257,6 +268,9 @@ init(void)
+    glEnable(GL_LIGHT0);
+    glEnable(GL_DEPTH_TEST);
+ 
++   glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
++   glEnable(GL_BLEND);
++
+    /* make the gears */
+    gear1 = glGenLists(1);
+    glNewList(gear1, GL_COMPILE);
+@@ -288,6 +302,9 @@ main(int argc, char *argv[])
+ 
+    eglutCreateWindow("eglgears");
+ 
++   /* prevent program exit after 5 seconds */
++   eglutKeyboardFunc(NULL);
++
+    eglutIdleFunc(idle);
+    eglutReshapeFunc(reshape);
+    eglutDisplayFunc(draw);
