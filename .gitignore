@@ -27,6 +27,7 @@
 /libports/include/GLES2
 /libports/include/KHR
 /libports/include/SDL
+/libports/include/eglut
 /libports/include/exfat
 /libports/include/ffat
 /libports/include/fribidi
