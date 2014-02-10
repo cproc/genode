@@ -1,0 +1,2 @@
+MESA_DEMOS_VERSION = 8.1.0
+MESA_DEMOS         = mesa-demos-$(MESA_DEMOS_VERSION)
