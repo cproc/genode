@@ -1,0 +1,38 @@
+es2gears tweaks
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+- implement 'sincos()', which is not available in Genode's libm
+- prevent program exit after 5 seconds
+---
+ src/egl/opengles2/es2gears.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/egl/opengles2/es2gears.c b/src/egl/opengles2/es2gears.c
+index 37fb6a4..4798a2d 100644
+--- a/src/egl/opengles2/es2gears.c
++++ b/src/egl/opengles2/es2gears.c
+@@ -51,6 +51,13 @@
+ #include <EGL/eglext.h>
+ #include "eglut.h"
+ 
++/* Genode's libm does not have this function */
++inline void sincos(double x, double *sin_out, double *cos_out)
++{
++	*sin_out = sin(x);
++	*cos_out = cos(x);
++}
++
+ #define STRIPS_PER_TOOTH 7
+ #define VERTICES_PER_TOOTH 34
+ #define GEAR_VERTEX_STRIDE 6
+@@ -708,6 +715,9 @@ main(int argc, char *argv[])
+ 
+    eglutCreateWindow("es2gears");
+ 
++   /* prevent program exit after 5 seconds */
++   eglutKeyboardFunc(NULL);
++
+    /* Set up eglut callback functions */
+    eglutIdleFunc(gears_idle);
+    eglutReshapeFunc(gears_reshape);
