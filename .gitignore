@@ -25,6 +25,8 @@
 /libports/include/EGL/egl.h
 /libports/include/EGL/eglext.h
 /libports/include/GL
+/libports/include/GLES
+/libports/include/GLES2
 /libports/include/KHR
 /libports/include/SDL
 /libports/include/exfat
