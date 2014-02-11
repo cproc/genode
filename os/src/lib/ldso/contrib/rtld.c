@@ -1453,7 +1453,7 @@ do_load_object(int fd, const char *name, char *path, struct stat *sbp)
     obj_loads++;
     linkmap_add(obj);	/* for GDB & dlinfo() */
 
-    dbg("  %p .. %p: %s", obj->mapbase,
+    printf("  %p .. %p: %s\n", obj->mapbase,
          obj->mapbase + obj->mapsize - 1, obj->path);
     if (obj->textrel)
 	dbg("  WARNING: %s has impure text", obj->path);
