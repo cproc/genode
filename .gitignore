@@ -43,6 +43,7 @@
 /libports/include/libc-arm/
 /libports/include/libc-i386/
 /libports/include/libc/
+/libports/include/libdrm/
 /libports/include/libpng
 /libports/include/libssh/
 /libports/include/lua
