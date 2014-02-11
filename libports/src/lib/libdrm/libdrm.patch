@@ -1,0 +1,61 @@
+libdrm.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/drm/drm.h    |    5 +++++
+ intel/intel_bufmgr.c |    8 ++++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/include/drm/drm.h b/include/drm/drm.h
+index f0b4c16..8516c51 100644
+--- a/include/drm/drm.h
++++ b/include/drm/drm.h
+@@ -633,7 +633,12 @@ struct drm_set_client_cap {
+ 	__u64 value;
+ };
+ 
++/* O_CLOEXEC is not defined in Genode's libc */
++#if 0
+ #define DRM_CLOEXEC O_CLOEXEC
++#else
++#define DRM_CLOEXEC 0
++#endif
+ struct drm_prime_handle {
+ 	__u32 handle;
+ 
+diff --git a/intel/intel_bufmgr.c b/intel/intel_bufmgr.c
+index 905556f..08a2571 100644
+--- a/intel/intel_bufmgr.c
++++ b/intel/intel_bufmgr.c
+@@ -36,7 +36,10 @@
+ #include <errno.h>
+ #include <drm.h>
+ #include <i915_drm.h>
++/* not available on Genode */
++#if 0
+ #include <pciaccess.h>
++#endif
+ #include "intel_bufmgr.h"
+ #include "intel_bufmgr_priv.h"
+ #include "xf86drm.h"
+@@ -275,6 +278,8 @@ int drm_intel_get_pipe_from_crtc_id(drm_intel_bufmgr *bufmgr, int crtc_id)
+ static size_t
+ drm_intel_probe_agp_aperture_size(int fd)
+ {
++/* TODO: implement for Genode */
++#if 0
+ 	struct pci_device *pci_dev;
+ 	size_t size = 0;
+ 	int ret;
+@@ -296,6 +301,9 @@ drm_intel_probe_agp_aperture_size(int fd)
+ err:
+ 	pci_system_cleanup ();
+ 	return size;
++#else
++	return 0;
++#endif
+ }
+ 
+ int drm_intel_get_aperture_sizes(int fd,
