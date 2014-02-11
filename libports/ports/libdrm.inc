@@ -1,0 +1,3 @@
+LIBDRM_VERSION = 2.4.52
+LIBDRM         = libdrm-$(LIBDRM_VERSION)
+LIBDRM_DIR     = libdrm-$(LIBDRM_VERSION)

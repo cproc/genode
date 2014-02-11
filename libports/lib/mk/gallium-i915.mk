@@ -18,10 +18,6 @@ INC_DIR += $(GALLIUM_SRC_DIR)/drivers/trace
 SRC_CC += query_device_id.cc
 vpath query_device_id.cc $(REP_DIR)/src/lib/gallium/i915
 
-# libdrm includes
-LIBDRM_DIR = $(REP_DIR)/contrib/libdrm-2.4.21
-INC_DIR += $(LIBDRM_DIR)/include/drm $(LIBDRM_DIR)/intel
-
 # interface to i915 drm device
 SRC_C += $(notdir $(wildcard $(GALLIUM_SRC_DIR)/winsys/drm/intel/gem/*.c))
 vpath %.c $(GALLIUM_SRC_DIR)/winsys/drm/intel/gem
