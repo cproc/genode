@@ -12,7 +12,6 @@
  */
 
 /* Genode includes */
-#include <base/sleep.h>
 #include <base/thread.h>
 #include <timer_session/connection.h>
 
@@ -32,8 +31,8 @@ class Test_thread : public Genode::Thread<2*4096>
 		void func()
 		{
 			/*
-			 * make sure that the main thread is sleeping in
-			 * Genode::sleep_forever() when the segfault happens
+			 * make sure that the main thread is blocking in
+			 * 'Timer_session::msleep()' when the segfault happens
 			 */
 			static Timer::Connection timer;
 			timer.msleep(500);
@@ -44,8 +43,6 @@ class Test_thread : public Genode::Thread<2*4096>
 		void entry() /* set a breakpoint here to test the 'info threads' command */
 		{
 			func();
-
-			Genode::sleep_forever();
 		}
 };
 
@@ -83,13 +80,18 @@ int func1()
 
 int main(void)
 {
+	Timer::Connection main_timer;
+	
 	Test_thread test_thread;
 
 	func1();
 
 	test_thread.start();
 
-	Genode::sleep_forever();
+	/* this call can be used for testing the stack trace of a thread doing IPC */
+	main_timer.msleep(60000);
+
+	test_thread.join();
 
 	return 0;
 }
