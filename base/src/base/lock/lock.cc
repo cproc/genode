@@ -15,7 +15,7 @@
 #include <base/cancelable_lock.h>
 
 /* local includes */
-#include "spin_lock.h"
+#include <spin_lock.h>
 
 using namespace Genode;
 
@@ -75,7 +75,7 @@ void Cancelable_lock::lock()
 	if (_owner == myself)
 		_owner = Applicant(invalid_thread_base());
 
-	if (cmpxchg(&_state, UNLOCKED, LOCKED)) {
+	if (cmpxchg(&_state, (int)UNLOCKED, (int)LOCKED)) {
 
 		/* we got the lock */
 		_owner          =  myself;

@@ -31,9 +31,10 @@ enum State { SPINLOCK_LOCKED, SPINLOCK_UNLOCKED };
 
 static inline void memory_barrier() { asm volatile ("" : : : "memory"); }
 
-static inline void spinlock_lock(volatile int *lock_variable)
+template <typename T>
+static inline void spinlock_lock(volatile T *lock_variable)
 {
-	while (!Genode::cmpxchg(lock_variable, SPINLOCK_UNLOCKED, SPINLOCK_LOCKED)) {
+	while (!Genode::cmpxchg(lock_variable, (T)SPINLOCK_UNLOCKED, (T)SPINLOCK_LOCKED)) {
 		/*
 		 * Yield our remaining time slice to help the spinlock holder to pass
 		 * the critical section.
@@ -43,7 +44,8 @@ static inline void spinlock_lock(volatile int *lock_variable)
 }
 
 
-static inline void spinlock_unlock(volatile int *lock_variable)
+template <typename T>
+static inline void spinlock_unlock(volatile T *lock_variable)
 {
 	/* make sure all got written by compiler before releasing lock */
 	memory_barrier();

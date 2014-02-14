@@ -58,7 +58,7 @@ namespace Genode {
 			 * atomically. Hence, we use the additional spinlock here.
 			 */
 
-			volatile int _spinlock_state;
+			volatile unsigned long _spinlock_state;
 			volatile int _state;
 
 			Applicant* volatile _last_applicant;

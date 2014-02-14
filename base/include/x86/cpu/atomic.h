@@ -29,24 +29,10 @@ namespace Genode {
 	 * \return  1 if the value was successfully changed to new_val,
 	 *          0 if cmp_val and the value at dest differ.
 	 */
-	inline int cmpxchg(volatile int *dest, int cmp_val, int new_val)
+	template <typename T>
+	inline int cmpxchg(volatile T *dest, T cmp_val, T new_val)
 	{
-		int tmp;
-
-		__asm__ __volatile__
-		(
-		 "lock cmpxchgl %1, %3 \n\t"
-		 :
-		 "=a" (tmp)      /* 0 EAX, return val */
-		 :
-		 "r"  (new_val), /* 1 reg, new value */
-		 "0"  (cmp_val), /* 2 EAX, compare value */
-		 "m"  (*dest)    /* 3 mem, destination operand */
-		 :
-		 "memory", "cc"
-		);
-
-		return tmp == cmp_val;
+	    return __sync_bool_compare_and_swap(dest, cmp_val, new_val);
 	}
 }
 

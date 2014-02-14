@@ -28,26 +28,10 @@ namespace Genode {
 	 * \return  1 if the value was successfully changed to new_val,
 	 *          0 if cmp_val and the value at dest differ.
 	 */
-	inline int cmpxchg(volatile int *dest, int cmp_val, int new_val)
+	template <typename T>
+	inline int cmpxchg(volatile T *dest, T cmp_val, T new_val)
 	{
-		unsigned long equal, not_exclusive;
-
-		__asm__ __volatile__(
-			"@ cmpxchg\n"
-			"  1:                  \n"
-			"  ldrex   %0, [%2]    \n"
-			"  cmp     %0, %3      \n"
-			"  bne     2f          \n"
-			"  strexeq %0, %4, [%2]\n"
-			"  teqeq   %0, #0      \n"
-			"  bne     1b          \n"
-			"  moveq   %1, #1      \n"
-			"  2:                  \n"
-			"  movne   %1, #0      \n"
-			: "=&r" (not_exclusive), "=&r" (equal)
-			: "r" (dest), "r" (cmp_val), "r" (new_val)
-			: "cc");
-		return equal && !not_exclusive;
+	    return __sync_bool_compare_and_swap(dest, cmp_val, new_val);
 	}
 }
 
