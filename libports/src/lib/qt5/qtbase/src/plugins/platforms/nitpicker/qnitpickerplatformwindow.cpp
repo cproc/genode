@@ -24,7 +24,7 @@
 
 QT_BEGIN_NAMESPACE
 
-static const bool qnpw_verbose = true;
+static const bool qnpw_verbose = false/*true*/;
 
 void QNitpickerPlatformWindow::_process_mouse_event(Input::Event *ev)
 {
@@ -124,13 +124,22 @@ void QNitpickerPlatformWindow::_process_key_event(Input::Event *ev)
 	_keyboard_handler.processKeycode(keycode, pressed, false);
 }
 
+Nitpicker::View_capability QNitpickerPlatformWindow::_parent_view_cap()
+{
+	if (window()->transientParent()) {
+		QNitpickerPlatformWindow *parent_platform_window =
+			static_cast<QNitpickerPlatformWindow*>(window()->transientParent()->handle());
+		return parent_platform_window->view_cap();
+	} else
+		return Nitpicker::View_capability();
+}
 
 QNitpickerPlatformWindow::QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_entrypoint &ep,
 		                 int screen_width, int screen_height)
 : QPlatformWindow(window),
   _framebuffer_session(_nitpicker_session.framebuffer_session()),
   _framebuffer(0),
-  _view_cap(_nitpicker_session.create_view()),
+  _view_cap(_nitpicker_session.create_view(_parent_view_cap())),
   _input_session(_nitpicker_session.input_session()),
   _timer(this),
   _keyboard_handler("", -1, false, false, ""),
@@ -138,6 +147,12 @@ QNitpickerPlatformWindow::QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_
   _decoration(!window->flags().testFlag(Qt::Popup)),
   _egl_surface(EGL_NO_SURFACE)
 {
+
+	if (window->transientParent())
+		qDebug() << "QNitpickerPlatformWindow(): child window of" << window->transientParent();
+
+	/* TODO: adjust the geometry */
+
 	QRect g(geometry());
 	Framebuffer::Mode mode(g.width(), g.height(), Framebuffer::Mode::RGB565);
 	_nitpicker_session.buffer(mode, false);
@@ -189,17 +204,22 @@ void QNitpickerPlatformWindow::setGeometry(const QRect &rect)
 	/* limit window size to screen size */
 	QRect adjusted_rect(rect.intersected(screen()->geometry()));
 
-	Framebuffer::Mode mode(rect.width(), rect.height(), Framebuffer::Mode::RGB565);
+	Framebuffer::Mode mode(adjusted_rect.width(), adjusted_rect.height(),
+	                       Framebuffer::Mode::RGB565);
 	_nitpicker_session.buffer(mode, false);
 
+	/* Currently, top level windows must start at (0,0) */
+	if (!window()->transientParent())
+		adjusted_rect.moveTo(0, 0);
+
 	if (window()->isVisible())
-		Nitpicker::View_client(_view_cap).viewport(rect.x(),
-				                                   rect.y(),
-				                                   rect.width(),
-				                                   rect.height(),
+		Nitpicker::View_client(_view_cap).viewport(adjusted_rect.x(),
+				                                   adjusted_rect.y(),
+				                                   adjusted_rect.width(),
+				                                   adjusted_rect.height(),
 				                                   0, 0, true);
 
-	QPlatformWindow::setGeometry(rect);
+	QPlatformWindow::setGeometry(adjusted_rect);
 
 	emit framebuffer_changed();
 
@@ -228,7 +248,16 @@ void QNitpickerPlatformWindow::setVisible(bool visible)
 
 	if (visible) {
 		QRect g = geometry();
-		Nitpicker::View_client(_view_cap).viewport(g.x(), g.y(),
+
+int x = g.x();
+if (window()->transientParent()) {
+	qDebug() << "setGeometry(): child window of" << window()->transientParent();
+} else {
+	PDBG("not a child window");
+	x += 100;
+}
+
+		Nitpicker::View_client(_view_cap).viewport(x, g.y(),
 				                                   g.width(),
 				                                   g.height(),
 				                                   0, 0, true);

@@ -54,6 +54,8 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 		void _process_mouse_event(Input::Event *ev);
 		void _process_key_event(Input::Event *ev);
 
+		Nitpicker::View_capability _parent_view_cap();
+
 	public:
 
 		QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_entrypoint &ep,
