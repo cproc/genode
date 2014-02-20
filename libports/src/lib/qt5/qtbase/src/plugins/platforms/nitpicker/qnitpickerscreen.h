@@ -21,7 +21,6 @@
 
 /* Genode includes */
 #include <nitpicker_session/connection.h>
-#include <framebuffer_session/client.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -29,14 +28,12 @@ class QNitpickerScreen : public QPlatformScreen
 {
 	private:
 
-		Nitpicker::Connection       _nitpicker;
-		Framebuffer::Session_client _framebuffer;
+		Nitpicker::Connection _nitpicker;
 		QRect _geometry;
 
 	public:
 
 		QNitpickerScreen()
-		: _framebuffer(_nitpicker.framebuffer_session())
 		{
 			Framebuffer::Mode const scr_mode = _nitpicker.mode();
 			_nitpicker.buffer(scr_mode, false);
