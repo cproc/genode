@@ -89,6 +89,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher
 
 		PVM          _current_vm;
 		PVMCPU       _current_vcpu;
+		unsigned     _current_exit_cond;
 
 		__attribute__((noreturn)) void _default_handler(unsigned cond)
 		{
@@ -99,7 +100,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher
 			Utcb *utcb = reinterpret_cast<Utcb *>(myself->utcb());
 
 			/* tell caller what happened */
-			utcb->tls = cond;
+			_current_exit_cond = cond;
 
 			PVMCPU   pVCpu = _current_vcpu;
 			PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
@@ -160,7 +161,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher
 			/* emulator has to take over if fault region is not ram */	
 			if (!pv) {
 				/* tell caller what happened */
-				utcb->tls = NPT_EPT;
+				_current_exit_cond = NPT_EPT;
 
 				PVMCPU   pVCpu = _current_vcpu;
 				PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
@@ -676,13 +677,13 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher
 
 			if (utcb->intr_state & 3) {
 /*
-				PDBG("reset intr_state - exit reason %u", utcb->tls);
+				PDBG("reset intr_state - exit reason %u", _current_exit_cond);
 */
 				utcb->intr_state &= ~3;
 				utcb->mtd |= Mtd::STA;
 			}
 
-			switch (utcb->tls)
+			switch (_current_exit_cond)
 			{
 				case RECALL:
 
@@ -742,8 +743,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher
 
 				default:
 
-					PERR("unknown exit tls:ip:qual[0],[1] %lx:%lx:%llx:%llx",
-					     utcb->tls, utcb->ip, utcb->qual[0], utcb->qual[1]);
+					PERR("unknown exit cond:ip:qual[0],[1] %lx:%lx:%llx:%llx",
+					     _current_exit_cond, utcb->ip, utcb->qual[0], utcb->qual[1]);
 
 					while (1) {}
 			}
