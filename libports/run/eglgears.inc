@@ -4,7 +4,7 @@ build "
 	server/nitpicker server/nit_fb
 	app/launchpad
 	drivers/framebuffer drivers/pci drivers/input
-	lib/gallium
+        lib/egl_gallium
 	app/$gears_binary
 "
 
@@ -130,10 +130,10 @@ append config {
 
 install_config $config
 
-set boot_modules "
+append boot_modules "
 	core init ld.lib.so timer nitpicker nit_fb
 	launchpad $gears_binary
-	gallium.lib.so libc.lib.so libm.lib.so libc_log.lib.so
+	glapi.lib.so egl.lib.so egl_gallium.lib.so libc.lib.so libm.lib.so libc_log.lib.so
 	pthread.lib.so eglut_screen.lib.so
 "
 

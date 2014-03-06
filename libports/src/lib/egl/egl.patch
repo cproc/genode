@@ -1,0 +1,80 @@
+egl.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/EGL/eglplatform.h |   14 ++++++++++++++
+ src/egl/main/egldisplay.c |    3 ++-
+ src/egl/main/egldisplay.h |    1 +
+ src/egl/main/egldriver.c  |    6 +++++-
+ 4 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/include/EGL/eglplatform.h b/include/EGL/eglplatform.h
+index 21b18fe..fa17e4c 100644
+--- a/include/EGL/eglplatform.h
++++ b/include/EGL/eglplatform.h
+@@ -104,6 +104,20 @@ typedef struct ANativeWindow        *EGLNativeWindowType;
+ typedef struct egl_native_pixmap_t  *EGLNativePixmapType;
+ typedef void                        *EGLNativeDisplayType;
+ 
++#elif (_EGL_NATIVE_PLATFORM == _EGL_PLATFORM_GENODE)
++
++typedef void *EGLNativeDisplayType;
++typedef void *EGLNativePixmapType;
++
++struct Genode_egl_window
++{
++	int width;
++	int height;
++	unsigned char *addr;
++};
++
++typedef struct Genode_egl_window *EGLNativeWindowType;
++
+ #elif defined(__unix__)
+ 
+ #ifdef MESA_EGL_NO_X11_HEADERS
+diff --git a/src/egl/main/egldisplay.c b/src/egl/main/egldisplay.c
+index 97ad865..061d2e7 100644
+--- a/src/egl/main/egldisplay.c
++++ b/src/egl/main/egldisplay.c
+@@ -74,7 +74,8 @@ static const struct {
+    { _EGL_PLATFORM_DRM, "drm" },
+    { _EGL_PLATFORM_FBDEV, "fbdev" },
+    { _EGL_PLATFORM_NULL, "null" },
+-   { _EGL_PLATFORM_ANDROID, "android" }
++   { _EGL_PLATFORM_ANDROID, "android" },
++   { _EGL_PLATFORM_GENODE, "genode" },
+ };
+ 
+ 
+diff --git a/src/egl/main/egldisplay.h b/src/egl/main/egldisplay.h
+index 66aaff5..45a0b60 100644
+--- a/src/egl/main/egldisplay.h
++++ b/src/egl/main/egldisplay.h
+@@ -46,6 +46,7 @@ enum _egl_platform_type {
+    _EGL_PLATFORM_FBDEV,
+    _EGL_PLATFORM_NULL,
+    _EGL_PLATFORM_ANDROID,
++   _EGL_PLATFORM_GENODE,
+ 
+    _EGL_NUM_PLATFORMS,
+    _EGL_INVALID_PLATFORM = -1
+diff --git a/src/egl/main/egldriver.c b/src/egl/main/egldriver.c
+index 0af8ab8..c10a4a3 100644
+--- a/src/egl/main/egldriver.c
++++ b/src/egl/main/egldriver.c
+@@ -352,7 +352,11 @@ _eglLoaderFile(const char *dir, size_t len, void *loader_data)
+       }
+    }
+ 
+-#if defined(_EGL_OS_UNIX)
++/*
++ * 'access()' is not implemented yet for Genode and we don't want to provide the
++ * shared lib in a file system anyway.
++ */
++#if defined(_EGL_OS_UNIX) && (_EGL_NATIVE_PLATFORM != _EGL_PLATFORM_GENODE)
+    /* check if the file exists */
+    if (access(path, F_OK))
+       return EGL_TRUE;

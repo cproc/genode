@@ -21,7 +21,7 @@
 #include <base/lock.h>
 #include <util/arg_string.h>
 #include <parent/parent.h>
-
+extern "C" void wait_for_continue();
 namespace Genode {
 
 	/**
@@ -95,6 +95,7 @@ namespace Genode {
 		virtual void exit(int exit_value)
 		{
 			PDBG("child exited with exit value %d", exit_value);
+wait_for_continue();
 		}
 
 		/**
