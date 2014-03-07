@@ -73,7 +73,7 @@ extern "C" int genode_fetch_register(int regno, unsigned long *reg_content)
 			 	 	 *   add	r11, sp, #8 -> r11 = sp + 8
 			 	 	 *   sub	sp, sp, #20 -> r11 = (sp + 20) + 8
 			 	 	 */
-					*reg_content = (thread_state.sp + 20) + 8;
+					*reg_content = thread_state.sp + 12;
 					PDBG("FP = %8lx", *reg_content);
 					return 0;
 				} else {

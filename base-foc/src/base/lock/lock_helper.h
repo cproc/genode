@@ -24,6 +24,22 @@
 
 /* Fiasco.OC includes */
 namespace Fiasco {
+
+#define l4_ipc(...) l4_ipc_wrapper(__VA_ARGS__)
+
+#if 0
+	/* Build with frame pointer to make GDB backtraces work. See issue #1061. */
+	__attribute__((optimize("-fno-omit-frame-pointer")))
+	__attribute__((noinline))
+	//__attribute__((used))
+	l4_msgtag_t l4_ipc(l4_cap_idx_t dest, l4_utcb_t *u,
+                       l4_umword_t flags,
+                       l4_umword_t slabel,
+                       l4_msgtag_t tag,
+                       l4_umword_t *rlabel,
+                       l4_timeout_t timeout) L4_NOTHROW;
+#endif    
+
 #include <l4/sys/kdebug.h>
 #include <l4/sys/irq.h>
 #include <l4/sys/thread.h>
@@ -76,15 +92,27 @@ static inline void thread_switch_to(Genode::Thread_base *thread_base)
 }
 
 
+namespace Fiasco {
+	/* Build with frame pointer to make GDB backtraces work. See issue #1061. */
+	__attribute__((optimize("-fno-omit-frame-pointer")))
+	__attribute__((noinline))
+	//__attribute__((used))
+	l4_msgtag_t l4_ipc_wrapper(l4_cap_idx_t dest, l4_utcb_t *u,
+                       l4_umword_t flags,
+                       l4_umword_t slabel,
+                       l4_msgtag_t tag,
+                       l4_umword_t *rlabel,
+                       l4_timeout_t timeout) L4_NOTHROW;
+/*	{
+		return l4_ipc(dest, u, flags, slabel, tag, rlabel, timeout);
+	}*/
+}
+
 /**
  * Unconditionally block the calling thread
  */
 
-/* Build with frame pointer to make GDB backtraces work. See issue #1061. */
-__attribute__((optimize("-fno-omit-frame-pointer")))
-__attribute__((noinline))
-__attribute__((used))
-static void thread_stop_myself()
+static inline void thread_stop_myself()
 {
 	using namespace Fiasco;
 
