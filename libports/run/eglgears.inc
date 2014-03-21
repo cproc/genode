@@ -65,8 +65,13 @@ append config {
 	<start name="nitpicker">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Nitpicker"/></provides>
-		<route><any-service><parent/><any-child/></any-service></route>
+		<route>
+			<service name="Framebuffer"> <child name="fb_drv"/> </service>
+			<service name="Input"> <child name="ps2_drv"/> </service>
+			<any-service> <parent /> <any-child/> </any-service>
+		</route>
 	</start>
+<!--
 	<start name="launchpad">
 		<resource name="RAM" quantum="1G"/>
 		<config>
@@ -103,6 +108,22 @@ append config {
 				</config>
 			</launcher>
 		</config>
+	</start>
+-->
+	<start name="nit_fb">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Input"/><service name="Framebuffer"/></provides>
+		<route><any-service><parent/><any-child/></any-service></route>
+		<config xpos="300" ypos="100" width="576" height="408" />
+	</start> }
+append config "
+	<start name=\"$gears_binary\"> "
+append config {
+		<resource name="RAM" quantum="1G"/>
+		<route>
+			<service name="Framebuffer"> <child name="nit_fb"/> </service>
+			<any-service> <parent /> <any-child/> </any-service>
+		</route>
 	</start>
 </config>
 }
