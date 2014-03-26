@@ -6,7 +6,7 @@ EGLUT_DIR = $(REP_DIR)/contrib/$(MESA_DEMOS)/src/egl/eglut
 
 SRC_C = eglut.c eglut_screen.c
 
-LIBS += libc
+LIBS += egl libc
 
 vpath %.c $(EGLUT_DIR)
 
