@@ -1,44 +1,31 @@
-include $(REP_DIR)/lib/mk/gallium.inc
+include $(REP_DIR)/lib/mk/mesa10.inc
 
-EGL_ST_SRC_DIR := $(MESA_DIR)/src/gallium/state_trackers/egl
-INC_DIR        += $(EGL_ST_SRC_DIR)
-INC_DIR        += $(MESA_DIR)/src/egl/main
-INC_DIR        += $(MESA_DIR)/src/gallium
-CC_OPT         += -DRTLD_NODELETE=0
+include $(REP_DIR)/lib/import/import-egl.mk
 
-# generic driver code
-SRC_C := $(notdir $(wildcard $(EGL_ST_SRC_DIR)/common/*.c))
-vpath %.c $(EGL_ST_SRC_DIR)/common
+# sources and compiler options extracted from the Linux build log for libegl.a
 
-# state tracker declarations for OpenGL ES1 and ES2
-SRC_C += st_es1.c st_es2.c
-vpath %.c $(MESA_DIR)/src/gallium/state_trackers/es
+SRC_C = common/egl_g3d_api.c \
+        common/egl_g3d.c \
+        common/egl_g3d_image.c \
+        common/egl_g3d_st.c \
+        common/egl_g3d_sync.c \
+        common/native_helper.c \
+        common/native_wayland_drm_bufmgr.c \
 
-# state tracker declarations for OpenGL
-SRC_C += st_opengl.c
-vpath st_opengl.c $(REP_DIR)/src/lib/egl
+SRC_CC = genode/native_genode.cc
 
-# Genode-specific driver code
-SRC_CC += driver.cc select_driver.cc
-vpath driver.cc $(REP_DIR)/src/lib/egl
-vpath select_driver.cc $(REP_DIR)/src/lib/egl
-LIBS += blit
+# TODO: winsys/sw is null-specific, probably not needed for Genode winsys
+INC_DIR += $(REP_DIR)/contrib/$(MESA_DIR)/include \
+           $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/auxiliary \
+           $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/include \
+           $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/state_trackers/egl \
+           $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/winsys/sw \
+           $(REP_DIR)/contrib/$(MESA_DIR)/src/egl/main \
 
-# MESA state tracker code
-MESA_ST_SRC_DIR := $(MESA_DIR)/src/mesa/state_tracker
-INC_DIR += $(MESA_ST_SRC_DIR)
-INC_DIR += $(MESA_DIR)/src/mesa/main
-INC_DIR += $(MESA_DIR)/src/mesa
+CC_OPT += -DHAVE_GENODE_BACKEND
 
-SRC_C += $(notdir $(wildcard $(MESA_ST_SRC_DIR)/*.c))
-vpath %.c $(MESA_ST_SRC_DIR)
+LIBS = libc
 
-# dim warning noise
-CC_OPT_st_atom_pixeltransfer += -Wno-unused-but-set-variable
-CC_OPT_st_cb_drawpixels      += -Wno-unused-but-set-variable
-CC_OPT_st_cb_texture         += -Wno-strict-aliasing
-CC_OPT_st_cb_texture         += -Wno-unused-but-set-variable
-CC_OPT_st_framebuffer        += -Wno-strict-aliasing
-CC_OPT_st_program            += -Wno-unused-but-set-variable
-CC_OPT_st_texture            += -Wno-unused-but-set-variable
+vpath %.c  $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/state_trackers/egl
+vpath %.cc $(REP_DIR)/contrib/$(MESA_DIR)/src/gallium/state_trackers/egl
 

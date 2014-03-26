@@ -1,3 +1,4 @@
 set gears_binary "es2gears"
+set boot_modules "glesv2.lib.so"
 
 source ${genode_dir}/libports/run/eglgears.inc
