@@ -1,0 +1,3 @@
+MESA_VERSION = 10.1.0
+MESA         = MesaLib-$(MESA_VERSION)
+MESA_DIR     = Mesa-$(MESA_VERSION)

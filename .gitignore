@@ -22,8 +22,7 @@
 /libports/contrib
 /libports/download
 /libports/include/curl/
-/libports/include/EGL/egl.h
-/libports/include/EGL/eglext.h
+/libports/include/EGL
 /libports/include/GL
 /libports/include/GLES
 /libports/include/GLES2
