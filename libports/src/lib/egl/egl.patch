@@ -1,0 +1,837 @@
+egl.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/EGL/eglplatform.h                          |   14 
+ src/egl/main/egldisplay.c                          |    3 
+ src/egl/main/egldisplay.h                          |    1 
+ src/egl/main/egldriver.c                           |   10 
+ src/gallium/state_trackers/egl/common/egl_g3d.c    |    9 
+ .../state_trackers/egl/genode/native_genode.cc     |  690 ++++++++++++++++++++
+ src/gallium/targets/egl-static/egl.c               |    3 
+ 7 files changed, 728 insertions(+), 2 deletions(-)
+ create mode 100644 src/gallium/state_trackers/egl/genode/native_genode.cc
+
+diff --git a/include/EGL/eglplatform.h b/include/EGL/eglplatform.h
+index 21b18fe..75fde41 100644
+--- a/include/EGL/eglplatform.h
++++ b/include/EGL/eglplatform.h
+@@ -104,6 +104,20 @@ typedef struct ANativeWindow        *EGLNativeWindowType;
+ typedef struct egl_native_pixmap_t  *EGLNativePixmapType;
+ typedef void                        *EGLNativeDisplayType;
+ 
++#elif defined (GENODE_EGL_PLATFORM)
++
++typedef void *EGLNativeDisplayType;
++typedef void *EGLNativePixmapType;
++
++struct Genode_egl_window
++{
++	int width;
++	int height;
++	unsigned char *addr;
++};
++
++typedef struct Genode_egl_window *EGLNativeWindowType;
++
+ #elif defined(__unix__)
+ 
+ #ifdef MESA_EGL_NO_X11_HEADERS
+diff --git a/src/egl/main/egldisplay.c b/src/egl/main/egldisplay.c
+index 97ad865..061d2e7 100644
+--- a/src/egl/main/egldisplay.c
++++ b/src/egl/main/egldisplay.c
+@@ -74,7 +74,8 @@ static const struct {
+    { _EGL_PLATFORM_DRM, "drm" },
+    { _EGL_PLATFORM_FBDEV, "fbdev" },
+    { _EGL_PLATFORM_NULL, "null" },
+-   { _EGL_PLATFORM_ANDROID, "android" }
++   { _EGL_PLATFORM_ANDROID, "android" },
++   { _EGL_PLATFORM_GENODE, "genode" },
+ };
+ 
+ 
+diff --git a/src/egl/main/egldisplay.h b/src/egl/main/egldisplay.h
+index 66aaff5..45a0b60 100644
+--- a/src/egl/main/egldisplay.h
++++ b/src/egl/main/egldisplay.h
+@@ -46,6 +46,7 @@ enum _egl_platform_type {
+    _EGL_PLATFORM_FBDEV,
+    _EGL_PLATFORM_NULL,
+    _EGL_PLATFORM_ANDROID,
++   _EGL_PLATFORM_GENODE,
+ 
+    _EGL_NUM_PLATFORMS,
+    _EGL_INVALID_PLATFORM = -1
+diff --git a/src/egl/main/egldriver.c b/src/egl/main/egldriver.c
+index 0af8ab8..d049c9b 100644
+--- a/src/egl/main/egldriver.c
++++ b/src/egl/main/egldriver.c
+@@ -128,7 +128,11 @@ close_library(void *lib)
+ static const char *
+ library_suffix(void)
+ {
++#ifdef GENODE_EGL_PLATFORM
++   return ".lib.so";
++#else
+    return ".so";
++#endif
+ }
+ 
+ 
+@@ -352,7 +356,11 @@ _eglLoaderFile(const char *dir, size_t len, void *loader_data)
+       }
+    }
+ 
+-#if defined(_EGL_OS_UNIX)
++/*
++ * 'access()' is not implemented yet for Genode and we don't want to provide the
++ * shared lib in a file system anyway.
++ */
++#if defined(_EGL_OS_UNIX) && (_EGL_NATIVE_PLATFORM != _EGL_PLATFORM_GENODE)
+    /* check if the file exists */
+    if (access(path, F_OK))
+       return EGL_TRUE;
+diff --git a/src/gallium/state_trackers/egl/common/egl_g3d.c b/src/gallium/state_trackers/egl/common/egl_g3d.c
+index 7cc4e8f..80ed3f1 100644
+--- a/src/gallium/state_trackers/egl/common/egl_g3d.c
++++ b/src/gallium/state_trackers/egl/common/egl_g3d.c
+@@ -143,6 +143,12 @@ egl_g3d_get_platform(_EGLDriver *drv, _EGLPlatformType plat)
+          nplat = native_get_android_platform(&egl_g3d_native_event_handler);
+ #endif
+          break;
++      case _EGL_PLATFORM_GENODE:
++         plat_name = "Genode";
++#ifdef HAVE_GENODE_BACKEND
++         nplat = native_get_genode_platform(&egl_g3d_native_event_handler);
++#endif
++         break;
+       default:
+          break;
+       }
+@@ -511,9 +517,12 @@ egl_g3d_terminate(_EGLDriver *drv, _EGLDisplay *dpy)
+    return EGL_TRUE;
+ }
+ 
++extern void wait_for_continue();
++
+ static EGLBoolean
+ egl_g3d_initialize(_EGLDriver *drv, _EGLDisplay *dpy)
+ {
++wait_for_continue();
+    struct egl_g3d_driver *gdrv = egl_g3d_driver(drv);
+    struct egl_g3d_display *gdpy;
+    const struct native_platform *nplat;
+diff --git a/src/gallium/state_trackers/egl/genode/native_genode.cc b/src/gallium/state_trackers/egl/genode/native_genode.cc
+new file mode 100644
+index 0000000..265815a
+--- /dev/null
++++ b/src/gallium/state_trackers/egl/genode/native_genode.cc
+@@ -0,0 +1,690 @@
++#if 0
++
++/*
++ * Mesa 3-D graphics library
++ *
++ * Copyright (C) 2011 LunarG Inc.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included
++ * in all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++ * DEALINGS IN THE SOFTWARE.
++ *
++ * Authors:
++ *    Chia-I Wu <olv@lunarg.com>
++ */
++
++/**
++ * For NULL window system,
++ *
++ *  - the only valid native display is EGL_DEFAULT_DISPLAY
++ *  - there is no window or pixmap
++ */
++
++#include "util/u_memory.h"
++#include "null/null_sw_winsys.h"
++#include "common/native.h"
++
++struct null_display {
++   struct native_display base;
++
++   const struct native_event_handler *event_handler;
++
++   struct native_config *configs;
++   int num_configs;
++};
++
++static INLINE struct null_display *
++null_display(const struct native_display *ndpy)
++{
++   return (struct null_display *) ndpy;
++}
++
++static const struct native_config **
++null_display_get_configs(struct native_display *ndpy, int *num_configs)
++{
++   struct null_display *null = null_display(ndpy);
++   const struct native_config **configs;
++   int i;
++
++   configs = MALLOC(sizeof(*configs) * null->num_configs);
++   if (configs) {
++      for (i = 0; i < null->num_configs; i++)
++         configs[i] = &null->configs[i];
++      if (num_configs)
++         *num_configs = null->num_configs;
++   }
++
++   return configs;
++}
++
++static int
++null_display_get_param(struct native_display *ndpy,
++                      enum native_param_type param)
++{
++   return 0;
++}
++
++static void
++null_display_destroy(struct native_display *ndpy)
++{
++   struct null_display *null = null_display(ndpy);
++
++   FREE(null->configs);
++   ndpy_uninit(&null->base);
++   FREE(null);
++}
++
++static boolean
++null_display_init_config(struct native_display *ndpy)
++{
++   const enum pipe_format color_formats[] =  {
++      PIPE_FORMAT_B8G8R8A8_UNORM,
++      PIPE_FORMAT_B8G8R8X8_UNORM,
++      PIPE_FORMAT_B5G6R5_UNORM,
++      PIPE_FORMAT_NONE
++   };
++   struct null_display *null = null_display(ndpy);
++   int i;
++
++   null->configs = CALLOC(Elements(color_formats) - 1, sizeof(*null->configs));
++   if (!null->configs)
++      return FALSE;
++
++   /* add configs */
++   for (i = 0; color_formats[i] != PIPE_FORMAT_NONE; i++) {
++      if (null->base.screen->is_format_supported(null->base.screen,
++               color_formats[i], PIPE_TEXTURE_2D, 0,
++               PIPE_BIND_RENDER_TARGET)) {
++         struct native_config *nconf = &null->configs[null->num_configs];
++
++         nconf->color_format = color_formats[i];
++         nconf->buffer_mask = 1 << NATIVE_ATTACHMENT_BACK_LEFT;
++         null->num_configs++;
++      }
++   }
++
++   return TRUE;
++}
++
++static boolean
++null_display_init_screen(struct native_display *ndpy)
++{
++   struct null_display *null = null_display(ndpy);
++   struct sw_winsys *ws;
++
++   ws = null_sw_create();
++   if (!ws)
++      return FALSE;
++
++   null->base.screen = null->event_handler->new_sw_screen(&null->base, ws);
++   if (!null->base.screen) {
++      if (ws->destroy)
++         ws->destroy(ws);
++      return FALSE;
++   }
++
++   if (!null_display_init_config(&null->base)) {
++      ndpy_uninit(&null->base);
++      return FALSE;
++   }
++
++   return TRUE;
++}
++
++static struct native_display *
++null_display_create(const struct native_event_handler *event_handler)
++{
++   struct null_display *null;
++
++   null = CALLOC_STRUCT(null_display);
++   if (!null)
++      return NULL;
++
++   null->event_handler = event_handler;
++
++   null->base.init_screen = null_display_init_screen;
++   null->base.destroy = null_display_destroy;
++   null->base.get_param = null_display_get_param;
++   null->base.get_configs = null_display_get_configs;
++
++   return &null->base;
++}
++
++static const struct native_event_handler *null_event_handler;
++
++static struct native_display *
++native_create_display(void *dpy, boolean use_sw)
++{
++   struct native_display *ndpy = NULL;
++
++   /* the only valid display is NULL */
++   if (!dpy)
++      ndpy = null_display_create(null_event_handler);
++
++   return ndpy;
++}
++
++#endif
++
++
++
++/* Genode includes */
++#include <base/env.h>
++#include <base/printf.h>
++#include <framebuffer_session/connection.h>
++
++/* Mesa includes */
++#include "common/native.h"
++#include "state_tracker/sw_winsys.h"
++
++
++using namespace Genode;
++
++/********************************
++ ** Genode framebuffer backend **
++ ********************************/
++
++class Genode_framebuffer
++{
++	private:
++
++		Framebuffer::Connection            _framebuffer;
++		Framebuffer::Mode            const _mode;
++		Genode::Dataspace_capability const _ds_cap;
++		void                       * const _local_addr;
++
++	public:
++
++		Genode_framebuffer()
++		:
++			_mode(_framebuffer.mode()),
++			_ds_cap(_framebuffer.dataspace()),
++			_local_addr(Genode::env()->rm_session()->attach(_ds_cap))
++		{ }
++
++		~Genode_framebuffer()
++		{
++			Genode::env()->rm_session()->detach(_local_addr);
++		}
++
++		void *local_addr() const { return _local_addr; }
++
++		void flush()
++		{
++			_framebuffer.refresh(0, 0, _mode.width(), _mode.height());
++		}
++
++		int width()  const { return _mode.width();  }
++		int height() const { return _mode.height(); }
++};
++
++
++static Genode_framebuffer *genode_framebuffer()
++{
++	static Genode_framebuffer genode_framebuffer_inst;
++	return &genode_framebuffer_inst;
++}
++
++
++/****************************
++ ** EGL platform functions **
++ ****************************/
++
++extern "C" void wait_for_continue();
++
++class Winsys : public sw_winsys
++{
++	private:
++
++		static void
++		_destroy(struct sw_winsys *ws)
++		{
++			Genode::destroy(Genode::env()->heap(), static_cast<Winsys *>(ws));
++		}
++
++		static boolean
++		_is_displaytarget_format_supported(struct sw_winsys *ws,
++                                   	   	   unsigned tex_usage,
++		                                   enum pipe_format format )
++		{
++			PDBG("not implemented");
++			return false;
++		}
++
++
++		static void *
++		_displaytarget_map(struct sw_winsys *ws,
++		                   struct sw_displaytarget *dt,
++                           unsigned flags )
++		{
++			PDBG("not implemented");
++			return 0;
++		}
++
++
++		static void
++		_displaytarget_unmap(struct sw_winsys *ws,
++		                     struct sw_displaytarget *dt )
++		{
++			PDBG("not implemented");
++		}
++
++
++		static void
++		_displaytarget_destroy(struct sw_winsys *winsys,
++		                       struct sw_displaytarget *dt)
++		{
++			PDBG("not implemented");
++		}
++
++
++		static struct sw_displaytarget *
++		_displaytarget_create(struct sw_winsys *ws,
++		                      unsigned tex_usage,
++		                      enum pipe_format format,
++		                      unsigned width, unsigned height,
++		                      unsigned alignment,
++		                      unsigned *stride)
++		{
++			PDBG("not implemented");
++			return 0;
++		}
++
++#if 0
++		static struct sw_displaytarget *
++		_displaytarget_from_handle(struct sw_winsys *ws,
++		                           const struct pipe_resource *templat,
++		                           struct winsys_handle *whandle,
++		                           unsigned *stride)
++		{
++			PDBG("not implemented");
++			return 0;
++		}
++
++
++		static boolean
++		_displaytarget_get_handle(struct sw_winsys *ws,
++		                          struct sw_displaytarget *dt,
++		                          struct winsys_handle *whandle)
++		{
++			PDBG("not implemented");
++			return 0;
++		}
++#endif
++
++		static void
++		_displaytarget_display(struct sw_winsys *ws,
++		                       struct sw_displaytarget *dt,
++		                       void *context_private,
++		                       struct pipe_box *box)
++		{
++			PDBG("not implemented");
++		}
++
++
++	public:
++
++		Winsys()
++		{
++			/* initialize members of 'struct sw_winsys' */
++			destroy                           = _destroy;
++			is_displaytarget_format_supported = _is_displaytarget_format_supported;
++			displaytarget_create              = _displaytarget_create;
++//			displaytarget_from_handle         = _displaytarget_from_handle;
++//			displaytarget_get_handle          = _displaytarget_get_handle;
++			displaytarget_map                 = _displaytarget_map;
++			displaytarget_unmap               = _displaytarget_unmap;
++			displaytarget_display             = _displaytarget_display;
++			displaytarget_destroy             = _displaytarget_destroy;
++		}
++};
++
++
++static const struct native_event_handler *genode_event_handler;
++
++
++class Display : public native_display
++{
++	/*drm_api *_api;*/
++	Winsys _winsys;
++
++	enum { NUM_MODES = 1 };
++	struct native_mode _mode;
++	const struct native_mode *_mode_list[NUM_MODES];
++
++	native_display_modeset _modeset;
++
++	/*
++	 * We only support one configuration.
++	 */
++	struct native_config _native_config;
++#if 0
++	boolean
++	_is_format_supported(enum pipe_format fmt, boolean is_color)
++	{
++		return screen->is_format_supported(screen,
++			fmt, PIPE_TEXTURE_2D,
++			(is_color) ? PIPE_TEXTURE_USAGE_RENDER_TARGET :
++			PIPE_TEXTURE_USAGE_DEPTH_STENCIL, 0);
++	}
++#endif
++	/***********************
++	 ** Modeset functions **
++	 ***********************/
++
++	static const struct native_connector **
++	_get_connectors(struct native_display *ndpy,
++	                int *num_connectors, int *num_crtcs)
++	{
++		static struct native_connector conn;
++		static const struct native_connector *conn_list[1] = { &conn };
++		printf("called, return 1 connector\n");
++
++		if (num_connectors) *num_connectors = 1;
++		if (num_crtcs)      *num_crtcs = 1;
++		return conn_list;
++	}
++
++	static const struct native_mode **
++	_get_modes(struct native_display *ndpy,
++	           const struct native_connector *nconn,
++	           int *num_modes)
++	{
++		*num_modes = 1;
++		return static_cast<Display *>(ndpy)->_mode_list;
++	}
++
++	static struct native_surface *
++	_create_scanout_surface(struct native_display *ndpy,
++	                        const struct native_config *nconf,
++	                        uint width, uint height)
++	{
++		return 0;
++#if 0
++		return new (Genode::env()->heap())
++			Surface(ndpy,
++			        Surface::TYPE_SCANOUT, nconf,
++			        width, height);
++#endif
++	}
++
++	static boolean
++	_program(struct native_display *ndpy, int crtc_idx,
++	         struct native_surface *nsurf, uint x, uint y,
++	         const struct native_connector **nconns, int num_nconns,
++	         const struct native_mode *nmode)
++	{
++		return TRUE;
++	}
++
++
++	/***********************
++	 ** Display functions **
++	 ***********************/
++
++	static void
++	_destroy(struct native_display *ndpy)
++	{
++		Genode::destroy(Genode::env()->heap(), static_cast<Display *>(ndpy));
++	}
++
++	static int
++	_get_param(struct native_display *ndpy, enum native_param_type param)
++	{
++		PDBG("called");
++		switch (param) {
++		case NATIVE_PARAM_USE_NATIVE_BUFFER:
++			return TRUE;
++			break;
++		default:
++			return FALSE;
++			break;
++		}
++	}
++
++	static const struct native_config **
++	_get_configs(struct native_display *ndpy, int *num_configs)
++	{
++		PDBG("called");
++
++		Display *display = static_cast<Display *>(ndpy);
++
++		enum { NUM_CONFIGS = 1 };
++		const struct native_config **configs =
++			(const struct native_config **)calloc(1, sizeof(struct native_config *));
++		configs[0] = &display->_native_config;
++#if 0
++		struct native_config *config = &display->_native_config;
++		config->mode.drawableType    = GLX_PBUFFER_BIT | GLX_WINDOW_BIT;
++
++		int r = 5, g = 6, b = 5, a = 0;
++		config->mode.swapMethod       = GLX_SWAP_EXCHANGE_OML;
++		config->mode.visualID         = 0;
++		config->mode.visualType       = EGL_NONE;
++		config->mode.renderType       = GLX_RGBA_BIT;
++		config->mode.rgbMode          = TRUE;
++		config->mode.xRenderable      = FALSE;
++		config->mode.maxPbufferWidth  = 4096;
++		config->mode.maxPbufferHeight = 4096;
++		config->mode.maxPbufferPixels = 4096*4096/256+3;
++		config->mode.doubleBufferMode = TRUE;
++		config->mode.rgbBits          = r + g + b + a;
++		config->mode.redBits          = r;
++		config->mode.greenBits        = g;
++		config->mode.blueBits         = b;
++		config->mode.alphaBits        = a;
++
++		config->depth_format   = PIPE_FORMAT_NONE;
++		config->stencil_format = PIPE_FORMAT_NONE;
++
++		enum pipe_format format = PIPE_FORMAT_Z24S8_UNORM;
++#if 0
++		if (!display->_is_format_supported(format, FALSE)) {
++			format = PIPE_FORMAT_S8Z24_UNORM;
++			if (!display->_is_format_supported(format, FALSE))
++				format = PIPE_FORMAT_NONE;
++		}
++#endif
++		if (format != PIPE_FORMAT_NONE) {
++			printf("support depth and stencil buffer\n");
++			config->depth_format           = format;
++			config->stencil_format         = format;
++			config->mode.depthBits         = 24;
++			config->mode.stencilBits       = 8;
++			config->mode.haveDepthBuffer   = TRUE;
++			config->mode.haveStencilBuffer = TRUE;
++		}
++
++		config->color_format = PIPE_FORMAT_B8G8R8A8_UNORM;
++		config->color_format = PIPE_FORMAT_B5G6R5_UNORM;
++
++		config->scanout_bit = TRUE;
++
++		printf("returning 1 config at %p\n", config);
++#endif
++		*num_configs = NUM_CONFIGS;
++
++		PDBG("finished");
++
++		return configs;
++	}
++
++#if 0
++	static boolean
++	_is_pixmap_supported(struct native_display *ndpy,
++	                     EGLNativePixmapType pix,
++	                     const struct native_config *nconf)
++	{
++		PDBG("not implemented"); return 0;
++	}
++#endif
++
++	static struct native_surface *
++	_create_window_surface(struct native_display *ndpy,
++	                       EGLNativeWindowType win,
++	                       const struct native_config *nconf)
++	{
++		PDBG("not implemented");
++		return 0;
++#if 0
++		return new (Genode::env()->heap())
++			Surface(ndpy,
++			        Surface::TYPE_WINDOW, nconf,
++			        win->width, win->height, win->addr);
++#endif
++	}
++
++	static struct native_surface *
++	_create_pixmap_surface(struct native_display *ndpy,
++	                       EGLNativePixmapType pix,
++	                       const struct native_config *nconf)
++	{
++		PDBG("not implemented"); return 0;
++	}
++
++#if 0
++	static struct native_surface *
++	_create_pbuffer_surface(struct native_display *ndpy,
++	                        const struct native_config *nconf,
++	                        uint width, uint height)
++	{
++		PDBG("not implemented"); return 0;
++	}
++#endif
++
++	public:
++
++		/**
++		 * Constructor
++		 */
++		Display(/*drm_api *api*/)/* : _api(api)*/
++		{
++			PDBG("called");
++			
++			::memset(&_mode,          0, sizeof(_mode));
++			::memset(&_modeset,       0, sizeof(_modeset));
++			::memset(&_native_config, 0, sizeof(_native_config));
++
++			/* setup mode list */
++			_mode.desc         = "Mode-genode";
++			try {
++				_mode.width        = genode_framebuffer()->width();
++				_mode.height       = genode_framebuffer()->height();
++			} catch (Genode::Parent::Service_denied) {
++				PWRN("EGL driver: could not create a Framebuffer session. "
++					 "Screen surfaces cannot be used.");
++				_mode.width  = 1;
++				_mode.height = 1;
++			}
++			_mode.refresh_rate = 100;
++			_mode_list[0]      = &_mode;
++
++			/* setup members of 'struct native_display_modeset' */
++			_modeset.get_connectors         = _get_connectors;
++			_modeset.get_modes              = _get_modes;
++			_modeset.create_scanout_surface = _create_scanout_surface;
++			_modeset.program                = _program;
++
++			/* setup members of 'struct native_display' */
++#if 0
++			if (api) {
++				struct drm_create_screen_arg arg;
++				::memset(&arg, 0, sizeof(arg));
++				arg.mode = DRM_CREATE_NORMAL;
++				int drm_fd = open("/dev/drm", O_RDWR);
++				screen = api->create_screen(api, drm_fd, &arg);
++			} else {
++#else
++				PDBG("calling new_sw_screen()");
++				wait_for_continue();
++				screen = genode_event_handler->new_sw_screen(this, &_winsys);
++				PDBG("new_sw_screen() returned");
++#endif
++#if 0
++			}
++#endif
++
++			PWRN("returned from init display->screen");
++
++			destroy                = _destroy;
++			get_param              = _get_param;
++			get_configs            = _get_configs;
++			/*is_pixmap_supported    = _is_pixmap_supported;*/
++			create_window_surface  = _create_window_surface;
++			create_pixmap_surface  = _create_pixmap_surface;
++			/*create_pbuffer_surface = _create_pbuffer_surface;*/
++			modeset                = &_modeset;
++		}
++};
++
++
++static struct native_display *
++native_create_display(void *dpy, boolean use_sw)
++{
++PDBG("called");
++#if 0
++	/*
++	 * Request API by dynamically loading the driver module. Each driver
++	 * module has an entry-point function called 'drm_api_create'. For the
++	 * i915 driver, this function resides in
++	 * 'gallium/winsys/drm/intel/gem/intel_drm_api.c'.
++	 */
++	drm_api *api = 0;
++
++	const char *driver_filename = probe_gpu_and_select_driver();
++	void *driver_so_handle = driver_filename ? dlopen(driver_filename, 0) : 0;
++	if (driver_so_handle) {
++
++		/* query entry point into driver module */
++		drm_api *(*drm_api_create) (void) = 0;
++		drm_api_create = (drm_api *(*)(void))dlsym(driver_so_handle, "drm_api_create");
++		if (drm_api_create)
++			api = drm_api_create();
++		else
++			PWRN("could not obtain symbol \"drm_api_create\" in driver \"%s\"",
++			     driver_filename);
++	}
++
++	if (!api) {
++		PWRN("falling back to softpipe driver");
++
++		/*
++		 * Performing clflush is not needed when using software rendering.
++		 * Furthermore, on qemu with the default cpu, 'cflush' is an illegal
++		 * instruction.
++		 */
++		do_clflush = false;
++	}
++#endif
++	return new (env()->heap()) Display(/*api*/);
++}
++
++
++static const struct native_platform genode_platform = {
++	"Genode", /* name */
++	native_create_display
++};
++
++
++extern "C" const struct native_platform *
++native_get_genode_platform(const struct native_event_handler *event_handler)
++{
++	PDBG("called, event_handler = %p", event_handler);
++	genode_event_handler = event_handler;
++	return &genode_platform;
++}
++
+diff --git a/src/gallium/targets/egl-static/egl.c b/src/gallium/targets/egl-static/egl.c
+index f19f024..c6b5d2f 100644
+--- a/src/gallium/targets/egl-static/egl.c
++++ b/src/gallium/targets/egl-static/egl.c
+@@ -96,7 +96,10 @@ loader_init(void)
+    egl_g3d_loader.create_drm_screen = create_drm_screen;
+    egl_g3d_loader.create_sw_screen = create_sw_screen;
+ 
++#ifndef GENODE_EGL_PLATFORM
++   /* the Genode port uses a different driver loading mechanism */
+    loader_set_logger(_eglLog);
++#endif
+ 
+    return &egl_g3d_loader;
+ }
