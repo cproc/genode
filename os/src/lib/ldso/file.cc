@@ -236,7 +236,7 @@ extern "C" int open(const char *pathname, int flags)
 
 	try {
 		/* open the file dataspace and attach it */
-		Rom_connection rom(filename);
+		Rom_connection rom(filename, filename, true);
 		rom.on_destruction(Rom_connection::KEEP_OPEN);
 
 		Fd_handle::file_list()->insert(new(env()->heap())

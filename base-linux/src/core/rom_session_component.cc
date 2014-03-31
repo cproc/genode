@@ -49,6 +49,12 @@ Rom_session_component::Rom_session_component(Rom_fs         *rom_fs,
 	char fname[Linux_dataspace::FNAME_LEN];
 	Arg_string::find_arg(args, "filename").string(fname, sizeof(fname), "");
 
+	bool writable = false;
+
+	Arg writable_arg = Arg_string::find_arg(args, "writable");
+	if (writable_arg.valid())
+		writable = writable_arg.bool_value(false);
+
 	/* only files inside the current working directory are allowed */
 	for (const char *c = fname; *c; c++)
 		if (*c == '/')
@@ -63,9 +69,9 @@ Rom_session_component::Rom_session_component(Rom_fs         *rom_fs,
 	if (fsize == 0)
 		throw Root::Invalid_args();
 
-	int const fd = lx_open(fname, O_RDONLY | LX_O_CLOEXEC, S_IRUSR | S_IXUSR);
+	int const fd = lx_open(fname, (writable ? O_RDWR : O_RDONLY) | LX_O_CLOEXEC, S_IRUSR | S_IXUSR);
 
-	_ds = Dataspace_component(fsize, 0, false, false, 0);
+	_ds = Dataspace_component(fsize, 0, false, writable, 0);
 	_ds.fd(fd);
 	_ds.fname(fname);
 
