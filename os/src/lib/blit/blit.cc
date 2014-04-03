@@ -13,7 +13,7 @@
 
 #include <blit/blit.h>
 #include <blit_helper.h>
-
+#include <base/printf.h>
 
 extern "C" void blit(void const *s, unsigned src_w,
                      void *d, unsigned dst_w,
@@ -27,11 +27,15 @@ extern "C" void blit(void const *s, unsigned src_w,
 	/* we support blitting only at a granularity of 16bit */
 	w &= ~1;
 
+	PDBG("1: src = %p, dst = %p, src_w = %u, dst_w = %u, w = %d, h = %d", src, dst, src_w, dst_w, w, h);
+
 	/* copy unaligned column */
 	if (w && ((long)dst & 2)) {
 		copy_16bit_column(src, src_w, dst, dst_w, h);
 		w -= 2; src += 2; dst += 2;
 	}
+
+	PDBG("2: src = %p, dst = %p, src_w = %u, dst_w = %u, w = %d, h = %d", src, dst, src_w, dst_w, w, h);
 
 	/* now, we are on a 32bit aligned destination address */
 
