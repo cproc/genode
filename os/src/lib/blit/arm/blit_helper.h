@@ -60,8 +60,9 @@ static inline void copy_block_32byte(char const *src, int src_w,
                                      char *dst, int dst_w,
                                      int w, int h)
 {
-	if (((long)src & 3) || ((long)dst & 3))
+//	if (((long)src & 3) || ((long)dst & 3))
 		copy_block_32bit(src, src_w, dst, dst_w, w*8, h);
+#if 0
 	else {
 		src_w -= w*32;
 		dst_w -= w*32;
@@ -72,6 +73,8 @@ static inline void copy_block_32byte(char const *src, int src_w,
 				              : "+r" (src), "+r" (dst)
 				              :: "r3","r4","r5","r6","r7","r8","r9","r10");
 	}
+#endif
+
 }
 
 #endif /* _LIB__BLIT__BLIT_HELPER_H_ */
