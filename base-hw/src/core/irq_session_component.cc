@@ -59,7 +59,7 @@ Irq_session_component::Irq_session_component(Cap_session * const     cap_session
 	bool error = irq_number < 0 || !_irq_alloc;
 	error |= _irq_alloc->alloc_addr(1, irq_number).is_error();
 	if (error) {
-		PERR("unavailable interrupt requested");
+		PERR("unavailable interrupt %ld requested", irq_number);
 		throw Root::Invalid_args();
 	}
 	/* make interrupt accessible */
