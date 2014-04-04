@@ -1,20 +1,16 @@
+source ${genode_dir}/libports/run/qt5.inc
+
 #
 # Build
 #
 
-set build_components {
-	core init
-	drivers/timer drivers/framebuffer drivers/pci drivers/input drivers/nic
-	server/nitpicker
+set feature(Nic) 1
+
+set build_components [build_components feature]
+
+append build_components {
 	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
 	app/arora
-}
-
-#
-# Qt5-specific components to build
-#
-append_if [expr ![have_spec qt4_deprecated]] build_components {
-	server/liquid_framebuffer
 }
 
 build $build_components
@@ -32,67 +28,32 @@ exec tar cf bin/nitpicker_plugin.tar -C [genode_dir]/ports/src/app/arora/demo/ni
 
 append config {
 <config>
-	<parent-provides>
-		<service name="ROM"/>
-		<service name="RAM"/>
-		<service name="IRQ"/>
-		<service name="IO_MEM"/>
-		<service name="IO_PORT"/>
-		<service name="CAP"/>
-		<service name="PD"/>
-		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="LOG"/>
-		<service name="SIGNAL"/>
+	<parent-provides>}
+append config "
+		[parent_provides feature]"
+append config {
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
 
-append_if [have_spec sdl] config {
-	<start name="fb_sdl">
-		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>
-	</start>}
+append config [start_nodes feature]
 
 append_if [have_spec pci] config {
 	<start name="pci_drv">
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="PCI"/></provides>
 	</start>}
-
-append_if [have_spec framebuffer] config {
-	<start name="fb_drv">
-		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Framebuffer"/></provides>
-	</start>}
-
-append_if [have_spec ps2] config {
-	<start name="ps2_drv">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Input"/></provides>
-	</start> }
-
 append config {
-	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Timer"/></provides>
+	<start name="gpio_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Gpio"/></provides>
+		<config/>
 	</start>
-	<start name="nic_drv">
-		<resource name="RAM" quantum="2M"/>
-		<provides><service name="Nic"/></provides>
-	</start>
-	<start name="nitpicker">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Nitpicker"/></provides>
-	</start>
-        <start name="loader">
-                <resource name="RAM" quantum="2M"/>
-                <provides><service name="Loader"/></provides>
-        </start>
+    <start name="loader">
+            <resource name="RAM" quantum="2M"/>
+            <provides><service name="Loader"/></provides>
+    </start>
 	<start name="arora">
 		<resource name="RAM" quantum="2G"/>
 	</start>
@@ -105,10 +66,10 @@ install_config $config
 #
 
 # generic modules
-set boot_modules {
-	core init
-	timer nic_drv
-	nitpicker
+set boot_modules [boot_modules feature]
+
+append boot_modules {
+	gpio_drv
 	loader
 	tar_rom
 	nit_fb
@@ -172,10 +133,7 @@ if {[have_spec qt4_deprecated]} {
 }
 
 # platform-specific modules
-lappend_if [have_spec       linux] boot_modules fb_sdl
 lappend_if [have_spec         pci] boot_modules pci_drv
-lappend_if [have_spec framebuffer] boot_modules fb_drv
-lappend_if [have_spec         ps2] boot_modules ps2_drv
 
 build_boot_image $boot_modules
 
