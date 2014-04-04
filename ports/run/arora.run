@@ -4,7 +4,7 @@
 
 set build_components {
 	core init
-	drivers/timer drivers/framebuffer drivers/pci drivers/input drivers/nic
+	drivers/timer drivers/framebuffer drivers/pci drivers/input drivers/usb drivers/gpio
 	server/nitpicker
 	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
 	app/arora
@@ -81,9 +81,27 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
+	<start name="usb_drv">
+		<resource name="RAM" quantum="12M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Nic"/>
+		</provides>
+		<config uhci="yes" ehci="yes" xhci="no">
+			<hid/>
+			<nic mac="2e:60:90:0c:4e:01" />
+		 </config>
+	</start>
+<!--
 	<start name="nic_drv">
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Nic"/></provides>
+	</start>
+-->
+	<start name="gpio_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Gpio"/></provides>
+		<config/>
 	</start>
 	<start name="nitpicker">
 		<resource name="RAM" quantum="1M"/>
@@ -107,7 +125,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init
-	timer nic_drv
+	timer usb_drv gpio_drv
 	nitpicker
 	loader
 	tar_rom
