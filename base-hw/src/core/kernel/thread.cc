@@ -245,7 +245,7 @@ void Thread::exception(unsigned const processor_id)
 	case RESET:
 		return;
 	default:
-		PERR("unknown exception");
+		PERR("unknown exception %lu", cpu_exception);
 		_stop();
 	}
 }
