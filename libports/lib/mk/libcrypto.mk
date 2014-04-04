@@ -4,7 +4,7 @@ LIBCRYPTO_DIR = $(REP_DIR)/contrib/openssl-1.0.1g/crypto
 #
 # ARM is not supported currently (needs testing)
 #
-REQUIRES = x86
+#REQUIRES = x86
 
 SHARED_LIB = yes
 
@@ -199,9 +199,10 @@ ifeq ($(filter-out $(SPECS),x86_32),)
 TARGET_CPUARCH=x86_32
 else ifeq ($(filter-out $(SPECS),x86_64),)
 TARGET_CPUARCH=x86_64
-
 SRC_S += modexp512.s
 SRC_S += rc4_md5.s
+else ifeq ($(filter-out $(SPECS),arm),)
+TARGET_CPUARCH=arm
 endif
 
 INC_DIR += $(REP_DIR)/src/lib/openssl/$(TARGET_CPUARCH)/
