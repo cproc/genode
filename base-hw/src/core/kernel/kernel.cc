@@ -119,6 +119,20 @@ namespace Kernel
 	 * Get core attributes
 	 */
 	unsigned core_id() { return core()->id(); }
+
+	/**
+	 * Return wether an interrupt is private to the kernel
+	 *
+	 * \param interrupt_id  kernel name of the targeted interrupt
+	 */
+	bool private_interrupt(unsigned const interrupt_id)
+	{
+		bool ret = 0;
+		for (unsigned i = 0; i < PROCESSORS; i++) {
+			ret |= interrupt_id == Timer::interrupt_id(i);
+		}
+		return ret;
+	}
 }
 
 
@@ -265,9 +279,10 @@ extern "C" void init_kernel_multiprocessor()
 
 		/* initialize interrupt objects */
 		static Genode::uint8_t _irqs[Pic::MAX_INTERRUPT_ID * sizeof(Irq)];
-		for (unsigned i = 0; i < Pic::MAX_INTERRUPT_ID; i++)
+		for (unsigned i = 0; i < Pic::MAX_INTERRUPT_ID; i++) {
+			if (private_interrupt(i)) { continue; }
 			new (&_irqs[i * sizeof(Irq)]) Irq(i);
-
+		}
 		/* kernel initialization finished */
 		Genode::printf("kernel initialized\n");
 	}
