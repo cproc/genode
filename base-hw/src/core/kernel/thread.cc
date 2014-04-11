@@ -213,7 +213,8 @@ void Thread::exception(unsigned const processor_id)
 	case RESET:
 		return;
 	default:
-		PWRN("unknown exception");
+		PWRN("unknown exception %u at 0x%lx, sp = 0x%lx, %u", cpu_exception, ip, sp, id());
+		_print_activity_table();
 		_stop();
 	}
 }
@@ -551,10 +552,18 @@ void Thread::_call_update_data_region()
 
 void Thread::_call_update_instr_region()
 {
+#if 0
 	auto base = (addr_t)user_arg_1();
 	auto const size = (size_t)user_arg_2();
 	Processor::flush_data_caches_by_virt_region(base, size);
 	Processor::invalidate_instr_caches_by_virt_region(base, size);
+#endif
+	/* synchronize data view of all processors */
+	Processor::flush_data_caches();
+	Processor::invalidate_instruction_caches();
+	Processor::invalidate_control_flow_predictions();
+	Processor::data_synchronization_barrier();
+    asm volatile ("dsb\n isb");
 }
 
 

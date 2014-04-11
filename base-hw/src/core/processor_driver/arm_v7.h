@@ -381,6 +381,7 @@ void Arm::Processor_driver::flush_data_caches()
 		FOR_ALL_SET_WAY_OF_ALL_DATA_CACHES_0
 		WRITE_DCCSW(r6)
 		FOR_ALL_SET_WAY_OF_ALL_DATA_CACHES_1);
+	asm volatile ("mcr  p15, 0, r0, c7, c10, 4 \n"); // drain WB
 }
 
 
