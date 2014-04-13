@@ -16,3 +16,4 @@ LD_TEXT_ADDR ?= 0x70000000
 # include implied specs
 include $(call select_from_repositories,mk/spec-hw.mk)
 include $(call select_from_repositories,mk/spec-platform_pbxa9.mk)
+include $(call select_from_repositories,mk/spec-fpu_vfpv3.mk)
