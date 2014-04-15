@@ -215,6 +215,10 @@ void Thread::exception(unsigned const processor_id)
 	default:
 		PWRN("unknown exception %u at 0x%lx, sp = 0x%lx, %u", cpu_exception, ip, sp, id());
 		_print_activity_table();
+		Tlb *tlb = _pd->tlb();
+		addr_t addr = tlb->virt_to_phys(ip);
+		if (addr != 0xbbadbeef)
+			PDBG("IP phys. = 0x%lx, *IP = 0x%lx", addr, *(unsigned volatile *)addr);
 		_stop();
 	}
 }
