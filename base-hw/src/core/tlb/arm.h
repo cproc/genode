@@ -301,6 +301,27 @@ namespace Arm
 				while (1) ;
 			}
 
+
+			addr_t virt_to_phys(addr_t vo)
+			{
+				unsigned i;
+
+				if (_index_by_vo(i, vo)) { return 0xbbadbeef; }
+
+				switch (Descriptor::type(_entries[i])) {
+
+					case Descriptor::FAULT:
+						return 0xbbadbeef;
+
+					case Descriptor::SMALL_PAGE:
+						PINF("SMALL_PAGE");
+
+						return Small_page::Pa_31_12::masked(_entries[i]) +
+						       (vo & Small_page::Pa_31_12::clear_mask()) ;
+				}
+			}
+
+
 			/**
 			 * Remove translations that overlap with a given virtual region
 			 *
@@ -686,6 +707,38 @@ namespace Arm
 				}
 				PDBG("Translation size not supported");
 				while (1) ;
+			}
+
+			addr_t virt_to_phys(addr_t vo)
+			{
+				unsigned i;
+
+				if (_index_by_vo(i, vo)) { return 0xbbadbeef; }
+	
+				switch (Descriptor::type(_entries[i])) {
+
+					case Descriptor::FAULT:
+
+						return 0xbbadbeef;
+
+					case Descriptor::PAGE_TABLE: {
+
+						typedef Page_table_descriptor Ptd;
+						typedef Page_table            Pt;
+
+						Pt * const pt = (Pt *)Ptd::Pa_31_10::masked(_entries[i]);
+						addr_t const pt_vo = vo - Section::Pa_31_20::masked(vo);
+
+						return pt->virt_to_phys(pt_vo); }
+
+					case Descriptor::SECTION:
+
+						PINF("SECTION");
+
+						return (Section::Pa_31_20::masked(_entries[i]) +
+						        (vo & Section::Pa_31_20::clear_mask()));
+				}
+	
 			}
 
 			/**
