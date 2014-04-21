@@ -1,6 +1,7 @@
 $(CONTRIB_DIR)/gcc-$(GCC_VERSION)/configure:: $(CONTRIB_DIR)/gcc-$(GCC_VERSION)
 	$(ECHO) "$(BRIGHT_COL)patching gcc build system...$(DEFAULT_COL)"
 	$(VERBOSE)patch -d $(CONTRIB_DIR)/gcc-$(GCC_VERSION) -p1 -i $(GENODE_DIR)/tool/patches/gcc-4.7.2.patch
+	$(VERBOSE)patch -d $(CONTRIB_DIR)/gcc-$(GCC_VERSION) -p1 -i $(GENODE_DIR)/tool/patches/gcc-4.7.2-makeinfo5.patch
 	@#
 	@# Re-generate configure scripts
 	@#
