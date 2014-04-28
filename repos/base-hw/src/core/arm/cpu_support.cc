@@ -75,6 +75,7 @@ Thread_event Thread::* Thread::_event(unsigned const id) const
 	return id < sizeof(_events)/sizeof(_events[0]) ? _events[id] : 0;
 }
 
+namespace Kernel { Pd * core_pd(); }
 
 void Thread::_mmu_exception()
 {
@@ -82,6 +83,9 @@ void Thread::_mmu_exception()
 	if (in_fault(_fault_addr, _fault_writes)) {
 		_fault_pd    = (addr_t)_pd->platform_pd();
 		_fault_signal = _fault.signal_context_id();
+		if (_pd->platform_pd() == Kernel::core_pd()->platform_pd())
+			PERR("PF in core thread (%s): ip=%p fault=%p",
+			     label(), (void*)ip, (void*)_fault_addr);
 		_fault.submit();
 		return;
 	}
