@@ -7,6 +7,7 @@ set build_components {
 	drivers/timer
 	drivers/usb
 	test/input
+	test/spin
 }
 
 lappend_if [have_spec acpi]             build_components drivers/acpi
@@ -83,13 +84,16 @@ append config {
 	<start name="usb_drv">
 		<resource name="RAM" quantum="7M"/>
 		<provides><service name="Input"/></provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
+		<config uhci="no" ehci="yes" xhci="no">
 			<hid/>
 		</config>
 	</start>
-	<start name="test-input">
+<!--	<start name="test-input">
 		<resource name="RAM" quantum="1M"/>
-	</start>
+	</start>-->
+<!--	<start name="test-spin">
+		<resource name="RAM" quantum="1M"/>
+	</start>-->
 </config>}
 
 install_config $config
@@ -100,7 +104,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	core init timer usb_drv test-input
+	core init timer usb_drv test-input test-spin
 }
 
 lappend_if [have_spec acpi]             boot_modules acpi_drv
