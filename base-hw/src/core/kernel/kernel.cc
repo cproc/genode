@@ -352,9 +352,6 @@ extern "C" void kernel()
 	auto const old_state = old_client->lazy_state();
 	old_client->exception(processor_id);
 
-	/* check for TLB maintainance requirements */
-	processor->flush_tlb();
-
 	/*
 	 * The processor local as well as remote exception-handling may have
 	 * changed the scheduling of the local activities. Hence we must update the
