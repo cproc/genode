@@ -460,7 +460,7 @@ extern "C" {
 				 * logs a warning if the timeout is lower than the minimum. To
 				 * prevent the warning, limit timeouts to >= 10 ms here.
 				 */
-				if (timeout != 0) timeout = max(timeout, 10);
+				if (timeout != 0) timeout = max(timeout, 10U);
 				c->signal_sem.down(timeout);
 			} catch (Timeout_exception) {
 				result = ETIMEDOUT;

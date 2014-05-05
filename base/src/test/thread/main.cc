@@ -166,6 +166,7 @@ struct Cpu_helper : Thread<0x1000>
 	}
 };
 
+
 static void test_cpu_session()
 {
 	Cpu_helper thread0("prio high  ", env()->cpu_session());
@@ -183,8 +184,11 @@ static void test_cpu_session()
 	thread2.join();
 }
 
+
 int main()
 {
+	printf("--- thread test started ---\n");
+
 	try {
 		test_context_alloc();
 		test_stack_alignment();

@@ -543,10 +543,6 @@ void Thread::_call_access_thread_regs()
 void Thread::_call_update_pd()
 {
 	tlb_to_flush(user_arg_1());
-
-	/* inform other processors */
-	for (unsigned i = 0; i < PROCESSORS; i++)
-		Kernel::processor_pool()->processor(i)->flush_tlb(this);
 }
 
 

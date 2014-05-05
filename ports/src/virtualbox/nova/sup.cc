@@ -182,16 +182,21 @@ extern "C" void pthread_yield(void) { Nova::ec_ctrl(Nova::EC_YIELD); }
 
 
 extern "C"
-pthread_t create_emt_vcpu(size_t stack_size, const pthread_attr_t *attr,
-                          void *(*start_routine)(void *), void *arg)
+bool create_emt_vcpu(pthread_t * pthread, size_t stack,
+                     const pthread_attr_t *attr,
+                     void *(*start_routine)(void *), void *arg)
 {
 	Nova::Hip * hip = hip_rom.local_addr<Nova::Hip>();
 
-	if (hip->has_feature_vmx())
-		vcpu_handler = new Vcpu_handler_vmx(stack_size, attr, start_routine, arg);
-	else
-		if (hip->has_feature_svm())
-			vcpu_handler = new Vcpu_handler_svm(stack_size, attr, start_routine, arg);
+	if (!hip->has_feature_vmx() && !hip->has_feature_svm())
+		return false;
 
-	return vcpu_handler;
+	if (hip->has_feature_vmx())
+		vcpu_handler = new Vcpu_handler_vmx(stack, attr, start_routine, arg);
+
+	if (hip->has_feature_svm())
+		vcpu_handler = new Vcpu_handler_svm(stack, attr, start_routine, arg);
+
+	*pthread = vcpu_handler;
+	return true;
 }
