@@ -61,6 +61,11 @@ void Thread_base::_init_platform_thread(Type type)
 
 void Thread_base::_deinit_platform_thread()
 {
+	if (!_cpu_session)
+		_cpu_session = env()->cpu_session();
+
+	_cpu_session->kill_thread(_thread_cap);
+
 	/* detach userland thread-context */
 	size_t const size = sizeof(_context->utcb);
 	addr_t utcb = Context_allocator::addr_to_base(_context) +
@@ -68,8 +73,6 @@ void Thread_base::_deinit_platform_thread()
 	              Native_config::context_area_virtual_base();
 	env_context_area_rm_session()->detach(utcb);
 
-	/* destroy server object */
-	_cpu_session->kill_thread(_thread_cap);
 	if (_pager_cap.valid()) {
 		env()->rm_session()->remove_client(_pager_cap);
 	}
