@@ -3,7 +3,7 @@ if {![have_spec foc] || ![have_spec 32bit]} {
 	exit 0
 }
 
-source ${genode_dir}/ports/run/noux_gdb.inc
+source ${genode_dir}/repos/ports/run/noux_gdb.inc
 
 #
 # Uncomment the following line when working on the GDB source code. Otherwise,
@@ -136,7 +136,7 @@ install_config $config
 # Boot modules
 #
 
-exec cp ${genode_dir}/os/src/app/cli_monitor/gdb_command_config bin
+exec cp ${genode_dir}/repos/os/src/app/cli_monitor/gdb_command_config bin
 
 # generic modules
 set boot_modules {

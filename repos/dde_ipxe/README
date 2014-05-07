@@ -12,7 +12,7 @@ build process. Just add the path to this directory to the
 'REPOSITORIES' declaration of the 'etc/build.conf' file within your
 build directory, for example
 
-! REPOSITORIES += $(GENODE_DIR)/dde_ipxe
+! REPOSITORIES += $(GENODE_DIR)/repos/dde_ipxe
 
 After successful build the DDE iPXE based ethernet driver is located
 at 'bin/nic_drv'.

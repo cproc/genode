@@ -55,7 +55,7 @@ foreach binary $guest_os_binaries {
 	incr binary_counter 1
 }
 
-source ${genode_dir}/ports/run/seoul.inc
+source ${genode_dir}/repos/ports/run/seoul.inc
 
 append qemu_args " -m 1536 "
 append qemu_args " -cpu phenom "

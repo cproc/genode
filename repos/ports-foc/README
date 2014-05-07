@@ -27,8 +27,8 @@ Create a new build-directory:
 Edit the 'etc/build.conf' file in your build directory, and uncomment the following
 lines:
 
-! REPOSITORIES += $(GENODE_DIR)/ports-foc
-! REPOSITORIES += $(GENODE_DIR)/dde_ipxe
+! REPOSITORIES += $(GENODE_DIR)/repos/ports-foc
+! REPOSITORIES += $(GENODE_DIR)/repos/dde_ipxe
 
 The dde_ipxe repository contains the networking drivers for Genode. Please make
 sure that you have followed the preparation steps for this repository as
@@ -55,8 +55,8 @@ Create a new build-directory:
 Edit the 'etc/build.conf' file in your build directory, and uncomment the following
 lines:
 
-! REPOSITORIES += $(GENODE_DIR)/ports-foc
-! REPOSITORIES += $(GENODE_DIR)/dde_gpxe
+! REPOSITORIES += $(GENODE_DIR)/repos/ports-foc
+! REPOSITORIES += $(GENODE_DIR)/repos/dde_gpxe
 
 Please do not forget to issue 'make prepare' in the 'dde_ipxe' and 'base-foc'
 repositories.

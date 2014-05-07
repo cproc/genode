@@ -22,7 +22,7 @@ proc container_dir { } { return [kernel_dir]/build/cont0/empty0 }
 ##
 # Return location of 'gen_romfs' tool
 #
-proc gen_romfs { } { return "[genode_dir]/base-codezero/tool/gen_romfs" }
+proc gen_romfs { } { return "[genode_dir]/repos/base-codezero/tool/gen_romfs" }
 
 
 ##

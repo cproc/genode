@@ -4,7 +4,7 @@ build "core init"
 
 create_boot_directory
 
-install_config "[exec cat [genode_dir]/os/src/init/config.priority]"
+install_config "[exec cat [genode_dir]/repos/os/src/init/config.priority]"
 
 build_boot_image "core init"
 

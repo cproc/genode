@@ -3,7 +3,7 @@ if {![have_spec foc] || ![have_spec 32bit]} {
 	exit 0
 }
 
-source ${genode_dir}/ports/run/noux_gdb.inc
+source ${genode_dir}/repos/ports/run/noux_gdb.inc
 
 if {[have_spec arm]} {
 	set tool_prefix "genode-arm-"

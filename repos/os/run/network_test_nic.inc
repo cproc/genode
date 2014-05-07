@@ -160,7 +160,7 @@ lappend_if [have_spec nova]          boot_modules pci_device_pd
 build_boot_image $boot_modules
 
 # build the test client
-set test_client_dir $genode_dir/os/src/lib/net
+set test_client_dir $genode_dir/repos/os/src/lib/net
 if {![file exists bin/nic_drv_test_client]} {
 	exec g++ -Wall -o bin/nic_drv_test_client $test_client_dir/stat-client.cc
 }

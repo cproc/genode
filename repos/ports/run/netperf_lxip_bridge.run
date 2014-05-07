@@ -21,5 +21,5 @@ set use_usb_11          "no"
 set use_usb_20          "no"
 set use_usb_30          "yes"
 
-source ${genode_dir}/ports/run/netperf_lxip.inc
-source ${genode_dir}/ports/run/netperf.inc
+source ${genode_dir}/repos/ports/run/netperf_lxip.inc
+source ${genode_dir}/repos/ports/run/netperf.inc

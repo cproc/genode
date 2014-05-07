@@ -9,4 +9,4 @@ set filesystem ffat
 #
 set libc_dev_blkdev ""
 
-source ${genode_dir}/libports/run/libc_filesystem_test.inc
+source ${genode_dir}/repos/libports/run/libc_filesystem_test.inc

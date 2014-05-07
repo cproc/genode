@@ -103,7 +103,7 @@ Before compiling L4Linux for Genode/Fiasco.OC you have to integrate the 'ports-f
 repository into your build environment. Therefore edit the 'etc/build.conf' file
 in your build directory, and uncomment the following line:
 
-! REPOSITORIES += $(GENODE_DIR)/ports-foc
+! REPOSITORIES += $(GENODE_DIR)/repos/ports-foc
 
 After that you can build and run L4Linux by issuing:
 

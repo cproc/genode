@@ -20,7 +20,7 @@ from the directory this file is contained in.
 
 Add
 
-! REPOSITORIES += $(GENODE_DIR)/dde_rump
+! REPOSITORIES += $(GENODE_DIR)/repos/dde_rump
 
 to your _etc/build.conf_ file of you build directory.
 

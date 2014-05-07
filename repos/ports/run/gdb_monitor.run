@@ -117,7 +117,7 @@ run_genode_until {.*Remote debugging using /dev/terminal.*} 30
 
 puts "GDB monitor is up, starting GDB"
 
-source ${genode_dir}/ports/run/gdb_monitor.inc
+source ${genode_dir}/repos/ports/run/gdb_monitor.inc
 
 set gdb_target_binary "test-gdb_monitor"
 

@@ -24,7 +24,7 @@ create_boot_directory
 #
 # Generate tar archives with plugin configurations
 #
-exec tar cf bin/nitpicker_plugin.tar -C [genode_dir]/ports/src/app/arora/demo/nitpicker_plugin config.plugin
+exec tar cf bin/nitpicker_plugin.tar -C [genode_dir]/repos/ports/src/app/arora/demo/nitpicker_plugin config.plugin
 
 #
 # Generate config

@@ -182,7 +182,7 @@ if {![regexp $match_string $output] } {
 }
 
 # build the client
-set pingpong_dir $genode_dir/libports/src/test/lwip/pingpong
+set pingpong_dir $genode_dir/repos/libports/src/test/lwip/pingpong
 exec g++ -o bin/network_test_client \
          $pingpong_dir/client/main.cc \
          $pingpong_dir/pingpong.cc \

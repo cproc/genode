@@ -1,13 +1,13 @@
-source ${genode_dir}/libports/run/network_test_lwip.run
+source ${genode_dir}/repos/libports/run/network_test_lwip.run
 set test_result_lwip $test_result 
 
-source ${genode_dir}/libports/run/network_test_lwip_nic_bridge.run
+source ${genode_dir}/repos/libports/run/network_test_lwip_nic_bridge.run
 set test_result_lwip_nic_bridge $test_result
 
-source ${genode_dir}/libports/run/network_test_libc_lwip.run
+source ${genode_dir}/repos/libports/run/network_test_libc_lwip.run
 set test_result_libc_lwip $test_result
 
-source ${genode_dir}/libports/run/network_test_libc_lwip_nic_bridge.run
+source ${genode_dir}/repos/libports/run/network_test_libc_lwip_nic_bridge.run
 set test_result_libc_lwip_nic_bridge $test_result
 
 puts "\nTest results:\n"

@@ -70,7 +70,7 @@ append config {
 #
 # Create iso
 #
-exec cp -f [genode_dir]/os/src/test/iso/test.txt [run_dir]
+exec cp -f [genode_dir]/repos/os/src/test/iso/test.txt [run_dir]
 
 for { set i 1 } { $i <= 30 } { incr i } {
 	exec touch [run_dir]/$i.txt

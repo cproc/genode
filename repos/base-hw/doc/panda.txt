@@ -12,7 +12,7 @@ Abstract
 This is a short tutorial that depicts a handy way to get a Genode ELF-image,
 build with 'base-hw', started on the PandaBoard A2. For informations
 about how to build Genode images with 'base-hw', have a look at
-'<GENODE_DIR>/base-hw/doc/hw.txt'. This tutorial is dedicated to common
+'<GENODE_DIR>/repos/base-hw/doc/hw.txt'. This tutorial is dedicated to common
 Linux systems, but all examples originate from a Ubuntu 11.10.
 
 

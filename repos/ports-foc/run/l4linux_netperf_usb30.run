@@ -15,4 +15,4 @@ set use_usb_11          "no"
 set use_usb_20          "no"
 set use_usb_30          "yes"
 
-source ${genode_dir}/ports-foc/run/l4linux_netperf.inc
+source ${genode_dir}/repos/ports-foc/run/l4linux_netperf.inc
