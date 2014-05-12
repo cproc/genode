@@ -5,7 +5,7 @@
 #
 
 set platform          "nova_x86_32"
-set platform_base_dir "base-nova"
+set platform_base_dir "repos/base-nova"
 set platform_pkgs     ""
 set platform_cmds     ""
 
