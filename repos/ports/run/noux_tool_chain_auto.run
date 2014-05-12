@@ -20,14 +20,14 @@ set platform_pkgs     ""
 set platform_cmds     {
                          make core &&
                          exit 234
-} 
+}
 
 # default tool_chain timeout, overwritten by platform if required
 set tool_chain_timeout  450
 set noux_boot_timeout   100
 
 if {[have_spec arm]} {
-	set platform_base_dir "base-hw"
+	set platform_base_dir "repos/base-hw"
 	set noux_boot_timeout   350
 	set tool_chain_timeout  500
 
@@ -52,7 +52,7 @@ if {[have_spec x86]} {
 	} else {
 		set platform          "nova_x86_64"
 	}
-	set platform_base_dir "base-nova"
+	set platform_base_dir "repos/base-nova"
 }
 
 source ${genode_dir}/repos/ports/run/noux_tool_chain.inc
