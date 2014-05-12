@@ -79,12 +79,7 @@ exec ln -sf bash bin/bash/bin/sh
 foreach pkg $noux_pkgs {
 	exec tar cfv bin/$pkg.tar -h -C bin/$pkg . }
 
-set genode_repositories "tool repos/base $platform_base_dir repos/os repos/demo"
-foreach rep $genode_repositories { append genode_repositories_filter_out_find " -not -name $rep " }
-set genode_repositories_filter_out [exec sh -c "find $genode_dir/repos -mindepth 1 -maxdepth 1 $genode_repositories_filter_out_find -printf \"%f \""]
-foreach rep $genode_repositories_filter_out { append genode_repositories_filter_out_tar " --exclude=./$rep " }
-set tar_command "tar cfv bin/genode.tar $genode_repositories_filter_out_tar -C $genode_dir ."
-eval exec $tar_command
+exec tar cvf bin/genode.tar -C $genode_dir tool repos/base repos/$platform_base_dir repos/os repos/demo
 
 create_boot_directory
 
