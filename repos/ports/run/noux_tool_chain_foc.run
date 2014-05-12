@@ -21,7 +21,7 @@ if {[have_spec x86_64]} {
 set platform          "foc_x86_64"
 }
 
-set platform_base_dir "repos/base-foc"
+set platform_base_dir "base-foc"
 set platform_pkgs     "l4"
 set platform_cmds {
                       ln -s /platform/l4/include include
