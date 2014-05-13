@@ -67,6 +67,7 @@
 /repos/libports/include/ncurses/termcap.h
 /repos/libports/include/ncurses/tic.h
 /repos/libports/include/ncurses/unctrl.h
+/repos/libports/include/ntfs-3g
 /repos/libports/include/openjpeg
 /repos/libports/include/openssl
 /repos/libports/src/lib/openssl/x86_32/aes_enc.s
