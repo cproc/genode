@@ -21,6 +21,10 @@ proc qt5_build_components { feature_arg } {
 
 	append build_components {
 		server/nitpicker
+		server/report_rom
+		app/floating_window_layouter
+		app/decorator
+		app/desktop
 	}
 
 	return $build_components
@@ -47,7 +51,7 @@ proc qt5_start_nodes { feature_arg } {
 	set start_nodes [drivers_start_nodes feature]
 
 	append start_nodes {
-		<start name="nitpicker">
+		<start name="desktop">
 			<resource name="RAM" quantum="1M"/>
 			<provides><service name="Nitpicker"/></provides>
 		</start>
@@ -73,6 +77,10 @@ proc qt5_boot_modules { feature_arg } {
 
 	append boot_modules {
 		nitpicker
+		report_rom
+		floating_window_layouter
+		decorator
+		desktop
 	}
 
 	return $boot_modules
