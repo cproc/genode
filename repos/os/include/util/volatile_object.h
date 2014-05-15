@@ -52,6 +52,10 @@ class Genode::Volatile_object
 
 		template <typename... ARGS> void _do_construct(ARGS &&... args)
 		{
+			PDBG("this = 0x%p", this);
+			PDBG("&_space = 0x%p", &_space);
+			PDBG("sizeof(MT) = 0x%zx", sizeof(MT));
+			PDBG("&_constructed = 0x%p", &_constructed);
 			construct_at<MT>(_space, args...);
 			_constructed = true;
 		}

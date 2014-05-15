@@ -55,7 +55,11 @@ class Genode::Reporter : Noncopyable
 		void enabled(bool enabled)
 		{
 			if (enabled == _enabled) return;
-
+PDBG("this = 0x%p", this);
+PDBG("&_name = 0x%p", &_name);
+PDBG("&_buffer_size = 0x%p", &_buffer_size);
+PDBG("&_enabled = 0x%p", &_enabled);
+PDBG("&_conn = 0x%p", &_conn);
 			if (enabled)
 				_conn.construct(_name.string(), _buffer_size);
 			else
