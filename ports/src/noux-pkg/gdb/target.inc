@@ -8,6 +8,7 @@ NOUX_CFLAGS += -DHAVE_LIBEXPAT=1
 LIBS += ncurses expat
 
 NOUX_PKG_DIR = $(wildcard $(REP_DIR)/contrib/gdb-*)
+NOUX_MAKE_ENV="MAKEINFO=true"
 
 NOUX_INSTALL_TARGET = install
 
