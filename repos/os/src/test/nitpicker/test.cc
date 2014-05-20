@@ -128,10 +128,12 @@ int main(int argc, char **argv)
 	 */
 	enum { CONFIG_ALPHA = false };
 	static Nitpicker::Connection nitpicker;
+	static Nitpicker::Connection nitpicker2;
 	static Timer::Connection     timer;
 
 	Framebuffer::Mode const mode(256, 256, Framebuffer::Mode::RGB565);
 	nitpicker.buffer(mode, false);
+	nitpicker2.buffer(mode, false);
 
 	int const scr_w = mode.width(), scr_h = mode.height();
 
@@ -173,10 +175,12 @@ int main(int argc, char **argv)
 		static Test_view v1(&nitpicker, 150, 100, 230, 200, "Eins");
 		static Test_view v2(&nitpicker,  20,  20, 230, 210, "Zwei", &v1);
 		static Test_view v3(&nitpicker,  40,  40, 230, 220, "Drei", &v1);
+		static Test_view v4(&nitpicker2,  60,  60, 230, 230, "Vier", &v1);
 
 		tvs.insert(&v1);
 		tvs.insert(&v2);
 		tvs.insert(&v3);
+		tvs.insert(&v4);
 	}
 
 	/*
