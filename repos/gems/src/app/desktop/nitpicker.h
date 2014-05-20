@@ -147,6 +147,12 @@ class Desktop::Nitpicker::View_component : public Rpc_object<View>,
 
 		void window_anchor_position(Point pos) { _anchor_position = pos; }
 
+		void update()
+		{
+			if (!_real_view.valid() && _parent && _parent->real_view().valid())
+				window_anchor_view(_parent->real_view());
+		}
+
 
 		/*******************************
 		 ** Nitpicker::View interface **
@@ -358,6 +364,13 @@ class Desktop::Nitpicker::Session_component : public Genode::Rpc_object<Session>
 			}
 		}
 
+		void update_views()
+		{
+			for (View_component *v = _views.first(); v; v = v->next()) {
+				v->update();
+			}
+		}
+
 		void window_anchor_position(Window_registry::Id id, Point position)
 		{
 			for (View_component *v = _views.first(); v; v = v->next()) {
@@ -514,6 +527,9 @@ class Desktop::Nitpicker::Root : public Genode::Root_component<Session_component
 		{
 			for (Session_component *s = _sessions.first(); s; s = s->next())
 				s->window_anchor_view(id, anchor);
+
+			for (Session_component *s = _sessions.first(); s; s = s->next())
+				s->update_views();
 		}
 
 		void window_anchor_position(Window_registry::Id id, Point position) override
