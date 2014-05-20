@@ -1,0 +1,143 @@
+qt5_arm.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/mkspecs/linux-g++-32/qmake.conf             |    4 ++--
+ qtbase/src/widgets/kernel/qwidget_qpa.cpp          |    2 +-
+ qtjsbackend/src/3rdparty/v8/src/arm/cpu-arm.cc     |   14 ++++++++++++++
+ .../Source/JavaScriptCore/assembler/ARMAssembler.h |    8 ++++++++
+ .../JavaScriptCore/assembler/MacroAssemblerARM.cpp |    7 ++++++-
+ 5 files changed, 31 insertions(+), 4 deletions(-)
+
+diff --git a/qtbase/mkspecs/linux-g++-32/qmake.conf b/qtbase/mkspecs/linux-g++-32/qmake.conf
+index 56dfe8c..a1553dd 100644
+--- a/qtbase/mkspecs/linux-g++-32/qmake.conf
++++ b/qtbase/mkspecs/linux-g++-32/qmake.conf
+@@ -6,8 +6,8 @@ MAKEFILE_GENERATOR      = UNIX
+ CONFIG                 += incremental gdb_dwarf_index
+ QMAKE_INCREMENTAL_STYLE = sublib
+ 
+-QMAKE_CFLAGS            = -m32
+-QMAKE_LFLAGS            = -m32
++#QMAKE_CFLAGS            = -m32
++#QMAKE_LFLAGS            = -m32
+ 
+ include(../common/linux.conf)
+ include(../common/gcc-base-unix.conf)
+diff --git a/qtbase/src/widgets/kernel/qwidget_qpa.cpp b/qtbase/src/widgets/kernel/qwidget_qpa.cpp
+index dafe7dc..79bfd40 100644
+--- a/qtbase/src/widgets/kernel/qwidget_qpa.cpp
++++ b/qtbase/src/widgets/kernel/qwidget_qpa.cpp
+@@ -933,7 +933,7 @@ void QWidgetPrivate::registerDropSite(bool on)
+ void QWidgetPrivate::setMask_sys(const QRegion &region)
+ {
+     if (!QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::WindowMasks)) {
+-        qWarning("%s: Not supported on %s.", Q_FUNC_INFO, qPrintable(QGuiApplication::platformName()));
++        //qWarning("%s: Not supported on %s.", Q_FUNC_INFO, qPrintable(QGuiApplication::platformName()));
+         return;
+     }
+     Q_Q(QWidget);
+diff --git a/qtjsbackend/src/3rdparty/v8/src/arm/cpu-arm.cc b/qtjsbackend/src/3rdparty/v8/src/arm/cpu-arm.cc
+index bed9503..2d905e8 100644
+--- a/qtjsbackend/src/3rdparty/v8/src/arm/cpu-arm.cc
++++ b/qtjsbackend/src/3rdparty/v8/src/arm/cpu-arm.cc
+@@ -27,6 +27,14 @@
+ 
+ // CPU specific code for arm independent of OS goes here.
+ 
++#if 0
++namespace Fiasco {
++#include <l4/sys/cache.h>
++}
++#else
++#include <kernel/interface.h>
++#endif
++
+ #include "v8.h"
+ 
+ #if defined(__arm__) && !defined(_WIN32_WCE)
+@@ -79,6 +87,8 @@ void CPU::FlushICache(void* start, size_t size) {
+   // region, so we need to flush the whole process.
+   FlushInstructionCache(GetCurrentProcess(), NULL, NULL);
+ #else
++/* TODO: check for GENODE */
++#if 0
+   // Ideally, we would call
+   //   syscall(__ARM_NR_cacheflush, start,
+   //           reinterpret_cast<intptr_t>(start) + size, 0);
+@@ -118,6 +128,10 @@ void CPU::FlushICache(void* start, size_t size) {
+         : "r3");
+   #endif
+ #endif
++    qDebug("FlushICache(%p - %p)", start, (void*)((unsigned long)code + size));
++    //Fiasco::l4_cache_coherent(code, (unsigned long)(start) + size);
++    Kernel::update_instr_region(start, size);
++#endif
+ }
+ 
+ 
+diff --git a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
+index 18b1017..9642938 100644
+--- a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
++++ b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
+@@ -29,9 +29,14 @@
+ 
+ #if ENABLE(ASSEMBLER) && CPU(ARM_TRADITIONAL)
+ 
++#if OS(GENODE)
++#include <cpu/cache.h>
++#endif
++
+ #include "AssemblerBufferWithConstantPool.h"
+ #include "JITCompilationEffort.h"
+ #include <wtf/Assertions.h>
++
+ namespace JSC {
+ 
+     typedef uint32_t ARMWord;
+@@ -1027,6 +1032,7 @@ namespace JSC {
+ #else
+         static void cacheFlush(void* code, size_t size)
+         {
++			static int count = 0;
+ #if OS(LINUX) && COMPILER(GCC)
+             uintptr_t currentPage = reinterpret_cast<uintptr_t>(code) & ~(pageSize() - 1);
+             uintptr_t lastPage = (reinterpret_cast<uintptr_t>(code) + size) & ~(pageSize() - 1);
+@@ -1052,6 +1058,8 @@ namespace JSC {
+             UNUSED_PARAM(size);
+ #elif OS(QNX)
+             msync(code, size, MS_INVALIDATE_ICACHE);
++#elif OS(GENODE)
++			Genode::cache_coherent((Genode::addr_t)code, size);
+ #else
+ #error "The cacheFlush support is missing on this platform."
+ #endif
+diff --git a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
+index 98dc3e9..c713fd7 100644
+--- a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
++++ b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
+@@ -39,6 +39,8 @@
+ #include <asm/hwcap.h>
+ #endif
+ 
++#include <QDebug>
++
+ namespace JSC {
+ 
+ static bool isVFPPresent()
+@@ -57,9 +59,12 @@ static bool isVFPPresent()
+     }
+ #endif
+ 
+-#if (COMPILER(RVCT) && defined(__TARGET_FPU_VFP)) || (COMPILER(GCC) && defined(__VFP_FP__))
++#if (COMPILER(RVCT) && defined(__TARGET_FPU_VFP)) || \
++    (COMPILER(GCC) && defined(__VFP_FP__) && !defined(__SOFTFP__))
++qDebug() << "VFP present";
+     return true;
+ #else
++qDebug() << "VFP not present";
+     return false;
+ #endif
+ }
