@@ -1,0 +1,108 @@
+build { core init drivers/timer app/monitor }
+
+create_boot_directory
+
+set monitor_config_fd [open "bin/monitor.config" w]
+puts $monitor_config_fd {
+}
+
+
+#
+# Build
+#
+
+build { core init drivers/timer app/monitor }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="LOG"/>
+			<service name="CAP"/>
+			<service name="CPU"/>
+			<service name="RAM"/>
+			<service name="RM"/>
+			<service name="PD"/>
+			<service name="SIGNAL"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="monitor">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+			<type name="configured">
+				<arg type="parent" name="parent" />
+
+<!--				<resource type="string" name="ROM_string" value="ROM" />
+
+				<resource type="service_name" name="ROM_service_name">
+					<bind arg="string_a" ref="ROM_string" />
+				</resource>
+
+				<resource type="parent_service" name="ROM_service">
+					<bind arg="parent" ref="parent" />
+					<bind arg="service_name_a" ref="ROM_service_name" />
+				</resource>-->
+
+
+				<!--<resource type="parent" name="parent" />-->
+
+				<resource type="string" name="Foo_string" value="Foofoo" />
+				<resource type="parent_rom_service" name="parent_rom_service">
+<!--					<bind arg="parent" ref="parent" /> -->
+					<bind arg="foo" ref="Foo_string" />
+				</resource>
+
+				<!-- <resource type="string" name="test_string" value="Test" />-->
+
+				<!-- XXX test -->
+				<!--<type name="foo_session">
+					<arg type="service"       name="service" />
+					<arg type="session_label" name="label" />
+					<arg type="session_args"  name="args" />
+					<resource type="string" name="foostring" />
+				</type>
+
+				<alias name="parent_binary">
+					<arg type="string" name="module_name" />
+					<resource type="parent_binary">
+						<arg name="parent_rom_service" ref="parent_rom_service" />
+						<arg name="module_name"        ref="module_name" />
+					</resource>
+				</alias>-->
+
+				<!--
+				<resource alias="parent_binary" name="init_binary"  arg="init" />
+				<resource alias="parent_binary" name="timer_binary" arg="timer" />
+				-->
+				</type>
+			</config>
+		</start>
+	</config>
+}
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules { core init timer monitor }
+
+build_boot_image $boot_modules
+
+#
+# Execute test case
+#
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until forever
+
+puts "Test succeeded"
