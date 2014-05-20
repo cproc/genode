@@ -1,0 +1,132 @@
+<top_level_types>
+<type name="string" builtin="yes" />
+
+<type name="parent" builtin="yes" />
+
+<type name="session_label">
+	<arg type="string" name="string_a" /> </type>
+
+<type name="session_args">
+	<arg type="string" name="string_a" /> </type>
+
+<type name="service_name">
+	<arg type="string" name="string_a" /> </type>
+
+<type name="service" builtin="yes" >
+	<arg type="service_name" name="service_name_a" /> </type>
+
+<type name="parent_service" builtin="yes" >
+	<!--	<arg type="parent"       name="parent_a" /> -->
+	<arg type="service_name" name="service_name_a" />
+	<arg type="string" name="foo_a" />
+	<resource type="service" name="service_r">
+		<bind arg="service_name_a" ref="service_name_a" />
+	</resource>
+</type>
+
+<type name="parent_rom_service">
+	<!--	<arg type="parent" name="parent_a" />-->
+	<arg type="string" name="foo" />
+	<resource type="string" name="rom_string" value="ROooM" />
+	<resource type="service_name" name="service_name_r" >
+		<bind arg="string_a" ref="rom_string" />
+	</resource>
+	<resource type="parent_service" name="service_r" >
+		<!--		<bind arg="parent_a"       ref="parent_a" /> -->
+		<bind arg="foo_a"          ref="foo" />
+		<bind arg="service_name_a" ref="service_name_r" />
+	</resource>
+</type>
+
+<type name="session">
+	<arg type="service"       name="service_a" />
+	<arg type="session_label" name="label_a" />
+	<arg type="session_args"  name="args_a" />
+</type>
+
+</top_level_types>
+
+<type name="parent_session">
+	<arg type="parent_service" name="parent_service" />
+	<arg type="session_label"  name="label" />
+	<arg type="session_args"   name="args" />
+	<aggregate>
+		<resource type="session">
+			<arg name="service" ref="parent_service">
+				<member name="service" /> </arg>
+			<arg name="label"   ref="label" />
+			<arg name="args"    ref="args" />
+		</resource>
+	</aggregate>
+</type>
+
+<type name="rom_session">
+	<arg type="session" />
+</type>
+
+
+<type name="parent_rom_session" >
+	<arg type="parent_rom_service" name="parent_rom_service" />
+	<arg type="string"             name="module_name" />
+	<aggregate>
+		<resource type="string" name="empty_string" value="" />
+		<resource type="session_args" name="no_args" >
+			<arg name="string" ref="empty_string" /> </resource>
+		<resource type="session_label" name="session_label">
+			<arg name="string" ref="module_name" />
+		</resource>
+		<resource type="parent_session" name="parent_session">
+			<arg name="parent_service">
+				<ref resource="parent_rom_service">
+					<member name="parent_service" /> </ref> </arg>
+			<arg name="session_label" ref="session_label" />
+			<arg name="session_args"  ref="no_args" />
+		</resource>
+		<resource type="rom_session">
+			<arg name="session">
+				<ref name="parent_session">
+					<member name="session" /> </ref> </arg>
+		</resource>
+	</aggregate>
+</type>
+
+<type name="parent_binary_rom_session">
+	<arg type="parent_rom_service" name="parent_rom_service">
+	<arg type="string"             name="name" />
+	<aggregate>
+		<resource type="parent_rom_session">
+			<arg name="parent_rom_service" ref="parent_rom_service" />
+			<arg name="session_label"      ref="session_label" />
+		</resource>
+	</aggregate>
+<type>
+
+<type name="parent_config_rom_session">
+	<arg type="parent_rom_service" name="parent_rom_service">
+	<arg type="string"             name="name" />
+	<aggregate>
+		<resource type="parent_rom_session">
+			<arg name="parent_rom_service" ref="parent_rom_service" />
+			<arg name="session_label"      ref="session_label" />
+		</resource>
+	</aggregate>
+<type>
+
+<type name="config">
+	<arg type="rom_session" name="rom_session" />
+</type>
+
+</config>
+
+
+<!-- experiments -->
+
+<!-- compound argument -->
+<type name="compound" builtin="yes">
+
+<!-- sub system that created according to the supplied config -->
+<type name="level" builtin="yes" >
+	<arg type="parent"   name="parent" />
+	<arg type="config"   name="config" />
+	<arg type="compound" name="env" />
+</type>
