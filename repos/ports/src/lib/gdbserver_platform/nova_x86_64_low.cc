@@ -22,9 +22,9 @@ using namespace Genode;
 extern "C" int genode_fetch_register(int regno, unsigned long *reg_content)
 {
 	Thread_state thread_state;
-
+PDBG("called");
 	try { thread_state = get_current_thread_state(); }
-	catch (...) { return -1; }
+	catch (...) { PDBG("could not get thread state"); return -1; }
 
 	switch((enum reg_index)regno)
 	{
