@@ -17,7 +17,7 @@ if {[have_spec x86]} {
 # Uncomment the following line when working on the GDB source code. Otherwise,
 # the package may get recompiled, yet it does not get reinstalled into 'bin/'.
 #
-#exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
+exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
 
 set build_components {
 	core init drivers/timer noux lib/libc_noux
