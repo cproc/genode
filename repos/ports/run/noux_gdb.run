@@ -17,7 +17,7 @@ if {[have_spec x86]} {
 # Uncomment the following line when working on the GDB source code. Otherwise,
 # the package may get recompiled, yet it does not get reinstalled into 'bin/'.
 #
-exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
+#exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
 
 set build_components {
 	core init drivers/timer noux lib/libc_noux
@@ -45,7 +45,7 @@ set gdb_target_binaries {
 lappend gdb_target_binaries ${gdb_target_binary_name}
 
 create_gdb_tar
-create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
+#create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
 
 create_boot_directory
 
@@ -179,19 +179,23 @@ append config {
 					<arg value="-ex" /><arg value="set interactive-mode off" />
 					<arg value="-ex" /><arg value="directory /gdb/src" />
 					<arg value="-ex" /><arg value="target remote /dev/gdb" />
-					<arg value="-ex" /><arg value="symbol-file /gdb/ld.lib.so" />
-					<arg value="-ex" /><arg value="b call_program_main" />
-					<arg value="-ex" /><arg value="c" />
-					<arg value="-ex" /><arg value="delete 1" /> }
-append config "
-					<arg value=\"-ex\" /><arg value=\"symbol-file /gdb/${gdb_target_binary_name}\" /> "
+}
+#append config {
+#					<arg value="-ex" /><arg value="symbol-file /gdb/ld.lib.so" />
+#					<arg value="-ex" /><arg value="b call_program_main" />
+#					<arg value="-ex" /><arg value="c" />
+#					<arg value="-ex" /><arg value="delete 1" /> }
+#append config "
+#					<arg value=\"-ex\" /><arg value=\"symbol-file /gdb/${gdb_target_binary_name}\" /> "
+#append config {
+#					<arg value="-ex" /><arg value="b main()" />
+#					<arg value="-ex" /><arg value="set solib-search-path /gdb" />
+#					<arg value="-ex" /><arg value="sharedlibrary" />
+#					<arg value="-ex" /><arg value="c" />
+#					<arg value="-ex" /><arg value="delete 2" />
+#					<arg value="-ex" /><arg value="set interactive-mode auto" />
+#}
 append config {
-					<arg value="-ex" /><arg value="b main()" />
-					<arg value="-ex" /><arg value="set solib-search-path /gdb" />
-					<arg value="-ex" /><arg value="sharedlibrary" />
-					<arg value="-ex" /><arg value="c" />
-					<arg value="-ex" /><arg value="delete 2" />
-					<arg value="-ex" /><arg value="set interactive-mode auto" />
 				</start>
 			</config>
 		</start>
