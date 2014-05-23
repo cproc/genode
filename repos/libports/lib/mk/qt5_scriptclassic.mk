@@ -9,8 +9,7 @@ include $(REP_DIR)/lib/mk/qt5_scriptclassic_generated.inc
 
 include $(REP_DIR)/lib/mk/qt5.inc
 
-INC_DIR += $(REP_DIR)/src/lib/qt5/qtbase/mkspecs/qws/genode-generic-g++ \
-           $(REP_DIR)/include/qt5 \
+INC_DIR += $(REP_DIR)/include/qt5 \
            $(REP_DIR)/contrib/include \
            $(REP_DIR)/include/qt5/qtbase/QtCore \
            $(REP_DIR)/contrib/qtbase/include/QtCore \
