@@ -16,36 +16,30 @@ QMAKE_CFLAGS = -pipe
 QMAKE_CXXFLAGS = -pipe
 QMAKE_LFLAGS =
 
-# Genode repository
-REP_DIR := ../../..
-
 include $(REP_DIR)/lib/mk/qt5_version.inc
 
-# root of Qt5 source tree
-CONTRIB_DIR := $(REP_DIR)/contrib/$(QT5)/qtbase
-
 # tell make where to look for source codes
-vpath %.h   $(CONTRIB_DIR)/qmake
-vpath %.cpp $(CONTRIB_DIR)/qmake
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators/mac
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators/unix
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators/win32
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators/symbian
-vpath %.cpp $(CONTRIB_DIR)/qmake/generators/integrity
-vpath %.cpp $(CONTRIB_DIR)/qmake/library
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/codecs
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/tools
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/global
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/kernel
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/plugin
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/io
-vpath %.cpp $(CONTRIB_DIR)/src/corelib/xml
-vpath %.cpp $(CONTRIB_DIR)/tools/shared/symbian
-vpath %.cpp $(CONTRIB_DIR)/tools/shared/windows
+vpath %.h   $(QT5_CONTRIB_DIR)/qtbase/qmake
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators/mac
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators/unix
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators/win32
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators/symbian
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/generators/integrity
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/qmake/library
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/codecs
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/tools
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/global
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/kernel
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/plugin
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/io
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/xml
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/tools/shared/symbian
+vpath %.cpp $(QT5_CONTRIB_DIR)/qtbase/tools/shared/windows
 
-QCONFIG_CPP_PATH = ../../../../src/lib/qt5/qtbase/src/corelib/global
-SOURCE_PATH = $(CONTRIB_DIR)
+QCONFIG_CPP_PATH = $(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global
+SOURCE_PATH = $(QT5_CONTRIB_DIR)/qtbase
 BUILD_PATH = .
 QTOBJS = 
 QTSRCS = 
@@ -145,12 +139,12 @@ CPPFLAGS = -g $(OPENSOURCE_CXXFLAGS) \
 	   -DQT_NO_THREAD -DQT_NO_QOBJECT -DQT_NO_GEOM_VARIANT -DQT_NO_DATASTREAM
 
 # extensions of the CPPFLAGS needed for the out-of-tree build
-CPPFLAGS += -I$(CONTRIB_DIR)/qmake
-CPPFLAGS += $(addprefix -I$(CONTRIB_DIR)/qmake/, generators generators/symbian generators/unix generators/win32 generators/mac generators/integrity)
+CPPFLAGS += -I$(QT5_CONTRIB_DIR)/qtbase/qmake
+CPPFLAGS += $(addprefix -I$(QT5_CONTRIB_DIR)/qtbase/qmake/, generators generators/symbian generators/unix generators/win32 generators/mac generators/integrity)
 CPPFLAGS += -I$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global
 CPPFLAGS += -I$(REP_DIR)/include/qt5 -I$(REP_DIR)/include/qt5/qtbase/QtCore
-CPPFLAGS += -I$(CONTRIB_DIR)/include -I$(CONTRIB_DIR)/include/QtCore
-CPPFLAGS += -I$(CONTRIB_DIR)/include/QtCore/$(QT_VERSION) -I$(CONTRIB_DIR)/include/QtCore/$(QT_VERSION)/QtCore
+CPPFLAGS += -I$(QT5_CONTRIB_DIR)/qtbase/include -I$(QT5_CONTRIB_DIR)/qtbase/include/QtCore
+CPPFLAGS += -I$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION) -I$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore
 CPPFLAGS += -I$(QCONFIG_CPP_PATH)
 
 # enable automatic dependency generation
