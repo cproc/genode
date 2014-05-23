@@ -1,11 +1,13 @@
 #
-# Build shader compiler as host tool
+# Build Qt5 host tools
 #
 
-QMAKE_DIR := $(BUILD_BASE_DIR)/tool/qt5/qmake
-MOC_DIR   := $(BUILD_BASE_DIR)/tool/qt5/moc
-RCC_DIR   := $(BUILD_BASE_DIR)/tool/qt5/rcc
-UIC_DIR   := $(BUILD_BASE_DIR)/tool/qt5/uic
+QT5_TOOL_DIR  := $(BUILD_BASE_DIR)/tool/qt5
+BOOTSTRAP_DIR := $(QT5_TOOL_DIR)/bootstrap
+QMAKE_DIR     := $(QT5_TOOL_DIR)/qmake
+MOC_DIR       := $(QT5_TOOL_DIR)/moc
+RCC_DIR       := $(QT5_TOOL_DIR)/rcc
+UIC_DIR       := $(QT5_TOOL_DIR)/uic
 
 HOST_TOOLS += $(QMAKE_DIR)/qmake $(MOC_DIR)/moc $(RCC_DIR)/rcc $(UIC_DIR)/uic
 
@@ -26,23 +28,19 @@ $(QMAKE_DIR)/qmake:
 #
 # Build the other tools using qmake
 #
-vpath bootstrap.pro $(REP_DIR)/contrib/$(QT5)/qtbase/src/tools/bootstrap
-vpath       moc.pro $(REP_DIR)/contrib/$(QT5)/qtbase/src/tools/moc
-vpath       rcc.pro $(REP_DIR)/contrib/$(QT5)/qtbase/src/tools/rcc
-vpath       uic.pro $(REP_DIR)/contrib/$(QT5)/qtbase/src/tools/uic
 
 #
 # The Makefile needs to rebuild itself to get the correct source paths.
 # This gets done by the 'qmake' target.
 #
 
-bootstrap/libQtBootstrap.a: bootstrap/Makefile
-	QMAKESPEC=$(QMAKESPEC) make -C bootstrap qmake
-	QMAKESPEC=$(QMAKESPEC) make -C bootstrap
+$(BOOTSTRAP_DIR)/libQtBootstrap.a: $(BOOTSTRAP_DIR)/Makefile
+	QMAKESPEC=$(QMAKESPEC) make -C $(BOOTSTRAP_DIR) qmake
+	QMAKESPEC=$(QMAKESPEC) make -C $(BOOTSTRAP_DIR)
 
-moc/moc: bootstrap/libQtBootstrap.a moc/Makefile
-	QMAKESPEC=$(QMAKESPEC) make -C moc qmake
-	QMAKESPEC=$(QMAKESPEC) make -C moc
+$(MOC_DIR)/moc: $(BOOTSTRAP_DIR)/libQtBootstrap.a $(MOC_DIR)/Makefile
+	QMAKESPEC=$(QMAKESPEC) make -C $(MOC_DIR) qmake
+	QMAKESPEC=$(QMAKESPEC) make -C $(MOC_DIR)
 
 rcc/rcc: rcc/Makefile bootstrap/libQtBootstrap.a
 	QMAKESPEC=$(QMAKESPEC) make -C rcc qmake
@@ -52,6 +50,13 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 	QMAKESPEC=$(QMAKESPEC) make -C uic qmake
 	QMAKESPEC=$(QMAKESPEC) make -C uic
 
+
+vpath bootstrap.pro $(QT5_CONTRIB_DIR)/qtbase/src/tools/bootstrap
+vpath       moc.pro $(QT5_CONTRIB_DIR)/qtbase/src/tools/moc
+vpath       rcc.pro $(QT5_CONTRIB_DIR)/qtbase/src/tools/rcc
+vpath       uic.pro $(QT5_CONTRIB_DIR)/qtbase/src/tools/uic
+
+
 #
 # Rule to generate tool Makefiles from the respective pro files via qmake
 #
@@ -59,7 +64,7 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 # 'gconfig.cpp' file.  Even though this is a 'cpp' file, it is used via
 # '#include'. So we have to make its location known to the 'INCLUDEPATH'.
 #
-%/Makefile: %.pro
+%/Makefile: $(notdir %).pro
 	QMAKESPEC=$(QMAKESPEC) qmake/qmake -o $*/Makefile \
 		QT_BUILD_TREE=$(REP_DIR)/contrib/$(QT5)/qtbase \
 		QT_CONFIG+=zlib \
@@ -82,7 +87,7 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 # Clean rule
 #
 clean:
-	make -C qmake clean
+	rm -rf $(QMAKE_DIR)
 	rm -rf bootstrap moc rcc uic
 
 distclean: clean
