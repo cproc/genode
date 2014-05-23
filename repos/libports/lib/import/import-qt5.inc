@@ -116,6 +116,10 @@ SRC_CC += qt_main.cc
 vpath qt_main.cc $(QT5_REP_DIR)/src/lib/qt5
 endif
 
+# reduce 'not implemented yet' noise
+SRC_CC += libc_dummies.cc
+vpath libc_dummies.cc $(QT5_REP_DIR)/src/lib/qt5
+
 # set QT_ARCH definition according to the SPECS variable
 ifneq ($(filter x86_32,$(SPECS)),)
 	QT_DEFINES += -DQT_ARCH_I386
