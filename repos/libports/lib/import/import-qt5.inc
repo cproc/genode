@@ -16,6 +16,7 @@ QT5_REP_DIR := $(realpath $(dir $(QT5_REP_DIR))../..)
 include $(QT5_REP_DIR)/lib/mk/qt5_version.inc
 
 QT5_INC_DIR := $(QT5_REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
+               $(QT5_REP_DIR)/contrib/$(QT5)/qtbase/src/corelib/global \
                $(QT5_REP_DIR)/include/qt5 \
                $(QT5_REP_DIR)/include/qt5/qtbase \
                $(QT5_REP_DIR)/contrib/$(QT5)/qtbase/include \
