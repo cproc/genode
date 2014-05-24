@@ -44,7 +44,7 @@ vpath %.cpp $(CONTRIB_DIR)/src/corelib/xml
 vpath %.cpp $(CONTRIB_DIR)/tools/shared/symbian
 vpath %.cpp $(CONTRIB_DIR)/tools/shared/windows
 
-QCONFIG_CPP_PATH = ../../../../src/lib/qt5/qtbase/src/corelib/global
+QCONFIG_CPP_PATH = $(CONTRIB_DIR)/src/corelib/global
 SOURCE_PATH = $(CONTRIB_DIR)
 BUILD_PATH = .
 QTOBJS = 
@@ -147,7 +147,6 @@ CPPFLAGS = -g $(OPENSOURCE_CXXFLAGS) \
 # extensions of the CPPFLAGS needed for the out-of-tree build
 CPPFLAGS += -I$(CONTRIB_DIR)/qmake
 CPPFLAGS += $(addprefix -I$(CONTRIB_DIR)/qmake/, generators generators/symbian generators/unix generators/win32 generators/mac generators/integrity)
-CPPFLAGS += -I$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global
 CPPFLAGS += -I$(REP_DIR)/include/qt5 -I$(REP_DIR)/include/qt5/qtbase/QtCore
 CPPFLAGS += -I$(CONTRIB_DIR)/include -I$(CONTRIB_DIR)/include/QtCore
 CPPFLAGS += -I$(CONTRIB_DIR)/include/QtCore/$(QT_VERSION) -I$(CONTRIB_DIR)/include/QtCore/$(QT_VERSION)/QtCore
