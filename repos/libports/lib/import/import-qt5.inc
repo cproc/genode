@@ -15,12 +15,15 @@ QT5_REP_DIR := $(realpath $(dir $(QT5_REP_DIR))../..)
 
 include $(QT5_REP_DIR)/lib/mk/qt5_version.inc
 
+QT5_PORT_DIR := $(call select_from_ports,qt5)
+QT5_CONTRIB_DIR := $(QT5_PORT_DIR)/src/lib/qt5/$(QT5)
+
 QT5_INC_DIR := $(QT5_REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
-               $(QT5_REP_DIR)/contrib/$(QT5)/qtbase/src/corelib/global \
+               $(QT5_CONTRIB_DIR)/qtbase/src/corelib/global \
                $(QT5_REP_DIR)/include/qt5 \
                $(QT5_REP_DIR)/include/qt5/qtbase \
-               $(QT5_REP_DIR)/contrib/$(QT5)/qtbase/include \
-               $(QT5_REP_DIR)/contrib/$(QT5)/qtbase/mkspecs/genode-g++ \
+               $(QT5_CONTRIB_DIR)/qtbase/include \
+               $(QT5_CONTRIB_DIR)/qtbase/mkspecs/genode-g++ \
 
 INC_DIR += $(QT5_INC_DIR)
 
@@ -67,9 +70,9 @@ SRC_CC += $(SRC_CC_QT_GENERATED)
 # These binaries are created by calling 'make' in the 'tool' directory, which
 # should have happened before starting to build QT5 applications.
 #
-MOC = $(QT5_REP_DIR)/tool/qt5/moc/moc
-RCC = $(QT5_REP_DIR)/tool/qt5/rcc/rcc
-UIC = $(QT5_REP_DIR)/tool/qt5/uic/uic
+MOC = $(BUILD_BASE_DIR)/tool/qt5/moc/moc
+RCC = $(BUILD_BASE_DIR)/tool/qt5/rcc/rcc
+UIC = $(BUILD_BASE_DIR)/tool/qt5/uic/uic
 
 $(MOC) $(RCC) $(UIC):
 	@echo

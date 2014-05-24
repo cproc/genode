@@ -32,10 +32,10 @@ qfiledialog.o: ui_qfiledialog.h
 include $(REP_DIR)/lib/mk/qt5.inc
 
 INC_DIR += $(REP_DIR)/include/qt5/qtbase/QtGui/private \
-           $(REP_DIR)/contrib/$(QT5)/qtbase/include/QtGui/$(QT_VERSION) \
-           $(REP_DIR)/contrib/$(QT5)/qtbase/include/QtGui/$(QT_VERSION)/QtGui \
-           $(REP_DIR)/contrib/$(QT5)/qtbase/include/QtGui/$(QT_VERSION)/QtGui/private \
-           $(REP_DIR)/contrib/$(QT5)/qtbase/include/QtCore/$(QT_VERSION) \
-           $(REP_DIR)/contrib/$(QT5)/qtbase/include/QtCore/$(QT_VERSION)/QtCore
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtGui/$(QT_VERSION) \
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtGui/$(QT_VERSION)/QtGui \
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtGui/$(QT_VERSION)/QtGui/private \
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION) \
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore
 
 LIBS += qt5_core jpeg zlib libpng gallium
