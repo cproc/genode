@@ -12,14 +12,15 @@ include $(REP_DIR)/lib/mk/qt5_version.inc
 #
 # Compound rule for building the tools in the right order
 #
-all: qmake/qmake moc/moc rcc/rcc uic/uic
+all: qmake/bin/qmake moc/moc rcc/rcc uic/uic
 
 QMAKESPEC = $(REP_DIR)/contrib/$(QT5)/qtbase/mkspecs/linux-g++
 
 #
 # Build qmake
 #
-qmake/qmake:
+qmake/bin/qmake:
+	mkdir -p qmake/bin
 	QMAKESPEC=$(QMAKESPEC) make -C qmake
 
 #
@@ -59,7 +60,7 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 # '#include'. So we have to make its location known to the 'INCLUDEPATH'.
 #
 %/Makefile: %.pro
-	QMAKESPEC=$(QMAKESPEC) qmake/qmake -o $*/Makefile \
+	QMAKESPEC=$(QMAKESPEC) qmake/bin/qmake -o $*/Makefile \
 		QT_BUILD_TREE=$(REP_DIR)/contrib/$(QT5)/qtbase \
 		QT_CONFIG+=zlib \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/src/corelib/global \
@@ -81,7 +82,7 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 # Clean rule
 #
 clean:
-	make -C qmake clean
+	make -C qmake distclean
 	rm -rf bootstrap moc rcc uic
 
 distclean: clean
