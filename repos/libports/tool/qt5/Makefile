@@ -62,13 +62,13 @@ uic/uic: uic/Makefile bootstrap/libQtBootstrap.a
 	QMAKESPEC=$(QMAKESPEC) qmake/qmake -o $*/Makefile \
 		QT_BUILD_TREE=$(REP_DIR)/contrib/$(QT5)/qtbase \
 		QT_CONFIG+=zlib \
+		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/src/corelib/global \
 		INCLUDEPATH+=$(REP_DIR)/include/qt5 \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/include \
 		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/include \
 		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/include/QtCore \
-		INCLUDEPATH+=$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/include/QtCore/5.1.0 \
 		INCLUDEPATH+=$(REP_DIR)/contrib/$(QT5)/qtbase/include/QtCore/5.1.0/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtXml \
