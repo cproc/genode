@@ -4,10 +4,10 @@
 # \date   2012-11-26
 #
 
-if {[is_qemu_available]} {
-	puts "\nAuto test running on Qemu is not recommended.\n"
-	exit 0
-}
+#if {[is_qemu_available]} {
+#	puts "\nAuto test running on Qemu is not recommended.\n"
+#	exit 0
+#}
 if {[have_spec pistachio]} {
 	puts "Pistachio is unsupported."
 	exit 0
@@ -57,7 +57,9 @@ if {[have_spec x86]} {
 
 source ${genode_dir}/repos/ports/run/noux_tool_chain.inc
 
-append qemu_args " -m 768 "
+append qemu_args " -m 768 -s"
+
+run_genode_until forever
 
 # wait until Noux started
 run_genode_until {\[init -\> noux\].*--- noux started ---} $noux_boot_timeout
