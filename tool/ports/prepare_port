@@ -114,7 +114,7 @@ _install_in_port_dir: $(PORT_DIR)
 	 # rule below. To avoid having both the port directory and the transient\
 	 # port directory present, remove the just-created port directory.\
 	 #
-	$(VERBOSE)test -d $(PORT_DIR).incomplete && rmdir $(PORT_DIR)
+	$(VERBOSE)(test -d $(PORT_DIR).incomplete && rmdir $(PORT_DIR)) || true
 	@#\
 	 # If no transient directory exists, rename the port directory accordingly.\
 	 #
