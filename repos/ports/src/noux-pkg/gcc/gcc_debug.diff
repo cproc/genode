@@ -1,0 +1,30 @@
+gcc_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gcc/main.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/gcc/main.c b/gcc/main.c
+index b492289..2225c10 100644
+--- a/gcc/main.c
++++ b/gcc/main.c
+@@ -23,6 +23,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "tm.h"
+ #include "diagnostic-core.h"
+ #include "toplev.h"
++#include "opts.h"
+ 
+ int main (int argc, char **argv);
+ 
+@@ -33,5 +34,8 @@ int main (int argc, char **argv);
+ int
+ main (int argc, char **argv)
+ {
++  fprintf(stderr, "main(): &in_fnames = %p, in_fnames = %p\n", &in_fnames, in_fnames);
++  if (in_fnames != 0)
++    while(1);
+   return toplev_main (argc, argv);
+ }
