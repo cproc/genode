@@ -52,7 +52,7 @@ HEADERS_FILTERED = $(filter-out $(HEADERS_FILTER_OUT), $(HEADERS))
 SRC_CC += $(SOURCES_FILTERED)
 
 # handle moc-headers, resources and ui descriptions
-$(SRC_CC:.cpp=.o): $(addprefix ui_,$(FORMS:.ui=.h))
+$(addsuffix .o,$(basename $(SRC_CC))): $(addprefix ui_,$(FORMS:.ui=.h))
 
 SRC_CC_QT_GENERATED = $(addprefix moc_,$(HEADERS_FILTERED:.h=.cpp)) \
                       $(addprefix qrc_,$(RESOURCES:.qrc=.cpp))
@@ -115,10 +115,6 @@ CC_CXX_OPT += -Dmain=qt_main
 SRC_CC += qt_main.cc
 vpath qt_main.cc $(QT5_REP_DIR)/src/lib/qt5
 endif
-
-# reduce 'not implemented yet' noise
-SRC_CC += libc_dummies.cc
-vpath libc_dummies.cc $(QT5_REP_DIR)/src/lib/qt5
 
 # set QT_ARCH definition according to the SPECS variable
 ifneq ($(filter x86_32,$(SPECS)),)
