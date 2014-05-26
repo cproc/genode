@@ -77,3 +77,5 @@ NOUX_CXXFLAGS += -ffunction-sections $(CC_OLEVEL) -nostdlib $(NOUX_CPPFLAGS)
 # in all cases because 'libtool' strips those arguments from the 'LIBS' variable.
 #
 NOUX_LIBS += -Wl,--start-group $(sort $(LINK_ITEMS)) $(sort $(LINK_ITEMS)) $(LIBGCC) -Wl,--end-group
+
+CC_OLEVEL = -O0
