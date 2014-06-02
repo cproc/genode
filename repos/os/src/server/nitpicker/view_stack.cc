@@ -46,8 +46,9 @@ VIEW *View_stack::_next_view(VIEW &view) const
 	View * const active_background = active_session ?
 	                                 active_session->background() : 0;
 
-	for (;;) {
-		VIEW *next_view = view.view_stack_next();
+	for (VIEW *next_view = &view; ;) {
+
+		next_view = next_view->view_stack_next();
 
 		/* check if we hit the bottom of the view stack */
 		if (!next_view) return 0;
