@@ -186,7 +186,7 @@ proc drivers_start_nodes { feature_arg } {
 		append_if [info exists feature(Input)] start_nodes {
 					<hid/>}
 		append_if [info exists feature(Nic)] start_nodes {
-					<nic mac="2e:60:90:0c:4e:01" />}
+					<nic mac="2A:40:F4:52:3D:0A" />}
 		append start_nodes {
 				</config>
 			</start>
