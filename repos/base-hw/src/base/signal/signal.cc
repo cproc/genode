@@ -162,7 +162,9 @@ Signal_context_capability Signal_receiver::manage(Signal_context * const c)
 				return Signal_context_capability();
 			}
 			PINF("upgrading quota donation for signal session");
+			Kernel::print_char(0);
 			env()->parent()->upgrade(s->cap(), "ram_quota=4K");
+			PDBG("upgraded");
 			session_upgraded = 1;
 		}
 	}

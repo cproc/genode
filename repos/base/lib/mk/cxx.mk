@@ -79,3 +79,5 @@ $(SRC_S): $(CXX_OBJECTS)
 	$(MSG_CONVERT)$@
 	$(VERBOSE)$(OBJCOPY) $(LOCAL_SYMBOLS) $(REDEF_SYMBOLS) $@.tmp $@
 	$(VERBOSE)$(RM) $@.tmp
+
+LIBS += backtrace

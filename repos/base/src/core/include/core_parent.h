@@ -20,7 +20,7 @@
 
 namespace Genode { struct Core_parent; }
 
-
+extern "C" void print_backtrace();
 /**
  * In fact, Core has _no_ parent. But most of our libraries could work
  * seamlessly inside Core too, if it had one. Core_parent fills this gap.
@@ -34,7 +34,7 @@ struct Genode::Core_parent : Parent
 	Session_capability session(Service_name const &, Session_args const &,
 	                           Affinity const &);
 
-	void upgrade(Session_capability, Upgrade_args const &) { throw Quota_exceeded(); }
+	void upgrade(Session_capability, Upgrade_args const &) { PDBG("throwing Quota_exceeded"); print_backtrace(); throw Quota_exceeded(); }
 
 	void close(Session_capability) { }
 
