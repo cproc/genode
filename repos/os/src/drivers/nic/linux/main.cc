@@ -26,6 +26,8 @@
 #include <base/sleep.h>
 #include <cap_session/connection.h>
 #include <nic/component.h>
+#include <os/config.h>
+#include <nic/xml_node.h>
 
 /* Linux */
 #include <unistd.h>
@@ -33,9 +35,6 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <linux/if_tun.h>
-
-#include <os/config.h>
-#include <nic/xml_node.h>
 
 
 class Linux_driver : public Nic::Driver
