@@ -177,9 +177,11 @@ QNitpickerPlatformWindow::QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_
 	_ev_buf = static_cast<Input::Event *>
 			  (Genode::env()->rm_session()->attach(_input_session.dataspace()));
 
-	/* bring the view to the top */
-	Nitpicker::View_client(_view_cap).stack(Nitpicker::View_capability(),
-				                            true, false);
+	if (_view_cap.valid()) {
+		/* bring the view to the top */
+		Nitpicker::View_client(_view_cap).stack(Nitpicker::View_capability(),
+					                            true, false);
+	}
 
 	connect(_timer, SIGNAL(timeout()), this, SLOT(handle_events()));
 	_timer->start(10);
@@ -317,7 +319,8 @@ void QNitpickerPlatformWindow::setWindowTitle(const QString &title)
 
 	_title = title.toLocal8Bit();
 
-	Nitpicker::View_client(_view_cap).title(_title.constData());
+	if (_view_cap.valid())
+		Nitpicker::View_client(_view_cap).title(_title.constData());
 
 	if (qnpw_verbose)
 	    qDebug() << "QNitpickerPlatformWindow::setWindowTitle() finished";
