@@ -14,25 +14,18 @@
 #ifndef _MODE_H_
 #define _MODE_H_
 
-class View;
-class Canvas_base;
+class Session;
 
 class Mode
 {
 	private:
 
-		bool _xray;
-		bool _kill;
+		bool _xray = false;
+		bool _kill = false;
 
-		/*
-		 * Last clicked view. This view is receiving keyboard input, except
-		 * for global keys.
-		 */
-		View const *_focused_view;
+		Session *_focused_session = nullptr;
 
 	public:
-
-		Mode(): _xray(false), _kill(false), _focused_view(0) { }
 
 		virtual ~Mode() { }
 
@@ -43,19 +36,23 @@ class Mode
 		bool kill() const { return _kill; }
 		bool flat() const { return !_xray && !_kill; }
 
-		void leave_kill() { _kill = false; }
+		void leave_kill()  { _kill = false; }
 		void toggle_kill() { _kill = !_kill; }
 		void toggle_xray() { _xray = !_xray; }
 
-		View const *focused_view() const { return _focused_view; }
+		Session *focused_session() { return _focused_session; }
 
-		void focused_view(View const *view) { _focused_view = view; }
+		virtual void focused_session(Session *session) { _focused_session = session; }
+
+		bool is_focused(Session const &session) const { return &session == _focused_session; }
 
 		/**
 		 * Discard all references to specified view
 		 */
-		virtual void forget(View const &v) {
-			if (&v == _focused_view) _focused_view = 0; }
+		virtual void forget(Session const &session)
+		{
+			if (is_focused(session)) _focused_session = nullptr;
+		}
 };
 
 #endif
