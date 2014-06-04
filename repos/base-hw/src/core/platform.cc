@@ -219,7 +219,6 @@ bool Genode::map_local(addr_t from_phys, addr_t to_virt, size_t num_pages, bool 
 	return false;
 }
 
-
 bool Genode::unmap_local(addr_t virt_addr, size_t num_pages)
 {
 	try {

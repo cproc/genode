@@ -128,27 +128,58 @@ namespace Kernel
 
 		struct Core_pd : Platform_pd, Pd
 		{
+
+bool map(addr_t from_phys, addr_t to_virt, size_t num_pages, bool io_mem)
+{
+	using namespace Genode;
+        Translation_table *tt = Pd::translation_table();
+        const Page_flags flags = Page_flags::map_core_area(io_mem);
+
+        try {
+                for (unsigned i = 0; i < 2; i++) {
+                        try {
+                                //Lock::Guard guard(*Kernel::core_pd()->platform_pd()->lock());
+
+                                tt->insert_translation(to_virt, from_phys,
+                                                       num_pages * get_page_size(), flags,
+                                                       platform_pd()->page_slab());
+                                return true;
+                        } catch(Page_slab::Out_of_slabs) {
+                                platform_pd()->page_slab()->alloc_slab_block();
+                        }
+                }
+        } catch(Allocator::Out_of_memory) {
+                PERR("Translation table needs to much RAM");
+        } catch(...) {
+                PERR("Invalid mapping %p -> %p (%zx)", (void*)from_phys, (void*)to_virt,
+                         get_page_size() * num_pages);
+        }
+        return false;
+}
+
 			Core_pd(Ttable * tt, Genode::Page_slab * slab)
 			: Platform_pd(tt, slab),
 			  Pd(tt, this)
 			{
 				using namespace Genode;
-
+PDBG("%u", __LINE__);
 				Platform_pd::_id = Pd::id();
-
+PDBG("%u", __LINE__);
 				/* map exception vector for core */
 				Kernel::mtc()->map(tt, slab);
-
+PDBG("%u", __LINE__);
 				/* map core's program image */
 				addr_t start = trunc_page((addr_t)&_prog_img_beg);
 				addr_t end   = round_page((addr_t)&_prog_img_end);
-				map_local(start, start, (end-start) / get_page_size());
-
+				map(start, start, (end-start) / get_page_size(), false);
+PDBG("%u", __LINE__);
 				/* map core's mmio regions */
 				Native_region * r = Platform::_core_only_mmio_regions(0);
+PDBG("%u", __LINE__);
 				for (unsigned i = 0; r;
 				     r = Platform::_core_only_mmio_regions(++i))
-					map_local(r->base, r->base, r->size / get_page_size(), true);
+					map(r->base, r->base, r->size / get_page_size(), true);
+PDBG("%u", __LINE__);
 			}
 		};
 
@@ -227,16 +258,18 @@ extern "C" void init_kernel_uniprocessor()
 	 ** we must avoid the use of 'cmpxchg' by now (includes not using any  **
 	 ** local static objects.                                              **
 	 ************************************************************************/
-
+PDBG("%u", __LINE__);
 	/* calculate in advance as needed later when data writes aren't allowed */
 	core_tt_base = (addr_t) core_pd()->translation_table();
+PDBG("%u", __LINE__);
 	core_pd_id   = core_pd()->id();
-
+PDBG("%u", __LINE__);
 	/* initialize all processor objects */
 	processor_pool();
-
+PDBG("%u", __LINE__);
 	/* go multiprocessor mode */
 	Processor::start_secondary_processors(&_start_secondary_processors);
+PDBG("%u", __LINE__);
 }
 
 /**
@@ -250,25 +283,28 @@ extern "C" void init_kernel_multiprocessor()
 	 ** activation of MMU and caches. Hence we must avoid write access to **
 	 ** kernel data by now.                                               **
 	 ***********************************************************************/
-
+PDBG("%u", __LINE__);
 	/* synchronize data view of all processors */
 	Processor::invalidate_data_caches();
+PDBG("%u", __LINE__);
 	Processor::invalidate_instr_caches();
+PDBG("%u", __LINE__);
 	Processor::invalidate_control_flow_predictions();
+PDBG("%u", __LINE__);
 	Processor::data_synchronization_barrier();
-
+PDBG("%u", __LINE__);
 	/* initialize processor in physical mode */
 	Processor::init_phys_kernel();
-
+PDBG("%u", __LINE__);
 	/* switch to core address space */
 	Processor::init_virt_kernel(core_tt_base, core_pd_id);
-
+PDBG("%u", __LINE__);
 	/************************************
 	 ** Now it's safe to use 'cmpxchg' **
 	 ************************************/
 
 	Lock::Guard guard(data_lock());
-
+PDBG("%u", __LINE__);
 	/*******************************************
 	 ** Now it's save to write to kernel data **
 	 *******************************************/
@@ -279,19 +315,19 @@ extern "C" void init_kernel_multiprocessor()
 	 * FIXME This is a plattform specific feature
 	 */
 	init_trustzone(pic());
-
+PDBG("%u", __LINE__);
 	/*
 	 * Enable performance counter
 	 *
 	 * FIXME This is an optional processor specific feature
 	 */
 	perf_counter()->enable();
-
+PDBG("%u", __LINE__);
 	/* initialize interrupt controller */
 	pic()->init_processor_local();
 	unsigned const processor_id = Processor::executing_id();
 	pic()->unmask(Timer::interrupt_id(processor_id), processor_id);
-
+PDBG("%u", __LINE__);
 	/* as primary processor create the core main thread */
 	if (Processor::primary_id() == processor_id)
 	{
@@ -306,10 +342,12 @@ extern "C" void init_kernel_multiprocessor()
 
 		/* provide thread ident at the aligned base of the stack */
 		*(Core_thread_id *)s = 0;
-
+PDBG("%u", __LINE__);
 		/* start thread with stack pointer at the top of stack */
 		static Native_utcb utcb;
+PDBG("%u", __LINE__);
 		static Thread t(Priority::MAX, "core");
+PDBG("%u", __LINE__);
 		_main_thread_id = t.id();
 		_main_thread_utcb = &utcb;
 		_main_thread_utcb->start_info()->init(t.id(), Genode::Native_capability());

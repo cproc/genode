@@ -50,7 +50,7 @@ Native_region * Platform::_core_only_mmio_regions(unsigned const i)
 		{ Board::SYSTEM_TIMER_MMIO_BASE, Board::SYSTEM_TIMER_MMIO_SIZE },
 
 		/* IRQ controller */
-		{ Board::IRQ_CONTROLLER_BASE, Board::IRQ_CONTROLLER_SIZE },
+		{ Board::IRQ_CONTROLLER_BASE & ~0xfff, /*Board::IRQ_CONTROLLER_SIZE*/0x1000 },
 	};
 	return i < sizeof(_regions)/sizeof(_regions[0]) ? &_regions[i] : 0;
 }

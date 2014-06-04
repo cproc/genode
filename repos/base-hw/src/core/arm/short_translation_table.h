@@ -184,7 +184,7 @@ class Arm::Section_table
 						access_t v = access_permission_bits<Small_page>(flags);
 						v |= memory_region_attr<Small_page>(flags);
 						v |= Ng::bits(!flags.global);
-						v |= S::bits(1);
+						v |= S::bits(0);
 						v |= Pa::masked(pa);
 						Descriptor::type(v, Descriptor::SMALL_PAGE);
 						return v;
@@ -447,7 +447,7 @@ class Arm::Section_table
 				access_t v = access_permission_bits<Section>(flags);
 				v |= memory_region_attr<Section>(flags);
 				v |= Domain::bits(DOMAIN);
-				v |= S::bits(1);
+				v |= S::bits(0);
 				v |= Ng::bits(!flags.global);
 				v |= Pa::masked(pa);
 				Descriptor::type(v, Descriptor::SECTION);

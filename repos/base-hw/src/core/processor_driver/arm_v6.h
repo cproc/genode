@@ -193,7 +193,8 @@ namespace Arm_v6
 		 */
 		static void data_synchronization_barrier()
 		{
-			asm volatile ("dsb");
+			unsigned v = 0;
+			asm volatile ("mcr p15, 0, %[v], c7, c10, 4" : [v] "=r"(v) ::);
 		}
 
 		/**
