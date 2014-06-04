@@ -141,7 +141,7 @@ _mt_constants
 	 * To enable such switching, the kernel context must be stored within this
 	 * region, thus one should map it solely accessable for privileged modes.
 	 */
-	.p2align min_page_size_log2
+	.p2align 12
 	.global _mt_begin
 	_mt_begin:
 
