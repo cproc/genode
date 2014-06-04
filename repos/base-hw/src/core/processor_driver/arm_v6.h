@@ -185,7 +185,7 @@ namespace Arm_v6
 		 */
 		static void invalidate_control_flow_predictions()
 		{
-			/* FIXME invalidation of branch prediction not implemented */
+			asm volatile ("mcr p15, 0, r0, c7, c5, 6");
 		}
 
 		/**
@@ -193,7 +193,7 @@ namespace Arm_v6
 		 */
 		static void data_synchronization_barrier()
 		{
-			/* FIXME data synchronization barrier not implemented */
+			asm volatile ("dsb");
 		}
 
 		/**
@@ -201,7 +201,7 @@ namespace Arm_v6
 		 */
 		static void wait_for_interrupt()
 		{
-			/* FIXME cheap way of waiting is not implemented */
+			asm volatile ("mcr p15, 0, r0, c7, c0, 4");
 		}
 
 		/**
