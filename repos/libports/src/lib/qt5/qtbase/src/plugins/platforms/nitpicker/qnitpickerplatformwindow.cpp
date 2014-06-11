@@ -239,6 +239,11 @@ void QNitpickerPlatformWindow::setGeometry(const QRect &rect)
 	if (window()->isVisible()) {
 		QRect g(geometry());
 
+		if (window()->transientParent()) {
+			/* translate global position to parent-relative position */
+			g.moveTo(window()->transientParent()->mapFromGlobal(g.topLeft()));
+		}
+
 		typedef Nitpicker::Session::Command Command;
 		_nitpicker_session.enqueue<Command::Geometry>(_view_handle,
 		             Nitpicker::Rect(Nitpicker::Point(g.x(), g.y()),
@@ -272,7 +277,12 @@ void QNitpickerPlatformWindow::setVisible(bool visible)
 	typedef Nitpicker::Session::Command Command;
 
 	if (visible) {
-		QRect g = geometry();
+		QRect g(geometry());
+
+		if (window()->transientParent()) {
+			/* translate global position to parent-relative position */
+			g.moveTo(window()->transientParent()->mapFromGlobal(g.topLeft()));
+		}
 
 		_nitpicker_session.enqueue<Command::Geometry>(_view_handle,
 		     Nitpicker::Rect(Nitpicker::Point(g.x(), g.y()),
