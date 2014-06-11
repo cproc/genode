@@ -329,8 +329,8 @@ void QPluginWidget::cleanup()
 		/* delete the QThread object */
 		delete _plugin_starter;
 		_plugin_starter = 0;
-		delete vc;
-		vc = 0;
+//		delete vc;
+//		vc = 0;
 	}
 }
 
@@ -379,7 +379,7 @@ void QPluginWidget::pluginStartFinished()
 	if (_plugin_loading_state == LOADED) {
 		Nitpicker::View_capability view = _plugin_starter->plugin_view(&orig_w, &orig_h, &orig_buf_x, &orig_buf_y);
 
-		vc = new Nitpicker::View_client(view);
+//		vc = new Nitpicker::View_client(view);
 
 		setFixedSize((_max_width > -1) ? qMin(orig_w, _max_width) : orig_w,
 		             (_max_height > -1) ? qMin(orig_h, _max_height) : orig_h);
