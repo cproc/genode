@@ -16,7 +16,8 @@
 
 int main(int argc, char **argv)
 {
-	Genode::printf("-1 = %d = %ld\n", -1, -1L);
+	while(1)
+		Genode::printf("-1 = %d = %ld\n", -1, -1L);
 
 	return 0;
 }

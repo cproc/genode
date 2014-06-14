@@ -18,7 +18,7 @@ namespace Kernel
 {
 	enum {
 		DEFAULT_STACK_SIZE   = 16 * 1024,
-		USER_LAP_TIME_MS     = 100,
+		USER_LAP_TIME_MS     = 1000,
 		MAX_PDS              = 256,
 		MAX_THREADS          = 256,
 		MAX_SIGNAL_RECEIVERS = 2048,

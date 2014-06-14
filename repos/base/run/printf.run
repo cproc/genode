@@ -1,4 +1,4 @@
-build "core init test/printf"
+build "core init test/printf test/loop"
 
 create_boot_directory
 
@@ -11,16 +11,22 @@ install_config {
 		<default-route>
 			<any-service> <parent/> </any-service>
 		</default-route>
+
 		<start name="test-printf">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+
+		<start name="test-loop">
 			<resource name="RAM" quantum="10M"/>
 		</start>
 	</config>
 }
 
-build_boot_image "core init test-printf"
+build_boot_image "core init test-printf test-loop"
 
 append qemu_args "-nographic -m 64"
 
-run_genode_until {-1 = -1 = -1} 10
+#run_genode_until {-1 = -1 = -1} 10
+run_genode_until forever
 
 puts "Test succeeded"

@@ -206,6 +206,10 @@ void Thread::exception(unsigned const processor_id)
 		return;
 	case INTERRUPT_REQUEST:
 		_interrupt(processor_id);
+		addr_t ip;
+		_read_reg(Thread_reg_id::IP, ip);
+		if (Genode::strcmp(_label, "idle") != 0)
+			PDBG("label = %s, ip = %8x", _label, ip);
 		return;
 	case FAST_INTERRUPT_REQUEST:
 		_interrupt(processor_id);

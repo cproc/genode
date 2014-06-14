@@ -48,7 +48,7 @@ void Kernel::Processor_client::_interrupt(unsigned const processor_id)
 	{
 		/* check wether the interrupt is a processor-scheduling timeout */
 		if (timer()->interrupt_id(processor_id) == irq_id) {
-
+			PDBG("scheduling timeout");
 			_processor->scheduler()->yield_occupation();
 			timer()->clear_interrupt(processor_id);
 
