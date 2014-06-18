@@ -200,62 +200,69 @@ class Ps2_mouse : public Input_driver
 			if (_packet_idx < _packet_len)
 				return;
 
-			/* decode packet and feed event queue */
-			int rel_x = _packet[1], rel_y = _packet[2];
+			try {
 
-			/* shortcut for packet header */
-			int ph = _packet[0];
+				/* decode packet and feed event queue */
+				int rel_x = _packet[1], rel_y = _packet[2];
 
-			/* sign extend motion values */
-			rel_x |= (ph & FLAG_X_SIGN) ? ~0xff : 0;
-			rel_y |= (ph & FLAG_Y_SIGN) ? ~0xff : 0;
+				/* shortcut for packet header */
+				int ph = _packet[0];
 
-			/* discard motion values on overflow */
-			rel_x &= (ph & FLAG_X_OVER) ? 0 : ~0;
-			rel_y &= (ph & FLAG_Y_OVER) ? 0 : ~0;
+				/* sign extend motion values */
+				rel_x |= (ph & FLAG_X_SIGN) ? ~0xff : 0;
+				rel_y |= (ph & FLAG_Y_SIGN) ? ~0xff : 0;
 
-			/* generate motion event */
-			if (rel_x || rel_y) {
+				/* discard motion values on overflow */
+				rel_x &= (ph & FLAG_X_OVER) ? 0 : ~0;
+				rel_y &= (ph & FLAG_Y_OVER) ? 0 : ~0;
 
-				/* mirror y axis to make the movement correspond to screen coordinates */
-				rel_y = -rel_y;
+				/* generate motion event */
+				if (rel_x || rel_y) {
 
-				if (verbose)
-					Genode::printf("post MOTION, rel_x = %d, rel_y = %d\n", rel_x, rel_y);
+					/* mirror y axis to make the movement correspond to screen coordinates */
+					rel_y = -rel_y;
 
-				_ev_queue.add(Input::Event(Input::Event::MOTION,
-				                           0, 0, 0, rel_x, rel_y));
-			}
+					if (verbose)
+						Genode::printf("post MOTION, rel_x = %d, rel_y = %d\n", rel_x, rel_y);
 
-			/* generate wheel event */
-			int rel_z = 0;
-			if (_type == IMPS2)
-				rel_z = (signed char) _packet[3];
-			if (_type == EXPS2) {
-				rel_z = _packet[3] & 0xf;
-				/* sign extend value */
-				rel_z |= (rel_z & 0x8) ? ~0x0f : 0;
-			}
-			if (rel_z) {
-				/* mirror y axis to make "scroll up" generate positive values */
-				rel_z = -rel_z;
+					_ev_queue.add(Input::Event(Input::Event::MOTION,
+					                           0, 0, 0, rel_x, rel_y));
+				}
 
-				if (verbose)
-					Genode::printf("post WHEEL, rel_z = %d\n", rel_z);
+				/* generate wheel event */
+				int rel_z = 0;
+				if (_type == IMPS2)
+					rel_z = (signed char) _packet[3];
+				if (_type == EXPS2) {
+					rel_z = _packet[3] & 0xf;
+					/* sign extend value */
+					rel_z |= (rel_z & 0x8) ? ~0x0f : 0;
+				}
+				if (rel_z) {
+					/* mirror y axis to make "scroll up" generate positive values */
+					rel_z = -rel_z;
 
-				_ev_queue.add(Input::Event(Input::Event::WHEEL,
-				                           0, 0, 0, 0, rel_z));
-			}
+					if (verbose)
+						Genode::printf("post WHEEL, rel_z = %d\n", rel_z);
 
-			/* detect changes of mouse-button state and post corresponding events */
-			_button_event(&_button_state[LEFT],   ph & FLAG_BTN_LEFT,   Input::BTN_LEFT);
-			_button_event(&_button_state[RIGHT],  ph & FLAG_BTN_RIGHT,  Input::BTN_RIGHT);
-			_button_event(&_button_state[MIDDLE], ph & FLAG_BTN_MIDDLE, Input::BTN_MIDDLE);
+					_ev_queue.add(Input::Event(Input::Event::WHEEL,
+					                           0, 0, 0, 0, rel_z));
+				}
 
-			/* post extra button events */
-			if (_type == EXPS2) {
-				_button_event(&_button_state[SIDE],  _packet[3] & 0x10, Input::BTN_SIDE);
-				_button_event(&_button_state[EXTRA], _packet[3] & 0x20, Input::BTN_EXTRA);
+				/* detect changes of mouse-button state and post corresponding events */
+				_button_event(&_button_state[LEFT],   ph & FLAG_BTN_LEFT,   Input::BTN_LEFT);
+				_button_event(&_button_state[RIGHT],  ph & FLAG_BTN_RIGHT,  Input::BTN_RIGHT);
+				_button_event(&_button_state[MIDDLE], ph & FLAG_BTN_MIDDLE, Input::BTN_MIDDLE);
+
+				/* post extra button events */
+				if (_type == EXPS2) {
+					_button_event(&_button_state[SIDE],  _packet[3] & 0x10, Input::BTN_SIDE);
+					_button_event(&_button_state[EXTRA], _packet[3] & 0x20, Input::BTN_EXTRA);
+				}
+
+			} catch (Input::Event_queue::Overflow) {
+				PERR("%s - drop input event - event queue overflow",
+				     __PRETTY_FUNCTION__);
 			}
 
 			/* start new packet */

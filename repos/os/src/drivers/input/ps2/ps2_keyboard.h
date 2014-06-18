@@ -444,10 +444,15 @@ class Ps2_keyboard : public Input_driver
 				PLOG("post %s, key_code = %d\n",
 				     press ? "PRESS" : "RELEASE", key_code);
 
-			/* post event to event queue */
-			_ev_queue.add(Input::Event(press ? Input::Event::PRESS
-			                                 : Input::Event::RELEASE,
-			                           key_code, 0, 0, 0, 0));
+			try {
+				/* post event to event queue */
+				_ev_queue.add(Input::Event(press ? Input::Event::PRESS
+				                                 : Input::Event::RELEASE,
+				                           key_code, 0, 0, 0, 0));
+			} catch (Input::Event_queue::Overflow) {
+				PERR("%s - drop input event - event queue overflow",
+				     __PRETTY_FUNCTION__);
+			}
 
 			/* start with new packet */
 			_state_machine->reset();
