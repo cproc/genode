@@ -89,6 +89,45 @@ namespace Timer {
 				if (sleep_time == 0)
 					sleep_time = 1;
 
+				/*
+				 * XXX Quirk - start
+				 *
+				 * On some x86 platforms it happens that the system seems to
+				 * slow down dramatically for some unclear reasons so far,
+				 * see issue #XXXX on github.
+				 * When this happens the handling of the timeout queue and
+				 * reprogramming the next timeout takes so long, that the
+				 * timer IRQ will fire immediately after acknowledging it.
+				 * This causes the timer service to run on a very high rate
+				 * which may utilize the CPU close to the maximum.
+				 * We try to detect this and apply this quirk which programs
+				 * the next timeout later in time - so that it will fire not
+				 * immediately after acknowledging it.
+				 *
+				 * This Quirk must be removed as soon as it is clear what
+				 * triggers the phenomenon described in issue #XXXX.
+				 */
+				enum {
+					QUIRK_TIMEOUT_US = 10000,
+					TOOK_TOO_LONG_US = 15000,
+				};
+				Alarm::Time later = _platform_timer->curr_time();
+				if ((later < now || later - now > TOOK_TOO_LONG_US) &&
+				    sleep_time < QUIRK_TIMEOUT_US) {
+
+					sleep_time = QUIRK_TIMEOUT_US;
+
+					if (later - now > sleep_time)
+						sleep_time = later - now;
+
+					if (sleep_time > _platform_timer->max_timeout())
+						sleep_time = _platform_timer->max_timeout();
+
+					PERR("apply timer quirk - %ld:%lu", later - now, sleep_time);
+
+				}
+				/* XXX Quirk - end */
+
 				_platform_timer->schedule_timeout(sleep_time);
 			}
 	};
