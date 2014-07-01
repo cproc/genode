@@ -91,7 +91,11 @@ namespace Gdb_monitor {
 						return _rm_root.session(args, affinity);
 					}
 
-					void upgrade(Genode::Session_capability, const char *) { }
+					void upgrade(Genode::Session_capability cap, const char *args)
+					{
+						PDBG("called");
+						//_rm_root.upgrade(cap, args);
+					}
 
 					void close(Genode::Session_capability cap)
 					{
@@ -103,7 +107,7 @@ namespace Gdb_monitor {
 			{
 				_entrypoint.manage(&_rm_root);
 				Capability<Rm_session> cap = static_cap_cast<Rm_session>
-				                             (_rm_root.session("ram_quota=64K", Affinity()));
+				                             (_rm_root.session("ram_quota=512K", Affinity()));
 				Rm_session_client rm(cap);
 
 				rm.fault_handler(_gdb_stub_thread.exception_signal_receiver()->manage(new (env()->heap()) Signal_context()));
