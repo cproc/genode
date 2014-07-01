@@ -326,6 +326,9 @@ void Child::upgrade(Session_capability to_session, Parent::Upgrade_args const &a
 	if (to_session.local_name() == _rm.local_name())
 		targeted_service = &_rm_service;
 
+if (targeted_service == &_rm_service)
+	PDBG("upgrading RM service");
+
 	/* check if upgrade refers to server */
 	Object_pool<Session>::Guard session(_session_pool.lookup_and_lock(to_session));
 	if (session)
