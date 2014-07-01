@@ -55,8 +55,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT |
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT |
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT |
-			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT |
-			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT |
+			                    /*VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT |
+			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT |*/
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT |
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT |
 			                    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT |
