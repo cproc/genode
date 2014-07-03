@@ -29,7 +29,7 @@ namespace Genode {
 	 * On NOVA, each pager object is an EC that corresponds to one user thread.
 	 */
 	class Pager_object : public Object_pool<Pager_object>::Entry,
-	                     Thread_base
+	                     public Thread_base
 	{
 		private:
 

@@ -167,6 +167,7 @@ void genode_interrupt_thread(unsigned long lwpid)
 
 void genode_continue_thread(unsigned long lwpid, int single_step)
 {
+	PDBG("lwpid = %lu, step = %d", lwpid, single_step);
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
