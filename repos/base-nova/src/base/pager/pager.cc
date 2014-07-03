@@ -104,8 +104,14 @@ void Pager_object::_exception_handler(addr_t portal_id)
 	addr_t fault_ip    = utcb->ip;
 	uint8_t res        = 0xFF;
 
-	if (obj->submit_exception_signal())
+	char client_name[Context::NAME_LEN];
+	myself->name(client_name, sizeof(client_name));
+	PDBG("_exception_handler(%s)", client_name);
+
+	if (obj->submit_exception_signal()) {
+		PDBG("calling client_recall() after sending exception signal");
 		res = obj->client_recall();
+	}
 
 	if (res != NOVA_OK) {
 		char client_name[Context::NAME_LEN];
@@ -124,6 +130,8 @@ void Pager_object::_exception_handler(addr_t portal_id)
 	utcb->set_msg_word(0);
 	utcb->mtd = 0;
 
+	PDBG("_exception_handler(%s) finished", client_name);
+
 	reply(myself->stack_top());
 }
 
@@ -133,6 +141,10 @@ void Pager_object::_recall_handler()
 	Thread_base  *myself;
 	Pager_object *obj;
 	Utcb         *utcb = _check_handler(myself, obj);
+
+	char client_name[Context::NAME_LEN];
+	myself->name(client_name, sizeof(client_name));
+	PDBG("_recall_handler(%s)", client_name);
 
 	obj->_copy_state(utcb);
 
@@ -167,6 +179,8 @@ void Pager_object::_recall_handler()
 			utcb->mtd = 0;
 
 	utcb->set_msg_word(0);
+
+	PDBG("_recall_handler(%s) finished", client_name);
 
 	reply(myself->stack_top());
 }
@@ -270,6 +284,10 @@ void Pager_object::_invoke_handler()
 
 void Pager_object::wake_up()
 {
+	char client_name[Context::NAME_LEN];
+	name(client_name, sizeof(client_name));
+	PDBG("wake_up(%s)", client_name);
+
 	_state.unmark_client_cancel();
 
 	cancel_blocking();
@@ -298,6 +316,10 @@ void Pager_object::client_cancel_blocking()
 
 uint8_t Pager_object::client_recall()
 {
+	char client_name[Context::NAME_LEN];
+	name(client_name, sizeof(client_name));
+	PDBG("client_recall(%s)", client_name);
+
 	return ec_ctrl(EC_RECALL, _state.sel_client_ec);
 }
 

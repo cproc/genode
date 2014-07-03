@@ -186,19 +186,37 @@ int Platform_thread::start(void *ip, void *sp)
 
 Native_capability Platform_thread::pause()
 {
-	if (!_pager) return Native_capability();
+	char client_name[256];
+	_pager->name(client_name, sizeof(client_name));
+	PDBG("pause(%s)", client_name);
+	if (!_pager) {
+		PDBG("pause(%s) finished 1", client_name);
+		return Native_capability();
+	}
 
 	Native_capability notify_sm = _pager->notify_sm();
-	if (!notify_sm.valid()) return notify_sm;
+	if (!notify_sm.valid()) {
+		PDBG("pause(%s) finished 2", client_name);
+		return notify_sm;
+	}
 
-	if (_pager->client_recall() != Nova::NOVA_OK)
+	PDBG("calling client_recall()");
+
+	if (_pager->client_recall() != Nova::NOVA_OK) {
+		PDBG("pause(%s) finished 3", client_name);
 		return Native_capability();
+	}
 
 	/* If the thread is blocked in its own SM, get him out */
 	cancel_blocking();
 
 	/* local thread may never get be canceled if it doesn't receive an IPC */
-	if (is_worker()) return Native_capability();
+	if (is_worker()) {
+		PDBG("pause(%s) finished 4", client_name);
+		return Native_capability();
+	}
+
+	PDBG("pause(%s) finished 5", client_name);
 
 	return notify_sm;
 }
@@ -208,16 +226,28 @@ void Platform_thread::resume()
 {
 	using namespace Nova;
 
+	char client_name[256];
+	_pager->name(client_name, sizeof(client_name));
+	PDBG("resume(%s)", client_name);
+
 	if (!is_worker()) {
 		uint8_t res = create_sc(_sel_sc(), _pd->pd_sel(), _sel_ec(),
 		                        Qpd(Qpd::DEFAULT_QUANTUM, _priority));
-		if (res == NOVA_OK) return;
+		if (res == NOVA_OK) {
+			PDBG("resume(%s) finished 1", client_name);
+			return;
+		}
 	}
 
-	if (!_pager) return;
+	if (!_pager) {
+		PDBG("resume(%s) finished 2", client_name);
+		return;
+	}
 
 	/* Thread was paused beforehand and blocked in pager - wake up pager */
 	_pager->wake_up();
+
+	PDBG("resume(%s) finished 3", client_name);
 }
 
 
@@ -272,7 +302,7 @@ void Platform_thread::cancel_blocking()
 void Platform_thread::single_step(bool on)
 {
 	if (!_pager) return;
-
+PDBG("%p: single step: %d", this, on);
 	_pager->single_step(on);
 }
 
