@@ -1,7 +1,7 @@
-if {![have_spec foc] || ![have_spec 32bit]} {
-	puts "\nThe Noux GDB scenario is supported on 32-bit Fiasco.OC only\n"
-	exit 0
-}
+#if {![have_spec foc] || ![have_spec 32bit]} {
+#	puts "\nThe Noux GDB scenario is supported on 32-bit Fiasco.OC only\n"
+#	exit 0
+#}
 
 source ${genode_dir}/repos/ports/run/noux_gdb.inc
 
