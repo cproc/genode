@@ -121,7 +121,7 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/$gdb_target_binary $gdb_cmds"
 
-exec [terminal] -e "[gdb] bin/ld.lib.so $gdb_cmds" &
+exec [terminal] -e "/usr/local/genode-gcc/bin/[gdb] bin/ld.lib.so $gdb_cmds" &
 
 interact -i [output_spawn_id]
 
