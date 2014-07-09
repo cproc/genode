@@ -1,0 +1,220 @@
+gdb_monitor_wait.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-low.c    |   38 +++++++++++++++++++++--------
+ gdb/gdbserver/remote-utils.c |   55 +++++++++++++++++++++++++++++++++++++++++-
+ gdb/gdbserver/server.c       |    4 ++-
+ 3 files changed, 84 insertions(+), 13 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 5b31da5..97cc65a 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -316,7 +316,17 @@ linux_add_process (int pid, int attached)
+ static int
+ my_waitpid (int pid, int *status, int flags)
+ {
+-  int ret, out_errno;
++
++#ifdef __GENODE__
++
++  //if (debug_threads)
++    fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
++
++  return genode_wait_for_signal_or_gdb_interrupt(status, flags & WNOHANG);
++
++#else /* __GENODE__ */
++
++	int ret, out_errno;
+ 
+   if (debug_threads)
+     fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
+@@ -383,6 +393,9 @@ my_waitpid (int pid, int *status, int flags)
+ 
+   errno = out_errno;
+   return ret;
++
++#endif /* __GENODE__ */
++
+ }
+ 
+ /* Handle a GNU/Linux extended wait response.  If we see a clone
+@@ -1092,6 +1105,10 @@ retry:
+ 
+   if (WIFSTOPPED (*wstatp) && WSTOPSIG (*wstatp) == SIGTRAP)
+     {
++#ifdef __GENODE__
++      /* no watchpoint support yet */
++	  child->stopped_by_watchpoint = 0;
++#else /* __GENODE__ */
+       if (the_low_target.stopped_by_watchpoint == NULL)
+ 	{
+ 	  child->stopped_by_watchpoint = 0;
+@@ -1117,7 +1134,8 @@ retry:
+ 
+ 	  current_inferior = saved_inferior;
+ 	}
+-    }
++#endif /* __GENODE__ */
++	}
+ 
+   /* Store the STOP_PC, with adjustment applied.  This depends on the
+      architecture being defined already (so that CHILD has a valid
+@@ -2503,13 +2521,7 @@ linux_wait (ptid_t ptid,
+     async_file_flush ();
+ #endif
+ 
+-#ifdef __GENODE__
+-  /* TODO: get some information from wait_for_signal_or_gdb_interrupt() */
+-  event_ptid = genode_wait_for_signal_or_gdb_interrupt(ourstatus);
+-  find_inferior (&all_lwps, mark_as_stopped, NULL);
+-#else
+   event_ptid = linux_wait_1 (ptid, ourstatus, target_options);
+-#endif
+ 
+ #ifndef __GENODE__
+   /* If at least one stop was reported, there may be more.  A single
+@@ -2528,6 +2540,11 @@ linux_wait (ptid_t ptid,
+ static int
+ kill_lwp (unsigned long lwpid, int signo)
+ {
++#ifdef __GENODE__
++
++	return genode_send_signal_to_thread(lwpid, signo);
++
++#else
+   /* Use tkill, if possible, in case we are using nptl threads.  If tkill
+      fails, then we are not using nptl threads and we should be using kill.  */
+ 
+@@ -2549,6 +2566,7 @@ kill_lwp (unsigned long lwpid, int signo)
+ #endif
+ 
+   return kill (lwpid, signo);
++#endif /* __GENODE__ */
+ }
+ 
+ void
+@@ -2823,7 +2841,7 @@ static void
+ linux_resume_one_lwp (struct lwp_info *lwp,
+ 		      int step, int signal, siginfo_t *info)
+ {
+-  printf("linux_resume_one_lwp(step = %d, signal = %d)\n", step, signal);
++  printf("linux_resume_one_lwp(lwpid = %d, step = %d, signal = %d)\n", lwpid_of(lwp), step, signal);
+ 
+   struct thread_info *saved_inferior;
+   int fast_tp_collecting;
+@@ -3483,7 +3501,7 @@ linux_resume_one_thread (struct inferior_list_entry *entry, void *arg)
+ static void
+ linux_resume (struct thread_resume *resume_info, size_t n)
+ {
+-  if (debug_threads) printf("linux_resume(%zd)\n", n);
++  /*if (debug_threads)*/ printf("linux_resume(%zd)\n", n);
+ 
+   struct thread_resume_array array = { resume_info, n };
+   struct lwp_info *need_step_over = NULL;
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index 728da30..19b3e2c 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -19,6 +19,7 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include "genode-low.h"
++#include <sys/wait.h>
+ 
+ #include "server.h"
+ #include "terminal.h"
+@@ -873,7 +874,59 @@ input_interrupt (int unused)
+     }
+ }
+ 
++int genode_wait_for_signal_or_gdb_interrupt(int *status, int wnohang)
++{
++	fd_set readset;
++
++	FD_ZERO (&readset);
++	FD_SET (remote_desc, &readset);
++	FD_SET (genode_signal_fd(), &readset);
++
++	struct timeval wnohang_timeout = {0, 0};
++	struct timeval *timeout = wnohang ? &wnohang_timeout : NULL;
++
++	while(1) {
++		if (select((remote_desc > genode_signal_fd() ? remote_desc : genode_signal_fd()) + 1,
++		    &readset, 0, 0, timeout) > 0) {
++
++			if (debug_threads) printf("select() returned\n");
++
++			int cc;
++			char c = 0;
++			if (FD_ISSET(remote_desc, &readset)) {
++				/* received input from GDB */
++				cc = read (remote_desc, &c, 1);
++
++				if (cc == 1 && c == '\003' && current_inferior != NULL) {
++					(*the_target->request_interrupt) ();
++					*status = _WSTOPPED | (SIGINT << 8);
++					return current_inferior->entry.id.lwp;
++				} else {
++					fprintf (stderr, "input_interrupt, count = %d c = %d ('%c')\n",
++					         cc, c, c);
++				}
++			} else {
++				/* received a signal */
++				unsigned long sig;
++				read(genode_signal_fd(), &sig, sizeof(sig));
++				printf("received signal %ld\n", sig);
++				if (current_inferior == NULL) continue;
++
++				genode_stop_all_threads();
++
++				if (sig > 0) {
++					*status = _WSTOPPED | (SIGTRAP << 8);
++					return sig;
++				} else {
++					*status = _WSTOPPED | (SIGSEGV << 8);
++					return genode_find_segfault_lwpid();
++				}
++			}
++		}
++	}
++}
+ 
++#if 0
+ ptid_t
+ genode_wait_for_signal_or_gdb_interrupt (struct target_waitstatus *status)
+ {
+@@ -933,7 +986,7 @@ genode_wait_for_signal_or_gdb_interrupt (struct target_waitstatus *status)
+     }
+   }
+ }
+-
++#endif
+ 
+ /* Check if the remote side sent us an interrupt request (^C).  */
+ void
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 79c89d4..2b7df20 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2780,7 +2780,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
+-  //if (debug_threads) printf("GDB command = %s\n", own_buf);
++  /*if (debug_threads)*/ printf("GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3172,7 +3172,7 @@ process_serial_event (void)
+       own_buf[0] = '\0';
+       break;
+     }
+-  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
++  /*if (debug_threads)*/ printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else

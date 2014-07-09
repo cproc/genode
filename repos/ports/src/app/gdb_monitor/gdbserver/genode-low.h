@@ -32,6 +32,9 @@ void genode_resume_all_threads();
 int genode_wait_for_signal_or_gdb_interrupt(int *status, int wnohang);
 void genode_continue_thread(unsigned long lwpid, int single_step);
 
+int genode_thread_state_fd(unsigned long lwpid);
+int genode_send_signal_to_thread(unsigned long lwipd, int signo);
+
 unsigned long genode_find_segfault_lwpid();
 
 int genode_fetch_register(int regno, unsigned long *reg_content);

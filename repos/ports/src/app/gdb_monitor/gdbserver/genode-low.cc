@@ -181,6 +181,49 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 }
 
 
+int genode_thread_state_read_fd(unsigned long lwpid)
+{
+	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+	if (!thread_cap.valid()) {
+		PERR("could not find thread capability for lwpid %lu", lwpid);
+		return -1;
+	}
+
+	return csc->thread_state_read_fd(thread_cap);
+}
+
+
+int genode_send_signal_to_thread(unsigned long lwipd, int signo)
+{
+	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+	if (!thread_cap.valid()) {
+		PERR("could not find thread capability for lwpid %lu", lwpid);
+		return -1;
+	}
+
+	switch(signo) {
+		case SIGINT:
+			csc->pause(thread_cap);
+			// TODO: deliver SIGINT
+			break;
+		case SIGSTOP:
+			csc->pause(thread_cap);
+			// TODO: deliver SIGSTOP
+			break;
+		default:
+			PDBG("unhandled signal %d", signo);
+	}
+
+	return 0;
+}
+
+
 unsigned long genode_find_segfault_lwpid()
 {
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
