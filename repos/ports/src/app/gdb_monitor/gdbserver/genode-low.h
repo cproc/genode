@@ -28,7 +28,8 @@ void genode_detect_all_threads();
 void genode_stop_all_threads();
 void genode_resume_all_threads();
 
-ptid_t genode_wait_for_signal_or_gdb_interrupt(struct target_waitstatus *status);
+//ptid_t genode_wait_for_signal_or_gdb_interrupt(struct target_waitstatus *status);
+int genode_wait_for_signal_or_gdb_interrupt(int *status, int wnohang);
 void genode_continue_thread(unsigned long lwpid, int single_step);
 
 unsigned long genode_find_segfault_lwpid();
