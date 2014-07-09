@@ -3,7 +3,7 @@
 
 using namespace Genode;
 
-void print_backtrace()
+extern "C" void print_backtrace()
 {
 	PDBG("begin of backtrace");
 
