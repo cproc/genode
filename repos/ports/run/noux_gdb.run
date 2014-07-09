@@ -17,7 +17,7 @@ if {[have_spec x86]} {
 # Uncomment the following line when working on the GDB source code. Otherwise,
 # the package may get recompiled, yet it does not get reinstalled into 'bin/'.
 #
-#exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
+exec rm -rf noux-pkg/[noux_gdb_pkg_name]/ bin/[noux_gdb_pkg_name]/
 
 set build_components {
 	core init drivers/timer noux lib/libc_noux
@@ -223,6 +223,8 @@ lappend_if [have_spec         usb] boot_modules usb_drv
 lappend_if [have_spec        gpio] boot_modules gpio_drv
 
 build_boot_image $boot_modules
+
+append qemu_args " -m 256 "
 
 run_genode_until forever
 
