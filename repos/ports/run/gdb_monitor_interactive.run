@@ -121,6 +121,10 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/$gdb_target_binary $gdb_cmds"
 
+append gdb_cmds {-ex "b Test_thread::entry" }
+append gdb_cmds {-ex "c" }
+append gdb_cmds {-ex "delete 3" }
+
 exec [terminal] -e "/usr/local/genode-gcc/bin/[gdb] bin/$gdb_target_binary $gdb_cmds" &
 
 interact
