@@ -1,0 +1,208 @@
+gdbserver_x86_64.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-x86-low.c |   64 ++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 56 insertions(+), 8 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
+index 4ccfb35..fc9c3e8 100644
+--- a/gdb/gdbserver/linux-x86-low.c
++++ b/gdb/gdbserver/linux-x86-low.c
+@@ -31,12 +31,18 @@
+ //#include "gdb_proc_service.h"
+ 
+ #ifdef __GENODE__
++#ifdef __x86_64__
++void init_registers_amd64 (void);
++static inline void init_registers_amd64_linux(void) { init_registers_amd64(); }
++void init_registers_amd64_avx (void);
++static inline void init_registers_amd64_avx_linux(void) { init_registers_amd64_avx(); }
++#endif /* __x64_64__ */
+ /* Defined in auto-generated file i386.c.  */
+ void init_registers_i386 (void);
+ static inline void init_registers_i386_linux(void) { init_registers_i386(); }
+ void init_registers_i386_avx (void);
+ static inline void init_registers_i386_avx_linux(void) { init_registers_i386_avx(); }
+-#else
++#else /* ! __GENODE__ */
+ /* Defined in auto-generated file i386-linux.c.  */
+ void init_registers_i386_linux (void);
+ /* Defined in auto-generated file amd64-linux.c.  */
+@@ -47,12 +53,13 @@ void init_registers_i386_avx_linux (void);
+ void init_registers_amd64_avx_linux (void);
+ /* Defined in auto-generated file i386-mmx-linux.c.  */
+ void init_registers_i386_mmx_linux (void);
+-#endif
++#endif /* __GENODE__ */
+ 
+ static unsigned char jump_insn[] = { 0xe9, 0, 0, 0, 0 };
+ 
+ /* Backward compatibility for gdb without XML support.  */
+ #ifdef __GENODE__
++
+ static const char *xmltarget_i386_linux_no_xml = "@<target>\
+ <architecture>i386</architecture>\
+ </target>";
+@@ -62,7 +69,9 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
+ <architecture>i386:x86-64</architecture>\
+ </target>";
+ #endif
+-#else
++
++#else /* ! __GENODE__ */
++
+ static const char *xmltarget_i386_linux_no_xml = "@<target>\
+ <architecture>i386</architecture>\
+ <osabi>GNU/Linux</osabi>\
+@@ -74,13 +83,16 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
+ <osabi>GNU/Linux</osabi>\
+ </target>";
+ #endif
++
+ #endif /* __GENODE__ */
+ 
+ #ifdef __GENODE__
+-#ifndef __x86_64__
++#ifdef __x86_64__
++#include "amd64.h"
++#else /* ! __x86_64__ */
+ #include "i386.h"
+ #endif /* __x86_64__ */
+-#else
++#else /* ! __GENODE__ */
+ #include <sys/reg.h>
+ #endif /* __GENODE__ */
+ #include <sys/procfs.h>
+@@ -147,7 +159,7 @@ static /*const*/ int i386_regmap[] =
+ /* So code below doesn't have to care, i386 or amd64.  */
+ #define ORIG_EAX ORIG_RAX
+ 
+-static const int x86_64_regmap[] =
++static /*const*/ int x86_64_regmap[] =
+ {
+   RAX * 8, RBX * 8, RCX * 8, RDX * 8,
+   RSI * 8, RDI * 8, RBP * 8, RSP * 8,
+@@ -159,7 +171,11 @@ static const int x86_64_regmap[] =
+   -1, -1, -1, -1, -1, -1, -1, -1,
+   -1, -1, -1, -1, -1, -1, -1, -1,
+   -1, -1, -1, -1, -1, -1, -1, -1, -1,
++#ifdef __GENODE__
++  -1
++#else /* ! __GENODE__ */
+   ORIG_RAX * 8
++#endif /* __GENODE__ */
+ };
+ 
+ #define X86_64_NUM_REGS (sizeof (x86_64_regmap) / sizeof (x86_64_regmap[0]))
+@@ -182,6 +198,7 @@ static /*const*/ int i386_regmap[] =
+ 
+ /* Called by libthread_db.  */
+ 
++#ifndef __GENODE__
+ ps_err_e
+ ps_get_thread_area (const struct ps_prochandle *ph,
+ 		    lwpid_t lwpid, int idx, void **base)
+@@ -219,6 +236,7 @@ ps_get_thread_area (const struct ps_prochandle *ph,
+     return PS_OK;
+   }
+ }
++#endif
+ 
+ /* Get the thread area address.  This is used to recognize which
+    thread is which when tracing with the in-process agent library.  We
+@@ -280,6 +298,20 @@ i386_cannot_fetch_register (int regno)
+   return regno >= I386_NUM_REGS;
+ }
+ 
++#ifdef __x86_64__
++static int
++x86_64_cannot_store_register (int regno)
++{
++  return regno >= X86_64_NUM_REGS;
++}
++
++static int
++x86_64_cannot_fetch_register (int regno)
++{
++  return regno >= X86_64_NUM_REGS;
++}
++#endif /* __x86_64__ */
++
+ static void
+ x86_fill_gregset (struct regcache *regcache, void *buf)
+ {
+@@ -722,6 +754,7 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
+    compatible with the siginfo type exported by the 32-bit userspace
+    support.  */
+ 
++#ifndef __GENODE__
+ #ifdef __x86_64__
+ 
+ typedef int compat_int_t;
+@@ -963,6 +996,7 @@ x86_siginfo_fixup (struct siginfo *native, void *inf, int direction)
+ 
+   return 0;
+ }
++#endif /* __GENODE__ */
+ 
+ static int use_xml;
+ 
+@@ -1132,11 +1166,15 @@ static void
+ x86_arch_setup (void)
+ {
+ #ifdef __x86_64__
++#ifdef __GENODE__
++  int use_64bit = 1;
++#else /* ! __GENODE__ */
+   int pid = pid_of (get_thread_lwp (current_inferior));
+   char *file = linux_child_pid_to_exec_file (pid);
+   int use_64bit = elf_64_file_p (file);
+ 
+   free (file);
++#endif /* __GENODE__ */
+ 
+   if (use_64bit < 0)
+     {
+@@ -1146,19 +1184,25 @@ x86_arch_setup (void)
+     }
+   else if (use_64bit)
+     {
++#ifdef __GENODE__
++      the_low_target.num_regs = X86_64_NUM_REGS;
++      the_low_target.regmap = x86_64_regmap;
++      the_low_target.cannot_fetch_register = x86_64_cannot_fetch_register;
++      the_low_target.cannot_store_register = x86_64_cannot_store_register;
++#else /* !__GENODE__ */
+       /* Amd64 doesn't have HAVE_LINUX_USRREGS.  */
+       the_low_target.num_regs = -1;
+       the_low_target.regmap = NULL;
+       the_low_target.cannot_fetch_register = NULL;
+       the_low_target.cannot_store_register = NULL;
+-
++#endif
+       /* Amd64 has 16 xmm regs.  */
+       num_xmm_registers = 16;
+ 
+       x86_linux_update_xmltarget ();
+       return;
+     }
+-#endif
++#endif /* __x86_64__ */
+ 
+   /* Ok we have a 32-bit inferior.  */
+ 
+@@ -2614,7 +2658,11 @@ struct linux_target_ops the_low_target =
+   NULL,
+   NULL,
+   /* need to fix up i386 siginfo if host is amd64 */
++#ifdef __GENODE__
++  NULL,
++#else
+   x86_siginfo_fixup,
++#endif
+   x86_linux_new_process,
+   x86_linux_new_thread,
+ #ifdef __GENODE__
