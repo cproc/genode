@@ -337,7 +337,8 @@ GCC_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-g
 GDB_BINARIES                = build/$(PLATFORM)/gdb/gdb/gdb
 GDB_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-gdb
 
-build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES)
+#build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES)
+build_all: $(GDB_INSTALLED_BINARIES)
 
 $(DOWNLOAD_DIR):
 	$(VERBOSE)mkdir -p $@
@@ -501,7 +502,7 @@ build/$(PLATFORM)/gdb/Makefile: $(CONTRIB_DIR)/gdb-$(GDB_VERSION)/configure
 	$(ECHO) "$(BRIGHT_COL)configuring gdb...$(DEFAULT_COL)"
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)cd $(dir $@); \
-		../../../$(CONTRIB_DIR)/gdb-$(GDB_VERSION)/configure $(COMMON_CONFIG)
+		CFLAGS="-O0 -g" ../../../$(CONTRIB_DIR)/gdb-$(GDB_VERSION)/configure $(COMMON_CONFIG)
 
 $(GDB_BINARIES): build/$(PLATFORM)/gdb/Makefile
 	$(ECHO) "$(BRIGHT_COL)builing gdb...$(DEFAULT_COL)"
