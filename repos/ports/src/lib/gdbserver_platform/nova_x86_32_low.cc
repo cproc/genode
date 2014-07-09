@@ -54,7 +54,7 @@ extern "C" int genode_fetch_register(int regno, unsigned long *reg_content)
 
 extern "C" void genode_store_register(int regno, unsigned long reg_content)
 {
-	PDBG("not implemented yet for this platform");
+	//PDBG("not implemented yet for this platform");
 	switch((enum reg_index)regno)
 	{
 		case EAX:  PDBG("EAX = %8lx", reg_content); return;
