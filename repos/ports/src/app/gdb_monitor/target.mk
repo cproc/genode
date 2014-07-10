@@ -11,7 +11,7 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
            $(PRG_DIR)
 
 LIBS    =  libc libc_terminal libc_lock_pipe \
-           gdbserver_platform gdbserver_libc_support
+           gdbserver_platform gdbserver_libc_support backtrace
 
 SRC_C   =  event-loop.c \
            i386-low.c \

@@ -1,0 +1,498 @@
+gdbserver_waitpid.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-low.c    |  176 ++++++++++++++++++++++++++++++++++--------
+ gdb/gdbserver/remote-utils.c |   66 ----------------
+ gdb/gdbserver/server.c       |    4 -
+ 3 files changed, 148 insertions(+), 98 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 5b31da5..5f5f9fa 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -147,6 +147,7 @@ static int stabilizing_threads;
+    control of gdbserver have the same architecture.  */
+ static int new_inferior;
+ 
++static void linux_request_interrupt (void);
+ static void linux_resume_one_lwp (struct lwp_info *lwp,
+ 				  int step, int signal, siginfo_t *info);
+ static void linux_resume (struct thread_resume *resume_info, size_t n);
+@@ -310,13 +311,120 @@ linux_add_process (int pid, int attached)
+   return proc;
+ }
+ 
++#ifdef __GENODE__
++
++static int
++add_signal_pipe_read_fd_to_set(struct inferior_list_entry *entry, void *args)
++{
++	fd_set *readset = args;
++
++	FD_SET(genode_thread_signal_pipe_read_fd(ptid_get_lwp(entry->id)), readset);
++
++	return 0;
++}
++
++static int
++signal_pipe_read_fd_in_set(struct inferior_list_entry *entry, void *args)
++{
++	fd_set *readset = args;
++
++	return FD_ISSET(genode_thread_signal_pipe_read_fd(ptid_get_lwp(entry->id)), readset);
++}
++
++#endif /* __GENODE__ */
++
+ /* Wrapper function for waitpid which handles EINTR, and emulates
+    __WALL for systems where that is not available.  */
+-
++extern void print_backtrace();
+ static int
+ my_waitpid (int pid, int *status, int flags)
+ {
+-  int ret, out_errno;
++
++#ifdef __GENODE__
++
++  //if (debug_threads)
++    fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
++
++    extern int remote_desc;
++
++	fd_set readset;
++
++	while(1) {
++
++		FD_ZERO (&readset);
++		FD_SET (remote_desc, &readset);
++
++		if (pid == -1)
++			find_inferior(&all_threads, add_signal_pipe_read_fd_to_set, &readset);
++		else {
++			FD_SET(genode_thread_signal_pipe_read_fd(pid), &readset);
++			print_backtrace();
++		}
++
++		struct timeval wnohang_timeout = {0, 0};
++		struct timeval *timeout = (flags & WNOHANG) ? &wnohang_timeout : NULL;
++
++
++		/* TODO: determine the highest fd in the set for optimization */
++		if (select(FD_SETSIZE, &readset, 0, 0, timeout) > 0) {
++
++			/*if (debug_threads)*/ fprintf(stderr, "select() returned\n");
++
++			if (FD_ISSET(remote_desc, &readset)) {
++
++				/* received input from GDB */
++
++				int cc;
++				char c = 0;
++
++				cc = read (remote_desc, &c, 1);
++
++				if (cc == 1 && c == '\003' && current_inferior != NULL) {
++					/* this causes a SIGINT to be delivered to one of the threads */
++					linux_request_interrupt();
++					//*status = _WSTOPPED | (SIGINT << 8);
++					//return current_inferior->entry.id.lwp;
++					continue;
++				} else {
++					fprintf (stderr, "input_interrupt, count = %d c = %d ('%c')\n",
++					         cc, c, c);
++				}
++
++			} else {
++
++				/* received a signal */
++
++				struct thread_info *thread =
++					find_inferior(&all_threads, signal_pipe_read_fd_in_set, &readset);
++
++				if (!thread)
++					continue;
++
++				unsigned long lwpid = ptid_get_lwp(thread->entry.id);
++				int sig;
++				read(genode_thread_signal_pipe_read_fd(lwpid), &sig, sizeof(sig));
++
++				fprintf(stderr, "thread %lu received signal %d\n", lwpid, sig);
++
++				if (sig == SIGINFO) {
++					/* a new thread was created, now possibly wait for its signals, too */
++					continue;
++				}
++#if 0
++				if (current_inferior == NULL) continue;
++				genode_stop_all_threads();
++#endif
++
++				*status = _WSTOPPED | (sig << 8);
++
++				return lwpid;
++			}
++		}
++	}
++
++#else /* __GENODE__ */
++
++	int ret, out_errno;
+ 
+   if (debug_threads)
+     fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
+@@ -383,6 +491,9 @@ my_waitpid (int pid, int *status, int flags)
+ 
+   errno = out_errno;
+   return ret;
++
++#endif /* __GENODE__ */
++
+ }
+ 
+ /* Handle a GNU/Linux extended wait response.  If we see a clone
+@@ -613,7 +724,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+   ptid_t ptid;
+   struct lwp_info *new_lwp;
+ 
+-#if 0
++#ifndef __GENODE__
+   if (ptrace (PTRACE_ATTACH, lwpid, 0, 0) != 0)
+     {
+       if (!initial)
+@@ -629,7 +740,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+ 	error ("Cannot attach to lwp %ld: %s (%d)\n", lwpid,
+ 	       strerror (errno), errno);
+     }
+-#endif
++#endif /* __GENODE__ */
+ 
+   if (initial)
+     /* NOTE/FIXME: This lwp might have not been the tgid.  */
+@@ -646,11 +757,11 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+   new_lwp = (struct lwp_info *) add_lwp (ptid);
+   add_thread (ptid, new_lwp);
+ 
+-#if 0
++#ifndef __GENODE__
+   /* We need to wait for SIGSTOP before being able to make the next
+      ptrace call on this LWP.  */
+   new_lwp->must_set_ptrace_flags = 1;
+-#endif
++
+   /* The next time we wait for this LWP we'll see a SIGSTOP as PTRACE_ATTACH
+      brings it to a halt.
+ 
+@@ -685,6 +796,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+      end of the list, and so the new thread has not yet reached
+      wait_for_sigstop (but will).  */
+   new_lwp->stop_expected = 1;
++#endif /* __GENODE__ */
+ }
+ 
+ void
+@@ -702,7 +814,7 @@ linux_attach (unsigned long pid)
+   /* must be called after 'add_thread()', because 'current_inferior' must be set */
+   the_low_target.arch_setup();
+ 
+-#if 0
++#ifndef __GENODE__
+   if (!non_stop)
+     {
+       struct thread_info *thread;
+@@ -712,7 +824,8 @@ linux_attach (unsigned long pid)
+       thread = find_thread_ptid (ptid_build (pid, pid, 0));
+       thread->last_resume_kind = resume_stop;
+     }
+-#endif
++#endif /* __GENODE__ */
++
+   return 0;
+ }
+ 
+@@ -1092,6 +1205,10 @@ retry:
+ 
+   if (WIFSTOPPED (*wstatp) && WSTOPSIG (*wstatp) == SIGTRAP)
+     {
++#ifdef __GENODE__
++      /* no watchpoint support yet */
++	  child->stopped_by_watchpoint = 0;
++#else /* __GENODE__ */
+       if (the_low_target.stopped_by_watchpoint == NULL)
+ 	{
+ 	  child->stopped_by_watchpoint = 0;
+@@ -1117,7 +1234,8 @@ retry:
+ 
+ 	  current_inferior = saved_inferior;
+ 	}
+-    }
++#endif /* __GENODE__ */
++	}
+ 
+   /* Store the STOP_PC, with adjustment applied.  This depends on the
+      architecture being defined already (so that CHILD has a valid
+@@ -2503,13 +2621,7 @@ linux_wait (ptid_t ptid,
+     async_file_flush ();
+ #endif
+ 
+-#ifdef __GENODE__
+-  /* TODO: get some information from wait_for_signal_or_gdb_interrupt() */
+-  event_ptid = genode_wait_for_signal_or_gdb_interrupt(ourstatus);
+-  find_inferior (&all_lwps, mark_as_stopped, NULL);
+-#else
+   event_ptid = linux_wait_1 (ptid, ourstatus, target_options);
+-#endif
+ 
+ #ifndef __GENODE__
+   /* If at least one stop was reported, there may be more.  A single
+@@ -2528,6 +2640,11 @@ linux_wait (ptid_t ptid,
+ static int
+ kill_lwp (unsigned long lwpid, int signo)
+ {
++#ifdef __GENODE__
++
++	return genode_send_signal_to_thread(lwpid, signo);
++
++#else
+   /* Use tkill, if possible, in case we are using nptl threads.  If tkill
+      fails, then we are not using nptl threads and we should be using kill.  */
+ 
+@@ -2549,6 +2666,7 @@ kill_lwp (unsigned long lwpid, int signo)
+ #endif
+ 
+   return kill (lwpid, signo);
++#endif /* __GENODE__ */
+ }
+ 
+ void
+@@ -2823,7 +2941,7 @@ static void
+ linux_resume_one_lwp (struct lwp_info *lwp,
+ 		      int step, int signal, siginfo_t *info)
+ {
+-  printf("linux_resume_one_lwp(step = %d, signal = %d)\n", step, signal);
++  printf("linux_resume_one_lwp(lwpid = %d, step = %d, signal = %d)\n", lwpid_of(lwp), step, signal);
+ 
+   struct thread_info *saved_inferior;
+   int fast_tp_collecting;
+@@ -3483,7 +3601,7 @@ linux_resume_one_thread (struct inferior_list_entry *entry, void *arg)
+ static void
+ linux_resume (struct thread_resume *resume_info, size_t n)
+ {
+-  if (debug_threads) printf("linux_resume(%zd)\n", n);
++  /*if (debug_threads)*/ printf("linux_resume(%zd)\n", n);
+ 
+   struct thread_resume_array array = { resume_info, n };
+   struct lwp_info *need_step_over = NULL;
+@@ -4009,6 +4127,7 @@ linux_fetch_registers (struct regcache *regcache, int regno)
+ #endif
+ }
+ 
++#ifdef __GENODE__
+ static void
+ genode_fetch_registers (struct regcache *regcache, int regno)
+ {
+@@ -4028,6 +4147,7 @@ genode_fetch_registers (struct regcache *regcache, int regno)
+ 			supply_register(regcache, regno, 0);
+ 	}
+ }
++#endif /* __GENODE__ */
+ 
+ void
+ linux_store_registers (struct regcache *regcache, int regno)
+@@ -4041,6 +4161,7 @@ linux_store_registers (struct regcache *regcache, int regno)
+ #endif
+ }
+ 
++#ifdef __GENODE__
+ void
+ genode_store_registers (struct regcache *regcache, int regno)
+ {
+@@ -4062,7 +4183,7 @@ genode_store_registers (struct regcache *regcache, int regno)
+ 		}
+ 	}
+ }
+-
++#endif /* __GENODE__ */
+ 
+ /* Copy LEN bytes from inferior's memory starting at MEMADDR
+    to debugger memory starting at MYADDR.  */
+@@ -4133,6 +4254,7 @@ linux_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
+   return 0;
+ }
+ 
++#ifdef __GENODE__
+ static int
+ genode_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
+ {
+@@ -4143,6 +4265,7 @@ genode_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
+ 		  myaddr[i] = genode_read_memory_byte((void*)(unsigned long)memaddr + i);
+ 	return 0;
+ }
++#endif /* __GENODE__ */
+ 
+ /* Copy LEN bytes of data from debugger memory at MYADDR to inferior's
+    memory at MEMADDR.  On failure (cannot write to the inferior)
+@@ -4225,6 +4348,7 @@ linux_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
+   return 0;
+ }
+ 
++#ifdef __GENODE__
+ static int
+ genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
+ {
+@@ -4252,6 +4376,7 @@ genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
+ 	}
+ 	return 0;
+ }
++#endif /* __GENODE__ */
+ 
+ /* Non-zero if the kernel supports PTRACE_O_TRACEFORK.  */
+ static int linux_supports_tracefork_flag;
+@@ -4428,10 +4553,6 @@ linux_look_up_symbols (void)
+ static void
+ linux_request_interrupt (void)
+ {
+-  /* FIXME: currently all threads get interrupted */
+-  genode_stop_all_threads();
+-
+-#if 0
+   extern unsigned long signal_pid;
+ 
+   if (!ptid_equal (cont_thread, null_ptid)
+@@ -4442,19 +4563,10 @@ linux_request_interrupt (void)
+ 
+       lwp = get_thread_lwp (current_inferior);
+       lwpid = lwpid_of (lwp);
+-#ifdef __GENODE__
+-      genode_interrupt_thread(lwpid);
+-#else
+       kill_lwp (lwpid, SIGINT);
+-#endif /* __GENODE__ */
+     }
+   else
+-#ifdef __GENODE__
+-    genode_interrupt_thread(lwpid);
+-#else
+-    kill_lwp (lwpid, SIGINT);
+-#endif /* __GENODE__ */
+-#endif
++    kill_lwp (signal_pid, SIGINT);
+ }
+ 
+ /* Copy LEN bytes from inferior's auxiliary vector starting at OFFSET
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index 728da30..37da6ba 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -19,6 +19,7 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include "genode-low.h"
++#include <sys/wait.h>
+ 
+ #include "server.h"
+ #include "terminal.h"
+@@ -109,8 +110,7 @@ struct sym_cache
+ 
+ int remote_debug = 0;
+ struct ui_file *gdb_stdlog;
+-
+-static gdb_fildes_t remote_desc = INVALID_DESCRIPTOR;
++/*static*/ gdb_fildes_t remote_desc = INVALID_DESCRIPTOR;
+ static gdb_fildes_t listen_desc = INVALID_DESCRIPTOR;
+ 
+ /* FIXME headerize? */
+@@ -873,68 +873,6 @@ input_interrupt (int unused)
+     }
+ }
+ 
+-
+-ptid_t
+-genode_wait_for_signal_or_gdb_interrupt (struct target_waitstatus *status)
+-{
+-  printf("genode_wait_for_signal_or_gdb_interrupt\n");
+-
+-  ptid_t event_ptid;
+-
+-  fd_set readset;
+-
+-  FD_ZERO (&readset);
+-  FD_SET (remote_desc, &readset);
+-  FD_SET (genode_signal_fd(), &readset);
+-
+-  while(1) {
+-  if (select ((remote_desc > genode_signal_fd() ? remote_desc : genode_signal_fd()) + 1, &readset, 0, 0, NULL) > 0)
+-    {
+-	  if (debug_threads) printf("select() returned\n");
+-	  int cc;
+-	  char c = 0;
+-	  if (FD_ISSET(remote_desc, &readset)) {
+-		  /* received input from GDB */
+-		  cc = read (remote_desc, &c, 1);
+-
+-		  if (cc == 1 && c == '\003' && current_inferior != NULL) {
+-			  (*the_target->request_interrupt) ();
+-			  event_ptid = current_inferior->entry.id;
+-			  status->kind = TARGET_WAITKIND_STOPPED;
+-			  status->value.sig = TARGET_SIGNAL_INT;
+-			  return event_ptid;
+-		  } else
+-		{
+-		  fprintf (stderr, "input_interrupt, count = %d c = %d ('%c')\n",
+-			   cc, c, c);
+-		}
+-	  } else {
+-		  /* received a signal */
+-		  unsigned long sig;
+-		  read(genode_signal_fd(), &sig, sizeof(sig));
+-		  printf("received signal %ld\n", sig);
+-		  if (current_inferior == NULL) continue;
+-
+-		  event_ptid.pid = GENODE_LWP_BASE;
+-		  event_ptid.tid = 0;
+-		  genode_stop_all_threads();
+-
+-		  if (sig > 0) {
+-			  event_ptid.lwp    = sig;
+-			  status->kind      = TARGET_WAITKIND_STOPPED;
+-			  status->value.sig = TARGET_SIGNAL_TRAP;
+-		  } else {
+-			  event_ptid.lwp    = genode_find_segfault_lwpid();
+-			  status->kind      = TARGET_WAITKIND_STOPPED;
+-			  status->value.sig = TARGET_SIGNAL_SEGV;
+-		  }
+-		  return event_ptid;
+-	  }
+-    }
+-  }
+-}
+-
+-
+ /* Check if the remote side sent us an interrupt request (^C).  */
+ void
+ check_remote_input_interrupt_request (void)
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 79c89d4..2b7df20 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2780,7 +2780,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
+-  //if (debug_threads) printf("GDB command = %s\n", own_buf);
++  /*if (debug_threads)*/ printf("GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3172,7 +3172,7 @@ process_serial_event (void)
+       own_buf[0] = '\0';
+       break;
+     }
+-  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
++  /*if (debug_threads)*/ printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else
