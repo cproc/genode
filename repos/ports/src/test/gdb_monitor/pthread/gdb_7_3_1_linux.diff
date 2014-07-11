@@ -1,0 +1,281 @@
+gdb_7_3_1_linux.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/amd64-linux-nat.c         |    4 ++--
+ gdb/breakpoint.c              |    2 +-
+ gdb/gdbserver/linux-low.c     |   15 +++++++++------
+ gdb/gdbserver/linux-low.h     |    6 +++---
+ gdb/gdbserver/linux-x86-low.c |    4 ++--
+ gdb/gdbserver/server.c        |    4 +++-
+ gdb/linux-nat.c               |   16 ++++++++--------
+ gdb/linux-nat.h               |    6 +++---
+ 8 files changed, 31 insertions(+), 26 deletions(-)
+
+diff --git a/gdb/amd64-linux-nat.c b/gdb/amd64-linux-nat.c
+index a869f85..7bae36d 100644
+--- a/gdb/amd64-linux-nat.c
++++ b/gdb/amd64-linux-nat.c
+@@ -684,13 +684,13 @@ siginfo_from_compat_siginfo (siginfo_t *to, compat_siginfo_t *from)
+    INF.  */
+ 
+ static int
+-amd64_linux_siginfo_fixup (struct siginfo *native, gdb_byte *inf, int direction)
++amd64_linux_siginfo_fixup (siginfo_t *native, gdb_byte *inf, int direction)
+ {
+   /* Is the inferior 32-bit?  If so, then do fixup the siginfo
+      object.  */
+   if (gdbarch_addr_bit (get_frame_arch (get_current_frame ())) == 32)
+     {
+-      gdb_assert (sizeof (struct siginfo) == sizeof (compat_siginfo_t));
++      gdb_assert (sizeof (siginfo_t) == sizeof (compat_siginfo_t));
+ 
+       if (direction == 0)
+ 	compat_siginfo_from_siginfo ((struct compat_siginfo *) inf, native);
+diff --git a/gdb/breakpoint.c b/gdb/breakpoint.c
+index 3ec9941..d617dbe 100644
+--- a/gdb/breakpoint.c
++++ b/gdb/breakpoint.c
+@@ -2324,7 +2324,7 @@ void
+ create_exception_master_breakpoint (void)
+ {
+   struct objfile *objfile;
+-  const char *const func_name = "_Unwind_DebugHook";
++  const char *const func_name = /*"_Unwind_DebugHook"*/"func";
+ 
+   ALL_OBJFILES (objfile)
+     {
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 81b8540..47a0013 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -2492,7 +2492,7 @@ kill_lwp (unsigned long lwpid, int signo)
+ {
+   /* Use tkill, if possible, in case we are using nptl threads.  If tkill
+      fails, then we are not using nptl threads and we should be using kill.  */
+-
++fprintf(stderr, "sending signal %d to thread %lu\n", signo, lwpid);
+ #ifdef __NR_tkill
+   {
+     static int tkill_failed;
+@@ -2785,9 +2785,12 @@ static void
+ linux_resume_one_lwp (struct lwp_info *lwp,
+ 		      int step, int signal, siginfo_t *info)
+ {
++
+   struct thread_info *saved_inferior;
+   int fast_tp_collecting;
+ 
++if (debug_threads) fprintf(stderr, "linux_resume_one_lwp(lwpid = %lu, step = %d, signal = %d\n", lwpid_of(lwp), step, signal);
++
+   if (lwp->stopped == 0)
+     return;
+ 
+@@ -4693,7 +4696,7 @@ linux_qxfer_osdata (const char *annex,
+    layout of the inferiors' architecture.  */
+ 
+ static void
+-siginfo_fixup (struct siginfo *siginfo, void *inf_siginfo, int direction)
++siginfo_fixup (siginfo_t *siginfo, void *inf_siginfo, int direction)
+ {
+   int done = 0;
+ 
+@@ -4705,9 +4708,9 @@ siginfo_fixup (struct siginfo *siginfo, void *inf_siginfo, int direction)
+   if (!done)
+     {
+       if (direction == 1)
+-	memcpy (siginfo, inf_siginfo, sizeof (struct siginfo));
++	memcpy (siginfo, inf_siginfo, sizeof (siginfo_t));
+       else
+-	memcpy (inf_siginfo, siginfo, sizeof (struct siginfo));
++	memcpy (inf_siginfo, siginfo, sizeof (siginfo_t));
+     }
+ }
+ 
+@@ -4716,8 +4719,8 @@ linux_xfer_siginfo (const char *annex, unsigned char *readbuf,
+ 		    unsigned const char *writebuf, CORE_ADDR offset, int len)
+ {
+   int pid;
+-  struct siginfo siginfo;
+-  char inf_siginfo[sizeof (struct siginfo)];
++  siginfo_t siginfo;
++  char inf_siginfo[sizeof (siginfo_t)];
+ 
+   if (current_inferior == NULL)
+     return -1;
+diff --git a/gdb/gdbserver/linux-low.h b/gdb/gdbserver/linux-low.h
+index 6635bc6..f8b1c33 100644
+--- a/gdb/gdbserver/linux-low.h
++++ b/gdb/gdbserver/linux-low.h
+@@ -21,6 +21,8 @@
+ #include <thread_db.h>
+ #endif
+ 
++#include <signal.h>
++
+ #include "gdb_proc_service.h"
+ 
+ #ifdef HAVE_LINUX_REGSETS
+@@ -46,8 +48,6 @@ struct regset_info
+ extern struct regset_info target_regsets[];
+ #endif
+ 
+-struct siginfo;
+-
+ struct process_info_private
+ {
+   /* Arch-specific additions.  */
+@@ -100,7 +100,7 @@ struct linux_target_ops
+      Returns true if any conversion was done; false otherwise.
+      If DIRECTION is 1, then copy from INF to NATIVE.
+      If DIRECTION is 0, copy from NATIVE to INF.  */
+-  int (*siginfo_fixup) (struct siginfo *native, void *inf, int direction);
++  int (*siginfo_fixup) (siginfo_t *native, void *inf, int direction);
+ 
+   /* Hook to call when a new process is created or attached to.
+      If extra per-process architecture-specific data is needed,
+diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
+index 69c6b57..82dcf83 100644
+--- a/gdb/gdbserver/linux-x86-low.c
++++ b/gdb/gdbserver/linux-x86-low.c
+@@ -906,13 +906,13 @@ siginfo_from_compat_siginfo (siginfo_t *to, compat_siginfo_t *from)
+    INF.  */
+ 
+ static int
+-x86_siginfo_fixup (struct siginfo *native, void *inf, int direction)
++x86_siginfo_fixup (siginfo_t *native, void *inf, int direction)
+ {
+ #ifdef __x86_64__
+   /* Is the inferior 32-bit?  If so, then fixup the siginfo object.  */
+   if (register_size (0) == 4)
+     {
+-      if (sizeof (struct siginfo) != sizeof (compat_siginfo_t))
++      if (sizeof (siginfo_t) != sizeof (compat_siginfo_t))
+ 	fatal ("unexpected difference in siginfo");
+ 
+       if (direction == 0)
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 2f4484f..53001a1 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -47,7 +47,7 @@ static char **program_argv, **wrapper_argv;
+ 
+ /* Enable miscellaneous debugging output.  The name is historical - it
+    was originally used to debug LinuxThreads support.  */
+-int debug_threads;
++int debug_threads = 1;
+ 
+ /* Enable debugging of h/w breakpoint/watchpoint support.  */
+ int debug_hw_points;
+@@ -2755,6 +2755,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
++  if (debug_threads) fprintf(stderr, "GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3141,6 +3142,7 @@ process_serial_event (void)
+       break;
+     }
+ 
++  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else
+diff --git a/gdb/linux-nat.c b/gdb/linux-nat.c
+index 44a2a21..791d7b2 100644
+--- a/gdb/linux-nat.c
++++ b/gdb/linux-nat.c
+@@ -214,7 +214,7 @@ static void (*linux_nat_new_thread) (ptid_t);
+ /* The method to call, if any, when the siginfo object needs to be
+    converted between the layout returned by ptrace, and the layout in
+    the architecture of the inferior.  */
+-static int (*linux_nat_siginfo_fixup) (struct siginfo *,
++static int (*linux_nat_siginfo_fixup) (siginfo_t *,
+ 				       gdb_byte *,
+ 				       int);
+ 
+@@ -3945,7 +3945,7 @@ linux_nat_mourn_inferior (struct target_ops *ops)
+    layout of the inferiors' architecture.  */
+ 
+ static void
+-siginfo_fixup (struct siginfo *siginfo, gdb_byte *inf_siginfo, int direction)
++siginfo_fixup (siginfo_t *siginfo, gdb_byte *inf_siginfo, int direction)
+ {
+   int done = 0;
+ 
+@@ -3957,9 +3957,9 @@ siginfo_fixup (struct siginfo *siginfo, gdb_byte *inf_siginfo, int direction)
+   if (!done)
+     {
+       if (direction == 1)
+-	memcpy (siginfo, inf_siginfo, sizeof (struct siginfo));
++	memcpy (siginfo, inf_siginfo, sizeof (siginfo_t));
+       else
+-	memcpy (inf_siginfo, siginfo, sizeof (struct siginfo));
++	memcpy (inf_siginfo, siginfo, sizeof (siginfo_t));
+     }
+ }
+ 
+@@ -3969,8 +3969,8 @@ linux_xfer_siginfo (struct target_ops *ops, enum target_object object,
+ 		    const gdb_byte *writebuf, ULONGEST offset, LONGEST len)
+ {
+   int pid;
+-  struct siginfo siginfo;
+-  gdb_byte inf_siginfo[sizeof (struct siginfo)];
++  siginfo_t siginfo;
++  gdb_byte inf_siginfo[sizeof (siginfo_t)];
+ 
+   gdb_assert (object == TARGET_OBJECT_SIGNAL_INFO);
+   gdb_assert (readbuf || writebuf);
+@@ -5784,7 +5784,7 @@ linux_nat_set_new_thread (struct target_ops *t, void (*new_thread) (ptid_t))
+    inferior.  */
+ void
+ linux_nat_set_siginfo_fixup (struct target_ops *t,
+-			     int (*siginfo_fixup) (struct siginfo *,
++			     int (*siginfo_fixup) (siginfo_t *,
+ 						   gdb_byte *,
+ 						   int))
+ {
+@@ -5793,7 +5793,7 @@ linux_nat_set_siginfo_fixup (struct target_ops *t,
+ }
+ 
+ /* Return the saved siginfo associated with PTID.  */
+-struct siginfo *
++siginfo_t *
+ linux_nat_get_siginfo (ptid_t ptid)
+ {
+   struct lwp_info *lp = find_lwp_pid (ptid);
+diff --git a/gdb/linux-nat.h b/gdb/linux-nat.h
+index 42cb2fc..422db28 100644
+--- a/gdb/linux-nat.h
++++ b/gdb/linux-nat.h
+@@ -60,7 +60,7 @@ struct lwp_info
+ 
+   /* Non-zero si_signo if this LWP stopped with a trap.  si_addr may
+      be the address of a hardware watchpoint.  */
+-  struct siginfo siginfo;
++  siginfo_t siginfo;
+ 
+   /* STOPPED_BY_WATCHPOINT is non-zero if this LWP stopped with a data
+      watchpoint trap.  */
+@@ -160,7 +160,7 @@ void linux_nat_set_new_thread (struct target_ops *, void (*) (ptid_t));
+    that ptrace returns, and the layout in the architecture of the
+    inferior.  */
+ void linux_nat_set_siginfo_fixup (struct target_ops *,
+-				  int (*) (struct siginfo *,
++				  int (*) (siginfo_t *,
+ 					   gdb_byte *,
+ 					   int));
+ 
+@@ -169,7 +169,7 @@ void linux_nat_set_siginfo_fixup (struct target_ops *,
+ void linux_nat_switch_fork (ptid_t new_ptid);
+ 
+ /* Return the saved siginfo associated with PTID.  */
+-struct siginfo *linux_nat_get_siginfo (ptid_t ptid);
++siginfo_t *linux_nat_get_siginfo (ptid_t ptid);
+ 
+ /* Compute and return the processor core of a given thread.  */
+ int linux_nat_core_of_thread_1 (ptid_t ptid);

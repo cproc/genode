@@ -81,7 +81,7 @@ set boot_modules {
 	core init timer
 	ld.lib.so libc.lib.so libc_pipe.lib.so libc_terminal.lib.so
 	uart_drv
-	gdb_monitor test-gdb_monitor
+	gdb_monitor test-gdb_monitor pthread.lib.so
 }
 
 build_boot_image $boot_modules
@@ -121,7 +121,8 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/$gdb_target_binary $gdb_cmds"
 
-append gdb_cmds {-ex "b Test_thread::entry" }
+#append gdb_cmds {-ex "b Test_thread::entry" }
+append gdb_cmds {-ex "b thread_entry" }
 append gdb_cmds {-ex "c" }
 append gdb_cmds {-ex "delete 3" }
 
