@@ -44,12 +44,6 @@ Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 }
 
 
-unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
-{
-	return _thread_info(thread_cap)->lwpid();
-}
-
-
 Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -60,6 +54,44 @@ Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 		thread_info = thread_info->next();
 	}
 	return Thread_capability();
+}
+
+
+unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
+{
+	return _thread_info(thread_cap)->lwpid();
+}
+
+
+int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
+{
+	return _thread_info(thread_cap)->signal_pipe_read_fd();
+}
+
+
+void Cpu_session_component::deliver_signal(Thread_capability thread_cap, int signo)
+{
+	_thread_info(thread_cap)->deliver_signal(signo);
+}
+
+
+Thread_capability Cpu_session_component::first()
+{
+	Thread_info *thread_info = _thread_list.first();
+	if (thread_info)
+		return thread_info->thread_cap();
+	else
+		return Thread_capability();
+}
+
+
+Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
+{
+	Thread_info *next_thread_info = _thread_info(thread_cap)->next();
+	if (next_thread_info)
+		return next_thread_info->thread_cap();
+	else
+		return Thread_capability();
 }
 
 
@@ -98,26 +130,6 @@ void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 }
 
 
-Thread_capability Cpu_session_component::first()
-{
-	Thread_info *thread_info = _thread_list.first();
-	if (thread_info)
-		return thread_info->thread_cap();
-	else
-		return Thread_capability();
-}
-
-
-Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
-{
-	Thread_info *next_thread_info = _thread_info(thread_cap)->next();
-	if (next_thread_info)
-		return next_thread_info->thread_cap();
-	else
-		return Thread_capability();
-}
-
-
 int Cpu_session_component::set_pager(Thread_capability thread_cap,
                                      Pager_capability  pager_cap)
 {
@@ -140,6 +152,7 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		if (thread_info->lwpid() == GENODE_LWP_BASE)
 			pause(thread_cap);
 
+		/* inform gdbserver about the new thread */
 		genode_add_thread(thread_info->lwpid());
 	}
 
