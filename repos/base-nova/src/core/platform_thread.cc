@@ -231,6 +231,8 @@ Thread_state Platform_thread::state()
 
 	if (is_worker())
 		s.sp = _pager->initial_esp();
+	else
+		throw Cpu_session::State_access_failed();
 
 	return s;
 }
