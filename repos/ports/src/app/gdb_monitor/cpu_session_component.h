@@ -47,8 +47,10 @@ class Cpu_session_component : public Rpc_object<Cpu_session>
 		 */
 		~Cpu_session_component();
 
-		unsigned long lwpid(Thread_capability thread_cap);
 		Thread_capability thread_cap(unsigned long lwpid);
+		unsigned long lwpid(Thread_capability thread_cap);
+		int signal_pipe_read_fd(Thread_capability thread_cap);
+		void deliver_signal(Thread_capability thread_cap, int signo, unsigned long *payload);
 		Thread_capability first();
 		Thread_capability next(Thread_capability);
 
