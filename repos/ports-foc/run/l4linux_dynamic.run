@@ -528,7 +528,7 @@ set gdb_stripped_binaries {
 	gdb_monitor
 	init
 	launchpad
-	libc_lock_pipe.lib.so
+	libc_pipe.lib.so
 	libc_noux.lib.so
 	libc_terminal.lib.so
 	libm.lib.so

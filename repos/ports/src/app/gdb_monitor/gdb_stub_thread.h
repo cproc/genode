@@ -54,7 +54,6 @@ namespace Gdb_monitor {
 			Cpu_session_component *cpu_session_component() { return _cpu_session_component; }
 			Rm_session_component *rm_session_component() { return _rm_session_component; }
 			Signal_receiver *exception_signal_receiver() { return &_exception_signal_receiver; }
-			int signal_fd() { return _signal_handler_thread.pipe_read_fd(); }
 	};
 }
 

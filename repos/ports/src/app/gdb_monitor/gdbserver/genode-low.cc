@@ -12,9 +12,12 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+#include <signal.h>
+
 extern "C" {
 #define private _private
 #include "genode-low.h"
+#include "server.h"
 #include "linux-low.h"
 #define _private private
 
@@ -54,22 +57,20 @@ Gdb_stub_thread *gdb_stub_thread()
 }
 
 
-extern "C" int genode_signal_fd()
-{
-	return gdb_stub_thread()->signal_fd();
-}
-
-
 void genode_add_thread(unsigned long lwpid)
 {
 	if (lwpid == GENODE_LWP_BASE) {
+
 		main_thread_ready_lock().unlock();
+
 	} else {
+
 		if (lwpid == GENODE_LWP_BASE + 1) {
 			/* make sure gdbserver is ready to attach new threads */
 			gdbserver_ready_lock().lock();
 		}
-		linux_attach_lwp(lwpid);
+
+		genode_send_signal_to_thread(GENODE_LWP_BASE, SIGINFO, &lwpid);
 	}
 }
 
@@ -178,6 +179,60 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 
 	csc->single_step(thread_cap, single_step);
 	csc->resume(thread_cap);
+}
+
+
+int genode_thread_signal_pipe_read_fd(unsigned long lwpid)
+{
+	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+	if (!thread_cap.valid()) {
+		PERR("could not find thread capability for lwpid %lu", lwpid);
+		return -1;
+	}
+
+	return csc->signal_pipe_read_fd(thread_cap);
+}
+
+
+int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *payload)
+{
+	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+	if (!thread_cap.valid()) {
+		PERR("could not find thread capability for lwpid %lu", lwpid);
+		return -1;
+	}
+
+	switch(signo) {
+		case SIGINT:
+			PDBG("sending SIGINT to thread %lu", lwpid);
+			csc->pause(thread_cap);
+			break;
+		case SIGSTOP:
+			PDBG("sending SIGSTOP to thread %lu", lwpid);
+			csc->pause(thread_cap);
+			break;
+		case SIGINFO:
+			PDBG("sending SIGINFO to thread %lu", lwpid);
+			break;
+		case SIGSEGV:
+			PDBG("sending SIGSEGV to thread %lu", lwpid);
+			break;
+		case SIGTRAP:
+			PDBG("sending SIGTRAP to thread %lu", lwpid);
+			break;
+		default:
+			PDBG("unhandled signal %d", signo);
+	}
+
+	csc->deliver_signal(thread_cap, signo, payload);
+
+	return 0;
 }
 
 
