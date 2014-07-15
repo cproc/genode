@@ -23,8 +23,8 @@ extern "C" {
 #include "gdbserver_platform_helper.h"
 #include "gdb_stub_thread.h"
 
-#undef PDBG
-#define PDBG(...)
+//#undef PDBG
+//#define PDBG(...)
 
 using namespace Genode;
 
