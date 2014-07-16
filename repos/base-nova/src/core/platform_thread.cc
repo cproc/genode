@@ -51,7 +51,7 @@ Affinity::Location Platform_thread::affinity() { return _location; }
 int Platform_thread::start(void *ip, void *sp)
 {
 	using namespace Nova;
-
+PDBG("start() called");
 	if (!_pager) {
 		PERR("pager undefined");
 		return -1;
@@ -91,7 +91,7 @@ int Platform_thread::start(void *ip, void *sp)
 		_pager->initial_eip((addr_t)ip);
 		_pager->initial_esp(initial_sp);
 		_pager->client_set_ec(_sel_ec());
-
+PDBG("start() finished");
 		return 0;
 	}
 
@@ -169,7 +169,7 @@ int Platform_thread::start(void *ip, void *sp)
 		PERR("create_sc returned %d", res);
 		goto cleanup_ec;
 	}
-
+PDBG("start(main) finished");
 	return 0;
 
 	cleanup_ec:
@@ -186,20 +186,22 @@ int Platform_thread::start(void *ip, void *sp)
 
 Native_capability Platform_thread::pause()
 {
+	PDBG("pause() called");
 	if (!_pager) return Native_capability();
 
 	Native_capability notify_sm = _pager->notify_sm();
 	if (!notify_sm.valid()) return notify_sm;
 
+PDBG("pause(): calling client_recall()");
 	if (_pager->client_recall() != Nova::NOVA_OK)
 		return Native_capability();
-
+PDBG("pause(): calling cancel_blocking()");
 	/* If the thread is blocked in its own SM, get him out */
 	cancel_blocking();
 
 	/* local thread may never get be canceled if it doesn't receive an IPC */
 	if (is_worker()) return Native_capability();
-
+PDBG("pause() finished");
 	return notify_sm;
 }
 

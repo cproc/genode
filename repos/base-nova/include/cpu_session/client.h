@@ -45,11 +45,14 @@ namespace Genode {
 
 		void pause(Thread_capability thread)
 		{
+			PDBG("calling pause_sync()");
 			Native_capability block = call<Rpc_pause_sync>(thread);
+			PDBG("pause_sync() returned");
 			if (!block.valid())
 				return;
-
+			PDBG("calling SEMAPHORE_DOWN");
 			Nova::sm_ctrl(block.local_name(), Nova::SEMAPHORE_DOWN);
+			PDBG("pause() finished");
 		}
 
 		void resume(Thread_capability thread) {

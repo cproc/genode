@@ -132,6 +132,8 @@ void Pager_object::_recall_handler()
 	Pager_object *obj;
 	Utcb         *utcb = _check_handler(myself, obj);
 
+	PDBG("%p: called", obj);
+
 	obj->_copy_state(utcb);
 
 	obj->_state.thread.ip     = utcb->ip;
@@ -142,9 +144,11 @@ void Pager_object::_recall_handler()
 
 	obj->_state.mark_valid();
 
-	if (obj->_state.is_client_cancel())
+	if (obj->_state.is_client_cancel()) {
+		PDBG("calling SEMAPHORE_UP");
 		if (sm_ctrl(obj->sm_state_notify(), SEMAPHORE_UP) != NOVA_OK)
 			PWRN("notify failed");
+	}
 
 	do {
 		if (sm_ctrl(obj->exc_pt_sel() + SM_SEL_EC, SEMAPHORE_DOWNZERO) != NOVA_OK)
@@ -165,7 +169,7 @@ void Pager_object::_recall_handler()
 			utcb->mtd = 0;
 
 	utcb->set_msg_word(0);
-
+	PDBG("%p: finished", obj);
 	reply(myself->stack_top());
 }
 

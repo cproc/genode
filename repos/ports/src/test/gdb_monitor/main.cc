@@ -49,7 +49,7 @@ class Test_thread : public Genode::Thread<2*4096>
 		void entry() /* set a breakpoint here to test the 'info threads' command */
 		{
 			step_func();
-
+PDBG("running");
 			sigsegv_func();
 
 			Genode::sleep_forever();

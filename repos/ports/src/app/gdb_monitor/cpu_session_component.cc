@@ -147,13 +147,17 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 	if (thread_info)
 		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
 
+	PDBG("calling start()");
+
 	int result = _parent_cpu_session.start(thread_cap, ip, sp);
+
+	PDBG("start() returned %d", result);
 
 	if (thread_info) {
 		
 		/* pause the thread */
 		PDBG("pausing thread");
-			pause(thread_cap);
+		pause(thread_cap);
 		PDBG("thread paused");
 
 		/* inform gdbserver about the new thread */
