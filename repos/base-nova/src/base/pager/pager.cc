@@ -134,6 +134,8 @@ void Pager_object::_recall_handler()
 
 	obj->_copy_state(utcb);
 
+	PDBG("called");
+
 	obj->_state.thread.ip     = utcb->ip;
 	obj->_state.thread.sp     = utcb->sp;
 
@@ -154,6 +156,9 @@ void Pager_object::_recall_handler()
 	obj->_state.mark_invalid();
 
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
+
+PDBG("singlestep_state = %d", singlestep_state);
+
 	if (obj->_state.singlestep() && !singlestep_state) {
 		utcb->flags = obj->_state.thread.eflags | 0x100UL;
 		utcb->mtd = Nova::Mtd(Mtd::EFL).value();
@@ -176,10 +181,19 @@ void Pager_object::_startup_handler()
 	Pager_object *obj;
 	Utcb         *utcb = _check_handler(myself, obj);
 
+	if (obj->_state.singlestep())
+		PDBG("single step");
+
 	utcb->ip  = obj->_initial_eip;
 	utcb->sp  = obj->_initial_esp;
 
 	utcb->mtd = Mtd::EIP | Mtd::ESP;
+
+	if (obj->_state.singlestep()) {
+		utcb->flags = 0x100UL;
+		utcb->mtd |= Nova::Mtd(Mtd::EFL).value();
+	}
+
 	utcb->set_msg_word(0);
 
 	reply(myself->stack_top());

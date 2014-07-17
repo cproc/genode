@@ -14,6 +14,7 @@
 /* Genode includes */
 #include <base/env.h>
 #include <base/printf.h>
+#include <base/sleep.h>
 #include <cpu_session_component.h>
 #include <util/list.h>
 
@@ -144,23 +145,21 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
-	if (thread_info)
-		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
-
-	int result = _parent_cpu_session.start(thread_cap, ip, sp);
-
-	if (thread_info) {
-		
-		/* pause the thread */
-		PDBG("pausing thread");
-			pause(thread_cap);
-		PDBG("thread paused");
-
-		/* inform gdbserver about the new thread */
-		genode_add_thread(thread_info->lwpid());
+	if (!thread_info) {
+		PERR("could not find thread info - called with invalid thread capability?");
+		Genode::sleep_forever();
 	}
 
-	return result;
+	/* inform gdbserver about the new thread */
+	genode_add_thread(thread_info->lwpid());
+
+	/* register the exception handler */
+	exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
+
+	/* make the thread stop at the second instruction */
+	single_step(thread_cap, true);
+
+	return _parent_cpu_session.start(thread_cap, ip, sp);
 }
 
 

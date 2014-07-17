@@ -62,13 +62,10 @@ void genode_add_thread(unsigned long lwpid)
 	if (lwpid == GENODE_LWP_BASE) {
 
 		main_thread_ready_lock().unlock();
+		PDBG("calling gdbserver_ready_lock().lock()");
+		gdbserver_ready_lock().lock();
 
 	} else {
-
-		if (lwpid == GENODE_LWP_BASE + 1) {
-			/* make sure gdbserver is ready to attach new threads */
-			gdbserver_ready_lock().lock();
-		}
 
 		genode_send_signal_to_thread(GENODE_LWP_BASE, SIGINFO, &lwpid);
 	}
@@ -199,6 +196,8 @@ int genode_thread_signal_pipe_read_fd(unsigned long lwpid)
 
 int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *payload)
 {
+	PDBG("sending signal %d to thread %lu", signo, lwpid);
+
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
