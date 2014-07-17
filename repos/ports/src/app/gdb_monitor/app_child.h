@@ -262,12 +262,16 @@ namespace Gdb_monitor {
 			{
 				_local_services.insert(&_rm_service);
 				_local_services.insert(&_rom_service);
-				_gdb_stub_thread.start();
 			}
 
 			~App_child()
 			{
 				_rm_root.close(_rm_session_cap);
+			}
+
+			Gdb_stub_thread *gdb_stub_thread()
+			{
+				return &_gdb_stub_thread;
 			}
 
 			/****************************

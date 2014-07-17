@@ -16,8 +16,9 @@
 
 /* Genode includes */
 #include <base/service.h>
+#include <dataspace/client.h>
 #include <root/component.h>
-#include <rom_session/client.h>
+#include <rom_session/connection.h>
 #include <util/arg_string.h>
 
 
@@ -28,7 +29,7 @@ namespace Gdb_monitor {
 	/**
 	 * Clone a ROM dataspace in RAM
 	 */
-	Capability<Ram_dataspace> clone_rom(Capability<Rom_dataspace> rom_cap)
+	static Capability<Ram_dataspace> clone_rom(Capability<Rom_dataspace> rom_cap)
 	{
 		Genode::size_t            rom_size  = Dataspace_client(rom_cap).size();
 		Capability<Ram_dataspace> clone_cap = env()->ram_session()->alloc(rom_size);
@@ -41,7 +42,7 @@ namespace Gdb_monitor {
 		void *rom   = env()->rm_session()->attach(rom_cap);
 		void *clone = env()->rm_session()->attach(clone_cap);
 
-		memcpy(clone, rom, rom_size);
+		Genode::memcpy(clone, rom, rom_size);
 
 		env()->rm_session()->detach(rom);
 		env()->rm_session()->detach(clone);

@@ -28,10 +28,10 @@ namespace Gdb_monitor {
 	{
 		private:
 
-			Thread_capability _thread_cap;
-			unsigned long     _lwpid;
-			int               _pipefd[2];
-			Lock              _pipe_lock;
+			Thread_capability      _thread_cap;
+			unsigned long          _lwpid;
+			int                    _pipefd[2];
+			Lock                   _pipe_lock;
 
 		public:
 

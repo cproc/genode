@@ -25,9 +25,7 @@ namespace Gdb_monitor {
 
 	using namespace Genode;
 
-	enum { GDB_STUB_STACK_SIZE = 4*4096 };
-
-	class Gdb_stub_thread : public Thread<GDB_STUB_STACK_SIZE>
+	class Gdb_stub_thread
 	{
 		private:
 
@@ -39,7 +37,6 @@ namespace Gdb_monitor {
 		public:
 
 			Gdb_stub_thread();
-			void entry();
 
 			void set_cpu_session_component(Cpu_session_component *cpu_session_component)
 			{
