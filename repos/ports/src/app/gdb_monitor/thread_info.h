@@ -14,11 +14,14 @@
 #ifndef _THREAD_INFO_H_
 #define _THREAD_INFO_H_
 
+/* Genode includes */
 #include <base/thread.h>
 
+/* libc includes */
 #include <unistd.h>
 
 #include "append_list.h"
+#include "cpu_session_component.h"
 
 namespace Gdb_monitor {
 
@@ -28,15 +31,20 @@ namespace Gdb_monitor {
 	{
 		private:
 
+			Cpu_session_component *_cpu_session_component;
 			Thread_capability      _thread_cap;
 			unsigned long          _lwpid;
 			int                    _pipefd[2];
 			Lock                   _pipe_lock;
+			bool                   _initial_sigtrap_pending = true;
 
 		public:
 
-			Thread_info(Thread_capability thread_cap, unsigned long lwpid)
-			: _thread_cap(thread_cap),
+			Thread_info(Cpu_session_component *cpu_session_component,
+			            Thread_capability thread_cap,
+			            unsigned long lwpid)
+			: _cpu_session_component(cpu_session_component),
+			  _thread_cap(thread_cap),
 			  _lwpid(lwpid)
 			{
 				if (pipe(_pipefd) != 0)
@@ -56,6 +64,17 @@ namespace Gdb_monitor {
 
 			void deliver_signal(int signo, unsigned long *payload)
 			{
+				if ((signo == SIGTRAP) &&
+				    _initial_sigtrap_pending) {
+
+					_initial_sigtrap_pending = false;
+
+					if (!_cpu_session_component->stop_new_threads()) {
+						_cpu_session_component->single_step(_thread_cap, false);
+						_cpu_session_component->resume(_thread_cap);
+					}
+				}
+
 				Lock::Guard pipe_lock_guard(_pipe_lock);
 
 				write(_pipefd[1], &signo, sizeof(signo));

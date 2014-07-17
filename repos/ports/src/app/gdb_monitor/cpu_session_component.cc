@@ -18,8 +18,11 @@
 #include <cpu_session_component.h>
 #include <util/list.h>
 
+#include <signal.h>
+
 /* GDB monitor includes */
 #include "config.h"
+#include "thread_info.h"
 
 extern void genode_add_thread(unsigned long lwpid);
 extern void genode_remove_thread(unsigned long lwpid);
@@ -78,6 +81,18 @@ void Cpu_session_component::deliver_signal(Thread_capability thread_cap,
 }
 
 
+void Cpu_session_component::stop_new_threads(bool stop)
+{
+	_stop_new_threads = stop;
+}
+
+
+bool Cpu_session_component::stop_new_threads()
+{
+	return _stop_new_threads;
+}
+
+
 Thread_capability Cpu_session_component::first()
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -104,7 +119,8 @@ Thread_capability Cpu_session_component::create_thread(Cpu_session::Name const &
 		_parent_cpu_session.create_thread(name.string(), utcb);
 
 	if (thread_cap.valid()) {
-		Thread_info *thread_info = new (env()->heap()) Thread_info(thread_cap, new_lwpid++);
+		Thread_info *thread_info = new (env()->heap())
+			Thread_info(this, thread_cap, new_lwpid++);
 		_thread_list.append(thread_info);
 	}
 

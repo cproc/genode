@@ -193,6 +193,12 @@ extern "C" void genode_stop_all_threads()
 PDBG("genode_stop_all_threads()");
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
+	/*
+	 * Assumption: 'genode_stop_all_threads()' is only called when a client is
+	 * attached.
+	 */
+	csc->stop_new_threads(true);
+
 	Thread_capability thread_cap = csc->first();
 
 	while (thread_cap.valid()) {
@@ -217,6 +223,10 @@ extern "C" void genode_resume_all_threads()
 
 int genode_detach(int pid)
 {
+   	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+
+	csc->stop_new_threads(false);
+
     //find_inferior (&all_threads, linux_detach_one_lwp, &pid);
 PDBG("calling genode_resume_all_threads()");
     genode_resume_all_threads();

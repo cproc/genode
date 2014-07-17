@@ -18,7 +18,9 @@
 
 #include "ram_session_component.h"
 
-namespace Genode {
+namespace Gdb_monitor {
+
+	using namespace Genode;
 
 	class Ram_root : public Root_component<Ram_session_component>
 	{

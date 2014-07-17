@@ -18,37 +18,40 @@
 #include <base/rpc_server.h>
 #include <ram_session/client.h>
 
-using namespace Genode;
+namespace Gdb_monitor {
 
-class Ram_session_component : public Rpc_object<Ram_session>
-{
-	private:
+	using namespace Genode;
 
-		Genode::Ram_session_client _parent_ram_session;
+	class Ram_session_component : public Rpc_object<Ram_session>
+	{
+		private:
 
-	public:
+			Genode::Ram_session_client _parent_ram_session;
 
-		/**
-		 * Constructor
-		 */
-		Ram_session_component(const char *args);
+		public:
 
-		/**
-		 * Destructor
-		 */
-		~Ram_session_component();
+			/**
+		 	 * Constructor
+		 	 */
+			Ram_session_component(const char *args);
+
+			/**
+		 	 * Destructor
+		 	 */
+			~Ram_session_component();
 
 
-		/***************************
-		 ** RAM Session interface **
-		 ***************************/
+			/***************************
+		 	 ** RAM Session interface **
+		 	 ***************************/
 
-		Ram_dataspace_capability alloc(Genode::size_t, Cache_attribute);
-		void free(Ram_dataspace_capability);
-		int ref_account(Ram_session_capability);
-		int transfer_quota(Ram_session_capability, Genode::size_t);
-		Genode::size_t quota();
-		Genode::size_t used();
-};
+			Ram_dataspace_capability alloc(Genode::size_t, Cache_attribute);
+			void free(Ram_dataspace_capability);
+			int ref_account(Ram_session_capability);
+			int transfer_quota(Ram_session_capability, Genode::size_t);
+			Genode::size_t quota();
+			Genode::size_t used();
+	};
+}
 
 #endif /* _RAM_SESSION_COMPONENT_H_ */

@@ -1,0 +1,192 @@
+gdbserver_genode2.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/inferiors.c    |    7 ++++---
+ gdb/gdbserver/linux-low.c    |   23 +++++++++++++++++++----
+ gdb/gdbserver/remote-utils.c |    6 +++---
+ gdb/gdbserver/server.c       |   36 +++++++++++++++++++++++++++++++++---
+ 4 files changed, 59 insertions(+), 13 deletions(-)
+
+diff --git a/gdb/gdbserver/inferiors.c b/gdb/gdbserver/inferiors.c
+index 2e3d1fe..e64282b 100644
+--- a/gdb/gdbserver/inferiors.c
++++ b/gdb/gdbserver/inferiors.c
+@@ -509,13 +509,14 @@ get_thread_process (struct thread_info *thread)
+   int pid = ptid_get_pid (thread->entry.id);
+   return find_process_pid (pid);
+ }
+-
++extern void print_backtrace();
+ struct process_info *
+ current_process (void)
+ {
+-  if (current_inferior == NULL)
++  if (current_inferior == NULL) {
++print_backtrace();
+     fatal ("Current inferior requested, but current_inferior is NULL\n");
+-
++}
+   return get_thread_process (current_inferior);
+ }
+ 
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 330f859..d50b810 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -282,13 +282,13 @@ elf_64_file_p (const char *file)
+ 
+   return elf_64_header_p (&header);
+ }
+-
++extern void print_backtrace();
+ static void
+ delete_lwp (struct lwp_info *lwp)
+ {
+   if (debug_threads)
+     printf("delete_lwp(%lu)\n", lwpid_of(lwp));
+-
++print_backtrace();
+   remove_thread (get_lwp_thread (lwp));
+   remove_inferior (&all_lwps, &lwp->head);
+   free (lwp->arch_private);
+@@ -357,7 +357,9 @@ my_waitpid (int pid, int *status, int flags)
+ 	while(1) {
+ 
+ 		FD_ZERO (&readset);
+-		FD_SET (remote_desc, &readset);
++
++		if (remote_desc != -1)
++			FD_SET (remote_desc, &readset);
+ 
+ 		if (pid == -1)
+ 			find_inferior(&all_threads, add_signal_pipe_read_fd_to_set, &readset);
+@@ -374,7 +376,7 @@ my_waitpid (int pid, int *status, int flags)
+ 			if (debug_threads)
+ 				fprintf(stderr, "select() returned\n");
+ 
+-			if (FD_ISSET(remote_desc, &readset)) {
++			if ((remote_desc != -1) && FD_ISSET(remote_desc, &readset)) {
+ 
+ 				/* received input from GDB */
+ 
+@@ -532,8 +534,21 @@ handle_extended_wait (struct lwp_info *event_child, int wstat)
+ 	}
+ #else
+       int status = W_STOPCODE (SIGSTOP);
++
++      /* read the thread ID of the new thread from the signal pipe (payload) */
+       read(genode_thread_signal_pipe_read_fd(lwpid_of(event_child)),
+            &new_pid, sizeof(new_pid));
++
++#if 0
++      /* consume the SIGTRAP signal caused by initial single-stepping */
++      {
++        int signal;
++        read(genode_thread_signal_pipe_read_fd(new_pid), &signal, sizeof(signal));
++        fprintf(stderr, "new thread received signal %d\n", signal);
++        if (signal != SIGTRAP)
++          fprintf(stderr, "Error: first signal received by the new thread was not SIGTRAP\n");
++      }
++#endif
+ #endif
+ 
+       linux_enable_event_reporting (new_pid);
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index 33db155..61543eb 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -198,7 +198,7 @@ handle_accept_event (int err, gdb_client_data client_data)
+   genode_stop_all_threads();
+ 
+   /* find all existing threads and tell gdbserver about it */
+-  genode_detect_all_threads();
++  //genode_detect_all_threads();
+ #endif
+ 
+   /* Register the event loop handler.  */
+@@ -298,9 +298,9 @@ remote_open (char *name)
+ 
+ #ifdef __GENODE__
+       /* FIXME: find better place */
+-      genode_stop_all_threads();
++      //genode_stop_all_threads();
+       /* find all existing threads and tell gdbserver about it */
+-      genode_detect_all_threads();
++      //genode_detect_all_threads();
+ #endif
+ 
+ #endif /* USE_WIN32API */
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index bf0fc90..7cd2d1a 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2457,8 +2457,13 @@ join_inferiors_callback (struct inferior_list_entry *entry)
+ }
+ 
+ int
+-gdbserver_main(char *port, void *gdb_stub_thread)
++#ifdef __GENODE__
++gdbserver_main(char *port)
++#else
++main (int argc, char *argv[])
++#endif
+ {
++fprintf(stderr, "gdbserver_main()\n");
+ #ifndef __GENODE__
+   int bad_attach;
+   int pid;
+@@ -2594,7 +2599,7 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+       exit (1);
+     }
+ #endif
+-
++fprintf(stderr, "calling initialize_inferiors()\n");
+   initialize_inferiors ();
+   initialize_async_io ();
+   initialize_low ();
+@@ -2661,8 +2666,33 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+ #endif
+ 
+ #ifdef __GENODE__
++
++  void *gdb_stub_thread = genode_start_inferior();
++
++  if (!gdb_stub_thread)
++    return -1;
++
+   /* wait until the target's main thread is ready */
+   genode_wait_for_target_main_thread();
++
++fprintf(stderr, "main thread ready\n");
++
++  /* attach to child */
++  myattach(GENODE_LWP_BASE);
++  signal_pid = GENODE_LWP_BASE;
++  struct process_info *pi = current_process();
++  struct process_info_private *pip = pi->private;
++  pip->gdb_stub_thread = gdb_stub_thread;
++#if 1
++  /* consume the SIGTRAP signal caused by initial single-stepping */
++  {
++    int signal;
++    read(genode_thread_signal_pipe_read_fd(GENODE_LWP_BASE), &signal, sizeof(signal));
++    fprintf(stderr, "main thread received signal %d\n", signal);
++    if (signal != SIGTRAP)
++      fprintf(stderr, "Error: first signal received by the main thread was not SIGTRAP\n");
++  }
++#endif
+ #endif
+ 
+   while (1)
+@@ -2672,7 +2702,7 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+       /* Be sure we're out of tfind mode.  */
+       current_traceframe = -1;
+ 
+-#ifdef __GENODE__
++#ifdef __GENODE___
+       /* attach to child */
+ 	  myattach(GENODE_LWP_BASE);
+ 	  signal_pid = GENODE_LWP_BASE;
