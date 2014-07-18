@@ -20,7 +20,7 @@ extern "C" {
 #include <base/printf.h>
 #include "i386.h"
 #include "cpu_session_component.h"
-#include "gdb_stub_thread.h"
+#include "genode_child_resources.h"
 #include "gdbserver_platform_helper.h"
 
 using namespace Genode;

@@ -16,22 +16,31 @@
 
 /* Genode includes */
 #include <base/rpc_server.h>
+#include <base/thread.h>
 #include <cpu_session/client.h>
 
 /* GDB monitor includes */
-#include "thread_info.h"
+#include "append_list.h"
 
-using namespace Genode;
-using namespace Gdb_monitor;
-
-class Cpu_session_component : public Rpc_object<Cpu_session>
+namespace Gdb_monitor
 {
+	class Cpu_session_component;
+	class Thread_info;
+	using namespace Genode;
+}
+
+class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
+{
+
 	private:
 
 		Cpu_session_client _parent_cpu_session;
 		Signal_receiver *_exception_signal_receiver;
 
 		Append_list<Thread_info> _thread_list;
+
+		bool _stop_new_threads = true;
+		Lock _stop_new_threads_lock;
 
 		Thread_info *_thread_info(Thread_capability thread_cap);
 
@@ -47,8 +56,13 @@ class Cpu_session_component : public Rpc_object<Cpu_session>
 		 */
 		~Cpu_session_component();
 
-		unsigned long lwpid(Thread_capability thread_cap);
 		Thread_capability thread_cap(unsigned long lwpid);
+		unsigned long lwpid(Thread_capability thread_cap);
+		int signal_pipe_read_fd(Thread_capability thread_cap);
+		void deliver_signal(Thread_capability thread_cap, int signo, unsigned long *payload);
+		void stop_new_threads(bool stop);
+		bool stop_new_threads();
+		Lock &stop_new_threads_lock();
 		Thread_capability first();
 		Thread_capability next(Thread_capability);
 
@@ -68,7 +82,7 @@ class Cpu_session_component : public Rpc_object<Cpu_session>
 		Thread_state state(Thread_capability);
 		void state(Thread_capability, Thread_state const &);
 		void exception_handler(Thread_capability         thread,
-		                       Signal_context_capability handler);
+							   Signal_context_capability handler);
 		void single_step(Thread_capability thread, bool enable);
 		Affinity::Space affinity_space() const;
 		void affinity(Thread_capability, Affinity::Location);
