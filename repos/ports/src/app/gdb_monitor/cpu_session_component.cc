@@ -14,11 +14,15 @@
 /* Genode includes */
 #include <base/env.h>
 #include <base/printf.h>
+#include <base/sleep.h>
 #include <cpu_session_component.h>
 #include <util/list.h>
 
+#include <signal.h>
+
 /* GDB monitor includes */
 #include "config.h"
+#include "thread_info.h"
 
 extern void genode_add_thread(unsigned long lwpid);
 extern void genode_remove_thread(unsigned long lwpid);
@@ -44,12 +48,6 @@ Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 }
 
 
-unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
-{
-	return _thread_info(thread_cap)->lwpid();
-}
-
-
 Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -63,38 +61,41 @@ Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 }
 
 
-Thread_capability Cpu_session_component::create_thread(Cpu_session::Name const &name, addr_t utcb)
+unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
 {
-	Thread_capability thread_cap =
-		_parent_cpu_session.create_thread(name.string(), utcb);
-
-	if (thread_cap.valid()) {
-		Thread_info *thread_info = new (env()->heap()) Thread_info(thread_cap, new_lwpid++);
-		_thread_list.append(thread_info);
-	}
-
-	return thread_cap;
+	return _thread_info(thread_cap)->lwpid();
 }
 
 
-Ram_dataspace_capability Cpu_session_component::utcb(Thread_capability thread)
+int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
 {
-	return _parent_cpu_session.utcb(thread);
+	return _thread_info(thread_cap)->signal_pipe_read_fd();
 }
 
 
-void Cpu_session_component::kill_thread(Thread_capability thread_cap)
+void Cpu_session_component::deliver_signal(Thread_capability thread_cap,
+                                           int signo,
+                                           unsigned long *payload)
 {
-	Thread_info *thread_info = _thread_info(thread_cap);
+	_thread_info(thread_cap)->deliver_signal(signo, payload);
+}
 
-	if (thread_info) {
-		_exception_signal_receiver->dissolve(thread_info);
-		genode_remove_thread(thread_info->lwpid());
-		_thread_list.remove(thread_info);
-		destroy(env()->heap(), thread_info);
-	}
 
-	_parent_cpu_session.kill_thread(thread_cap);
+void Cpu_session_component::stop_new_threads(bool stop)
+{
+	_stop_new_threads = stop;
+}
+
+
+bool Cpu_session_component::stop_new_threads()
+{
+	return _stop_new_threads;
+}
+
+
+Lock &Cpu_session_component::stop_new_threads_lock()
+{
+	return _stop_new_threads_lock;
 }
 
 
@@ -118,6 +119,45 @@ Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 }
 
 
+Thread_capability Cpu_session_component::create_thread(Cpu_session::Name const &name, addr_t utcb)
+{
+	Thread_capability thread_cap =
+		_parent_cpu_session.create_thread(name.string(), utcb);
+
+	if (thread_cap.valid()) {
+		Thread_info *thread_info = new (env()->heap())
+			Thread_info(this, thread_cap, new_lwpid++);
+		_thread_list.append(thread_info);
+	} else
+		PERR("%s: thread creation failed", __PRETTY_FUNCTION__);
+
+	return thread_cap;
+}
+
+
+Ram_dataspace_capability Cpu_session_component::utcb(Thread_capability thread)
+{
+	return _parent_cpu_session.utcb(thread);
+}
+
+
+void Cpu_session_component::kill_thread(Thread_capability thread_cap)
+{
+	Thread_info *thread_info = _thread_info(thread_cap);
+
+	if (thread_info) {
+		_exception_signal_receiver->dissolve(thread_info);
+		genode_remove_thread(thread_info->lwpid());
+		_thread_list.remove(thread_info);
+		destroy(env()->heap(), thread_info);
+	} else
+		PERR("%s: could not find thread info for the given thread capability",
+		     __PRETTY_FUNCTION__);
+
+	_parent_cpu_session.kill_thread(thread_cap);
+}
+
+
 int Cpu_session_component::set_pager(Thread_capability thread_cap,
                                      Pager_capability  pager_cap)
 {
@@ -130,20 +170,22 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
-	if (thread_info)
+	if (thread_info) {
+
+		/* inform gdbserver about the new thread */
+		genode_add_thread(thread_info->lwpid());
+
+		/* register the exception handler */
 		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
 
-	int result = _parent_cpu_session.start(thread_cap, ip, sp);
+		/* make the thread stop at the second instruction */
+		single_step(thread_cap, true);
 
-	if (thread_info) {
-		/* pause the first thread */
-		if (thread_info->lwpid() == GENODE_LWP_BASE)
-			pause(thread_cap);
+	} else
+		PERR("%s: could not find thread info for the given thread capability",
+		     __PRETTY_FUNCTION__);
 
-		genode_add_thread(thread_info->lwpid());
-	}
-
-	return result;
+	return _parent_cpu_session.start(thread_cap, ip, sp);
 }
 
 

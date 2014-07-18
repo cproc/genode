@@ -1,0 +1,232 @@
+gdbserver_genode2.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-low.c    |   36 +++++++++++++++++++++++++++++------
+ gdb/gdbserver/linux-low.h    |    2 +-
+ gdb/gdbserver/remote-utils.c |   15 ---------------
+ gdb/gdbserver/server.c       |   43 +++++++++++++++++++++++++++++++-----------
+ 4 files changed, 63 insertions(+), 33 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 330f859..a521991 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -357,7 +357,9 @@ my_waitpid (int pid, int *status, int flags)
+ 	while(1) {
+ 
+ 		FD_ZERO (&readset);
+-		FD_SET (remote_desc, &readset);
++
++		if (remote_desc != -1)
++			FD_SET (remote_desc, &readset);
+ 
+ 		if (pid == -1)
+ 			find_inferior(&all_threads, add_signal_pipe_read_fd_to_set, &readset);
+@@ -374,7 +376,7 @@ my_waitpid (int pid, int *status, int flags)
+ 			if (debug_threads)
+ 				fprintf(stderr, "select() returned\n");
+ 
+-			if (FD_ISSET(remote_desc, &readset)) {
++			if ((remote_desc != -1) && FD_ISSET(remote_desc, &readset)) {
+ 
+ 				/* received input from GDB */
+ 
+@@ -532,8 +534,19 @@ handle_extended_wait (struct lwp_info *event_child, int wstat)
+ 	}
+ #else
+       int status = W_STOPCODE (SIGSTOP);
++
++      /* read the thread ID of the new thread from the signal pipe (payload) */
+       read(genode_thread_signal_pipe_read_fd(lwpid_of(event_child)),
+            &new_pid, sizeof(new_pid));
++
++      /* consume the SIGTRAP signal caused by initial single-stepping */
++      {
++        int signal;
++        read(genode_thread_signal_pipe_read_fd(new_pid), &signal, sizeof(signal));
++        fprintf(stderr, "new thread received signal %d\n", signal);
++        if (signal != SIGTRAP)
++          fprintf(stderr, "Error: first signal received by the new thread was not SIGTRAP\n");
++      }
+ #endif
+ 
+       linux_enable_event_reporting (new_pid);
+@@ -5285,6 +5298,13 @@ linux_core_of_thread (ptid_t ptid)
+ static void
+ linux_process_qsupported (const char *query)
+ {
++#ifdef __GENODE__
++  /*
++   * 'qSupported' is the first command sent by GDB when attaching to the
++   * server, so when at this location, GDB has just (re-)attached itself.
++   */
++  genode_stop_all_threads();
++#endif
+   if (the_low_target.process_qsupported != NULL)
+     the_low_target.process_qsupported (query);
+ }
+@@ -5390,12 +5410,14 @@ static struct target_ops linux_target_ops = {
+   NULL,
+ #endif
+   linux_attach,
+-  genode_kill,
+-  genode_detach,
+ #ifndef __GENODE__
++  linux_kill,
++  linux_detach,
+   linux_mourn,
+   linux_join,
+ #else
++  genode_kill,
++  genode_detach,
+   NULL,
+   NULL,
+ #endif
+@@ -5464,7 +5486,11 @@ static struct target_ops linux_target_ops = {
+ #endif
+ #ifndef __GENODE__
+   linux_core_of_thread,
++#else
++  NULL,
++#endif
+   linux_process_qsupported,
++#ifndef __GENODE__
+   linux_supports_tracepoints,
+   linux_read_pc,
+   linux_write_pc,
+@@ -5487,8 +5513,6 @@ static struct target_ops linux_target_ops = {
+   NULL,
+   NULL,
+   NULL,
+-  NULL,
+-  NULL,
+   NULL
+ #endif
+ };
+diff --git a/gdb/gdbserver/linux-low.h b/gdb/gdbserver/linux-low.h
+index fb4e4f7..704dc58 100644
+--- a/gdb/gdbserver/linux-low.h
++++ b/gdb/gdbserver/linux-low.h
+@@ -60,7 +60,7 @@ struct process_info_private
+   struct thread_db *thread_db;
+ 
+ #ifdef __GENODE__
+-  void *gdb_stub_thread;
++  void *genode_child_resources;
+ #endif
+ };
+ 
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index 33db155..124bdda 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -193,14 +193,6 @@ handle_accept_event (int err, gdb_client_data client_data)
+ 
+   enable_async_notification (remote_desc);
+ 
+-#ifdef __GENODE__
+-  /* stop all threads */
+-  genode_stop_all_threads();
+-
+-  /* find all existing threads and tell gdbserver about it */
+-  genode_detect_all_threads();
+-#endif
+-
+   /* Register the event loop handler.  */
+   add_file_handler (remote_desc, handle_serial_event, NULL);
+ 
+@@ -296,13 +288,6 @@ remote_open (char *name)
+       /* Register the event loop handler.  */
+       add_file_handler (remote_desc, handle_serial_event, NULL);
+ 
+-#ifdef __GENODE__
+-      /* FIXME: find better place */
+-      genode_stop_all_threads();
+-      /* find all existing threads and tell gdbserver about it */
+-      genode_detect_all_threads();
+-#endif
+-
+ #endif /* USE_WIN32API */
+     }
+   else
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index bf0fc90..b7e43bc 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2457,8 +2457,13 @@ join_inferiors_callback (struct inferior_list_entry *entry)
+ }
+ 
+ int
+-gdbserver_main(char *port, void *gdb_stub_thread)
++#ifdef __GENODE__
++gdbserver_main(char *port)
++#else
++main (int argc, char *argv[])
++#endif
+ {
++fprintf(stderr, "gdbserver_main()\n");
+ #ifndef __GENODE__
+   int bad_attach;
+   int pid;
+@@ -2594,7 +2599,7 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+       exit (1);
+     }
+ #endif
+-
++fprintf(stderr, "calling initialize_inferiors()\n");
+   initialize_inferiors ();
+   initialize_async_io ();
+   initialize_low ();
+@@ -2661,8 +2666,33 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+ #endif
+ 
+ #ifdef __GENODE__
++
++  void *genode_child_resources = genode_start_inferior();
++
++  if (!genode_child_resources)
++    return -1;
++
+   /* wait until the target's main thread is ready */
+   genode_wait_for_target_main_thread();
++
++fprintf(stderr, "main thread ready\n");
++
++  /* attach to child */
++  myattach(GENODE_LWP_BASE);
++  signal_pid = GENODE_LWP_BASE;
++  struct process_info *pi = current_process();
++  struct process_info_private *pip = pi->private;
++  pip->genode_child_resources = genode_child_resources;
++
++  /* consume the SIGTRAP signal caused by initial single-stepping */
++  {
++    int signal;
++    read(genode_thread_signal_pipe_read_fd(GENODE_LWP_BASE), &signal, sizeof(signal));
++    fprintf(stderr, "main thread received signal %d\n", signal);
++    if (signal != SIGTRAP)
++      fprintf(stderr, "Error: first signal received by the main thread was not SIGTRAP\n");
++  }
++
+ #endif
+ 
+   while (1)
+@@ -2672,15 +2702,6 @@ gdbserver_main(char *port, void *gdb_stub_thread)
+       /* Be sure we're out of tfind mode.  */
+       current_traceframe = -1;
+ 
+-#ifdef __GENODE__
+-      /* attach to child */
+-	  myattach(GENODE_LWP_BASE);
+-	  signal_pid = GENODE_LWP_BASE;
+-	  struct process_info *pi = current_process();
+-	  struct process_info_private *pip = pi->private;
+-	  pip->gdb_stub_thread = gdb_stub_thread;
+-#endif
+-
+       remote_open (port);
+ 
+       if (setjmp (toplevel) != 0)
