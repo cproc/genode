@@ -18,9 +18,7 @@
 #ifndef GENODE_LOW_H
 #define GENODE_LOW_H
 
-#include "server.h"
-
-int genode_signal_fd();
+void *genode_start_inferior();
 
 void genode_wait_for_target_main_thread();
 void genode_detect_all_threads();
@@ -28,8 +26,10 @@ void genode_detect_all_threads();
 void genode_stop_all_threads();
 void genode_resume_all_threads();
 
-ptid_t genode_wait_for_signal_or_gdb_interrupt(struct target_waitstatus *status);
 void genode_continue_thread(unsigned long lwpid, int single_step);
+
+int genode_thread_signal_pipe_read_fd(unsigned long lwpid);
+int genode_send_signal_to_thread(unsigned long lwipd, int signo, unsigned long *payload);
 
 unsigned long genode_find_segfault_lwpid();
 
