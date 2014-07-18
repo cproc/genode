@@ -224,6 +224,12 @@ void Pager_object::_startup_handler(addr_t pager_obj)
 	utcb->sp  = obj->_initial_esp;
 
 	utcb->mtd = Mtd::EIP | Mtd::ESP;
+
+	if (obj->_state.singlestep()) {
+		utcb->flags = 0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
+
 	utcb->set_msg_word(0);
 
 	reply(myself->stack_top());
