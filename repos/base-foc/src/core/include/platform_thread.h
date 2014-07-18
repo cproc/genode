@@ -54,6 +54,8 @@ namespace Genode {
 
 			Affinity::Location _location;
 
+			unsigned int       _start_flags = 0;
+
 			void _create_thread(void);
 			void _finalize_construction(const char *name);
 			bool _in_syscall(Fiasco::l4_umword_t flags);
@@ -103,6 +105,11 @@ namespace Genode {
 			 * Resume this thread
 			 */
 			void resume();
+
+			/**
+			 * Enable/disable single-stepping
+			 */
+			void single_step(bool enable);
 
 			/**
 			 * Cancel currently blocking operation
