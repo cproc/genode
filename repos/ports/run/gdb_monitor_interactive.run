@@ -121,7 +121,7 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/$gdb_target_binary $gdb_cmds"
 
-exec [terminal] -e "[gdb] bin/test-gdb_monitor $gdb_cmds" &
+exec [terminal] -e "[gdb] bin/$gdb_target_binary $gdb_cmds" &
 
 interact
 
