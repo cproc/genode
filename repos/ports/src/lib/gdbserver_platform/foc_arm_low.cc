@@ -22,7 +22,7 @@ extern "C" {
 #include "reg-arm.h"
 #include "gdbserver_platform_helper.h"
 
-#include "gdb_stub_thread.h"
+#include "genode_child_resources.h"
 
 #undef PDBG
 #define PDBG(...)
