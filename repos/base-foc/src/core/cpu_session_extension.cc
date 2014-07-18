@@ -102,13 +102,7 @@ void Genode::Cpu_session_component::single_step(Genode::Thread_capability thread
 
 	auto lambda = [&] (Cpu_thread_component *thread) {
 		if (!thread) return;
-
-		Fiasco::l4_cap_idx_t tid = thread->platform_thread()->thread().local.dst();
-
-		enum { THREAD_SINGLE_STEP = 0x40000 };
-		int flags = enable ? THREAD_SINGLE_STEP : 0;
-
-		Fiasco::l4_thread_ex_regs(tid, ~0UL, ~0UL, flags);
+		thread->platform_thread()->single_step(enable);
 	};
 	_thread_ep->apply(thread_cap, lambda);
 }
