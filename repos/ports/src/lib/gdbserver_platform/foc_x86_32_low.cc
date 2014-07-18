@@ -21,7 +21,7 @@ extern "C" {
 #include "i386.h"
 #include "cpu_session_component.h"
 #include "gdbserver_platform_helper.h"
-#include "gdb_stub_thread.h"
+#include "genode_child_resources.h"
 
 //#undef PDBG
 //#define PDBG(...)
