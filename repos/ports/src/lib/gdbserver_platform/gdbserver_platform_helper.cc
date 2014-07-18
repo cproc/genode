@@ -20,16 +20,16 @@ extern "C" {
 }
 
 #include "cpu_session_component.h"
-#include "gdb_stub_thread.h"
+#include "genode_child_resources.h"
 
 using namespace Genode;
 using namespace Gdb_monitor;
 
-extern Gdb_stub_thread *gdb_stub_thread();
+extern Genode_child_resources *genode_child_resources();
 
 Thread_state get_current_thread_state()
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
@@ -38,7 +38,7 @@ Thread_state get_current_thread_state()
 
 void set_current_thread_state(Thread_state thread_state)
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
