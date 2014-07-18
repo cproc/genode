@@ -58,7 +58,7 @@ int Platform_thread::start(void *ip, void *sp)
 
 	/* set ip and sp and run the thread */
 	tag = l4_thread_ex_regs(_thread.local.dst(), (l4_addr_t) ip,
-	                        (l4_addr_t) sp, 0);
+	                        (l4_addr_t) sp, _start_flags);
 	if (l4_msgtag_has_error(tag)) {
 		PWRN("l4_thread_ex_regs failed!");
 		return -1;
@@ -132,6 +132,21 @@ void Platform_thread::resume()
 	Msgbuf<16> snd, rcv;
 	Ipc_client ipc_client(_pager_obj->cap(), &snd, &rcv);
 	ipc_client << _pager_obj << IPC_CALL;
+}
+
+
+void Platform_thread::single_step(bool enable)
+{
+	enum { THREAD_SINGLE_STEP = 0x40000 };
+
+	if (_state == RUNNING) {
+		Native_thread tid = _thread.local.dst();
+
+		int flags = enable ? THREAD_SINGLE_STEP : 0;
+
+		Fiasco::l4_thread_ex_regs(tid, ~0UL, ~0UL, flags);
+	} else
+		_start_flags = enable ? THREAD_SINGLE_STEP : 0;
 }
 
 

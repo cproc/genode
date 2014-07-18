@@ -100,10 +100,5 @@ void Genode::Cpu_session_component::single_step(Genode::Thread_capability thread
 	Object_pool<Cpu_thread_component>::Guard thread(_thread_ep->lookup_and_lock(thread_cap));
 	if (!thread) return;
 
-	Native_thread tid = thread->platform_thread()->thread().local.dst();
-
-	enum { THREAD_SINGLE_STEP = 0x40000 };
-	int flags = enable ? THREAD_SINGLE_STEP : 0;
-
-	Fiasco::l4_thread_ex_regs(tid, ~0UL, ~0UL, flags);
+	thread->platform_thread()->single_step(enable);
 }
