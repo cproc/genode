@@ -45,7 +45,7 @@ set gdb_target_binaries {
 lappend gdb_target_binaries ${gdb_target_binary_name}
 
 create_gdb_tar
-create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
+#create_binary_and_source_tars ${gdb_target_binary_name} ${gdb_target_binaries}
 
 create_boot_directory
 
@@ -192,6 +192,12 @@ append config {
 					<arg value="-ex" /><arg value="c" />
 					<arg value="-ex" /><arg value="delete 2" />
 					<arg value="-ex" /><arg value="set interactive-mode auto" />
+					<arg value="-ex" /><arg value="b Test_thread::entry" />
+					<arg value="-ex" /><arg value="c" />
+					<arg value="-ex" /><arg value="step" />
+					<arg value="-ex" /><arg value="step" />
+					<arg value="-ex" /><arg value="step" />
+					<arg value="-ex" /><arg value="step" />
 				</start>
 			</config>
 		</start>
