@@ -21,7 +21,7 @@ namespace Dde_kit {
 
 	using namespace Genode;
 
-	typedef Genode::Thread<0x2000> Thread;
+	typedef Genode::Thread<2*1024*sizeof(addr_t)> Thread;
 
 	/*
 	 * The thread information is splitted from the actual (runable) thread, so
