@@ -83,6 +83,7 @@ class Vfs::Terminal_file_system : public Single_file_system
 		                 file_size &out_count) override
 		{
 			out_count = _terminal.read(dst, count);
+			//PDBG("out_count = %zu", out_count);
 			return READ_OK;
 		}
 
@@ -93,8 +94,11 @@ class Vfs::Terminal_file_system : public Single_file_system
 
 		bool check_unblock(Vfs_handle *vfs_handle, bool rd, bool wr, bool ex) override
 		{
-			if (rd && (_terminal.avail() > 0))
+			PDBG("called: rd = %d, wr = %d, ex = %d", rd, wr, ex);
+			if (rd && (_terminal.avail() > 0)) {
+				PDBG("%zu bytes available", _terminal.avail());
 				return true;
+			}
 
 			if (wr)
 				return true;
