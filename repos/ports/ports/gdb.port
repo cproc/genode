@@ -12,7 +12,10 @@ GENODE_DIR  := $(REP_DIR)/../..
 PATCHES_DIR := $(GENODE_DIR)/tool/patches/gdb-$(VERSION)
 PATCHES     := $(addprefix $(PATCHES_DIR)/,$(shell cat $(PATCHES_DIR)/series)) \
                $(REP_DIR)/src/app/gdb_monitor/gdbserver_genode.patch \
-               $(REP_DIR)/src/noux-pkg/gdb/build.patch
+               $(REP_DIR)/src/app/gdb_monitor/gdbserver_genode2.diff \
+               $(REP_DIR)/src/noux-pkg/gdb/build.patch \
+               $(REP_DIR)/src/app/gdb_monitor/gdbserver_x86_64.diff
+
 PATCH_OPT   := -p1 -d ${DIR(gdb)}
 
 default: _patch generated_files
@@ -33,7 +36,14 @@ $(GENERATED_DIR)/i386.c: $(GENERATED_DIR)
 $(GENERATED_DIR)/i386-avx.c: $(GENERATED_DIR)
 	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/i386-avx.dat $(notdir $@)
 
+$(GENERATED_DIR)/amd64.c: $(GENERATED_DIR)
+	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64.dat $(notdir $@)
+
+$(GENERATED_DIR)/amd64-avx.c: $(GENERATED_DIR)
+	$(VERBOSE) cd $(GENERATED_DIR) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64-avx.dat $(notdir $@)
+
 generated_files: $(GENERATED_DIR)/reg-arm.c \
                  $(GENERATED_DIR)/i386.c \
-                 $(GENERATED_DIR)/i386-avx.c
-
+                 $(GENERATED_DIR)/i386-avx.c \
+                 $(GENERATED_DIR)/amd64.c \
+                 $(GENERATED_DIR)/amd64-avx.c
