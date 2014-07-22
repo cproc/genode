@@ -61,13 +61,18 @@ size_t Session_component::cross_read(unsigned char *buf, size_t dst_len)
 
 	for (num_bytes_read = 0;
 	     (num_bytes_read < dst_len) && !_buffer.empty();
-	     num_bytes_read++)
+	     num_bytes_read++) {
 		buf[num_bytes_read] = _buffer.get();
+		if (buf[num_bytes_read] >= 32)
+			PDBG("read %u - %c", buf[num_bytes_read], buf[num_bytes_read]);
+		else
+			PDBG("read <%u>", buf[num_bytes_read]);
+	}
 
 	_cross_num_bytes_avail -= num_bytes_read;
 
 	_write_avail_lock.unlock();
-
+PDBG("read %zu bytes", num_bytes_read);
 	return num_bytes_read;
 }
 
@@ -100,7 +105,13 @@ void Session_component::_write(Genode::size_t num_bytes)
 	size_t src_index = 0;
 	while (num_bytes_written < num_bytes)
 		try {
-			_buffer.add(src[src_index]);
+			unsigned char c = src[src_index];
+			_buffer.add(c);
+			if (c >= 32)
+				PDBG("wrote %u - %c", c, c);
+			else
+				PDBG("wrote <%u>", c);
+			//_buffer.add(src[src_index]);
 			++src_index;
 			++num_bytes_written;
 		} catch(Local_buffer::Overflow) {
