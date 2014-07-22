@@ -18,8 +18,8 @@
 
 using namespace Genode;
 
-//#undef PDBG
-//#define PDBG(...)
+#undef PDBG
+#define PDBG(...)
 
 extern "C" int genode_fetch_register(int regno, unsigned long *reg_content)
 {

@@ -194,12 +194,17 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			{
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio->read_in.fd);
 
-				if (!io->is_nonblocking())
+				if (!io->is_nonblocking()) {
+					PDBG("blocking for IO channel");
 					_block_for_io_channel(io, true, false, false);
+					PDBG("returned from blocking");
+				}
 
-				if (io->check_unblock(true, false, false))
+				if (io->check_unblock(true, false, false)) {
+					PDBG("calling io->read()");
 					result = io->read(_sysio);
-				else
+					PDBG("io->read() returned %d", result);
+				} else
 					_sysio->error.read = Vfs::File_io_service::READ_ERR_INTERRUPT;
 
 				break;
