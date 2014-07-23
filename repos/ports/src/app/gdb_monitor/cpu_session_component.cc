@@ -48,6 +48,12 @@ Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 }
 
 
+Signal_receiver *Cpu_session_component::exception_signal_receiver()
+{
+	return _exception_signal_receiver;
+}
+
+
 Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -73,11 +79,75 @@ int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
 }
 
 
-void Cpu_session_component::deliver_signal(Thread_capability thread_cap,
-                                           int signo,
-                                           unsigned long *payload)
+int Cpu_session_component::send_signal(Thread_capability thread_cap,
+                                       int signo,
+                                       unsigned long *payload)
 {
-	_thread_info(thread_cap)->deliver_signal(signo, payload);
+	Thread_info *thread_info = _thread_info(thread_cap);
+PDBG("calling pause()");
+	_parent_cpu_session.pause(thread_cap);
+PDBG("pause returned");
+	switch (signo) {
+		case SIGSTOP:
+			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
+			return 1;
+		case SIGINT:
+			Signal_transmitter(thread_info->sigint_signal_context_cap()).submit();
+			return 1;
+		case SIGINFO:
+			Signal_transmitter(thread_info->siginfo_signal_context_cap()).submit();
+			PDBG("sent SIGINFO");
+			return 1;
+		default:
+			PERR("unexpected signal %d", signo);
+			return 0;
+	}
+}
+
+
+/*
+ * This function delivers a SIGSEGV to the first thread with an unresolved
+ * page fault that it finds. Multiple page-faulted threads are currently
+ * not supported.
+ */
+
+void Cpu_session_component::handle_unresolved_page_fault()
+{
+	/*
+	 * It can happen that the thread state of the thread which caused the
+	 * page fault is not accessible yet. In that case, we'll retry until
+	 * it is accessible.
+	 */
+
+	while (1) {
+
+		Thread_capability thread_cap = first();
+
+		while (thread_cap.valid()) {
+
+			try {
+
+				Thread_state thread_state = _parent_cpu_session.state(thread_cap);
+
+				if (thread_state.unresolved_page_fault) {
+
+					/*
+					 * On base-foc it is necessary to pause the thread before
+					 * IP and SP are available in the thread state.
+					 */
+					_parent_cpu_session.pause(thread_cap);
+
+					_thread_info(thread_cap)->deliver_signal(SIGSEGV, 0);
+
+					return;
+				}
+
+			} catch (Cpu_session::State_access_failed) { }
+
+			thread_cap = next(thread_cap);
+		}
+
+	}
 }
 
 
@@ -146,7 +216,6 @@ void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 	Thread_info *thread_info = _thread_info(thread_cap);
 
 	if (thread_info) {
-		_exception_signal_receiver->dissolve(thread_info);
 		genode_remove_thread(thread_info->lwpid());
 		_thread_list.remove(thread_info);
 		destroy(env()->heap(), thread_info);
@@ -172,11 +241,9 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 
 	if (thread_info) {
 
-		/* inform gdbserver about the new thread */
-		genode_add_thread(thread_info->lwpid());
-
 		/* register the exception handler */
-		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
+		exception_handler(thread_cap,
+		                  thread_info->exception_signal_context_cap());
 
 		/* make the thread stop at the second instruction */
 		single_step(thread_cap, true);
@@ -185,7 +252,14 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		PERR("%s: could not find thread info for the given thread capability",
 		     __PRETTY_FUNCTION__);
 
-	return _parent_cpu_session.start(thread_cap, ip, sp);
+	int result = _parent_cpu_session.start(thread_cap, ip, sp);
+
+	if ((result == 0) && thread_info) {
+		/* inform gdbserver about the new thread */
+		genode_add_thread(thread_info->lwpid());
+	}
+
+	return result;
 }
 
 

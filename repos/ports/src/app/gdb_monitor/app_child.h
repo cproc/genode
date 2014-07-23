@@ -58,6 +58,8 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 
 		Genode_child_resources        _genode_child_resources;
 
+		Signal_dispatcher<App_child>  _unresolved_page_fault_dispatcher;
+
 		Rm_root                       _rm_root;
 		Rm_session_capability         _rm_session_cap;
 
@@ -100,14 +102,14 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 				}
 		} _rm_service;
 
-		Rm_session_capability _get_rm_session_cap(Signal_receiver *signal_receiver)
+		Rm_session_capability _get_rm_session_cap()
 		{
 			_entrypoint.manage(&_rm_root);
 			Capability<Rm_session> cap = static_cap_cast<Rm_session>
 										 (_rm_root.session("ram_quota=64K", Affinity()));
 			Rm_session_client rm(cap);
 
-			rm.fault_handler(signal_receiver->manage(new (env()->heap()) Signal_context()));
+			rm.fault_handler(_unresolved_page_fault_dispatcher);
 			return cap;
 		}
 
@@ -247,6 +249,11 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 				}
 		};
 
+		void _dispatch_unresolved_page_fault(unsigned)
+		{
+			_genode_child_resources.cpu_session_component()->handle_unresolved_page_fault();
+		}
+
 	public:
 
 		/**
@@ -272,9 +279,12 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 		  _child_config(ram_session, target_node),
 		  _binary_policy("binary", elf_ds, &_entrypoint),
 		  _config_policy("config", _child_config.dataspace(), &_entrypoint),
+		  _unresolved_page_fault_dispatcher(*signal_receiver,
+		                                    *this,
+		                                    &App_child::_dispatch_unresolved_page_fault),
 		  _rm_root(&_entrypoint, env()->heap() /* should be _child.heap() */,
 				   &_managed_ds_map, &_genode_child_resources),
-		  _rm_session_cap(_get_rm_session_cap(signal_receiver)),
+		  _rm_session_cap(_get_rm_session_cap()),
 		  _cpu_root(&_entrypoint, env()->heap() /* should be _child.heap() */,
 					signal_receiver, &_genode_child_resources),
 		  _cpu_session_cap(_get_cpu_session_cap()),
