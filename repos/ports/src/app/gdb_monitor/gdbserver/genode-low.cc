@@ -310,28 +310,19 @@ int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *
 	switch(signo) {
 		case SIGINT:
 			PDBG("sending SIGINT to thread %lu", lwpid);
-			csc->pause(thread_cap);
 			break;
 		case SIGSTOP:
 			PDBG("sending SIGSTOP to thread %lu", lwpid);
-			csc->pause(thread_cap);
 			break;
 		case SIGINFO:
 			PDBG("sending SIGINFO to thread %lu", lwpid);
 			break;
-		case SIGSEGV:
-			PDBG("sending SIGSEGV to thread %lu", lwpid);
-			break;
-		case SIGTRAP:
-			PDBG("sending SIGTRAP to thread %lu", lwpid);
-			break;
 		default:
 			PDBG("unhandled signal %d", signo);
+			return -1;
 	}
 
-	csc->deliver_signal(thread_cap, signo, payload);
-
-	return 0;
+	return csc->deliver_signal(thread_cap, signo, payload);
 }
 
 

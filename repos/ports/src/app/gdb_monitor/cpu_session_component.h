@@ -56,10 +56,11 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		 */
 		~Cpu_session_component();
 
+		Signal_receiver *exception_signal_receiver();
 		Thread_capability thread_cap(unsigned long lwpid);
 		unsigned long lwpid(Thread_capability thread_cap);
 		int signal_pipe_read_fd(Thread_capability thread_cap);
-		void deliver_signal(Thread_capability thread_cap, int signo, unsigned long *payload);
+		int deliver_signal(Thread_capability thread_cap, int signo, unsigned long *payload);
 		void stop_new_threads(bool stop);
 		bool stop_new_threads();
 		Lock &stop_new_threads_lock();

@@ -35,9 +35,16 @@ void Signal_handler_thread::entry()
 	while(1) {
 		Signal s = _signal_receiver->wait_for_signal();
 
-		if (Thread_info *thread_info = dynamic_cast<Thread_info*>(s.context())) {
-			PDBG("delivering SIGTRAP to thread %lu", thread_info->lwpid());
-			thread_info->deliver_signal(SIGTRAP, 0);
+		if (Exception_signal_context *exception_signal_context =
+		    dynamic_cast<Exception_signal_context*>(s.context())) {
+			PDBG("delivering SIGTRAP to thread %lu",
+			     exception_signal_context->thread_info()->lwpid());
+			exception_signal_context->thread_info()->deliver_signal(SIGTRAP, 0);
+		} else if (Sigstop_signal_context *sigstop_signal_context =
+	        dynamic_cast<Sigstop_signal_context*>(s.context())) {
+			PDBG("delivering SIGSTOP to thread %lu",
+			     sigstop_signal_context->thread_info()->lwpid());
+			sigstop_signal_context->thread_info()->deliver_signal(SIGSTOP, 0);
 		} else {
 			genode_send_signal_to_thread(genode_find_segfault_lwpid(), SIGSEGV, 0);
 		}

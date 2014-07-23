@@ -48,6 +48,12 @@ Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 }
 
 
+Signal_receiver *Cpu_session_component::exception_signal_receiver()
+{
+	return _exception_signal_receiver;
+}
+
+
 Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -73,11 +79,28 @@ int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
 }
 
 
-void Cpu_session_component::deliver_signal(Thread_capability thread_cap,
-                                           int signo,
-                                           unsigned long *payload)
+int Cpu_session_component::deliver_signal(Thread_capability thread_cap,
+                                          int signo,
+                                          unsigned long *payload)
 {
-	_thread_info(thread_cap)->deliver_signal(signo, payload);
+	Thread_info *thread_info = _thread_info(thread_cap);
+
+	switch(signo) {
+		case SIGINT:
+			_parent_cpu_session.pause(thread_cap);
+			break;
+		case SIGSTOP:
+			_parent_cpu_session.pause(thread_cap);
+			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
+			return 1;
+		case SIGINFO:
+			break;
+		default:
+			PDBG("unhandled signal %d", signo);
+			return -1;
+	}
+
+	return _thread_info(thread_cap)->deliver_signal(signo, payload);
 }
 
 
@@ -146,7 +169,6 @@ void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 	Thread_info *thread_info = _thread_info(thread_cap);
 
 	if (thread_info) {
-		_exception_signal_receiver->dissolve(thread_info);
 		genode_remove_thread(thread_info->lwpid());
 		_thread_list.remove(thread_info);
 		destroy(env()->heap(), thread_info);
@@ -176,7 +198,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		genode_add_thread(thread_info->lwpid());
 
 		/* register the exception handler */
-		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
+		exception_handler(thread_cap,
+		                  thread_info->exception_signal_context_cap());
 
 		/* make the thread stop at the second instruction */
 		single_step(thread_cap, true);
