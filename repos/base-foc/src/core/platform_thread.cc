@@ -70,6 +70,7 @@ int Platform_thread::start(void *ip, void *sp)
 
 void Platform_thread::pause()
 {
+	PDBG("called");
 	if (!_pager_obj)
 		return;
 
@@ -107,6 +108,7 @@ void Platform_thread::pause()
 	 * an exception before ipc is completed.
 	 */
 	if (!in_syscall) {
+		PDBG("thread is not in a syscall");
 		/*
 		 * Wait until the pager thread got an exception from
 		 * the requested thread, and stored its thread state
@@ -114,6 +116,7 @@ void Platform_thread::pause()
 		while (exc == _pager_obj->state.exceptions && !_pager_obj->state.in_exception)
 			l4_thread_switch(_thread.local.dst());
 	}
+	PDBG("finished");
 }
 
 
