@@ -4,28 +4,35 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/gdbserver/linux-low.c    |   36 +++++++++++++++++++++++++++++------
- gdb/gdbserver/linux-low.h    |    2 +-
- gdb/gdbserver/remote-utils.c |   15 ---------------
- gdb/gdbserver/server.c       |   43 +++++++++++++++++++++++++++++++-----------
- 4 files changed, 63 insertions(+), 33 deletions(-)
+ gdb/gdbserver/linux-low.c    |   81 +++++++++++++++++++++++++++++++++++-------
+ gdb/gdbserver/linux-low.h    |    2 +
+ gdb/gdbserver/remote-utils.c |   15 --------
+ gdb/gdbserver/server.c       |   43 +++++++++++++++++-----
+ 4 files changed, 101 insertions(+), 40 deletions(-)
 
 diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
-index 330f859..a521991 100644
+index 330f859..3c08187 100644
 --- a/gdb/gdbserver/linux-low.c
 +++ b/gdb/gdbserver/linux-low.c
-@@ -357,7 +357,9 @@ my_waitpid (int pid, int *status, int flags)
+@@ -357,11 +357,14 @@ my_waitpid (int pid, int *status, int flags)
  	while(1) {
  
  		FD_ZERO (&readset);
 -		FD_SET (remote_desc, &readset);
-+
+ 
+-		if (pid == -1)
 +		if (remote_desc != -1)
 +			FD_SET (remote_desc, &readset);
- 
- 		if (pid == -1)
++
++		if (pid == -1) {
++			FD_SET(genode_new_thread_pipe_read_fd(), &readset);
  			find_inferior(&all_threads, add_signal_pipe_read_fd_to_set, &readset);
-@@ -374,7 +376,7 @@ my_waitpid (int pid, int *status, int flags)
+-		else
++		} else
+ 			FD_SET(genode_thread_signal_pipe_read_fd(pid), &readset);
+ 
+ 		struct timeval wnohang_timeout = {0, 0};
+@@ -374,7 +377,7 @@ my_waitpid (int pid, int *status, int flags)
  			if (debug_threads)
  				fprintf(stderr, "select() returned\n");
  
@@ -34,14 +41,52 @@ index 330f859..a521991 100644
  
  				/* received input from GDB */
  
-@@ -532,8 +534,19 @@ handle_extended_wait (struct lwp_info *event_child, int wstat)
+@@ -392,6 +395,33 @@ my_waitpid (int pid, int *status, int flags)
+ 					         cc, c, c);
+ 				}
+ 
++			} else if (FD_ISSET(genode_new_thread_pipe_read_fd(), &readset)) {
++
++				/* read the lwpid of the new thread from the pipe */
++				unsigned long new_lwpid;
++				read(genode_new_thread_pipe_read_fd(), &new_lwpid, sizeof(new_lwpid));
++				
++				/* make the new thread known to gdbserver */
++				{
++					ptid_t ptid = ptid_build (1, new_lwpid, 0);
++					struct lwp_info *new_lwp = (struct lwp_info *) add_lwp (ptid);
++					add_thread (ptid, new_lwp);
++				}
++
++				/* consume the SIGTRAP signal caused by initial single-stepping */
++				{
++					int signal;
++					read(genode_thread_signal_pipe_read_fd(new_lwpid), &signal, sizeof(signal));
++					fprintf(stderr, "new thread received signal %d\n", signal);
++					if (signal != SIGTRAP)
++						fprintf(stderr, "Error: first signal received by the new thread was not SIGTRAP\n");
++				}
++
++				/* resume the new thread */
++				genode_continue_thread(new_lwpid, 0);
++
++				continue;
++
+ 			} else {
+ 
+ 				/* received a signal */
+@@ -532,10 +562,25 @@ handle_extended_wait (struct lwp_info *event_child, int wstat)
  	}
  #else
        int status = W_STOPCODE (SIGSTOP);
 +
++#if 0
 +      /* read the thread ID of the new thread from the signal pipe (payload) */
        read(genode_thread_signal_pipe_read_fd(lwpid_of(event_child)),
             &new_pid, sizeof(new_pid));
+ #endif
+ 
++      //new_pid = genode_find_lwpid_of_new_thread();
 +
 +      /* consume the SIGTRAP signal caused by initial single-stepping */
 +      {
@@ -51,10 +96,42 @@ index 330f859..a521991 100644
 +        if (signal != SIGTRAP)
 +          fprintf(stderr, "Error: first signal received by the new thread was not SIGTRAP\n");
 +      }
- #endif
- 
++#endif
++
        linux_enable_event_reporting (new_pid);
-@@ -5285,6 +5298,13 @@ linux_core_of_thread (ptid_t ptid)
+ 
+       ptid = ptid_build (pid_of (event_child), new_pid, 0);
+@@ -670,10 +715,6 @@ add_lwp (ptid_t ptid)
+ 
+   add_inferior_to_list (&all_lwps, &lwp->head);
+ 
+-#ifdef __GENODE__
+-  lwp->stopped = 1;
+-#endif
+-
+   return lwp;
+ }
+ 
+@@ -766,7 +807,9 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+   new_lwp = (struct lwp_info *) add_lwp (ptid);
+   add_thread (ptid, new_lwp);
+ 
+-#ifndef __GENODE__
++#ifdef __GENODE__
++  new_lwp->stopped = 1;
++#else
+   /* We need to wait for SIGSTOP before being able to make the next
+      ptrace call on this LWP.  */
+   new_lwp->must_set_ptrace_flags = 1;
+@@ -1764,6 +1807,7 @@ linux_wait_for_event_1 (ptid_t ptid, int *wstat, int options)
+ 	  && *wstat >> 16 != 0)
+ #endif
+ 	{
++	  fprintf(stderr, "calling handle_extended_wait()\n");
+ 	  handle_extended_wait (event_child, *wstat);
+ 	  continue;
+ 	}
+@@ -5285,6 +5329,13 @@ linux_core_of_thread (ptid_t ptid)
  static void
  linux_process_qsupported (const char *query)
  {
@@ -68,7 +145,7 @@ index 330f859..a521991 100644
    if (the_low_target.process_qsupported != NULL)
      the_low_target.process_qsupported (query);
  }
-@@ -5390,12 +5410,14 @@ static struct target_ops linux_target_ops = {
+@@ -5390,12 +5441,14 @@ static struct target_ops linux_target_ops = {
    NULL,
  #endif
    linux_attach,
@@ -85,7 +162,7 @@ index 330f859..a521991 100644
    NULL,
    NULL,
  #endif
-@@ -5464,7 +5486,11 @@ static struct target_ops linux_target_ops = {
+@@ -5464,7 +5517,11 @@ static struct target_ops linux_target_ops = {
  #endif
  #ifndef __GENODE__
    linux_core_of_thread,
@@ -97,7 +174,7 @@ index 330f859..a521991 100644
    linux_supports_tracepoints,
    linux_read_pc,
    linux_write_pc,
-@@ -5487,8 +5513,6 @@ static struct target_ops linux_target_ops = {
+@@ -5487,8 +5544,6 @@ static struct target_ops linux_target_ops = {
    NULL,
    NULL,
    NULL,
