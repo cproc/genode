@@ -11,14 +11,6 @@
  * under the terms of the GNU General Public License version 2.
  */
 
-/* libc includes */
-#include <signal.h>
-
-/* GDB monitor includes */
-extern "C" {
-#include "genode-low.h"
-}
-#include "thread_info.h"
 #include "signal_handler_thread.h"
 
 using namespace Genode;
@@ -35,11 +27,9 @@ void Signal_handler_thread::entry()
 	while(1) {
 		Signal s = _signal_receiver->wait_for_signal();
 
-		if (Thread_info *thread_info = dynamic_cast<Thread_info*>(s.context())) {
-			PDBG("delivering SIGTRAP to thread %lu", thread_info->lwpid());
-			thread_info->deliver_signal(SIGTRAP, 0);
-		} else {
-			genode_send_signal_to_thread(genode_find_segfault_lwpid(), SIGSEGV, 0);
-		}
+		Signal_dispatcher_base *signal_dispatcher =
+		    dynamic_cast<Signal_dispatcher_base*>(s.context());
+
+		signal_dispatcher->dispatch(s.num());
 	}
 };
