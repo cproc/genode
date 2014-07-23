@@ -101,10 +101,10 @@ void Pager_object::_exception_handler(addr_t portal_id)
 	Utcb         *utcb = _check_handler(myself, obj);
 	addr_t fault_ip    = utcb->ip;
 	uint8_t res        = 0xFF;
-
+PDBG("sending exception signal");
 	if (obj->submit_exception_signal())
 		res = obj->client_recall();
-
+PDBG("sent exception signal");
 	if (res != NOVA_OK) {
 		char client_name[Context::NAME_LEN];
 		myself->name(client_name, sizeof(client_name));
