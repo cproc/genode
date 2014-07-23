@@ -13,6 +13,7 @@
  */
 
 #include <signal.h>
+#include <unistd.h>
 
 extern "C" {
 #define private _private
@@ -41,6 +42,8 @@ int linux_detach_one_lwp (struct inferior_list_entry *entry, void *args);
 
 static bool verbose = false;
 
+static int _new_thread_pipe[2];
+
 using namespace Genode;
 using namespace Gdb_monitor;
 
@@ -49,13 +52,6 @@ static Lock &main_thread_ready_lock()
 {
 	static Lock _main_thread_ready_lock(Lock::LOCKED);
 	return _main_thread_ready_lock;
-}
-
-
-static Lock &gdbserver_ready_lock()
-{
-	static Lock _gdbserver_ready_lock(Lock::LOCKED);
-	return _gdbserver_ready_lock;
 }
 
 
@@ -150,17 +146,24 @@ Genode_child_resources *genode_child_resources()
 }
 
 
+int genode_new_thread_pipe_read_fd()
+{
+	return _new_thread_pipe[0];
+}
+
+
 void genode_add_thread(unsigned long lwpid)
 {
 	if (lwpid == GENODE_LWP_BASE) {
 
+		if (pipe(_new_thread_pipe) != 0)
+			PERR("could not create the 'new thread' pipe");
+
 		main_thread_ready_lock().unlock();
-		//gdbserver_ready_lock().lock();
 
-	} else {
+	} else
 
-		genode_send_signal_to_thread(GENODE_LWP_BASE, SIGINFO, &lwpid);
-	}
+		write(_new_thread_pipe[1], &lwpid, sizeof(lwpid));
 }
 
 
@@ -174,14 +177,12 @@ void genode_remove_thread(unsigned long lwpid)
 
 void genode_wait_for_target_main_thread()
 {
-	/* gdbserver is now ready to attach new threads */
-	gdbserver_ready_lock().unlock();
-
 	/* wait until the target's main thread has been created */
 	main_thread_ready_lock().lock();
 }
 
 
+#if 0
 extern "C" void genode_detect_all_threads()
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
@@ -193,7 +194,40 @@ extern "C" void genode_detect_all_threads()
 		thread_cap = csc->next(thread_cap);
 	}
 }
+#endif
 
+
+/*
+ * Return 1 if the list entry has the lwpid given in 'args'.
+ */
+static int has_lwpid(struct inferior_list_entry *entry, void *args)
+{
+	unsigned long *lwpid = (unsigned long*)args;
+
+	return ((unsigned long)ptid_get_lwp(entry->id) == *lwpid);
+}
+
+#if 0
+extern "C" unsigned long genode_find_lwpid_of_new_thread()
+{
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->first();
+
+	while (thread_cap.valid()) {
+		unsigned long lwpid = csc->lwpid(thread_cap);
+		if (!find_inferior(&all_threads, has_lwpid, &lwpid)) {
+			PDBG("new thread has lwpid %lu", lwpid);
+			return lwpid;
+		}
+		thread_cap = csc->next(thread_cap);
+	}
+
+	PERR("could not find out the lwpid of the new thread");
+
+	return 0;
+}
+#endif
 
 extern "C" void genode_stop_all_threads()
 {
@@ -248,7 +282,7 @@ int genode_kill(int pid)
 }
 
 
-void genode_interrupt_thread(unsigned long lwpid)
+void genode_stop_thread(unsigned long lwpid)
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
@@ -296,8 +330,6 @@ int genode_thread_signal_pipe_read_fd(unsigned long lwpid)
 
 int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *payload)
 {
-	PDBG("sending signal %d to thread %lu", signo, lwpid);
-
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
@@ -307,77 +339,7 @@ int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *
 		return -1;
 	}
 
-	switch(signo) {
-		case SIGINT:
-			PDBG("sending SIGINT to thread %lu", lwpid);
-			csc->pause(thread_cap);
-			break;
-		case SIGSTOP:
-			PDBG("sending SIGSTOP to thread %lu", lwpid);
-			csc->pause(thread_cap);
-			break;
-		case SIGINFO:
-			PDBG("sending SIGINFO to thread %lu", lwpid);
-			break;
-		case SIGSEGV:
-			PDBG("sending SIGSEGV to thread %lu", lwpid);
-			break;
-		case SIGTRAP:
-			PDBG("sending SIGTRAP to thread %lu", lwpid);
-			break;
-		default:
-			PDBG("unhandled signal %d", signo);
-	}
-
-	csc->deliver_signal(thread_cap, signo, payload);
-
-	return 0;
-}
-
-
-/*
- * This function returns the first thread with a page fault that it finds.
- * Multiple page-faulted threads are currently not supported.
- */
-
-unsigned long genode_find_segfault_lwpid()
-{
-
-	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
-
-	/*
-	 * It can happen that the thread state of the thread which caused the
-	 * page fault is not accessible yet. In that case, we'll retry until
-	 * it is accessible.
-	 */
-
-	while (1) {
-
-		Thread_capability thread_cap = csc->first();
-
-		while (thread_cap.valid()) {
-
-			try {
-
-				Thread_state thread_state = csc->state(thread_cap);
-
-				if (thread_state.unresolved_page_fault) {
-
-					/*
-					 * On base-foc it is necessary to pause the thread before
-					 * IP and SP are available in the thread state.
-					 */
-					csc->pause(thread_cap);
-
-					return csc->lwpid(thread_cap);
-				}
-
-			} catch (Cpu_session::State_access_failed) { }
-
-			thread_cap = csc->next(thread_cap);
-		}
-
-	}
+	return csc->send_signal(thread_cap, signo, payload);
 }
 
 
