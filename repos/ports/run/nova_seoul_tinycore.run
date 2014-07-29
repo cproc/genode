@@ -1,0 +1,285 @@
+set build_components {
+	core init
+	drivers/acpi
+	drivers/pci
+	drivers/rtc
+	drivers/nic
+	drivers/input
+	drivers/framebuffer
+	drivers/timer
+	server/nic_bridge
+	server/nitpicker
+	app/pointer
+	app/status_bar
+	server/liquid_framebuffer
+	app/seoul
+}
+
+build $build_components
+
+create_boot_directory
+
+#
+# Download demo kernel, image and
+# munich (part of Oslo framework http://os.inf.tu-dresden.de/~kauer/oslo)
+#
+
+set guest_os_binaries { munich bzImage-3.1 tc-browser.gz }
+
+set uri "http://genode.org/files/seoul"
+
+foreach binary $guest_os_binaries {
+	if {![file exists bin/$binary]} {
+		puts "Download file bin/$binary"
+		exec mkdir -p bin
+		exec >& /dev/null wget -c -O bin/$binary $uri/$binary
+	}
+}
+
+#
+# Create seoul configuration file
+#
+
+set seoul_config_fd [open "bin/config.seoul" w]
+puts $seoul_config_fd {
+
+	<config colocate="1" >
+
+		<machine>
+			<mem start="0x0" end="0x9a000"/>
+			<mem start="0x100000" end="0xfffff000"/>
+			<!--<ioio/>-->
+			<nullio io_base="0x80" />
+			<pic io_base="0x20" elcr_base="0x4d0"/>
+			<pic io_base="0xa0" irq="2" elcr_base="0x4d1"/>
+			<pit io_base="0x40" irq="0"/>
+			<scp io_port_a="0x92" io_port_b="0x61"/>
+			<kbc io_base="0x60" irq_kbd="1" irq_aux="12"/>
+			<keyb ps2_port="0" host_keyboard="0x10000"/>
+			<mouse ps2_port="1" host_mouse="0x10001"/>
+			<rtc io_base="0x70" irq="8"/>
+			<serial io_base="0x3f8" irq="0x4" host_serial="0x4711"/>
+			<hostsink host_dev="0x4712" buffer="80"/>
+			<vga io_base="0x03c0" fb_size="4096" readonly="1"/>
+
+			<vbios_keyboard/>
+			<vbios_mem/>
+			<vbios_time/>
+			<vbios_reset/>
+
+			<vbios_multiboot/>
+
+			<msi/>
+			<ioapic/>
+			<pcihostbridge bus_num="0" bus_count="0x10" io_base="0xcf8"
+		               	   mem_base="0xe0000000"/>
+			<pmtimer io_port="0x8000"/>
+
+			<vcpu/> <halifax/> <vbios/> <lapic/>
+
+			<intel82576vf/>
+		</machine>
+
+		<multiboot>
+			<rom name="munich"/>
+			<rom name="bzImage-3.1" cmdline="root=/dev/ram0 earlyprintk=ttyS0 vga=0x314"/>
+			<rom name="tc-browser.gz"/>
+	 	</multiboot>
+
+	</config>
+}
+close $seoul_config_fd
+
+
+set config {
+
+<config prio_levels="4">
+
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+
+	<default-route>
+		<any-service> <any-child/> <parent/> </any-service>
+	</default-route>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="acpi" priority="-1">
+		<resource name="RAM" quantum="10M"/>
+		<binary name="acpi_drv"/>
+		<provides>
+			<service name="PCI"/>
+			<service name="IRQ" />
+		</provides>
+		<route>
+			<service name="PCI"> <any-child /> </service>
+			<any-service> <parent/> <any-child /> </any-service>
+		</route>
+	</start>
+
+	<start name="rtc_drv" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Rtc"/>
+		</provides>
+	</start>
+
+	<start name="nic_drv" priority="-1">
+		<resource name="RAM" quantum="3M"/>
+		<provides><service name="Nic"/></provides>
+		<route> <any-service><any-child/><parent/></any-service> </route>
+	</start>
+
+	<start name="nic_bridge">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nic"/></provides>
+		<route>
+			<service name="Nic"><child name="nic_drv"/></service>
+			<any-service><parent/></any-service>
+		</route>
+	</start>
+
+	<start name="fb_drv" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>
+
+	<start name="ps2_drv" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Input"/></provides>
+	</start>
+
+	<start name="nitpicker" priority="-1">
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Nitpicker"/>
+		</provides>
+		<route>
+			<service name="Framebuffer"> <child name="fb_drv"/>	</service>
+			<service name="Input"> <child name="ps2_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config>
+			<report focus="yes" />
+			<domain name="pointer" layer="1" xray="no" origin="pointer" />
+			<domain name="panel"   layer="2" xray="no" />
+			<domain name=""        layer="3" ypos="18" height="-18" />
+
+			<policy label="pointer"    domain="pointer"/>
+			<policy label="status_bar" domain="panel"/>
+			<policy label=""           domain=""/>
+
+			<global-key name="KEY_SCROLLLOCK" operation="xray" />
+			<global-key name="KEY_SYSRQ"      operation="kill" />
+			<global-key name="KEY_PRINT"      operation="kill" />
+			<global-key name="KEY_F11"        operation="kill" />
+			<global-key name="KEY_F12"        operation="xray" />
+		</config>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+
+	<start name="status_bar">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="ROM"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<!-- first Seoul window -->
+
+	<start name="liquid_fb.1" priority="-1">
+		<binary name="liquid_fb"/>
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Framebuffer"/>
+			<service name="Input"/>
+		</provides>
+		<config title="TinyCore 1" xpos="16" ypos="48" width="800" height="600" animate="off"/>
+	</start>
+
+	<start name="seoul.1" priority="-2">
+		<binary name="seoul"/>
+		<resource name="RAM" quantum="256M"/>
+		<route>
+			<service name="Nic"> <child name="nic_bridge"/> </service>
+			<service name="Input"> <child name="liquid_fb.1"/> </service>
+			<service name="Framebuffer"> <child name="liquid_fb.1"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<configfile name="config.seoul"/>
+	</start>
+
+	<!-- second Seoul window -->
+
+	<start name="liquid_fb.2" priority="-1">
+		<binary name="liquid_fb"/>
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Framebuffer"/>
+			<service name="Input"/>
+		</provides>
+		<config title="TinyCore 2" xpos="208" ypos="136" width="800" height="600" animate="off"/>
+	</start>
+
+	<start name="seoul.2" priority="-2">
+		<binary name="seoul"/>
+		<resource name="RAM" quantum="256M"/>
+		<route>
+			<service name="Nic"> <child name="nic_bridge"/> </service>
+			<service name="Input"> <child name="liquid_fb.2"/> </service>
+			<service name="Framebuffer"> <child name="liquid_fb.2"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<configfile name="config.seoul"/>
+	</start>
+
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	core
+	init
+	timer
+	acpi_drv
+	pci_drv
+	pci_device_pd
+	fb_drv
+	ps2_drv
+	rtc_drv
+	nic_drv
+	nic_bridge
+	nitpicker
+	pointer
+	status_bar
+	liquid_fb
+	seoul
+	config.seoul
+}
+
+append boot_modules $guest_os_binaries
+
+build_boot_image $boot_modules
+
+puts "\nISO image generated at '[run_dir].iso'\n"
+
+run_genode_until forever
