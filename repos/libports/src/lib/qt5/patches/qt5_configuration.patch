@@ -8,14 +8,14 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qt.pro                                             |   42 +-
  qtbase/configure                                   |    8 
  qtbase/mkspecs/genode-g++/qmake.conf               |   12 
- qtbase/mkspecs/genode-g++/qplatformdefs.h          |  116 ++++
- qtbase/src/corelib/global/qconfig-genode.h         |  550 ++++++++++++++++++++
+ qtbase/mkspecs/genode-g++/qplatformdefs.h          |  112 ++++
+ qtbase/src/corelib/global/qconfig-genode.h         |  546 ++++++++++++++++++++
  qtdeclarative/examples/quick/quick.pro             |    6 
  qtdeclarative/src/imports/imports.pro              |    2 
  qtdeclarative/tests/tests.pro                      |    4 
  qtquick1/examples/declarative/declarative.pro      |    1 
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
- 11 files changed, 715 insertions(+), 34 deletions(-)
+ 11 files changed, 707 insertions(+), 34 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
@@ -144,10 +144,10 @@ index 0000000..f99671f
 +load(qt_config)
 diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
 new file mode 100644
-index 0000000..d3b5acf
+index 0000000..4d2c580
 --- /dev/null
 +++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,112 @@
 +/****************************************************************************
 +**
 +** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
@@ -239,11 +239,7 @@ index 0000000..d3b5acf
 +#endif
 +
 +#define QT_USE_XOPEN_LFS_EXTENSIONS
-+#ifdef Q_OS_GENODE
-+#include "../../../../../contrib/qt-everywhere-opensource-src-5.1.0/qtbase/mkspecs/common/posix/qplatformdefs.h"
-+#else
 +#include "../common/posix/qplatformdefs.h"
-+#endif
 +
 +#ifdef Q_OS_GENODE
 +#undef QT_OPEN_LARGEFILE
@@ -266,10 +262,10 @@ index 0000000..d3b5acf
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
 new file mode 100644
-index 0000000..68c47e9
+index 0000000..6227a0c
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig-genode.h
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,546 @@
 +/* Data structures */
 +#ifndef QT_NO_STL
 +#  define QT_NO_STL
@@ -346,10 +342,6 @@ index 0000000..68c47e9
 +#ifndef QT_NO_QWS_QPF2
 +#  define QT_NO_QWS_QPF2
 +#endif
-+#ifndef QT_FONTS_ARE_RESOURCES
-+#  define QT_FONTS_ARE_RESOURCES
-+#endif
-+
 +
 +/* Images */
 +//#ifndef QT_NO_IMAGEFORMATPLUGIN

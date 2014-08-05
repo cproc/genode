@@ -21,7 +21,7 @@ $(QTQUICK_INSTALL_DIR):
 	$(VERBOSE)mkdir -p $@
 
 $(QTQUICK_QMLDIR): $(QTQUICK_INSTALL_DIR)
-	$(VERBOSE)cp $(REP_DIR)/contrib/$(QT5)/qtdeclarative/src/imports/qtquick2/qmldir $(QTQUICK_INSTALL_DIR)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtdeclarative/src/imports/qtquick2/qmldir $(QTQUICK_INSTALL_DIR)
 
 $(QTQUICK_PLUGIN): $(QTQUICK_INSTALL_DIR)
 	$(VERBOSE)ln -sf $(BUILD_BASE_DIR)/bin/$(QTQUICK_PLUGIN_NAME) $(QTQUICK_INSTALL_DIR)/$(QTQUICK_PLUGIN_NAME)
@@ -36,4 +36,3 @@ clean-qtquick_install_dir:
 	rm -rf $(QTQUICK_INSTALL_DIR)
 
 clean: clean-qtquick_install_dir
-
