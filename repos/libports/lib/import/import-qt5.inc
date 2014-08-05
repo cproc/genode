@@ -67,19 +67,9 @@ SRC_CC += $(SRC_CC_QT_GENERATED)
 #
 # Locations of moc, rcc, and uic binaries
 #
-# These binaries are created by calling 'make' in the 'tool' directory, which
-# should have happened before starting to build QT5 applications.
-#
-MOC = $(QT5_REP_DIR)/tool/qt5/moc/moc
-RCC = $(QT5_REP_DIR)/tool/qt5/rcc/rcc
-UIC = $(QT5_REP_DIR)/tool/qt5/uic/uic
-
-$(MOC) $(RCC) $(UIC):
-	@echo
-	@echo "Attempting to build QT5 application without having built the QT5 tools."
-	@echo "Please execute 'make prepare PKG=qt5' in the root of the 'libports' repository."
-	@echo
-	@false
+MOC = $(BUILD_BASE_DIR)/tool/qt5/moc/moc
+RCC = $(BUILD_BASE_DIR)/tool/qt5/rcc/rcc
+UIC = $(BUILD_BASE_DIR)/tool/qt5/uic/uic
 
 # moc rules
 moc_%.cpp: %.h $(MOC)
