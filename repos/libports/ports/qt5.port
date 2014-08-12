@@ -1,74 +1,41 @@
-#
-# \brief  Download and prepare Qt4 source code
-# \author Christian Prochaska
-# \author Norman Feske
-# \date   2009-05-11
-#
+LICENSE := GPL
+VERSION := 5.1.0
 
-REP_DIR := $(realpath .)
-include $(REP_DIR)/lib/mk/qt5_version.inc
+QT5 := qt-everywhere-opensource-src-${VERSION}
+QTSCRIPTCLASSIC := qtscriptclassic-1.0_1-opensource
 
-QT5_URL = http://download.qt-project.org/official_releases/qt/5.1/$(QT_VERSION)/single
-QT5_TGZ = $(QT5).tar.gz
-QT5_MD5 = 787ce18c7f47fc14538b4362a0aa9edd
+DOWNLOADS := ${QT5}.archive ${QTSCRIPTCLASSIC}.archive
 
-QTSCRIPTCLASSIC_URL =  ftp://ftp.informatik.hu-berlin.de/pub/Mirrors/ftp.troll.no/QT/qt/solutions/lgpl
-#QTSCRIPTCLASSIC_URL = http://ftp.heanet.ie/mirrors/ftp.trolltech.com/pub/qt/solutions/lgpl
-QTSCRIPTCLASSIC     = qtscriptclassic-1.0_1-opensource
-QTSCRIPTCLASSIC_TGZ = $(QTSCRIPTCLASSIC).tar.gz
-QTSCRIPTCLASSIC_MD5 = a835edfa9de2206ebfaebcb1267453bf
+URL(${QT5}) := http://download.qt-project.org/official_releases/qt/5.1/${VERSION}/single/${QT5}.tar.gz
+SHA(${QT5}) := 12d706124dbfac3d542dd3165176a978d478c085
+DIR(${QT5}) := src/lib/qt5/${QT5}
 
-#
-# Interface to top-level prepare Makefile
-#
-PORTS += qt5
+URL(${QTSCRIPTCLASSIC}) := ftp://ftp.informatik.hu-berlin.de/pub/Mirrors/ftp.troll.no/QT/qt/solutions/lgpl/${QTSCRIPTCLASSIC}.tar.gz
+SHA(${QTSCRIPTCLASSIC}) := 74e9dc82dd194d8ae0fb0f8f1df74081948b943a
+DIR(${QTSCRIPTCLASSIC}) := src/lib/qt5/${QTSCRIPTCLASSIC}
 
-prepare-qt5: $(CONTRIB_DIR)/$(QT5) \
-             $(CONTRIB_DIR)/$(QTSCRIPTCLASSIC) \
-             tools \
-             $(REP_DIR)/src/lib/qt5/qtjsbackend/generated/generated.tag \
-             $(REP_DIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag \
-             $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag
 
-#
-# Port-specific local rules
-#
-PATCHES_DIR  = src/lib/qt5/patches
-PATCHES = $(shell cat $(PATCHES_DIR)/series)
+PATCHES_DIR := $(REP_DIR)/src/lib/qt5/patches
+QT5_PATCHES := $(shell cat $(PATCHES_DIR)/series)
+QTSCRIPTCLASSIC_PATCHES = qtscriptclassic_qt5.patch
 
-$(call check_tool,wget)
-$(call check_tool,patch)
-$(call check_tool,bison)
-$(call check_tool,perl)
-$(call check_tool,python)
-$(call check_tool,sed)
-$(call check_tool,gperf)
+PATCHES := $(addprefix src/lib/qt5/patches/, ${QT5_PATCHES} ${QTSCRIPTCLASSIC_PATCHES})
 
-$(DOWNLOAD_DIR)/$(QT5_TGZ):
-	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(QT5_URL)/$(QT5_TGZ) && touch $@
+PATCH_OPT := -p1 -d src/lib/qt5/${QT5}
+PATCH_OPT(src/lib/qt5/patches/qtscriptclassic_qt5.patch) := -p1 -d src/lib/qt5/${QTSCRIPTCLASSIC}
 
-$(DOWNLOAD_DIR)/$(QT5_TGZ).verified: $(DOWNLOAD_DIR)/$(QT5_TGZ)
-	$(VERBOSE)$(HASHVERIFIER) $(DOWNLOAD_DIR)/$(QT5_TGZ) $(QT5_MD5) md5
-	$(VERBOSE)touch $@
+default: $(DOWNLOADS) \
+         $(REP_DIR)/src/lib/qt5/qtjsbackend/generated/generated.tag \
+         $(REP_DIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag \
+         $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag
 
-$(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ): $(DOWNLOAD_DIR)
-	$(VERBOSE)wget -c -P $(DOWNLOAD_DIR) $(QTSCRIPTCLASSIC_URL)/$(QTSCRIPTCLASSIC_TGZ) && touch $@
-
-$(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ).verified: $(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ)
-	$(VERBOSE)$(HASHVERIFIER) $(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ) $(QTSCRIPTCLASSIC_MD5) md5
-	$(VERBOSE)touch $@
-
-$(CONTRIB_DIR)/$(QT5): $(DOWNLOAD_DIR)/$(QT5_TGZ).verified
-	$(VERBOSE)tar xzf $(DOWNLOAD_DIR)/$(QT5_TGZ) -C $(CONTRIB_DIR)
-	$(VERBOSE)touch $(CONTRIB_DIR)/$(QT5)
-	$(VERBOSE)git init $(CONTRIB_DIR)/$(QT5)
-	$(VERBOSE)cd $(CONTRIB_DIR)/$(QT5) && for p in $(PATCHES); do \
-	            git apply ../../$(PATCHES_DIR)/$$p; done;
-
-$(CONTRIB_DIR)/$(QTSCRIPTCLASSIC): $(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ).verified
-	$(VERBOSE)tar xzf $(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ) -C $(CONTRIB_DIR)
-	$(VERBOSE)touch $(CONTRIB_DIR)/$(QTSCRIPTCLASSIC)
-	$(VERBOSE)patch -d $(CONTRIB_DIR)/$(QTSCRIPTCLASSIC) -p1 -i ../../$(PATCHES_DIR)/qtscriptclassic_qt5.patch
+#$(call check_tool,wget)
+#$(call check_tool,patch)
+#$(call check_tool,bison)
+#$(call check_tool,perl)
+#$(call check_tool,python)
+#$(call check_tool,sed)
+#$(call check_tool,gperf)
 
 #
 # generated files
@@ -76,7 +43,9 @@ $(CONTRIB_DIR)/$(QTSCRIPTCLASSIC): $(DOWNLOAD_DIR)/$(QTSCRIPTCLASSIC_TGZ).verifi
 # some of the following lines have been extracted from Makefiles (and modified afterwards), that's why they can be quite long   
 #
 
-V8_DIR = $(CONTRIB_DIR)/$(QT5)/qtjsbackend/src/v8/../3rdparty/v8
+QT5_CONTRIB_DIR = src/lib/qt5/$(QT5)
+
+V8_DIR = $(QT5_CONTRIB_DIR)/qtjsbackend/src/v8/../3rdparty/v8
 
 $(REP_DIR)/src/lib/qt5/qtjsbackend/generated/generated.tag:
 
@@ -87,7 +56,7 @@ $(REP_DIR)/src/lib/qt5/qtjsbackend/generated/generated.tag:
 	$(VERBOSE)python $(V8_DIR)/tools/js2c.py $(dir $@)/libraries.cpp CORE off $(V8_DIR)/src/macros.py $(V8_DIR)/src/runtime.js $(V8_DIR)/src/v8natives.js $(V8_DIR)/src/array.js $(V8_DIR)/src/string.js $(V8_DIR)/src/uri.js $(V8_DIR)/src/math.js $(V8_DIR)/src/messages.js $(V8_DIR)/src/apinatives.js $(V8_DIR)/src/date.js $(V8_DIR)/src/regexp.js $(V8_DIR)/src/json.js $(V8_DIR)/src/liveedit-debugger.js $(V8_DIR)/src/mirror-debugger.js $(V8_DIR)/src/debug-debugger.js
 
 
-JAVASCRIPTCORE_DIR = $(CONTRIB_DIR)/$(QT5)/qtwebkit/Source/JavaScriptCore
+JAVASCRIPTCORE_DIR = $(QT5_CONTRIB_DIR)/qtwebkit/Source/JavaScriptCore
 
 $(REP_DIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag:
 
@@ -132,7 +101,7 @@ QT_DEFINES = "LANGUAGE_JAVASCRIPT=1 ENABLE_3D_RENDERING=1 ENABLE_BLOB=1 ENABLE_C
 QT_EXTRA_DEFINES = "QT_NO_LIBUDEV QT_NO_XCB QT_NO_XKBCOMMON ENABLE_3D_RENDERING=1 ENABLE_BLOB=1 ENABLE_CHANNEL_MESSAGING=1 ENABLE_CSS_BOX_DECORATION_BREAK=1 ENABLE_CSS_COMPOSITING=1 ENABLE_CSS_EXCLUSIONS=1 ENABLE_CSS_FILTERS=1 ENABLE_CSS_IMAGE_SET=1 ENABLE_CSS_REGIONS=1 ENABLE_CSS_STICKY_POSITION=1 ENABLE_DATALIST_ELEMENT=1 ENABLE_DETAILS_ELEMENT=1 ENABLE_FAST_MOBILE_SCROLLING=1 ENABLE_FILTERS=1 ENABLE_FTPDIR=1 ENABLE_GESTURE_EVENTS=1 ENABLE_ICONDATABASE=1 ENABLE_IFRAME_SEAMLESS=1 ENABLE_INPUT_TYPE_COLOR=1 ENABLE_INSPECTOR=1 ENABLE_INSPECTOR_SERVER=1 ENABLE_JAVASCRIPT_DEBUGGER=1 ENABLE_LEGACY_NOTIFICATIONS=1 ENABLE_LEGACY_VIEWPORT_ADAPTION=1 ENABLE_LEGACY_VENDOR_PREFIXES=1 ENABLE_LINK_PREFETCH=1 ENABLE_METER_ELEMENT=1 ENABLE_MHTML=1 ENABLE_MUTATION_OBSERVERS=1 ENABLE_NOTIFICATIONS=1 ENABLE_PAGE_VISIBILITY_API=1 ENABLE_PROGRESS_ELEMENT=1 ENABLE_RESOLUTION_MEDIA_QUERY=1 ENABLE_REQUEST_ANIMATION_FRAME=1 ENABLE_SHARED_WORKERS=1 ENABLE_SMOOTH_SCROLLING=1 ENABLE_SQL_DATABASE=1 ENABLE_SVG=1 ENABLE_SVG_FONTS=1 ENABLE_TOUCH_ADJUSTMENT=1 ENABLE_TOUCH_EVENTS=1 ENABLE_WEB_SOCKETS=1 ENABLE_WEB_TIMING=1 ENABLE_WORKERS=1 ENABLE_XHR_TIMEOUT=1 WTF_USE_TILED_BACKING_STORE=1 HAVE_QTPRINTSUPPORT=1 HAVE_QSTYLE=1 HAVE_QTTESTLIB=1 WTF_USE_LIBJPEG=1 WTF_USE_LIBPNG=1 PLUGIN_ARCHITECTURE_UNSUPPORTED=1 ENABLE_TOUCH_SLIDER=1 ENABLE_ACCELERATED_2D_CANVAS=0 ENABLE_ANIMATION_API=0 ENABLE_BATTERY_STATUS=0 ENABLE_CSP_NEXT=0 ENABLE_CSS_GRID_LAYOUT=0 ENABLE_CSS_HIERARCHIES=0 ENABLE_CSS_IMAGE_ORIENTATION=0 ENABLE_CSS_IMAGE_RESOLUTION=0 ENABLE_CSS_SHADERS=0 ENABLE_CSS_VARIABLES=0 ENABLE_CSS3_BACKGROUND=0 ENABLE_CSS3_CONDITIONAL_RULES=0 ENABLE_CSS3_TEXT=0 ENABLE_DASHBOARD_SUPPORT=0 ENABLE_DATAGRID=0 ENABLE_DATA_TRANSFER_ITEMS=0 ENABLE_DEVICE_ORIENTATION=0 ENABLE_DIRECTORY_UPLOAD=0 ENABLE_DOWNLOAD_ATTRIBUTE=0 ENABLE_FILE_SYSTEM=0 ENABLE_FULLSCREEN_API=0 ENABLE_GAMEPAD=0 ENABLE_GEOLOCATION=0 ENABLE_HIGH_DPI_CANVAS=0 ENABLE_INDEXED_DATABASE=0 ENABLE_INPUT_SPEECH=0 ENABLE_INPUT_TYPE_DATE=0 ENABLE_INPUT_TYPE_DATETIME=0 ENABLE_INPUT_TYPE_DATETIMELOCAL=0 ENABLE_INPUT_TYPE_MONTH=0 ENABLE_INPUT_TYPE_TIME=0 ENABLE_INPUT_TYPE_WEEK=0 ENABLE_LEGACY_CSS_VENDOR_PREFIXES=0 ENABLE_LINK_PRERENDER=0 ENABLE_MATHML=0 ENABLE_MEDIA_SOURCE=0 ENABLE_MEDIA_STATISTICS=0 ENABLE_MEDIA_STREAM=0 ENABLE_MICRODATA=0 ENABLE_NAVIGATOR_CONTENT_UTILS=0 ENABLE_NETSCAPE_PLUGIN_API=0 ENABLE_NETWORK_INFO=0 ENABLE_ORIENTATION_EVENTS=0 ENABLE_PROXIMITY_EVENTS=0 ENABLE_QUOTA=0 ENABLE_SCRIPTED_SPEECH=0 ENABLE_SHADOW_DOM=0 ENABLE_STYLE_SCOPED=0 ENABLE_SVG_DOM_OBJC_BINDINGS=0 ENABLE_TEXT_AUTOSIZING=0 ENABLE_TEXT_NOTIFICATIONS_ONLY=0 ENABLE_TOUCH_ICON_LOADING=0 ENABLE_VIBRATION=0 ENABLE_VIDEO=0 ENABLE_VIDEO_TRACK=0 ENABLE_WEBGL=0 ENABLE_WEB_AUDIO=0 ENABLE_XSLT=0" 
 GENERATE_BINDINGS_PL = $(VERBOSE)export "SOURCE_ROOT=$(WEBCORE_DIR)" && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/bindings/scripts/generate-bindings.pl --defines $(QT_DEFINES) --generator JS --include Modules/filesystem --include Modules/geolocation --include Modules/indexeddb --include Modules/mediasource --include Modules/notifications --include Modules/quota --include Modules/webaudio --include Modules/webdatabase --include Modules/websockets --include css --include dom --include editing --include fileapi --include html --include html/canvas --include html/shadow --include html/track --include inspector --include loader/appcache --include page --include plugins --include storage --include svg --include testing --include workers --include xml --outputDir $(dir $@) --supplementalDependencyFile $(dir $@)/supplemental_dependency.tmp --preprocessor "$(REP_DIR)/tool/qt5/moc/moc -E"
 # the absolute path is needed for makeprop.pl
-WEBCORE_DIR = $(REP_DIR)/$(CONTRIB_DIR)/$(QT5)/qtwebkit/Source/WebCore
+WEBCORE_DIR = $(REP_DIR)/$(QT5_CONTRIB_DIR)/qtwebkit/Source/WebCore
  
 $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
 
@@ -141,9 +110,9 @@ $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
 	$(VERBOSE)bison -d -p xpathyy $(WEBCORE_DIR)/xml/XPathGrammar.y -o $(dir $@)/XPathGrammar.tab.c && $(MOVE) $(dir $@)/XPathGrammar.tab.c $(dir $@)/XPathGrammar.cpp && $(MOVE) $(dir $@)/XPathGrammar.tab.h $(dir $@)/XPathGrammar.h
 
 	@# preprocess-idls.pl
-	$(VERBOSE)sed -e "s,^,$(CONTRIB_DIR)/$(QT5)/,g" $(dir $@)/../idl_files > $(dir $@)/idl_files.tmp
+	$(VERBOSE)sed -e "s,^,$(QT5_CONTRIB_DIR)/,g" $(dir $@)/../idl_files > $(dir $@)/idl_files.tmp
 	$(VERBOSE)touch $(dir $@)/supplemental_dependency.tmp 
-	$(VERBOSE)export "CONTRIB_DIR=$(CONTRIB_DIR)" && export "QT5=$(QT5)" && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/bindings/scripts/preprocess-idls.pl --defines $(QT_DEFINES) --idlFilesList $(dir $@)/idl_files.tmp --supplementalDependencyFile $(dir $@)/supplemental_dependency.tmp --idlAttributesFile $(WEBCORE_DIR)/bindings/scripts/IDLAttributes.txt --preprocessor "$(REP_DIR)/tool/qt5/moc/moc -E"
+	$(VERBOSE)export "QT5_CONTRIB_DIR=$(QT5_CONTRIB_DIR)" && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/bindings/scripts/preprocess-idls.pl --defines $(QT_DEFINES) --idlFilesList $(dir $@)/idl_files.tmp --supplementalDependencyFile $(dir $@)/supplemental_dependency.tmp --idlAttributesFile $(WEBCORE_DIR)/bindings/scripts/IDLAttributes.txt --preprocessor "$(REP_DIR)/tool/qt5/moc/moc -E"
 
 	@# generate-bindings.pl
 	$(GENERATE_BINDINGS_PL) $(WEBCORE_DIR)/Modules/filesystem/DOMFileSystem.idl 
@@ -697,7 +666,7 @@ $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
 	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_event_factory.pl --input $(WEBCORE_DIR)/dom/EventTargetFactory.in --outputDir $(dir $@)
 
 	@# make-hash-tools.pl
-	$(VERBOSE)perl $(WEBCORE_DIR)/make-hash-tools.pl $(dir $@) $(WEBCORE_DIR)/platform/ColorData.gperf	
+	$(VERBOSE)perl $(WEBCORE_DIR)/make-hash-tools.pl $(dir $@) $(WEBCORE_DIR)/platform/ColorData.gperf
 
 	@# make_names.pl
 	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --tags $(WEBCORE_DIR)/mathml/mathtags.in --attrs $(WEBCORE_DIR)/mathml/mathattrs.in          --extraDefines $(QT_EXTRA_DEFINES) --preprocessor "$(REP_DIR)/tool/qt5/moc/moc -E" --factory --wrapperFactory --outputDir $(dir $@)
@@ -732,14 +701,3 @@ $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
 	$(VERBOSE)python $(WEBCORE_DIR)/html/parser/create-html-entity-table -o $(dir $@)/HTMLEntityTable.cpp $(WEBCORE_DIR)/html/parser/HTMLEntityNames.in
 
 	$(VERBOSE)touch $@
-
-
-tools:
-	$(VERBOSE)make -C tool/qt5
-
-clean-qt5:
-	$(VERBOSE)make -C tool/qt5 clean
-	$(VERBOSE)rm -rf $(CONTRIB_DIR)/$(QT5)
-	$(VERBOSE)rm -rf $(CONTRIB_DIR)/$(QTSCRIPTCLASSIC)
-	$(VERBOSE)rm -rf $(REP_DIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore
-	$(VERBOSE)rm -rf $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated
