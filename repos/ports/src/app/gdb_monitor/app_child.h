@@ -112,7 +112,7 @@ class Gdb_monitor::App_child : public Child_policy,
 		{
 			_entrypoint.manage(&_rm_root);
 			Capability<Rm_session> cap = static_cap_cast<Rm_session>
-										 (_rm_root.session("ram_quota=64K", Affinity()));
+										 (_rm_root.session("ram_quota=512K", Affinity()));
 			Rm_session_client rm(cap);
 
 			rm.fault_handler(_unresolved_page_fault_dispatcher);
