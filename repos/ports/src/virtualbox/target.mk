@@ -15,7 +15,7 @@ LIBS  += virtualbox-bios virtualbox-recompiler virtualbox-runtime \
          virtualbox-storage virtualbox-zlib virtualbox-liblzf \
          virtualbox-hwaccl virtualbox-dis
 
-LIBS  += pthread libc_terminal libc_lock_pipe libiconv
+LIBS  += pthread libc_terminal libc_pipe libiconv
 
 INC_DIR += $(call select_from_repositories,src/lib/libc)
 INC_DIR += $(call select_from_repositories,src/lib/pthread)
