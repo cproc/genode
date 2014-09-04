@@ -117,7 +117,7 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 		{
 			_entrypoint.manage(&_cpu_root);
 			char args[64];
-			Genode::snprintf(args, sizeof(args), "ram_quota=32K, label=\"%s\"", _unique_name);
+			Genode::snprintf(args, sizeof(args), "ram_quota=64K, label=\"%s\"", _unique_name);
 			return static_cap_cast<Cpu_session>(_cpu_root.session(args, Affinity()));
 		}
 
