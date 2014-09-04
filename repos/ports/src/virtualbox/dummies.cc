@@ -17,6 +17,10 @@
 #include <stddef.h>
 #include <time.h>
 
+#include <VBox/vmm/iom.h>
+#include <VBox/vmm/selm.h>
+#include <VBox/vmm/hwaccm.h>
+
 extern "C" {
 
 	typedef long DUMMY;
@@ -34,6 +38,21 @@ DUMMY name(void) { \
 	return retval; \
 }
 
+#define NOT_IMPLEMENTED_ARG(retval) \
+{ \
+	PDBG(" %s called, not implemented, eip=%p", __func__, \
+	     __builtin_return_address(0)); \
+	Genode::Lock deadlock; \
+	for (;;) deadlock.lock(); \
+	return retval; \
+}
+
+#define NOT_IMPLEMENTED NOT_IMPLEMENTED_ARG(0)
+#define NOT_IMPLEMENTED_VOID NOT_IMPLEMENTED_ARG()
+
+#define NOT_IMPLEMENTED_CHECKED(retval) \
+{ return retval; }
+
 CHECKED_DUMMY( 0, cpumR3DbgInit)
 CHECKED_DUMMY( 0, DBGFR3Init)  /* debugger */
 DUMMY(-1, DBGFR3CoreWrite)
@@ -45,7 +64,6 @@ CHECKED_DUMMY( 0, pthread_atfork)
 CHECKED_DUMMY( 0, pthread_attr_setdetachstate)
 CHECKED_DUMMY( 0, pthread_attr_setstacksize)
 CHECKED_DUMMY( 0, RTMemProtect)
-CHECKED_DUMMY( 0, SELMR3Init)  /* selector manager - GDT handling */
 CHECKED_DUMMY( 0, sigfillset)
 CHECKED_DUMMY( 0, vmmR3SwitcherInit)  /* world switcher */
 CHECKED_DUMMY(-1, atexit)
@@ -56,8 +74,8 @@ CHECKED_DUMMY(-1, sigaddset)
 CHECKED_DUMMY(-1, sigemptyset)
 CHECKED_DUMMY(-1, siginterrupt)
 CHECKED_DUMMY(-1, sysctl)
-DUMMY( 0, RTErrCOMGet)
-void CPUMPushHyper() { } /* called by 'VMMR3InitRC', but we don't use GC */
+const RTCOMERRMSG* RTErrCOMGet(uint32_t) NOT_IMPLEMENTED
+void CPUMPushHyper(PVMCPU, uint32_t) NOT_IMPLEMENTED_CHECKED() /* called by 'VMMR3InitRC', but we don't use GC */
 DUMMY(-1, DBGCRegisterCommands)
 DUMMY(-1, DBGFR3Event)
 DUMMY(-1, DBGFR3EventAssertion)
@@ -78,17 +96,17 @@ int FTMSetCheckpoint() { return 0; }
 DUMMY(-1, _funlockfile)
 DUMMY(-1, _fwalk)
 
-DUMMY(-1, HWACCMInvalidatePage)
-DUMMY(-1, HWACCMFlushTLB)
-DUMMY(-1, HWACCMR3EmulateIoBlock)
-DUMMY(-1, HWACCMR3PatchTprInstr)
-DUMMY(-1, HWACCMR3CheckError)
-DUMMY(-1, HWACCMR3RestartPendingIOInstr)
-void HWACCMR3Relocate() { }
-DUMMY(-1, HWACCMR3Reset)
-DUMMY(-1, HWACCMR3Term)
-DUMMY(-1, HWACMMR3EnablePatching)
-DUMMY(-1, HWACMMR3DisablePatching)
+int HWACCMInvalidatePage(PVMCPU, RTGCPTR) NOT_IMPLEMENTED
+int HWACCMFlushTLB(PVMCPU) NOT_IMPLEMENTED
+int HWACCMR3EmulateIoBlock(PVM, PCPUMCTX) NOT_IMPLEMENTED
+int HWACCMR3PatchTprInstr(PVM, PVMCPU, PCPUMCTX) NOT_IMPLEMENTED
+void HWACCMR3CheckError(PVM, int) NOT_IMPLEMENTED_VOID
+VBOXSTRICTRC HWACCMR3RestartPendingIOInstr(PVM, PVMCPU, PCPUMCTX) NOT_IMPLEMENTED
+void HWACCMR3Relocate(PVM) NOT_IMPLEMENTED_CHECKED()
+void HWACCMR3Reset(PVM pVM) NOT_IMPLEMENTED_CHECKED()
+int HWACCMR3Term(PVM) NOT_IMPLEMENTED
+int HWACMMR3EnablePatching(PVM, RTGCPTR, unsigned int) NOT_IMPLEMENTED
+int HWACMMR3DisablePatching(PVM, RTGCPTR, unsigned int) NOT_IMPLEMENTED
 
 CHECKED_DUMMY( 0, IEMR3Init)  /* interpreted execution manager (seems to be just a skeleton) */
 void IEMR3Relocate() { }
@@ -111,53 +129,58 @@ DUMMY(-1, PDMR3LdrGetInterfaceSymbols)
 CHECKED_DUMMY( 0, PDMR3LdrRelocateU)
 DUMMY(-1, pdmR3LdrTermU)
 
-DUMMY(-1, PGMNotifyNxeChanged)
-DUMMY(-1, PGMPhysGCPtr2GCPhys)
-DUMMY(-1, PGMPhysSimpleReadGCPhys)
-DUMMY(-1, PGMPhysSimpleReadGCPtr)
-DUMMY(-1, PGMPhysSimpleWriteGCPtr)
-DUMMY(-1, PGMSyncCR3)
+void PGMNotifyNxeChanged(PVMCPU, bool) NOT_IMPLEMENTED_VOID
+int PGMPhysGCPtr2GCPhys(PVMCPU, RTGCPTR, PRTGCPHYS) NOT_IMPLEMENTED
+int PGMPhysSimpleReadGCPhys(PVM, void*, RTGCPHYS, size_t) NOT_IMPLEMENTED
+int PGMPhysSimpleReadGCPtr(PVMCPU, void*, RTGCPTR, size_t) NOT_IMPLEMENTED
+int PGMPhysSimpleWriteGCPtr(PVMCPU, RTGCPTR, const void*, size_t) NOT_IMPLEMENTED
+int PGMSyncCR3(PVMCPU, uint64_t, uint64_t, uint64_t, bool) NOT_IMPLEMENTED
 
-CHECKED_DUMMY( 0, PGMR3CheckIntegrity)
-CHECKED_DUMMY( 0, PGMR3FinalizeMappings)
-CHECKED_DUMMY( 0, PGMR3InitCompleted)
-CHECKED_DUMMY( 0, PGMR3InitDynMap)  /* reserve space for "dynamic mappings" */
-CHECKED_DUMMY( 0, PGMR3InitFinalize)
+int PGMR3CheckIntegrity(PVM) NOT_IMPLEMENTED_CHECKED(0)
+int PGMR3FinalizeMappings(PVM) NOT_IMPLEMENTED_CHECKED(0)
+int PGMR3InitCompleted(PVM, VMINITCOMPLETED) NOT_IMPLEMENTED_CHECKED(0)
+int PGMR3InitDynMap(PVM) NOT_IMPLEMENTED_CHECKED(0)
+int PGMR3InitFinalize(PVM) NOT_IMPLEMENTED_CHECKED(0)
 
-DUMMY(-1, PGMR3SharedModuleCheckAll)
-DUMMY(-1, PGMR3SharedModuleUnregister)
-DUMMY(-1, PGMR3SharedModuleRegister)
-DUMMY(-1, PGMR3MappingsUnfix)
-DUMMY(-1, PGMR3PhysChangeMemBalloon)
-DUMMY(-1, PGMR3MappingsFix)
-CHECKED_DUMMY( 0, PGMR3MappingsDisable)
-DUMMY(-1, PGMR3LockCall)
-DUMMY(-1, PGMR3PhysAllocateHandyPages)
-DUMMY(-1, PGMR3PhysAllocateLargeHandyPage)
-DUMMY(-1, PGMR3PhysChunkMap)
-DUMMY(-1, PGMR3PhysGCPhys2CCPtrExternal)
-DUMMY(-1, PGMR3PhysGCPhys2CCPtrReadOnlyExternal)
-DUMMY(-1, PGMR3PhysMMIO2Deregister)
-DUMMY(-1, PGMR3PhysMMIO2MapKernel)
-DUMMY(-1, PGMR3PhysReadU16)
-DUMMY(-1, PGMR3PhysReadU64)
-DUMMY(-1, PGMR3PhysRomProtect)
-DUMMY(-1, PGMR3PoolGrow)
-void PGMR3Relocate() {}
-DUMMY(-1, PGMR3ResetCpu)
-DUMMY(-1, PGMR3Term)
+int PGMR3SharedModuleCheckAll(PVM) NOT_IMPLEMENTED
+int PGMR3SharedModuleUnregister(PVM, char*, char*, RTGCPTR, uint32_t)
+	NOT_IMPLEMENTED
+int PGMR3SharedModuleRegister(PVM, VBOXOSFAMILY, char*, char*, RTGCPTR,
+                              uint32_t, uint32_t,
+                              const VMMDEVSHAREDREGIONDESC*) NOT_IMPLEMENTED
+int PGMR3MappingsUnfix(PVM) NOT_IMPLEMENTED
+int PGMR3PhysChangeMemBalloon(PVM, bool, unsigned int, RTGCPHYS*) NOT_IMPLEMENTED
+int PGMR3MappingsFix(PVM, RTGCPTR, uint32_t) NOT_IMPLEMENTED
+int PGMR3MappingsDisable(PVM) NOT_IMPLEMENTED
+int PGMR3LockCall(PVM) NOT_IMPLEMENTED
+int PGMR3PhysAllocateHandyPages(PVM) NOT_IMPLEMENTED
+int PGMR3PhysAllocateLargeHandyPage(PVM, RTGCPHYS) NOT_IMPLEMENTED
+int PGMR3PhysChunkMap(PVM, uint32_t) NOT_IMPLEMENTED
+int PGMR3PhysGCPhys2CCPtrExternal(PVM, RTGCPHYS, void**, PPGMPAGEMAPLOCK) NOT_IMPLEMENTED
+int PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM, RTGCPHYS, const void**,
+                                          PPGMPAGEMAPLOCK) NOT_IMPLEMENTED
+int PGMR3PhysMMIO2Deregister(PVM, PPDMDEVINS, uint32_t) NOT_IMPLEMENTED
+int PGMR3PhysMMIO2MapKernel(PVM, PPDMDEVINS, uint32_t, RTGCPHYS, RTGCPHYS,
+                            const char*, PRTR0PTR) NOT_IMPLEMENTED
+uint16_t PGMR3PhysReadU16(PVM, RTGCPHYS) NOT_IMPLEMENTED
+uint64_t PGMR3PhysReadU64(PVM, RTGCPHYS) NOT_IMPLEMENTED
+int PGMR3PhysRomProtect(PVM, RTGCPHYS, RTGCPHYS, PGMROMPROT) NOT_IMPLEMENTED
+int PGMR3PoolGrow(PVM) NOT_IMPLEMENTED
+void PGMR3Relocate(PVM, RTGCINTPTR) NOT_IMPLEMENTED_CHECKED()
+void PGMR3ResetCpu(PVM, PVMCPU) NOT_IMPLEMENTED_VOID
+int PGMR3Term(PVM) NOT_IMPLEMENTED
 
-DUMMY(-1, PGMPrefetchPage)
-DUMMY(-1, PGMGstGetPage)
-DUMMY(-1, PGMGstIsPagePresent)
-DUMMY(-1, PGMShwMakePageReadonly)
-DUMMY(-1, PGMShwMakePageNotPresent)
-DUMMY(-1, PGMPhysIsGCPhysNormal)
-DUMMY(-1, PGMHandlerVirtualChangeInvalidateCallback)
-DUMMY(-1, PGMSetLargePageUsage)
-DUMMY(-1, PGMPhysSimpleDirtyWriteGCPtr)
-DUMMY(-1, PGMGetShadowMode)
-DUMMY(-1, PGMGetHostMode)
+int PGMPrefetchPage(PVMCPU, RTGCPTR) NOT_IMPLEMENTED
+int PGMGstGetPage(PVMCPU, RTGCPTR, uint64_t*, PRTGCPHYS) NOT_IMPLEMENTED
+bool PGMGstIsPagePresent(PVMCPU, RTGCPTR) NOT_IMPLEMENTED
+int PGMShwMakePageReadonly(PVMCPU, RTGCPTR, uint32_t) NOT_IMPLEMENTED
+int PGMShwMakePageNotPresent(PVMCPU, RTGCPTR, uint32_t) NOT_IMPLEMENTED
+bool PGMPhysIsGCPhysNormal(PVM, RTGCPHYS) NOT_IMPLEMENTED
+int PGMHandlerVirtualChangeInvalidateCallback(PVM, RTGCPTR, PFNPGMR3VIRTINVALIDATE) NOT_IMPLEMENTED
+int PGMSetLargePageUsage(PVM, bool) NOT_IMPLEMENTED
+int PGMPhysSimpleDirtyWriteGCPtr(PVMCPU, RTGCPTR, const void*, size_t) NOT_IMPLEMENTED
+PGMMODE PGMGetShadowMode(PVMCPU) NOT_IMPLEMENTED_ARG(PGMMODE_INVALID)
+PGMMODE PGMGetHostMode(PVM) NOT_IMPLEMENTED_ARG(PGMMODE_INVALID)
 
 CHECKED_DUMMY(0, poll)  /* needed by 'DrvHostSerial.cpp' */
 DUMMY(-1, pthread_key_delete)
@@ -166,32 +189,33 @@ DUMMY(-1, RTMemPageFree)
 DUMMY(-1, RTPathAppend)
 DUMMY(-1, RTSemEventWaitEx)
 
-CHECKED_DUMMY( 0, SELMR3InitFinalize)
-void SELMR3Relocate() { }
-CHECKED_DUMMY( 0, SELMR3DisableMonitoring)
-DUMMY(-1, SELMR3Reset)
-DUMMY(-1, SELMR3Term)
-DUMMY(-1, SELMR3GetSelectorInfo)
+int SELMR3Init(PVM) NOT_IMPLEMENTED_CHECKED(0)
+int SELMR3InitFinalize(PVM) NOT_IMPLEMENTED_CHECKED(0)
+void SELMR3Relocate(PVM) NOT_IMPLEMENTED_CHECKED()
+void SELMR3Reset(PVM) NOT_IMPLEMENTED_CHECKED()
+void SELMR3DisableMonitoring(PVM) NOT_IMPLEMENTED_CHECKED()
+int SELMR3Term(PVM) NOT_IMPLEMENTED
+int SELMR3GetSelectorInfo(PVM, PVMCPU, RTSEL, PDBGFSELINFO) NOT_IMPLEMENTED
 
 DUMMY(-1, libc_select_notify) /* needed for libc_terminal plugin */
-DUMMY(-1, DISInstrToStrEx)
 CHECKED_DUMMY(-1, signal)
 
 DUMMY(-1, strcat)
 DUMMY(-1, strerror)
 DUMMY(-1, strpbrk)
 
-CHECKED_DUMMY( 0, SUPR3SetVMForFastIOCtl)
-DUMMY(-1, SUPR3HardenedLdrLoadPlugIn)
-DUMMY(-1, SUPR3Term)
+int SUPR3SetVMForFastIOCtl(PVMR0) NOT_IMPLEMENTED_CHECKED(0)
+int SUPR3HardenedLdrLoadPlugIn(const char*, PRTLDRMOD, PRTERRINFO) NOT_IMPLEMENTED
+int SUPR3Term(bool) NOT_IMPLEMENTED
 
-CHECKED_DUMMY(100000*10, SUPSemEventMultiGetResolution) /* called by 'vmR3HaltGlobal1Init' */
+uint32_t SUPSemEventMultiGetResolution(PSUPDRVSESSION)
+	 NOT_IMPLEMENTED_CHECKED(100000*10) /* called by 'vmR3HaltGlobal1Init' */
 CHECKED_DUMMY(-1, __swsetup)
 
-DUMMY(-1, VMMR3FatalDump)
+void VMMR3FatalDump(PVM, PVMCPU, int) NOT_IMPLEMENTED_VOID
 void vmmR3SwitcherRelocate() { }
-CHECKED_DUMMY( 0, VMMR3DisableSwitcher)
-DUMMY(-1, VMMR3GetHostToGuestSwitcher)
+int VMMR3DisableSwitcher(PVM) NOT_IMPLEMENTED_CHECKED(0)
+RTR0PTR VMMR3GetHostToGuestSwitcher(PVM, VMMSWITCHER) NOT_IMPLEMENTED
 
 DUMMY(-1, pthread_kill)
 DUMMY(-1, sscanf)
@@ -199,57 +223,74 @@ DUMMY(-1, RTHeapSimpleRelocate)
 DUMMY(-1, RTHeapSimpleAlloc)
 DUMMY(-1, RTHeapSimpleInit)
 DUMMY(-1, RTHeapSimpleFree)
-DUMMY(-1, RTAvloU32Get)
-DUMMY(-1, RTAvloU32Remove)
-DUMMY(-1, RTAvloU32GetBestFit)
-DUMMY( 0, RTAvloU32RemoveBestFit)
-DUMMY(-1, RTAvlU32Destroy)
-DUMMY(-1, RTAvlU32GetBestFit)
-DUMMY(-1, RTAvloU32DoWithAll)
-DUMMY(-1, RTAvloU32Insert)
-DUMMY(-1, RTAvlU32Get)
-DUMMY(-1, RTAvlU32DoWithAll)
-DUMMY(-1, RTAvlU32Insert)
+_AVLOU32NodeCore* RTAvloU32Remove(PAVLOU32TREE, AVLOU32KEY) NOT_IMPLEMENTED
+_AVLOU32NodeCore* RTAvloU32Get(PAVLOU32TREE, AVLOU32KEY) NOT_IMPLEMENTED
+_AVLOU32NodeCore* RTAvloU32GetBestFit(PAVLOU32TREE, AVLOU32KEY, bool) NOT_IMPLEMENTED
+_AVLOU32NodeCore* RTAvloU32RemoveBestFit(PAVLOU32TREE, AVLOU32KEY, bool)
+	NOT_IMPLEMENTED_CHECKED(0)
+int RTAvlU32Destroy(PAVLU32TREE, PAVLU32CALLBACK, void*) NOT_IMPLEMENTED
+_AVLU32NodeCore* RTAvlU32GetBestFit(PAVLU32TREE, AVLU32KEY, bool) NOT_IMPLEMENTED
+int RTAvloU32DoWithAll(PAVLOU32TREE, int, PAVLOU32CALLBACK, void*) NOT_IMPLEMENTED
+bool RTAvloU32Insert(PAVLOU32TREE, PAVLOU32NODECORE) NOT_IMPLEMENTED
+_AVLU32NodeCore* RTAvlU32Get(PAVLU32TREE, AVLU32KEY) NOT_IMPLEMENTED
+int RTAvlU32DoWithAll(PAVLU32TREE, int, PAVLU32CALLBACK, void*) NOT_IMPLEMENTED
+bool RTAvlU32Insert(PAVLU32TREE, PAVLU32NODECORE) NOT_IMPLEMENTED
 
-CHECKED_DUMMY( 0, IOMR3Init)
-int IOMR3IOPortRegisterR0() { return 0; }
-int IOMR3IOPortRegisterRC() { return 0; }
-CHECKED_DUMMY( 0, IOMR3MmioRegisterR0)
-CHECKED_DUMMY( 0, IOMR3MmioRegisterRC)
-void IOMR3Relocate() { }
-DUMMY(-1, IOMR3Reset)
-DUMMY(-1, IOMR3Term)
+int IOMR3Init(PVM) NOT_IMPLEMENTED_CHECKED(0)
+int IOMR3IOPortRegisterRC(PVM, PPDMDEVINS, RTIOPORT, RTUINT, RTRCPTR, RTRCPTR,
+                          RTRCPTR, RTRCPTR, RTRCPTR, const char*)
+	NOT_IMPLEMENTED_CHECKED(0)
+int IOMR3IOPortRegisterR0(PVM, PPDMDEVINS, RTIOPORT, RTUINT, RTR0PTR,
+                          RTHCUINTPTR, RTHCUINTPTR, RTHCUINTPTR, RTHCUINTPTR,
+                          const char*) NOT_IMPLEMENTED_CHECKED(0)
+int IOMR3MmioRegisterR0(PVM, PPDMDEVINS, RTGCPHYS, uint32_t, RTR0PTR,
+                        RTHCUINTPTR, RTHCUINTPTR, RTHCUINTPTR)
+	NOT_IMPLEMENTED_CHECKED(0)
+int IOMR3MmioRegisterRC(PVM, PPDMDEVINS, RTGCPHYS, uint32_t, RTGCPTR, RTRCPTR,
+                        RTRCPTR, RTRCPTR)
+	NOT_IMPLEMENTED_CHECKED(0)
 
-DUMMY(-1, IOMInterpretOUT)
-DUMMY(-1, IOMInterpretOUTS)
-DUMMY(-1, IOMInterpretIN)
-DUMMY(-1, IOMInterpretINS)
+void IOMR3Relocate(PVM, RTGCINTPTR) NOT_IMPLEMENTED_CHECKED()
+void IOMR3Reset(PVM) NOT_IMPLEMENTED_CHECKED()
+int  IOMR3Term(PVM) NOT_IMPLEMENTED
+
+VBOXSTRICTRC IOMInterpretOUT(PVM, PCPUMCTXCORE, PDISCPUSTATE) NOT_IMPLEMENTED
+VBOXSTRICTRC IOMInterpretOUTS(PVM, PCPUMCTXCORE, PDISCPUSTATE) NOT_IMPLEMENTED
+VBOXSTRICTRC IOMInterpretIN(PVM, PCPUMCTXCORE, PDISCPUSTATE) NOT_IMPLEMENTED
+VBOXSTRICTRC IOMInterpretINS(PVM, PCPUMCTXCORE, PDISCPUSTATE) NOT_IMPLEMENTED
 
 
-DUMMY(-1, DISInstrToStrWithReader)
+int DISInstrToStrWithReader (RTUINTPTR, DISCPUMODE, PFNDISREADBYTES, void*,
+                             PDISSTATE, uint32_t*, char*, size_t) NOT_IMPLEMENTED
+int DISInstrToStrEx(RTUINTPTR, DISCPUMODE, PFNDISREADBYTES, void*, uint32_t,
+                    PDISSTATE, uint32_t*, char*, size_t) NOT_IMPLEMENTED
 
 DUMMY(-1, RTFileQueryFsSizes)
 
 DUMMY(-1, pthread_mutex_timedlock)
 
-CHECKED_DUMMY( 0, PGMHandlerVirtualDeregister) /* XXX */
-CHECKED_DUMMY( 0, PGMR3HandlerVirtualRegister) /* XXX */
+int PGMR3HandlerVirtualRegister(PVM, PGMVIRTHANDLERTYPE, RTGCPTR, RTGCPTR,
+                                PFNPGMR3VIRTINVALIDATE, PFNPGMR3VIRTHANDLER,
+                                const char*, const char*, const char*)
+	NOT_IMPLEMENTED_CHECKED(0) /* XXX */
+int PGMHandlerVirtualDeregister(PVM, RTGCPTR)
+	NOT_IMPLEMENTED_CHECKED(0) /* XXX */
 
 /*
  * Dummies added for storage
  */
-DUMMY(-1, RTAvlrFileOffsetDestroy)
-DUMMY(-1, RTAvlrFileOffsetGet)
-DUMMY(-1, RTAvlrFileOffsetGetBestFit)
-DUMMY(-1, RTAvlrFileOffsetInsert)
-DUMMY(-1, RTAvlrFileOffsetRemove)
-DUMMY(-1, RTAvlrU64Destroy)
-DUMMY(-1, RTAvlrU64DoWithAll)
-DUMMY(-1, RTAvlrU64GetBestFit)
-DUMMY(-1, RTAvlrU64Insert)
-DUMMY(-1, RTAvlrU64RangeGet)
-DUMMY(-1, RTAvlrU64RangeRemove)
-DUMMY(-1, RTAvlrU64Remove)
+int RTAvlrFileOffsetDestroy(PAVLRFOFFTREE, PAVLRFOFFCALLBACK, void*) NOT_IMPLEMENTED
+_AVLRFOFFNodeCore* RTAvlrFileOffsetGet(PAVLRFOFFTREE, RTFOFF) NOT_IMPLEMENTED
+_AVLRFOFFNodeCore* RTAvlrFileOffsetGetBestFit(PAVLRFOFFTREE, RTFOFF, bool) NOT_IMPLEMENTED
+bool RTAvlrFileOffsetInsert(PAVLRFOFFTREE, PAVLRFOFFNODECORE) NOT_IMPLEMENTED
+_AVLRFOFFNodeCore* RTAvlrFileOffsetRemove(PAVLRFOFFTREE, RTFOFF) NOT_IMPLEMENTED
+int RTAvlrU64Destroy(PAVLRU64TREE, PAVLRU64CALLBACK, void*) NOT_IMPLEMENTED
+int RTAvlrU64DoWithAll(PAVLRU64TREE, int, PAVLRU64CALLBACK, void*) NOT_IMPLEMENTED
+AVLRU64NodeCore* RTAvlrU64GetBestFit(PAVLRU64TREE, AVLRU64KEY, bool) NOT_IMPLEMENTED
+bool RTAvlrU64Insert(PAVLRU64TREE, PAVLRU64NODECORE) NOT_IMPLEMENTED
+AVLRU64NodeCore* RTAvlrU64RangeGet(PAVLRU64TREE, AVLRU64KEY) NOT_IMPLEMENTED
+AVLRU64NodeCore* RTAvlrU64RangeRemove(PAVLRU64TREE, AVLRU64KEY) NOT_IMPLEMENTED
+AVLRU64NodeCore* RTAvlrU64Remove(PAVLRU64TREE, AVLRU64KEY) NOT_IMPLEMENTED
 DUMMY(-1, RTLdrClose)
 DUMMY(-1, RTMemDupExTag)
 DUMMY(-1, rtPathRootSpecLen)
@@ -286,14 +327,17 @@ int __isthreaded;
 int sigprocmask() { return 0; }
 int _sigprocmask() { return 0; }
 
-int  PGMFlushTLB() { return 0; }
-int PGMInvalidatePage() { return 0; }  /* seems to be needed on raw mode only */
-int  PGMHandlerPhysicalPageTempOff() { return 0; }
+int PGMFlushTLB(PVMCPU, uint64_t, bool) NOT_IMPLEMENTED_CHECKED(0)
 
-int  PGMIsLockOwner() { return 0; }  /* assertion in EMRemLock */
-bool IOMIsLockOwner() { return 0; }  /* XXX */
+ /* seems to be needed on raw mode only */
+int PGMInvalidatePage(PVMCPU, RTGCPTR) NOT_IMPLEMENTED_CHECKED(0)
+
+int PGMHandlerPhysicalPageTempOff(PVM, RTGCPHYS, RTGCPHYS) NOT_IMPLEMENTED_CHECKED(0)
+
+bool PGMIsLockOwner(PVM) NOT_IMPLEMENTED_CHECKED(0) /* assertion in EMRemLock */
+bool IOMIsLockOwner(PVM) NOT_IMPLEMENTED_CHECKED(0) /* XXX */
 
 int  MMHyperIsInsideArea() { return 0; } /* used by dbgfR3DisasInstrRead */
-int  PGMPhysReleasePageMappingLock() { return 0; }
+void PGMPhysReleasePageMappingLock(PVM, PPGMPAGEMAPLOCK) NOT_IMPLEMENTED_CHECKED()
 } /* extern "C" */
 
