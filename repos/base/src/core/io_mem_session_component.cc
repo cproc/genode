@@ -22,7 +22,7 @@
 using namespace Genode;
 
 
-static const bool verbose = false;
+static const bool verbose = true;
 
 
 Io_mem_session_component::Dataspace_attr

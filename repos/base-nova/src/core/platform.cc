@@ -384,6 +384,9 @@ Platform::Platform() :
 
 		_io_mem_alloc.add_range(base, size);
 		ram_alloc()->remove_range(base, size);
+
+		if (base == 0xc75b3000)
+			_io_mem_alloc.remove_range(base, size);
 	}
 
 	/* needed as I/O memory by the VESA driver */

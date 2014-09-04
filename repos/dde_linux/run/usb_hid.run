@@ -38,6 +38,7 @@ append config {
 		<service name="LOG"/>
 		<service name="SIGNAL" />
 	</parent-provides>
+	<affinity-space width="2" />
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
@@ -57,6 +58,7 @@ append_if [have_spec gpio] config {
 
 append_if [have_spec acpi] config {
 	<start name="acpi">
+		<affinity xpos="0" width="1" />
 		<resource name="RAM" quantum="8M"/>
 		<binary name="acpi_drv"/>
 		<provides>
@@ -77,13 +79,15 @@ append_if [expr ![have_spec acpi] && [have_spec pci]] config {
 
 append config {
 	<start name="timer">
+		<affinity xpos="0" width="1" />
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
 	<start name="usb_drv">
+		<affinity xpos="1" width="1"/>
 		<resource name="RAM" quantum="7M"/>
 		<provides><service name="Input"/></provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
+		<config uhci="no" ehci="yes" xhci="no">
 			<hid/>
 		</config>
 	</start>

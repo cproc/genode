@@ -141,6 +141,8 @@ class Platform_timer
 			 */
 			unsigned long diff = _time_in_us(now - before, false);
 
+			PDBG("x");
+
 			if (diff)
 				quirk_count++;
 			else
