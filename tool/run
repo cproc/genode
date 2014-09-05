@@ -727,18 +727,18 @@ proc spawn_amt { wait_for_re timeout_value } {
 	#
 	# amttool and wsman are supported for reset
 	#
-	set amt_tool [get_cmd_arg --amt-tool "wsman"]
+	set amt_tool [get_cmd_arg --amt-tool "default"]
 
 	#
 	# reset the box
 	#
-	if { $amt_tool == "wsman" && [have_installed wsman]} {
+	if {[have_installed wsman] && ( $amt_tool == "wsman" || $amt_tool == "default") } {
 		amt_reset_wsman
 	} else {
-		if {$amt_tool == "amttool" } {
+		if {[have_installed amttool] && ($amt_tool == "amttool" || $amt_tool == "default") } {
 			amt_reset_soap_eoi
 		} else {
-			puts stderr "specified tool \"$amt_tool\"for using Intel AMT is unknown or is not installed"
+			puts stderr "specified tool \"$amt_tool\" for using Intel AMT is unknown or is not installed"
 			exit -1
 		}
 	}
