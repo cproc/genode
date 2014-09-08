@@ -26,7 +26,7 @@ install_config {
 	</config>
 }
 
-build_boot_image "core init test-rmfault"
+build_boot_image "core init test-rm_fault"
 
 append qemu_args "-nographic -m 64"
 
