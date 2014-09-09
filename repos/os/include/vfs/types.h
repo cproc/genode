@@ -38,7 +38,7 @@ namespace Vfs {
 	using Genode::strncpy;
 	using Genode::strcmp;
 	using Genode::strlen;
-	using Genode::off_t;
+	typedef long long off_t;
 	using Genode::memcpy;
 	using Genode::memset;
 	typedef unsigned long long size_t;
