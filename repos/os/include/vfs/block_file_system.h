@@ -49,7 +49,7 @@ class Vfs::Block_file_system : public Single_file_system
 
 		Genode::Allocator_avl       _tx_block_alloc;
 		Block::Connection           _block;
-		size_t                      _block_size;
+		Genode::size_t              _block_size;
 		Block::sector_t             _block_count;
 		Block::Session::Operations  _block_ops;
 		Block::Session::Tx::Source *_tx_source;
