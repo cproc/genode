@@ -147,7 +147,7 @@ class Vfs::Dir_file_system : public File_system
 		/**
 		 * The 'path' is relative to the child file systems.
 		 */
-		Dirent_result _dirent_of_file_systems(char const *path, off_t index, Dirent &out)
+		Dirent_result _dirent_of_file_systems(char const *path, file_offset index, Dirent &out)
 		{
 			int base = 0;
 			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
@@ -177,7 +177,7 @@ class Vfs::Dir_file_system : public File_system
 			return DIRENT_OK;
 		}
 
-		void _dirent_of_this_dir_node(off_t index, Dirent &out)
+		void _dirent_of_this_dir_node(file_offset index, Dirent &out)
 		{
 			if (index == 0) {
 				strncpy(out.name, _name, sizeof(out.name));
@@ -311,7 +311,7 @@ class Vfs::Dir_file_system : public File_system
 			return STAT_ERR_NO_ENTRY;
 		}
 
-		Dirent_result dirent(char const *path, off_t index, Dirent &out) override
+		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
 		{
 			if (_is_root())
 				return _dirent_of_file_systems(path, index, out);

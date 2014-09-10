@@ -112,7 +112,7 @@ struct Vfs::Directory_service
 		char        name[DIRENT_MAX_NAME_LEN];
 	};
 
-	virtual Dirent_result dirent(char const *path, off_t index, Dirent &) = 0;
+	virtual Dirent_result dirent(char const *path, file_offset index, Dirent &) = 0;
 
 
 	/************

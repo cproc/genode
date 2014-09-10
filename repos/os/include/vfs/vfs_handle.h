@@ -53,7 +53,7 @@ class Vfs::Vfs_handle
 		/**
 		 * Set seek offset in bytes
 		 */
-		void seek(off_t seek) { _seek = seek; }
+		void seek(file_offset seek) { _seek = seek; }
 
 		/**
 		 * Advance seek offset by 'incr' bytes

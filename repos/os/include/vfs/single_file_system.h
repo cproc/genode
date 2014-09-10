@@ -87,7 +87,7 @@ class Vfs::Single_file_system : public File_system
 			return STAT_OK;
 		}
 
-		Dirent_result dirent(char const *path, off_t index, Dirent &out) override
+		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
 		{
 			if (!_is_root(path))
 				return DIRENT_ERR_INVALID_PATH;

@@ -281,7 +281,7 @@ class Vfs::Fs_file_system : public File_system
 			return STAT_OK;
 		}
 
-		Dirent_result dirent(char const *path, off_t index, Dirent &out) override
+		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
 		{
 			Lock::Guard guard(_lock);
 
