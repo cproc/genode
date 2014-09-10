@@ -27,7 +27,7 @@ class Vfs::Vfs_handle
 		Directory_service &_ds;
 		File_io_service   &_fs;
 		int                _status_flags;
-		size_t             _seek;
+		file_size          _seek;
 
 	public:
 
@@ -48,7 +48,7 @@ class Vfs::Vfs_handle
 		/**
 		 * Return seek offset in bytes
 		 */
-		size_t seek() const { return _seek; }
+		file_size seek() const { return _seek; }
 
 		/**
 		 * Set seek offset in bytes
@@ -58,7 +58,7 @@ class Vfs::Vfs_handle
 		/**
 		 * Advance seek offset by 'incr' bytes
 		 */
-		void advance_seek(size_t incr) { _seek += incr; }
+		void advance_seek(file_size incr) { _seek += incr; }
 };
 
 #endif /* _INCLUDE__VFS__VFS_HANDLE_H_ */

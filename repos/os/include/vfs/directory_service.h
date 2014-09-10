@@ -74,7 +74,7 @@ struct Vfs::Directory_service
 
 	struct Stat
 	{
-		size_t         size;
+		file_size      size;
 		unsigned       mode;
 		unsigned       uid;
 		unsigned       gid;
@@ -130,8 +130,8 @@ struct Vfs::Directory_service
 
 	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_OK };
 
-	virtual Readlink_result readlink(char const *path, char *buf, size_t buf_size,
-	                                 size_t &out_len) = 0;
+	virtual Readlink_result readlink(char const *path, char *buf,
+	                                 file_size buf_size, file_size &out_len) = 0;
 
 
 	/************
@@ -169,7 +169,7 @@ struct Vfs::Directory_service
 	/**
 	 * Return number of directory entries located at given path
 	 */
-	virtual size_t num_dirent(char const *path) = 0;
+	virtual file_size num_dirent(char const *path) = 0;
 
 	virtual bool is_directory(char const *path) = 0;
 

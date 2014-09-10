@@ -41,7 +41,7 @@ namespace Vfs {
 	typedef long long file_offset;
 	using Genode::memcpy;
 	using Genode::memset;
-	typedef unsigned long long size_t;
+	typedef unsigned long long file_size;
 	using Genode::Lock;
 	using Genode::List;
 	using Genode::Xml_node;
