@@ -1,10 +1,11 @@
 # Tested for nova 64bit solely.
 assert_spec nova
-assert_spec 64bit
- 
+
+set use_net 1
 set use_vdi 1
-set use_iso 0
-set vdi_image "win7.vdi"
+set use_iso 1
+set iso_image "debian-7.6.0-i386-CD-1.iso"
+set vdi_image "Debian.vdi"
 
 set config_of_app {
 	<start name="vbox-auto-test-helper" priority="-1">
@@ -26,8 +27,8 @@ set config_of_app {
 
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
-run_genode_until "vbox_auto_test_helper is done." 20
-exec kill [exp_pid −i $spawn_id]
+#run_genode_until "vbox_auto_test_helper is done." 20
+#exec kill [exp_pid −i $spawn_id]
 
 # reset values used before
 set build_components { }
@@ -39,17 +40,23 @@ set config_of_app {
 		<resource name="RAM" quantum="2G"/>
 		<config>}
 
+if {$use_vdi} {
+append config_of_app "
+			<image type=\"vdi\" file=\"/$vdi_image\" overlay=\"no\"/>"
+}
+
 if {$use_iso} {
 append config_of_app "
 			<image type=\"iso\" file=\"/$iso_image\"/>"
 }
 
-if {$use_vdi} {
+if ($use_net) {
 append config_of_app "
-			<image type=\"vdi\" file=\"/$vdi_image\" overlay=\"yes\"/>"
+			<net model=\"e1000\"/>"
 }
 
 append config_of_app {
+			<noacpi/>
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>
 					<fs />
@@ -66,6 +73,7 @@ append config_of_app {
 
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
+run_genode_until forever
 
 run_genode_until forever
 run_genode_until "ignore resize request to 720x400" 20 
