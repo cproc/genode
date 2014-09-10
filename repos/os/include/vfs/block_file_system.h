@@ -184,7 +184,7 @@ class Vfs::Block_file_system : public Single_file_system
 					nbytes = _block_io(blk_nr, (void*)(buf + written),
 					                   bytes_left, true, true);
 					if (nbytes == 0) {
-						PERR("error while write block:%zu from block device",
+						PERR("error while write block:%llu from block device",
 						     blk_nr);
 						return WRITE_ERR_INVALID;
 					}
@@ -203,7 +203,7 @@ class Vfs::Block_file_system : public Single_file_system
 				 * than block size, we also have to read the block first.
 				 */
 				if (displ > 0 || length < _block_size) {
-					PWRN("offset:%zd block_size:%zd displacement:%zd length:%zu",
+					PWRN("offset:%llu block_size:%zd displacement:%llu length:%llu",
 							seek_offset, _block_size, displ, length);
 
 					_block_io(blk_nr, _block_buffer, _block_size, false);
@@ -215,7 +215,7 @@ class Vfs::Block_file_system : public Single_file_system
 
 				nbytes = _block_io(blk_nr, _block_buffer, _block_size, true);
 				if ((unsigned)nbytes != _block_size) {
-					PERR("error while writing block:%zu from Block_device",
+					PERR("error while writing block:%llu from Block_device",
 					     blk_nr);
 					return WRITE_ERR_INVALID;
 				}
@@ -267,7 +267,7 @@ class Vfs::Block_file_system : public Single_file_system
 
 					nbytes = _block_io(blk_nr, dst + read, bytes_left, false, true);
 					if (nbytes == 0) {
-						PERR("error while reading block:%zu from block device",
+						PERR("error while reading block:%llu from block device",
 						     blk_nr);
 						return READ_ERR_INVALID;
 					}
@@ -279,13 +279,13 @@ class Vfs::Block_file_system : public Single_file_system
 				}
 
 				if (displ > 0)
-					PWRN("offset:%zd is not aligned to block_size:%zu"
-					     " displacement:%zu", seek_offset, _block_size,
+					PWRN("offset:%llu is not aligned to block_size:%zu"
+					     " displacement:%llu", seek_offset, _block_size,
 					     displ);
 
 				nbytes = _block_io(blk_nr, _block_buffer, _block_size, false);
 				if ((unsigned)nbytes != _block_size) {
-					PERR("error while reading block:%zu from block device",
+					PERR("error while reading block:%llu from block device",
 					     blk_nr);
 					return READ_ERR_INVALID;
 				}

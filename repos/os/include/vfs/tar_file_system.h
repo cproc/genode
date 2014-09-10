@@ -358,7 +358,7 @@ class Vfs::Tar_file_system : public File_system
 			_root_node("", 0),
 			_cached_num_dirent(_root_node)
 		{
-			PINF("tar archive '%s' local at %p, size is %zd",
+			PINF("tar archive '%s' local at %p, size is %llu",
 			     _rom_name.name, _tar_base, _tar_size);
 
 			_for_each_tar_record_do(Add_node_action(_root_node));
@@ -525,7 +525,7 @@ class Vfs::Tar_file_system : public File_system
 			if (!record || (record->type() != Record::TYPE_SYMLINK))
 				return READLINK_ERR_NO_ENTRY;
 
-			file_size const count = min(buf_size, 100LL);
+			file_size const count = min(buf_size, 100ULL);
 
 			memcpy(buf, record->linked_name(), count);
 
