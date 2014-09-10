@@ -12,6 +12,7 @@ append build_components {
 	drivers/ahci
 	drivers/input
 	drivers/framebuffer
+	drivers/nic
 	drivers/timer
 }
 
@@ -61,7 +62,7 @@ set config {
 			<any-service><child name="ahci"/> <parent/><any-child/></any-service>
 		</route>
 		<config>
-			<policy label="rump_fs" partition="4"/>
+			<policy label="rump_fs" partition="1"/>
 		</config>
 	</start>
 	<start name="rump_fs" priority="-1">
@@ -71,6 +72,12 @@ set config {
 		<route>
 			<any-service><child name="part_blk"/> <parent/><any-child/></any-service>
 		</route>
+	</start>
+	<start name="nic_drv" priority="-1">
+		<resource name="RAM" quantum="8M" />
+		<provides>
+			<service name="Nic" />
+		</provides>
 	</start>}
 
 append_if [have_spec acpi] config {
@@ -130,6 +137,7 @@ append boot_modules {
 	libiconv.lib.so
 	rump.lib.so rump_fs.lib.so rump_fs
 	virtualbox vbox-auto-test-helper
+	nic_drv
 }
 
 #
