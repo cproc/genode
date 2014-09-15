@@ -29,13 +29,6 @@ static const bool qnpw_verbose = false/*true*/;
 
 void QNitpickerPlatformWindow::_process_mouse_event(Input::Event *ev)
 {
-#if 0
-	/* liquid_fb-specific calculation */
-	QPoint local_position(ev->ax(), ev->ay());
-	QPoint global_position (geometry().x() + local_position.x(),
-			                geometry().y() + local_position.y());
-#endif
-
 	QPoint global_position(ev->ax(), ev->ay());
 	QPoint local_position(global_position.x() - geometry().x(),
 			              global_position.y() - geometry().y());
@@ -162,6 +155,8 @@ Nitpicker::Session::View_handle QNitpickerPlatformWindow::_create_view()
 
 void QNitpickerPlatformWindow::_adjust_and_set_geometry(const QRect &rect)
 {
+	qDebug() << "_adjust_and_set_geometry:" << rect;
+
 	/* limit window size to screen size */
 	QRect adjusted_rect(rect.intersected(screen()->geometry()));
 
@@ -174,6 +169,8 @@ void QNitpickerPlatformWindow::_adjust_and_set_geometry(const QRect &rect)
 	Framebuffer::Mode mode(adjusted_rect.width(), adjusted_rect.height(),
 	                       Framebuffer::Mode::RGB565);
 	_nitpicker_session.buffer(mode, false);
+
+	_current_mode = mode;
 
 	_framebuffer_changed = true;
 
@@ -197,6 +194,9 @@ QNitpickerPlatformWindow::QNitpickerPlatformWindow(QWindow *window, Genode::Rpc_
 	if (qnpw_verbose)
 		if (window->transientParent())
 			qDebug() << "QNitpickerPlatformWindow(): child window of" << window->transientParent();
+
+	_mode_changed_signal_context_capability = _signal_receiver.manage(&_mode_changed_signal_context);
+	_nitpicker_session.mode_sigh(_mode_changed_signal_context_capability);
 
 	_adjust_and_set_geometry(geometry());
 
@@ -321,15 +321,7 @@ void QNitpickerPlatformWindow::setWindowFlags(Qt::WindowFlags flags)
 {
 	if (qnpw_verbose)
 	    qDebug() << "QNitpickerPlatformWindow::setWindowFlags(" << flags << ")";
-#if 0
-	_resize_handle = true;
-	_decoration = true;
 
-	if (flags.testFlag(Qt::Popup)) {
-	    _resize_handle = false;
-	    _decoration = false;
-	}
-#endif
 	QPlatformWindow::setWindowFlags(flags);
 
 	if (qnpw_verbose)
@@ -584,30 +576,34 @@ Nitpicker::View_capability QNitpickerPlatformWindow::view_cap() const
 
 void QNitpickerPlatformWindow::handle_events()
 {
-#if 0
-	/* handle framebuffer mode change events */
-	if (_window_slave_policy.mode_changed()) {
-		int new_width;
-		int new_height;
-		_window_slave_policy.size(new_width, new_height);
+	/* handle resize events */
 
-		if (qnpw_verbose)
-			PDBG("mode change detected: %d, %d", new_width, new_height);
+	if (_signal_receiver.pending()) {
 
-		QRect geo = geometry();
-		geo.setWidth(new_width);
-		geo.setHeight(new_height);
-		QPlatformWindow::setGeometry(geo);
+		_signal_receiver.wait_for_signal();
 
-		if (qnpw_verbose)
-			qDebug() << "calling QWindowSystemInterface::handleGeometryChange(" << geo << ")";
+		qDebug() << "received mode change signal";
 
-		QWindowSystemInterface::handleGeometryChange(window(), geo);
-		emit framebuffer_changed();
+		Framebuffer::Mode mode(_nitpicker_session.mode());
+
+		if ((mode.width() != _current_mode.width()) ||
+	    	(mode.height() != _current_mode.height()) ||
+	    	(mode.format() != _current_mode.format())) {
+			qDebug() << "mode change detected:" << _current_mode.width() << "->" << mode.width() <<
+			            "," << _current_mode.height() << "->" << mode.height();
+
+			QRect geo(geometry());
+			geo.setWidth(mode.width());
+			geo.setHeight(mode.height());
+
+			QWindowSystemInterface::handleGeometryChange(window(), geo);
+
+			setGeometry(geo);
+		}
 	}
-#endif
 
 	/* handle input events */
+
 	if (_input_session.is_pending()) {
 		for (int i = 0, num_ev = _input_session.flush(); i < num_ev; i++) {
 
