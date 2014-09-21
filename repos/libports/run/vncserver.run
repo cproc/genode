@@ -1,0 +1,61 @@
+build "core init drivers/timer drivers/acpi drivers/pci drivers/nic test/vncserver"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Timer"/>
+		</provides>
+	</start>
+	<start name="acpi_drv">
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="IRQ"/>
+			<service name="PCI"/>
+		</provides>
+	</start>
+	<start name="nic_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Nic"/>
+		</provides>
+        </start>
+	<start name="vncserver">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<!--<libc stdout="/dev/log" stderr="/dev/log" ip_addr="10.0.0.70" netmask="255.255.255.0" gateway="10.0.0.69">-->
+			<libc stdout="/dev/log" stderr="/dev/log">
+				<vfs> <dir name="dev"> <log/> </dir> </vfs>
+			</libc>
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init acpi_drv pci_drv timer nic_drv vncserver
+	ld.lib.so libc.lib.so vncserver.lib.so zlib.lib.so pthread.lib.so jpeg.lib.so lwip.lib.so libpng.lib.so libm.lib.so
+}
+
+append qemu_args " -nographic -m 64 -net nic,model=e1000 -net user -redir tcp:5900::5900 "
+
+run_genode_until forever

@@ -1,0 +1,7 @@
+LICENSE := GPLv2
+VERSION := 0.9.9
+DOWNLOADS := libvncserver.archive
+
+URL(libvncserver) := https://github.com/LibVNC/libvncserver/archive/LibVNCServer-$(VERSION).tar.gz
+SHA(libvncserver) := 83d0c95f85fcf42b70d206d81226bec5c479bbb1
+DIR(libvncserver) := src/lib/vncserver
