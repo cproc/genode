@@ -598,6 +598,11 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
 	PDBGV("pathname = %s", pathname);
 
+	if (!pathname || (pathname[0] == '\0')) {
+		errno = ENOENT;
+		return -1;
+	}
+
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
