@@ -36,6 +36,7 @@ namespace Fiasco {
 #include <l4/sys/types.h>
 #include <l4/sys/utcb.h>
 #include <l4/sys/scheduler.h>
+#include <l4/sys/kdebug.h>
 
 static l4_kernel_info_t *kip;
 }
@@ -108,6 +109,7 @@ static void _core_pager_loop()
 			/* page-fault address is not in RAM */
 			PERR("%s access outside of RAM at %lx IP %lx",
 			     rw ? "WRITE" : "READ", pfa, ip);
+			enter_kdebug("");
 			/* do not unblock faulter */
 			send_reply = false;
 			continue;
