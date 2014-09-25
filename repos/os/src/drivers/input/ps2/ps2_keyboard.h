@@ -387,10 +387,26 @@ class Ps2_keyboard : public Input_driver
 			/* acknowledge code from keyboard */
 			enum { ACK = 0xfa };
 
+			/* 'self-test passed' code from keyboard */
+			enum { SELF_TEST_PASSED = 0xaa };
+
 			/* scan-code request/config commands */
 			enum { SCAN_CODE_REQUEST = 0, SCAN_CODE_SET_1 = 1, SCAN_CODE_SET_2 = 2 };
 
 			_state_machine = &_scan_code_set_1_state_machine;
+
+			/* reset and start self-test */
+			_kbd.write(0xff);
+			if (_kbd.read() != ACK) {
+				PWRN("Reset failed");
+				return;
+			}
+			/* read self-test result */
+			if (_kbd.read() != SELF_TEST_PASSED) {
+				PWRN("Self-test failed");
+				return;
+			}
+
 			if (_xlate_mode)
 				return;
 
