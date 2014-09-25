@@ -101,6 +101,7 @@ void Pager_object::_exception_handler(addr_t portal_id)
 	Utcb         *utcb = _check_handler(myself, obj);
 	addr_t fault_ip    = utcb->ip;
 	uint8_t res        = 0xFF;
+	Nova::mword_t mtd  = 0UL;
 
 	if (obj->submit_exception_signal())
 		res = obj->client_recall();
@@ -109,18 +110,32 @@ void Pager_object::_exception_handler(addr_t portal_id)
 		char client_name[Context::NAME_LEN];
 		myself->name(client_name, sizeof(client_name));
 
-		PWRN("unresolvable exception at ip 0x%lx, exception portal 0x%lx, %s, "
-		     "'%s'", fault_ip,
-		     portal_id, res == 0xFF ? "no signal handler" :
+		/* mark this thread as dead */
+		obj->_state.mark_dead();
+
+		PWRN("unresolvable exception at ip 0x%lx, exception portal 0x%lx, "
+		     "exception id %lx, %s, '%s'",
+		     fault_ip, portal_id, portal_id & 0x1F,
+		     res == 0xFF ? "no signal handler" :
 		     res == NOVA_OK ? "" : "recall failed",
 		     client_name);
 
+		/* revoke exception portal and let die the thread inside kernel */
 		Nova::revoke(Obj_crd(portal_id, 0));
-		obj->_state.mark_dead();
+
+		if ((portal_id & 0x1F) == 3) {
+			/*
+			 * set instruction point back to breakpoint (int3) - so that this
+			 * exception is caused again and the thread is stopped in kernel
+			 * because we revoked the portal beforehand (see above)
+			 */
+			utcb->ip  = fault_ip - 1;
+			mtd       = Mtd::EIP;
+		}
 	}
 
 	utcb->set_msg_word(0);
-	utcb->mtd = 0;
+	utcb->mtd = mtd;
 
 	reply(myself->stack_top());
 }
