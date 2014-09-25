@@ -244,8 +244,13 @@ class I8042
 			/* get configuration (can change during the self tests) */
 			_command(CMD_READ);
 			configuration = _wait_data();
+			PDBG("configuration: %x", configuration);
 			/* query xlate bit */
 			_kbd_xlate = !!(configuration & CTRL_XLATE);
+
+			_command(CMD_READ);
+			ret = _wait_data();
+			PDBG("configuration 2: %x", ret);
 
 			/* run self tests */
 			_command(CMD_TEST);
@@ -254,11 +259,19 @@ class I8042
 				return;
 			}
 
+			_command(CMD_READ);
+			ret = _wait_data();
+			PDBG("configuration 3: %x", ret);
+
 			_command(CMD_KBD_TEST);
 			if ((ret = _wait_data()) != RET_KBD_TEST_OK) {
 				Genode::printf("i8042: kbd test failed (%x)\n", ret);
 				return;
 			}
+
+			_command(CMD_READ);
+			ret = _wait_data();
+			PDBG("configuration 4: %x", ret);
 
 			_command(CMD_AUX_TEST);
 			if ((ret = _wait_data()) != RET_AUX_TEST_OK) {
@@ -266,10 +279,19 @@ class I8042
 				return;
 			}
 
+			_command(CMD_READ);
+			ret = _wait_data();
+			PDBG("configuration 5: %x", ret);
+
+
 			/* enable interrupts for keyboard and mouse at the controller */
 			configuration |= CTRL_KBD_INT | CTRL_AUX_INT;
 			_command(CMD_WRITE);
 			_data(configuration);
+
+			_command(CMD_READ);
+			ret = _wait_data();
+			PDBG("final configuration: %x", ret);
 
 			/* enable keyboard and mouse */
 			_command(CMD_KBD_ENABLE);
