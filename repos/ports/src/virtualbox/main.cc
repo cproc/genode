@@ -162,25 +162,6 @@ int main()
 	}
 	vm_size -= VMM_MEMORY + VRAM_MEMORY;
 
-	try {
-		using namespace Genode;
-
-		Xml_node node = config()->xml_node().sub_node("image");
-		Xml_node::Attribute type = node.attribute("type");
-		Xml_node::Attribute file = node.attribute("file");
-		try {
-			Xml_node::Attribute overlay = node.attribute("overlay");
-			overlay.value(c_type, sizeof(c_type));
-			if (!Genode::strcmp(c_type, "yes"))
-				bOverlay = true;
-		} catch (...) { }
-		type.value(c_type, sizeof(c_type));
-		file.value(c_file, sizeof(c_file));
-	} catch (...) {
-		PERR("C++ exception during xml parsing");
-		return 2;
-	}
-
 	args.add("virtualbox");
 
 	Genode::snprintf(c_mem, sizeof(c_mem), "%u", vm_size / 1024 / 1024);
@@ -189,23 +170,48 @@ int main()
 	Genode::snprintf(c_vram, sizeof(c_vram), "%u", VRAM_MEMORY / 1024 / 1024);
 	args.add("-vram"); args.add(c_vram);
 
-	args.add("-boot");
-	if (!Genode::strcmp(c_type, "iso")) {
-		args.add("d");
-		args.add("-cdrom");
-	} else 
-	if (!Genode::strcmp(c_type, "vdi")) {
-		args.add("c");
-		args.add("-hda");
-	} else {
-		PERR("invalid configuration - abort");
-		return 3;
+	try {
+		using namespace Genode;
+
+		for (Xml_node node = config()->xml_node().sub_node("image");
+		     ;
+		     node = node.next("image")) {
+
+			Xml_node::Attribute type = node.attribute("type");
+			Xml_node::Attribute file = node.attribute("file");
+			try {
+				Xml_node::Attribute overlay = node.attribute("overlay");
+				overlay.value(c_type, sizeof(c_type));
+				if (!Genode::strcmp(c_type, "yes"))
+					bOverlay = true;
+			} catch (...) { }
+			type.value(c_type, sizeof(c_type));
+			file.value(c_file, sizeof(c_file));
+
+			/* the last configured image becomes the boot device */
+			args.add("-boot");
+			if (!Genode::strcmp(c_type, "iso")) {
+				args.add("d");
+				args.add("-cdrom");
+			} else 
+			if (!Genode::strcmp(c_type, "vdi")) {
+				args.add("c");
+				args.add("-hda");
+			} else {
+				PERR("invalid configuration - abort");
+				return 3;
+			}
+
+			args.add(c_file);
+
+			if (bOverlay)
+				args.add("-overlay");
+		}
+
+	} catch (...) {
+		//PERR("C++ exception during xml parsing");
+		//return 2;
 	}
-
-	args.add(c_file);
-
-	if (bOverlay)
-		args.add("-overlay");
 
 	/* disable acpi support if requested */
 	try {
