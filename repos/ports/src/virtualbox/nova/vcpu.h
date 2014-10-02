@@ -66,7 +66,7 @@ static inline Genode::uint32_t sel_ar_conv_from_nova(Genode::uint16_t v)
  * Used to map mmio memory to VM
  */
 extern "C" int MMIO2_MAPPED_SYNC(PVM pVM, RTGCPHYS GCPhys, size_t cbWrite,
-                                 void **ppv);
+                                 void **ppv, Genode::Flexpage_iterator &fli);
 
 
 class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
@@ -183,6 +183,12 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		void _exc_memory(Genode::Thread_base * myself, Nova::Utcb * utcb,
 		                 bool unmap, Genode::addr_t reason)
 		{
+			/* fault region is ram - so map it */
+			enum {
+				USER_PD = false, GUEST_PGT = true,
+				READABLE = true, WRITEABLE = true, EXECUTABLE = true
+			};
+
 			using namespace Nova;
 			using namespace Genode;
 
@@ -198,6 +204,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			enum { MAP_SIZE = 0x1000UL };
 
+			bool writeable = WRITEABLE;
+
 			Flexpage_iterator fli;
 			void *pv = guest_memory()->lookup_ram(reason, MAP_SIZE, fli);
 
@@ -206,10 +214,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 				 * Check whether this is some mmio memory provided by VMM
 				 * we can map, e.g. VMMDev memory or framebuffer currently.
 				 */
-				int res = MMIO2_MAPPED_SYNC(_current_vm, reason, MAP_SIZE, &pv);
+				int res = MMIO2_MAPPED_SYNC(_current_vm, reason, MAP_SIZE, &pv, fli);
 				if (pv && (res == VINF_SUCCESS))
 					fli = Genode::Flexpage_iterator((addr_t)pv, MAP_SIZE,
 					                                reason, MAP_SIZE, reason);
+				else
+				if (pv && (res == VERR_GENERAL_FAILURE)) {
+					writeable = !WRITEABLE;
+				}
 				else
 					pv = 0;
 			}
@@ -218,12 +230,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			if (!pv)
 				longjmp(_env, 1);
 
-			/* fault region is ram - so map it */
-			enum {
-				USER_PD = false, GUEST_PGT = true,
-				READABLE = true, WRITEABLE = true, EXECUTABLE = true
-			};
-			Rights const permission(READABLE, WRITEABLE, EXECUTABLE);
+			Rights const permission(READABLE, writeable, EXECUTABLE);
 
 			/* prepare utcb */
 			utcb->set_msg_word(0);

@@ -540,7 +540,7 @@ int PGMHandlerPhysicalReset(PVM, RTGCPHYS GCPhys)
 
 
 extern "C" int MMIO2_MAPPED_SYNC(PVM pVM, RTGCPHYS GCPhys, size_t cbWrite,
-                                 void **ppv)
+                                 void **ppv, Genode::Flexpage_iterator &fli)
 {
 	/* DON'T USE normal printf in this function - corrupts unsaved UTCB !!! */
 
@@ -573,8 +573,23 @@ extern "C" int MMIO2_MAPPED_SYNC(PVM pVM, RTGCPHYS GCPhys, size_t cbWrite,
 		return rc;
 	}
 
-	Vmm::printf("%s: GCPhys=0x%lx failed - unexpected state \n",
+	Vmm::printf("%s: GCPhys=0x%llx failed - unexpected state\n",
 	            __func__, GCPhys);
+
+	RTGCPHYS map_start = GCPhys;
+	size_t map_size = 1;
+
+	bool io = vmm_memory()->lookup_range(map_start, map_size);
+	Assert(io);
+
+	pv = vmm_memory()->lookup(map_start, map_size);
+	Assert(pv);
+
+	fli = Genode::Flexpage_iterator((Genode::addr_t)pv, map_size, map_start, map_size, map_start);
+	Vmm::printf("%s: GCPhys=0x%llx failed - unexpected state %llx+%zx %p\n",
+	            __func__, GCPhys, map_start, map_size, pv);
+
+	*ppv = pv;
 	return VERR_GENERAL_FAILURE;
 }
 
