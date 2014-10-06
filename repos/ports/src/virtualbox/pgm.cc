@@ -230,8 +230,17 @@ int PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion,
 	if (debug)
 		PDBG("called phys=%llx iRegion=0x%x", GCPhys, iRegion);
 
-	vmm_memory()->map_to_vm(pDevIns, GCPhys, iRegion);
+	size_t size = 1;
+	bool INVALIDATE = true;
+	bool ok = vmm_memory()->unmap_from_vm(GCPhys, size, INVALIDATE);
+	Assert(ok);
 
+#ifdef VBOX_WITH_REM
+#if 0 /* XXX */
+    if (fInformREM)
+        REMR3NotifyPhysRamDeregister(pVM, GCPhysRangeREM, cbRangeREM);
+#endif
+#endif
 	return VINF_SUCCESS;
 }
 
@@ -522,8 +531,9 @@ int PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv,
 
 int PGMHandlerPhysicalReset(PVM, RTGCPHYS GCPhys)
 {
-	if (!vmm_memory()->unmap_from_vm(GCPhys))
-		PWRN("%s: unbacked region - GCPhys %lx", __func__, GCPhys);
+	size_t size = 1;
+	if (!vmm_memory()->unmap_from_vm(GCPhys, size))
+		PWRN("%s: unbacked region - GCPhys %llx", __func__, GCPhys);
 
 	return VINF_SUCCESS;
 }

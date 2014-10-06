@@ -133,18 +133,6 @@ class Vmm_memory
 			return alloc(cb, 0, ~0U);
 		}
 
-		size_t map_to_vm(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
-		                 unsigned iRegion = ~0U)
-		{
-			Lock::Guard guard(_lock);
-
-			Region *r = _lookup_unsynchronized(pDevIns, iRegion);
-
-			if (r) r->vm_phys = GCPhys;
-
-			return r ? r->size() : 0;
-		}
-
 		bool add_handler(RTGCPHYS vm_phys, size_t size,
 		                 PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
 		                 PGMPHYSHANDLERTYPE enmType = PGMPHYSHANDLERTYPE_PHYSICAL_ALL)
@@ -196,7 +184,37 @@ class Vmm_memory
 			return true;
 		}
 
-		bool unmap_from_vm(RTGCPHYS GCPhys);
+		size_t map_to_vm(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
+		                 unsigned iRegion = ~0U)
+		{
+			Lock::Guard guard(_lock);
+
+			Region *r = _lookup_unsynchronized(pDevIns, iRegion);
+
+			if (r) r->vm_phys = GCPhys;
+
+			return r ? r->size() : 0;
+		}
+
+		bool unmap_from_vm(RTGCPHYS GCPhys, size_t size, bool invalidate = false)
+		{
+			Lock::Guard guard(_lock);
+
+			Region *r = _lookup_unsynchronized(GCPhys, size);
+			if (!r) return false;
+
+			bool result = revoke_from_vm(r);
+
+			if (invalidate)
+				r->vm_phys = 0ULL;
+
+			return result;
+		}
+
+		/**
+		 * Platform specific implemented.
+		 */
+		bool revoke_from_vm(Region *r);
 };
 
 

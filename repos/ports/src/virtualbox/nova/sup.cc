@@ -152,12 +152,9 @@ uint64_t genode_cpu_hz()
 }
 
 
-bool Vmm_memory::unmap_from_vm(RTGCPHYS GCPhys)
+bool Vmm_memory::revoke_from_vm(Region *r)
 {
-	size_t const size = 1;
-
-	Region *r = _lookup_unsynchronized(GCPhys, size);
-	if (!r) return false;
+	Assert(r);
 
 	using Genode::addr_t;
 	addr_t const vmm_local = (addr_t)r->local_addr<addr_t>();
