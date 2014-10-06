@@ -596,6 +596,8 @@ void PGMR3Reset(PVM pVM)
 		VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 		VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
 
+		VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+
 		if (!pVCpu->pgm.s.fA20Enabled)
 		{
 			pVCpu->pgm.s.fA20Enabled = true;
@@ -608,7 +610,7 @@ void PGMR3Reset(PVM pVM)
 		}
 	}
 
-	PERR("clearing ram and rom areas missing !!!!!!!");	
+	vmm_memory()->revoke_all();
 }
 
 

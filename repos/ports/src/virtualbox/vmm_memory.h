@@ -215,6 +215,20 @@ class Vmm_memory
 		 * Platform specific implemented.
 		 */
 		bool revoke_from_vm(Region *r);
+
+		/**
+		 * Revoke all memory (RAM or ROM) from VM
+		 */
+		void revoke_all()
+		{
+			Lock::Guard guard(_lock);
+
+			for (Region *r = _regions.first(); r; r = r->next())
+			{
+				bool ok = revoke_from_vm(r);
+				Assert(ok);
+			}
+		}
 };
 
 
