@@ -40,15 +40,16 @@ set config_of_app {
 		<resource name="RAM" quantum="2G"/>
 		<config>}
 
+if {$use_iso} {
+append config_of_app "
+			<image type=\"iso\" file=\"/$iso_image\"/>"
+}
+
 if {$use_vdi} {
 append config_of_app "
 			<image type=\"vdi\" file=\"/$vdi_image\" overlay=\"no\"/>"
 }
 
-if {$use_iso} {
-append config_of_app "
-			<image type=\"iso\" file=\"/$iso_image\"/>"
-}
 
 if ($use_net) {
 append config_of_app "
