@@ -34,6 +34,7 @@ using Genode::Ram_session;
 using Genode::Rm_session;
 
 static bool debug = true;
+static bool verbose_debug = false;
 
 Vmm_memory *vmm_memory()
 {
@@ -49,24 +50,60 @@ Guest_memory *guest_memory()
 }
 
 
+static DECLCALLBACK(int) romwritehandler(PVM pVM, RTGCPHYS GCPhys,
+                                         void *pvPhys, void *pvBuf,
+                                         size_t cbBuf,
+                                         PGMACCESSTYPE enmAccessType,
+                                         void *pvUser)
+{
+	while (1) {
+		Assert(!"Somebody tries to write to ROM");
+	}
+	return 0;
+}
+
 int PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
                          RTGCPHYS cb, const void *pvBinary, uint32_t cbBinary,
                          uint32_t fFlags, const char *pszDesc)
 {
-	PLOG("PGMR3PhysRomRegister: GCPhys=0x%llx cb=0x%llx pvBinary=0x%p",
-	     GCPhys, cb, pvBinary);
+	PLOG("PGMR3PhysRomRegister: GCPhys=0x%llx cb=0x%llx pvBinary=0x%p - '%s'",
+	     GCPhys, cb, pvBinary, pszDesc);
 
 	try {
-		guest_memory()->add_rom_mapping(GCPhys, cb, pvBinary, pDevIns);
+		RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
 
-		/*
-		 * XXX Try to understand the fShadowed condition
-		 *     (see pgmR3PhysRomRegister)
-		 */
-		REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false /* fShadowed */);
+		size_t size = (size_t)cb;
+		Assert(cb == size);
 
-	} catch (Guest_memory::Region_conflict) {
-		return VERR_PGM_MAPPING_CONFLICT; }
+		void *pv = vmm_memory()->alloc_rom(size, pDevIns);
+		Assert(pv);
+		memcpy(pv, pvBinary, size);
+
+		/* associate memory of VMM with guest VM */
+		vmm_memory()->map_to_vm(pDevIns, GCPhys);
+
+		guest_memory()->add_rom_mapping(GCPhys, cb, pv, pDevIns);
+
+		bool fShadowed = fFlags & PGMPHYS_ROM_FLAGS_SHADOWED;
+		Assert(!fShadowed);
+
+		int rc = PGMR3HandlerPhysicalRegister(pVM,
+		                                      PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+		                                      GCPhys, GCPhysLast,
+		                                      romwritehandler,
+		                                      NULL,
+		                                      NULL, NULL, 0,
+		                                      NULL, NULL, 0, pszDesc);
+		Assert(rc == VINF_SUCCESS);
+
+#ifdef VBOX_WITH_REM
+		REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, fShadowed);
+#endif
+
+	}
+	catch (Guest_memory::Region_conflict) { return VERR_PGM_MAPPING_CONFLICT; }
+	catch (Ram_session::Alloc_failed) { return VERR_PGM_MAPPING_CONFLICT; }
+	catch (Rm_session::Attach_failed) { return VERR_PGM_MAPPING_CONFLICT; }
 
 	return VINF_SUCCESS;
 }
@@ -169,7 +206,7 @@ int PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion,
 int PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion,
                       RTGCPHYS GCPhys)
 {
-	size_t cb = vmm_memory()->map_to_vm(pDevIns, iRegion, GCPhys);
+	size_t cb = vmm_memory()->map_to_vm(pDevIns, GCPhys, iRegion);
 	if (cb == 0) {
 		PERR("PGMR3PhysMMIO2Map: lookup for pDevIns=%p iRegion=%u failed\n",
 		     pDevIns, iRegion);
@@ -179,7 +216,9 @@ int PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion,
 	PLOG("PGMR3PhysMMIO2Map: pDevIns=%p iRegion=%u cb=0x%zx GCPhys=0x%lx\n",
 	     pDevIns, iRegion, cb, (long)GCPhys);
 
+#ifdef VBOX_WITH_REM
 	REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
+#endif
 
 	return VINF_SUCCESS;
 }
@@ -191,7 +230,7 @@ int PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion,
 	if (debug)
 		PDBG("called phys=%llx iRegion=0x%x", GCPhys, iRegion);
 
-	vmm_memory()->map_to_vm(pDevIns, iRegion, 0);
+	vmm_memory()->map_to_vm(pDevIns, GCPhys, iRegion);
 
 	return VINF_SUCCESS;
 }
@@ -215,18 +254,18 @@ int PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
                                  const char *pszHandlerRC,
                                  RTRCPTR pvUserRC, const char *pszDesc)
 {
-	PLOG("PGMR3HandlerPhysicalRegister: pszDesc=%s %u GCPhys=0x%llx"
-	     " GCPhysLast=0x%llx r3=0x%p enmType=%x\n",
-	     pszDesc, enmType, GCPhys, GCPhysLast, pfnHandlerR3, enmType);
+	PLOG("PGMR3HandlerPhysicalRegister: GCPhys=0x%llx-%llx r3=0x%p "
+	     "enmType=%x - '%s'\n",
+	     GCPhys, GCPhysLast, pfnHandlerR3, enmType, pszDesc);
+
+	bool ok = vmm_memory()->add_handler(GCPhys, GCPhysLast - GCPhys + 1,
+	                                    pfnHandlerR3, pvUserR3, enmType);
+	Assert(ok);
 
 #ifdef VBOX_WITH_REM
 	REMR3NotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast -
 	                                   GCPhys + 1, !!pfnHandlerR3);
 #endif
-
-	bool ok = vmm_memory()->add_handler(GCPhys, GCPhysLast - GCPhys + 1,
-	                                    pfnHandlerR3, pvUserR3, enmType);
-	Assert(ok);
 
 	return VINF_SUCCESS;
 }
@@ -280,7 +319,9 @@ int PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
 		 *     The lack of allocation-related VERR_PGM_ error codes suggests
 		 *     so.
 		 */
-		void *pv = vmm_memory()->alloc_ram((size_t)cb);
+		size_t size = (size_t)cb;
+		Assert(cb == size);
+		void *pv = vmm_memory()->alloc_ram(size);
 
 		guest_memory()->add_ram_mapping(GCPhys, cb, pv);
 
@@ -345,31 +386,44 @@ int PGMPhysGCPtr2CCPtrReadOnly(PVMCPU pVCpu, RTGCPTR GCPtr, void const **ppv,
 
 int PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv)
 {
-	size_t const size = 1;
-	void *pv = guest_memory()->lookup(GCPhys, size);
-
-	if (pv) {
-		*ppv = pv;
-		return VINF_SUCCESS;
-	}
-
+	size_t const         size         = 1;
 	PFNPGMR3PHYSHANDLER  pfnHandlerR3 = 0;
 	void                *pvUserR3     = 0;
+	PGMPHYSHANDLERTYPE   enmType;
 
-	pv = vmm_memory()->lookup(GCPhys, size, &pfnHandlerR3, &pvUserR3);
-
+	void * pv = vmm_memory()->lookup(GCPhys, size, &pfnHandlerR3, &pvUserR3,
+	                                 &enmType);
 	if (!pv) {
-		PERR("%s: lookup for GCPhys=0x%p failed", __func__, GCPhys);
-		return VERR_PGM_PHYS_TLB_UNASSIGNED;
+		/* It could be ordinary guest memory - look it up. */
+		pv = guest_memory()->lookup(GCPhys, size);
+
+		if (!pv) {
+			PERR("%s: lookup for GCPhys=0x%llx failed", __func__, GCPhys);
+			return VERR_PGM_PHYS_TLB_UNASSIGNED;
+		}
+
+		*ppv = pv;
+
+		if (verbose_debug)
+			PDBG("%llx %u -> 0x%p", GCPhys, fWritable, pv);
+
+		return VINF_SUCCESS;
 	}
 
 	/* pv valid - check handlers next */
 	if (!pfnHandlerR3 && !pvUserR3) {
+		PERR("%s: %llx %u -> 0x%p no handlers", __func__, GCPhys, fWritable, pv);
+
 		*ppv = pv;
 		return VINF_SUCCESS;
 	}
- 
-	PERR("%s: denied access - handlers set - GCPhys=0x%p", __func__, GCPhys);
+
+	if (enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE) {
+		*ppv = pv;
+		return VINF_PGM_PHYS_TLB_CATCH_WRITE;
+	}
+	PERR("%s: denied access - handlers set - GCPhys=0x%llx %p %p %x", __func__, GCPhys, pfnHandlerR3, pvUserR3, enmType);
+
 	return VERR_PGM_PHYS_TLB_CATCH_ALL;
 }
 
@@ -378,7 +432,9 @@ void PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 {
 	if (!pVCpu->pgm.s.fA20Enabled != fEnable) {
 		pVCpu->pgm.s.fA20Enabled = fEnable;
+#ifdef VBOX_WITH_REM
 		REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
+#endif
 	}
 
 	return;

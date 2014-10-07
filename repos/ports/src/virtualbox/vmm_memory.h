@@ -123,12 +123,18 @@ class Vmm_memory
 			return 0;
 		}
 
-		void *alloc_ram(size_t cb)
+		void *alloc_rom(size_t cb, PPDMDEVINS pDevIns)
 		{
-			return alloc(cb, 0, 0);
+			return alloc(cb, pDevIns, ~0U);
 		}
 
-		size_t map_to_vm(PPDMDEVINS pDevIns, unsigned iRegion, RTGCPHYS GCPhys)
+		void *alloc_ram(size_t cb)
+		{
+			return alloc(cb, 0, ~0U);
+		}
+
+		size_t map_to_vm(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
+		                 unsigned iRegion = ~0U)
 		{
 			Lock::Guard guard(_lock);
 
