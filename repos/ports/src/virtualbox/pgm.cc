@@ -413,96 +413,9 @@ int PGMPhysGCPtr2CCPtrReadOnly(PVMCPU pVCpu, RTGCPTR GCPtr, void const **ppv,
 }
 
 
-int PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode) {
-
-//    Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-	
-//	PDBG("not implemented %x %x", pVCpu->pgm.s.enmShadowMode, PGMMODE_EPT);
-
-    pVCpu->pgm.s.enmGuestMode = enmGuestMode;
-
-    HWACCMR3PagingModeChanged(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
-
-	return VINF_SUCCESS;
-}
-
-int PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer)
-{
-    PGMMODE enmGuestMode;
-
-    VMCPU_ASSERT_EMT(pVCpu);
-
-    /*
-     * Calc the new guest mode.
-     */
-    if (!(cr0 & X86_CR0_PE))
-        enmGuestMode = PGMMODE_REAL;
-    else if (!(cr0 & X86_CR0_PG))
-        enmGuestMode = PGMMODE_PROTECTED;
-    else if (!(cr4 & X86_CR4_PAE))
-    {
-        bool const fPse = !!(cr4 & X86_CR4_PSE);
-        if (pVCpu->pgm.s.fGst32BitPageSizeExtension != fPse)
-            Log(("PGMChangeMode: CR4.PSE %d -> %d\n", pVCpu->pgm.s.fGst32BitPageSizeExtension, fPse));
-        pVCpu->pgm.s.fGst32BitPageSizeExtension = fPse;
-        enmGuestMode = PGMMODE_32_BIT;
-    }
-    else if (!(efer & MSR_K6_EFER_LME))
-    {
-        if (!(efer & MSR_K6_EFER_NXE))
-            enmGuestMode = PGMMODE_PAE;
-        else
-            enmGuestMode = PGMMODE_PAE_NX;
-    }
-    else
-    {
-        if (!(efer & MSR_K6_EFER_NXE))
-            enmGuestMode = PGMMODE_AMD64;
-        else
-            enmGuestMode = PGMMODE_AMD64_NX;
-    }
-
-    /*
-     * Did it change?
-     */
-    if (pVCpu->pgm.s.enmGuestMode == enmGuestMode)
-        return VINF_SUCCESS;
-
-    /* Flush the TLB */
-//    PGM_INVL_VCPU_TLBS(pVCpu);
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-
-//	PDBG("not implemented %x %x before", enmGuestMode, pVCpu->pgm.s.enmGuestMode);
-    int rc = PGMR3ChangeMode(pVCpu->CTX_SUFF(pVM), pVCpu, enmGuestMode);
-//	PDBG("not implemented %x %x out %p", enmGuestMode, pVCpu->pgm.s.enmGuestMode, __builtin_return_address(0));
-//	return VINF_PGM_CHANGE_MODE;
-	return rc;
-}
-
-
 /*
  * Copied from src/VBox/VMM/VMMAll/PGMAll.cpp
  */
-
-PGMMODE PGMGetGuestMode(PVMCPU pVCpu) { return pVCpu->pgm.s.enmGuestMode; }
-
-VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
-{
-    switch (enmMode)
-    {
-        case PGMMODE_REAL:      return "Real";
-        case PGMMODE_PROTECTED: return "Protected";
-        case PGMMODE_32_BIT:    return "32-bit";
-        case PGMMODE_PAE:       return "PAE";
-        case PGMMODE_PAE_NX:    return "PAE+NX";
-        case PGMMODE_AMD64:     return "AMD64";
-        case PGMMODE_AMD64_NX:  return "AMD64+NX";
-        case PGMMODE_NESTED:    return "Nested";
-        case PGMMODE_EPT:       return "EPT";
-        default:                return "unknown mode value";
-    }
-}
-
 
 int PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
@@ -579,8 +492,8 @@ void PGMR3Reset(PVM pVM)
 
 	for (VMCPUID i = 0; i < pVM->cCpus; i++)
 	{
-		int rc = PGMR3ChangeMode(pVM, &pVM->aCpus[i], PGMMODE_REAL);
-		AssertRC(rc);
+//		int rc = PGMR3ChangeMode(pVM, &pVM->aCpus[i], PGMMODE_REAL);
+//		AssertRC(rc);
 	}
 
 	for (VMCPUID i = 0; i < pVM->cCpus; i++)
