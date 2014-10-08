@@ -8,6 +8,7 @@ if {[is_qemu_available]} {
 append build_components {
 	core init virtualbox 
 	server/part_blk
+	server/ffat_fs
 	server/rump_fs
 	drivers/ahci
 	drivers/input
@@ -62,10 +63,10 @@ set config {
 			<any-service><child name="ahci"/> <parent/><any-child/></any-service>
 		</route>
 		<config>
-			<policy label="rump_fs" partition="1"/>
+			<policy label="ffat_fs" partition="2"/>
 		</config>
 	</start>
-	<start name="rump_fs" priority="-1">
+	<start name="ffat_fs" priority="-1">
 		<resource name="RAM" quantum="32M" />
 		<provides><service name="File_system"/></provides>
 		<config fs="ext2fs"><policy label="" root="/" writeable="yes"/></config>
@@ -135,7 +136,7 @@ append boot_modules {
 	ld.lib.so libc.lib.so libm.lib.so pthread.lib.so
 	libc_lock_pipe.lib.so libc_terminal.lib.so
 	libiconv.lib.so
-	rump.lib.so rump_fs.lib.so rump_fs
+	rump.lib.so rump_fs.lib.so ffat_fs
 	virtualbox vbox-auto-test-helper
 	nic_drv
 }
