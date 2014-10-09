@@ -35,7 +35,10 @@ Heap::Dataspace_pool::~Dataspace_pool()
 		void *ds_local_addr             = ds->local_addr;
 
 		remove(ds);
+
+		/* have the destructor of the 'cap' member called */
 		delete ds;
+
 		rm_session->detach(ds_local_addr);
 		ram_session->free(ds_cap);
 	}
@@ -215,6 +218,8 @@ void Heap::free(void *addr, size_t size)
 
 		_quota_used -= ds->size;
 
+		/* have the destructor of the 'cap' member called */
+		delete ds;
 		_alloc.free(ds);
 
 	} else {
