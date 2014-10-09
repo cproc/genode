@@ -5,6 +5,8 @@ set build_components {
 	drivers/input
 	drivers/framebuffer
 	drivers/timer
+	drivers/nic
+	server/tcp_terminal
 }
 
 lappend_if [have_spec acpi]  build_components drivers/acpi
@@ -97,6 +99,23 @@ append_if [expr $use_net] config {
 }
 
 append config {
+
+	<start name="nic_drv">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Nic"/> </provides>
+	</start>
+
+	<start name="tcp_terminal">
+		<resource name="RAM" quantum="2560K"/>
+		<provides> <service name="Terminal"/> </provides>
+		<config>
+			<policy label="virtualbox" port="8888"/>
+			<libc stdout="/dev/log">
+				<vfs> <dir name="dev"> <log/> </dir> </vfs>
+			</libc>
+		</config>
+	</start>
+
 	<start name="virtualbox" priority="-2">
 		<resource name="RAM" quantum="1G"/>
 		<config>
@@ -134,7 +153,7 @@ lappend_if [have_spec         x86] boot_modules rtc_drv
 
 append boot_modules { ld.lib.so libc.lib.so libm.lib.so pthread.lib.so
                       libc_lock_pipe.lib.so libc_terminal.lib.so
-                      libiconv.lib.so }
+                      libiconv.lib.so nic_drv tcp_terminal lwip.lib.so}
 
 append_if [expr $use_net] boot_modules { nic_drv }
 
