@@ -120,7 +120,7 @@ append config {
 		<resource name="RAM" quantum="1G"/>
 		<config>
 			<image type="iso" file="test.iso" />
-<!--			<ioapic/> -->
+			<ioapic/>
 <!--			<noacpi/> -->}
 
 append_if [expr $use_net] config {
