@@ -1,0 +1,73 @@
+build "core init app/mprime"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="RM"/>
+			<service name="ROM"/>
+			<service name="SIGNAL"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<start name="mprime.1">
+			<binary name="mprime" />
+			<resource name="RAM" quantum="200M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+<!--
+		<start name="mprime.2">
+			<binary name="mprime" />
+			<resource name="RAM" quantum="200M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+
+		<start name="mprime.3">
+			<binary name="mprime" />
+			<resource name="RAM" quantum="200M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+
+		<start name="mprime.4">
+			<binary name="mprime" />
+			<resource name="RAM" quantum="200M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+
+		<start name="mprime.5">
+			<binary name="mprime" />
+			<resource name="RAM" quantum="200M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+-->
+	</config>
+}
+
+build_boot_image "core init mprime ld.lib.so libc.lib.so libm.lib.so pthread.lib.so stdcxx.lib.so"
+
+append qemu_args "-nographic -m 2048"
+
+run_genode_until forever
