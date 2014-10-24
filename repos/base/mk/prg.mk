@@ -188,8 +188,8 @@ $(LINK_ITEMS) $(TARGET): $(HOST_TOOLS)
 
 LD_CMD += -Wl,--whole-archive -Wl,--start-group
 LD_CMD += $(SHORT_LINK_ITEMS)
-LD_CMD += $(EXT_OBJECTS)
 LD_CMD += -Wl,--end-group -Wl,--no-whole-archive
+LD_CMD += $(EXT_OBJECTS)
 
 #
 # Link libgcc to each program
