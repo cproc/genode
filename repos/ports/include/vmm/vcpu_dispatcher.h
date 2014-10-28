@@ -14,6 +14,8 @@
 #ifndef _INCLUDE__VMM__VCPU_DISPATCHER_H_
 #define _INCLUDE__VMM__VCPU_DISPATCHER_H_
 
+extern unsigned int exit_reason;
+
 namespace Vmm {
 
 	using namespace Genode;
@@ -47,6 +49,8 @@ class Vmm::Vcpu_dispatcher : public T
 			/* obtain this pointer of the event handler */
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			DISPATCHER *vd = static_cast<DISPATCHER *>(myself);
+
+			exit_reason = EV;
 
 			/* call event-specific handler function */
 			(vd->*FUNC)();
