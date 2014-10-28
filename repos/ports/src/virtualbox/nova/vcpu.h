@@ -742,7 +742,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 				next_utcb.mtd        |= Mtd::STA;
 			}
 
-			return VINF_EM_RAW_EMULATE_INSTR;
+			return (exit_reason == RECALL) ? VINF_SUCCESS : VINF_EM_RAW_EMULATE_INSTR;
 		}
 };
 

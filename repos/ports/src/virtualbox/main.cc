@@ -29,6 +29,8 @@
 #include <iprt/initterm.h>
 #include <iprt/err.h>
 
+unsigned int exit_reason = 0;
+
 void *operator new (Genode::size_t size)
 {
 	static Libc::Mem_alloc_impl heap(Genode::env()->rm_session());
