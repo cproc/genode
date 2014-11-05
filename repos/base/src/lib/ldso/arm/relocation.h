@@ -34,11 +34,9 @@ namespace Linker {
 };
 
 
-class Linker::Reloc_non_plt
+class Linker::Reloc_non_plt : public Reloc_non_plt_generic
 {
 	private:
-
-		Dag const *_dag;
 
 		void _rel32(Elf::Rel const *rel, Elf::Addr *addr)
 		{
@@ -51,34 +49,6 @@ class Linker::Reloc_non_plt
 			/* S + A - P */
 			*addr = reloc_base + sym->st_value - (Elf::Addr)addr + *addr;
 			trace("REL32", (unsigned long)addr, *addr, 0);
-		}
-
-		/**
-		 * Copy relocations, these are just for the main program, we can do them
-		 * safely here since all other DSO are loaded, relocated, and constructed at
-		 * this point
-		 */
-		void _copy(Elf::Rel const *rel, Elf::Addr *addr)
-		{
-			if (!_dag->obj->is_binary()) {
-				PERR("LD: Copy relocation in DSO (%s at %p)", _dag->obj->name(), addr);
-				throw Incompatible();
-			}
-
-			Elf::Sym const *sym;
-			Elf::Addr      reloc_base;
-
-			 /* search symbol in other objects, do not return undefined symbols */
-			if (!(sym = locate_symbol(rel->sym(), _dag, &reloc_base, false, true))) {
-				PWRN("LD: Symbol not found");
-				return;
-			}
-
-			Elf::Addr src = reloc_base + sym->st_value;
-			Genode::memcpy(addr, (void *)src, sym->st_size);
-			
-			if (verbose_relocation)
-				PDBG("Copy relocation: " EFMT " -> %p (0x%zx bytes)", src, addr,sym->st_size);
 		}
 
 		void _glob_dat(Elf::Rel const *rel, Elf::Addr *addr, bool no_addend)
@@ -109,14 +79,15 @@ class Linker::Reloc_non_plt
 
 	public:
 
-		Reloc_non_plt(Dag const *, Elf::Rela const *, unsigned long)
+		Reloc_non_plt(Dag const *dag, Elf::Rela const *, unsigned long)
+		: Reloc_non_plt_generic(dag)
 		{
 			PERR("LD: DT_RELA not supported");
 			throw Incompatible();
 		}
 
 		Reloc_non_plt(Dag const *dag, Elf::Rel const *rel, unsigned long size, bool second_pass)
-		: _dag(dag)
+		: Reloc_non_plt_generic(dag)
 		{
 			Elf::Rel const *end = rel + (size / sizeof(Elf::Rel));
 			for (; rel < end; rel++) {
@@ -128,7 +99,7 @@ class Linker::Reloc_non_plt
 				switch (rel->type()) {
 
 					case R_REL32   : _rel32(rel, addr);                 break;
-					case R_COPY    : _copy(rel, addr);                  break;
+					case R_COPY    : _copy<Elf::Rel>(rel, addr);        break;
 					case R_ABS32   :
 					case R_GLOB_DAT: _glob_dat(rel, addr, second_pass); break;
 					case R_RELATIVE: _relative(addr);                   break;

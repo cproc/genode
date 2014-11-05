@@ -20,6 +20,7 @@ namespace Linker {
 
 	enum Reloc_types {
 		R_32       = 1,
+		R_COPY     = 5,
 		R_GLOB_DAT = 6,
 		R_JMPSLOT  = 7,
 		R_RELATIVE = 8,
@@ -33,13 +34,11 @@ namespace Linker {
 }
 
 
-class Linker::Reloc_non_plt
+class Linker::Reloc_non_plt : public Reloc_non_plt_generic
 {
 	private:
 
-		Dag const *_dag;
-
-		void _glob_dat(Elf::Rel const *rel, Elf::Addr *addr)
+		void _glob_dat(Elf::Rel const *rel, Elf::Addr *addr, bool addend = false)
 		{
 			Elf::Addr reloc_base;
 			Elf::Sym  const *sym;
@@ -47,7 +46,7 @@ class Linker::Reloc_non_plt
 			if (!(sym = locate_symbol(rel->sym(), _dag, &reloc_base)))
 				return;
 
-			*addr = reloc_base + sym->st_value;
+			*addr = (addend ? *addr : 0) + reloc_base + sym->st_value;
 			trace("REL32", (unsigned long)addr, *addr, 0);
 		}
 
@@ -59,7 +58,8 @@ class Linker::Reloc_non_plt
 
 	public:
 
-		Reloc_non_plt(Dag const *, Elf::Rela const *, unsigned long)
+		Reloc_non_plt(Dag const *dag, Elf::Rela const *, unsigned long)
+		: Reloc_non_plt_generic(dag)
 		{
 			PERR("LD: DT_RELA not supported");
 			trace("Non_plt", 0, 0, 0);
@@ -67,10 +67,9 @@ class Linker::Reloc_non_plt
 		}
 
 		Reloc_non_plt(Dag const *dag, Elf::Rel const *rel, unsigned long size, bool second_pass)
-		: _dag(dag)
+		: Reloc_non_plt_generic(dag)
 		{
 			Elf::Rel const *end = rel + (size / sizeof(Elf::Rel));
-
 
 			for (; rel < end; rel++) {
 				Elf::Addr *addr = (Elf::Addr *)(_dag->obj->reloc_base() + rel->offset);
@@ -80,9 +79,10 @@ class Linker::Reloc_non_plt
 
 				switch (rel->type()) {
 
-					case R_32      :
-					case R_GLOB_DAT: _glob_dat(rel, addr); break;
-					case R_RELATIVE: _relative(rel, addr); break;
+					case R_32      : _glob_dat(rel, addr, true); break;
+					case R_GLOB_DAT: _glob_dat(rel, addr);       break;
+					case R_COPY    : _copy<Elf::Rel>(rel, addr); break;
+					case R_RELATIVE: _relative(rel, addr);       break;
 					default:
 						trace("UNKREL", rel->type(), 0, 0);
 						if (_dag->root) {

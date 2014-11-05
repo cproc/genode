@@ -23,6 +23,7 @@ namespace Linker {
  */
 	enum Reloc_types {
 		R_64       = 1, /* add 64 bit symbol value.       */
+		R_COPY     = 5,
 		R_GLOB_DAT = 6, /* GOT entry to data address      */
 		R_JMPSLOT  = 7, /* jump slot                      */
 		R_RELATIVE = 8, /* add load addr of shared object */
@@ -35,12 +36,9 @@ namespace Linker {
 	typedef Reloc_bind_now_generic<Elf::Rela, DT_RELA>       Reloc_bind_now;
 };
 
-class Linker::Reloc_non_plt
+class Linker::Reloc_non_plt : public Reloc_non_plt_generic
 {
 	private:
-
-		Dag const *_dag;
-
 		/**
 		 * Relative relocation (reloc base + addend)
 		 */
@@ -71,7 +69,7 @@ class Linker::Reloc_non_plt
 	public:
 
 		Reloc_non_plt(Dag const *dag, Elf::Rela const *rel, unsigned long size)
-		: _dag(dag)
+		: Reloc_non_plt_generic(dag)
 		{
 			Elf::Rela const *end = rel + (size / sizeof(Elf::Rela));
 
@@ -81,6 +79,7 @@ class Linker::Reloc_non_plt
 				switch(rel->type()) {
 					case R_64:       _glob_dat_64(rel, addr, true);  break;
 					case R_GLOB_DAT: _glob_dat_64(rel, addr, false); break;
+					case R_COPY:     _copy<Elf::Rela>(rel, addr);    break;
 					case R_RELATIVE: _relative(rel, addr);           break;
 
 					default:
@@ -94,7 +93,8 @@ class Linker::Reloc_non_plt
 			}
 		}
 
-		Reloc_non_plt(Dag const *, Elf::Rel const *, unsigned long, bool)
+		Reloc_non_plt(Dag const *dag, Elf::Rel const *, unsigned long, bool)
+		: Reloc_non_plt_generic(dag)
 		{
 			PERR("LD: DT_REL not supported");
 			throw Incompatible();

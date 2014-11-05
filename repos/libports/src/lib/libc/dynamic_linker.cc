@@ -95,6 +95,7 @@ int dladdr(const void *addr, Dl_info *dlip)
 int dlclose(void *handle)
 {
 	destroy(env()->heap(), to_object(handle));
+	return 0;
 }
 
 

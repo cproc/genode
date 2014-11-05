@@ -22,6 +22,7 @@ namespace Linker
 	template <typename REL, unsigned TYPE, bool DIV> class Reloc_jmpslot_generic;
 	template <typename REL, unsigned TYPE, unsigned JMPSLOT> struct Reloc_plt_generic;
 	template <typename REL, unsigned TYPE> struct Reloc_bind_now_generic;
+	class Reloc_non_plt_generic;
 }
 
 
@@ -70,6 +71,48 @@ struct Linker::Reloc_plt_generic
 			*addr          += obj->reloc_base();
 		}
 	}
+};
+
+
+class Linker::Reloc_non_plt_generic
+{
+	protected:
+
+		Dag const *_dag;
+
+		/**
+		 * Copy relocations, these are just for the main program, we can do them
+		 * safely here since all other DSO are loaded, relocated, and constructed at
+		 * this point
+		 */
+		template <typename REL>
+		void _copy(REL const *rel, Elf::Addr *addr)
+		{
+			if (!_dag->obj->is_binary()) {
+				PERR("LD: Copy relocation in DSO (%s at %p)", _dag->obj->name(), addr);
+				throw Incompatible();
+			}
+
+			Elf::Sym const *sym;
+			Elf::Addr      reloc_base;
+
+			 /* search symbol in other objects, do not return undefined symbols */
+			if (!(sym = locate_symbol(rel->sym(), _dag, &reloc_base, false, true))) {
+				PWRN("LD: Symbol not found");
+				return;
+			}
+
+			Elf::Addr src = reloc_base + sym->st_value;
+			Genode::memcpy(addr, (void *)src, sym->st_size);
+
+			if (verbose_relocation)
+				PDBG("Copy relocation: " EFMT " -> %p (0x" EFMT " bytes) val: " EFMT "\n",
+				      src, addr, sym->st_size, sym->st_value);
+		}
+
+	public:
+
+		Reloc_non_plt_generic(Dag const *dag) : _dag(dag) { }
 };
 
 
