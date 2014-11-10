@@ -351,6 +351,8 @@ struct Linker::Dynamic
 };
 
 
+static void register_initializer(Elf_object *elf);
+
 /**
  * The actual ELF object, one per file
  */
@@ -371,7 +373,7 @@ struct Linker::Elf_object : Object, Genode::List<Elf_object>::Element,
 	  flags(flags)
 	{
 		/* register for static construction and relocation */
-		init_list()->insert(this);
+		register_initializer(this);
 		obj_list()->enqueue(this);
 
 		/* add to link map */
@@ -500,6 +502,12 @@ struct Linker::Elf_object : Object, Genode::List<Elf_object>::Element,
 			throw Genode::Address_info::Invalid_address();
 	}
 
+	Elf_object *init_next() const
+	{
+		return Genode::List<Elf_object>::Element::next();
+	}
+
+
 	Elf_object *obj_next() const
 	{
 		return Genode::Fifo<Elf_object>::Element::next();
@@ -540,51 +548,12 @@ struct Linker::Elf_object : Object, Genode::List<Elf_object>::Element,
 
 	bool unload() { return !(--ref_count) && !(flags & Genode::Shared_object::KEEP); }
 
-	static Genode::List<Elf_object> *init_list()
-	{
-		static Genode::List<Elf_object> _list;
-		return &_list;
-	}
-
-	Elf_object *init_next() const
-	{
-		return Genode::List<Elf_object>::Element::next();
-	}
-
 	static Genode::Lock & lock()
 	{
 		static Genode::Lock _lock;
 		return _lock;
 	}
 
-	static void init_obj()
-	{
-		Elf_object *obj = init_list()->first();
-
-		/* relocate */
-		for (; obj; obj = obj->init_next()) {
-			if (verbose_relocation)
-				PDBG("Relocate %s", obj->name());
-			obj->relocate();
-		}
-
-		/* call static constructors */
-		obj = init_list()->first();
-		while (obj) {
-
-			if (obj->dynamic.init_function) {
-
-				if (verbose_relocation)
-					PDBG("%s init func %p", obj->name(), obj->dynamic.init_function);
-
-				obj->dynamic.init_function();
-			}
-
-			Elf_object *next = obj->init_next();
-			init_list()->remove(obj);
-			obj = next;
-		}
-	}
 
 	Elf::Phdr const *phdr_exidx() const
 	{
@@ -604,7 +573,80 @@ struct Linker::Elf_object : Object, Genode::List<Elf_object>::Element,
 
 
 /**
- * Dag knot
+ * Handle static construction and relocation of ELF files
+ */
+struct Init : Genode::List<Elf_object>
+{
+	static Init *list()
+	{
+		static Init _list;
+		return &_list;
+	}
+
+	Elf_object *contains(char const *file)
+	{
+		for (Elf_object *e = first(); e; e = e->init_next())
+			if (!Genode::strcmp(file, e->name()))
+				return e;
+
+		return nullptr;
+	}
+
+	void reorder(Elf_object const *elf)
+	{
+		/* put in front of initializer list */
+		remove(elf);
+		insert(elf);
+
+		/* re-order dependencies */
+		for (Dynamic::Needed *n = elf->dynamic.needed.head(); n; n = n->next()) {
+			char const *path = n->path(elf->dynamic.strtab);
+			Elf_object *e;
+
+			if ((e = contains(Linker::file(path))))
+				reorder(e);
+		}
+	}
+
+	void initialize()
+	{
+		Elf_object *obj = first();
+
+		/* relocate */
+		for (; obj; obj = obj->init_next()) {
+			if (verbose_relocation)
+				PDBG("Relocate %s", obj->name());
+			obj->relocate();
+		}
+
+		/* call static constructors */
+		obj = first();
+		while (obj) {
+
+			if (obj->dynamic.init_function) {
+
+				if (verbose_relocation)
+					PDBG("%s init func %p", obj->name(), obj->dynamic.init_function);
+
+				obj->dynamic.init_function();
+			}
+
+			Elf_object *next = obj->init_next();
+			remove(obj);
+			obj = next;
+		}
+	}
+};
+
+
+void register_initializer(Elf_object *elf)
+{
+	Init::list()->insert(elf);
+}
+
+
+/**
+ * Dag node
  */
 Linker::Dag::Dag(char const *path, Root_object *root, Genode::Fifo<Dag> * const dag, unsigned flags)
 	: obj(Elf_object::load(path, this, flags)), root(root)
@@ -642,8 +684,14 @@ void Linker::Dag::load_needed(Genode::Fifo<Dag> * const dag, unsigned flags)
 
 	for (Dynamic::Needed *n = elf->dynamic.needed.head(); n; n = n->next()) {
 		char const *path = n->path(elf->dynamic.strtab);
+		Elf_object *e;
+
 		if (!in_dag(Linker::file(path), dag))
 			new (Genode::env()->heap()) Dag(path, root, dag, flags);
+
+		/* re-order initializer list, if needed object has been already added */
+		else if ((e = Init::list()->contains(Linker::file(path))))
+			Init::list()->reorder(e);
 	}
 }
 
@@ -743,7 +791,7 @@ struct Linker::Root_object
 		new (Genode::env()->heap()) Dag(linker_name(), this, &dag);;
 
 		/* relocate and call constructors */
-		Elf_object::init_obj();
+		Init::list()->initialize();
 	}
 
 	~Root_object()
@@ -785,7 +833,7 @@ struct Linker::Binary : Root_object, Elf_object
 		binary->load_needed(&dag);
 
 		/* relocate and call constructors */
-		Elf_object::init_obj();
+		Init::list()->initialize();
 	}
 
 	Elf::Addr lookup_symbol(char const *name)
