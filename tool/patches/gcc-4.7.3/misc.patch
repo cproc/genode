@@ -10,7 +10,7 @@ Changes lacking documentation
  3 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/libgcc/Makefile.in b/libgcc/Makefile.in
-index f38d5b4..d64c9e0 100644
+index e1cac49..57070e0 100644
 --- a/libgcc/Makefile.in
 +++ b/libgcc/Makefile.in
 @@ -858,7 +858,7 @@ LIBGCOV = _gcov _gcov_merge_add _gcov_merge_single _gcov_merge_delta \
