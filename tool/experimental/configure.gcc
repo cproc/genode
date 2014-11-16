@@ -1,0 +1,14 @@
+#!/bin/sh
+
+#
+# libstdc++-v3 options:
+#   --disable-hosted-libstdcxx -> build only libsupc++
+#   --with-pic                 -> build libsupc++ with -fPIC
+#
+
+# autogen/autoconf
+
+TARGET=x86_64-genode-elf
+#TARGET=arm-genode-eabi
+
+../contrib/gcc-4.7.2/configure --prefix=$HOME/opt/genode-gcc --target=${TARGET} --enable-languages=c,c++ --disable-libssp --disable-libquadmath --disable-threads --disable-tls --without-headers --enable-shared --disable-hosted-libstdcxx --with-pic
