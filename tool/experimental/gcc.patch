@@ -1,0 +1,343 @@
+gcc.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gcc/config.gcc              |    8 ++
+ gcc/config/genode.h         |    4 +
+ gcc/config/i386/genode64.h  |    1 
+ gcc/config/i386/t-genode64  |    2 +
+ libgcc/Makefile.in          |    8 +-
+ libgcc/config.host          |   10 +++
+ libgcc/link.h               |  156 +++++++++++++++++++++++++++++++++++++++++++
+ libstdc++-v3/configure.ac   |   10 +--
+ libstdc++-v3/crossconfig.m4 |    2 -
+ 9 files changed, 191 insertions(+), 10 deletions(-)
+ create mode 100644 gcc/config/genode.h
+ create mode 100644 gcc/config/i386/genode64.h
+ create mode 100644 gcc/config/i386/t-genode64
+ create mode 100644 libgcc/link.h
+
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 5fcd192..729d101 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -762,6 +762,10 @@ case ${target} in
+     *) echo 'Unknown thread configuration for VxWorks'; exit 1 ;;
+   esac
+   ;;
++*-genode-*)
++  tm_file="${tm_file} genode.h"
++  default_use_cxa_atexit=yes
++  ;;
+ *-*-elf)
+   # Assume that newlib is being used and so __cxa_atexit is provided.
+   default_use_cxa_atexit=yes
+@@ -1205,6 +1209,10 @@ x86_64-*-darwin*)
+ i[34567]86-*-elf*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h"
+ 	;;
++x86_64-genode-elf)
++        tmake_file="${tmake_file} i386/t-genode64"
++	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/genode64.h"
++	;;
+ x86_64-*-elf*)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h"
+ 	;;
+diff --git a/gcc/config/genode.h b/gcc/config/genode.h
+new file mode 100644
+index 0000000..b8c5d78
+--- /dev/null
++++ b/gcc/config/genode.h
+@@ -0,0 +1,4 @@
++#if defined(HAVE_LD_EH_FRAME_HDR)
++#define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
++#define USE_PT_GNU_EH_FRAME
++#endif
+diff --git a/gcc/config/i386/genode64.h b/gcc/config/i386/genode64.h
+new file mode 100644
+index 0000000..6b7fac7
+--- /dev/null
++++ b/gcc/config/i386/genode64.h
+@@ -0,0 +1 @@
++#define LINK_SPEC "%{!m32:-m elf_x86_64} %{m32:-m elf_i386} %{shared:-shared} %{!static:--eh-frame-hdr}"
+diff --git a/gcc/config/i386/t-genode64 b/gcc/config/i386/t-genode64
+new file mode 100644
+index 0000000..4c76d49
+--- /dev/null
++++ b/gcc/config/i386/t-genode64
+@@ -0,0 +1,2 @@
++MULTILIB_OPTIONS  = m64/m32
++MULTILIB_DIRNAMES = 64 32
+diff --git a/libgcc/Makefile.in b/libgcc/Makefile.in
+index f38d5b4..a931cae 100644
+--- a/libgcc/Makefile.in
++++ b/libgcc/Makefile.in
+@@ -892,7 +892,7 @@ libgcc_s$(SHLIB_EXT): libunwind$(SHLIB_EXT)
+ endif
+ 
+ ifeq ($(enable_shared),yes)
+-all: libgcc_eh.a libgcc_s$(SHLIB_EXT)
++all: libgcc_eh.a
+ ifneq ($(LIBUNWIND),)
+ all: libunwind$(SHLIB_EXT)
+ endif
+@@ -1059,9 +1059,9 @@ install-shared:
+ 	chmod 644 $(DESTDIR)$(inst_libdir)/libgcc_eh.a
+ 	$(RANLIB) $(DESTDIR)$(inst_libdir)/libgcc_eh.a
+ 
+-	$(subst @multilib_dir@,$(MULTIDIR),$(subst \
+-		@shlib_base_name@,libgcc_s,$(subst \
+-		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(SHLIB_INSTALL))))
++#	$(subst @multilib_dir@,$(MULTIDIR),$(subst \
++#		@shlib_base_name@,libgcc_s,$(subst \
++#		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(SHLIB_INSTALL))))
+ 
+ install-leaf: $(install-shared) $(install-libunwind)
+ 	$(mkinstalldirs) $(DESTDIR)$(inst_libdir)
+diff --git a/libgcc/config.host b/libgcc/config.host
+index ef9791b..d64c652 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -193,6 +193,10 @@ case ${host} in
+       ;;
+   esac
+   ;;
++*-genode*)
++  tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc"
++  extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
++  ;;
+ *-*-linux* | frv-*-*linux* | *-*-kfreebsd*-gnu | *-*-knetbsd*-gnu | *-*-gnu* | *-*-kopensolaris*-gnu)
+   tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver t-linux"
+   extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
+@@ -358,6 +362,9 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtemseabi*)
+ 	tmake_file="${tmake_file} arm/t-arm arm/t-elf t-fixedpoint-gnu-prefix"
+ 	tm_file="$tm_file arm/bpabi-lib.h"
+ 	case ${host} in
++	arm-genode-eabi)
++	  tmake_file="${tmake_file} arm/t-bpabi"
++	  ;;
+ 	arm*-*-eabi* | arm*-*-rtemseabi*)
+ 	  tmake_file="${tmake_file} arm/t-bpabi"
+ 	  extra_parts="crtbegin.o crtend.o crti.o crtn.o"
+@@ -523,6 +530,9 @@ x86_64-*-darwin*)
+ i[34567]86-*-elf*)
+ 	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
+ 	;;
++x86_64-genode-elf)
++	tmake_file="$tmake_file i386/t-crtstuff"
++	;;
+ x86_64-*-elf*)
+ 	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
+ 	;;
+diff --git a/libgcc/link.h b/libgcc/link.h
+new file mode 100644
+index 0000000..4763191
+--- /dev/null
++++ b/libgcc/link.h
+@@ -0,0 +1,156 @@
++/*
++ * \brief  Stub for compiling GCC support libraries without libc
++ * \author Norman Feske
++ * \date   2011-08-31
++ *
++ * The target components of GCC tool chains (i.e. libsupc++, libgcc_eh, and
++ * libstdc++) depend on the presence of libc includes. For this reason, a C
++ * library for the target platform is normally regarded as a prerequisite for
++ * building a complete tool chain. However, for low-level operating-system
++ * code, this prerequisite is not satisfied.
++ *
++ * There are two traditional solutions to this problem. The first is to leave
++ * out those target components from the tool chain and live without full C++
++ * support (using '-fno-rtti' and '-fno-exceptions'). Because Genode relies on
++ * such C++ features however, this is no option. The other traditional solution
++ * is to use a tool chain compiled for a different target platform such as
++ * Linux. However, this approach calls for subtle problems because the target
++ * components are compiled against glibc and make certain presumptions about
++ * the underlying OS environment. E.g., the 'libstdc++' library of a Linux tool
++ * chain contains references to glibc's 'stderr' symbol, which does not exist
++ * on Genode's libc derived from FreeBSD. More critical assumptions are related
++ * to the mechanism used for thread-local storage.
++ *
++ * This header file overcomes these problems by providing all function
++ * prototypes and type declarations that are mandatory for compiling GCC's
++ * target components. Using this libc stub, all GCC target components can be
++ * built without the need for additional libc support. Of course, for actually
++ * using these target components, the target OS has to provide the
++ * implementation of a small subset of functions declared herein. On Genode,
++ * this subset is provided by the 'cxx' library.
++ *
++ * The code of the target components expects usual C header file names such as
++ * 'stdio.h'. It does not include 'libgcc_libc_stub.h'. By creating symlinks
++ * for all those file names pointing to this file, we ensure that this file is
++ * always included on the first occurrence of the inclusion of any libc header
++ * file. The set of symlinks pointing to this libc stub are created
++ * automatically by the 'tool_chain' script.
++ */
++
++/*
++ * Copyright (C) 2011-2013 Genode Labs GmbH
++ *
++ * This file is part of the Genode OS framework, which is distributed
++ * under the terms of the GNU General Public License version 2.
++ */
++
++#ifndef _LIBC_STUB_H_
++#define _LIBC_STUB_H_
++
++/*****************
++ ** sys/types.h **
++ *****************/
++
++#ifdef _LP64
++typedef signed   char  __int8_t;
++typedef signed   short __int16_t;
++typedef signed   int   __int32_t;
++typedef signed   long  __int64_t;
++typedef unsigned char  __uint8_t;
++typedef unsigned short __uint16_t;
++typedef unsigned int   __uint32_t;
++typedef unsigned long  __uint64_t;
++#else /* _LP64 */
++typedef signed   char  __int8_t;
++typedef signed   short __int16_t;
++typedef signed   long  __int32_t;
++typedef unsigned char  __uint8_t;
++typedef unsigned short __uint16_t;
++typedef unsigned long  __uint32_t;
++#ifndef __STRICT_ANSI__
++typedef signed   long long __int64_t;
++typedef unsigned long long __uint64_t;
++#endif /* __STRICT_ANSI__ */
++#endif /* _LP64 */
++
++/***********
++ ** elf.h **
++ ***********/
++
++/*
++ * The following defines and types are solely needed to compile libgcc's
++ * 'unwind-dw2-fde-glibc.c' in libc mode. This is needed because Genode's
++ * dynamic linker relies on the the "new" exception mechanism, which is not
++ * compiled-in when compiling libgcc with the 'inhibit_libc' flag.
++ *
++ * The following types are loosely based on glibc's 'link.h' and 'elf.h'.
++ */
++
++typedef __uint32_t Elf64_Word;
++typedef __uint64_t Elf64_Addr;
++typedef __uint64_t Elf64_Xword;
++typedef __uint64_t Elf64_Off;
++typedef __uint16_t Elf64_Half;
++
++typedef struct
++{
++	Elf64_Word  p_type;
++	Elf64_Word  p_flags;
++	Elf64_Off   p_offset;
++	Elf64_Addr  p_vaddr;
++	Elf64_Addr  p_paddr;
++	Elf64_Xword p_filesz;
++	Elf64_Xword p_memsz;
++	Elf64_Xword p_align;
++} Elf64_Phdr;
++
++typedef __uint32_t Elf32_Word;
++typedef __uint32_t Elf32_Addr;
++typedef __uint64_t Elf32_Xword;
++typedef __uint32_t Elf32_Off;
++typedef __uint16_t Elf32_Half;
++
++typedef struct
++{
++	Elf32_Word p_type;
++	Elf32_Off  p_offset;
++	Elf32_Addr p_vaddr;
++	Elf32_Addr p_paddr;
++	Elf32_Word p_filesz;
++	Elf32_Word p_memsz;
++	Elf32_Word p_flags;
++	Elf32_Word p_align;
++} Elf32_Phdr;
++
++#define PT_LOAD    1
++#define PT_DYNAMIC 2
++#define PT_LOOS    0x60000000
++
++/************
++ ** link.h **
++ ************/
++
++/* definitions according to glibc */
++
++#ifdef _LP64
++#define ElfW(type) Elf64_##type
++#else
++#define ElfW(type) Elf32_##type
++#endif /* _LP64 */
++
++struct dl_phdr_info
++{
++	ElfW(Addr) dlpi_addr;
++	const char *dlpi_name;
++	const ElfW(Phdr) *dlpi_phdr;
++	ElfW(Half) dlpi_phnum;
++	unsigned long long int dlpi_adds;
++	unsigned long long int dlpi_subs;
++	size_t dlpi_tls_modid;
++	void *dlpi_tls_data;
++};
++
++extern int dl_iterate_phdr(int (*__callback) (struct dl_phdr_info *,
++                                              size_t, void *), void *__data);
++
++#endif /* _LIBC_STUB_H_ */
+diff --git a/libstdc++-v3/configure.ac b/libstdc++-v3/configure.ac
+index f04563e..6e1e194 100644
+--- a/libstdc++-v3/configure.ac
++++ b/libstdc++-v3/configure.ac
+@@ -88,9 +88,9 @@ CXXFLAGS="$save_CXXFLAGS"
+ # up critical shell variables.
+ GLIBCXX_CONFIGURE
+ 
+-if test "x${with_newlib}" != "xyes"; then
+-  AC_LIBTOOL_DLOPEN
+-fi
++#if test "x${with_newlib}" != "xyes"; then
++#  AC_LIBTOOL_DLOPEN
++#fi
+ AM_PROG_LIBTOOL
+ ACX_LT_HOST_FLAGS
+ AC_SUBST(enable_shared)
+@@ -158,7 +158,7 @@ GLIBCXX_CHECK_WRITEV
+ GLIBCXX_CHECK_C99_TR1
+ 
+ # For the EOF, SEEK_CUR, and SEEK_END integer constants.
+-GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS
++#GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS
+ 
+ # For gettimeofday support.
+ GLIBCXX_CHECK_GETTIMEOFDAY
+@@ -306,7 +306,7 @@ GCC_CHECK_UNWIND_GETIPINFO
+ 
+ GCC_LINUX_FUTEX([AC_DEFINE(HAVE_LINUX_FUTEX, 1, [Define if futex syscall is available.])])
+ 
+-GCC_HEADER_STDINT(include/gstdint.h)
++#GCC_HEADER_STDINT(include/gstdint.h)
+ 
+ GLIBCXX_ENABLE_SYMVERS([yes])
+ AC_SUBST(libtool_VERSION)
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index 361ed0b..59d492d 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -5,7 +5,7 @@ dnl
+ AC_DEFUN([GLIBCXX_CROSSCONFIG],[
+ # Base decisions on target environment.
+ case "${host}" in
+-  arm*-*-symbianelf*)
++  arm*-*-symbianelf* | *-genode-*)
+     # This is a freestanding configuration; there is nothing to do here.
+     ;;
+ 
