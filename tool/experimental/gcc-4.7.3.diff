@@ -1,0 +1,442 @@
+diff -urN gcc-4.7.3.orig/configure.ac gcc-4.7.3/configure.ac
+--- gcc-4.7.3.orig/configure.ac	2012-09-05 14:19:47.000000000 +0200
++++ gcc-4.7.3/configure.ac	2014-04-21 22:24:09.937435400 +0200
+@@ -2142,6 +2142,7 @@
+     *) CFLAGS_FOR_TARGET="-g $CFLAGS" ;;
+   esac
+ fi
++AC_SUBST(CPPFLAGS_FOR_TARGET)
+ AC_SUBST(CFLAGS_FOR_TARGET)
+ 
+ if test "x$CXXFLAGS_FOR_TARGET" = x; then
+@@ -3113,6 +3114,7 @@
+ 
+ GCC_TARGET_TOOL(ar, AR_FOR_TARGET, AR, [binutils/ar])
+ GCC_TARGET_TOOL(as, AS_FOR_TARGET, AS, [gas/as-new])
++GCC_TARGET_TOOL(cpp, CPP_FOR_TARGET, CPP, [gcc/cpp -B$$r/$(HOST_SUBDIR)/gcc/])
+ GCC_TARGET_TOOL(cc, CC_FOR_TARGET, CC, [gcc/xgcc -B$$r/$(HOST_SUBDIR)/gcc/])
+ dnl see comments for CXX_FOR_TARGET_FLAG_TO_PASS
+ GCC_TARGET_TOOL(c++, CXX_FOR_TARGET, CXX,
+diff -urN gcc-4.7.3.orig/gcc/config/arm/arm.c gcc-4.7.3/gcc/config/arm/arm.c
+--- gcc-4.7.3.orig/gcc/config/arm/arm.c	2013-03-18 12:52:08.000000000 +0100
++++ gcc-4.7.3/gcc/config/arm/arm.c	2014-04-21 22:24:09.997434560 +0200
+@@ -23464,7 +23464,7 @@
+ static bool
+ arm_default_short_enums (void)
+ {
+-  return TARGET_AAPCS_BASED && arm_abi != ARM_ABI_AAPCS_LINUX;
++  return false;
+ }
+ 
+ 
+diff -urN gcc-4.7.3.orig/gcc/config.gcc gcc-4.7.3/gcc/config.gcc
+--- gcc-4.7.3.orig/gcc/config.gcc	2013-03-06 23:54:11.000000000 +0100
++++ gcc-4.7.3/gcc/config.gcc	2014-04-21 22:24:09.717438477 +0200
+@@ -204,7 +204,7 @@
+ 
+ out_file=
+ common_out_file=
+-tmake_file=
++#tmake_file=
+ extra_headers=
+ user_headers_inc_next_pre=
+ user_headers_inc_next_post=
+@@ -881,7 +881,7 @@
+ 	;;
+ arm*-*-uclinux*)		# ARM ucLinux
+ 	tm_file="dbxelf.h elfos.h arm/unknown-elf.h arm/elf.h arm/linux-gas.h arm/uclinux-elf.h glibc-stdint.h"
+-	tmake_file="arm/t-arm arm/t-arm-elf"
++	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf"
+ 	case ${target} in
+ 	arm*-*-uclinux*eabi*)
+ 	    tm_file="$tm_file arm/bpabi.h arm/uclinux-eabi.h"
+@@ -897,11 +897,11 @@
+ 	;;
+ arm*-*-ecos-elf)
+ 	tm_file="dbxelf.h elfos.h newlib-stdint.h arm/unknown-elf.h arm/elf.h arm/aout.h arm/arm.h arm/ecos-elf.h"
+-	tmake_file="arm/t-arm arm/t-arm-elf"
++	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf"
+ 	;;
+ arm*-*-rtemself*)
+ 	tm_file="dbxelf.h elfos.h arm/unknown-elf.h arm/elf.h arm/aout.h arm/arm.h arm/rtems-elf.h rtems.h newlib-stdint.h"
+-	tmake_file="arm/t-arm arm/t-arm-elf t-rtems arm/t-rtems"
++	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf t-rtems arm/t-rtems"
+ 	;;
+ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
+ 	# The BPABI long long divmod functions return a 128-bit value in
+@@ -910,7 +910,7 @@
+ 	need_64bit_hwint=yes
+ 	default_use_cxa_atexit=yes
+ 	tm_file="dbxelf.h elfos.h arm/unknown-elf.h arm/elf.h arm/bpabi.h"
+-	tmake_file="arm/t-arm arm/t-arm-elf"
++	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf"
+ 	case ${target} in
+ 	arm*-*-eabi*)
+ 	  tm_file="$tm_file newlib-stdint.h"
+@@ -932,11 +932,11 @@
+ 	;;
+ arm*-*-elf)
+ 	tm_file="dbxelf.h elfos.h newlib-stdint.h arm/unknown-elf.h arm/elf.h arm/aout.h arm/arm.h"
+-	tmake_file="arm/t-arm arm/t-arm-elf"
++	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf"
+ 	;;
+ arm*-wince-pe*)
+ 	tm_file="arm/semi.h arm/aout.h arm/arm.h arm/coff.h dbxcoff.h arm/pe.h arm/wince-pe.h"
+-	tmake_file="arm/t-arm arm/t-wince-pe"
++	tmake_file="${tmake_file} arm/t-arm arm/t-wince-pe"
+ 	extra_options="${extra_options} arm/pe.opt"
+ 	extra_objs="pe.o"
+ 	;;
+diff -urN gcc-4.7.3.orig/gcc/configure.ac gcc-4.7.3/gcc/configure.ac
+--- gcc-4.7.3.orig/gcc/configure.ac	2013-02-06 16:23:55.000000000 +0100
++++ gcc-4.7.3/gcc/configure.ac	2014-04-21 22:24:09.789437470 +0200
+@@ -1785,7 +1785,7 @@
+ done
+ 
+ host_xm_file_list=
+-host_xm_include_list=
++#host_xm_include_list=
+ for f in $host_xm_file; do
+   case $f in
+     ansidecl.h )
+@@ -1888,7 +1888,7 @@
+ if { { test x$host != x$target && test "x$with_sysroot" = x ; } ||
+        test x$with_newlib = xyes ; } &&
+      { test "x$with_headers" = x || test "x$with_headers" = xno ; } ; then
+-       inhibit_libc=true
++       inhibit_libc=false # was true
+ fi
+ AC_SUBST(inhibit_libc)
+ 
+diff -urN gcc-4.7.3.orig/libgcc/config/t-libunwind-elf gcc-4.7.3/libgcc/config/t-libunwind-elf
+--- gcc-4.7.3.orig/libgcc/config/t-libunwind-elf	2011-08-05 16:37:48.000000000 +0200
++++ gcc-4.7.3/libgcc/config/t-libunwind-elf	2014-04-21 22:24:09.673439093 +0200
+@@ -32,7 +32,7 @@
+ SHLIBUNWIND_LINK = $(CC) $(LIBGCC2_CFLAGS) -shared \
+ 	-nodefaultlibs -Wl,-h,$(SHLIBUNWIND_SONAME) \
+ 	-Wl,-z,text -Wl,-z,defs -o $(SHLIB_DIR)/$(SHLIBUNWIND_SONAME).tmp \
+-	@multilib_flags@ $(SHLIB_OBJS) -lc && \
++	@multilib_flags@ $(SHLIB_OBJS)  && \
+ 	rm -f $(SHLIB_DIR)/$(SHLIB_SOLINK) && \
+ 	if [ -f $(SHLIB_DIR)/$(SHLIBUNWIND_SONAME) ]; then \
+ 	  mv -f $(SHLIB_DIR)/$(SHLIBUNWIND_SONAME) \
+diff -urN gcc-4.7.3.orig/libgcc/config/t-slibgcc gcc-4.7.3/libgcc/config/t-slibgcc
+--- gcc-4.7.3.orig/libgcc/config/t-slibgcc	2011-11-02 11:49:46.000000000 +0100
++++ gcc-4.7.3/libgcc/config/t-slibgcc	2014-04-21 22:24:09.673439093 +0200
+@@ -27,7 +27,7 @@
+ SHLIB_OBJS = @shlib_objs@
+ SHLIB_DIR = @multilib_dir@
+ SHLIB_SLIBDIR_QUAL = @shlib_slibdir_qual@
+-SHLIB_LC = -lc
++SHLIB_LC = 
+ SHLIB_MAKE_SOLINK = $(LN_S) $(SHLIB_SONAME) $(SHLIB_DIR)/$(SHLIB_SOLINK)
+ SHLIB_INSTALL_SOLINK = $(LN_S) $(SHLIB_SONAME) \
+ 	$(DESTDIR)$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK)
+diff -urN gcc-4.7.3.orig/libgcc/config.host gcc-4.7.3/libgcc/config.host
+--- gcc-4.7.3.orig/libgcc/config.host	2013-03-06 18:42:45.000000000 +0100
++++ gcc-4.7.3/libgcc/config.host	2014-04-21 22:24:09.637439596 +0200
+@@ -69,8 +69,8 @@
+ 
+ asm_hidden_op=.hidden
+ enable_execute_stack=
+-extra_parts=
+-tmake_file=
++#extra_parts=
++#tmake_file=
+ tm_file=
+ tm_define=
+ md_unwind_header=no-unwind.h
+@@ -172,14 +172,14 @@
+ *-*-darwin*)
+   asm_hidden_op=.private_extern
+   tmake_file="$tmake_file t-darwin ${cpu_type}/t-darwin t-libgcc-pic t-slibgcc-darwin"
+-  extra_parts="crt3.o crttms.o crttme.o"
++#  extra_parts="crt3.o crttms.o crttme.o"
+   ;;
+ *-*-freebsd*)
+   # This is the generic ELF configuration of FreeBSD.  Later
+   # machine-specific sections may refine and add to this
+   # configuration.
+   tmake_file="$tmake_file t-freebsd t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver"
+-  extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
++#  extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
+   case ${target_thread_file} in
+     posix)
+       tmake_file="${tmake_file} t-freebsd-thread"
+@@ -195,11 +195,11 @@
+   ;;
+ *-*-linux* | frv-*-*linux* | *-*-kfreebsd*-gnu | *-*-knetbsd*-gnu | *-*-gnu* | *-*-kopensolaris*-gnu)
+   tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver t-linux"
+-  extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
++#  extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
+   ;;
+ *-*-lynxos*)
+   tmake_file="$tmake_file t-lynx $cpu_type/t-crtstuff t-crtstuff-pic t-libgcc-pic"
+-  extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
++#  extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
+   ;;
+ *-*-netbsd*)
+   tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver"
+@@ -208,7 +208,7 @@
+   # a.out configurations.
+   case ${host} in
+     *-*-netbsd*1.[7-9]* | *-*-netbsd[2-9]* | *-*-netbsdelf[2-9]*)
+-      extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o"
++#      extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o"
+       ;;
+   esac
+   ;;
+@@ -222,7 +222,7 @@
+   ;;
+ *-*-rtems*)
+   tmake_file="$tmake_file t-rtems"
+-  extra_parts="crtbegin.o crtend.o"
++#  extra_parts="crtbegin.o crtend.o"
+   ;;
+ *-*-solaris2*)
+   # Unless linker support and dl_iterate_phdr are present,
+@@ -251,7 +251,7 @@
+   esac
+   ;;
+ *-*-uclinux*)
+-  extra_parts="crtbegin.o crtend.o"
++#  extra_parts="crtbegin.o crtend.o"
+   ;;
+ *-*-*vms*)
+   tmake_file="vms/t-vms"
+@@ -261,7 +261,7 @@
+   tmake_file=t-vxworks
+   ;;
+ *-*-elf)
+-  extra_parts="crtbegin.o crtend.o"
++#  extra_parts="crtbegin.o crtend.o"
+   ;;
+ esac
+ 
+@@ -364,7 +364,7 @@
+ 	case ${host} in
+ 	arm*-*-eabi* | arm*-*-rtems*)
+ 	  tmake_file="${tmake_file} arm/t-bpabi"
+-	  extra_parts="crtbegin.o crtend.o crti.o crtn.o"
++#	  extra_parts="crtbegin.o crtend.o crti.o crtn.o"
+ 	  ;;
+ 	arm*-*-symbianelf*)
+ 	  tmake_file="${tmake_file} arm/t-symbian t-slibgcc-nolc-override"
+@@ -409,7 +409,7 @@
+ 	tmake_file="$tmake_file bfin/t-bfin bfin/t-crtstuff t-libgcc-pic t-fdpbit bfin/t-linux"
+ 	# No need to build crtbeginT.o on uClibc systems.  Should probably
+ 	# be moved to the OS specific section above.
+-	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
++#	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
+ 	md_unwind_header=bfin/linux-unwind.h
+ 	;;
+ bfin*-rtems*)
+@@ -418,7 +418,7 @@
+ 	;;
+ bfin*-*)
+ 	tmake_file="$tmake_file bfin/t-bfin t-fdpbit"
+-	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
++#	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
+         ;;
+ cr16-*-elf)
+ 	tmake_file="${tmake_file} cr16/t-cr16 cr16/t-crtlibid t-fdpbit"
+@@ -579,7 +579,7 @@
+ i[4567]86-wrs-vxworks|i[4567]86-wrs-vxworksae)
+ 	;;
+ i[34567]86-*-cygwin*)
+-	extra_parts="crtbegin.o crtend.o crtfastmath.o"
++#	extra_parts="crtbegin.o crtend.o crtfastmath.o"
+ 	# This has to match the logic for DWARF2_UNWIND_INFO in gcc/config/i386/cygming.h
+ 	if test x$enable_sjlj_exceptions = xyes; then
+ 		tmake_eh_file="i386/t-sjlj-eh"
+@@ -595,7 +595,7 @@
+ 	tmake_file="${tmake_file} ${tmake_eh_file} ${tmake_dlldir_file} i386/t-slibgcc-cygming i386/t-cygming i386/t-cygwin i386/t-crtfm i386/t-chkstk t-dfprules"
+ 	;;
+ i[34567]86-*-mingw*)
+-	extra_parts="crtbegin.o crtend.o crtfastmath.o"
++#	extra_parts="crtbegin.o crtend.o crtfastmath.o"
+ 	case ${target_thread_file} in
+ 	  win32)
+ 	    tmake_file="$tmake_file i386/t-gthr-win32"
+@@ -656,7 +656,7 @@
+ 	;;
+ ia64*-*-linux*)
+ 	# Don't use crtbeginT.o from *-*-linux* default.
+-	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtfastmath.o"
++#	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtfastmath.o"
+ 	tmake_file="$tmake_file ia64/t-ia64 ia64/t-ia64-elf t-crtfm t-softfp-tf ia64/t-softfp t-softfp ia64/t-softfp-compat ia64/t-eh-ia64 t-libunwind ia64/t-linux"
+ 	if test x$with_system_libunwind != xyes ; then
+ 		tmake_file="${tmake_file} t-libunwind-elf ia64/t-linux-libunwind"
+@@ -739,11 +739,11 @@
+ 	;;
+ microblaze*-*-*)
+         tmake_file="microblaze/t-microblaze t-fdpbit"
+-	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
++#	extra_parts="crtbegin.o crtend.o crti.o crtn.o"
+ 	;;
+ mips-sgi-irix6.5*)
+ 	tmake_file="$tmake_file mips/t-irix6 t-crtfm mips/t-tpbit t-slibgcc mips/t-slibgcc-irix"
+-	extra_parts="crtbegin.o crtend.o crtfastmath.o irix-crti.o irix-crtn.o"
++#	extra_parts="crtbegin.o crtend.o crtfastmath.o irix-crti.o irix-crtn.o"
+ 	md_unwind_header=mips/irix6-unwind.h
+ 	;;
+ mips*-*-netbsd*)			# NetBSD/mips, either endian.
+@@ -812,7 +812,7 @@
+ 	tmake_file="$tmake_file mips/t-crtstuff mips/t-mips16"
+ 	;;
+ mmix-knuth-mmixware)
+-	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
++#	extra_parts="crti.o crtn.o crtbegin.o crtend.o"
+ 	tmake_file="${tmake_file} ${cpu_type}/t-${cpu_type}"
+ 	;;
+ mn10300-*-*)
+@@ -947,7 +947,7 @@
+ 	;;
+ s390x-ibm-tpf*)
+ 	tmake_file="${tmake_file} s390/t-crtstuff t-libgcc-pic t-eh-dw2-dip"
+-	extra_parts="crtbeginS.o crtendS.o"
++#	extra_parts="crtbeginS.o crtendS.o"
+ 	md_unwind_header=s390/tpf-unwind.h
+ 	;;
+ score-*-elf)
+@@ -1132,7 +1132,7 @@
+ 	;;
+ am33_2.0-*-linux*)
+ 	# Don't need crtbeginT.o from *-*-linux* default.
+-	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
++#	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
+ 	tmake_file="$tmake_file t-fdpbit"
+ 	;;
+ m32c-*-elf*|m32c-*-rtems*)
+@@ -1140,7 +1140,7 @@
+  	;;
+ mep*-*-*)
+ 	tmake_file="mep/t-mep t-fdpbit"
+-	extra_parts="crtbegin.o crtend.o"
++#	extra_parts="crtbegin.o crtend.o"
+ 	;;
+ *)
+ 	echo "*** Configuration ${host} not supported" 1>&2
+diff -urN gcc-4.7.3.orig/libgcc/Makefile.in gcc-4.7.3/libgcc/Makefile.in
+--- gcc-4.7.3.orig/libgcc/Makefile.in	2012-12-04 20:09:59.000000000 +0100
++++ gcc-4.7.3/libgcc/Makefile.in	2014-04-21 22:24:09.665439205 +0200
+@@ -858,7 +858,7 @@
+     _gcov_indirect_call_profiler _gcov_average_profiler _gcov_ior_profiler \
+     _gcov_merge_ior
+ 
+-libgcov-objects = $(patsubst %,%$(objext),$(LIBGCOV))
++libgcov-objects = 
+ 
+ $(libgcov-objects): %$(objext): $(srcdir)/libgcov.c
+ 	$(gcc_compile) -DL$* -c $(srcdir)/libgcov.c
+diff -urN gcc-4.7.3.orig/libstdc++-v3/configure gcc-4.7.3/libstdc++-v3/configure
+--- gcc-4.7.3.orig/libstdc++-v3/configure	2012-11-06 00:42:32.000000000 +0100
++++ gcc-4.7.3/libstdc++-v3/configure	2014-04-21 22:24:17.017336434 +0200
+@@ -64133,7 +64133,6 @@
+ 
+     ;;
+   *)
+-    as_fn_error "No support for this host/target combination." "$LINENO" 5
+    ;;
+ esac
+ 
+diff -urN gcc-4.7.3.orig/libstdc++-v3/crossconfig.m4 gcc-4.7.3/libstdc++-v3/crossconfig.m4
+--- gcc-4.7.3.orig/libstdc++-v3/crossconfig.m4	2011-07-18 13:04:18.000000000 +0200
++++ gcc-4.7.3/libstdc++-v3/crossconfig.m4	2014-04-21 22:24:10.017434281 +0200
+@@ -264,7 +264,6 @@
+     AC_DEFINE(HAVE_TANHF)
+     ;;
+   *)
+-    AC_MSG_ERROR([No support for this host/target combination.])
+    ;;
+ esac
+ ])
+diff -urN gcc-4.7.3.orig/Makefile.def gcc-4.7.3/Makefile.def
+--- gcc-4.7.3.orig/Makefile.def	2012-08-06 16:34:27.000000000 +0200
++++ gcc-4.7.3/Makefile.def	2014-04-21 22:24:09.921435624 +0200
+@@ -242,6 +242,7 @@
+ // Target tools
+ flags_to_pass = { flag= AR_FOR_TARGET ; };
+ flags_to_pass = { flag= AS_FOR_TARGET ; };
++flags_to_pass = { flag= CPP_FOR_TARGET ; };
+ flags_to_pass = { flag= CC_FOR_TARGET ; };
+ flags_to_pass = { flag= CFLAGS_FOR_TARGET ; };
+ flags_to_pass = { flag= CPPFLAGS_FOR_TARGET ; };
+diff -urN gcc-4.7.3.orig/Makefile.in gcc-4.7.3/Makefile.in
+--- gcc-4.7.3.orig/Makefile.in	2012-08-06 16:34:27.000000000 +0200
++++ gcc-4.7.3/Makefile.in	2014-04-21 22:24:13.000000000 +0200
+@@ -272,6 +272,7 @@
+ 	$(BASE_EXPORTS) \
+ 	AR="$(AR_FOR_TARGET)"; export AR; \
+ 	AS="$(COMPILER_AS_FOR_TARGET)"; export AS; \
++	CPP="$(CPP_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export CPP; \
+ 	CC="$(CC_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export CC; \
+ 	CFLAGS="$(CFLAGS_FOR_TARGET)"; export CFLAGS; \
+ 	CONFIG_SHELL="$(SHELL)"; export CONFIG_SHELL; \
+@@ -540,6 +541,7 @@
+ 
+ AR_FOR_TARGET=@AR_FOR_TARGET@
+ AS_FOR_TARGET=@AS_FOR_TARGET@
++CPP_FOR_TARGET=$(STAGE_CC_WRAPPER) @CPP_FOR_TARGET@
+ CC_FOR_TARGET=$(STAGE_CC_WRAPPER) @CC_FOR_TARGET@
+ 
+ # If GCC_FOR_TARGET is not overriden on the command line, then this
+@@ -569,6 +571,7 @@
+ COMPILER_NM_FOR_TARGET=@COMPILER_NM_FOR_TARGET@
+ 
+ CFLAGS_FOR_TARGET = @CFLAGS_FOR_TARGET@
++CPPFLAGS_FOR_TARGET = @CPPFLAGS_FOR_TARGET@
+ CXXFLAGS_FOR_TARGET = @CXXFLAGS_FOR_TARGET@
+ 
+ LIBCFLAGS_FOR_TARGET = $(CFLAGS_FOR_TARGET)
+@@ -758,6 +761,7 @@
+ 	"GNATMAKE=$(GNATMAKE)" \
+ 	"AR_FOR_TARGET=$(AR_FOR_TARGET)" \
+ 	"AS_FOR_TARGET=$(AS_FOR_TARGET)" \
++	"CPP_FOR_TARGET=$(CPP_FOR_TARGET)" \
+ 	"CC_FOR_TARGET=$(CC_FOR_TARGET)" \
+ 	"CFLAGS_FOR_TARGET=$(CFLAGS_FOR_TARGET)" \
+ 	"CPPFLAGS_FOR_TARGET=$(CPPFLAGS_FOR_TARGET)" \
+@@ -850,6 +854,7 @@
+ EXTRA_TARGET_FLAGS = \
+ 	'AR=$$(AR_FOR_TARGET)' \
+ 	'AS=$(COMPILER_AS_FOR_TARGET)' \
++	'CPP=$$(CPP_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
+ 	'CC=$$(CC_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
+ 	'CFLAGS=$$(CFLAGS_FOR_TARGET)' \
+ 	'CXX=$$(CXX_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
+diff -urN gcc-4.7.3.orig/Makefile.tpl gcc-4.7.3/Makefile.tpl
+--- gcc-4.7.3.orig/Makefile.tpl	2012-08-06 16:34:27.000000000 +0200
++++ gcc-4.7.3/Makefile.tpl	2014-04-21 22:24:09.917435679 +0200
+@@ -275,6 +275,7 @@
+ 	$(BASE_EXPORTS) \
+ 	AR="$(AR_FOR_TARGET)"; export AR; \
+ 	AS="$(COMPILER_AS_FOR_TARGET)"; export AS; \
++	CPP="$(CPP_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export CPP; \
+ 	CC="$(CC_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export CC; \
+ 	CFLAGS="$(CFLAGS_FOR_TARGET)"; export CFLAGS; \
+ 	CONFIG_SHELL="$(SHELL)"; export CONFIG_SHELL; \
+@@ -478,6 +479,7 @@
+ 
+ AR_FOR_TARGET=@AR_FOR_TARGET@
+ AS_FOR_TARGET=@AS_FOR_TARGET@
++CPP_FOR_TARGET=$(STAGE_CC_WRAPPER) @CPP_FOR_TARGET@
+ CC_FOR_TARGET=$(STAGE_CC_WRAPPER) @CC_FOR_TARGET@
+ 
+ # If GCC_FOR_TARGET is not overriden on the command line, then this
+@@ -507,6 +509,7 @@
+ COMPILER_NM_FOR_TARGET=@COMPILER_NM_FOR_TARGET@
+ 
+ CFLAGS_FOR_TARGET = @CFLAGS_FOR_TARGET@
++CPPFLAGS_FOR_TARGET = @CPPFLAGS_FOR_TARGET@
+ CXXFLAGS_FOR_TARGET = @CXXFLAGS_FOR_TARGET@
+ 
+ LIBCFLAGS_FOR_TARGET = $(CFLAGS_FOR_TARGET)
+@@ -642,6 +645,7 @@
+ EXTRA_TARGET_FLAGS = \
+ 	'AR=$$(AR_FOR_TARGET)' \
+ 	'AS=$(COMPILER_AS_FOR_TARGET)' \
++	'CPP=$$(CPP_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
+ 	'CC=$$(CC_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
+ 	'CFLAGS=$$(CFLAGS_FOR_TARGET)' \
+ 	'CXX=$$(CXX_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
