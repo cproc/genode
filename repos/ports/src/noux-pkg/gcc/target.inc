@@ -50,7 +50,7 @@ libgmp.a libmpfr.a libmpc.a libc.a:
 
 Makefile: dummy_libs
 
-LIBS  += libc libm libc_noux
+LIBS  += libc libm libc_noux stdcxx
 
 include $(REP_DIR)/mk/noux.mk
 
