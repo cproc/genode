@@ -28,13 +28,7 @@ NOUX_ENV += CC_FOR_TARGET=$(CC) CXX_FOR_TARGET=$(CXX) GCC_FOR_TARGET=$(CC) CPP_F
             LD_FOR_TARGET=$(LD) AS_FOR_TARGET=$(AS) AR_FOR_TARGET=$(AR)
 
 NOUX_ENV += CFLAGS_FOR_TARGET='-I$(BASE_DIR)/../../tool -fPIC -DUSE_PT_GNU_EH_FRAME'
-
-#
-# Need to specify LDFLAGS_FOR_TARGET as configure argument, not just as
-# environment variable. Otherwise, the generated Makefile will set 'LDFLAGS_FOR_TARGET'
-# to empty, target libraries will fail to build.
-#
-NOUX_ENV += LDFLAGS_FOR_TARGET='$(NOUX_LDFLAGS)'
+NOUX_ENV += CXXFLAGS_FOR_TARGET='-fPIC'
 
 NOUX_MAKE_ENV += MULTILIB_OPTIONS="m64/m32" MULTILIB_DIRNAMES="64 32"
 
@@ -56,7 +50,7 @@ libgmp.a libmpfr.a libmpc.a libc.a:
 
 Makefile: dummy_libs
 
-LIBS  += libc libm libc_noux
+LIBS  += libc libm libc_noux stdcxx
 
 include $(REP_DIR)/mk/noux.mk
 
