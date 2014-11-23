@@ -21,6 +21,7 @@
 #include <base/session_label.h>
 #include <util/arg_string.h>
 #include <base/log.h>
+#include <timer_session/connection.h>
 
 
 using namespace Genode;
@@ -47,6 +48,8 @@ class Rom_session_component : public Genode::Rpc_object<Genode::Rom_session>
 		 * Name of requested file, interpreted at path into the file system
 		 */
 		Path const _file_path;
+
+		Timer::Session &_timer;
 
 		/**
 		 * Handle of associated file
@@ -123,7 +126,7 @@ class Rom_session_component : public Genode::Rpc_object<Genode::Rom_session>
 
 				catch (Invalid_handle)    { Genode::error(_file_path, ": invalid_handle"); }
 				catch (Invalid_name)      { Genode::error(_file_path, ": invalid_name"); }
-				catch (Lookup_failed)     { Genode::error(_file_path, ": lookup_failed"); }
+				catch (Lookup_failed)     { Genode::error(_file_path, ": lookup_failed (dir)"); }
 				catch (Permission_denied) { Genode::error(_file_path, ": permission_denied"); }
 				catch (Name_too_long)     { Genode::error(_file_path, ": name_too_long"); }
 				catch (No_space)          { Genode::error(_file_path, ": no_space"); }
@@ -147,20 +150,29 @@ class Rom_session_component : public Genode::Rpc_object<Genode::Rom_session>
 
 			File_system::File_handle file_handle;
 
-			try {
+			unsigned num_attempts = 10;
 
-				Dir_handle dir = _open_compound_dir(fs, path, false);
-				Handle_guard guard(fs, dir);
+			while (num_attempts--) {
+				try {
 
-				/* open file */
-				Genode::Path<PATH_MAX_LEN> file_name(path.base());
-				file_name.keep_only_last_element();
-				file_handle = fs.file(dir, file_name.base() + 1,
-				                      File_system::READ_ONLY, false);
+					Dir_handle dir = _open_compound_dir(fs, path, false);
+					Handle_guard guard(fs, dir);
+
+					/* open file */
+					Genode::Path<PATH_MAX_LEN> file_name(path.base());
+					file_name.keep_only_last_element();
+					file_handle = fs.file(dir, file_name.base() + 1,
+					                      File_system::READ_ONLY, false);
+
+					break;
+				}
+				catch (Invalid_handle)    { Genode::error(_file_path, ": Invalid_handle"); }
+				catch (Invalid_name)      { Genode::error(_file_path, ": invalid_name"); }
+				catch (Lookup_failed)     { Genode::error(_file_path, ": lookup_failed"); }
+
+
+				_timer.msleep(20);
 			}
-			catch (Invalid_handle)    { Genode::error(_file_path, ": Invalid_handle"); }
-			catch (Invalid_name)      { Genode::error(_file_path, ": invalid_name"); }
-			catch (Lookup_failed)     { Genode::error(_file_path, ": lookup_failed"); }
 
 			return file_handle;
 		}
@@ -272,9 +284,10 @@ class Rom_session_component : public Genode::Rpc_object<Genode::Rom_session>
 		 *                  creation time)
 		 */
 		Rom_session_component(Genode::Env &env,
-		                      File_system::Session &fs, const char *file_path)
+		                      File_system::Session &fs, const char *file_path,
+		                      Timer::Session &timer)
 		:
-			_env(env), _fs(fs), _file_path(file_path),
+			_env(env), _fs(fs), _file_path(file_path), _timer(timer),
 			_file_handle(_open_file(_fs, _file_path))
 		{
 			if (!_file_handle.valid())
@@ -327,6 +340,8 @@ class Rom_root : public Genode::Root_component<Rom_session_component>
 		/* open file-system session */
 		File_system::Connection _fs { _env, _fs_tx_block_alloc };
 
+		Timer::Connection _timer;
+
 		Rom_session_component *_create_session(const char *args)
 		{
 			Genode::Session_label const label = label_from_args(args);
@@ -336,7 +351,7 @@ class Rom_root : public Genode::Root_component<Rom_session_component>
 
 			/* create new session for the requested file */
 			return new (md_alloc())
-				Rom_session_component(_env, _fs, module_name.string());
+				Rom_session_component(_env, _fs, module_name.string(), _timer);
 		}
 
 	public:
