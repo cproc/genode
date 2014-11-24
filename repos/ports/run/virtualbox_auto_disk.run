@@ -10,10 +10,42 @@ set vdi_image "win7.vdi"
 # Write overlay back to harddisk if set to 0
 set use_ram_fs 0
 
-set build_components { }
-set boot_modules { vm_auto_disk.vbox }
+set build_components { drivers/nic server/nic_bridge server/tcp_terminal }
+set boot_modules { vm_auto_disk.vbox nic_drv nic_bridge tcp_terminal lwip.lib.so }
 
 set config_of_app {
+	<start name="nic_drv" priority="-1">
+		<resource name="RAM" quantum="8M" />
+		<provides>
+			<service name="Nic" />
+		</provides>
+	</start>
+
+	<start name="nic_bridge" priority="-1">
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Nic"/> </provides>
+		<route>
+			<service name="Nic"> <child name="nic_drv" /> </service>
+			<any-service> <parent /> <any-child /> </any-service>
+		</route>
+		<config mac="02:03:02:02:02:00"/>
+	</start>
+
+	<start name="tcp_terminal" priority="-1">
+		<resource name="RAM" quantum="2560K"/>
+		<provides> <service name="Terminal"/> </provides>
+		<config>
+			<policy label="vbox" port="8888"/>
+			<libc stdout="/dev/log">
+				<vfs> <dir name="dev"> <log/> </dir> </vfs>
+			</libc>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_bridge" /> </service>
+			<any-service> <parent /> <any-child /> </any-service>
+		</route>
+	</start>
+
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>
@@ -41,6 +73,7 @@ append_if [expr $use_ram_fs] config_of_app {
 
 append config_of_app {
 			<service name="File_system"> <child name="rump_fs"/> </service>
+			<service name="Nic"> <child name="nic_bridge" /> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
@@ -49,10 +82,12 @@ append config_of_app {
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
 # copy vbox configuration to bin directory
+exec mkdir -p bin
 exec cp ${genode_dir}/repos/ports/run/vm_auto_disk.vbox bin/.
 
 build_boot_image $boot_modules
 
+run_genode_until forever
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} 70
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: yes, hostWindowMapping: no, graphics: yes} 170 [output_spawn_id]
 
