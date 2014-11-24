@@ -22,6 +22,7 @@ VBOX_MAIN_GLUE := AutoLock EventQueue string xpcom/helpers
 
 VBOX_MAIN_ALL := DisplayResampleImage DisplayUtils EventImpl Global HashedPw
 VBOX_MAIN_ALL += PCIDeviceAttachmentImpl ProgressImpl SharedFolderImpl
+VBOX_MAIN_ALL += VirtualBoxBase
 
 VBOX_MAIN_CLI := AdditionsFacilityImpl ConsoleImpl2 DisplayImpl HGCM HGCMThread
 VBOX_MAIN_CLI += HGCMObjects

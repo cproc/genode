@@ -20,8 +20,11 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <sys/mount.h>    /* statfs */
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>        /* open */
+
 
 
 /* libc memory allocator */
@@ -111,9 +114,10 @@ extern "C" char *getenv(const char *name)
 //		               "+dev_pcnet.e.l.f"
 //		               "+dev_pic.e.l.f"
 //		               "+dev_apic.e.l.f"
-//		               "+dev_vmm.e.l.f"
+		               "+dev_vmm.e"
 //		               "+main.e.l.f"
 //		               "+hgcm.e.l.f"
+//		               "+shared_folders.e.l.f"
 		               ;
 
 	if (Genode::strcmp(name, "VBOX_LOG_FLAGS") == 0 ||
@@ -175,7 +179,7 @@ extern "C" int nanosleep(const struct timespec *req, struct timespec *rem)
 
 
 
-/* Some dummy implemention for LibC functions */
+/* Some dummy implementation for LibC functions */
 
 extern "C" pid_t getpid(void)
 {
@@ -220,4 +224,33 @@ extern "C" int _sigprocmask()
 		PINF("%s called - rip %p", __func__, __builtin_return_address(0));
 
 	return 0;
+}
+
+
+
+/**
+ * Used by Shared Folders Guest additions
+ */
+extern "C" int _fstatfs(int libc_fd, struct statfs *buf);
+extern "C" int statfs(const char *path, struct statfs *buf)
+{
+	int fd = open(path, 0);
+
+	if (fd < 0)
+		return fd;
+
+	int res = _fstatfs(fd, buf);
+
+	close(fd);
+
+	return res;
+}
+
+extern "C" long pathconf(char const *path, int name)
+{
+	if (name == _PC_NAME_MAX) return 255;
+
+	PERR("pathconf does not support config option %d", name);
+	errno = EINVAL;
+	return -1;
 }

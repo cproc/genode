@@ -37,3 +37,13 @@
  
      /*
       * Clear the event variables.
++++ src/app/virtualbox/src/VBox/Devices/VMMDev/VMMDevHGCM.cpp
+@@ -19,7 +19,7 @@
+ /*******************************************************************************
+ *   Header Files                                                               *
+ *******************************************************************************/
+-#define LOG_GROUP LOG_GROUP_DEV_VMM
++#define LOG_GROUP LOG_GROUP_HGCM
+ #include <iprt/alloc.h>
+ #include <iprt/asm.h>
+ #include <iprt/assert.h>

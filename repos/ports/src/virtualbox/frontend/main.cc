@@ -32,10 +32,6 @@
 #include "console.h"
 #include "fb.h"
 
-static PVM                gpVM             = NULL;
-static PUVM               gpuVM            = NULL;
-static GenodeConsole    * gConsole         = nullptr;
-
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 
@@ -115,18 +111,17 @@ HRESULT setupmachine()
 		return rc;
 
 	// open a session
-	static ISession session;
-	rc = session.init();
+	ComObjPtr<ISession> session;
+	rc = session.createObject();
 	if (FAILED(rc))
 		return rc;
 
-	rc = machine->LockMachine(&session, LockType_VM);
+	rc = machine->LockMachine(session, LockType_VM);
 	if (FAILED(rc))
 		return rc;
-
 
 	/* Console object */
-	gConsole = new GenodeConsole();
+	GenodeConsole * gConsole = new GenodeConsole();
 	/* Derived from Session::AssignMachine method in Main/src-client/SessionImpl.cpp */
 	static IInternalMachineControl control;
 	rc = control.init(machine);
@@ -181,17 +176,6 @@ HRESULT setupmachine()
 	rc = gConsole->PowerUp(progress.asOutParam());
 	if (FAILED(rc))
 		return rc;
-
-	/* construct virtual hardware for VM based on loaded .vbox file */
-	int irc = VMR3Create(1, NULL, NULL, NULL, Console::configConstructor,
-	                     gConsole, &gpVM, &gpuVM);
-	if (RT_FAILURE(irc))
-		return E_FAIL;
-
-	/* power on the VM */
-	irc = VMR3PowerOn(gpuVM);
-	if (RT_FAILURE(irc))
-		return E_FAIL;
 
 	/* wait until VM is up */
 	MachineState_T machineState = MachineState_Null;

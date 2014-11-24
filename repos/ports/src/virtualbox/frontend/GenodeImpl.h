@@ -201,6 +201,7 @@ class DummyClass {
 		void fireHostNameResolutionConfigurationChangeEvent(const ComObjPtr<EventSource>&);
 		void fireHostPCIDevicePlugEvent(ComPtr<EventSource>&, BSTR, bool, bool, ComObjPtr<PCIDeviceAttachment>&, void *);
 		void fireStateChangedEvent(const ComObjPtr<EventSource>&, MachineState_T);
+		void fireRuntimeErrorEvent(const ComObjPtr<EventSource>&, BOOL&, short unsigned int*&, short unsigned int*&);
 };
 
 #define ATL_NO_VTABLE

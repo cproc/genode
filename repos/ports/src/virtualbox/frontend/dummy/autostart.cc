@@ -28,5 +28,6 @@ int AutostartDb::addAutostopVM(char const*)                                     
 int AutostartDb::removeAutostopVM(char const*)                                  DUMMY(-1)
 int AutostartDb::removeAutostartVM(char const*)                                 DUMMY(-1)
 
-AutostartDb::AutostartDb() TRACE()
+AutostartDb::AutostartDb()                                                      TRACE()
+AutostartDb::~AutostartDb()                                                     DUMMY()
 int AutostartDb::setAutostartDbPath(char const*path)                            TRACE(VINF_SUCCESS)

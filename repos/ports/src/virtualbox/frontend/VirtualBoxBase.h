@@ -4,6 +4,7 @@
 #include <base/printf.h>
 
 #include <iprt/asm.h>
+#include <iprt/thread.h>
 
 #include <list>
 #include <map>
@@ -30,8 +31,46 @@ typedef std::list<Utf8Str> StringsList;
 
 class VirtualBoxBase : public util::Lockable {
 
+	public:
+
+		enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
+
+		virtual void uninit() { }
+
 	private:
+
 		RWLockHandle *_lock;
+
+
+		void setState(State aState)
+		{
+			Assert(mState != aState);
+			mState = aState;
+			mStateChangeThread = RTThreadSelf();
+		}
+
+		/** Primary state of this object */
+		State mState;
+		/** Thread that caused the last state change */
+		RTTHREAD mStateChangeThread;
+		/** Total number of active calls to this object */
+		unsigned mCallers;
+		/** Posted when the number of callers drops to zero */
+		RTSEMEVENT mZeroCallersSem;
+		/** Posted when the object goes from InInit/InUninit to some other state */
+		RTSEMEVENTMULTI mInitUninitSem;
+		/** Number of threads waiting for mInitUninitDoneSem */
+		unsigned mInitUninitWaiters;
+
+		/** Protects access to state related data members */
+		WriteLockHandle mStateLock;
+
+		/** User-level object lock for subclasses */
+		mutable RWLockHandle *mObjectLock;
+
+		friend class AutoInitSpan;
+		friend class AutoReinitSpan;
+		friend class AutoUninitSpan;
 
 	protected:
 
@@ -41,9 +80,8 @@ class VirtualBoxBase : public util::Lockable {
 
 	public:
 
-		VirtualBoxBase() : _lock(nullptr) { }
-
-		enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
+		VirtualBoxBase(); // : _lock(nullptr) { }
+		~VirtualBoxBase();
 
 		virtual HRESULT addCaller(State *aState = NULL, bool aLimited = false);
 		virtual void releaseCaller();
@@ -58,6 +96,7 @@ class VirtualBoxBase : public util::Lockable {
 		}
 
 		static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
+		static HRESULT initializeComForThread(void);
 		static void clearError(void);
 
 		HRESULT setError(HRESULT aResultCode);
@@ -76,15 +115,7 @@ class VirtualBoxBase : public util::Lockable {
 			return LOCKCLASS_OTHEROBJECT;
 		}
 
-		RWLockHandle * lockHandle() const
-		{
-			if (!_lock) {
-				RWLockHandle * lock = new RWLockHandle(getLockingClass());
-				bool rc = ASMAtomicCmpXchgPtr(&_lock, lock, NULL);
-				Assert(rc);
-			}
-			return _lock;
-		}
+		RWLockHandle * lockHandle() const;
 };
 
 template <typename T>

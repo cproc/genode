@@ -33,6 +33,7 @@ SRC_CC += HostServices/SharedFolders/shflhandle.cpp
 
 SRC_CC += frontend/dummy/errorinfo.cc frontend/dummy/virtualboxbase.cc
 SRC_CC += frontend/dummy/autostart.cc frontend/dummy/rest.cc
+SRC_CC += frontend/dummy/host.cc
 
 INC_DIR += $(VBOX_DIR)/Main/include
 INC_DIR += $(VBOX_DIR)/VMM/include

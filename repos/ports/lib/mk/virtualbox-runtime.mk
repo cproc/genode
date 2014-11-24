@@ -60,6 +60,7 @@ SRC_CC += Runtime/common/misc/RTMemWipeThoroughly.cpp
 SRC_CC += Runtime/common/path/comparepaths.cpp
 SRC_CC += Runtime/common/path/RTPathAbsDup.cpp
 SRC_CC += Runtime/common/path/RTPathAbsEx.cpp
+SRC_CC += Runtime/common/path/RTPathAppendEx.cpp
 SRC_CC += Runtime/common/path/RTPathCalcRelative.cpp
 SRC_CC += Runtime/common/path/RTPathExt.cpp
 SRC_CC += Runtime/common/path/RTPathFilename.cpp

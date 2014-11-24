@@ -14,6 +14,7 @@ SRC_CC += Main/src-all/HashedPw.cpp
 SRC_CC += Main/src-all/PCIDeviceAttachmentImpl.cpp
 SRC_CC += Main/src-all/ProgressImpl.cpp
 SRC_CC += Main/src-all/SharedFolderImpl.cpp
+SRC_CC += Main/src-all/VirtualBoxBase.cpp
 
 SRC_CC += Main/src-client/AdditionsFacilityImpl.cpp
 SRC_CC += Main/src-client/BusAssignmentManager.cpp

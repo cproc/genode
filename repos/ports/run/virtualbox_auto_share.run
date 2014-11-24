@@ -57,9 +57,6 @@
 # beforehand. test.bat contains the actual instructions to be performed by
 # the VM - for this script to copy the test.bin file from D: to E:.
 
-puts "\nRun script does not support current VBox version.\n"
-exit
-
 if {[is_qemu_available]} {
 	puts "\nRun script does not support Qemu.\n"
 	exit
@@ -116,7 +113,7 @@ set boot_modules {
 	noux libc_noux.lib.so bash.tar coreutils.tar
 	tcp_terminal lwip.lib.so nic_drv
 	test.bin template.bat
-	vm_auto_disk.vbox
+	vm_auto_share.vbox
 }
 
 set config_of_app {
@@ -189,13 +186,11 @@ set config_of_app {
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="2112M"/>
-		<config vbox_file="vm_auto_disk.vbox" vm_name="AutoDisk">
-			<share host="/from" guest="from" />
-			<share host="/to" guest="to" />
+		<config vbox_file="vm_auto_share.vbox" vm_name="AutoDisk">
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>
 					<dir name="dev"> <log/> </dir>
-					<rom name="vm_auto_disk.vbox" />}
+					<rom name="vm_auto_share.vbox" />}
 
 append_if [expr $use_ram_fs] config_of_app {
 					<dir name="ram">  <fs label="from_ram_fs"/> </dir>}
@@ -230,12 +225,13 @@ append config_of_app {
 	</start>
 }
 
-exec cp  ${genode_dir}/repos/ports/run/vm_auto_disk.vbox bin/.
-
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
 exec tar cfv bin/bash.tar      -h -C bin/bash .
 exec tar cfv bin/coreutils.tar -h -C bin/coreutils .
+exec cp ${genode_dir}/repos/ports/run/vm_auto_share.vbox bin/.
+
+build_boot_image $boot_modules
 
 #
 # Step 2: Read out TCP/IP address of tcp_terminal running on Genode target
@@ -287,7 +283,7 @@ puts $noux_id "sleep 5"
 puts $noux_id "done"
 
 # Wait until VM signaled shutdown state
-run_genode_until {\[init -\> vbox\].*Changing the VM state from 'POWERING_OFF' to 'OFF'} 120 $serial_id
+run_genode_until {\[init -\> vbox\] EMT      PDMR3PowerOff: .* ns run time} 120 $serial_id
 
 # SHA1 of copied file
 puts $noux_id "sha1sum to/test.bin"
@@ -300,6 +296,7 @@ run_genode_until {[[:xdigit:]]+  to/test\.bin} 50 $noux_id
 foreach pkg {bash coreutils} { exec rm -f bin/$pkg.tar }
 exec rm -f bin/test.bin
 exec rm -f bin/template.bat
+exec rm -f bin/vm_auto_share.vbox
 
 
 #

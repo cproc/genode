@@ -119,7 +119,6 @@ DUMMY(RTProcWait)
 DUMMY(RTLdrGetSuff)
 
 DUMMY(RTPathAppend)
-DUMMY(RTPathAppendEx)
 DUMMY(RTPathChangeToDosSlashes)
 DUMMY(RTSemEventWaitEx)
 
@@ -203,10 +202,12 @@ DUMMY(RTSymlinkDelete)
 
 DUMMY(RTNetIPv6PseudoChecksumEx)
 
-DUMMY(pthread_key_delete)
 DUMMY(pthread_mutex_timedlock)
 DUMMY(pthread_kill)
 
 DUMMY(RTZipXarFsStreamFromIoStream)
+
+DUMMY(FTMR3CancelStandby)
+DUMMY(FTMR3PowerOn)
 
 } /* extern "C" */

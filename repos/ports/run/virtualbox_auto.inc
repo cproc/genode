@@ -188,5 +188,3 @@ lappend_if [have_spec         pci] boot_modules pci_drv
 lappend_if [have_spec framebuffer] boot_modules fb_drv
 lappend_if [have_spec        nova] boot_modules pci_device_pd
 lappend_if [have_spec         x86] boot_modules rtc_drv
-
-build_boot_image $boot_modules

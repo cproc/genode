@@ -25,50 +25,11 @@ static const bool debug = false;
 		return X; \
 	}
 
-
-Console::Console()
-    : mSavedStateDataLoaded(false)
-    , mConsoleVRDPServer(NULL)
-    , mfVRDEChangeInProcess(false)
-    , mfVRDEChangePending(false)
-    , mpUVM(NULL)
-    , mVMCallers(0)
-    , mVMZeroCallersSem(NIL_RTSEMEVENT)
-    , mVMDestroying(false)
-    , mVMPoweredOff(false)
-    , mVMIsAlreadyPoweringOff(false)
-    , mfSnapshotFolderSizeWarningShown(false)
-    , mfSnapshotFolderExt4WarningShown(false)
-    , mfSnapshotFolderDiskTypeShown(false)
-    , mfVMHasUsbController(false)
-    , mfPowerOffCausedByReset(false)
-    , mpVmm2UserMethods(NULL)
-    , m_pVMMDev(NULL)
-    , mAudioSniffer(NULL)
-    , mNvram(NULL)
-#ifdef VBOX_WITH_USB_CARDREADER
-    , mUsbCardReader(NULL)
-#endif
-    , mBusMgr(NULL)
-    , mpIfSecKey(NULL)
-    , mVMStateChangeCallbackDisabled(false)
-    , mfUseHostClipboard(true)
-    , mMachineState(MachineState_PoweredOff)
-{
-	m_pVMMDev = new VMMDev(this);
-}
-
-Console::~Console()
-{}
-
 void    Console::uninit()                                                       DUMMY()
 HRESULT Console::resume(Reason_T aReason)                                       DUMMY(E_FAIL)
 HRESULT Console::pause(Reason_T aReason)                                        DUMMY(E_FAIL)
 void    Console::enableVMMStatistics(BOOL aEnable)                              DUMMY()
 void    Console::changeClipboardMode(ClipboardMode_T aClipboardMode)            DUMMY()
-void    Console::setVMRuntimeErrorCallback(PUVM, void *, uint32_t,
-                                           const char *, const char *,
-                                           va_list va)                          DUMMY()
 HRESULT Console::updateMachineState(MachineState_T aMachineState)               DUMMY(E_FAIL)
 
 HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
@@ -84,6 +45,8 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
 	TRACE(S_OK)
 }
 
+HRESULT Console::teleporterTrg(UVM*, Machine*, com::Utf8Str*, bool, Progress*,
+                               bool*)                                           DUMMY(E_FAIL)
 HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)        DUMMY(E_FAIL)
 HRESULT Console::saveState(Reason_T aReason, IProgress **aProgress)             DUMMY(E_FAIL)
 HRESULT Console::get_Debugger(MachineDebugger**)                                DUMMY(E_FAIL)
@@ -153,44 +116,3 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)             
 HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                    ULONG aSourceIdx, ULONG aTargetIdx,
                                    IProgress *aProgress)                        DUMMY(E_FAIL)
-
-
-#if 0
-HRESULT Console::PowerUp(Progress**)
-{
-	HRESULT rc;
-	BOOL fTeleporterEnabled;
-	rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
-	if (FAILED(rc))
-		return rc;
-
-	FaultToleranceState_T enmFaultToleranceState;
-	rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
-	if (FAILED(rc))
-		return rc;
-
-	Assert( mMachineState != MachineState_Saved &&
-	        !fTeleporterEnabled &&
-	        enmFaultToleranceState != FaultToleranceState_Standby);
-
-        ComPtr<ISnapshot> pCurrentSnapshot;
-        rc = mMachine->COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam());
-        if (FAILED(rc))
-            throw rc;
-
-        BOOL fCurrentSnapshotIsOnline = false;
-        if (pCurrentSnapshot)
-        {
-            rc = pCurrentSnapshot->COMGETTER(Online)(&fCurrentSnapshotIsOnline);
-            if (FAILED(rc))
-                throw rc;
-        }
-
-	PERR("%u", fCurrentSnapshotIsOnline);
-	Assert(!"done");
-
-	setMachineState(MachineState_Starting);
-
-	return S_OK;
-}
-#endif
