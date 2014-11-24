@@ -48,7 +48,7 @@ set config_of_app {
 
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
-		<resource name="RAM" quantum="1280M"/>
+		<resource name="RAM" quantum="256M"/>
 		<config vbox_file="vm_auto_disk.vbox" vm_name="AutoDisk">
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>}
