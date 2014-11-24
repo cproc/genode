@@ -6,11 +6,11 @@
 ** Use VBoxManage or the VirtualBox Manager GUI to make changes.
 -->
 <VirtualBox xmlns="http://www.innotek.de/VirtualBox-settings" version="1.14-linux">
-  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Windows XP" OSType="WindowsXP" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
+  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Debian" OSType="Linux" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{8e55fcfc-4c09-4173-9066-341968be4864}" location="/win7.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{4c5ed34f-f6cf-48e8-808d-2c06f0d11464}" location="/ram/overlay.vdi" format="VDI" autoReset="true"/>
+        <HardDisk uuid="{ac4ab67c-6fa4-4ce7-9579-d303a0eb10cc}" location="/Debian.vdi" format="VDI">
+          <!--<HardDisk uuid="{4c5ed34f-f6cf-48e8-808d-2c06f0d11464}" location="/ram/overlay.vdi" format="VDI" autoReset="true"/>-->
         </HardDisk>
       </HardDisks>
       <DVDImages/>
@@ -57,7 +57,7 @@
         <DeviceFilters/>
       </USB>
       <Network>
-        <Adapter slot="0" enabled="false" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
+        <Adapter slot="0" enabled="true" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
           <HostInterface/>
           <DisabledModes/>
         </Adapter>
@@ -119,7 +119,7 @@
         </Adapter>
       </Network>
       <UART>
-        <Port slot="0" enabled="false" IOBase="0x3f8" IRQ="4" hostMode="Disconnected"/>
+        <Port slot="0" enabled="true" IOBase="0x3f8" IRQ="4" hostMode="Disconnected"/>
         <Port slot="1" enabled="false" IOBase="0x2f8" IRQ="3" hostMode="Disconnected"/>
       </UART>
       <LPT>
@@ -176,7 +176,7 @@
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{4c5ed34f-f6cf-48e8-808d-2c06f0d11464}"/>
+          <Image uuid="{ac4ab67c-6fa4-4ce7-9579-d303a0eb10cc}"/>
         </AttachedDevice>
         <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
       </StorageController>
