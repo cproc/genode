@@ -22,7 +22,7 @@ namespace Vmm {
 	class Vcpu_dispatcher;
 }
 
-
+extern unsigned int exit_reason;
 /**
  * Thread that handles virtualization events of a 'Vmm::Vcpu_thread'
  */
@@ -47,6 +47,8 @@ class Vmm::Vcpu_dispatcher : public T
 			/* obtain this pointer of the event handler */
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			DISPATCHER *vd = static_cast<DISPATCHER *>(myself);
+
+			exit_reason = EV;
 
 			/* call event-specific handler function */
 			(vd->*FUNC)();

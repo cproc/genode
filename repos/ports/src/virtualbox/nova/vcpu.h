@@ -144,6 +144,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			if (!setjmp(_env)) {
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
+				//Vmm::printf("%u\n", exit_reason);
 				Nova::reply(_stack_reply);
 			}
 		}
@@ -163,6 +164,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		{
 			Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
 
+			//Vmm::printf("_recall_handler(): IP = %x\n", utcb->ip);
+
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
 			if (utcb->intr_state != INTERRUPT_STATE_NONE)
 				Vmm::printf("intr state %x %x\n", utcb->intr_state, utcb->intr_state & 0xF);
@@ -177,6 +180,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 */
 				/* got recall during irq injection and X86_EFL_IF set for
 				 * delivery of IRQ - just continue */
+				//Vmm::printf("%u\n", exit_reason);
 				Nova::reply(_stack_reply);
 			}
 
@@ -191,13 +195,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			utcb->mtd = Nova::Mtd::FPU;
 			if (check_to_request_irq_window(utcb, _current_vcpu)) {
 				_irq_win = true;
+			//Vmm::printf("%u\n", exit_reason);
 				Nova::reply(_stack_reply);
 			}
 
 			/* nothing to do at all - continue hardware accelerated */
 			Assert(!_irq_win);
 			Assert(continue_hw_accelerated(utcb));
-				
+				//Vmm::printf("%u\n", exit_reason);
 			Nova::reply(_stack_reply);
 		}
 
@@ -219,6 +224,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			if (unmap) {
 				PERR("unmap not implemented\n");
+			//Vmm::printf("%u\n", exit_reason);
 				Nova::reply(_stack_reply);
 			}
 
@@ -277,6 +283,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 					            flexpage.addr, 1UL << flexpage.log2_order,
 					            flexpage.hotspot, reason);
 			} while (res);
+			//Vmm::printf("%u\n", exit_reason);
 
 			Nova::reply(_stack_reply);
 		}
@@ -438,6 +445,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 		__attribute__((noreturn)) void _irq_window()
 		{
+			//Vmm::printf("_irq_window()\n");
+
 			Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
 
 			PVMCPU   pVCpu = _current_vcpu;
@@ -507,6 +516,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
 */
 			utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
+			//Vmm::printf("%u\n", exit_reason);
+
 			Nova::reply(_stack_reply);
 		}
 
@@ -690,6 +701,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			/* check whether to request interrupt window for injection */
 			_irq_win = check_to_request_irq_window(utcb, pVCpu);
 
+			//volatile long int i = 0;
+			//while (i++ != 1024*1024);
+
 			/*
 			 * Flag vCPU to be "pokeable" by external events such as interrupts
 			 * from virtual devices. Only if this flag is set, the
@@ -698,7 +712,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			 * events. This function, in turn, will recall the vCPU.
 			 */
 			VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
+//Vmm::printf("E\n");
 			/* save current FPU state */
 			fpu_save(reinterpret_cast<char *>(&_emt_fpu_state));
 			/* write FPU state from pCtx to FPU registers */
@@ -711,9 +725,18 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			_last_exit_was_recall = false;
 
+			//Vmm::printf("r\n"));
+
 			/* switch to hardware accelerated mode */
 			switch_to_hw();
 
+			//Vmm::printf("%u %x\n", exit_reason, utcb->ip);
+#if 0
+			if ((utcb->ip >= 0xc13fdd8a) && (utcb->ip < 0xc13fddb1))
+				Vmm::printf("= calibrate_delay()\n");
+			if ((utcb->ip >= 0xc103c8dc) && (utcb->ip < 0xc103d023))
+				Vmm::printf("= do_timer()\n");
+#endif
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
 
 			_current_vm   = 0;
@@ -728,7 +751,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
 			VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-
+//Vmm::printf("S\n");
 			/* Transfer vCPU state from Nova to vBox format */
 			if (!utcb_to_vbox(utcb, pVM, pVCpu) ||
 				!hw_save_state(utcb, pVM, pVCpu)) {

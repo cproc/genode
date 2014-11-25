@@ -12,6 +12,7 @@
  * version 2.
  */
 
+unsigned exit_reason = 0;
 
 /* Genode includes */
 #include <base/printf.h>

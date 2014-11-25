@@ -77,6 +77,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			void *exit_status = _start_routine(_arg);
 			pthread_exit(exit_status);
 
+			Vmm::printf("%u\n", exit_reason);
+
 			Nova::reply(nullptr);
 		}
 

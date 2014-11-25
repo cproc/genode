@@ -73,7 +73,7 @@ proc build_boot_image {binaries} {
 	puts $fh "default 0"
 	puts $fh "\ntitle Genode on NOVA"
 	puts $fh " kernel /boot/bender"
-	puts $fh " module /hypervisor iommu serial"
+	puts $fh " module /hypervisor serial"
 	puts $fh " module /genode/core"
 	puts $fh " module /genode/config"
 	foreach binary $binaries {
