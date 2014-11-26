@@ -21,7 +21,7 @@ namespace Genode {
 
 	struct Cpu_connection : Connection<Cpu_session>, Cpu_session_client
 	{
-		enum { RAM_QUOTA = 32*1024 };
+		enum { RAM_QUOTA = 48*1024 };
 
 		/**
 		 * Constructor
@@ -35,7 +35,7 @@ namespace Genode {
 		               Affinity const &affinity = Affinity())
 		:
 			Connection<Cpu_session>(
-				session(affinity, "priority=0x%lx, ram_quota=36K, label=\"%s\"",
+				session(affinity, "priority=0x%lx, ram_quota=48K, label=\"%s\"",
 				        priority, label)),
 			Cpu_session_client(cap()) { }
 	};
