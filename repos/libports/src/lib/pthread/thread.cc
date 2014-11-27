@@ -610,7 +610,7 @@ extern "C" {
 	void *pthread_getspecific(pthread_key_t key)
 	{
 		if (key < 0 || key >= PTHREAD_KEYS_MAX)
-			return EINVAL;
+			return nullptr;
 
 		void *myself = Thread_base::myself();
 
