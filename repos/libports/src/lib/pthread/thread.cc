@@ -572,13 +572,15 @@ extern "C" {
 
 	int pthread_key_delete(pthread_key_t key)
 	{
-		if (key < 0 || key >= PTHREAD_KEYS_MAX || key_list[key].first())
+		if (key < 0 || key >= PTHREAD_KEYS_MAX || !key_list[key].first())
 			return EINVAL;
 
 		Lock_guard<Lock> key_list_lock_guard(key_list_lock);
 
-		while (Key_element * element = key_list[key].first())
+		while (Key_element * element = key_list[key].first()) {
 			key_list[key].remove(element);
+			destroy(env()->heap(), element);
+		}
 
 		return 0;
 	}
