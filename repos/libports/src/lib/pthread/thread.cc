@@ -586,7 +586,13 @@ extern "C" {
 
 	int pthread_setspecific(pthread_key_t key, const void *value)
 	{
+		if (key < 0 || key >= PTHREAD_KEYS_MAX)
+			return EINVAL;
+
 		void *myself = Thread_base::myself();
+
+		Lock_guard<Lock> key_list_lock_guard(key_list_lock);
+
 		for (Key_element *key_element = key_list[key].first(); key_element;
 		     key_element = key_element->next())
 			if (key_element->thread_base == myself) {
@@ -603,7 +609,13 @@ extern "C" {
 
 	void *pthread_getspecific(pthread_key_t key)
 	{
+		if (key < 0 || key >= PTHREAD_KEYS_MAX)
+			return EINVAL;
+
 		void *myself = Thread_base::myself();
+
+		Lock_guard<Lock> key_list_lock_guard(key_list_lock);
+
 		for (Key_element *key_element = key_list[key].first(); key_element;
 		     key_element = key_element->next())
 			if (key_element->thread_base == myself)
