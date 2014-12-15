@@ -47,6 +47,8 @@
 #ifndef _LIBC_STUB_H_
 #define _LIBC_STUB_H_
 
+#include <stddef.h>
+
 /*****************
  ** sys/types.h **
  *****************/
