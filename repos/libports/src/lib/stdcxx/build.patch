@@ -1,0 +1,36 @@
+build.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/stdcxx/c_global/cstdint |    2 +-
+ include/stdcxx/c_std/cstddef    |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/c_global/cstdint b/include/c_global/cstdint
+index 7fa0d1b..65f4196 100644
+--- a/include/c_global/cstdint
++++ b/include/c_global/cstdint
+@@ -75,7 +75,7 @@ namespace std
+ 
+   using ::uint_least8_t;
+   using ::uint_least16_t;
+-  using ::uint_least32_t;
++  //using ::uint_least32_t;
+   using ::uint_least64_t;
+ 
+   using ::uintmax_t;
+diff --git a/include/c_std/cstddef b/include/c_std/cstddef
+index f4845f0..dfdf8f6 100644
+--- a/include/c_std/cstddef
++++ b/include/c_std/cstddef
+@@ -48,7 +48,7 @@
+ namespace std
+ {
+   // We handle size_t, ptrdiff_t, and nullptr_t in c++config.h.
+-  using ::max_align_t;
++  //using ::max_align_t;
+ }
+ #endif
+ 
