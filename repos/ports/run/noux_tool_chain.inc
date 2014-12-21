@@ -149,6 +149,7 @@ append_if [have_spec framebuffer] config {
 	<start name="fb_drv">
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Framebuffer"/></provides>
+		<config width="640" height="480" />
 	</start>}
 
 append_if [expr ![have_spec acpi] && [have_spec pci]] config {

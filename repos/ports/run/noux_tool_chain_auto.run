@@ -6,7 +6,7 @@
 
 if {[is_qemu_available]} {
 	puts "\nAuto test running on Qemu is not recommended.\n"
-	exit 0
+#	exit 0
 }
 if {[have_spec pistachio]} {
 	puts "Pistachio is unsupported."
@@ -25,7 +25,7 @@ set platform_cmds     {
 if {[have_spec arm]} {
 	set platform_base_dir   "base-hw"
 	set noux_boot_timeout   350
-	set tool_chain_timeout  600
+	set tool_chain_timeout  3600
 
 	if {[have_spec platform_panda]}   {
 		set platform "hw_panda"
@@ -45,7 +45,7 @@ if {[have_spec arm]} {
 if {[have_spec x86]} {
 	set platform_base_dir   "base-nova"
 	set noux_boot_timeout   100
-	set tool_chain_timeout  600
+	set tool_chain_timeout  3600
 
 	if {[have_spec 32bit]} {
 		set platform          "nova_x86_32"
