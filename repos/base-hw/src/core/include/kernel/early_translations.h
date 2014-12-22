@@ -77,6 +77,6 @@ class Genode::Early_translations_slab : public Genode::Page_slab
 		Early_translations_slab(Allocator * const alloc) : Page_slab(alloc) {
 			assert(Genode::aligned(this, ALIGN_LOG2)); }
 
-} __attribute__((aligned(Early_translations_slab::ALIGN)));
+} __attribute__((aligned(Early_translations_slab::ALIGN + 0)));
 
 #endif /* _KERNEL__EARLY_TRANSLATIONS_H_ */
