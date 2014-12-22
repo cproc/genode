@@ -247,7 +247,7 @@ class Kernel::Mode_transition_control
 		void continue_vm(Cpu_state_modes * const vm, unsigned const cpu) {
 			_continue_client(vm, cpu, (addr_t)&_mt_vm_entry_pic); }
 
-} __attribute__((aligned(Mode_transition_control::ALIGN)));
+} __attribute__((aligned(Mode_transition_control::ALIGN + 0)));
 
 class Kernel::Pd : public Object<Pd, MAX_PDS, Pd_ids, pd_ids, pd_pool>
 {
