@@ -246,7 +246,7 @@ void init_kernel_mp_primary()
 	};
 	static_assert(STACK_SIZE <= STACK_ALIGNM - sizeof(Core_thread_id),
 	              "stack size does not fit stack alignment of core");
-	static char s[STACK_SIZE] __attribute__((aligned(STACK_ALIGNM + 0)));
+	static char s[STACK_SIZE] __attribute__((aligned(STACK_ALIGNM)));
 
 	/* provide thread ident at the aligned base of the stack */
 	*(Core_thread_id *)s = 0;
