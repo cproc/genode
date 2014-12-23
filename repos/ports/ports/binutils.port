@@ -1,9 +1,9 @@
 LICENSE   := GPLv2
-VERSION   := 2.22
+VERSION   := 2.24
 DOWNLOADS := binutils.archive
 
 URL(binutils) := ftp://ftp.fu-berlin.de/gnu/binutils/binutils-$(VERSION).tar.bz2
-SHA(binutils) := 65b304a0b9a53a686ce50a01173d1f40f8efe404
+SHA(binutils) := 7ac75404ddb3c4910c7594b51ddfc76d4693debb
 SIG(binutils) := ${URL(binutils)}.sig
 KEY(binutils) := GNU
 DIR(binutils) := src/noux-pkg/binutils
