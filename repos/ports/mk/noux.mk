@@ -69,10 +69,10 @@ NOUX_BUILD_OUTPUT_FILTER = 2>&1 | sed "s/^/      [$(NOUX_PKG)]  /"
 endif
 
 ifeq ($(findstring arm, $(SPECS)), arm)
-NOUX_CONFIGURE_ARGS += --host arm-elf-eabi
+NOUX_CONFIGURE_ARGS += --host arm-none-eabi
 else
 ifeq ($(findstring x86, $(SPECS)), x86)
-NOUX_CONFIGURE_ARGS += --host x86_64-elf
+NOUX_CONFIGURE_ARGS += --host x86_64-pc-elf
 endif
 endif
 
