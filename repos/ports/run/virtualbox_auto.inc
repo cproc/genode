@@ -63,7 +63,7 @@ set config {
 			<any-service><child name="ahci"/> <parent/><any-child/></any-service>
 		</route>
 		<config>
-			<policy label="rump_fs" partition="4"/>
+			<policy label="rump_fs" partition="1"/>
 		</config>
 	</start>
 	<start name="rump_fs" priority="-1">
@@ -139,7 +139,7 @@ append_if [have_spec framebuffer] config {
 	<start name="fb_drv" priority="-1">
 		<resource name="RAM" quantum="6M"/>
 		<provides><service name="Framebuffer"/></provides>
-		<config buffered="yes" width="1024" height="768" depth="16" />
+		<config buffered="yes" />
 	</start>}
 
 append_if [have_spec x86] config {
