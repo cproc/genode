@@ -58,6 +58,7 @@ append boot_modules " ${vbox_file} "
 
 build_boot_image $boot_modules
 
+run_genode_until forever
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} 70
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: yes, hostWindowMapping: no, graphics: yes} 170 [output_spawn_id]
 
