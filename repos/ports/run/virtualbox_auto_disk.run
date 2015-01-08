@@ -25,8 +25,8 @@ set config_of_app {
 
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
-run_genode_until "vbox_auto_test_helper is done." 20
-exec kill [exp_pid −i $spawn_id]
+#run_genode_until "vbox_auto_test_helper is done." 20
+#exec kill [exp_pid −i $spawn_id]
 
 # reset values used before
 set build_components { }
@@ -45,7 +45,7 @@ append config_of_app "
 
 if {$use_vdi} {
 append config_of_app "
-			<image type=\"vdi\" file=\"/$vdi_image\" overlay=\"yes\"/>"
+			<image type=\"vdi\" file=\"/$vdi_image\" overlay=\"no\"/>"
 }
 
 append config_of_app {
@@ -66,6 +66,7 @@ append config_of_app {
 source ${genode_dir}/repos/ports/run/virtualbox_auto.inc
 
 
+run_genode_until forever
 run_genode_until "ignore resize request to 720x400" 20 
 run_genode_until "ignore resize request to 640x480" 25 $spawn_id
 run_genode_until "ignore resize request to 800x600" 35 $spawn_id
