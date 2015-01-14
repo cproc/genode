@@ -129,7 +129,7 @@ bool Trace::Logger::_evaluate_control()
 		Control::Inhibit_guard guard(*control);
 
 		/* obtain policy */
-		Dataspace_capability policy_ds = env()->cpu_session()->trace_policy(thread_cap);
+		Dataspace_capability policy_ds = cpu_session->trace_policy(thread_cap);
 
 		if (!policy_ds.valid()) {
 			PWRN("could not obtain trace policy");
@@ -155,7 +155,7 @@ bool Trace::Logger::_evaluate_control()
 
 		/* obtain buffer */
 		buffer = 0;
-		Dataspace_capability buffer_ds = env()->cpu_session()->trace_buffer(thread_cap);
+		Dataspace_capability buffer_ds = cpu_session->trace_buffer(thread_cap);
 
 		if (!buffer_ds.valid()) {
 			PWRN("could not obtain trace buffer");
@@ -185,11 +185,13 @@ void Trace::Logger::log(char const *msg, size_t len)
 }
 
 
-void Trace::Logger::init(Thread_capability thread)
+void Trace::Logger::init(Thread_capability thread,
+                         Genode::Cpu_session *cpu)
 {
+	cpu_session = cpu;
 	thread_cap = thread;
 
-	control = trace_control(env()->cpu_session(), env()->rm_session(), thread);
+	control = trace_control(cpu_session, env()->rm_session(), thread);
 }
 
 
@@ -235,7 +237,8 @@ Trace::Logger *Thread_base::_logger()
 	/* lazily initialize trace object */
 	if (!logger->is_initialized()) {
 		logger->init_pending(true);
-		logger->init(myself ? myself->_thread_cap : env()->parent()->main_thread_cap());
+		logger->init(myself ? myself->_thread_cap : env()->parent()->main_thread_cap(),
+		             myself ? (myself->_cpu_session ? myself->_cpu_session : env()->cpu_session()) : env()->cpu_session());
 	}
 
 	return logger;

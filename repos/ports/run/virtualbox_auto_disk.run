@@ -10,8 +10,8 @@ set vdi_image "win7.vdi"
 # Write overlay back to harddisk if set to 0
 set use_ram_fs 0
 
-set build_components { drivers/nic }
-set boot_modules { vm_auto_disk.vbox nic_drv }
+set build_components { drivers/nic test/trace lib/trace/policy/null }
+set boot_modules { vm_auto_disk.vbox nic_drv test-trace null}
 
 set config_of_app {
 
@@ -21,6 +21,14 @@ set config_of_app {
 			<service name="Nic" />
 		</provides>
 	</start>
+
+	<start name="test-trace">
+		<resource name="RAM" quantum="10M"/>
+		<config>
+			<trace_policy label="init -> vbox" module="null" />
+		</config>
+	</start>
+
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>
