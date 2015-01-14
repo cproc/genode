@@ -38,6 +38,7 @@ set config {
 		<service name="CPU"/>
 		<service name="LOG"/>
 		<service name="SIGNAL"/>
+		<service name="TRACE"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <any-child/> <parent/> </any-service>
