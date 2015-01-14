@@ -172,12 +172,15 @@ int main(int argc, char **argv)
 
 	} catch (...) { }
 
-	for (size_t cnt = 0; cnt < 5; cnt++) {
+
+	/* wait for the subject and enable tracing */
+
+	do {
 
 		timer.msleep(3000);
 
-		Trace::Subject_id subjects[32];
-		size_t num_subjects = trace.subjects(subjects, 32);
+		Trace::Subject_id subjects[1000];
+		size_t num_subjects = trace.subjects(subjects, 1000);
 
 		printf("%zd tracing subjects present\n", num_subjects);
 
@@ -194,7 +197,7 @@ int main(int argc, char **argv)
 			/* enable tracing */
 			if (!policy_set
 			    && strcmp(info.session_label().string(), policy_label) == 0
-			    && strcmp(info.thread_name().string(), "test-thread") == 0) {
+			    && strcmp(info.thread_name().string(), "vCPU dispatcher") == 0) {
 				try {
 					PINF("enable tracing for thread:'%s' with policy:%d",
 					     info.thread_name().string(), policy_id.id);
@@ -204,18 +207,23 @@ int main(int argc, char **argv)
 					Dataspace_capability ds_cap = trace.buffer(subjects[i].id);
 					test_monitor = new (env()->heap()) Trace_buffer_monitor(subjects[i].id, ds_cap);
 
-				} catch (Trace::Source_is_dead) { PERR("source is dead"); }
+					break;
+
+				} catch (Trace::Source_is_dead) { PERR("source is dead"); return -1; }
 
 				policy_set = true;
 			}
-
-			/* read events from trace buffer */
-			if (test_monitor) {
-				if (subjects[i].id == test_monitor->id().id)
-					test_monitor->dump();
-			}
 		}
+	} while (!test_monitor);
+
+
+	/* read events from trace buffer */
+
+	for (;;) {
+		//test_monitor->dump();
+		timer.msleep(3000);
 	}
+
 
 	if (test_monitor)
 		destroy(env()->heap(), test_monitor);
