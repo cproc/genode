@@ -1,5 +1,5 @@
 set use_net 0
-set use_serial 0
+set use_serial 1
 
 set build_components {
 	core init virtualbox
@@ -160,4 +160,21 @@ build_boot_image $boot_modules
 append qemu_args " -m 512 "
 append qemu_args " -cpu phenom "
 
-run_genode_until forever
+#run_genode_until forever
+
+puts "waiting for Noux"
+
+# wait until Noux started
+run_genode_until {\[init -\> noux\].*--- noux started ---} 1000
+set serial_id $spawn_id
+
+puts "starting the measurement"
+
+# start the measurement
+set time_start [ clock seconds ]
+run_genode_until {child /bin/bash exited with exit value 234} 10000 $serial_id
+
+set time_end [ clock seconds ]
+
+puts "! PERF: runtime [expr $time_end - $time_start ] seconds ok"
+
