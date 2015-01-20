@@ -34,7 +34,7 @@ namespace Genode {
 	{
 		private:
 
-			enum { JIFFIES_STEP_MS = 10 };
+			enum { JIFFIES_STEP_MS = 1 };
 
 			Timer::Connection   _timer;    /* timer session   */
 			Signal_context      _context;
