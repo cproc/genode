@@ -48,6 +48,10 @@ class Periodic_GIP : public Genode::Alarm {
 
 	bool on_alarm(unsigned) override
 	{
+		static unsigned count = 0;
+		if (count++ % UPDATE_HZ == 0);
+			//PDBG("Alarm signals received: %u", count - 1);
+
 		/**
 		 * We're using rdtsc here since timer_session->elapsed_ms produces
 		 * instable results when the timer service is using the Genode PIC
@@ -163,6 +167,7 @@ int SUPR3Init(PSUPDRVSESSION *ppSession)
 
 	/* schedule periodic call of GIP update function */
 	static Periodic_GIP alarm;
+PDBG("UPDATE_MS = %u", UPDATE_MS);
 	Genode::Timeout_thread::alarm_timer()->schedule(&alarm, UPDATE_MS);
 
 	initialized = true;

@@ -502,6 +502,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			utcb->inj_info  = Event.u; 
 			utcb->inj_error = Event.n.u32ErrorCode;
 
+			static unsigned count = 0;
+			if ((count++ % 1000 == 0) && (u8Vector == 0x30))
+				Vmm::printf("Timer interrupts injected: %u\n", count - 1);
+
 /*
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
