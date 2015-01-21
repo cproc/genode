@@ -196,7 +196,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			/* nothing to do at all - continue hardware accelerated */
 			Assert(!_irq_win);
-			Assert(continue_hw_accelerated(utcb));
+			//Assert(continue_hw_accelerated(utcb));
 				
 			Nova::reply(_stack_reply);
 		}
