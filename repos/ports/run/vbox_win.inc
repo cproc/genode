@@ -10,10 +10,17 @@ set vdi_image "${flavor}.vdi"
 set vbox_file "vm_${flavor}.vbox"
 set overlay_image "overlay_${flavor}.vdi"
 
-set build_components { }
-set boot_modules { }
+set build_components { drivers/nic }
+set boot_modules { nic_drv }
 
 set config_of_app {
+
+	<start name="nic_drv" priority="-1">
+		<resource name="RAM" quantum="8M" />
+		<provides>
+			<service name="Nic" />
+		</provides>
+	</start>
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>}
