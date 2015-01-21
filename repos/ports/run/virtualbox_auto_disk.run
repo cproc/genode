@@ -10,10 +10,17 @@ set vdi_image "win7.vdi"
 # Write overlay back to harddisk if set to 0
 set use_ram_fs 0
 
-set build_components { }
-set boot_modules { vm_auto_disk.vbox }
+set build_components { drivers/nic }
+set boot_modules { vm_auto_disk.vbox nic_drv }
 
 set config_of_app {
+
+	<start name="nic_drv" priority="-1">
+		<resource name="RAM" quantum="8M" />
+		<provides>
+			<service name="Nic" />
+		</provides>
+	</start>
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>
