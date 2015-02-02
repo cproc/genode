@@ -92,13 +92,10 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 		return VINF_SUCCESS;
 
 	case VMMR0_DO_GVMM_SCHED_HALT:
-		Genode::Thread_base::tracef("%lu down", Genode::Trace::timestamp());
 		r0_halt_sem()->down();
-		Genode::Thread_base::tracef("%lu down return", Genode::Trace::timestamp());
 		return VINF_SUCCESS;
 
 	case VMMR0_DO_GVMM_SCHED_WAKE_UP:
-		Genode::Thread_base::tracef("%lu up", Genode::Trace::timestamp());
 		r0_halt_sem()->up();
 		return VINF_SUCCESS;
 

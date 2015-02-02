@@ -114,7 +114,7 @@ class Trace_buffer_monitor
 					continue;
 
 				const char *data = _terminate_entry(next);
-				if (data && (_count++ > 10000))
+				if (data && (_count++ > 0))
 					PLOG("%s", data);
 			}
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 
 	do {
 
-		timer.msleep(3000);
+		timer.msleep(120000);
 
 		Trace::Subject_id subjects[1000];
 		size_t num_subjects = trace.subjects(subjects, 1000);

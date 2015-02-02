@@ -189,7 +189,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			/* check whether we have to request irq injection window */
 			utcb->mtd = Nova::Mtd::FPU;
-			if (check_to_request_irq_window(utcb, _current_vcpu)) {
+			if (check_to_request_irq_window(utcb, _current_vcpu, __func__)) {
 				_irq_win = true;
 				Nova::reply(_stack_reply);
 			}
@@ -421,12 +421,16 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		}
 
 
-		inline bool check_to_request_irq_window(Nova::Utcb * utcb, PVMCPU pVCpu)
+		inline bool check_to_request_irq_window(Nova::Utcb * utcb, PVMCPU pVCpu, const char *source)
 		{
 			if (!TRPMHasTrap(pVCpu) &&
 				!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC |
-				                             VMCPU_FF_INTERRUPT_PIC)))
+				                             VMCPU_FF_INTERRUPT_PIC))) {
+				//Genode::Thread_base::tracef("%s: n\n", source);
 				return false;
+			}
+
+			//Genode::Thread_base::tracef("%s: requesting IRQ window\n", source);
 
 			unsigned vector = 0;
 			utcb->inj_info  = NOVA_REQ_IRQWIN_EXIT | vector;
@@ -451,7 +455,6 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			_irq_win = false;
 
 			if (!TRPMHasTrap(pVCpu)) {
-
 				bool res = VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
 				Assert(!res);
 
@@ -503,8 +506,18 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			utcb->inj_error = Event.n.u32ErrorCode;
 
 			static unsigned count = 0;
-			if ((count++ % 1000 == 0) && (u8Vector == 0x30))
-				Vmm::printf("Timer interrupts injected: %u\n", count - 1);
+			//if ((u8Vector == 0x30) && (++count % 100 == 0))
+				//Vmm::printf("Timer interrupts injected: %u\n", count);
+
+			if (u8Vector == 0x30) {
+				static unsigned long last_injected_time = 0;
+				unsigned long injected_time = Genode::Trace::timestamp() * 1000 / 2400000000;
+				//Genode::Thread_base::tracef("Timer interrupt injected: %lu, diff: %lu ms\n", injected_time, injected_time - last_injected_time);
+				last_injected_time = injected_time;
+			} else {
+				unsigned long injected_time = Genode::Trace::timestamp() * 1000 / 2400000000;
+				//Genode::Thread_base::tracef("Interrupt 0x%x injected: %lu\n", u8Vector, injected_time);
+			}
 
 /*
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
@@ -692,7 +705,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			}
 			
 			/* check whether to request interrupt window for injection */
-			_irq_win = check_to_request_irq_window(utcb, pVCpu);
+			_irq_win = check_to_request_irq_window(utcb, pVCpu, __func__);
 
 			/*
 			 * Flag vCPU to be "pokeable" by external events such as interrupts
@@ -715,6 +728,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			_last_exit_was_recall = false;
 
+			//Genode::Thread_base::trace("r\n");
+
 			/* switch to hardware accelerated mode */
 			switch_to_hw();
 
@@ -728,6 +743,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			/* load saved FPU state of EMT thread */
 			fpu_load(reinterpret_cast<char *>(&_emt_fpu_state));
+
+			//Genode::Thread_base::tracef("e\n");
 
 			CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 

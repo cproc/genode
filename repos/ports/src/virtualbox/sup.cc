@@ -34,7 +34,7 @@ struct Attached_gip : Genode::Attached_ram_dataspace
 
 
 enum {
-	UPDATE_HZ  = 100,                     /* Hz */
+	UPDATE_HZ  = 250,                     /* Hz */
 	/* Note: UPDATE_MS < 10ms is not supported by alarm timer, take care !*/
 	UPDATE_MS  = 1000 / UPDATE_HZ,
 	UPDATE_NS  = UPDATE_MS * 1000 * 1000,
@@ -43,14 +43,33 @@ enum {
 
 PSUPGLOBALINFOPAGE g_pSUPGlobalInfoPage;
 
+extern bool do_stats;
 
 class Periodic_GIP : public Genode::Alarm {
 
 	bool on_alarm(unsigned) override
 	{
-		static unsigned count = 0;
-		if (count++ % UPDATE_HZ == 0);
-			//PDBG("Alarm signals received: %u", count - 1);
+
+		{
+			static unsigned count = 0;
+			static unsigned long last_time = 0;
+			static unsigned long tot_time = 0;
+			static unsigned long min_time = (unsigned long)-1;
+			static unsigned long max_time = 0;
+
+			unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
+			unsigned long diff = time - last_time;
+			last_time = time;
+			if (do_stats) {
+				count++;
+				tot_time += diff;
+				min_time = Genode::min(min_time, diff);
+				max_time = Genode::max(max_time, diff);
+
+				if (count % 100 == 0)
+					Genode::printf("main     Periodic GIP alarms: %u, min: %lu, max: %lu, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
+			}
+		}
 
 		/**
 		 * We're using rdtsc here since timer_session->elapsed_ms produces

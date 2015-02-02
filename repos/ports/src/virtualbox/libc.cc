@@ -109,6 +109,7 @@ extern "C" char *getenv(const char *name)
 		return (char *)"+rem_dias.e.l.f"
 		               "+rem_printf.e.l.f"
 //		               "+rem_run.e.l.f"
+                       "+tm.e.l1"
 //		               "+pgm.e.l.f"
 		               "+pdm"
 //		               "+dev_pcnet.e.l.f"
