@@ -64,9 +64,11 @@ class Ahci_driver_base : public Block::Driver
 		              addr_t                    phys,
 		              Block::Packet_descriptor &packet)
 		{
+//PDBG("block_number = %llu, block_count = %zu", block_number, block_count);
 			_sanity_check(block_number, block_count);
 			_device->read(block_number, block_count, phys);
 			ack_packet(packet);
+//PDBG("finished");
 		}
 
 		void write_dma(Block::sector_t           block_number,
@@ -74,9 +76,11 @@ class Ahci_driver_base : public Block::Driver
 		               addr_t                    phys,
 		               Block::Packet_descriptor &packet)
 		{
+//PDBG("block_number = %llu, block_count = %zu", block_number, block_count);
 			_sanity_check(block_number, block_count);
 			_device->write(block_number, block_count, phys);
 			ack_packet(packet);
+//PDBG("finished");
 		}
 
 		Ram_dataspace_capability alloc_dma_buffer(size_t size) {

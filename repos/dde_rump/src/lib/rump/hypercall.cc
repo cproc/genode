@@ -221,13 +221,13 @@ void rumpuser_putchar(int ch)
 	if (ch == '\n') {
 		buf[count] = 0;
 		int nlocks;
-		if (myself() != &_main_thread)
-			rumpkern_unsched(&nlocks, 0);
+		//if (myself() != &_main_thread)
+			//rumpkern_unsched(&nlocks, 0);
 
 		PLOG("rump: %s", buf);
 
-		if (myself() != &_main_thread)
-			rumpkern_sched(nlocks, 0);
+		//if (myself() != &_main_thread)
+			//rumpkern_sched(nlocks, 0);
 
 		count = 0;
 	}
@@ -308,12 +308,14 @@ int rumpuser_clock_gettime(int enum_rumpclock, int64_t *sec, long *nsec)
 
 int rumpuser_clock_sleep(int enum_rumpclock, int64_t sec, long nsec)
 {
+PDBG("%p: %p", rumpuser_curlwp(), __builtin_return_address(0));
 	int nlocks;
 	unsigned int msec = 0;
 
 	Timer::Connection *timer  = myself()->timer();
-
+PDBG("%p: calling rumpkern_unsched()", rumpuser_curlwp());
 	rumpkern_unsched(&nlocks, 0);
+PDBG("%p: rumpkern_unsched() returned", rumpuser_curlwp());
 	switch (enum_rumpclock) {
 		case RUMPUSER_CLOCK_RELWALL:
 			msec = sec * 1000 + nsec / (1000*1000UL);
@@ -323,9 +325,11 @@ int rumpuser_clock_sleep(int enum_rumpclock, int64_t sec, long nsec)
 			msec = ((sec * 1000) + (nsec / (1000 * 1000))) - msec;
 			break;
 	}
-
+PDBG("%p: calling msleep()", rumpuser_curlwp());
 	timer->msleep(msec);
+PDBG("%p: msleep() returned, calling rumpkern_sched() %p", rumpuser_curlwp(), __builtin_return_address(0));
 	rumpkern_sched(nlocks, 0);
+PDBG("%p: rumpkern_sched() returned", rumpuser_curlwp());
 	return 0;
 }
 

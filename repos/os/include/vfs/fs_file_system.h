@@ -93,6 +93,7 @@ class Vfs::Fs_file_system : public File_system
 		file_size _read(::File_system::Node_handle node_handle, void *buf,
 		                file_size const count, file_size const seek_offset)
 		{
+//		PDBG("count = %llu, seek_offset = %llu", count, seek_offset);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 
 			file_size const max_packet_size = source.bulk_buffer_size() / 2;
@@ -123,13 +124,15 @@ class Vfs::Fs_file_system : public File_system
 			 */
 
 			source.release_packet(packet_out);
-
+//PDBG("res = %llu", read_num_bytes);
 			return read_num_bytes;
 		}
 
 		file_size _write(::File_system::Node_handle node_handle,
 		                 const char *buf, file_size count, file_size seek_offset)
 		{
+
+//		PDBG("count = %llu, seek_offset = %llu", count, seek_offset);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 
 			file_size const max_packet_size = source.bulk_buffer_size() / 2;
@@ -155,7 +158,7 @@ class Vfs::Fs_file_system : public File_system
 			 */
 
 			source.release_packet(packet);
-
+//PDBG("res = %llu", count);
 			return count;
 		}
 

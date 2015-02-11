@@ -1218,7 +1218,7 @@ int main()
 
 	/* print loaded object information */
 	try {
-		if (Genode::config()->xml_node().attribute("ld_verbose").has_value("yes"))
+		//if (Genode::config()->xml_node().attribute("ld_verbose").has_value("yes"))
 			dump_loaded();
 	} catch (...) {  }
 

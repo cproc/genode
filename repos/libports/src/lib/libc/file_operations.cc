@@ -682,7 +682,10 @@ extern "C" ssize_t _read(int libc_fd, void *buf, ::size_t count) {
 
 extern "C" ssize_t read(int libc_fd, void *buf, ::size_t count)
 {
-	return _read(libc_fd, buf, count);
+	//PDBG("fd = %d, count = %zu", libc_fd, count);
+	int res = _read(libc_fd, buf, count);
+	//PDBG("res = %d", res);
+	return res;
 }
 
 
@@ -863,7 +866,11 @@ extern "C" ssize_t _write(int libc_fd, const void *buf, ::size_t count)
 
 
 extern "C" ssize_t write(int libc_fd, const void *buf, ::size_t count) {
-	return _write(libc_fd, buf, count); }
+	//PDBG("fd = %d, count = %zu", libc_fd, count);
+	int res = _write(libc_fd, buf, count);
+	//PDBG("res = %d", res);
+	return res;
+	}
 
 
 extern "C" int __getcwd(char *dst, ::size_t dst_size)

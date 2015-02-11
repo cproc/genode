@@ -114,13 +114,15 @@ class File_system::File : public Node
 
 		size_t read(char *dst, size_t len, seek_off_t seek_offset)
 		{
+			//PDBG("len = %zu, seek_offset = %llu", len, seek_offset);
 			ssize_t ret = rump_sys_pread(_fd, dst, len, seek_offset);
-
+			//PDBG("ret = %lld", ret);
 			return ret == -1 ? 0 : ret;
 		}
 
 		size_t write(char const *src, size_t len, seek_off_t seek_offset)
 		{
+			//PDBG("len = %zu, seek_offset = %llu", len, seek_offset);
 			/* should we append? */
 			if (seek_offset == ~0ULL) {
 				off_t off = rump_sys_lseek(_fd, 0, SEEK_END);
@@ -130,6 +132,7 @@ class File_system::File : public Node
 			}
 
 			ssize_t ret = rump_sys_pwrite(_fd, src, len, seek_offset);
+//PDBG("ret = %lld", ret);
 			return ret == -1 ? 0 : ret;
 		}
 
