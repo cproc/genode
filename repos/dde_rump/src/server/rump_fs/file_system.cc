@@ -91,9 +91,9 @@ class File_system::Sync : public Genode::Thread<1024 * sizeof(Genode::addr_t)>
 		void _process_sync(unsigned)
 		{
 			/* sync through front-end */
-			rump_sys_sync();
+			//rump_sys_sync();
 			/* sync Genode back-end */
-			rump_io_backend_sync();
+			//rump_io_backend_sync();
 		}
 
 	protected:

@@ -27,30 +27,33 @@ struct rumpuser_mtx
 {
 	Genode::Semaphore sem;
 	Genode::Lock      counter_lock;
+	Genode::Lock      down_lock;
 	struct lwp       *owner;
 	int               flags;
 
 	rumpuser_mtx(int flags) : sem(1), owner(0), flags(flags) { }
 	
-
-	bool down(bool try_lock = false)
+	bool try_lock()
 	{
-		counter_lock.lock();
+		Genode::Lock::Guard guard(counter_lock);
 
 		if (sem.cnt() > 1)
 			PERR("SEM cnt > 1");
 
 		bool locked = sem.cnt() <= 0;
 
-		counter_lock.unlock();
-
-		if (locked && try_lock)
+		if (locked)
 			return false;
 
-		sem.down();
-		set_owner();
+		down();
 
 		return true;
+	}
+
+	void down()
+	{
+		sem.down();
+		set_owner();
 	}
 
 	void up()
@@ -58,11 +61,6 @@ struct rumpuser_mtx
 		Genode::Lock::Guard guard(counter_lock);
 		clear_owner();
 		sem.up();
-	}
-
-	bool try_lock()
-	{
-		return down(true);
 	}
 
 	void set_owner()
@@ -80,7 +78,7 @@ struct rumpuser_mtx
 		if (flags & RUMPUSER_MTX_KMUTEX) {
 
 			if(owner == 0) {
-				PERR("OWNER 0");
+				//PERR("OWNER 0");
 			}
 			owner = 0;
 		}
@@ -117,6 +115,7 @@ void rumpuser_mutex_enter(struct rumpuser_mtx *mtx)
 		int nlocks;
 		rumpkern_unsched(&nlocks, 0);
 		mtx->down();
+		PDBG("%p", __builtin_return_address(0));
 		rumpkern_sched(nlocks, 0);
 	}
 }
@@ -305,10 +304,11 @@ static void cv_reschedule(struct rumpuser_mtx *mtx, int nlocks)
 void rumpuser_cv_wait(struct rumpuser_cv *cv, struct rumpuser_mtx *mtx)
 {
 	int nlocks;
-
+PDBG("%p: called %p", rumpuser_curlwp(), __builtin_return_address(0));
 	cv_unschedule(mtx, &nlocks);
 	cv->cond.wait(mtx);
 	cv_reschedule(mtx, nlocks);
+PDBG("%p: finished %p", rumpuser_curlwp(), __builtin_return_address(0));
 }
 
 
@@ -384,7 +384,9 @@ struct Rw_lock {
 
 	bool read_lock(bool try_lock)
 	{
+	PDBG("%p: %p: before lock guard", rumpuser_curlwp(), this);
 		Genode::Lock::Guard guard(_inc);
+	PDBG("%p: %p: after lock guard", rumpuser_curlwp(), this);
 
 		if (_read > 0) {
 			_read++;
@@ -408,14 +410,19 @@ struct Rw_lock {
 
 	void read_unlock()
 	{
+	PDBG("%p: %p: before lock guard", rumpuser_curlwp(), this);
 		Genode::Lock::Guard guard(_inc);
+	PDBG("%p: %p: after lock guard", rumpuser_curlwp(), this);
 		if (--_read == 0)
 			unlock();
 	}
 
 	bool lock(bool try_lock)
 	{
+	PDBG("%p: %p: before lock guard", rumpuser_curlwp(), this);
 		Genode::Lock::Guard guard(_write);
+	PDBG("%p: %p: after lock guard", rumpuser_curlwp(), this);
+
 		if (_lock.cnt() > 0) {
 			_lock.down();
 			return true;
@@ -430,7 +437,9 @@ struct Rw_lock {
 
 	void unlock()
 	{
+	PDBG("%p: %p: before lock guard", rumpuser_curlwp(), this);
 		Genode::Lock::Guard guard(_write);
+	PDBG("%p: %p: after lock guard", rumpuser_curlwp(), this);
 		_lock.up();
 	}
 

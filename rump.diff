@@ -1,0 +1,428 @@
+diff --git a/sys/kern/vfs_subr.c b/sys/kern/vfs_subr.c
+index e685387..7db1b1d 100644
+--- a/sys/kern/vfs_subr.c
++++ b/sys/kern/vfs_subr.c
+@@ -1001,11 +1001,13 @@ VFS_SYNC(struct mount *mp, int a, struct kauth_cred *b)
+ 	if ((mp->mnt_iflag & IMNT_MPSAFE) == 0) {
+ 		KERNEL_LOCK(1, NULL);
+ 	}
++printf("%p: VFS_SYNC(): %p\n", rumpuser_curlwp(), mp->mnt_op->vfs_sync);
+ 	error = (*(mp->mnt_op->vfs_sync))(mp, a, b);
++printf("%p: VFS_SYNC() check\n");
+ 	if ((mp->mnt_iflag & IMNT_MPSAFE) == 0) {
+ 		KERNEL_UNLOCK_ONE(NULL);
+ 	}
+-
++printf("%p: VFS_SYNC() finished\n", rumpuser_curlwp());
+ 	return error;
+ }
+ 
+diff --git a/sys/kern/vfs_vnops.c b/sys/kern/vfs_vnops.c
+index 63f8c05..d3e4630 100644
+--- a/sys/kern/vfs_vnops.c
++++ b/sys/kern/vfs_vnops.c
+@@ -540,7 +540,7 @@ vn_read(file_t *fp, off_t *offset, struct uio *uio, kauth_cred_t cred,
+ 	struct vnode *vp = fp->f_vnode;
+ 	int error, ioflag, fflag;
+ 	size_t count;
+-
++printf("%p: vn_read()\n", rumpuser_curlwp());
+ 	ioflag = IO_ADV_ENCODE(fp->f_advice);
+ 	fflag = fp->f_flag;
+ 	if (fflag & FNONBLOCK)
+@@ -551,13 +551,17 @@ vn_read(file_t *fp, off_t *offset, struct uio *uio, kauth_cred_t cred,
+ 		ioflag |= IO_ALTSEMANTICS;
+ 	if (fflag & FDIRECT)
+ 		ioflag |= IO_DIRECT;
++printf("%p: vn_read() check 1\n", rumpuser_curlwp());
+ 	vn_lock(vp, LK_SHARED | LK_RETRY);
++printf("%p: vn_read() check 2\n", rumpuser_curlwp());
+ 	uio->uio_offset = *offset;
+ 	count = uio->uio_resid;
+ 	error = VOP_READ(vp, uio, ioflag, cred);
++printf("%p: vn_read() check 3\n", rumpuser_curlwp());
+ 	if (flags & FOF_UPDATE_OFFSET)
+ 		*offset += count - uio->uio_resid;
+ 	VOP_UNLOCK(vp);
++printf("%p: vn_read() finished\n", rumpuser_curlwp());
+ 	return (error);
+ }
+ 
+@@ -1030,14 +1034,14 @@ vn_lock(struct vnode *vp, int flags)
+ 	if (wapbl_vphaswapbl(vp))
+ 		WAPBL_JUNLOCK_ASSERT(wapbl_vptomp(vp));
+ #endif
+-
++printf("%p: vn_lock(%p) %p\n", rumpuser_curlwp(), vp, __builtin_return_address(0));
+ 	error = VOP_LOCK(vp, flags);
+ 	if ((flags & LK_RETRY) != 0 && error == ENOENT)
+ 		error = VOP_LOCK(vp, flags);
+ 
+ 	KASSERT((flags & LK_RETRY) == 0 || (flags & LK_NOWAIT) != 0 ||
+ 	    error == 0);
+-
++printf("%p: vn_lock(%p) locked %p\n", rumpuser_curlwp(), vp, __builtin_return_address(0));
+ 	return error;
+ }
+ 
+diff --git a/sys/kern/vnode_if.c b/sys/kern/vnode_if.c
+index d0b0090..16cfcef 100644
+--- a/sys/kern/vnode_if.c
++++ b/sys/kern/vnode_if.c
+@@ -721,7 +721,9 @@ VOP_FSYNC(struct vnode *vp,
+ 	a.a_offhi = offhi;
+ 	mpsafe = (vp->v_vflag & VV_MPSAFE);
+ 	if (!mpsafe) { KERNEL_LOCK(1, curlwp); }
++printf("%p: calling vop_fsync(), op = %p\n", rumpuser_curlwp(), vp->v_op[20]);
+ 	error = (VCALL(vp, VOFFSET(vop_fsync), &a));
++printf("%p: vop_fsync() returned\n", rumpuser_curlwp());
+ 	if (!mpsafe) { KERNEL_UNLOCK_ONE(curlwp); }
+ 	return error;
+ }
+@@ -1163,6 +1165,7 @@ VOP_LOCK(struct vnode *vp,
+ 	a.a_flags = flags;
+ 	mpsafe = (vp->v_vflag & VV_MPSAFE);
+ 	if (!mpsafe) { KERNEL_LOCK(1, curlwp); }
++	printf("%p: VOP_LOCK() %p\n", rumpuser_curlwp(), vp->v_op[VOFFSET(vop_lock)]);
+ 	error = (VCALL(vp, VOFFSET(vop_lock), &a));
+ 	if (!mpsafe) { KERNEL_UNLOCK_ONE(curlwp); }
+ 	return error;
+@@ -1184,6 +1187,7 @@ const struct vnodeop_desc vop_unlock_desc = {
+ int
+ VOP_UNLOCK(struct vnode *vp)
+ {
++printf("%p: VOP_UNLOCK(%p) %p\n", rumpuser_curlwp(), vp, __builtin_return_address(0));
+ 	int error;
+ 	bool mpsafe;
+ 	struct vop_unlock_args a;
+@@ -1193,6 +1197,7 @@ VOP_UNLOCK(struct vnode *vp)
+ 	if (!mpsafe) { KERNEL_LOCK(1, curlwp); }
+ 	error = (VCALL(vp, VOFFSET(vop_unlock), &a));
+ 	if (!mpsafe) { KERNEL_UNLOCK_ONE(curlwp); }
++printf("%p: VOP_UNLOCK(%p) finished %p\n", rumpuser_curlwp(), vp, __builtin_return_address(0));
+ 	return error;
+ }
+ 
+diff --git a/sys/miscfs/genfs/genfs_io.c b/sys/miscfs/genfs/genfs_io.c
+index 9526cef..048b601 100644
+--- a/sys/miscfs/genfs/genfs_io.c
++++ b/sys/miscfs/genfs/genfs_io.c
+@@ -1220,7 +1220,7 @@ retry:
+ 				printf("%s: %p: !CLEAN\n", __func__, pg);
+ 			}
+ 			if (pmap_is_modified(pg)) {
+-				printf("%s: %p: modified\n", __func__, pg);
++				//printf("%s: %p: modified\n", __func__, pg);
+ 			}
+ 		}
+ #endif /* defined(DEBUG) */
+diff --git a/sys/miscfs/genfs/genfs_vnops.c b/sys/miscfs/genfs/genfs_vnops.c
+index b853d66..3140ac2 100644
+--- a/sys/miscfs/genfs/genfs_vnops.c
++++ b/sys/miscfs/genfs/genfs_vnops.c
+@@ -359,7 +359,7 @@ genfs_lock(void *v)
+ 	int flags = ap->a_flags;
+ 	krw_t op;
+ 	int error;
+-
++printf("%p: genfs_lock()\n", rumpuser_curlwp());
+ 	op = (ISSET(flags, LK_EXCLUSIVE) ? RW_WRITER : RW_READER);
+ 	if (ISSET(flags, LK_NOWAIT)) {
+ 		if (fstrans_start_nowait(mp, FSTRANS_SHARED))
+@@ -377,12 +377,16 @@ genfs_lock(void *v)
+ 			rw_exit(&vp->v_lock);
+ 			fstrans_done(mp);
+ 		}
++printf("%p: genfs_lock() exit 1\n", rumpuser_curlwp());
+ 		return error;
+ 	}
+-
++printf("%p: genfs_lock() check 1\n", rumpuser_curlwp());
+ 	fstrans_start(mp, FSTRANS_SHARED);
++printf("%p: genfs_lock() check 2\n", rumpuser_curlwp());
+ 	rw_enter(&vp->v_lock, op);
++printf("%p: genfs_lock() check 3\n", rumpuser_curlwp());
+ 	mutex_enter(vp->v_interlock);
++printf("%p: genfs_lock() check 4\n", rumpuser_curlwp());
+ 	error = vdead_check(vp, VDEAD_NOWAIT);
+ 	if (error) {
+ 		rw_exit(&vp->v_lock);
+@@ -391,6 +395,7 @@ genfs_lock(void *v)
+ 		KASSERT(error == ENOENT);
+ 	}
+ 	mutex_exit(vp->v_interlock);
++printf("%p: genfs_lock() finished\n", rumpuser_curlwp());
+ 	return error;
+ }
+ 
+diff --git a/sys/miscfs/syncfs/sync_subr.c b/sys/miscfs/syncfs/sync_subr.c
+index d2d96d3..6536fb0 100644
+--- a/sys/miscfs/syncfs/sync_subr.c
++++ b/sys/miscfs/syncfs/sync_subr.c
+@@ -221,9 +221,10 @@ sched_sync(void *arg)
+ 	bool synced;
+ 
+ 	for (;;) {
++printf("%p: sched_sync() start of loop\n", rumpuser_curlwp());
+ 		mutex_enter(&syncer_mutex);
+ 		mutex_enter(&syncer_data_lock);
+-
++printf("%p: sched_sync() check 1\n", rumpuser_curlwp());
+ 		starttime = time_second;
+ 
+ 		/*
+@@ -235,19 +236,27 @@ sched_sync(void *arg)
+ 			syncer_delayno = 0;
+ 
+ 		while ((vp = TAILQ_FIRST(slp)) != NULL) {
++printf("%p: sched_sync() check 2\n", rumpuser_curlwp());
+ 			/* We are locking in the wrong direction. */
+ 			synced = false;
+ 			if (mutex_tryenter(vp->v_interlock)) {
++printf("%p: sched_sync() check 2.1\n", rumpuser_curlwp());
+ 				mutex_exit(&syncer_data_lock);
++printf("%p: sched_sync() check 2.2\n", rumpuser_curlwp());
+ 				if (vget(vp, LK_EXCLUSIVE | LK_NOWAIT) == 0) {
++printf("%p: sched_sync() check 2.2.1\n", rumpuser_curlwp());
+ 					synced = true;
+ 					(void) VOP_FSYNC(vp, curlwp->l_cred,
+ 					    FSYNC_LAZY, 0, 0);
++printf("%p: sched_sync() check 2.2.2\n", rumpuser_curlwp());
+ 					vput(vp);
++printf("%p: sched_sync() check 2.2.3\n", rumpuser_curlwp());
+ 				}
++printf("%p: sched_sync() check 2.3\n", rumpuser_curlwp());
+ 				mutex_enter(&syncer_data_lock);
++printf("%p: sched_sync() check 2.4\n", rumpuser_curlwp());
+ 			}
+-
++printf("%p: sched_sync() check 3\n", rumpuser_curlwp());
+ 			/*
+ 			 * XXX The vnode may have been recycled, in which
+ 			 * case it may have a new identity.
+@@ -280,8 +289,9 @@ sched_sync(void *arg)
+ 				    synced ? syncdelay : lockdelay);
+ 			}
+ 		}
++printf("%p: sched_sync() check 4\n", rumpuser_curlwp());
+ 		mutex_exit(&syncer_mutex);
+-
++printf("%p: sched_sync() check 5\n", rumpuser_curlwp());
+ 		/*
+ 		 * If it has taken us less than a second to process the
+ 		 * current work, then wait.  Otherwise start right over
+@@ -294,6 +304,7 @@ sched_sync(void *arg)
+ 			kpause("syncer", false, hz, &syncer_data_lock);
+ 		}
+ 		mutex_exit(&syncer_data_lock);
++printf("%p: sched_sync() end of loop\n", rumpuser_curlwp());
+ 	}
+ }
+ 
+diff --git a/sys/miscfs/syncfs/sync_vnops.c b/sys/miscfs/syncfs/sync_vnops.c
+index d3dc91b..8432ad2 100644
+--- a/sys/miscfs/syncfs/sync_vnops.c
++++ b/sys/miscfs/syncfs/sync_vnops.c
+@@ -184,22 +184,27 @@ sync_fsync(void *v)
+ 	 */
+ 	if (!(ap->a_flags & FSYNC_LAZY))
+ 		return (0);
+-
++printf("%p: sync_fsync() check 1\n", rumpuser_curlwp());
+ 	/*
+ 	 * Move ourselves to the back of the sync list.
+ 	 */
+ 	mutex_enter(syncvp->v_interlock);
++printf("%p: sync_fsync() check 2\n", rumpuser_curlwp());
+ 	vn_syncer_add_to_worklist(syncvp, sync_delay(mp));
++printf("%p: sync_fsync() check 3\n", rumpuser_curlwp());
+ 	mutex_exit(syncvp->v_interlock);
+-
++printf("%p: sync_fsync() check 4\n", rumpuser_curlwp());
+ 	/*
+ 	 * Walk the list of vnodes pushing all that are dirty and
+ 	 * not already on the sync list.
+ 	 */
+ 	if (vfs_busy(mp, NULL) == 0) {
++printf("%p: sync_fsync() check 5\n", rumpuser_curlwp());
+ 		VFS_SYNC(mp, MNT_LAZY, ap->a_cred);
++printf("%p: sync_fsync() check 6\n", rumpuser_curlwp());
+ 		vfs_unbusy(mp, false, NULL);
+ 	}
++printf("%p: sync_fsync() finished\n", rumpuser_curlwp());
+ 	return (0);
+ }
+ 
+diff --git a/sys/rump/librump/rumpkern/emul.c b/sys/rump/librump/rumpkern/emul.c
+index 9414620..e0a675c 100644
+--- a/sys/rump/librump/rumpkern/emul.c
++++ b/sys/rump/librump/rumpkern/emul.c
+@@ -156,6 +156,7 @@ syncobj_t mutex_syncobj, rw_syncobj;
+ int
+ kpause(const char *wmesg, bool intr, int timeo, kmutex_t *mtx)
+ {
++printf("%p: kpause(%d) %p\n", rumpuser_curlwp(), timeo, __builtin_return_address(0));
+ 	extern int hz;
+ 	int rv __diagused;
+ 	uint64_t sec, nsec;
+@@ -170,7 +171,7 @@ kpause(const char *wmesg, bool intr, int timeo, kmutex_t *mtx)
+ 
+ 	if (mtx)
+ 		mutex_enter(mtx);
+-
++printf("%p: kpause(%d) finished %p\n", rumpuser_curlwp(), timeo, __builtin_return_address(0));
+ 	return 0;
+ }
+ 
+diff --git a/sys/rump/librump/rumpkern/klock.c b/sys/rump/librump/rumpkern/klock.c
+index 044c169..ae430bf 100644
+--- a/sys/rump/librump/rumpkern/klock.c
++++ b/sys/rump/librump/rumpkern/klock.c
+@@ -148,7 +148,7 @@ _kernel_locked_p(void)
+ void
+ rump_user_unschedule(int nlocks, int *countp, void *interlock)
+ {
+-
++printf("%p: rump_user_unschedule() l = %p, %p\n", rumpuser_curlwp(), curlwp, __builtin_return_address(0));
+ 	_kernel_unlock(nlocks, countp);
+ 	/*
+ 	 * XXX: technically we should unschedule_cpu1() here, but that
+@@ -160,7 +160,7 @@ rump_user_unschedule(int nlocks, int *countp, void *interlock)
+ void
+ rump_user_schedule(int nlocks, void *interlock)
+ {
+-
++printf("%p: rump_user_schedule() l = %p, %p\n", rumpuser_curlwp(), curlwp, __builtin_return_address(0));
+ 	rump_schedule_cpu_interlock(curlwp, interlock);
+ 
+ 	if (nlocks)
+diff --git a/sys/rump/librump/rumpkern/locks.c b/sys/rump/librump/rumpkern/locks.c
+index a292262..d6d3700 100644
+--- a/sys/rump/librump/rumpkern/locks.c
++++ b/sys/rump/librump/rumpkern/locks.c
+@@ -136,7 +136,7 @@ mutex_destroy(kmutex_t *mtx)
+ void
+ mutex_enter(kmutex_t *mtx)
+ {
+-
++//printf("mutex_enter(): %p\n", __builtin_return_address(0));
+ 	WANTLOCK(mtx, 0);
+ 	rumpuser_mutex_enter(RUMPMTX(mtx));
+ 	LOCKED(mtx, false);
+diff --git a/sys/rump/librump/rumpkern/scheduler.c b/sys/rump/librump/rumpkern/scheduler.c
+index c19f47c..1e19f67 100644
+--- a/sys/rump/librump/rumpkern/scheduler.c
++++ b/sys/rump/librump/rumpkern/scheduler.c
+@@ -231,6 +231,7 @@ lwp0rele(void)
+ void
+ rump_schedule()
+ {
++printf("%p: rump_schedule(), %p\n", rumpuser_curlwp(), __builtin_return_address(0));
+ 	struct lwp *l;
+ 
+ 	/*
+@@ -322,11 +323,12 @@ rump_schedule_cpu_interlock(struct lwp *l, void *interlock)
+ 	for (;;) {
+ 		SCHED_SLOWPATH(rcpu);
+ 		old = atomic_swap_ptr(&rcpu->rcpu_prevlwp, RCPULWP_WANTED);
+-
++printf("%p: rump_schedule_cpu_interlock() l = %p, old = %p\n", rumpuser_curlwp(), l, old);
+ 		/* CPU is free? */
+ 		if (old != RCPULWP_BUSY && old != RCPULWP_WANTED) {
+ 			if (atomic_cas_ptr(&rcpu->rcpu_prevlwp,
+ 			    RCPULWP_WANTED, RCPULWP_BUSY) == RCPULWP_WANTED) {
++			    printf("%p: rump_schedule_cpu_interlock() l = %p, break\n", rumpuser_curlwp(), l);
+ 				break;
+ 			}
+ 		}
+@@ -365,6 +367,7 @@ rump_schedule_cpu_interlock(struct lwp *l, void *interlock)
+ void
+ rump_unschedule()
+ {
++printf("%p: rump_unschedule() %p\n", rumpuser_curlwp(), __builtin_return_address(0));
+ 	struct lwp *l = curlwp;
+ #ifdef DIAGNOSTIC
+ 	int nlock;
+@@ -429,7 +432,7 @@ rump_unschedule_cpu1(struct lwp *l, void *interlock)
+ 	struct rumpcpu *rcpu;
+ 	struct cpu_info *ci;
+ 	void *old;
+-
++printf("%p: rump_unschedule_cpu1() l = %p\n", rumpuser_curlwp(), l);
+ 	ci = l->l_cpu;
+ 	ci->ci_curlwp = NULL;
+ 	rcpu = &rcpu_storage[ci-&rump_cpus[0]];
+diff --git a/sys/ufs/ext2fs/ext2fs_vfsops.c b/sys/ufs/ext2fs/ext2fs_vfsops.c
+index 3a1f8c7..798b764 100644
+--- a/sys/ufs/ext2fs/ext2fs_vfsops.c
++++ b/sys/ufs/ext2fs/ext2fs_vfsops.c
+@@ -901,7 +901,7 @@ ext2fs_sync(struct mount *mp, int waitfor, kauth_cred_t cred)
+ 		printf("fs = %s\n", fs->e2fs_fsmnt);
+ 		panic("update: rofs mod");
+ 	}
+-
++printf("%p: ext2fs_sync() check 1\n", rumpuser_curlwp());
+ 	/*
+ 	 * Write back each (modified) inode.
+ 	 */
+@@ -909,21 +909,30 @@ ext2fs_sync(struct mount *mp, int waitfor, kauth_cred_t cred)
+ 	while ((vp = vfs_vnode_iterator_next(marker, ext2fs_sync_selector,
+ 	    NULL)))
+ 	{
++printf("%p: ext2fs_sync() check 1.1\n", rumpuser_curlwp());
+ 		error = vn_lock(vp, LK_EXCLUSIVE);
++printf("%p: ext2fs_sync() check 1.2\n", rumpuser_curlwp());
+ 		if (error) {
++printf("%p: ext2fs_sync() check 1.3\n", rumpuser_curlwp());
+ 			vrele(vp);
+ 			continue;
+ 		}
+-		if (vp->v_type == VREG && waitfor == MNT_LAZY)
++printf("%p: ext2fs_sync() check 2\n", rumpuser_curlwp());
++		if (vp->v_type == VREG && waitfor == MNT_LAZY) {
++printf("%p: ext2fs_sync() check 2.1\n", rumpuser_curlwp());
+ 			error = ext2fs_update(vp, NULL, NULL, 0);
+-		else
++		} else {
++printf("%p: ext2fs_sync() check 2.2\n", rumpuser_curlwp());
+ 			error = VOP_FSYNC(vp, cred,
+ 			    waitfor == MNT_WAIT ? FSYNC_WAIT : 0, 0, 0);
++		}
++printf("%p: ext2fs_sync() check 3\n", rumpuser_curlwp());
+ 		if (error)
+ 			allerror = error;
+ 		vput(vp);
+ 	}
+ 	vfs_vnode_iterator_destroy(marker);
++printf("%p: ext2fs_sync() check 4\n", rumpuser_curlwp());
+ 	/*
+ 	 * Force stale file system control information to be flushed.
+ 	 */
+diff --git a/sys/ufs/ext2fs/ext2fs_vnops.c b/sys/ufs/ext2fs/ext2fs_vnops.c
+index b6ffe58..80dff81 100644
+--- a/sys/ufs/ext2fs/ext2fs_vnops.c
++++ b/sys/ufs/ext2fs/ext2fs_vnops.c
+@@ -965,19 +965,21 @@ ext2fs_fsync(void *v)
+ 
+ 	wait = (ap->a_flags & FSYNC_WAIT) != 0;
+ 
++printf("%p: ext2fs_fsync() check 1\n", rumpuser_curlwp());
+ 	if (vp->v_type == VBLK)
+ 		error = spec_fsync(v);
+ 	else
+ 		error = vflushbuf(vp, ap->a_flags);
++printf("%p: ext2fs_fsync() check 2\n", rumpuser_curlwp());
+ 	if (error == 0 && (ap->a_flags & FSYNC_DATAONLY) == 0)
+ 		error = ext2fs_update(vp, NULL, NULL, wait ? UPDATE_WAIT : 0);
+-
++printf("%p: ext2fs_fsync() check 3\n", rumpuser_curlwp());
+ 	if (error == 0 && ap->a_flags & FSYNC_CACHE) {
+ 		int l = 0;
+ 		error = VOP_IOCTL(VTOI(vp)->i_devvp, DIOCCACHESYNC, &l, FWRITE,
+ 		    curlwp->l_cred);
+ 	}
+-
++printf("%p: ext2fs_fsync() finished\n", rumpuser_curlwp());
+ 	return error;
+ }
+ 

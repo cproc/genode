@@ -115,10 +115,13 @@ class Backend : public Hard_context_thread
 
 		void _ack_avail(unsigned)
 		{
+PDBG("%p: ACK", rumpuser_curlwp());
 			_handle = false;
 
 			while (_session.tx()->ack_avail()) {
+			//PDBG("check 1");
 				Block::Packet_descriptor packet = _session.tx()->get_acked_packet();
+			//PDBG("check 2");
 				Packet *p = _find(packet);
 
 				if (p->opcode == Block::Packet_descriptor::READ)
@@ -131,19 +134,23 @@ class Backend : public Hard_context_thread
 					_session.sync();
 
 				int dummy;
-				if (verbose)
-					PDBG("BIO done  p: %p bio %p", p, p->donearg);
+				//if (verbose)
+					PDBG("%p: BIO done  p: %p bio %p", rumpuser_curlwp(), p, p->donearg);
 
 				rumpkern_sched(0, 0);
+				PDBG("%p: check 3", rumpuser_curlwp());
 				if (p->biodone)
 					p->biodone(p->donearg, p->cnt * _blk_size,
 					           packet.succeeded() ? 0 : EIO);
+				PDBG("%p: check 4", rumpuser_curlwp());
 				rumpkern_unsched(&dummy, 0);
 
 				_session.tx()->release_packet(packet);
+				//PDBG("check 5");
 				_pending()->remove(p);
 				_free(p);
 			}
+PDBG("%p: ACK finished", rumpuser_curlwp());
 		}
 
 		void _handle_signal()
@@ -309,12 +316,12 @@ void rumpuser_bio(int fd, int op, void *data, size_t dlen, int64_t off,
                   rump_biodone_fn biodone, void *donearg)
 {
 	int nlocks;
-	
+PDBG("%p: calling rumpkern_unsched()", rumpuser_curlwp());	
 	rumpkern_unsched(&nlocks, 0);
 
 	Packet *p = backend()->alloc();
 
-#if 0
+#if 1
 	PDBG("fd: %d op: %d len: %zu off: %lx p %p bio %p sync %u", fd, op, dlen, off,
 	     p, donearg, !!(op & RUMPUSER_BIO_SYNC));
 #endif
@@ -329,6 +336,7 @@ void rumpuser_bio(int fd, int op, void *data, size_t dlen, int64_t off,
 	p->donearg = donearg;
 	p->sync    = !!(op & RUMPUSER_BIO_SYNC);
 	backend()->submit();
+PDBG("%p: calling rumpkern_sched()", rumpuser_curlwp());
 	rumpkern_sched(nlocks, 0);
 }
 
