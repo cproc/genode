@@ -32,6 +32,7 @@ struct Genode::Trace::Logger
 {
 	private:
 
+		Cpu_session       *cpu_session;
 		Thread_capability  thread_cap;
 		Control           *control;
 		bool               enabled;
@@ -54,7 +55,7 @@ struct Genode::Trace::Logger
 
 		void init_pending(bool val) { pending_init = val; }
 
-		void init(Thread_capability);
+		void init(Thread_capability, Genode::Cpu_session*);
 
 		/**
 		 * Log binary data to trace buffer

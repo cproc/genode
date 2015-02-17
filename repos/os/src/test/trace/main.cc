@@ -31,7 +31,7 @@ static char const *state_name(Genode::Trace::Subject_info::State state)
 }
 
 
-struct Test_thread : Genode::Thread<1024 * sizeof (unsigned long)>
+struct Test_thread : Genode::Thread<2 * 1024 * sizeof (unsigned long)>
 {
 	Timer::Connection _timer;
 
@@ -66,10 +66,13 @@ class Trace_buffer_monitor
 
 		Trace::Subject_id     _id;
 		Trace::Buffer        *_buffer;
-		Trace::Buffer::Entry _curr_entry;
+		Trace::Buffer::Entry _last_dumped;
+
+		unsigned int _count = 0;
 
 		const char *_terminate_entry(Trace::Buffer::Entry const &entry)
 		{
+			//PDBG("entry.length() = %zu", entry.length());
 			size_t len = min(entry.length() + 1, MAX_ENTRY_BUF);
 			memcpy(_buf, entry.data(), len);
 			_buf[len-1] = '\0';
@@ -83,7 +86,7 @@ class Trace_buffer_monitor
 		:
 			_id(id),
 			_buffer(env()->rm_session()->attach(ds_cap)),
-			_curr_entry(_buffer->first())
+			_last_dumped(_buffer->first())
 		{
 			PLOG("monitor subject:%d buffer:0x%lx", _id.id, (addr_t)_buffer);
 		}
@@ -98,21 +101,25 @@ class Trace_buffer_monitor
 
 		void dump()
 		{
-			PLOG("overflows: %u", _buffer->wrapped());
+			PLOG("overflows: %u, count: %u", _buffer->wrapped(), _count);
 
 			PLOG("read all remaining events");
-			for (; !_curr_entry.is_last(); _curr_entry = _buffer->next(_curr_entry)) {
+
+			Trace::Buffer::Entry next = _last_dumped.is_last() ? _buffer->first() : _buffer->next(_last_dumped);
+
+			for (; !next.is_last(); _last_dumped = next, next = _buffer->next(next)) {
 				/* omit empty entries */
-				if (_curr_entry.length() == 0)
+				//PDBG("_curr_entry.length() = %zu", next.length());
+				if (next.length() == 0)
 					continue;
 
-				const char *data = _terminate_entry(_curr_entry);
-				if (data)
+				const char *data = _terminate_entry(next);
+				if (data && (_count++ > 0))
 					PLOG("%s", data);
 			}
 
 			/* reset after we read all available entries */
-			_curr_entry = _buffer->first();
+			//_curr_entry = _buffer->first();
 		}
 };
 
@@ -123,11 +130,11 @@ int main(int argc, char **argv)
 
 	printf("--- test-trace started ---\n");
 
-	static Genode::Trace::Connection trace(1024*1024, 64*1024, 0);
+	static Genode::Trace::Connection trace(100*1024*1024, 64*1024, 0);
 
 	static Timer::Connection timer;
 
-	static Test_thread test("test-thread");
+	//static Test_thread test("test-thread");
 
 	static Trace_buffer_monitor *test_monitor = 0;
 
@@ -172,12 +179,15 @@ int main(int argc, char **argv)
 
 	} catch (...) { }
 
-	for (size_t cnt = 0; cnt < 5; cnt++) {
+
+	/* wait for the subject and enable tracing */
+
+	do {
 
 		timer.msleep(3000);
 
-		Trace::Subject_id subjects[32];
-		size_t num_subjects = trace.subjects(subjects, 32);
+		Trace::Subject_id subjects[1000];
+		size_t num_subjects = trace.subjects(subjects, 1000);
 
 		printf("%zd tracing subjects present\n", num_subjects);
 
@@ -194,28 +204,33 @@ int main(int argc, char **argv)
 			/* enable tracing */
 			if (!policy_set
 			    && strcmp(info.session_label().string(), policy_label) == 0
-			    && strcmp(info.thread_name().string(), "test-thread") == 0) {
+			    && strcmp(info.thread_name().string(), "vCPU dispatcher") == 0) {
 				try {
 					PINF("enable tracing for thread:'%s' with policy:%d",
 					     info.thread_name().string(), policy_id.id);
 
-					trace.trace(subjects[i].id, policy_id, 16384U);
+					trace.trace(subjects[i].id, policy_id, 5000*16384U);
 
 					Dataspace_capability ds_cap = trace.buffer(subjects[i].id);
 					test_monitor = new (env()->heap()) Trace_buffer_monitor(subjects[i].id, ds_cap);
 
-				} catch (Trace::Source_is_dead) { PERR("source is dead"); }
+					break;
+
+				} catch (Trace::Source_is_dead) { PERR("source is dead"); return -1; }
 
 				policy_set = true;
 			}
-
-			/* read events from trace buffer */
-			if (test_monitor) {
-				if (subjects[i].id == test_monitor->id().id)
-					test_monitor->dump();
-			}
 		}
+	} while (!test_monitor);
+
+
+	/* read events from trace buffer */
+
+	for (;;) {
+		test_monitor->dump();
+		timer.msleep(3000);
 	}
+
 
 	if (test_monitor)
 		destroy(env()->heap(), test_monitor);
