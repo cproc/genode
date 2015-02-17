@@ -15,6 +15,7 @@
 
 /* Genode includes */
 #include <base/printf.h>
+#include <base/thread.h>
 #include <os/config.h>
 
 /* Virtualbox includes */
@@ -35,6 +36,20 @@
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 
+extern "C" void tracef(const char *format, ...)
+{
+	char dst[512];
+
+	va_list list;
+	va_start(list, format);
+
+	Genode::String_console sc(dst, sizeof(dst));
+	sc.vprintf(format, list);
+
+	va_end(list);
+
+	Genode::Thread_base::trace(dst);
+}
 
 /**
  * xpcom style memory allocation

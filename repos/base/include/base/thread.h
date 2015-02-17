@@ -58,6 +58,7 @@
 #include <base/exception.h>
 #include <base/lock.h>
 #include <base/native_types.h>
+#include <base/snprintf.h>
 #include <base/trace/logger.h>
 #include <cpu/consts.h>
 #include <util/string.h>
@@ -65,6 +66,7 @@
 #include <ram_session/ram_session.h>  /* for 'Ram_dataspace_capability' type */
 #include <cpu_session/cpu_session.h>  /* for 'Thread_capability' type */
 #include <cpu_session/capability.h>   /* for 'Cpu_session_capability' type */
+#include <trace/timestamp.h>
 
 namespace Genode {
 
@@ -498,6 +500,21 @@ namespace Genode {
 			static void trace(char const *data, size_t len)
 			{
 				_logger()->log(data, len);
+			}
+
+			static void tracef(const char *format, ...)
+			{
+				char dst[512];
+
+				va_list list;
+				va_start(list, format);
+
+				String_console sc(dst, sizeof(dst));
+				sc.vprintf(format, list);
+
+				va_end(list);
+
+				trace(dst);
 			}
 
 			/**
