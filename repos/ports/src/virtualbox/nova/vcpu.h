@@ -506,6 +506,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
 */
+
+			Genode::Thread_base::tracef("u8Vector = %u\n", u8Vector);
+
 			utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
 			Nova::reply(_stack_reply);
 		}

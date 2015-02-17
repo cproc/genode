@@ -26,6 +26,7 @@ set config_of_app {
 		<resource name="RAM" quantum="128M"/>
 		<config>
 			<trace_policy label="init -> vbox" module="null" />
+<!--			<trace_policy label="init -> vbox -> vbox 11" module="null" />-->
 		</config>
 	</start>
 
