@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 			/* enable tracing */
 			if (!policy_set
 			    && strcmp(info.session_label().string(), policy_label) == 0
-			    && strcmp(info.thread_name().string(), "vCPU dispatcher") == 0) {
+			    && strcmp(info.thread_name().string(), "Timer") == 0) {
 				try {
 					PINF("enable tracing for thread:'%s' with policy:%d",
 					     info.thread_name().string(), policy_id.id);

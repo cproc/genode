@@ -21,6 +21,8 @@
 /* local includes */
 #include <trace/control.h>
 
+#include <nova/syscalls.h>
+
 using namespace Genode;
 
 
@@ -47,7 +49,12 @@ static Trace::Control *trace_control(Cpu_session *cpu, Rm_session *rm,
 			ds(cpu.trace_control()),
 			size(ds.valid() ? Dataspace_client(ds).size() : 0),
 			base(ds.valid() ? (Trace::Control * const)rm.attach(ds) : 0)
-		{ }
+		{
+			char buf[256];
+			Thread_base::myself()->name(buf, sizeof(buf));
+			if (Genode::strcmp(buf, "Timer") == 0)
+				*(int*)0 = 0;
+		}
 
 		Trace::Control *slot(Thread_capability thread)
 		{
@@ -55,6 +62,8 @@ static Trace::Control *trace_control(Cpu_session *cpu, Rm_session *rm,
 				return 0;
 
 			unsigned const index = cpu.trace_control_index(thread);
+
+			Nova::debug(index);
 
 			if ((index + 1)*sizeof(Trace::Control) > size) {
 				PERR("thread control index is out of range");
@@ -190,8 +199,9 @@ void Trace::Logger::init(Thread_capability thread,
 {
 	cpu_session = cpu;
 	thread_cap = thread;
-
+Nova::debug(0xfe);
 	control = trace_control(cpu_session, env()->rm_session(), thread);
+Nova::debug(0xff);
 }
 
 
