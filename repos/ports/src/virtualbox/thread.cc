@@ -32,6 +32,8 @@
 static Genode::Cpu_session * get_cpu_session(RTTHREADTYPE type) {
 	using namespace Genode;
 
+	return Genode::env()->cpu_session();
+
 	static Cpu_connection * con[RTTHREADTYPE_END - 1];
 	static Lock lock;
 
