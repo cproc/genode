@@ -160,9 +160,9 @@ DUMMY(IOMInterpretOUTS)
 DUMMY(IOMInterpretIN)
 DUMMY(IOMInterpretINS)
 
-DUMMY(DISInstrToStrWithReader)
-DUMMY(DISInstrToStrEx)
-DUMMY(DISFetchRegSegEx)
+//DUMMY(DISInstrToStrWithReader)
+//DUMMY(DISInstrToStrEx)
+//DUMMY(DISFetchRegSegEx)
 
 DUMMY(RTFileQueryFsSizes)
 

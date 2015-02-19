@@ -77,14 +77,16 @@ namespace Genode {
 					if (string[i] == '\n') {
 						memcpy(buf, string + from_i, i - from_i);
 						buf[i - from_i] = 0;
-						printf("[%s] %s\n", _label, buf);
+						//printf("[%s] %s\n", _label, buf);
+						printf("%s\n", buf);
 						from_i = i + 1;
 					}
 				}
 
 				/* if last character of string was not a line break, add one */
 				if (from_i < len)
-					printf("[%s] %s\n", _label, string + from_i);
+					//printf("[%s] %s\n", _label, string + from_i);
+					printf("%s\n", string + from_i);
 
 				return len;
 			}

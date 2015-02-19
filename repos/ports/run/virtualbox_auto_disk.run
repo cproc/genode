@@ -21,16 +21,15 @@ set config_of_app {
 			<service name="Nic" />
 		</provides>
 	</start>
-
+<!--
 	<start name="test-trace" priority="-2">
-		<resource name="RAM" quantum="128M"/>
+		<resource name="RAM" quantum="1024M"/>
 		<config>
 			<trace_policy label="init -> vbox" module="null" />
-<!--			<trace_policy label="init -> vbox -> vbox 11" module="null" />-->
 		</config>
 	</start>
-
-	<start name="vbox" priority="-1">
+-->
+	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>
 		<config vbox_file="vm_auto_disk.vbox" vm_name="AutoDisk">

@@ -76,7 +76,7 @@ namespace Genode {
 				_sigh(sigh), _trace_control_index(trace_control_index),
 				_trace_source(label, _name, trace_control)
 			{
-			PDBG("name = %s, index = %u", name.string(), _trace_control_index);
+			//PDBG("name = %s, index = %u", name.string(), _trace_control_index);
 				update_exception_sigh();
 			}
 
@@ -105,7 +105,7 @@ namespace Genode {
 			/**
 			 * Return index within the CPU-session's trace control area
 			 */
-			unsigned trace_control_index() const { PDBG("%u", _trace_control_index); return _trace_control_index; }
+			unsigned trace_control_index() const { /*PDBG("%u", _trace_control_index);*/ return _trace_control_index; }
 	};
 
 

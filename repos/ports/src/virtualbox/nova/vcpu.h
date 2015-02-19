@@ -507,7 +507,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
 */
 
-			Genode::Thread_base::tracef("u8Vector = %u\n", u8Vector);
+			//Genode::Thread_base::tracef("u8Vector = 0x%x\n", u8Vector);
 
 			utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
 			Nova::reply(_stack_reply);
@@ -664,6 +664,16 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 		int run_hw(PVMR0 pVMR0, VMCPUID idCpu)
 		{
+static unsigned long count = 0;
+count++;
+#if 0
+if ((count <= 2200000) && (count % 100000 == 0))
+	RTLogPrintf("run_hw: %lu", count);
+#endif
+#if 0
+if (count > 2200000)
+	Genode::Thread_base::tracef("r0\n");
+#endif
 			VM     * pVM   = reinterpret_cast<VM *>(pVMR0);
 			PVMCPU   pVCpu = &pVM->aCpus[idCpu];
 			PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
@@ -713,7 +723,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			_current_vcpu = pVCpu;
 
 			_last_exit_was_recall = false;
-
+#if 0
+if (count > 2200000)
+	Genode::Thread_base::tracef("r\n");
+#endif
 			/* switch to hardware accelerated mode */
 			switch_to_hw();
 
@@ -758,7 +771,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			/* XXX see VMM/VMMR0/HMVMXR0.cpp - not necessary every time ! XXX */
 			REMFlushTBs(pVM);
 #endif
-
+#if 0
+if (count > 2200000)
+	Genode::Thread_base::tracef("e: %u\n", exit_reason);
+#endif
 			return _last_exit_was_recall ? VINF_SUCCESS : VINF_EM_RAW_EMULATE_INSTR;
 		}
 };

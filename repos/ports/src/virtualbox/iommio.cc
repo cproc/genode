@@ -109,6 +109,18 @@ int IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart,
 VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU, RTGCPHYS GCPhys,
                                    uint32_t u32Value, size_t cbValue)
 {
+	static unsigned long count = 0;
+	count++;
+
+#if 0
+	if ((count <= 3200) && (count % 100 == 0))
+		RTLogPrintf("%lu\n", count);
+#endif
+#if 0
+	if (count > 3200)
+		Genode::Thread_base::tracef("1: 0x%lx\n", GCPhys);
+#endif
+
 	VBOXSTRICTRC rc = IOM_LOCK_SHARED(pVM);
 	Assert(rc == VINF_SUCCESS);
 
@@ -119,6 +131,11 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU, RTGCPHYS GCPhys,
 	 * supports. See original IOMMMIOWrite & iomMMIODoComplicatedWrite of VBox.
 	 */
 	if (rc == VERR_IOM_NOT_MMIO_RANGE_OWNER) {
+
+#if 0
+	if (count > 3200)
+		Genode::Thread_base::tracef("11\n");
+#endif
 
 		/* implement what we need to - extend by need */
 
@@ -139,6 +156,11 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU, RTGCPHYS GCPhys,
 	Assert(rc != VERR_IOM_NOT_MMIO_RANGE_OWNER);
 
 	IOM_UNLOCK_SHARED(pVM);
+
+#if 0
+	if (count > 3200)
+		Genode::Thread_base::tracef("2\n");
+#endif
 
 	return rc;
 }

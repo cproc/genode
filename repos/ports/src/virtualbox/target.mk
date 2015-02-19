@@ -17,7 +17,7 @@ LIBS  += stdcxx
 LIBS  += virtualbox-bios virtualbox-recompiler virtualbox-runtime \
          virtualbox-vmm virtualbox-devices virtualbox-drivers \
          virtualbox-storage virtualbox-zlib virtualbox-liblzf \
-         virtualbox-hwaccl virtualbox-xml virtualbox-main
+         virtualbox-hwaccl virtualbox-xml virtualbox-main virtualbox-dis
 
 LIBS  += pthread libc_terminal libc_lock_pipe libiconv
 

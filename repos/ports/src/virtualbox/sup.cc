@@ -56,6 +56,7 @@ class Periodic_GIP : public Genode::Alarm {
 		 */
 
 		static uint64_t tsc_reference = Genode::Trace::timestamp();
+		static int print_tsc_reference = (Genode::printf("************** %lu\n", tsc_reference / 2400000000), 0);
 
 		Genode::uint64_t tsc_current = Genode::Trace::timestamp() - tsc_reference;
 

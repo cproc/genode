@@ -1,0 +1,831 @@
+net_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/VBox/Devices/Network/DevE1000.cpp  |  104 ++++++++++++++++++++++++++++++--
+ src/VBox/VMM/VMMR3/EM.cpp              |   23 +++++++
+ src/VBox/VMM/VMMR3/EMHM.cpp            |   28 ++++++++-
+ src/VBox/VMM/VMMR3/PDMDevHlp.cpp       |   22 +++++--
+ src/VBox/VMM/include/EMHandleRCTmpl.h  |   27 ++++++++
+ src/recompiler/VBoxRecompiler.c        |   50 ++++++++++++++-
+ src/recompiler/cpu-exec.c              |   24 +++++++
+ src/recompiler/softmmu_template.h      |   43 +++++++++++++
+ src/recompiler/target-i386/op_helper.c |   17 +++++
+ src/recompiler/translate-all.c         |   16 ++---
+ 10 files changed, 326 insertions(+), 28 deletions(-)
+
+diff --git a/src/VBox/Devices/Network/DevE1000.cpp b/src/VBox/Devices/Network/DevE1000.cpp
+index fc2660a..6eaadf5 100644
+--- a/src/VBox/Devices/Network/DevE1000.cpp
++++ b/src/VBox/Devices/Network/DevE1000.cpp
+@@ -45,7 +45,7 @@
+ #include "DevEEPROM.h"
+ #include "DevE1000Phy.h"
+ 
+-
++extern "C" void tracef(const char *, ...);
+ /* Options *******************************************************************/
+ /** @def E1K_INIT_RA0
+  * E1K_INIT_RA0 forces E1000 to set the first entry in Receive Address filter
+@@ -1571,8 +1571,22 @@ DECLINLINE(void) e1kCancelTimer(PE1KSTATE pThis, PTMTIMER pTimer)
+ #define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
+ #define e1kCsLeave(ps) PDMCritSectLeave(&ps->cs)
+ 
+-#define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
+-#define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
++//#define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
++static int e1kCsRxEnter(PE1KSTATE ps, int rc)
++{
++	RTLogPrintf("e (%p) %p\n", ps, __builtin_return_address(0));
++	int res = PDMCritSectEnter(&ps->csRx, rc);
++	RTLogPrintf("e2 (%p): %d\n", ps, res);
++	return res;
++}
++//#define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
++static int e1kCsRxLeave(PE1KSTATE ps)
++{
++	RTLogPrintf("l (%p) %p\n", ps, __builtin_return_address(0));
++	int res = PDMCritSectLeave(&ps->csRx);
++	RTLogPrintf("l2 (%p)\n", ps);
++	return res;
++}
+ #define e1kCsRxIsOwner(ps) PDMCritSectIsOwner(&ps->csRx)
+ 
+ #ifndef E1K_WITH_TX_CS
+@@ -2060,9 +2074,12 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
+     if (nDescsToFetch == 0)
+         return 0;
+     E1KRXDESC* pFirstEmptyDesc = &pThis->aRxDescriptors[pThis->nRxDFetched];
++    RTLogPrintf("%s: 1: 0x%lx %p\n", __func__, ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
++                pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pHlp)->pfnPhysRead);
+     PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+                       ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
+                       pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
++    RTLogPrintf("%s: 2\n", __func__);
+     // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
+     // unsigned i, j;
+     // for (i = pThis->nRxDFetched; i < pThis->nRxDFetched + nDescsInSingleRead; ++i)
+@@ -2115,6 +2132,7 @@ DECLINLINE(E1KRXDESC*) e1kRxDGet(PE1KSTATE pThis)
+     pThis->iRxDCurrent = pThis->nRxDFetched = 0;
+     if (e1kRxDPrefetch(pThis))
+         return &pThis->aRxDescriptors[pThis->iRxDCurrent];
++    RTLogPrintf("%s: 2\n", __func__);
+     /* Out of Rx descriptors. */
+     return NULL;
+ }
+@@ -2136,11 +2154,13 @@ DECLINLINE(void) e1kRxDPut(PE1KSTATE pThis, E1KRXDESC* pDesc)
+     // uint64_t addr = e1kDescAddr(RDBAH, RDBAL, RDH);
+     // uint32_t rdh = RDH;
+     // Assert(pThis->aRxDescAddr[pDesc - pThis->aRxDescriptors] == addr);
++    RTLogPrintf("%s: 1\n", __func__);
+     PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
+                           e1kDescAddr(RDBAH, RDBAL, RDH),
+                           pDesc, sizeof(E1KRXDESC));
+     e1kAdvanceRDH(pThis);
+     e1kPrintRDesc(pThis, pDesc);
++    RTLogPrintf("%s: 2\n", __func__);
+ }
+ 
+ /**
+@@ -2305,7 +2325,9 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
+     uint8_t   rxPacket[E1K_MAX_RX_PKT_SIZE];
+     uint8_t  *ptr = rxPacket;
+ 
++    RTLogPrintf("%s: e\n", __func__);
+     int rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
++    RTLogPrintf("%s: e2\n", __func__);
+     if (RT_UNLIKELY(rc != VINF_SUCCESS))
+         return rc;
+ 
+@@ -2426,9 +2448,13 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
+             if (cb > pThis->u16RxBSize)
+             {
+                 pDesc->status.fEOP = false;
++                RTLogPrintf("%s: l\n", __func__);
+                 e1kCsRxLeave(pThis);
++                RTLogPrintf("%s: l2\n", __func__);
+                 e1kStoreRxFragment(pThis, pDesc, ptr, pThis->u16RxBSize);
++                RTLogPrintf("%s: e\n", __func__);
+                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
++                RTLogPrintf("%s: e2\n", __func__);
+                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                     return rc;
+                 ptr += pThis->u16RxBSize;
+@@ -2437,10 +2463,14 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
+             else
+             {
+                 pDesc->status.fEOP = true;
++                RTLogPrintf("%s: l\n", __func__);
+                 e1kCsRxLeave(pThis);
++                RTLogPrintf("%s: l2\n", __func__);
+                 e1kStoreRxFragment(pThis, pDesc, ptr, cb);
+ #ifdef E1K_WITH_RXD_CACHE
++                RTLogPrintf("%s: e\n", __func__);
+                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
++                RTLogPrintf("%s: e2\n", __func__);
+                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                     return rc;
+                 cb = 0;
+@@ -2475,8 +2505,9 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
+         E1kLog(("%s Out of receive buffers, dropping %u bytes", pThis->szPrf, cb));
+ 
+     pThis->led.Actual.s.fReading = 0;
+-
++    RTLogPrintf("%s: l\n", __func__);
+     e1kCsRxLeave(pThis);
++    RTLogPrintf("%s: l2\n", __func__);
+ #ifdef E1K_WITH_RXD_CACHE
+     /* Complete packet has been stored -- it is time to let the guest know. */
+ # ifdef E1K_USE_RX_TIMERS
+@@ -3082,15 +3113,45 @@ static int e1kRegWritePBA(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
+  */
+ static int e1kRegWriteRDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint32_t value)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 0) && (count % 100 == 0))
++		RTLogPrintf("%s: %lu\n", __func__, count);
++#endif
++
++#if 0
++	if (count > 0)
++		tracef("%s: 1\n", __func__);
++#endif
++
+ #ifndef IN_RING3
+     /* XXX */
+ //    return VINF_IOM_R3_MMIO_WRITE;
+ #endif
++#if 0
++	if (count > 0)
++		tracef("%s: 11\n", __func__);
++#endif
+     int rc = e1kCsRxEnter(pThis, VINF_IOM_R3_MMIO_WRITE);
++#if 0
++	if (count > 0)
++		tracef("%s: 12\n", __func__);
++#endif
+     if (RT_LIKELY(rc == VINF_SUCCESS))
+     {
++#if 0
++	if (count > 0)
++		tracef("%s: 13\n", __func__);
++#endif
+         E1kLog(("%s e1kRegWriteRDT\n",  pThis->szPrf));
+         rc = e1kRegWriteDefault(pThis, offset, index, value);
++#if 0
++	if (count > 0)
++		tracef("%s: 14\n", __func__);
++#endif
++
+ #ifdef E1K_WITH_RXD_CACHE
+         /*
+          * We need to fetch descriptors now as RDT may go whole circle
+@@ -3132,6 +3193,10 @@ static int e1kRegWriteRDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
+ #endif
+         }
+     }
++#if 0
++	if (count > 0)
++		tracef("%s: 2\n", __func__);
++#endif
+     return rc;
+ }
+ 
+@@ -5813,6 +5878,13 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
+  */
+ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32Value)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 3200) && (count % 100 == 0))
++		RTLogPrintf("%lu\n", count);
++#endif
+     int         rc    = VINF_SUCCESS;
+     int         index = e1kRegLookup(pThis, offReg);
+     if (RT_LIKELY(index != -1))
+@@ -5831,7 +5903,15 @@ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32V
+             //pThis->fDelayInts = false;
+             //pThis->iStatIntLost += pThis->iStatIntLostOne;
+             //pThis->iStatIntLostOne = 0;
++#if 0
++	if (count > 3200)
++		tracef("1: %p\n", g_aE1kRegMap[index].pfnWrite);
++#endif
+             rc = g_aE1kRegMap[index].pfnWrite(pThis, offReg, index, u32Value);
++#if 0
++	if (count > 3200)
++		tracef("2\n");
++#endif
+             //e1kCsLeave(pThis);
+         }
+         else
+@@ -5874,6 +5954,13 @@ PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
+  */
+ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 3200) && (count % 100 == 0))
++		RTLogPrintf("%s: %lu\n", __func__, count);
++#endif
+     NOREF(pvUser);
+     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
+@@ -5882,8 +5969,15 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
+     Assert(offReg < E1K_MM_SIZE);
+     Assert(cb == 4);
+     Assert(!(GCPhysAddr & 3));
+-
++#if 0
++	if (count > 3200)
++		tracef("%s: 1: 0x%lx\n", __func__, GCPhysAddr);
++#endif
+     int rc = e1kRegWriteAlignedU32(pThis, offReg, *(uint32_t const *)pv);
++#if 0
++	if (count > 3200)
++		tracef("%s: 2\n", __func__);
++#endif
+ 
+     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
+     return rc;
+diff --git a/src/VBox/VMM/VMMR3/EM.cpp b/src/VBox/VMM/VMMR3/EM.cpp
+index 6ee8cbf..76f2920 100644
+--- a/src/VBox/VMM/VMMR3/EM.cpp
++++ b/src/VBox/VMM/VMMR3/EM.cpp
+@@ -1599,7 +1599,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+     return rc;
+ }
+ 
+-
++extern "C" void tracef(const char *, ...);
+ /**
+  * Executes all pending forced actions.
+  *
+@@ -1621,6 +1621,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+  */
+ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+ {
++//tracef("fa 1\n");
+     STAM_REL_PROFILE_START(&pVCpu->em.s.StatForcedActions, a);
+ #ifdef VBOX_STRICT
+     int rcIrq = VINF_SUCCESS;
+@@ -2042,6 +2043,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+     Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+     Assert(rcIrq == VINF_SUCCESS || rcIrq == rc);
++//tracef("fa 2\n");
+     return rc;
+ }
+ 
+@@ -2168,6 +2170,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+              * Now what to do?
+              */
+             Log2(("EMR3ExecuteVM: rc=%Rrc\n", rc));
++            //tracef("rc: %d\n", rc);
+             EMSTATE const enmOldState = pVCpu->em.s.enmState;
+             switch (rc)
+             {
+@@ -2458,6 +2461,16 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
+             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
+ 
++static unsigned long count = 0;
++count++;
++#if 0
++if ((count <= 2200000) && (count % 100000 == 0))
++	RTLogPrintf("em: %lu\n", count);
++#endif
++#if 0
++if (count > 2200000)
++	tracef("new: %d\n", enmNewState);
++#endif
+             /*
+              * Act on the new state.
+              */
+@@ -2479,7 +2492,15 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+                  * Execute hardware accelerated raw.
+                  */
+                 case EMSTATE_HM:
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+                     rc = emR3HmExecute(pVM, pVCpu, &fFFDone);
++#if 0
++if (count > 2200000)
++	tracef("2\n");
++#endif
+                     break;
+ 
+                 /*
+diff --git a/src/VBox/VMM/VMMR3/EMHM.cpp b/src/VBox/VMM/VMMR3/EMHM.cpp
+index 39dd8df..7e8d075 100644
+--- a/src/VBox/VMM/VMMR3/EMHM.cpp
++++ b/src/VBox/VMM/VMMR3/EMHM.cpp
+@@ -170,6 +170,14 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, const
+ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
+ #endif
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("count: %lu\n", count);
++#endif
++
+ #ifdef LOG_ENABLED
+     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+ #endif
+@@ -213,8 +221,15 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
+         if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+         pVM->em.s.idLastRemCpu = pVCpu->idCpu;
+-
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+         rc = REMR3EmulateInstruction(pVM, pVCpu);
++#if 0
++if (count > 2200000)
++	tracef("2: %d\n", rc);
++#endif
+         EMRemUnlock(pVM);
+         STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, b);
+ #else  /* !VBOX_WITH_REM */
+@@ -448,7 +463,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+     return VINF_SUCCESS;
+ }
+ 
+-
++extern "C" void tracef(const char *, ...);
+ /**
+  * Executes hardware accelerated raw code. (Intel VT-x & AMD-V)
+  *
+@@ -554,7 +569,6 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+             rc = VINF_SUCCESS;
+         }
+ 
+-
+         /*
+          * Deal with high priority post execution FFs before doing anything else.
+          */
+@@ -569,7 +583,15 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+         if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+             break;
+ 
++#if 0
++        if (count > 2200000)
++        	tracef("1\n");
++#endif
+         rc = emR3HmHandleRC(pVM, pVCpu, pCtx, rc);
++#if 0
++        if (count > 2200000)
++        	tracef("2\n");
++#endif
+         if (rc != VINF_SUCCESS)
+             break;
+ 
+diff --git a/src/VBox/VMM/VMMR3/PDMDevHlp.cpp b/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
+index 3e22938..ce10c3a 100644
+--- a/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
++++ b/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
+@@ -702,8 +702,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
+ {
+     PDMDEV_ASSERT_DEVINS(pDevIns);
+     PVM pVM = pDevIns->Internal.s.pVMR3;
+-    LogFlow(("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
+-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
++    if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++    	RTLogPrintf("pdmR3DevHlp_PhysRead: caller='%s'/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
++             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, pvBuf, cbRead);
+ 
+ #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
+     if (!VM_IS_EMT(pVM))
+@@ -715,12 +716,21 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
+ #endif
+ 
+     int rc;
+-    if (VM_IS_EMT(pVM))
++    if (VM_IS_EMT(pVM)) {
++        if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++        	RTLogPrintf("11\n");
+         rc = PGMPhysRead(pVM, GCPhys, pvBuf, cbRead);
+-    else
++        if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++        	RTLogPrintf("12\n");
++    } else {
++        if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++        	RTLogPrintf("21\n");
+         rc = PGMR3PhysReadExternal(pVM, GCPhys, pvBuf, cbRead);
+-
+-    Log(("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
++        if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++        	RTLogPrintf("22\n");
++    }
++    if (GCPhys >= 0x3ef00000 && GCPhys < 0x3f000000)
++    	RTLogPrintf("pdmR3DevHlp_PhysRead: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc);
+     return rc;
+ }
+ 
+diff --git a/src/VBox/VMM/include/EMHandleRCTmpl.h b/src/VBox/VMM/include/EMHandleRCTmpl.h
+index ef54f34..a82ad58 100644
+--- a/src/VBox/VMM/include/EMHandleRCTmpl.h
++++ b/src/VBox/VMM/include/EMHandleRCTmpl.h
+@@ -22,7 +22,7 @@
+ # error "Only one define"
+ #endif
+ 
+-
++extern "C" void tracef(const char *, ...);
+ /**
+  * Process a subset of the raw-mode and hm return codes.
+  *
+@@ -43,6 +43,19 @@ int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+ #endif
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("count: %lu\n", count);
++#endif
++
++#if 0
++if (count > 2200000)
++	tracef("1: %d\n", rc);
++#endif
++
+     switch (rc)
+     {
+         /*
+@@ -271,7 +284,15 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+         case VINF_EM_RAW_GUEST_TRAP:
+ #endif
+         case VINF_EM_RAW_EMULATE_INSTR:
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+             rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
++#if 0
++if (count > 2200000)
++	tracef("2: %d\n", rc);
++#endif
+             break;
+ 
+ #ifdef EMHANDLERC_WITH_PATM
+@@ -373,6 +394,10 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
+             AssertMsgFailed(("Unknown GC return code: %Rra\n", rc));
+             break;
+     }
++#if 0
++    if (count > 2200000)
++        tracef("2\n");
++#endif
+     return rc;
+ }
+ 
+diff --git a/src/recompiler/VBoxRecompiler.c b/src/recompiler/VBoxRecompiler.c
+index d74eeb0..f37501c 100644
+--- a/src/recompiler/VBoxRecompiler.c
++++ b/src/recompiler/VBoxRecompiler.c
+@@ -900,6 +900,14 @@ REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
+  */
+ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("count: %lu\n", count);
++#endif
++
+     bool fFlushTBs;
+ 
+     int rc, rc2;
+@@ -934,7 +942,15 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
+          */
+         TMNotifyStartOfExecution(pVCpu);
+         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+         rc = cpu_exec(&pVM->rem.s.Env);
++#if 0
++if (count > 2200000)
++	tracef("2\n");
++#endif
+         TMNotifyEndOfExecution(pVCpu);
+         switch (rc)
+         {
+@@ -1039,6 +1055,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
+ 
+     Log2(("REMR3EmulateInstruction: returns %Rrc (cs:eip=%04x:%RGv)\n",
+           rc, pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
++
+     return rc;
+ }
+ 
+@@ -3845,11 +3862,27 @@ static void     remR3MMIOWriteU16(void *pvEnv, target_phys_addr_t GCPhys, uint32
+ /** Write to MMIO memory. */
+ static void     remR3MMIOWriteU32(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 3200) && (count % 100 == 0))
++		RTLogPrintf("%lu\n", count);
++#endif
++#if 0
++	if (count > 3200)
++		tracef("1: 0x%lx\n", GCPhys);
++#endif
++
+     CPUX86State *env = (CPUX86State *)pvEnv;
+     int          rc;
+     Log2(("remR3MMIOWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
+     rc = IOMMMIOWrite(env->pVM, env->pVCpu, GCPhys, u32, 4);
+     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
++#if 0
++	if (count > 3200)
++		tracef("2\n");
++#endif
+ }
+ 
+ 
+@@ -4058,7 +4091,18 @@ bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
+  */
+ void disas(FILE *phFile, void *pvCode, unsigned long cb)
+ {
+-    if (LogIs2Enabled())
++	static unsigned long count = 0;
++	count++;
++
++#if 1
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("dis: %lu\n", count);
++#endif
++
++	if (count <= 2200000)
++		return;
++
++    //if (LogIs2Enabled())
+     {
+         unsigned        off = 0;
+         char            szOutput[256];
+@@ -4069,14 +4113,14 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
+         DISCPUMODE      enmCpuMode = DISCPUMODE_64BIT;
+ #endif
+ 
+-        RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
++        //RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
+         while (off < cb)
+         {
+             uint32_t cbInstr;
+             int rc = DISInstrToStr((uint8_t const *)pvCode + off, enmCpuMode,
+                                    &Cpu, &cbInstr, szOutput, sizeof(szOutput));
+             if (RT_SUCCESS(rc))
+-                RTLogPrintf("%s", szOutput);
++                /*RTLogPrintf*/tracef("%s", szOutput);
+             else
+             {
+                 RTLogPrintf("disas error %Rrc\n", rc);
+diff --git a/src/recompiler/cpu-exec.c b/src/recompiler/cpu-exec.c
+index aa1826c..a615903 100644
+--- a/src/recompiler/cpu-exec.c
++++ b/src/recompiler/cpu-exec.c
+@@ -232,6 +232,19 @@ volatile sig_atomic_t exit_request;
+ 
+ int cpu_exec(CPUState *env1)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("count: %lu\n", count);
++#endif
++
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
++
+     volatile host_reg_t saved_env_reg;
+     int ret VBOX_ONLY(= 0), interrupt_request;
+     TranslationBlock *tb;
+@@ -391,9 +404,9 @@ int cpu_exec(CPUState *env1)
+                 longjmp(env->jmp_env, 1);
+             }
+ # endif /* !VBOX */
+-
+             next_tb = 0; /* force lookup of first TB */
+             for(;;) {
++
+                 interrupt_request = env->interrupt_request;
+                 if (unlikely(interrupt_request)) {
+                     if (unlikely(env->singlestep_enabled & SSTEP_NOIRQ)) {
+@@ -434,8 +447,16 @@ int cpu_exec(CPUState *env1)
+                         {
+                             ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
+                             env->exception_index = EXCP_SINGLE_INSTR;
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+                             if (emulate_single_instr(env) == -1)
+                                 AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", (RTGCPTR)env->eip));
++#if 0
++if (count > 2200000)
++	tracef("2\n");
++#endif
+ 
+                             /* When we receive an external interrupt during execution of this single
+                                instruction, then we should stay here. We will leave when we're ready
+@@ -872,6 +893,7 @@ int cpu_exec(CPUState *env1)
+     /* fail safe : never use cpu_single_env outside cpu_exec() */
+     cpu_single_env = NULL;
+ # endif
++
+     return ret;
+ }
+ 
+diff --git a/src/recompiler/softmmu_template.h b/src/recompiler/softmmu_template.h
+index a31411b..67edfea 100644
+--- a/src/recompiler/softmmu_template.h
++++ b/src/recompiler/softmmu_template.h
+@@ -230,6 +230,18 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
+                                           target_ulong addr,
+                                           void *retaddr)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 3200) && (count % 100 == 0))
++		RTLogPrintf("%s: %lu\n", __func__, count);
++#endif
++#if 0
++	if (count > 3200)
++		tracef("%s: 1: 0x%lx\n", __func__, physaddr);
++#endif
++
+     int index;
+     index = (physaddr >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
+     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
+@@ -241,6 +253,10 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
+     env->mem_io_vaddr = addr;
+     env->mem_io_pc = (uintptr_t)retaddr;
+ #if SHIFT <= 2
++#if 0
++	if (count > 3200)
++		tracef("%s: 0x%lx\n", __func__, io_mem_write[index][SHIFT]);
++#endif
+     io_mem_write[index][SHIFT](io_mem_opaque[index], physaddr, val);
+ #else
+ #ifdef TARGET_WORDS_BIGENDIAN
+@@ -251,12 +267,27 @@ static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
+     io_mem_write[index][2](io_mem_opaque[index], physaddr + 4, val >> 32);
+ #endif
+ #endif /* SHIFT > 2 */
++#if 0
++    if (count > 3200)
++    	tracef("%s: 2\n", __func__);
++#endif
+ }
+ 
+ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
+                                                  DATA_TYPE val,
+                                                  int mmu_idx)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 25000) && (count % 1000 == 0))
++		RTLogPrintf("%s: %lu\n", __func__, count);
++#endif
++#if 0
++	if (count > 25000)
++		tracef("%s: 1\n", __func__);
++#endif
+     target_phys_addr_t ioaddr;
+     uintptr_t addend;
+     target_ulong tlb_addr;
+@@ -268,11 +299,19 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
+     tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
+     if ((addr & TARGET_PAGE_MASK) == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
+         if (tlb_addr & ~TARGET_PAGE_MASK) {
++#if 0
++        	if (count > 25000)
++        		tracef("%s: io\n", __func__);
++#endif
+             /* IO access */
+             if ((addr & (DATA_SIZE - 1)) != 0)
+                 goto do_unaligned_access;
+             retaddr = GETPC();
+             ioaddr = env->iotlb[mmu_idx][index];
++#if 0
++        	if (count > 25000)
++        		tracef("%s: ioaddr = 0x%lx, addr = 0x%lx\n", __func__, ioaddr, addr);
++#endif
+             glue(io_write, SUFFIX)(ioaddr, val, addr, retaddr);
+         } else if (((addr & ~TARGET_PAGE_MASK) + DATA_SIZE - 1) >= TARGET_PAGE_SIZE) {
+         do_unaligned_access:
+@@ -303,6 +342,10 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
+         tlb_fill(addr, 1, mmu_idx, retaddr);
+         goto redo;
+     }
++#if 0
++    if (count > 25000)
++    	tracef("%s: 2\n", __func__);
++#endif
+ }
+ 
+ /* handles all unaligned cases */
+diff --git a/src/recompiler/target-i386/op_helper.c b/src/recompiler/target-i386/op_helper.c
+index 20d671c..529cc31 100644
+--- a/src/recompiler/target-i386/op_helper.c
++++ b/src/recompiler/target-i386/op_helper.c
+@@ -5985,6 +5985,14 @@ DECLINLINE(void) tb_reset_jump(TranslationBlock *tb, int n)
+ 
+ int emulate_single_instr(CPUX86State *env1)
+ {
++	static unsigned long count = 0;
++	count++;
++
++#if 0
++	if ((count <= 2200000) && (count % 100000 == 0))
++		RTLogPrintf("count: %lu\n", count);
++#endif
++
+     TranslationBlock *tb;
+     TranslationBlock *current;
+     int flags;
+@@ -6040,7 +6048,15 @@ int emulate_single_instr(CPUX86State *env1)
+         int fake_ret;
+         tcg_qemu_tb_exec(tc_ptr, fake_ret);
+ #else
++#if 0
++if (count > 2200000)
++	tracef("1\n");
++#endif
+         tcg_qemu_tb_exec(tc_ptr);
++#if 0
++if (count > 2200000)
++	tracef("2\n");
++#endif
+ #endif
+ 
+         /*
+@@ -6084,6 +6100,7 @@ int emulate_single_instr(CPUX86State *env1)
+     }
+ 
+     env = savedenv;
++
+     return 0;
+ }
+ 
+diff --git a/src/recompiler/translate-all.c b/src/recompiler/translate-all.c
+index b688255..19a28e8 100644
+--- a/src/recompiler/translate-all.c
++++ b/src/recompiler/translate-all.c
+@@ -117,14 +117,14 @@ int cpu_gen_code(CPUState *env, TranslationBlock *tb, int *gen_code_size_ptr)
+     RAWEx_ProfileStop(env, STATS_QEMU_COMPILATION);
+ #endif
+ 
+-#ifdef DEBUG_DISAS
+-    if (qemu_loglevel_mask(CPU_LOG_TB_OUT_ASM)) {
+-        qemu_log("OUT: [size=%d]\n", *gen_code_size_ptr);
+-        log_disas(tb->tc_ptr, *gen_code_size_ptr);
+-        qemu_log("\n");
+-        qemu_log_flush();
+-    }
+-#endif
++//#ifdef DEBUG_DISAS
++    //if (qemu_loglevel_mask(CPU_LOG_TB_OUT_ASM)) {
++        //qemu_log("OUT: [size=%d]\n", *gen_code_size_ptr);
++        //log_disas(tb->tc_ptr, *gen_code_size_ptr);
++        //qemu_log("\n");
++        //qemu_log_flush();
++    //}
++//#endif
+     return 0;
+ }
+ 

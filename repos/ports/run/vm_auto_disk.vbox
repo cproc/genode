@@ -9,8 +9,8 @@
   <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Windows XP" OSType="WindowsXP" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{8657bb15-f719-490b-96ef-8894eb4b6aac}" location="/win7.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}" location="/ram/overlay.vdi" format="VDI" autoReset="false"/>
+        <HardDisk uuid="{352926ef-0f0c-499a-bbd2-6927a4c320a7}" location="/win7.vdi" format="VDI" type="Immutable">
+          <HardDisk uuid="{c3bd5fb1-36ae-414f-9633-829f976db46a}" location="/ram/overlay.vdi" format="VDI" autoReset="false"/>
         </HardDisk>
       </HardDisks>
       <DVDImages/>
@@ -176,7 +176,7 @@
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}"/>
+          <Image uuid="{c3bd5fb1-36ae-414f-9633-829f976db46a}"/>
         </AttachedDevice>
         <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
       </StorageController>

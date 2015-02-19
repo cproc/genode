@@ -132,6 +132,15 @@ class Guest_memory
 
 			int mmio_write(RTGCPHYS GCPhys, void const *pv, unsigned cb)
 			{
+				static unsigned long count = 0;
+				count++;
+
+#if 0
+	if ((count <= 3200) && (count % 100 == 0))
+		RTLogPrintf("%lu\n", count);
+#endif
+
+
 				if (!_pfnWriteCallback)
 					return VINF_SUCCESS;
 
@@ -140,7 +149,17 @@ class Guest_memory
 				if (rc != VINF_SUCCESS)
 					return rc;
 
+#if 0
+	if (count > 3200)
+		Genode::Thread_base::tracef("1: 0x%lx, %p\n", GCPhys, _pfnWriteCallback);
+#endif
+
 				rc = _pfnWriteCallback(_pDevIns, _pvUser, GCPhys, pv, cb);
+
+#if 0
+	if (count > 3200)
+		Genode::Thread_base::tracef("2\n");
+#endif
 
 				PDMCritSectLeave(_pDevIns->CTX_SUFF(pCritSectRo));
 
@@ -372,6 +391,7 @@ class Guest_memory
 				return VERR_IOM_NOT_MMIO_RANGE_OWNER;
 
 			int rc = r->mmio_write(vm_phys, &u32Value, size);
+
 			/* check that VERR_IOM_NOT_MMIO_RANGE_OWNER is unused, see above */
 			Assert(rc != VERR_IOM_NOT_MMIO_RANGE_OWNER);
 			return rc;

@@ -1,8 +1,9 @@
 include $(REP_DIR)/lib/mk/virtualbox-common.inc
 
-SRC_CC += VMM/VMMR3/DBGFAddr.cpp
-SRC_CC += VMM/VMMR3/DBGFDisas.cpp
+#SRC_CC += VMM/VMMR3/DBGFAddr.cpp
+#SRC_CC += VMM/VMMR3/DBGFDisas.cpp
 
+SRC_CC += Disassembler/Disasm.cpp
 SRC_CC += Disassembler/DisasmCore.cpp
 SRC_CC += Disassembler/DisasmTables.cpp
 SRC_CC += Disassembler/DisasmReg.cpp
