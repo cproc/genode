@@ -1,0 +1,61 @@
+net_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/VBox/VMM/VMMR3/EM.cpp |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/src/VBox/VMM/VMMR3/EM.cpp b/src/VBox/VMM/VMMR3/EM.cpp
+index 6ee8cbf..3a8bdc5 100644
+--- a/src/VBox/VMM/VMMR3/EM.cpp
++++ b/src/VBox/VMM/VMMR3/EM.cpp
+@@ -1599,7 +1599,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+     return rc;
+ }
+ 
+-
++extern "C" void tracef(const char *, ...);
+ /**
+  * Executes all pending forced actions.
+  *
+@@ -1621,6 +1621,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+  */
+ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+ {
++//tracef("fa 1\n");
+     STAM_REL_PROFILE_START(&pVCpu->em.s.StatForcedActions, a);
+ #ifdef VBOX_STRICT
+     int rcIrq = VINF_SUCCESS;
+@@ -2042,6 +2043,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+     Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+     Assert(rcIrq == VINF_SUCCESS || rcIrq == rc);
++//tracef("fa 2\n");
+     return rc;
+ }
+ 
+@@ -2168,6 +2170,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+              * Now what to do?
+              */
+             Log2(("EMR3ExecuteVM: rc=%Rrc\n", rc));
++            //tracef("rc: %d\n", rc);
+             EMSTATE const enmOldState = pVCpu->em.s.enmState;
+             switch (rc)
+             {
+@@ -2458,6 +2461,14 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
+             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
+             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
+ 
++static unsigned long count = 0;
++count++;
++#if 0
++if (count > 3000000)
++	tracef("new: %d\n", enmNewState);
++else if (count % 100000 == 0)
++	RTLogPrintf("count: %lu\n", count);
++#endif
+             /*
+              * Act on the new state.
+              */

@@ -109,11 +109,12 @@ class Trace_buffer_monitor
 
 			for (; !next.is_last(); _last_dumped = next, next = _buffer->next(next)) {
 				/* omit empty entries */
-				//PDBG("_curr_entry.length() = %zu", next.length());
+				//PDBG("next.length() = %zu", next.length());
 				if (next.length() == 0)
 					continue;
 
 				const char *data = _terminate_entry(next);
+				//PDBG("data = %p", data);
 				if (data && (_count++ > 0))
 					PLOG("%s", data);
 			}
@@ -130,7 +131,7 @@ int main(int argc, char **argv)
 
 	printf("--- test-trace started ---\n");
 
-	static Genode::Trace::Connection trace(100*1024*1024, 64*1024, 0);
+	static Genode::Trace::Connection trace(200*1024*1024, 128*1024, 0);
 
 	static Timer::Connection timer;
 
@@ -184,7 +185,7 @@ int main(int argc, char **argv)
 
 	do {
 
-		timer.msleep(3000);
+		timer.msleep(120000);
 
 		Trace::Subject_id subjects[1000];
 		size_t num_subjects = trace.subjects(subjects, 1000);
@@ -204,7 +205,7 @@ int main(int argc, char **argv)
 			/* enable tracing */
 			if (!policy_set
 			    && strcmp(info.session_label().string(), policy_label) == 0
-			    && strcmp(info.thread_name().string(), "Timer") == 0) {
+			    && strcmp(info.thread_name().string(), "vCPU dispatcher") == 0) {
 				try {
 					PINF("enable tracing for thread:'%s' with policy:%d",
 					     info.thread_name().string(), policy_id.id);

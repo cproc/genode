@@ -315,6 +315,14 @@ int IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart,
 VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM, PVMCPU, RTIOPORT Port,
                                      uint32_t u32Value, size_t cbValue)
 {
+#if 0
+static unsigned long count = 0;
+if (count++ > 600000)
+	Genode::Thread_base::tracef("w: port = %x\n", Port);
+	//RTLogPrintf("w: port = %x\n", Port);
+else if (count % 100000 == 0)
+	RTLogPrintf("w: %lu\n", count);
+#endif
 	return guest_ioports()->write(Port, u32Value, cbValue);
 }
 
@@ -322,5 +330,13 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM, PVMCPU, RTIOPORT Port,
 VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM, PVMCPU, RTIOPORT Port,
                                     uint32_t *pu32Value, size_t cbValue)
 {
+#if 0
+static unsigned long count = 0;
+if (count++ > 10300000)
+	Genode::Thread_base::tracef("r: port = %x\n", Port);
+	//RTLogPrintf("r: port = %x\n", Port);
+else if (count % 100000 == 0)
+	RTLogPrintf("r: %lu\n", count);
+#endif
 	return guest_ioports()->read(Port, pu32Value, cbValue);
 }

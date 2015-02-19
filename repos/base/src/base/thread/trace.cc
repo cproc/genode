@@ -63,7 +63,7 @@ static Trace::Control *trace_control(Cpu_session *cpu, Rm_session *rm,
 
 			unsigned const index = cpu.trace_control_index(thread);
 
-			Nova::debug(index);
+			//Nova::debug(index);
 
 			if ((index + 1)*sizeof(Trace::Control) > size) {
 				PERR("thread control index is out of range");
@@ -199,9 +199,9 @@ void Trace::Logger::init(Thread_capability thread,
 {
 	cpu_session = cpu;
 	thread_cap = thread;
-Nova::debug(0xfe);
+//Nova::debug(0xfe);
 	control = trace_control(cpu_session, env()->rm_session(), thread);
-Nova::debug(0xff);
+//Nova::debug(0xff);
 }
 
 

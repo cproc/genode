@@ -36,6 +36,8 @@
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 
+unsigned int exit_reason = 0;
+
 extern "C" void tracef(const char *format, ...)
 {
 	char dst[512];
