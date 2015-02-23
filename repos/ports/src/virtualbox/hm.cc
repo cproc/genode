@@ -94,6 +94,7 @@ VMM_INT_DECL(bool) HMIsLongModeAllowed(PVM pVM)
 
 VMMR3DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 {
+return false;
 	/* no re-schedule on AMD-V required - just works */
 /*
 	if (pVM->hm.s.svm.fSupported)
@@ -117,6 +118,8 @@ VMMR3DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
 VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
 	PVMCPU pVCpu = VMMGetCpu(pVM);
+
+	return true;
 
 	/* AMD-V just works */
 /*
