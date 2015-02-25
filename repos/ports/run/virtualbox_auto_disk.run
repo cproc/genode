@@ -20,7 +20,7 @@ set config_of_app {
 			<service name="Nic" />
 		</provides>
 	</start>
-
+<!--
 	<start name="nic_bridge" priority="-1">
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Nic"/> </provides>
@@ -45,7 +45,7 @@ set config_of_app {
 			<any-service> <parent /> <any-child /> </any-service>
 		</route>
 	</start>
-
+-->
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>
@@ -73,7 +73,7 @@ append_if [expr $use_ram_fs] config_of_app {
 
 append config_of_app {
 			<service name="File_system"> <child name="rump_fs"/> </service>
-			<service name="Nic"> <child name="nic_bridge" /> </service>
+			<!--<service name="Nic"> <child name="nic_bridge" /> </service>-->
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
