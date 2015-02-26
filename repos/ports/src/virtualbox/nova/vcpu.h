@@ -196,7 +196,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			/* nothing to do at all - continue hardware accelerated */
 			Assert(!_irq_win);
-			Assert(continue_hw_accelerated(utcb));
+			//Assert(continue_hw_accelerated(utcb));
+			if (!continue_hw_accelerated(utcb, true))
+				Vmm::printf("*** !continue_hw_accelerated() ***\n");
 				
 			Nova::reply(_stack_reply);
 		}
@@ -511,7 +513,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		}
 
 
-		inline bool continue_hw_accelerated(Nova::Utcb * utcb)
+		inline bool continue_hw_accelerated(Nova::Utcb * utcb, bool print_log = false)
 		{
 			Assert(!(VMCPU_FF_IS_SET(_current_vcpu, VMCPU_FF_INHIBIT_INTERRUPTS)));
 
@@ -528,6 +530,25 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 				return true;
 
 			Assert(!(VM_FF_IS_PENDING(_current_vm, VM_FF_PGM_NO_MEMORY)));
+
+			if (print_log) {
+				if (VM_FF_IS_PENDING(_current_vm, check_vm))
+					Vmm::printf("check_vm\n");
+				else if (VMCPU_FF_IS_PENDING(_current_vcpu, check_vcpu)) {
+					if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_TO_R3))
+						Vmm::printf("VMCPU_FF_TO_R3\n");
+					else if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_TIMER))
+						Vmm::printf("VMCPU_FF_TIMER\n");
+					else if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_PDM_CRITSECT))
+						Vmm::printf("VMCPU_FF_PDM_CRITSECT\n");
+					else if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_PGM_SYNC_CR3))
+						Vmm::printf("VMCPU_FF_PGM_SYNC_CR3\n");
+					else if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+						Vmm::printf("VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL\n");
+					else if (VMCPU_FF_IS_PENDING(_current_vcpu, VMCPU_FF_REQUEST))
+						Vmm::printf("VMCPU_FF_REQUEST\n");
+				}
+			}
 
 			return false;
 		}
