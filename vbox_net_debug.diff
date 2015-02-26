@@ -1,0 +1,107 @@
+vbox_net_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/VBox/Runtime/r3/posix/thread2-posix.cpp |    6 ++++--
+ src/VBox/VMM/VMMAll/TMAll.cpp               |   21 ++++++++++++++++++---
+ 2 files changed, 22 insertions(+), 5 deletions(-)
+
+diff --git a/src/VBox/Runtime/r3/posix/thread2-posix.cpp b/src/VBox/Runtime/r3/posix/thread2-posix.cpp
+index bd7e030..9303169 100644
+--- a/src/VBox/Runtime/r3/posix/thread2-posix.cpp
++++ b/src/VBox/Runtime/r3/posix/thread2-posix.cpp
+@@ -54,7 +54,8 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
+ 
+ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+ {
+-    LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
++    //LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
++	RTLogPrintf("RTThreadSleep: cMillies=%d\n", cMillies);
+     if (!cMillies)
+     {
+         /* pthread_yield() isn't part of SuS, thus this fun. */
+@@ -138,7 +139,8 @@ RTDECL(bool) RTThreadYield(void)
+ #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+     u64TS = ASMReadTSC() - u64TS;
+     bool fRc = u64TS > 1500;
+-    LogFlow(("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS));
++    //LogFlow(("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS));
++	RTLogPrintf("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS);
+ #else
+     bool fRc = true; /* PORTME: Add heuristics for determining whether the cpus was yielded. */
+ #endif
+diff --git a/src/VBox/VMM/VMMAll/TMAll.cpp b/src/VBox/VMM/VMMAll/TMAll.cpp
+index a1167a1..fa938c7 100644
+--- a/src/VBox/VMM/VMMAll/TMAll.cpp
++++ b/src/VBox/VMM/VMMAll/TMAll.cpp
+@@ -42,7 +42,7 @@
+ #ifdef IN_RING3
+ # include <iprt/thread.h>
+ #endif
+-
++#include <string.h>
+ #include "TMInline.h"
+ 
+ 
+@@ -1257,14 +1257,20 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+          * Change to any of the SET_EXPIRE states if valid and then to SCHEDULE or RESCHEDULE.
+          */
+         TMTIMERSTATE enmState = pTimer->enmState;
+-        Log2(("TMTimerSet: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%'RU64\n",
+-              pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire));
++        //Log2(("TMTimerSet: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%'RU64\n",
++              //pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire));
++
++		//if (cRetries < 1000)
++			if (strcmp(R3STRING(pTimer->pszDesc), "E1000 Late Interrupt Timer") == 0)
++		        RTLogPrintf("TMTimerSet: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d u64Expire=%'RU64\n",
++        	          pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries, u64Expire);
+         switch (enmState)
+         {
+             case TMTIMERSTATE_EXPIRED_DELIVER:
+             case TMTIMERSTATE_STOPPED:
+                 if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
+                 {
++                //for (volatile unsigned int i = 0; i < 10000000; i++);
+                     Assert(!pTimer->offPrev);
+                     Assert(!pTimer->offNext);
+                     pTimer->u64Expire = u64Expire;
+@@ -1279,6 +1285,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE, enmState))
+                 {
++                //for (volatile unsigned int i = 0; i < 10000000; i++);
+                     pTimer->u64Expire = u64Expire;
+                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
+                     tmSchedule(pTimer);
+@@ -1291,6 +1298,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+             case TMTIMERSTATE_ACTIVE:
+                 if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE, enmState))
+                 {
++                //for (volatile unsigned int i = 0; i < 10000000; i++);
+                     pTimer->u64Expire = u64Expire;
+                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
+                     tmSchedule(pTimer);
+@@ -1303,6 +1311,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+             case TMTIMERSTATE_PENDING_STOP:
+                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE, enmState))
+                 {
++                //for (volatile unsigned int i = 0; i < 10000000; i++);
+                     pTimer->u64Expire = u64Expire;
+                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_RESCHEDULE);
+                     tmSchedule(pTimer);
+@@ -1849,6 +1858,12 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
+         TMTIMERSTATE    enmState = pTimer->enmState;
+         Log2(("TMTimerStop: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
+               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
++#if 1
++		if (cRetries < 1000)
++			if (strcmp(R3STRING(pTimer->pszDesc), "E1000 Late Interrupt Timer") == 0)
++		        RTLogPrintf("TMTimerStop: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
++        	      pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries);
++#endif
+         switch (enmState)
+         {
+             case TMTIMERSTATE_EXPIRED_DELIVER:
