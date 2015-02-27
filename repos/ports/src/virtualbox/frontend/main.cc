@@ -32,6 +32,36 @@
 #include "console.h"
 #include "fb.h"
 
+#include <base/thread.h>
+#include <trace/timestamp.h>
+
+extern bool do_stats = false;
+
+extern "C" void tracef(const char *format, ...)
+{
+	char dst[512];
+
+	va_list list;
+	va_start(list, format);
+
+	Genode::String_console sc(dst, sizeof(dst));
+	sc.vprintf(format, list);
+
+	va_end(list);
+
+	Genode::Thread_base::trace(dst);
+}
+
+unsigned long ts_diff()
+{
+	static unsigned long last_ts = 0;
+
+	unsigned long current_ts = Genode::Trace::timestamp();
+	unsigned long diff = current_ts - last_ts;
+	last_ts = current_ts;
+	return diff;
+}
+
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 

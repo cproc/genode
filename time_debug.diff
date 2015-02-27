@@ -1,0 +1,668 @@
+time_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/VBox/vmm/tm.h                      |    1 
+ src/VBox/Devices/Graphics/DevVGA.cpp       |    3 -
+ src/VBox/Devices/PC/DevPIC.cpp             |   33 ++++++
+ src/VBox/Devices/PC/DevPit-i8254.cpp       |   58 ++++++++++-
+ src/VBox/Runtime/generic/timer-generic.cpp |    3 +
+ src/VBox/VMM/VMMAll/PDMAll.cpp             |   31 ++++++
+ src/VBox/VMM/VMMAll/TMAll.cpp              |    2 
+ src/VBox/VMM/VMMR3/EM.cpp                  |    4 +
+ src/VBox/VMM/VMMR3/PDMDevMiscHlp.cpp       |    9 +-
+ src/VBox/VMM/VMMR3/TM.cpp                  |  151 +++++++++++++++++++++++++++-
+ src/VBox/VMM/VMMR3/VMEmt.cpp               |    5 +
+ src/recompiler/VBoxRecompiler.c            |    5 +
+ src/recompiler/cpu-exec.c                  |    3 -
+ 13 files changed, 292 insertions(+), 16 deletions(-)
+
+diff --git a/include/VBox/vmm/tm.h b/include/VBox/vmm/tm.h
+index 8f857a4..ff4c80c 100644
+--- a/include/VBox/vmm/tm.h
++++ b/include/VBox/vmm/tm.h
+@@ -269,6 +269,7 @@ VMMR3DECL(int)          TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCr
+ VMMR3DECL(void)         TMR3TimerQueuesDo(PVM pVM);
+ VMMR3_INT_DECL(void)    TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
+ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime);
++VMMR3DECL(void)         TMR3DoStats();
+ /** @} */
+ #endif /* IN_RING3 */
+ 
+diff --git a/src/VBox/Devices/Graphics/DevVGA.cpp b/src/VBox/Devices/Graphics/DevVGA.cpp
+index 627a1b8..5b63121 100644
+--- a/src/VBox/Devices/Graphics/DevVGA.cpp
++++ b/src/VBox/Devices/Graphics/DevVGA.cpp
+@@ -4644,7 +4644,8 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
+ static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval)
+ {
+     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
+-
++//cMilliesInterval = 5000;
++RTLogPrintf("VGA refresh interval: %u ms\n");
+     pThis->cMilliesRefreshInterval = cMilliesInterval;
+     if (cMilliesInterval)
+         return TMTimerSetMillies(pThis->RefreshTimer, cMilliesInterval);
+diff --git a/src/VBox/Devices/PC/DevPIC.cpp b/src/VBox/Devices/PC/DevPIC.cpp
+index 10fe2a0..7a4150a 100644
+--- a/src/VBox/Devices/PC/DevPIC.cpp
++++ b/src/VBox/Devices/PC/DevPIC.cpp
+@@ -53,6 +53,8 @@
+ 
+ #include "VBoxDD.h"
+ 
++#include <base/thread.h>
++#include <trace/timestamp.h>
+ 
+ /*******************************************************************************
+ *   Defined Constants And Macros                                               *
+@@ -316,6 +318,8 @@ static int pic_update_irq(PDEVPIC pThis)
+     return VINF_SUCCESS;
+ }
+ 
++extern bool do_stats;
++
+ /** @note if an interrupt line state changes from unmasked to masked, then it must be deactivated when currently pending! */
+ static void pic_update_imr(PDEVPIC pThis, PPICSTATE pPic, uint8_t val)
+ {
+@@ -494,13 +498,14 @@ static void pic_reset(PPICSTATE pPic)
+     pPic->pDevInsR3 = pDevInsR3;
+ }
+ 
+-
++extern uint64_t genode_cpu_hz();
+ static int pic_ioport_write(PDEVPIC pThis, PPICSTATE pPic, uint32_t addr, uint32_t val)
+ {
+     int         rc = VINF_SUCCESS;
+     int         irq;
+ 
+     Log(("pic_write: addr=0x%02x val=0x%02x\n", addr, val));
++
+     addr &= 1;
+     if (addr == 0)
+     {
+@@ -557,6 +562,32 @@ static int pic_ioport_write(PDEVPIC pThis, PPICSTATE pPic, uint32_t addr, uint32
+                 {
+                     irq = val & 7;
+                     Log(("pic_write: EOI2 for irq %d\n", irq));
++
++					if ((pPic == &pThis->aPics[0]) && (irq == 0)) {
++	        			static unsigned count = 0;
++						static unsigned long last_time = 0;
++						static unsigned long tot_time = 0;
++						static unsigned long min_time = (unsigned)-1;
++						static unsigned long max_time = 0;
++
++						uint64_t time = (uint128_t)Genode::Trace::timestamp() * 1000 * 1000 * 1000 / genode_cpu_hz();
++						unsigned long diff = time - last_time;
++						last_time = time;
++						if (do_stats) {
++							count++;
++							tot_time += diff;
++							min_time = Genode::min(min_time, diff);
++							max_time = Genode::max(max_time, diff);
++#if 1
++		 	    			if (count % 100 == 0)
++								RTLogPrintf("Timer interrupts delivered to VM: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++#endif
++						}
++
++						//Genode::Thread_base::tracef("Timer interrupt delivered, diff: %lu ms\n", diff);
++						RTLogPrintf("Timer interrupt delivered, diff: %lu ms\n", diff);
++					}
++
+                     pPic->isr &= ~(1 << irq);
+                     rc = pic_update_irq(pThis);
+                     Assert(rc == VINF_SUCCESS);
+diff --git a/src/VBox/Devices/PC/DevPit-i8254.cpp b/src/VBox/Devices/PC/DevPit-i8254.cpp
+index 6f4a329..f2010f3 100644
+--- a/src/VBox/Devices/PC/DevPit-i8254.cpp
++++ b/src/VBox/Devices/PC/DevPit-i8254.cpp
+@@ -56,8 +56,12 @@
+ # include <iprt/uuid.h>
+ #endif /* IN_RING3 */
+ 
++#include <base/thread.h>
++#include <trace/timestamp.h>
++#include <sys/time.h>
+ #include "VBoxDD.h"
+ 
++extern bool do_stats;
+ 
+ /*******************************************************************************
+ *   Defined Constants And Macros                                               *
+@@ -404,6 +408,11 @@ static void pit_load_count(PPITCHANNEL pChan, int val)
+     PTMTIMER pTimer = pChan->CTX_SUFF(pPit)->channels[0].CTX_SUFF(pTimer);
+     Assert(TMTimerIsLockOwner(pTimer));
+ 
++#if 0
++	if (val == 11949)
++		val -= 956;
++#endif
++
+     if (val == 0)
+         val = 0x10000;
+     pChan->count_load_time = pChan->u64ReloadTS = TMTimerGet(pTimer);
+@@ -542,6 +551,51 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
+                  */
+                 if (in_timer)
+                 {
++                	{
++                		static unsigned int start_count = 5000;
++	                	static unsigned count = 0;
++						static unsigned long last_time = 0;
++						static unsigned long tot_time = 0;
++						static unsigned long min_time = (unsigned)-1;
++						static unsigned long max_time = 0;
++
++						static unsigned long tot_timeout = 0;
++						static unsigned long min_timeout = (unsigned)-1;
++						static unsigned long max_timeout = 0;
++
++						count++;
++						unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
++						unsigned long diff = time - last_time;
++						last_time = time;
++
++						unsigned long timeout = expire_time - now;
++
++						if (count == start_count)
++							do_stats = true;
++
++						if (count > start_count) {
++							
++							tot_time += diff;
++							min_time = Genode::min(min_time, diff);
++							max_time = Genode::max(max_time, diff);
++
++							tot_timeout += timeout;
++							min_timeout = Genode::min(min_timeout, timeout);
++							max_timeout = Genode::max(max_timeout, timeout);
++#if 0
++    	            		if (count % 100 == 0) {
++								RTLogPrintf("Timer interrupts generated by model: %u, min_to: %lu ns, max_to: %lu ns, avg_to: %lu ns\n",
++								            (count - start_count), min_timeout, max_timeout, tot_timeout / (count - start_count));
++								RTLogPrintf("Timer interrupts generated by model: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n",
++							            (count - start_count), min_time, max_time, tot_time / (count - start_count));
++							}
++#endif
++						}
++
++						//Genode::Thread_base::tracef("Timer interrupt ready, diff: %lu ms\n", diff);
++						RTLogPrintf("Timer interrupt ready, diff: %lu ms\n", diff);
++					}
++
+                     PDMDevHlpISASetIrq(pDevIns, pChan->irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+                     break;
+                 }
+@@ -560,7 +614,8 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
+ 
+     if (expire_time != -1)
+     {
+-        Log3(("pit_irq_timer_update: next=%'RU64 now=%'RU64\n", expire_time, now));
++        //RTLogPrintf("pit_irq_timer_update: next=%'RU64 now=%'RU64\n", expire_time, now);
++        //Genode::Thread_base::tracef("next timeout in %lu ms\n", (expire_time - now) / (1000*1000));
+         pChan->u64NextTS = expire_time;
+         TMTimerSet(pChan->CTX_SUFF(pTimer), pChan->u64NextTS);
+     }
+@@ -1143,7 +1198,6 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
+     DEVPIT_UNLOCK_BOTH(pThis);
+ }
+ 
+-
+ /**
+  * @interface_method_impl{PDMDEVREG,pfnConstruct}
+  */
+diff --git a/src/VBox/Runtime/generic/timer-generic.cpp b/src/VBox/Runtime/generic/timer-generic.cpp
+index 8e4c327..30f9b5a 100644
+--- a/src/VBox/Runtime/generic/timer-generic.cpp
++++ b/src/VBox/Runtime/generic/timer-generic.cpp
+@@ -260,6 +260,9 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD hThreadSelf, void *pvUser)
+                 /* one shot? */
+                 if (!pTimer->u64NanoInterval)
+                     ASMAtomicXchgU8(&pTimer->fSuspended, true);
++                    static unsigned count = 0;
++                    if (count++ % 1000 == 0);
++                    	//RTLogPrintf("pfnTimer calls: %u\n", count - 1);
+                 pTimer->pfnTimer(pTimer, pTimer->pvUser, pTimer->iTick);
+ 
+                 /* status changed? */
+diff --git a/src/VBox/VMM/VMMAll/PDMAll.cpp b/src/VBox/VMM/VMMAll/PDMAll.cpp
+index 29eefb9..d63ca65 100644
+--- a/src/VBox/VMM/VMMAll/PDMAll.cpp
++++ b/src/VBox/VMM/VMMAll/PDMAll.cpp
+@@ -33,7 +33,10 @@
+ #include "PDMInline.h"
+ #include "dtrace/VBoxVMM.h"
+ 
++#include <base/thread.h>
++#include <trace/timestamp.h>
+ 
++extern bool do_stats;
+ 
+ /**
+  * Gets the pending interrupt.
+@@ -74,6 +77,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
+     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC))
+     {
+         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
++        //Genode::Thread_base::tracef("INT_PIC cleared\n");
+         Assert(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
+         Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt));
+         uint32_t uTagSrc;
+@@ -84,6 +88,33 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
+             pdmUnlock(pVM);
+             *pu8Interrupt = (uint8_t)i;
+             VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
++
++			if (*pu8Interrupt == 0x30)
++			{
++				static unsigned count = 0;
++				static unsigned long last_time = 0;
++				static unsigned long tot_time = 0;
++				static unsigned long min_time = (unsigned)-1;
++				static unsigned long max_time = 0;
++
++				unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
++				unsigned long diff = time - last_time;
++				last_time = time;
++
++				if (do_stats) {
++					count++;
++					tot_time += diff;
++					min_time = Genode::min(min_time, diff);
++					max_time = Genode::max(max_time, diff);
++#if 0
++					if (count % 100 == 0)
++						RTLogPrintf("Timer interrupt FF flags consumed: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++#endif
++				}
++
++				//Genode::Thread_base::tracef("Timer interrupt taken from PIC: %lu\n", time);
++			}
++
+             return VINF_SUCCESS;
+         }
+     }
+diff --git a/src/VBox/VMM/VMMAll/TMAll.cpp b/src/VBox/VMM/VMMAll/TMAll.cpp
+index 87b5e38..bbb21f8 100644
+--- a/src/VBox/VMM/VMMAll/TMAll.cpp
++++ b/src/VBox/VMM/VMMAll/TMAll.cpp
+@@ -1195,6 +1195,8 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+ {
+     PVM pVM = pTimer->CTX_SUFF(pVM);
+ 
++//RTLogPrintf("TMTimerSet(%s, %llu\n", R3STRING(pTimer->pszDesc), u64Expire);
++
+     /* Treat virtual sync timers specially. */
+     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+         return tmTimerVirtualSyncSet(pVM, pTimer, u64Expire);
+diff --git a/src/VBox/VMM/VMMR3/EM.cpp b/src/VBox/VMM/VMMR3/EM.cpp
+index 6ee8cbf..5776445 100644
+--- a/src/VBox/VMM/VMMR3/EM.cpp
++++ b/src/VBox/VMM/VMMR3/EM.cpp
+@@ -1870,8 +1870,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+          * Timers before interrupts.
+          */
+         if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)
+-            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
++            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) {
++			//RTLogPrintf("emR3ForcedActions()\n");
+             TMR3TimerQueuesDo(pVM);
++		}
+ 
+         /*
+          * The instruction following an emulated STI should *always* be executed!
+diff --git a/src/VBox/VMM/VMMR3/PDMDevMiscHlp.cpp b/src/VBox/VMM/VMMR3/PDMDevMiscHlp.cpp
+index c6cadd8..e0f3991 100644
+--- a/src/VBox/VMM/VMMR3/PDMDevMiscHlp.cpp
++++ b/src/VBox/VMM/VMMR3/PDMDevMiscHlp.cpp
+@@ -40,7 +40,7 @@
+ #include "PDMInline.h"
+ #include "dtrace/VBoxVMM.h"
+ 
+-
++#include <base/thread.h>
+ 
+ /** @name Ring-3 PIC Helpers
+  * @{
+@@ -66,6 +66,8 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
+     LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_PIC %d -> 1\n",
+              pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
+ 
++	//Genode::Thread_base::tracef("PIC: SetInterruptFF()\n");
++
+     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+ #ifdef VBOX_WITH_REM
+     REMR3NotifyInterruptSet(pVM, pVCpu);
+@@ -194,15 +196,20 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
+     {
+         case PDMAPICIRQ_HARDWARE:
+             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
++			//Genode::Thread_base::tracef("APIC: SetInterruptFF(APIC)\n");
+             break;
+         case PDMAPICIRQ_NMI:
+             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
++			//Genode::Thread_base::tracef("APIC: SetInterruptFF(NMI)\n");
+             break;
+         case PDMAPICIRQ_SMI:
+             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
++			//Genode::Thread_base::tracef("APIC: SetInterruptFF(SMI)\n");
++
+             break;
+         case PDMAPICIRQ_EXTINT:
+             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
++			//Genode::Thread_base::tracef("APIC: SetInterruptFF(PIC)\n");
+             break;
+         default:
+             AssertMsgFailed(("enmType=%d\n", enmType));
+diff --git a/src/VBox/VMM/VMMR3/TM.cpp b/src/VBox/VMM/VMMR3/TM.cpp
+index f6f6c8e..25f2d26 100644
+--- a/src/VBox/VMM/VMMR3/TM.cpp
++++ b/src/VBox/VMM/VMMR3/TM.cpp
+@@ -154,6 +154,8 @@
+ 
+ #include "TMInline.h"
+ 
++#include <base/thread.h>
++#include <trace/timestamp.h>
+ 
+ /*******************************************************************************
+ *   Defined Constants And Macros                                               *
+@@ -161,6 +163,7 @@
+ /** The current saved state version.*/
+ #define TM_SAVED_STATE_VERSION  3
+ 
++extern bool do_stats;
+ 
+ /*******************************************************************************
+ *   Internal Functions                                                         *
+@@ -1402,9 +1405,6 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
+     return rc;
+ }
+ 
+-
+-
+-
+ /**
+  * Creates a USB device timer.
+  *
+@@ -1879,6 +1879,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
+     return false;
+ }
+ 
++extern uint64_t genode_cpu_hz();
+ 
+ /**
+  * Schedule timer callback.
+@@ -1898,22 +1899,92 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+     PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+     NOREF(pTimer);
+ 
++	{
++		static unsigned count = 0;
++		static unsigned long last_time = 0;
++		static unsigned long tot_time = 0;
++		static unsigned long min_time = (unsigned long)-1;
++		static unsigned long max_time = 0;
++
++		uint64_t time = (uint128_t)Genode::Trace::timestamp() * 1000 * 1000 * 1000 / genode_cpu_hz();
++		unsigned long diff = time - last_time;
++		last_time = time;
++		if (do_stats) {
++			count++;
++			tot_time += diff;
++			min_time = Genode::min(min_time, diff);
++			max_time = Genode::max(max_time, diff);
++
++			if (count % 100 == 0)
++				RTLogPrintf("TM callbacks: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++
++			//Genode::Thread_base::tracef("TM notifiy diff: %lu ns\n", diff);
++			//RTLogPrintf("%llu: %llu: TM callback diff: %lu ns\n", time, TMVirtualGetNoCheck(pVM), diff);
++		}
++	}
++
+     AssertCompile(TMCLOCK_MAX == 4);
+ #ifdef DEBUG_Sander /* very annoying, keep it private. */
+     if (VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
+-        Log(("tmR3TimerCallback: timer event still pending!!\n"));
++        RTLogPrintf("tmR3TimerCallback: timer event still pending!!\n");
++#endif
++
++	bool _tmR3AnyExpiredTimers = tmR3AnyExpiredTimers(pVM);
++#if 0
++	RTLogPrintf("%d, %d, %d, %d, %d, %d, %d\n",
++	            VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER),
++	            pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule,
++	            pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule,
++	            pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule,
++	            pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offSchedule,
++	            _tmR3AnyExpiredTimers,
++	            pVM->tm.s.fRunningQueues);
++#endif
++	if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule /** @todo FIXME - reconsider offSchedule as a reason for running the timer queues. */
++        ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
++        ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule
++        ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offSchedule)
++        RTLogPrintf("********** offSchedule **********\n");
++#if 0
++	if (pVM->tm.s.fRunningQueues)
++		RTLogPrintf("********** tm.s.fRunningQueues **********\n");
+ #endif
+     if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
+         &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule /** @todo FIXME - reconsider offSchedule as a reason for running the timer queues. */
+             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
+             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule
+             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offSchedule
+-            ||  tmR3AnyExpiredTimers(pVM)
++            ||  _tmR3AnyExpiredTimers
+             )
+         && !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
+         && !pVM->tm.s.fRunningQueues
+        )
+     {
++
++		{
++			static unsigned count = 0;
++			static unsigned long last_time = 0;
++			static unsigned long tot_time = 0;
++			static unsigned long min_time = (unsigned long)-1;
++			static unsigned long max_time = 0;
++
++			uint64_t time = (uint128_t)Genode::Trace::timestamp() * 1000 * 1000 * 1000 / genode_cpu_hz();
++			unsigned long diff = time - last_time;
++			last_time = time;
++			if (do_stats) {
++				count++;
++				tot_time += diff;
++				min_time = Genode::min(min_time, diff);
++				max_time = Genode::max(max_time, diff);
++
++				//if (count % 100 == 0)
++					//RTLogPrintf("TM notifications: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++
++				//Genode::Thread_base::tracef("TM notifiy diff: %lu ns\n", diff);
++				//RTLogPrintf("TM notify diff: %lu ns\n", diff);
++			}
++		}
++
+         Log5(("TM(%u): FF: 0 -> 1\n", __LINE__));
+         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
+ #ifdef VBOX_WITH_REM
+@@ -2038,6 +2109,28 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+     const uint64_t u64Now = tmClock(pVM, pQueue->enmClock);
+     while (pNext && pNext->u64Expire <= u64Now)
+     {
++
++		{
++			static unsigned count = 0;
++			static unsigned long last_time = 0;
++			static unsigned long tot_time = 0;
++			static unsigned long min_time = (unsigned long)-1;
++			static unsigned long max_time = 0;
++
++			unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
++			unsigned long diff = time - last_time;
++			last_time = time;
++			if (do_stats) {
++				count++;
++				tot_time += diff;
++				min_time = Genode::min(min_time, diff);
++				max_time = Genode::max(max_time, diff);
++
++				//if (count % 100 == 0)
++					//RTLogPrintf("tmR3TimerQueueRun() triggers: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++			}
++		}
++
+         PTMTIMER        pTimer    = pNext;
+         pNext = TMTIMER_GET_NEXT(pTimer);
+         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
+@@ -2108,6 +2201,27 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+     VM_ASSERT_EMT(pVM);
+     Assert(PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock));
+ 
++	{
++		static unsigned count = 0;
++		static unsigned long last_time = 0;
++		static unsigned long tot_time = 0;
++		static unsigned long min_time = (unsigned long)-1;
++		static unsigned long max_time = 0;
++
++		unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
++		unsigned long diff = time - last_time;
++		last_time = time;
++		if (do_stats) {
++			count++;
++			tot_time += diff;
++			min_time = Genode::min(min_time, diff);
++			max_time = Genode::max(max_time, diff);
++
++			//if (count % 100 == 0)
++				//RTLogPrintf("tmR3TimerQueueRunVirtualSync() calls: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++		}
++	}
++
+     /*
+      * Any timers?
+      */
+@@ -2220,8 +2334,31 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+ #ifdef VBOX_STRICT
+     uint64_t u64Prev = u64Now; NOREF(u64Prev);
+ #endif
++
+     while (pNext && pNext->u64Expire <= u64Max)
+     {
++
++		{
++			static unsigned count = 0;
++			static unsigned long last_time = 0;
++			static unsigned long tot_time = 0;
++			static unsigned long min_time = (unsigned long)-1;
++			static unsigned long max_time = 0;
++
++			unsigned long time = Genode::Trace::timestamp() * 1000 / 2400;
++			unsigned long diff = time - last_time;
++			last_time = time;
++			if (do_stats) {
++				count++;
++				tot_time += diff;
++				min_time = Genode::min(min_time, diff);
++				max_time = Genode::max(max_time, diff);
++
++				//if (count % 100 == 0)
++					//RTLogPrintf("tmR3TimerQueueRunVirtualSync() triggers: %u, min: %lu ns, max: %lu ns, avg: %lu ns\n", count, min_time, max_time, tot_time / count);
++			}
++		}
++
+         /* Advance */
+         PTMTIMER pTimer = pNext;
+         pNext = TMTIMER_GET_NEXT(pTimer);
+@@ -2231,7 +2368,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         if (pCritSect)
+             PDMCritSectEnter(pCritSect, VERR_IGNORED);
+ 
+-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
++        Log2(("tmR3TimerQueueRunVirtualSync: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
+               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
+ 
+         /* Advance the clock - don't permit timers to be out of order or armed
+@@ -2409,7 +2546,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+  */
+ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+ {
+-    Log2(("TMR3VirtualSyncFF:\n"));
++    RTLogPrintf("TMR3VirtualSyncFF:\n");
+ 
+     /*
+      * The EMT doing the timers is diverted to them.
+diff --git a/src/VBox/VMM/VMMR3/VMEmt.cpp b/src/VBox/VMM/VMMR3/VMEmt.cpp
+index 8135443..1350e69 100644
+--- a/src/VBox/VMM/VMMR3/VMEmt.cpp
++++ b/src/VBox/VMM/VMMR3/VMEmt.cpp
+@@ -334,6 +334,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
+          * addition to perhaps set an FF.
+          */
+         uint64_t const u64StartTimers   = RTTimeNanoTS();
++RTLogPrintf("vmR3HaltOldDoHalt()\n");
+         TMR3TimerQueuesDo(pVM);
+         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
+@@ -533,6 +534,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+          * Work the timers and check if we can exit.
+          */
+         uint64_t const u64StartTimers   = RTTimeNanoTS();
++RTLogPrintf("vmR3HaltMethod1Halt()\n");
+         TMR3TimerQueuesDo(pVM);
+         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
+@@ -682,7 +684,8 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+          * Work the timers and check if we can exit.
+          */
+         uint64_t const u64StartTimers   = RTTimeNanoTS();
+-        TMR3TimerQueuesDo(pVM);
++//RTLogPrintf("vmR3HaltGlobal1Halt()\n");
++        //TMR3TimerQueuesDo(pVM);
+         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
+         if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+diff --git a/src/recompiler/VBoxRecompiler.c b/src/recompiler/VBoxRecompiler.c
+index d74eeb0..f8a4127 100644
+--- a/src/recompiler/VBoxRecompiler.c
++++ b/src/recompiler/VBoxRecompiler.c
+@@ -1963,7 +1963,8 @@ void remR3DmaRun(CPUX86State *env)
+  */
+ void remR3TimersRun(CPUX86State *env)
+ {
+-    LogFlow(("remR3TimersRun:\n"));
++    //LogFlow(("remR3TimersRun:\n"));
++	RTLogPrintf("remR3TimersRun:\n");
+     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("remR3TimersRun\n"));
+     remR3ProfileStop(STATS_QEMU_RUN_EMULATED_CODE);
+     remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
+@@ -4447,6 +4448,8 @@ void cpu_set_ferr(CPUX86State *env)
+     LogFlow(("cpu_set_ferr: rc=%d\n", rc)); NOREF(rc);
+ }
+ 
++extern void tracef(const char *format, ...);
++
+ int cpu_get_pic_interrupt(CPUX86State *env)
+ {
+     uint8_t u8Interrupt;
+diff --git a/src/recompiler/cpu-exec.c b/src/recompiler/cpu-exec.c
+index aa1826c..f5af989 100644
+--- a/src/recompiler/cpu-exec.c
++++ b/src/recompiler/cpu-exec.c
+@@ -834,7 +834,8 @@ int cpu_exec(CPUState *env1)
+                  || TMTimerPollBool(env->pVM, env->pVCpu)) ) {
+             ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXTERNAL_TIMER);
+             remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
+-            TMR3TimerQueuesDo(env->pVM);
++//RTLogPrintf("cpu_exec()\n");
++            //TMR3TimerQueuesDo(env->pVM);
+             remR3ProfileStop(STATS_QEMU_RUN_TIMERS);
+         }
+ #endif

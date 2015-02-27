@@ -732,6 +732,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			_last_exit_was_recall = false;
 
+			//Genode::Thread_base::trace("r\n");
+
 			/* switch to hardware accelerated mode */
 			switch_to_hw();
 
@@ -745,6 +747,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			/* load saved FPU state of EMT thread */
 			fpu_load(reinterpret_cast<char *>(&_emt_fpu_state));
+
+			//Genode::Thread_base::tracef("e\n");
 
 			CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
