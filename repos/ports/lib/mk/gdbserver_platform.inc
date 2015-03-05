@@ -1,4 +1,5 @@
 GDB_CONTRIB_DIR = $(call select_from_ports,gdb)/src/noux-pkg/gdb
+GDBSERVER_PLATFORM_GENERATED_DIR = $(call select_from_ports,gdb)/src/lib/gdbserver_platform/generated
 
 INC_DIR += $(REP_DIR)/src/lib/gdbserver_libc_support \
            $(REP_DIR)/src/lib/gdbserver_platform \
@@ -14,7 +15,7 @@ SRC_CC += gdbserver_platform_helper.cc
 LIBS += libc
 
 vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform
-vpath %.c  $(REP_DIR)/src/lib/gdbserver_platform/generated
+vpath %.c  $(GDBSERVER_PLATFORM_GENERATED_DIR)
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
 
 #
