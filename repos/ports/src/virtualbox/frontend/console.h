@@ -145,7 +145,7 @@ class GenodeConsole : public Console {
 		void eventWait(IKeyboard * gKeyboard, IMouse * gMouse)
 		{
 			static Timer::Connection timer;
-#if 1
+#if 0
 			for (int d = 8; ; d = -d) {
 
 				for (int x = 0; x < 128; x++) {

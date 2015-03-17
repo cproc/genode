@@ -91,7 +91,7 @@ void    Console::onAdditionsStateChange()                                       
 void    Console::onAdditionsOutdated()                                          DUMMY()
 void    Console::onMousePointerShapeChange(bool, bool, uint32_t, uint32_t,
                                         uint32_t, uint32_t,
-                                        ComSafeArrayIn(uint8_t, aShape))        DUMMY()
+                                        ComSafeArrayIn(uint8_t, aShape))        TRACE()
 void    Console::onKeyboardLedsChange(bool, bool, bool)                         TRACE()
 HRESULT Console::onVideoCaptureChange()                                         DUMMY(E_FAIL)
 HRESULT Console::onSharedFolderChange(BOOL aGlobal)                             DUMMY(E_FAIL)
