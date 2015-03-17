@@ -16,7 +16,12 @@
 #include <framebuffer_session/connection.h>
 #undef Framebuffer
 
+#include <trace/timestamp.h>
+
 /* VirtualBox includes */
+extern uint64_t tsc_start;
+extern uint64_t tsc_diff_sum;
+extern unsigned int tsc_count;
 
 class Genodefb : public Framebuffer
 {
@@ -94,6 +99,25 @@ class Genodefb : public Framebuffer
 
 		HRESULT NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
 		{
+			//PDBG("x: %d, y: %d, w: %d, h: %d", x, y, w, h);
+
+			if ((y == 382) && (h == 24)) {
+
+#if 1
+				uint64_t tsc_diff = Genode::Trace::timestamp() - tsc_start;
+				tsc_count++;
+				tsc_diff_sum += tsc_diff;
+				if (tsc_diff < tsc_diff_min)
+					tsc_diff_min = tsc_diff;
+				if (tsc_diff > tsc_diff_max)
+					tsc_diff_max = tsc_diff;
+				PDBG("update: %u, %lu ns, min: %lu, max: %lu, avg: %lu ns", tsc_count,
+				                                        (tsc_diff * 1000) / 2400,
+				                                        (tsc_diff_min * 1000) / 2400,
+				                                        (tsc_diff_max * 1000) / 2400,
+				                                        (tsc_diff_sum * 1000) / (tsc_count * 2400));
+#endif
+			}
 			_fb.refresh(x, y, w, h);
 			return S_OK;
 		}
@@ -166,7 +190,13 @@ class Genodefb : public Framebuffer
 
 		STDMETHODIMP VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
 		{
-			Assert(!"FixMe");
+			//Assert(!"FixMe");
+			PDBG("width: %u, height: %u, bpp: %u\n", width, height, bpp);
+			if ((width <= 1024) && (height <= 768) && (bpp == 16))
+				*supported = true;
+			else
+				*supported = false;
+			PDBG("supported: %d", *supported);
 			return S_OK;
 		}
 
@@ -185,6 +215,7 @@ class Genodefb : public Framebuffer
 
 		STDMETHODIMP ProcessVHWACommand(BYTE *pCommand)
 		{
+			RTLogPrintf("ProcessVHWACommand()\n");
 		    return E_NOTIMPL;
 		}
 };
