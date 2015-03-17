@@ -24,6 +24,7 @@
 /* VirtualBox includes */
 #include "ConsoleImpl.h"
 #include <base/printf.h>
+#include <trace/timestamp.h>
 
 /* XXX */
 enum { KMOD_RCTRL = 0, SDLK_RCTRL = 0 };
@@ -102,6 +103,11 @@ class Scan_code
 		}
 };
 
+uint64_t tsc_start = 0;
+uint64_t tsc_diff_sum = 0;
+unsigned int tsc_count = 0;
+uint64_t tsc_diff_min = (uint64_t)-1;
+uint64_t tsc_diff_max = 0;
 
 class GenodeConsole : public Console {
 
@@ -138,6 +144,24 @@ class GenodeConsole : public Console {
 
 		void eventWait(IKeyboard * gKeyboard, IMouse * gMouse)
 		{
+			static Timer::Connection timer;
+#if 1
+			for (int d = 8; ; d = -d) {
+
+				for (int x = 0; x < 128; x++) {
+					tsc_start = Genode::Trace::timestamp();
+					//RTLogPrintf("input, %lu", Genode::Trace::timestamp());
+					gMouse->PutMouseEvent(d, 0, 0, 0, 0);
+					timer.msleep(250);
+				}
+
+			}
+
+
+			return;
+#endif
+			/* ----- */
+
 			_receiver.wait_for_signal();
 
 			for (int i = 0, num_ev = _input.flush(); i < num_ev; ++i) {
