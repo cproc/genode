@@ -10,8 +10,8 @@ set vdi_image "${flavor}.vdi"
 set vbox_file "vm_${flavor}.vbox"
 set overlay_image "overlay_${flavor}.vdi"
 
-set build_components { drivers/nic }
-set boot_modules { nic_drv }
+set build_components { drivers/nic server/nitpicker app/pointer server/nit_fb server/report_rom }
+set boot_modules { nic_drv nitpicker pointer nit_fb report_rom }
 
 set config_of_app {
 
@@ -21,6 +21,64 @@ set config_of_app {
 			<service name="Nic" />
 		</provides>
 	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config>
+			<rom>
+				<policy label="status_bar -> focus" report="nitpicker -> focus"/>
+			</rom>
+		</config>
+	</start>
+
+	<start name="nitpicker" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<route>
+			<service name="Framebuffer"> <child name="fb_drv" /> </service>
+			<service name="Input"> <child name="usb_drv" /> </service>
+			<any-service> <parent/> <any-child /> </any-service>
+		</route>
+		<config>
+			<report focus="yes" />
+			<domain name="pointer" layer="1" xray="no" origin="pointer" />
+			<domain name="panel"   layer="2" xray="no" />
+			<domain name=""        layer="3" />
+
+			<policy label="pointer"    domain="pointer"/>
+			<policy label="status_bar" domain="panel"/>
+			<policy label=""           domain=""/>
+
+			<global-key name="KEY_SCROLLLOCK" operation="xray" />
+			<global-key name="KEY_SYSRQ"      operation="kill" />
+			<global-key name="KEY_PRINT"      operation="kill" />
+			<global-key name="KEY_F11"        operation="kill" />
+			<global-key name="KEY_F12"        operation="xray" />
+		</config>
+	</start>
+
+	<start name="pointer" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+
+	<start name="status_bar">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="ROM"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="nit_fb" priority="-1">
+		<resource name="RAM" quantum="8M" />
+		<provides>
+			<service name="Framebuffer" />
+			<service name="Input" />
+		</provides>
+		<config width="1024" height="768" />
+	</start>
+
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="1280M"/>}
@@ -51,6 +109,8 @@ append_if [expr $use_ram_fs] config_of_app {
 
 append config_of_app {
 			<service name="File_system"> <child name="rump_fs"/> </service>
+			<service name="Framebuffer"> <child name="nit_fb" /> </service>
+			<service name="Input"> <child name="nit_fb" /> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>

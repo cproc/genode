@@ -115,7 +115,7 @@ extern "C" char *getenv(const char *name)
 //		               "+dev_pcnet.e.l.f"
 //		               "+dev_pic.e.l.f"
 //		               "+dev_apic.e.l.f"
-//		               "+dev_vmm.e.l.f"
+		               "+dev_vmm.e.l.f"
 //		               "+main.e.l.f"
 //		               "+hgcm.e.l.f"
 //		               "+shared_folders.e.l.f"
