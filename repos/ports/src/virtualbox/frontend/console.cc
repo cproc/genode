@@ -89,9 +89,7 @@ HRESULT Console::setDiskEncryptionKeys(const Utf8Str &strCfg)                   
 void    Console::onMouseCapabilityChange(BOOL, BOOL, BOOL, BOOL)                TRACE()
 void    Console::onAdditionsStateChange()                                       TRACE()
 void    Console::onAdditionsOutdated()                                          DUMMY()
-void    Console::onMousePointerShapeChange(bool, bool, uint32_t, uint32_t,
-                                        uint32_t, uint32_t,
-                                        ComSafeArrayIn(uint8_t, aShape))        TRACE()
+
 void    Console::onKeyboardLedsChange(bool, bool, bool)                         TRACE()
 HRESULT Console::onVideoCaptureChange()                                         DUMMY(E_FAIL)
 HRESULT Console::onSharedFolderChange(BOOL aGlobal)                             DUMMY(E_FAIL)

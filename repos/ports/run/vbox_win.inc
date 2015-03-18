@@ -10,8 +10,8 @@ set vdi_image "${flavor}.vdi"
 set vbox_file "vm_${flavor}.vbox"
 set overlay_image "overlay_${flavor}.vdi"
 
-set build_components { drivers/nic server/nitpicker app/pointer server/nit_fb server/report_rom }
-set boot_modules { nic_drv nitpicker pointer nit_fb report_rom }
+set build_components { drivers/nic server/nitpicker app/vbox_pointer server/nit_fb server/report_rom }
+set boot_modules { nic_drv nitpicker vbox_pointer nit_fb report_rom }
 
 set config_of_app {
 
@@ -27,28 +27,31 @@ set config_of_app {
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
 			<rom>
-				<policy label="status_bar -> focus" report="nitpicker -> focus"/>
+				<policy label="vbox_pointer -> hover" report="nitpicker -> hover"/>
+				<policy label="vbox_pointer -> xray"  report="nitpicker -> xray"/>
+				<policy label="vbox_pointer -> shape" report="vbox -> shape"/>
 			</rom>
 		</config>
 	</start>
 
 	<start name="nitpicker" priority="-1">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Nitpicker"/></provides>
 		<route>
 			<service name="Framebuffer"> <child name="fb_drv" /> </service>
-			<service name="Input"> <child name="usb_drv" /> </service>
+			<service name="Input"> <child name="ps2_drv" /> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 		<config>
-			<report focus="yes" />
-			<domain name="pointer" layer="1" xray="no" origin="pointer" />
-			<domain name="panel"   layer="2" xray="no" />
-			<domain name=""        layer="3" />
+			<report focus="yes" hover="yes" xray="yes" />
 
-			<policy label="pointer"    domain="pointer"/>
-			<policy label="status_bar" domain="panel"/>
-			<policy label=""           domain=""/>
+			<domain name="pointer" layer="1" xray="no" origin="pointer" />
+			<domain name="vbox"    layer="2" />
+			<domain name=""        layer="2" />
+
+			<policy label="vbox_pointer" domain="pointer"/>
+			<policy label="nit_fb"       domain="vbox"/>
+			<policy label=""             domain=""/>
 
 			<global-key name="KEY_SCROLLLOCK" operation="xray" />
 			<global-key name="KEY_SYSRQ"      operation="kill" />
@@ -58,18 +61,14 @@ set config_of_app {
 		</config>
 	</start>
 
-	<start name="pointer" priority="-1">
-		<resource name="RAM" quantum="1M"/>
-	</start>
-
-	<start name="status_bar">
+	<start name="vbox_pointer" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<route>
-			<service name="ROM"> <child name="report_rom"/> </service>
+			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
+			<service name="ROM">       <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-
 	<start name="nit_fb" priority="-1">
 		<resource name="RAM" quantum="8M" />
 		<provides>
