@@ -24,7 +24,10 @@
 /* VirtualBox includes */
 #include "ConsoleImpl.h"
 #include <base/printf.h>
+#include <os/attached_dataspace.h>
+#include <report_session/connection.h>
 #include <trace/timestamp.h>
+#include <vbox_pointer/shape_report.h>
 
 /* XXX */
 enum { KMOD_RCTRL = 0, SDLK_RCTRL = 0 };
@@ -113,11 +116,14 @@ class GenodeConsole : public Console {
 
 	private:
 
-		Input::Connection        _input;
-		Genode::Signal_receiver  _receiver;
-		Genode::Signal_context   _context;
-		Input::Event            *_ev_buf;
-		unsigned                 _ax, _ay;
+		Input::Connection           _input;
+		Genode::Signal_receiver     _receiver;
+		Genode::Signal_context      _context;
+		Input::Event               *_ev_buf;
+		unsigned                    _ax, _ay;
+		Report::Connection          _shape_report_connection;
+		Genode::Attached_dataspace  _shape_report_ds;
+		Vbox_pointer::Shape_report *_shape_report;
 
 		bool _key_status[Input::KEY_MAX + 1];
 
@@ -134,7 +140,10 @@ class GenodeConsole : public Console {
 		:
 			Console(),
 			_ev_buf(static_cast<Input::Event *>(Genode::env()->rm_session()->attach(_input.dataspace()))),
-			_ax(0), _ay(0)
+			_ax(0), _ay(0),
+			_shape_report_connection("shape", sizeof(Vbox_pointer::Shape_report)),
+			_shape_report_ds(_shape_report_connection.dataspace()),
+			_shape_report(_shape_report_ds.local_addr<Vbox_pointer::Shape_report>())
 		{
 			for (unsigned i = 0; i <= Input::KEY_MAX; i++)
 				_key_status[i] = 0;
@@ -210,18 +219,66 @@ class GenodeConsole : public Console {
 					if (ev.is_absolute_motion()) {
 						int const rx = ev.ax() - _ax; _ax = ev.ax();
 						int const ry = ev.ay() - _ay; _ay = ev.ay();
-						gMouse->PutMouseEvent(rx, ry, 0, 0, buttons);
+						//gMouse->PutMouseEvent(rx, ry, 0, 0, buttons);
 						gMouse->PutMouseEventAbsolute(ev.ax(), ev.ay(), 0, 0, buttons);
 					} else if (ev.is_relative_motion())
 						gMouse->PutMouseEvent(ev.rx(), ev.ry(), 0, 0, buttons);
 
 					/* only the buttons changed */
 					else
-						gMouse->PutMouseEvent(0, 0, 0, 0, buttons);
+						gMouse->PutMouseEventAbsolute(_ax, _ay, 0, 0, buttons);
 				}
 
 				if (is_wheel)
 					gMouse->PutMouseEvent(0, 0, ev.rx(), ev.ry(), 0);
 			}
+		}
+
+		void onMousePointerShapeChange(bool fVisible, bool fAlpha,
+		                               uint32_t xHot, uint32_t yHot,
+		                               uint32_t width, uint32_t height,
+		                               ComSafeArrayIn(BYTE,pShape))
+		{
+			com::SafeArray<BYTE> shape_array(ComSafeArrayInArg(pShape));
+
+			PDBG("visible: %d, alpha: %d, hot: %u,%u, width: %u, height: %u, size: %zu",
+			     fVisible, fAlpha, xHot, yHot, width, height, shape_array.size());
+
+			if (fVisible && !fAlpha) {
+				PERR("%s: only shapes with alpha are supported, yet", __func__);
+				return;
+			}
+
+			if (shape_array.size() > Vbox_pointer::MAX_SHAPE_SIZE) {
+				PERR("%s: shape data buffer is too small for %zu bytes",
+				     __func__, shape_array.size());
+				return;
+			}
+
+			_shape_report->visible = fVisible;
+			_shape_report->x_hot = xHot;
+			_shape_report->y_hot = yHot;
+			_shape_report->width = width;
+			_shape_report->height = height;
+
+			Genode::memcpy(_shape_report->shape,
+			               shape_array.raw(),
+			               shape_array.size());
+
+#if 0
+			unsigned int and_mask_size = (_shape_report->width + 7) / 8 *
+			                              _shape_report->height;
+
+			unsigned char *shape = _shape_report->shape +
+			                       ((and_mask_size + 3) & ~3);
+
+			for (unsigned int y = 0; y < height; y++) {
+				for (unsigned int x = 0; x < width / 2; x++) {
+					Genode::printf("%8x ", *(unsigned int*)&shape[y * width * 4 + x]);
+				}
+				Genode::printf("\n");
+			}
+#endif
+			_shape_report_connection.submit(sizeof(Vbox_pointer::Shape_report));
 		}
 };
