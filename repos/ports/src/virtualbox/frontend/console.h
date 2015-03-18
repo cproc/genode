@@ -24,6 +24,8 @@
 /* VirtualBox includes */
 #include "ConsoleImpl.h"
 #include <base/printf.h>
+#include <os/attached_dataspace.h>
+#include <report_session/connection.h>
 #include <trace/timestamp.h>
 
 /* XXX */
@@ -113,11 +115,13 @@ class GenodeConsole : public Console {
 
 	private:
 
-		Input::Connection        _input;
-		Genode::Signal_receiver  _receiver;
-		Genode::Signal_context   _context;
-		Input::Event            *_ev_buf;
-		unsigned                 _ax, _ay;
+		Input::Connection          _input;
+		Genode::Signal_receiver    _receiver;
+		Genode::Signal_context     _context;
+		Input::Event              *_ev_buf;
+		unsigned                   _ax, _ay;
+		Report::Connection         _shape_report_connection;
+		Genode::Attached_dataspace _shape_report_ds;
 
 		bool _key_status[Input::KEY_MAX + 1];
 
@@ -134,7 +138,9 @@ class GenodeConsole : public Console {
 		:
 			Console(),
 			_ev_buf(static_cast<Input::Event *>(Genode::env()->rm_session()->attach(_input.dataspace()))),
-			_ax(0), _ay(0)
+			_ax(0), _ay(0),
+			_shape_report_connection("shape", 4096),
+			_shape_report_ds(_shape_report_connection.dataspace())
 		{
 			for (unsigned i = 0; i <= Input::KEY_MAX; i++)
 				_key_status[i] = 0;
@@ -210,18 +216,56 @@ class GenodeConsole : public Console {
 					if (ev.is_absolute_motion()) {
 						int const rx = ev.ax() - _ax; _ax = ev.ax();
 						int const ry = ev.ay() - _ay; _ay = ev.ay();
-						gMouse->PutMouseEvent(rx, ry, 0, 0, buttons);
+						//gMouse->PutMouseEvent(rx, ry, 0, 0, buttons);
 						gMouse->PutMouseEventAbsolute(ev.ax(), ev.ay(), 0, 0, buttons);
 					} else if (ev.is_relative_motion())
 						gMouse->PutMouseEvent(ev.rx(), ev.ry(), 0, 0, buttons);
 
 					/* only the buttons changed */
 					else
-						gMouse->PutMouseEvent(0, 0, 0, 0, buttons);
+						gMouse->PutMouseEventAbsolute(_ax, _ay, 0, 0, buttons);
 				}
 
 				if (is_wheel)
 					gMouse->PutMouseEvent(0, 0, ev.rx(), ev.ry(), 0);
 			}
+		}
+
+		void onMousePointerShapeChange(bool fVisible, bool fAlpha,
+		                               uint32_t xHot, uint32_t yHot,
+		                               uint32_t width, uint32_t height,
+		                               ComSafeArrayIn(BYTE,pShape))
+		{
+			com::SafeArray<BYTE> shape_array(ComSafeArrayInArg(pShape));
+
+			PDBG("visible: %d, alpha: %d, hot: %u,%u, width: %u, height: %u", fVisible, fAlpha, xHot, yHot, width, height);
+
+			enum { MAX_SHAPE_SIZE = 3*1024 };
+
+			struct Shape_data
+			{
+				bool          visible;
+				uint32_t      x_hot;
+				uint32_t      y_hot;
+				uint32_t      width;
+				uint32_t      height;
+				unsigned char shape[MAX_SHAPE_SIZE];
+			};
+
+			Shape_data shape_data;
+			shape_data.visible = fVisible;
+			shape_data.x_hot = xHot;
+			shape_data.y_hot = yHot;
+			shape_data.width = width;
+			shape_data.height = height;
+
+			if (shape_array.size() > MAX_SHAPE_SIZE) {
+				PERR("%s: shape data buffer is too small for %zu bytes", __func__, shape_array.size());
+				return;
+			}
+
+			Genode::memcpy(&shape_data.shape, shape_array.raw(), shape_array.size());
+
+			Genode::memcpy(_shape_report_ds.local_addr<unsigned char>(), &shape_data, sizeof(Shape_data));
 		}
 };
