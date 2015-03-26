@@ -30,6 +30,7 @@
 #include <util/token.h>
 #include <util/string.h>
 #include <base/snprintf.h>
+#include <base/printf.h>
 
 namespace Genode {
 
@@ -317,6 +318,7 @@ class Genode::Arg_string
 		static bool set_arg(char *args, unsigned args_len,
 		                    const char *key, int value)
 		{
+PDBG("value = %d", value);
 			enum { STRING_LONG_MAX = 32 };
 			char buf[STRING_LONG_MAX];
 			snprintf(buf, sizeof(buf), "%d", value);

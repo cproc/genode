@@ -343,7 +343,12 @@ void Child::upgrade(Session_capability to_session, Parent::Upgrade_args const &a
 
 	size_t const ram_quota =
 		Arg_string::find_arg(args.string(), "ram_quota").ulong_value(0);
-
+#if 0
+	if (ram_quota == ~0) {
+		PWRN("no valid 'ram_quota' argument in \"%s\"", args.string());
+		return;
+	}
+#endif
 	/* transfer quota from client to ourself */
 	Transfer donation_from_child(ram_quota, _ram,
 	                             env()->ram_session_cap());

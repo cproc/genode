@@ -81,10 +81,13 @@ class Nitpicker::Connection : public Genode::Connection<Session>,
 			                             ? needed - _session_quota
 			                             : 0;
 
+			PDBG("needed = %zu", needed);
+			PDBG("upgrade = %zu", upgrade);
+
 			if (upgrade > 0) {
 				Genode::Arg_string::set_arg(argbuf, sizeof(argbuf), "ram_quota",
 				                            upgrade);
-
+PDBG("arg_buf = %s", argbuf);
 				Genode::env()->parent()->upgrade(cap(), argbuf);
 				_session_quota += upgrade;
 			}

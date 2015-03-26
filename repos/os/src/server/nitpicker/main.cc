@@ -478,6 +478,7 @@ class Nitpicker::Session_component : public Genode::Rpc_object<Session>,
 			destroy(&_session_alloc, const_cast<Chunky_dataspace_texture<PT> *>(cdt));
 
 			_session_alloc.upgrade(_buffer_size);
+PDBG("_session_alloc.quota() after buffer release: %zu", _session_alloc.quota());
 			_buffer_size = 0;
 		}
 
@@ -690,7 +691,10 @@ class Nitpicker::Session_component : public Genode::Rpc_object<Session>,
 			_view_handle_registry(_session_alloc),
 			_focus_reporter(focus_reporter)
 		{
+PDBG("ram_quota = %zu", ram_quota);
+PDBG("_session_alloc.quota() 1 = %zu", _session_alloc.quota());
 			_session_alloc.upgrade(ram_quota);
+PDBG("_session_alloc.quota() 2 = %zu", _session_alloc.quota());
 		}
 
 		/**
@@ -721,7 +725,7 @@ class Nitpicker::Session_component : public Genode::Rpc_object<Session>,
 				Signal_transmitter(_mode_sigh).submit();
 		}
 
-		void upgrade_ram_quota(size_t ram_quota) { _session_alloc.upgrade(ram_quota); }
+		void upgrade_ram_quota(size_t ram_quota) { _session_alloc.upgrade(ram_quota); PDBG("upgrade_ram_quota(): %zu, %zu", ram_quota, _session_alloc.quota());}
 
 
 		/**********************************
@@ -891,6 +895,7 @@ class Nitpicker::Session_component : public Genode::Rpc_object<Session>,
 		void buffer(Framebuffer::Mode mode, bool use_alpha) override
 		{
 			/* check if the session quota suffices for the specified mode */
+PDBG("_session_alloc.quota() = %zu, needed quota = %zu", _session_alloc.quota(), ram_quota(mode, use_alpha));
 			if (_session_alloc.quota() < ram_quota(mode, use_alpha))
 				throw Nitpicker::Session::Out_of_metadata();
 
@@ -979,13 +984,15 @@ class Nitpicker::Session_component : public Genode::Rpc_object<Session>,
 				                       Texture_painter::SOLID, false);
 				_release_buffer();
 			}
-
+PDBG("realloc_buffer(): %zu", _session_alloc.quota());
 			if (!_session_alloc.withdraw(_buffer_size)) {
+PDBG("realloc_buffer() 2: %zu", _session_alloc.quota());
 				destroy(&_session_alloc, texture);
+PDBG("realloc_buffer() 3: %zu", _session_alloc.quota());
 				_buffer_size = 0;
 				return 0;
 			}
-
+PDBG("realloc_buffer() 4: %zu", _session_alloc.quota());
 			::Session::texture(texture, use_alpha);
 			::Session::input_mask(texture->input_mask_buffer());
 
@@ -1045,7 +1052,10 @@ class Nitpicker::Root : public Genode::Root_component<Session_component>
 
 		void _upgrade_session(Session_component *s, const char *args)
 		{
-			size_t ram_quota = Arg_string::find_arg(args, "ram_quota").long_value(0);
+PDBG("args = %s", args);
+			size_t ram_quota = Arg_string::find_arg(args, "ram_quota").ulong_value(0);
+			long ram_quota_long = Arg_string::find_arg(args, "ram_quota").long_value(0);
+PDBG("ram_quota = %zu, ram_quota_long = %ld", ram_quota, ram_quota_long);
 			s->upgrade_ram_quota(ram_quota);
 		}
 

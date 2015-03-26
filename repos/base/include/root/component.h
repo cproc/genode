@@ -248,6 +248,8 @@ class Genode::Root_component : public Rpc_object<Typed_root<SESSION_TYPE> >,
 			Object_guard s(_ep->lookup_and_lock(session));
 			if (!s) return;
 
+PDBG("args.string() = %s", args.string());
+
 			_upgrade_session(s, args.string());
 		}
 

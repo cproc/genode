@@ -176,7 +176,7 @@ struct Main
 	{
 		if (cursor_size != current_cursor_size) {
 
-			Framebuffer::Mode const mode { (int)cursor_size.w() /** 1000000*/, (int)cursor_size.h() /** 1000000*/,
+			Framebuffer::Mode const mode { (int)cursor_size.w() * 1000000, (int)cursor_size.h() * 1000000,
 	                               	   	   Framebuffer::Mode::RGB565 };
 
 			nitpicker.buffer(mode, true /* use alpha */);
