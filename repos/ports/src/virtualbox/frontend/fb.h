@@ -166,7 +166,13 @@ class Genodefb : public Framebuffer
 
 		STDMETHODIMP VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
 		{
-			Assert(!"FixMe");
+			//Assert(!"FixMe");
+			PDBG("width: %u, height: %u, bpp: %u\n", width, height, bpp);
+			if ((width <= 1024) && (height <= 768) && (bpp == 16))
+				*supported = true;
+			else
+				*supported = false;
+			PDBG("supported: %d", *supported);
 			return S_OK;
 		}
 
@@ -185,6 +191,7 @@ class Genodefb : public Framebuffer
 
 		STDMETHODIMP ProcessVHWACommand(BYTE *pCommand)
 		{
+			RTLogPrintf("ProcessVHWACommand()\n");
 		    return E_NOTIMPL;
 		}
 };
