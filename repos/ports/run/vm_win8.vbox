@@ -59,7 +59,7 @@
         <DeviceFilters/>
       </USB>
       <Network>
-        <Adapter slot="0" enabled="false" MACAddress="080027235455" cable="true" speed="0" type="82540EM">
+        <Adapter slot="0" enabled="true" MACAddress="080027235455" cable="true" speed="0" type="82540EM">
           <DisabledModes/>
         </Adapter>
       </Network>
