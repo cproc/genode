@@ -26,6 +26,8 @@ INC_DIR += $(call select_from_repositories,src/lib/pthread)
 
 INC_DIR += $(VBOX_DIR)/Runtime/include
 
+SRC_CC += HostDrivers/VBoxUSB/USBFilter.cpp
+
 SRC_CC += HostServices/SharedFolders/service.cpp
 SRC_CC += HostServices/SharedFolders/mappings.cpp
 SRC_CC += HostServices/SharedFolders/vbsf.cpp

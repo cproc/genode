@@ -25,35 +25,6 @@
  namespace com
  {
 +++ src/app/virtualbox/include/VBox/com/string.h
-@@ -109,11 +109,13 @@
-     }
- 
- #if defined(VBOX_WITH_XPCOM)
-+/*
-     Bstr(const wchar_t *that)
-     {
-         AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
-         copyFrom((const OLECHAR *)that);
-     }
-+*/
- #endif
- 
-     Bstr(const RTCString &that)
-@@ -151,12 +153,14 @@
-     }
- 
- #if defined(VBOX_WITH_XPCOM)
-+/*
-     Bstr& operator=(const wchar_t *that)
-     {
-         cleanup();
-         copyFrom((const OLECHAR *)that);
-         return *this;
-     }
-+*/
- #endif
- 
-     Bstr& setNull()
 @@ -247,7 +251,7 @@
       *  returns a pointer to a global variable containing an empty BSTR with a proper zero
       *  length prefix so that Windows is happy.
