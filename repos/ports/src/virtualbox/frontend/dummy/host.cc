@@ -3,6 +3,7 @@
 #include "VirtualBoxBase.h"
 
 #include <VBox/usbfilter.h>
+#include <USBProxyService.h>
 
 static bool debug = false;
 
@@ -24,6 +25,11 @@ static bool debug = false;
 		\
 		return X; \
 	}
+
+struct Host::Data
+{
+	USBProxyService *pUSBProxyService;
+};
 
 STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, drives)) DUMMY(E_FAIL)
 STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, drives)) DUMMY(E_FAIL)
@@ -75,11 +81,24 @@ HRESULT Host::findHostDriveById(DeviceType_T, com::Guid const&, bool,
 
 HRESULT Host::saveSettings(settings::Host&)                                     TRACE(S_OK)
 
-HRESULT Host::init(VirtualBox *aParent)                                         TRACE(S_OK)
+HRESULT Host::init(VirtualBox *aParent)
+{
+	m = new Data();
+
+	m->pUSBProxyService = new USBProxyService(this);	
+
+	return S_OK;
+}
+
 HRESULT Host::loadSettings(const settings::Host &)                              TRACE(S_OK)
 HRESULT Host::FinalConstruct()                                                  TRACE(S_OK)
 void    Host::FinalRelease()                                                    DUMMY()
-void    Host::uninit()                                                          DUMMY()
+
+void    Host::uninit()
+{
+	delete m;
+	m = 0;
+}
 
 void Host::generateMACAddress(Utf8Str &mac)
 {
@@ -123,7 +142,7 @@ HRESULT Host::buildFloppyDrivesList(MediaList &list) DUMMY(E_FAIL)
 #ifdef VBOX_WITH_USB
 USBProxyService* Host::usbProxyService()
 {
-	TRACE(nullptr)
+	return m->pUSBProxyService;
 }
 
 HRESULT Host::addChild(HostUSBDeviceFilter *pChild)                             DUMMY(E_FAIL)
@@ -136,5 +155,4 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters)             
 
 HRESULT Host::checkUSBProxyService()                                            TRACE(S_OK)
 
-int  USBFilterMatchRated(PCUSBFILTER pFilter, PCUSBFILTER pDevice)              DUMMY(-1)
 #endif

@@ -29,7 +29,19 @@ class Medium;
 typedef std::list<ComObjPtr<Medium> > MediaList;
 typedef std::list<Utf8Str> StringsList;
 
-class VirtualBoxBase : public util::Lockable {
+class VirtualBoxTranslatable : public util::Lockable
+{
+	public:
+
+		/* should be used for translations */
+		inline static const char *tr(const char *pcszSourceText,
+		                             const char *aComment = NULL)
+		{
+			return pcszSourceText;
+		}
+};
+
+class VirtualBoxBase : public VirtualBoxTranslatable {
 
 	public:
 
@@ -88,13 +100,6 @@ class VirtualBoxBase : public util::Lockable {
 
 		virtual const char* getComponentName() const = 0;
 
-		/* should be used for translations */
-		inline static const char *tr(const char *pcszSourceText,
-		                             const char *aComment = NULL)
-		{
-			return pcszSourceText;
-		}
-
 		static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
 		static HRESULT initializeComForThread(void);
 		static void clearError(void);
@@ -117,8 +122,6 @@ class VirtualBoxBase : public util::Lockable {
 
 		RWLockHandle * lockHandle() const;
 };
-
-class VirtualBoxTranslatable : public util::Lockable { };
 
 template <typename T>
 class Shareable {
