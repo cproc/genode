@@ -3,6 +3,8 @@
 
 #include <VBox/com/defs.h>
 
+#include <base/printf.h>
+
 template <typename T>
 class ComPtr {
 
@@ -24,6 +26,19 @@ class ComPtr {
 		/* operators */
 		T * operator->() const  { return _obj; }
         operator T*() const     { return _obj; }
+
+		template <class T2>
+		ComPtr& operator=(const ComPtr<T2> &that)
+		{
+			return operator=((T2*)that);
+		}
+
+		template <class T2>
+		ComPtr& operator=(T2 *p)
+		{
+			_obj = (T*)p;
+			return *this;
+		}
 
 		bool isNull () const    { return _obj == nullptr; }
 

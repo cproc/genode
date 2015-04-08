@@ -67,6 +67,9 @@ CC_WARN += -Wno-trigraphs
 
 CC_OPT += $(VBOX_CC_OPT)
 
+# VirtualBox expects wchar_t to be a 16-bit type. yasm does not understand this flag, therefore it gets added to CC_OPT.
+CC_OPT += -fshort-wchar
+
 LIBS += libc libm 
 
 INC_DIR += $(REP_DIR)/src/virtualbox/include

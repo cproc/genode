@@ -66,24 +66,21 @@ HRESULT Console::SleepButton()                                                  
 HRESULT Console::GetPowerButtonHandled(bool*)                                   DUMMY(E_FAIL)
 HRESULT Console::GetGuestEnteredACPIMode(bool*)                                 DUMMY(E_FAIL)
 HRESULT Console::SaveState(Progress**)                                          DUMMY(E_FAIL)
-HRESULT Console::AdoptSavedState(unsigned short*)                               DUMMY(E_FAIL)
+HRESULT Console::AdoptSavedState(IN_BSTR)                                       DUMMY(E_FAIL)
 HRESULT Console::DiscardSavedState(bool)                                        DUMMY(E_FAIL)
 HRESULT Console::GetDeviceActivity(DeviceType_T, DeviceActivity_T*)             DUMMY(E_FAIL)
-HRESULT Console::AttachUSBDevice(unsigned short*)                               DUMMY(E_FAIL)
-HRESULT Console::DetachUSBDevice(unsigned short*, IUSBDevice**)                 DUMMY(E_FAIL)
-HRESULT Console::FindUSBDeviceByAddress(unsigned short*, IUSBDevice**)          DUMMY(E_FAIL)
-HRESULT Console::FindUSBDeviceById(unsigned short*, IUSBDevice**)               DUMMY(E_FAIL)
-HRESULT Console::CreateSharedFolder(unsigned short*, unsigned short*, bool,
-                                    bool)                                       DUMMY(E_FAIL)
-HRESULT Console::RemoveSharedFolder(unsigned short*) DUMMY(E_FAIL)
-HRESULT Console::TakeSnapshot(unsigned short*, unsigned short*, Progress**)     DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshot(unsigned short*, Progress**)                    DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotAndAllChildren(unsigned short*, Progress**)      DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotRange(unsigned short*, unsigned short*,
-                                     Progress**)                                DUMMY(E_FAIL)
+HRESULT Console::AttachUSBDevice(IN_BSTR)                                       DUMMY(E_FAIL)
+HRESULT Console::DetachUSBDevice(IN_BSTR, IUSBDevice**)                         DUMMY(E_FAIL)
+HRESULT Console::FindUSBDeviceByAddress(IN_BSTR, IUSBDevice**)                  DUMMY(E_FAIL)
+HRESULT Console::FindUSBDeviceById(IN_BSTR, IUSBDevice**)                       DUMMY(E_FAIL)
+HRESULT Console::CreateSharedFolder(IN_BSTR, IN_BSTR, BOOL, BOOL)               DUMMY(E_FAIL)
+HRESULT Console::RemoveSharedFolder(IN_BSTR)                                    DUMMY(E_FAIL)
+HRESULT Console::TakeSnapshot(IN_BSTR, IN_BSTR, Progress**)                     DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshot(IN_BSTR, Progress**)                            DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotAndAllChildren(IN_BSTR, Progress**)              DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotRange(IN_BSTR, IN_BSTR, Progress**)              DUMMY(E_FAIL)
 HRESULT Console::RestoreSnapshot(Snapshot*, Progress**)                         DUMMY(E_FAIL)
-HRESULT Console::Teleport(unsigned short*, unsigned int, unsigned short*,
-                          unsigned int, Progress**)                             DUMMY(E_FAIL)
+HRESULT Console::Teleport(IN_BSTR, ULONG, IN_BSTR, ULONG, IProgress **)         DUMMY(E_FAIL)
 HRESULT Console::setDiskEncryptionKeys(const Utf8Str &strCfg)                   DUMMY(E_FAIL)
 
 void    Console::onAdditionsStateChange()                                       TRACE()
@@ -100,8 +97,18 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)                   
 HRESULT Console::onStorageControllerChange()                                    DUMMY(E_FAIL)
 HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL)     DUMMY(E_FAIL)
 HRESULT Console::onVRDEServerChange(BOOL aRestart)                              DUMMY(E_FAIL)
-HRESULT Console::onUSBDeviceAttach(IUSBDevice *, IVirtualBoxErrorInfo *, ULONG) DUMMY(E_FAIL)
+#if 0
+HRESULT Console::onUSBDeviceAttach(IUSBDevice *, IVirtualBoxErrorInfo *, ULONG)
+{
+	RTLogPrintf("Console::onUSBDeviceAttach()\n");
+
+	return E_FAIL;
+}
+#endif
 HRESULT Console::onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError)   DUMMY(E_FAIL)
+void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
+                                     IVirtualBoxErrorInfo *aError)              DUMMY()
+
 HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)      DUMMY(E_FAIL)
 HRESULT Console::onNetworkAdapterChange(INetworkAdapter *, BOOL changeAdapter)  DUMMY(E_FAIL)
 HRESULT Console::onStorageDeviceChange(IMediumAttachment *, BOOL, BOOL)         DUMMY(E_FAIL)
@@ -111,3 +118,13 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)             
 HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                    ULONG aSourceIdx, ULONG aTargetIdx,
                                    IProgress *aProgress)                        DUMMY(E_FAIL)
+
+void Console::onMouseCapabilityChange(BOOL supportsAbsolute,
+                                      BOOL supportsRelative,
+                                      BOOL supportsMT,
+                                      BOOL needsHostCursor) TRACE()
+void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
+                                           uint32_t xHot, uint32_t yHot,
+                                           uint32_t width, uint32_t height,
+                                           ComSafeArrayIn(uint8_t, aShape)) TRACE()
+
