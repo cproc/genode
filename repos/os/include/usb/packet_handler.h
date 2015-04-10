@@ -14,6 +14,8 @@
 #define _INCLUDE__USB__PACKET_HANDLER_
 
 #include <base/lock.h>
+#include <os/server.h>
+#include <os/signal_rpc_dispatcher.h>
 #include <usb_session/connection.h>
 
 namespace Usb { class Packet_handler; }
