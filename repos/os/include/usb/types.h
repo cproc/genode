@@ -16,6 +16,7 @@
 
 #include <base/stdint.h>
 #include <base/printf.h>
+#include <util/string.h>
 
 namespace Usb {
 	struct Device_descriptor;

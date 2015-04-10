@@ -124,9 +124,13 @@ append_if [expr $use_ps2] config {
 append_if [expr $use_usb] config {
 	<start name="usb_drv" priority="-1">
 		<resource name="RAM" quantum="7M"/>
-		<provides><service name="Input"/></provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
-			<hid/>
+		<provides>
+			<!--<service name="Input"/>-->
+			<service name="Usb" />
+		</provides>
+		<config uhci="yes" ehci="yes" xhci="no">
+			<!--<hid/>-->
+			<raw/>
 		</config>
 		<route>
 			<service name="IRQ"><child name="acpi" /></service>
