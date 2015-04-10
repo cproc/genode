@@ -56,7 +56,9 @@
         <Controllers>
           <Controller name="OHCI" type="OHCI"/>
         </Controllers>
-        <DeviceFilters/>
+        <DeviceFilters>
+			<DeviceFilter name="USB Optical Mouse [0200]" active="true" vendorId="04b3" productId="310c" revision="0200" product="USB Optical Mouse" remote="0"/>
+        </DeviceFilters>
       </USB>
       <Network>
         <Adapter slot="0" enabled="false" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
