@@ -6,6 +6,7 @@ CC_WARN += -Wall
 
 TARGET = virtualbox
 SRC_CC = frontend/main.cc frontend/console.cc \
+         frontend/USBProxyDevice-genode.cpp \
          devices.cc drivers.cc dummies.cc libc.cc \
          logger.cc mm.cc pdm.cc pgm.cc rt.cc sup.cc iommio.cc ioport.cc \
          hm.cc thread.cc dynlib.cc unimpl.cc  
@@ -26,6 +27,8 @@ INC_DIR += $(call select_from_repositories,src/lib/pthread)
 
 INC_DIR += $(VBOX_DIR)/Runtime/include
 
+SRC_CC += HostDrivers/VBoxUSB/USBFilter.cpp
+
 SRC_CC += HostServices/SharedFolders/service.cpp
 SRC_CC += HostServices/SharedFolders/mappings.cpp
 SRC_CC += HostServices/SharedFolders/vbsf.cpp
@@ -40,6 +43,7 @@ INC_DIR += $(VBOX_DIR)/VMM/include
 
 INC_DIR += $(REP_DIR)/src/virtualbox/frontend
 INC_DIR += $(VBOX_DIR)/Main/xml
+INC_DIR += $(VBOX_DIR)/Devices/USB
 
 # search path to 'scan_code_set_2.h'
 INC_DIR += $(call select_from_repositories,src/drivers/input/ps2)

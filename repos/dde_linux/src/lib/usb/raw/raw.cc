@@ -27,7 +27,7 @@ using namespace Genode;
 
 extern "C" int usb_set_configuration(struct usb_device *dev, int configuration);
 
-constexpr bool verbose_raw = false;
+constexpr bool verbose_raw = true;
 
 
 namespace Usb {
@@ -125,6 +125,7 @@ class Usb::Worker
 		 */
 		void _ctrl_in(Packet_descriptor &p)
 		{
+		PDBG("_ctrl_in");
 			void *buf = kmalloc(4096, GFP_NOIO);
 
 			int err = usb_control_msg(_device->udev, usb_rcvctrlpipe(_device->udev, 0),
@@ -150,6 +151,7 @@ class Usb::Worker
 		 */
 		void _ctrl_out(Packet_descriptor &p)
 		{
+		PDBG("_ctrl_out");
 			void *buf = kmalloc(4096, GFP_NOIO);
 
 			if (p.size())
@@ -491,6 +493,8 @@ class Usb::Session_component : public Session_rpc_object,
 			_device = Device::device(_vendor, _product);
 			if (_device)
 				PDBG("Found device");
+			else
+				PDBG("Device not found");
 
 			/* register signal handlers */
 			_tx.sigh_packet_avail(_packet_avail);
