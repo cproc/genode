@@ -4,6 +4,9 @@
 
 #include "ConsoleImpl.h"
 #include "MachineImpl.h"
+#include "MouseImpl.h"
+
+#include "console.h"
 
 static const bool debug = false;
 
@@ -66,24 +69,21 @@ HRESULT Console::SleepButton()                                                  
 HRESULT Console::GetPowerButtonHandled(bool*)                                   DUMMY(E_FAIL)
 HRESULT Console::GetGuestEnteredACPIMode(bool*)                                 DUMMY(E_FAIL)
 HRESULT Console::SaveState(Progress**)                                          DUMMY(E_FAIL)
-HRESULT Console::AdoptSavedState(unsigned short*)                               DUMMY(E_FAIL)
+HRESULT Console::AdoptSavedState(IN_BSTR)                                       DUMMY(E_FAIL)
 HRESULT Console::DiscardSavedState(bool)                                        DUMMY(E_FAIL)
 HRESULT Console::GetDeviceActivity(DeviceType_T, DeviceActivity_T*)             DUMMY(E_FAIL)
-HRESULT Console::AttachUSBDevice(unsigned short*)                               DUMMY(E_FAIL)
-HRESULT Console::DetachUSBDevice(unsigned short*, IUSBDevice**)                 DUMMY(E_FAIL)
-HRESULT Console::FindUSBDeviceByAddress(unsigned short*, IUSBDevice**)          DUMMY(E_FAIL)
-HRESULT Console::FindUSBDeviceById(unsigned short*, IUSBDevice**)               DUMMY(E_FAIL)
-HRESULT Console::CreateSharedFolder(unsigned short*, unsigned short*, bool,
-                                    bool)                                       DUMMY(E_FAIL)
-HRESULT Console::RemoveSharedFolder(unsigned short*) DUMMY(E_FAIL)
-HRESULT Console::TakeSnapshot(unsigned short*, unsigned short*, Progress**)     DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshot(unsigned short*, Progress**)                    DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotAndAllChildren(unsigned short*, Progress**)      DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotRange(unsigned short*, unsigned short*,
-                                     Progress**)                                DUMMY(E_FAIL)
+HRESULT Console::AttachUSBDevice(IN_BSTR)                                       DUMMY(E_FAIL)
+HRESULT Console::DetachUSBDevice(IN_BSTR, IUSBDevice**)                         DUMMY(E_FAIL)
+HRESULT Console::FindUSBDeviceByAddress(IN_BSTR, IUSBDevice**)                  DUMMY(E_FAIL)
+HRESULT Console::FindUSBDeviceById(IN_BSTR, IUSBDevice**)                       DUMMY(E_FAIL)
+HRESULT Console::CreateSharedFolder(IN_BSTR, IN_BSTR, BOOL, BOOL)               DUMMY(E_FAIL)
+HRESULT Console::RemoveSharedFolder(IN_BSTR)                                    DUMMY(E_FAIL)
+HRESULT Console::TakeSnapshot(IN_BSTR, IN_BSTR, Progress**)                     DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshot(IN_BSTR, Progress**)                            DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotAndAllChildren(IN_BSTR, Progress**)              DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotRange(IN_BSTR, IN_BSTR, Progress**)              DUMMY(E_FAIL)
 HRESULT Console::RestoreSnapshot(Snapshot*, Progress**)                         DUMMY(E_FAIL)
-HRESULT Console::Teleport(unsigned short*, unsigned int, unsigned short*,
-                          unsigned int, Progress**)                             DUMMY(E_FAIL)
+HRESULT Console::Teleport(IN_BSTR, ULONG, IN_BSTR, ULONG, IProgress **)         DUMMY(E_FAIL)
 HRESULT Console::setDiskEncryptionKeys(const Utf8Str &strCfg)                   DUMMY(E_FAIL)
 
 void    Console::onAdditionsStateChange()                                       TRACE()
@@ -100,8 +100,14 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)                   
 HRESULT Console::onStorageControllerChange()                                    DUMMY(E_FAIL)
 HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL)     DUMMY(E_FAIL)
 HRESULT Console::onVRDEServerChange(BOOL aRestart)                              DUMMY(E_FAIL)
-HRESULT Console::onUSBDeviceAttach(IUSBDevice *, IVirtualBoxErrorInfo *, ULONG) DUMMY(E_FAIL)
 HRESULT Console::onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError)   DUMMY(E_FAIL)
+
+void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
+                                     IVirtualBoxErrorInfo *aError)
+{
+	RTLogPrintf("Console::onUSBDeviceStateChange(): attached = %d\n", aAttached);
+}
+
 HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)      DUMMY(E_FAIL)
 HRESULT Console::onNetworkAdapterChange(INetworkAdapter *, BOOL changeAdapter)  DUMMY(E_FAIL)
 HRESULT Console::onStorageDeviceChange(IMediumAttachment *, BOOL, BOOL)         DUMMY(E_FAIL)
@@ -111,3 +117,164 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)             
 HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                    ULONG aSourceIdx, ULONG aTargetIdx,
                                    IProgress *aProgress)                        DUMMY(E_FAIL)
+
+void GenodeConsole::eventWait(IKeyboard * gKeyboard, IMouse * gMouse)
+{
+	static LONG64 mt_events [64];
+	unsigned      mt_number = 0;
+
+	_receiver.wait_for_signal();
+
+	/* read out input capabilities of guest */
+	bool guest_abs = false, guest_rel = false, guest_multi = false;
+	gMouse->COMGETTER(AbsoluteSupported)(&guest_abs);
+	gMouse->COMGETTER(RelativeSupported)(&guest_rel);
+	gMouse->COMGETTER(MultiTouchSupported)(&guest_multi);
+
+	for (int i = 0, num_ev = _input.flush(); i < num_ev; ++i) {
+		Input::Event &ev = _ev_buf[i];
+
+		bool const is_press   = ev.type() == Input::Event::PRESS;
+		bool const is_release = ev.type() == Input::Event::RELEASE;
+		bool const is_key     = is_press || is_release;
+		bool const is_motion  = ev.type() == Input::Event::MOTION;
+		bool const is_wheel   = ev.type() == Input::Event::WHEEL;
+		bool const is_touch   = ev.type() == Input::Event::TOUCH;
+
+		if (is_key) {
+			Scan_code scan_code(ev.keycode());
+
+			unsigned char const release_bit =
+				(ev.type() == Input::Event::RELEASE) ? 0x80 : 0;
+
+			if (scan_code.is_normal())
+				gKeyboard->PutScancode(scan_code.code() | release_bit);
+
+			if (scan_code.is_ext()) {
+				gKeyboard->PutScancode(0xe0);
+				gKeyboard->PutScancode(scan_code.ext() | release_bit);
+			}
+		}
+
+		/*
+		 * Track press/release status of keys and buttons. Currently,
+		 * only the mouse-button states are actually used.
+		 */
+		if (is_press)
+			_key_status[ev.keycode()] = true;
+
+		if (is_release)
+			_key_status[ev.keycode()] = false;
+
+		bool const is_mouse_button_event =
+			is_key && _is_mouse_button(ev.keycode());
+
+		bool const is_mouse_event = is_mouse_button_event || is_motion;
+
+		if (is_mouse_event) {
+			unsigned const buttons = (_key_status[Input::BTN_LEFT]   ? MouseButtonState_LeftButton : 0)
+					               | (_key_status[Input::BTN_RIGHT]  ? MouseButtonState_RightButton : 0)
+					               | (_key_status[Input::BTN_MIDDLE] ? MouseButtonState_MiddleButton : 0);
+			if (ev.is_absolute_motion()) {
+
+				_last_received_motion_event_was_absolute = true;
+
+				/* transform absolute to relative if guest is so odd */
+				if (!guest_abs && guest_rel) {
+					int const boundary = 20;
+					int rx = ev.ax() - _ax;
+					int ry = ev.ay() - _ay;
+					rx = Genode::min(boundary, Genode::max(-boundary, rx));
+					ry = Genode::min(boundary, Genode::max(-boundary, ry));
+					gMouse->PutMouseEvent(rx, ry, 0, 0, buttons);
+				} else
+					gMouse->PutMouseEventAbsolute(ev.ax(), ev.ay(), 0,
+							                      0, buttons);
+
+				_ax = ev.ax();
+				_ay = ev.ay();
+
+			} else if (ev.is_relative_motion()) {
+
+				_last_received_motion_event_was_absolute = false;
+
+				/* prefer relative motion event */
+				if (guest_rel)
+					gMouse->PutMouseEvent(ev.rx(), ev.ry(), 0, 0, buttons);
+				else if (guest_abs) {
+					_ax += ev.rx();
+					_ay += ev.ry();
+					gMouse->PutMouseEventAbsolute(_ax, _ay, 0, 0, buttons);
+				}
+			}
+			/* only the buttons changed */
+			else {
+
+				if (_last_received_motion_event_was_absolute) {
+					/* prefer absolute button event */
+					if (guest_abs)
+						gMouse->PutMouseEventAbsolute(_ax, _ay, 0, 0, buttons);
+					else if (guest_rel)
+						gMouse->PutMouseEvent(0, 0, 0, 0, buttons);
+				} else {
+					/* prefer relative button event */
+					if (guest_rel)
+						gMouse->PutMouseEvent(0, 0, 0, 0, buttons);
+					else if (guest_abs)
+						gMouse->PutMouseEventAbsolute(_ax, _ay, 0, 0, buttons);
+				}
+
+			}
+		}
+
+		if (is_wheel)
+			gMouse->PutMouseEvent(0, 0, ev.rx(), ev.ry(), 0);
+
+		if (is_touch) {
+			/* if multitouch queue is full - send it */
+			if (mt_number >= sizeof(mt_events) / sizeof(mt_events[0])) {
+				gMouse->PutEventMultiTouch(mt_number, mt_number,
+						                   mt_events, RTTimeMilliTS());
+				mt_number = 0;
+			}
+
+			int x    = ev.ax();
+			int y    = ev.ay();
+			int slot = ev.code();
+
+			/* Mouse::putEventMultiTouch drops values of 0 */
+			if (x <= 0) x = 1;
+			if (y <= 0) y = 1;
+
+			enum MultiTouch {
+				None = 0x0,
+				InContact = 0x01,
+				InRange = 0x02
+			};
+
+			int status = MultiTouch::InContact | MultiTouch::InRange;
+			if (ev.is_touch_release())
+				status = MultiTouch::None;
+
+			uint16_t const s = RT_MAKE_U16(slot, status);
+			mt_events[mt_number++] = RT_MAKE_U64_FROM_U16(x, y, s, 0);
+		}
+
+	}
+
+	/* if there are elements - send it */
+	if (mt_number)
+		gMouse->PutEventMultiTouch(mt_number, mt_number, mt_events,
+				                   RTTimeMilliTS());
+}
+
+void GenodeConsole::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative,
+		                                    BOOL supportsMT, BOOL needsHostCursor)
+{
+	if (supportsAbsolute) {
+		/* let the guest hide the software cursor */
+		Mouse *gMouse = getMouse();
+		gMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
+	}
+}
+
