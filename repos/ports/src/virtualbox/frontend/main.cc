@@ -120,17 +120,18 @@ HRESULT setupmachine()
 	if (FAILED(rc))
 		return rc;
 
-	/* Console object */
-	GenodeConsole * gConsole = new GenodeConsole();
+#if 0
 	/* Derived from Session::AssignMachine method in Main/src-client/SessionImpl.cpp */
 	static IInternalMachineControl control;
 	rc = control.init(machine);
 	if (FAILED(rc))
 		return rc;
-
+#endif
+#if 0
 	rc = gConsole->init(machine, &control, LockType_VM);
 	if (FAILED(rc))
 		return rc;
+#endif
 
 	/* Validate configured memory of vbox file and Genode config */
 	ULONG memory_vbox;
@@ -152,6 +153,10 @@ HRESULT setupmachine()
 		PERR("(3) maximal available memory to VM");
 		return E_FAIL;
 	}
+
+	/* Console object */
+	ComPtr<IConsole> gConsole;
+	rc = session->COMGETTER(Console)(gConsole.asOutParam());
 
 	/* Display object */
 	ComPtr<Display> display;
@@ -203,8 +208,10 @@ HRESULT setupmachine()
 	Assert (&*gKeyboard);
 
 	/* handle input of Genode and forward it to VMM layer */
+	ComPtr<GenodeConsole> genodeConsole = gConsole;
+	RTLogPrintf("genodeConsole = %p\n", genodeConsole);
 	while (true) {
-		gConsole->eventWait(gKeyboard, gMouse);
+		genodeConsole->eventWait(gKeyboard, gMouse);
 	}
 
 	Assert(!"return not expected");

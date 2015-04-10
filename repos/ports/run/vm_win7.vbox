@@ -9,8 +9,8 @@
   <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Windows XP" OSType="WindowsXP" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{8657bb15-f719-490b-96ef-8894eb4b6aac}" location="/win7.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}" location="/ram/overlay_win7.vdi" format="VDI" autoReset="false"/>
+        <HardDisk uuid="{352926ef-0f0c-499a-bbd2-6927a4c320a7}" location="/win7.vdi" format="VDI" type="Immutable">
+          <HardDisk uuid="{c3bd5fb1-36ae-414f-9633-829f976db46a}" location="/ram/overlay_win7.vdi" format="VDI" autoReset="false"/>
         </HardDisk>
       </HardDisks>
       <DVDImages/>
@@ -56,7 +56,15 @@
         <Controllers>
           <Controller name="OHCI" type="OHCI"/>
         </Controllers>
-        <DeviceFilters/>
+        <DeviceFilters>
+			<DeviceFilter name="USB Keyboard" active="true" vendorId="046a" productId="0001" remote="0"/>
+			<DeviceFilter name="USB Keyboard 2" active="true" vendorId="04f2" productId="0402" remote="0"/>
+			<DeviceFilter name="USB Optical Mouse" active="true" vendorId="04b3" productId="310c" remote="0"/>
+			<DeviceFilter name="USB Stick" active="true" vendorId="05e3" productId="0738" remote="0"/>
+			<DeviceFilter name="USB Stick 2" active="true" vendorId="058f" productId="6387" remote="0"/>
+			<DeviceFilter name="USB Scanner" active="true" vendorId="04a9" productId="2220" remote="0"/>
+			<DeviceFilter name="USB Printer" active="true" vendorId="0482" productId="0015" remote="0"/>
+        </DeviceFilters>
       </USB>
       <Network>
         <Adapter slot="0" enabled="false" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
@@ -93,7 +101,7 @@
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}"/>
+          <Image uuid="{c3bd5fb1-36ae-414f-9633-829f976db46a}"/>
         </AttachedDevice>
         <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
       </StorageController>
