@@ -56,7 +56,11 @@
         <Controllers>
           <Controller name="OHCI" type="OHCI"/>
         </Controllers>
-        <DeviceFilters/>
+        <DeviceFilters>
+			<DeviceFilter name="USB Keyboard" active="true" vendorId="046a" productId="0001" remote="0"/>
+			<DeviceFilter name="USB Optical Mouse" active="true" vendorId="04b3" productId="310c" remote="0"/>
+			<DeviceFilter name="USB Stick" active="true" vendorId="05e3" productId="0738" remote="0"/>
+        </DeviceFilters>
       </USB>
       <Network>
         <Adapter slot="0" enabled="false" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
