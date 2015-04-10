@@ -15,9 +15,7 @@ typedef Progress       IProgress;
 class VirtualBoxErrorInfo;
 typedef VirtualBoxErrorInfo IVirtualBoxErrorInfo;
 
-class IUnknown;
 #include <VBox/com/ErrorInfo.h>
-
 
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/settings.h>
@@ -49,8 +47,6 @@ enum INTNETTRUNKTYPE
 
 class IHostNetworkInterface;
 class IFramebufferOverlay;
-class IInternalSessionControl;
-class IHostUSBDevice;
 class IHostUSBDeviceFilter;
 class IHostVideoInputDevice;
 class IVetoEvent;
@@ -74,6 +70,7 @@ class GuestOSType;
 class GuestProcess;
 class GuestSession;
 class Host;
+class HostUSBDevice;
 class Keyboard;
 class Machine;
 class MachineDebugger;
@@ -157,6 +154,7 @@ typedef ParallelPort        IParallelPort;
 class IPerformanceCollector;
 typedef SerialPort          ISerialPort;
 typedef Session             ISession;
+typedef Session             IInternalSessionControl;
 typedef SharedFolder        ISharedFolder;
 typedef Snapshot            ISnapshot;
 typedef StorageController   IStorageController;
@@ -166,6 +164,7 @@ typedef USBController       IUSBController;
 typedef OUSBDevice          IUSBDevice;
 typedef USBDeviceFilter     IUSBDeviceFilter;
 typedef USBDeviceFilters    IUSBDeviceFilters;
+typedef HostUSBDevice       IHostUSBDevice;
 typedef VirtualBox          IVirtualBox;
 typedef VRDEServer          IVRDEServer;
 typedef VRDEServerInfo      IVRDEServerInfo;
@@ -191,18 +190,15 @@ class IEventListener {
 template <typename X>
 class DummyClass {
 	public:
-		void AddRef() { }
-		void Release() { }
-
-		void fireNATRedirectEvent(const ComObjPtr<EventSource>&, BSTR, ULONG&, bool&, short unsigned int*&, NATProtocol_T&, short unsigned int*&, uint16_t&, short unsigned int*&, uint16_t&);
-		void fireNATNetworkChangedEvent(const ComObjPtr<EventSource>&, short unsigned int*&);
-		void fireNATNetworkStartStopEvent(const ComObjPtr<EventSource>&, short unsigned int*&, BOOL&);
-		void fireNATNetworkSettingEvent(const ComObjPtr<EventSource>&, short unsigned int*&, BOOL&, short unsigned int*&, short unsigned int*&, BOOL&, BOOL&);
-		void fireNATNetworkPortForwardEvent(const ComObjPtr<EventSource>&, short unsigned int*&, BOOL&, BOOL&, short unsigned int*&, NATProtocol_T&, short unsigned int*&, LONG&, short unsigned int*&, LONG&);
-		void fireHostNameResolutionConfigurationChangeEvent(const ComObjPtr<EventSource>&);
-		void fireHostPCIDevicePlugEvent(ComPtr<EventSource>&, BSTR, bool, bool, ComObjPtr<PCIDeviceAttachment>&, void *);
-		void fireStateChangedEvent(const ComObjPtr<EventSource>&, MachineState_T);
-		void fireRuntimeErrorEvent(const ComObjPtr<EventSource>&, BOOL, IN_BSTR, IN_BSTR);
+		void fireNATRedirectEvent(IEventSource *, CBSTR, ULONG, BOOL, CBSTR, NATProtocol_T, CBSTR, LONG, CBSTR, LONG);
+		void fireNATNetworkChangedEvent(IEventSource*, CBSTR);
+		void fireNATNetworkStartStopEvent(IEventSource*, CBSTR, BOOL);
+		void fireNATNetworkSettingEvent(IEventSource*, CBSTR, BOOL, CBSTR, CBSTR, BOOL, BOOL);
+		void fireNATNetworkPortForwardEvent(IEventSource*, CBSTR, BOOL, BOOL, CBSTR, NATProtocol_T, CBSTR, LONG, CBSTR, LONG);
+		void fireHostNameResolutionConfigurationChangeEvent(IEventSource*);
+		void fireHostPCIDevicePlugEvent(IEventSource*, CBSTR, BOOL, BOOL, IPCIDeviceAttachment*, CBSTR);
+		void fireStateChangedEvent(IEventSource*, MachineState_T);
+		void fireRuntimeErrorEvent(IEventSource*, BOOL, CBSTR, CBSTR);
 };
 
 #define ATL_NO_VTABLE
