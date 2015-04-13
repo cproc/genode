@@ -82,8 +82,8 @@ class Pci_driver
 				Device::Resource res = client.resource(i);
 				_dev->resource[i].start = res.base();
 				_dev->resource[i].end   = res.base() + res.size() - 1;
-				_dev->resource[i].flags = res.type() == Device::Resource::IO
-				                        ? IORESOURCE_IO : 0;
+				_dev->resource[i].flags = res.type() == Device::Resource::IO ?  IORESOURCE_IO :
+				                          res.type() == Device::Resource::MEMORY ? IORESOURCE_MEM : 0;
 
 				/* request port I/O session */
 				if (res.type() == Device::Resource::IO) {

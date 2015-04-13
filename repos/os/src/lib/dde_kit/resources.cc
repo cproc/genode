@@ -259,7 +259,7 @@ static Range_database<Mem_range> *mem_db()
 }
 
 
-class Mem_range : public Range, public Io_mem_connection
+class Mem_range : public Range, public Io_mem_session_client
 {
 	private:
 
@@ -271,9 +271,10 @@ class Mem_range : public Range, public Io_mem_connection
 
 	public:
 
-		Mem_range(addr_t base, size_t size, bool wc)
+		Mem_range(addr_t base, size_t size, bool wc,
+		          Genode::Io_mem_session_capability io_cap)
 		:
-			Range(base, size), Io_mem_connection(base, size, wc),
+			Range(base, size), Io_mem_session_client(io_cap),
 			_wc(wc), _ds(dataspace())
 		{
 			if (!_ds.valid()) throw Resource_not_accessible();
@@ -297,7 +298,9 @@ class Mem_range : public Range, public Io_mem_connection
 
 
 extern "C" int dde_kit_request_mem(dde_kit_addr_t addr, dde_kit_size_t size,
-                                   int wc, dde_kit_addr_t *vaddr)
+                                   int wc, dde_kit_addr_t *vaddr,
+                                   dde_kit_uint8_t bus, dde_kit_uint8_t dev,
+                                   dde_kit_uint8_t func, dde_kit_uint8_t bar)
 {
 	/*
 	 * We check if a resource comprising the requested region was allocated
@@ -323,7 +326,7 @@ extern "C" int dde_kit_request_mem(dde_kit_addr_t addr, dde_kit_size_t size,
 
 	/* request resource if no previous allocation was found */
 	try {
-		*vaddr = (new (env()->heap()) Mem_range(addr, size, !!wc))->vaddr();
+		*vaddr = (new (env()->heap()) Mem_range(addr, size, !!wc, Dde_kit::Device::io_mem(bus, dev, func, bar)))->vaddr();
 
 		return 0;
 	} catch (...) {

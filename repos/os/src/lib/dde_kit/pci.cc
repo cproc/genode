@@ -24,6 +24,7 @@
 #include <dataspace/client.h>
 
 #include <io_port_session/capability.h>
+#include <io_mem_session/capability.h>
 
 extern "C" {
 #include <dde_kit/pci.h>
@@ -59,6 +60,10 @@ void Dde_kit::Device::ack_irq(int bus, int dev, int fun)
 
 Genode::Io_port_session_capability Dde_kit::Device::io_port(int bus, int dev, int fun, unsigned short bda) {
 	return pci_tree()->io_port(bus, dev, fun, bda); }
+
+
+Genode::Io_mem_session_capability Dde_kit::Device::io_mem(int bus, int dev, int fun, unsigned short bar) {
+	return pci_tree()->io_mem(bus, dev, fun, bar); }
 
 
 /********************************

@@ -152,7 +152,8 @@ class Driver
 					Pci::Device::Resource res = client.resource(i);
 					ossdev->res[i].base = res.base();
 					ossdev->res[i].size = res.size();
-					ossdev->res[i].io = res.type() == Pci::Device::Resource::IO ? 1 : 0;
+					ossdev->res[i].type = res.type() == Pci::Device::Resource::IO ? resource::IO :
+					                      res.type() == Pci::Device::Resource::MEMORY ? resource::MEMORY : resource::INVALID;
 				}
 
 				ossdev->drv = driver;

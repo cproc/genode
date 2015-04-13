@@ -106,8 +106,13 @@ extern "C" int pci_read_config_irq(oss_device_t *osdev, offset_t where, unsigned
 
 extern "C" void *pci_map(oss_device_t *osdev, int resource, addr_t phys, size_t size)
 {
+	if (resource >= Pci::Device::NUM_RESOURCES || resource < 0 ||
+	    osdev->res[resource].type != resource::MEMORY)
+		return 0;
+
 	addr_t addr;
-	if (dde_kit_request_mem(phys, size, 0, &addr))
+	if (dde_kit_request_mem(phys, size, 0, &addr, resource, osdev->bus,
+	                        osdev->dev, osdev->fun))
 		return 0;
 
 	return (void *)addr;
@@ -117,7 +122,7 @@ extern "C" void *pci_map(oss_device_t *osdev, int resource, addr_t phys, size_t 
 extern "C" oss_native_word pci_map_io(struct _oss_device_t *osdev, int resource, unsigned base)
 {
 	if (resource >= Pci::Device::NUM_RESOURCES || resource < 0 ||
-	    !osdev->res[resource].io)
+	    osdev->res[resource].type != resource::IO)
 		return 0;
 
 	dde_kit_request_io(osdev->res[resource].base, osdev->res[resource].size,

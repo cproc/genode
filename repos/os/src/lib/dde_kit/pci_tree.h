@@ -24,6 +24,7 @@
 #include <pci_device/client.h>
 
 #include <io_port_session/capability.h>
+#include <io_mem_session/capability.h>
 #include <irq_session/connection.h>
 
 namespace Dde_kit {
@@ -166,6 +167,9 @@ namespace Dde_kit {
 
 			Genode::Io_port_session_capability io_port(unsigned short bar) {
 				return _device.io_port(_device.phys_bar_to_virt(bar)); }
+
+			Genode::Io_mem_session_capability io_mem(unsigned short bar) {
+				return _device.io_mem(_device.phys_bar_to_virt(bar)); }
 	};
 
 	class Pci_tree
@@ -326,6 +330,15 @@ namespace Dde_kit {
 				unsigned short bdf = Pci_device::knit_bdf(bus, dev, fun);
 
 				return _lookup(bdf)->io_port(bda);
+			}
+
+			Io_mem_session_capability io_mem(int bus, int dev, int fun, unsigned short bda)
+			{
+				Lock::Guard lock_guard(_lock);
+
+				unsigned short bdf = Pci_device::knit_bdf(bus, dev, fun);
+
+				return _lookup(bdf)->io_mem(bda);
 			}
 	};
 }

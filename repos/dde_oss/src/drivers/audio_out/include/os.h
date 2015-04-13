@@ -209,8 +209,8 @@ struct resource
 {
 	unsigned base;
 	unsigned size;
-	unsigned io;
-};
+	enum { IO, MEMORY, INVALID } type;
+} typedef resource;
 
 struct _oss_device_t
 {

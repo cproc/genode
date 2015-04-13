@@ -2214,8 +2214,8 @@ void kunmap(struct page *page);
 /**********************
  ** asm-generic/io.h **
  **********************/
-
-void *ioremap(resource_size_t offset, unsigned long size);
+struct pci_dev;
+void *ioremap(resource_size_t offset, unsigned long size, struct pci_dev *);
 void  iounmap(volatile void *addr);
 void *devm_ioremap(struct device *dev, resource_size_t offset,
                    unsigned long size);

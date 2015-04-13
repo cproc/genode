@@ -15,6 +15,7 @@
 #pragma once
 
 #include <base/signal.h>
+#include <io_mem_session/capability.h>
 #include <io_port_session/capability.h>
 
 namespace Dde_kit { class Device; }
@@ -29,4 +30,8 @@ class Dde_kit::Device {
 		static Genode::Io_port_session_capability io_port(int bus, int dev,
 		                                                  int fun,
 		                                                  unsigned short bda);
+
+		static Genode::Io_mem_session_capability io_mem(int bus, int dev,
+		                                                int fun,
+		                                                unsigned short bar);
 };

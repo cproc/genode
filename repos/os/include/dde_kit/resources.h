@@ -100,7 +100,9 @@ void dde_kit_outl(dde_kit_addr_t port, unsigned long val);
  * \return 0 on success, -1 otherwise
  */
 int dde_kit_request_mem(dde_kit_addr_t start, dde_kit_size_t size,
-                        int wc, dde_kit_addr_t *vaddr);
+                        int wc, dde_kit_addr_t *vaddr,
+                        dde_kit_uint8_t bus, dde_kit_uint8_t dev,
+                        dde_kit_uint8_t func, dde_kit_uint8_t bar);
 
 /**
  * Free MMIO range

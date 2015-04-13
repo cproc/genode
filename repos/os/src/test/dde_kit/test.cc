@@ -435,49 +435,6 @@ static void test_pci()
 }
 
 
-static void test_resources()
-{
-	PDBG("=== starting resource test ===");
-
-	dde_kit_addr_t addr, a; dde_kit_size_t size, s; int wc;
-	dde_kit_addr_t vaddr; int ret;
-
-	/* should succeed */
-	addr = 0xf0000000; size = 0x01000000; wc = 1;
-	ret = dde_kit_request_mem(addr, size, wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p (pgtab %p)", addr, addr + size, ret, (void *)vaddr,
-	     (void *)dde_kit_pgtab_get_physaddr((void *)vaddr));
-	/* rerequest resource */
-	ret = dde_kit_request_mem(addr, size, wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p (pgtab %p)", addr, addr + size, ret, (void *)vaddr,
-	     (void *)dde_kit_pgtab_get_physaddr((void *)vaddr));
-	/* rerequest part of resource */
-	a = addr + 0x2000; s = size - 0x2000;
-	ret = dde_kit_request_mem(a, s, wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p", a, a + s, ret, (void *)vaddr);
-	/* rerequest resource with different access type which fails */
-	a = addr + 0x2000; s = size - 0x2000;
-	ret = dde_kit_request_mem(a, s, !wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p", a, a + s, ret, (void *)vaddr);
-	/* request resource overlapping existing which fails */
-	a = addr + size / 2; s = size;
-	ret = dde_kit_request_mem(a, s, wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p", a, a + s, ret, (void *)vaddr);
-	/* release resource */
-	ret = dde_kit_release_mem(addr, size);
-	PDBG("mrel [%04lx,%04lx) => %d (pgtab %p)", addr, addr + size, ret,
-	     (void *)dde_kit_pgtab_get_physaddr((void *)vaddr));
-
-	/* should fail */
-	addr = 0x1000; size = 0x1000; wc = 0;
-	ret = dde_kit_request_mem(addr, size, wc, &vaddr);
-	PDBG("mreq [%04lx,%04lx) => %d @ %p", addr, addr + size, ret, (void *)vaddr);
-	PDBG("mrel [%04lx,%04lx) => %d", addr, addr + size, dde_kit_release_mem(addr, size));
-
-	PDBG("=== finished resource test ===");
-}
-
-
 static void test_timer_fn(void *id)
 {
 	PDBG("timer %ld fired at %ld", (long) id, jiffies);
@@ -561,7 +518,6 @@ int main(int argc, char **argv)
 	if (0) test_memory();
 	if (0) test_thread();
 	if (1) test_pci();
-	if (0) test_resources();
 	if (0) test_timer();
 
 	if (1) test_panic();
