@@ -37,6 +37,7 @@ Thread_capability Cpu_session_component::create_thread(size_t quota,
                                                        Name const &name,
                                                        addr_t utcb)
 {
+PDBG("create_thread(%s)", name.string());
 	/* check for sufficient quota */
 	quota = _local_to_global(quota);
 	if (quota > avail()) { _insuff_for_consume(quota); }
@@ -73,7 +74,11 @@ Thread_capability Cpu_session_component::create_thread(size_t quota,
 
 	_trace_sources.insert(thread->trace_source());
 
-	return _thread_ep->manage(thread);
+	Thread_capability result = _thread_ep->manage(thread);
+
+	PDBG("create_thread() finished");
+
+	return result;
 }
 
 
