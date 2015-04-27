@@ -103,7 +103,7 @@ void start_usb_driver(Server::Entrypoint &ep)
 	Nic::init(ep);
 
 	if (services.raw)
-		Raw::init(ep);
+		Raw::init(ep, services.raw_report_device_list);
 
 	Routine::add(0, 0, "Main", true);
 	Routine::make_main_current();
