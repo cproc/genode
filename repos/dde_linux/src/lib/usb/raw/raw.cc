@@ -27,7 +27,7 @@ using namespace Genode;
 
 extern "C" int usb_set_configuration(struct usb_device *dev, int configuration);
 
-constexpr bool verbose_raw = false;
+constexpr bool verbose_raw = true;
 
 
 namespace Usb {
@@ -99,6 +99,8 @@ class Usb::Worker
 
 		void _ack_packet(Packet_descriptor &p)
 		{
+			static int count = 0;
+		PDBG("_ack_packet(): %d", ++count);
 			_sink->acknowledge_packet(p);
 			_p_in_flight--;
 		}
@@ -126,13 +128,14 @@ class Usb::Worker
 		 */
 		void _ctrl_in(Packet_descriptor &p)
 		{
+		PDBG("_ctrl_in");
 			void *buf = kmalloc(4096, GFP_NOIO);
 
 			int err = usb_control_msg(_device->udev, usb_rcvctrlpipe(_device->udev, 0),
 			                          p.control.request, p.control.request_type,
 			                          p.control.value, p.control.index, buf,
 			                          p.size(), p.control.timeout);
-
+PDBG("err = %d", err);
 			if (err > 0 && p.size())
 				Genode::memcpy(_sink->packet_content(p), buf, err);
 
@@ -152,6 +155,7 @@ class Usb::Worker
 		 */
 		void _ctrl_out(Packet_descriptor &p)
 		{
+		PDBG("_ctrl_out");
 			void *buf = kmalloc(4096, GFP_NOIO);
 
 			if (p.size())
@@ -180,6 +184,7 @@ class Usb::Worker
 
 		void _async_finish(Packet_descriptor &p, urb *urb, bool read)
 		{
+		PDBG("status = %d, actual_size = %zu", urb->status, urb->actual_length);
 			if (urb->status == 0) {
 				p.transfer.actual_size = urb->actual_length;
 				p.succeded             = true;
@@ -384,14 +389,17 @@ class Usb::Worker
 
 		void _wait_for_device()
 		{
+		PDBG("_wait_for_device()");
 			_wait_event(_device);
 			_wait_event(_device->udev->actconfig);
 
 			/* set raw driver */
 			_device->udev->dev.driver = &raw_driver.drvwrap.driver;
-
-			if (_sigh_ready.valid())
+PDBG("checking sigh");
+			if (_sigh_ready.valid()) {
+			PDBG("submitting signal");
 				Signal_transmitter(_sigh_ready).submit(1);
+			}
 
 			_device_ready = true;
 		}
@@ -401,15 +409,18 @@ class Usb::Worker
 		 */
 		void _wait()
 		{
+PDBG("_wait started");
 			/* wait for device to become ready */
 			init_completion(&_packet_avail);
 
 			_wait_for_device();
-
+PDBG("device ready");
 			while (true) {
+PDBG("waiting for completion %p", &_packet_avail);
 				wait_for_completion(&_packet_avail);
-
+PDBG("completion ready, calling _dispatch()");
 				_dispatch();
+PDBG("_dispatch() returned, calling schedule_all()");
 				Routine::schedule_all();
 			}
 		}
@@ -418,6 +429,7 @@ class Usb::Worker
 
 		static int run(void *worker)
 		{
+		PDBG("run()");
 			Worker *w = static_cast<Worker *>(worker);
 			w->_wait();
 			return 0;
@@ -429,10 +441,12 @@ class Usb::Worker
 
 		void start()
 		{
+		PDBG("start(): _routine = %p", _routine);
 			if (!_routine) {
 				_routine = Routine::add(run, this, "worker");
 				Routine::schedule_all();
 			}
+		PDBG("start() finished");
 		}
 
 		void stop()
@@ -442,7 +456,12 @@ class Usb::Worker
 			_routine = nullptr;
 		}
 
-		void packet_avail() { ::complete(&_packet_avail); }
+		void packet_avail()
+		{
+			PDBG("calling complete(%p)", &_packet_avail);
+			::complete(&_packet_avail);
+			PDBG("complete(%p) returned", &_packet_avail);
+		}
 
 		void device(Device *device, Signal_context_capability sigh_ready = Signal_context_capability())
 		{
@@ -475,13 +494,16 @@ class Usb::Session_component : public Session_rpc_object,
 
 		void _signal_state_change()
 		{
+		PDBG("_signal_state_change()");
 			if (_sigh_state_change.valid())
 				Signal_transmitter(_sigh_state_change).submit(1);
 		}
 
 		void _receive(unsigned)
 		{
+		PDBG("_receive()");
 			_worker.packet_avail();
+		PDBG("_worker.packet_avail() returned");
 		}
 
 	public:
@@ -504,10 +526,17 @@ class Usb::Session_component : public Session_rpc_object,
 			if (device) {
 				PDBG("Found device");
 				state_change(DEVICE_ADD, device);
-			}
+			} else
+				PDBG("Device not found");
 
 			/* register signal handlers */
 			_tx.sigh_packet_avail(_packet_avail);
+			PDBG("registered signal handler");
+		}
+
+		~Session_component()
+		{
+			PDBG("session closed");
 		}
 
 		/***********************
@@ -518,6 +547,7 @@ class Usb::Session_component : public Session_rpc_object,
 
 		void claim_interface(unsigned interface_num) override
 		{
+		PDBG("claim_interface(%u)", interface_num);
 			usb_interface *iface   = _device->interface(interface_num);
 			if (!iface)
 				throw Interface_not_found();
@@ -587,6 +617,8 @@ class Usb::Session_component : public Session_rpc_object,
 
 		bool state_change(State state, Device *device)
 		{
+		PDBG("state_change() for device %x:%x", device->udev->descriptor.idVendor,
+		     device->udev->descriptor.idProduct);
 			switch (state) {
 				case DEVICE_ADD:
 					if (!session_device(device))
@@ -634,6 +666,9 @@ struct Session : public List<Usb::Session_component>
 
 	void state_change(Usb::Session_component::State state, Device *device)
 	{
+	PDBG("state_change() for device %x:%x", device->udev->descriptor.idVendor,
+		     device->udev->descriptor.idProduct);
+
 		for (Usb::Session_component *session = list()->first(); session; session = session->next())
 			if (session->state_change(state, device))
 				return;
@@ -699,6 +734,7 @@ void Raw::init(Server::Entrypoint &ep)
 
 void raw_register_device(struct usb_device *udev)
 {
+PDBG("raw_register_device()");
 	::Session::list()->state_change(Usb::Session_component::DEVICE_ADD,
 	                                new (env()->heap()) Device(udev));
 }
@@ -706,6 +742,7 @@ void raw_register_device(struct usb_device *udev)
 
 void raw_unregister_device(struct usb_device *udev)
 {
+PDBG("raw_unregister_device()");
 	Device *dev = Device::device(udev->descriptor.idVendor,
 	                             udev->descriptor.idProduct);
 	if (dev)
