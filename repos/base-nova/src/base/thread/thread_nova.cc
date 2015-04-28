@@ -115,26 +115,32 @@ void Thread_base::_init_platform_thread(size_t, Type type)
 void Thread_base::_deinit_platform_thread()
 {
 	using namespace Nova;
-
+PDBG("_deinit_platform_thread()");
 	if (_tid.ec_sel != Native_thread::INVALID_INDEX) {
 		revoke(Obj_crd(_tid.ec_sel, 1));
 		cap_map()->remove(_tid.ec_sel, 1, false);
 	}
+PDBG("_deinit_platform_thread(): check 1");
 
 	revoke(Obj_crd(_tid.exc_pt_sel, NUM_INITIAL_PT_LOG2));
 	cap_map()->remove(_tid.exc_pt_sel, NUM_INITIAL_PT_LOG2, false);
+PDBG("_deinit_platform_thread(): check 2");
 
 	/* revoke utcb */
 	Rights rwx(true, true, true);
 	addr_t utcb = reinterpret_cast<addr_t>(&_context->utcb);
 	revoke(Mem_crd(utcb >> 12, 0, rwx));
+PDBG("_deinit_platform_thread(): check 3");
 
 	/* de-announce thread */
 	if (_thread_cap.valid())
 		_cpu_session->kill_thread(_thread_cap);
+PDBG("_deinit_platform_thread(): check 4");
 
 	if (_pager_cap.valid())
 		env()->rm_session()->remove_client(_pager_cap);
+PDBG("_deinit_platform_thread(): check 5");
+
 }
 
 

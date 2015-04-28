@@ -37,7 +37,7 @@ Thread_capability Cpu_session_component::create_thread(size_t quota,
                                                        Name const &name,
                                                        addr_t utcb)
 {
-PDBG("create_thread(%s)", name.string());
+PDBG("create_thread(%s), avail: %zu", name.string(), avail());
 	/* check for sufficient quota */
 	quota = _local_to_global(quota);
 	if (quota > avail()) { _insuff_for_consume(quota); }
@@ -76,7 +76,7 @@ PDBG("create_thread(%s)", name.string());
 
 	Thread_capability result = _thread_ep->manage(thread);
 
-	PDBG("create_thread() finished");
+	PDBG("create_thread() finished, avail: %zu", avail());
 
 	return result;
 }
@@ -84,6 +84,7 @@ PDBG("create_thread(%s)", name.string());
 
 void Cpu_session_component::_unsynchronized_kill_thread(Cpu_thread_component *thread)
 {
+PDBG("_unsynchronized_kill_thread(): avail: %zu", avail());
 	_thread_ep->dissolve(thread);
 	_thread_list.remove(thread);
 
@@ -97,6 +98,7 @@ void Cpu_session_component::_unsynchronized_kill_thread(Cpu_thread_component *th
 	destroy(&_thread_alloc, thread);
 
 	_trace_control_area.free(trace_control_index);
+PDBG("_unsynchronized_kill_thread(): finished, avail: %zu", avail());
 }
 
 

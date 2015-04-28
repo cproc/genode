@@ -96,7 +96,7 @@ extern "C" int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 			return 0;
 		/* no haredware support, create normal pthread thread */
 	}
-
+PDBG("*** new thread %s ***", rtthread->szName);
 	pthread_t thread_obj = new (Genode::env()->heap())
 	                           pthread(attr ? *attr : 0, start_routine,
 	                           arg, stack_size, rtthread->szName,
