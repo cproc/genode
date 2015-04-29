@@ -25,7 +25,7 @@ static bool debug = false;
 
 HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
 {
-	Genode::printf(ESC_ERR);
+	//Genode::printf(ESC_ERR);
 
 	va_list list;
 	va_start(list, pcsz);
