@@ -39,7 +39,7 @@ set config_of_app {
 append_if [expr $use_ps2] config_of_app {
 			<input label="ps2" /> }
 append_if [expr $use_usb] config_of_app {
-			<input label="usb_hid" />}
+			<!--<input label="usb_hid" />-->}
 append config_of_app {
 		</config>
 		<route> }
@@ -75,6 +75,7 @@ append config_of_app {
 				<policy label="vbox_pointer -> hover" report="nitpicker -> hover"/>
 				<policy label="vbox_pointer -> xray"  report="nitpicker -> xray"/>
 				<policy label="vbox_pointer -> shape" report="vbox -> shape"/>
+				<policy label="vbox -> usb_devices"   report="usb_drv -> devices"/>
 			</rom>
 		</config>
 	</start>
@@ -156,6 +157,9 @@ append config_of_app {
 			<service name="File_system"> <child name="rump_fs"/> </service>
 			<service name="Framebuffer"> <child name="nit_fb" /> </service>
 			<service name="Input"> <child name="nit_fb" /> </service>
+			<service name="ROM">
+				<if-arg key="label" value="usb_devices"/> <child name="report_rom"/>
+			</service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>

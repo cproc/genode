@@ -23,39 +23,6 @@
          Assert(RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
      }
  
-+++ src/app/virtualbox/src/VBox/Main/src-server/MachineImpl.cpp
-@@ -13571,6 +13582,7 @@
-     AutoCaller autoCaller(this);
-     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
- 
-+#if 0
- #ifdef VBOX_WITH_USB
-     HRESULT rc = mUSBDeviceFilters->notifyProxy(true /* aInsertFilters */);
-     AssertComRC(rc);
-@@ -13579,6 +13591,7 @@
-     USBProxyService *service = mParent->host()->usbProxyService();
-     AssertReturn(service, E_FAIL);
-     return service->autoCaptureDevicesForVM(this);
-+#endif /* if 0 */
- #else
-     return S_OK;
- #endif
-@@ -13601,6 +13614,7 @@
-     AutoCaller autoCaller(this);
-     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
- 
-+#if 0
- #ifdef VBOX_WITH_USB
-     HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
-     AssertComRC(rc);
-@@ -13609,6 +13623,7 @@
-     USBProxyService *service = mParent->host()->usbProxyService();
-     AssertReturn(service, E_FAIL);
-     return service->detachAllDevicesFromVM(this, !!aDone, false /* aAbnormal */);
-+#endif /* if 0 */
- #else
-     NOREF(aDone);
-     return S_OK;
 +++ src/app/virtualbox/src/VBox/Main/include/Matching.h
 @@ -291,10 +291,12 @@
          return mValueAny || mValue == aValue;
