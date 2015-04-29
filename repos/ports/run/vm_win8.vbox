@@ -9,8 +9,8 @@
   <Machine uuid="{179f623e-40a1-4827-995d-251537a53129}" name="Win8" OSType="Windows8" snapshotFolder="Snapshots" lastStateChange="2015-01-08T11:27:52Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{4b8253d7-9c9f-46fc-afdf-e78fa7b8eb2c}" location="/win8.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{9d5f52e5-81ef-45ef-8334-5c644f5a4ef0}" location="/ram/overlay_win8.vdi" format="VDI" autoReset="true"/>
+        <HardDisk uuid="{e3929473-2091-4c79-9a3e-29cb8861e3da}" location="/win8.vdi" format="VDI" type="Immutable">
+          <HardDisk uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}" location="/ram/overlay_win8.vdi" format="VDI" autoReset="false"/>
         </HardDisk>
       </HardDisks>
       <DVDImages/>
@@ -95,7 +95,7 @@
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{9d5f52e5-81ef-45ef-8334-5c644f5a4ef0}"/>
+          <Image uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}"/>
         </AttachedDevice>
         <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
       </StorageController>
