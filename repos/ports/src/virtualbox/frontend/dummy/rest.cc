@@ -175,7 +175,7 @@ STDMETHODIMP NATNetwork::Stop() DUMMY(E_FAIL)
 
 HRESULT com::Shutdown() DUMMY(E_FAIL)
 
-void Display::fireGuestMonitorChangedEvent(EventSource*, GuestMonitorChangedEventType, int, int, int, int, int) DUMMY()
+void Display::fireGuestMonitorChangedEvent(EventSource*, GuestMonitorChangedEventType, int, int, int, int, int) TRACE()
 
 STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR,
                                          ComSafeArrayIn(IN_BSTR, aArguments),
