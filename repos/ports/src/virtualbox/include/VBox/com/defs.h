@@ -3,14 +3,17 @@
 
 #include <iprt/types.h>
 
-typedef       short unsigned int * BSTR;
-typedef       BSTR                 IN_BSTR;
-typedef const short unsigned int * CBSTR;
-typedef       short unsigned int   OLECHAR;
-typedef       unsigned int         PRUint32;
-typedef       OLECHAR              PRUnichar;
 typedef       bool                 BOOL;
 typedef       unsigned char        BYTE;
+
+typedef       unsigned short       PRUint16;
+typedef       unsigned int         PRUint32;
+typedef       PRUint16             PRUnichar;
+
+typedef       wchar_t              OLECHAR;
+typedef       PRUnichar          * BSTR;
+typedef const PRUnichar          * CBSTR;
+typedef       CBSTR                IN_BSTR;
 
 #define       FALSE                false
 #define       TRUE                 true
@@ -630,6 +633,12 @@ enum HWVirtExPropertyType_T
 
 enum USBDeviceState_T
 {
+    USBDeviceState_NotSupported = 0,
+    USBDeviceState_Unavailable = 1,
+    USBDeviceState_Busy = 2,
+    USBDeviceState_Available = 3,
+    USBDeviceState_Held = 4,
+    USBDeviceState_Captured = 5
 };
 
 #endif /* !___VBox_com_defs_h */
