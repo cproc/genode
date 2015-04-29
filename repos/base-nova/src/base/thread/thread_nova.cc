@@ -124,14 +124,16 @@ void Thread_base::_deinit_platform_thread()
 	revoke(Obj_crd(_tid.exc_pt_sel, NUM_INITIAL_PT_LOG2));
 	cap_map()->remove(_tid.exc_pt_sel, NUM_INITIAL_PT_LOG2, false);
 
+	/* de-announce thread */
+	if (_thread_cap.valid())
+		_cpu_session->kill_thread(_thread_cap);
+
+#if 0
 	/* revoke utcb */
 	Rights rwx(true, true, true);
 	addr_t utcb = reinterpret_cast<addr_t>(&_context->utcb);
 	revoke(Mem_crd(utcb >> 12, 0, rwx));
-
-	/* de-announce thread */
-	if (_thread_cap.valid())
-		_cpu_session->kill_thread(_thread_cap);
+#endif
 
 	if (_pager_cap.valid())
 		env()->rm_session()->remove_client(_pager_cap);
