@@ -29,7 +29,31 @@ class Medium;
 typedef std::list<ComObjPtr<Medium> > MediaList;
 typedef std::list<Utf8Str> StringsList;
 
-class VirtualBoxBase : public util::Lockable {
+class IUnknown
+{
+	public:
+
+		/* make the class polymorphic, so it can be used with 'dynamic_cast' */
+		virtual ~IUnknown() { }
+
+		void AddRef() { }
+		void Release() { }
+};
+
+class VirtualBoxTranslatable : public util::Lockable
+{
+	public:
+
+		/* should be used for translations */
+		inline static const char *tr(const char *pcszSourceText,
+		                             const char *aComment = NULL)
+		{
+			return pcszSourceText;
+		}
+};
+
+class VirtualBoxBase : public VirtualBoxTranslatable, public IUnknown
+{
 
 	public:
 
@@ -88,13 +112,6 @@ class VirtualBoxBase : public util::Lockable {
 
 		virtual const char* getComponentName() const = 0;
 
-		/* should be used for translations */
-		inline static const char *tr(const char *pcszSourceText,
-		                             const char *aComment = NULL)
-		{
-			return pcszSourceText;
-		}
-
 		static HRESULT handleUnexpectedExceptions(VirtualBoxBase *const aThis, RT_SRC_POS_DECL);
 		static HRESULT initializeComForThread(void);
 		static void clearError(void);
@@ -118,10 +135,9 @@ class VirtualBoxBase : public util::Lockable {
 		RWLockHandle * lockHandle() const;
 };
 
-class VirtualBoxTranslatable : public util::Lockable { };
-
 template <typename T>
-class Shareable {
+class Shareable
+{
 
 	private:
 
@@ -153,7 +169,8 @@ class Shareable {
 };
 
 template <typename T>
-class Backupable : public Shareable<T> {
+class Backupable : public Shareable<T>
+{
 
 	public:
 
