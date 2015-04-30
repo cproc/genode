@@ -51,8 +51,10 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT, GUID const&, char const*,
                                          com::Utf8Str, bool, bool)              DUMMY(E_FAIL)
 HRESULT VirtualBoxBase::initializeComForThread(void)                            TRACE(S_OK)
 
+#if 0
 HRESULT VirtualBoxErrorInfo::init(HRESULT, const GUID &, const char *,
                                   const Utf8Str &, IVirtualBoxErrorInfo *)      DUMMY(E_FAIL)
 
 HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)  TRACE(S_OK)
 HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)                       TRACE(S_OK)
+#endif

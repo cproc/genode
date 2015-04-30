@@ -44,16 +44,17 @@ static bool debug = false;
 /* static */
 const Guid Guid::Empty;
 
+#if 0
 HRESULT IMediumFormat::get_Capabilities(unsigned int*,
                                         MediumFormatCapabilities_T**)           DUMMY(E_FAIL)
-
+#endif
 HRESULT Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location,
                           IVirtualSystemDescription **aDescription)             DUMMY(E_FAIL)
 
 int DisplayMakePNG(uint8_t *, uint32_t, uint32_t, uint8_t **, uint32_t *,
                    uint32_t *, uint32_t *, uint8_t)                             DUMMY(-1)
 
-ProgressErrorInfo::ProgressErrorInfo(Progress*) DUMMY()
+ProgressErrorInfo::ProgressErrorInfo(IProgress*)                                DUMMY()
 
 HRESULT ProgressProxy::init(VirtualBox*, IUnknown*, unsigned short const*,
         bool)                                                                   DUMMY(E_FAIL)
@@ -63,7 +64,7 @@ HRESULT ProgressProxy::init(VirtualBox*, void*, unsigned short const*, bool,
 HRESULT ProgressProxy::notifyComplete(HRESULT)                                  DUMMY(E_FAIL)
 HRESULT ProgressProxy::notifyComplete(HRESULT, GUID const&, char const*,
                                       char const*, ...)                         DUMMY(E_FAIL)
-bool    ProgressProxy::setOtherProgressObject(Progress*)                        DUMMY(false)
+bool    ProgressProxy::setOtherProgressObject(IProgress*)                       DUMMY(false)
 HRESULT ProgressProxy::FinalConstruct()                                         DUMMY(E_FAIL)
 STDMETHODIMP ProgressProxy::COMGETTER(Cancelable)(BOOL *)                       DUMMY(E_FAIL)
 STDMETHODIMP ProgressProxy::COMGETTER(Percent)(ULONG *)                         DUMMY(E_FAIL)
@@ -89,6 +90,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)    
 void ProgressProxy::uninit()                                                    DUMMY()
 void ProgressProxy::FinalRelease()                                              DUMMY()
 
+#if 0
 template<>
 void DummyClass<VirtualBox>::fireNATRedirectEvent(IEventSource *,
                                                   CBSTR,
@@ -118,7 +120,9 @@ void DummyClass<Machine>::fireHostPCIDevicePlugEvent(IEventSource*, CBSTR,
                                                      BOOL, BOOL,
                                                      IPCIDeviceAttachment*,
                                                      CBSTR)                     DUMMY()
+#endif
 
+#if 0
 NATNetwork::NATNetwork() : mVirtualBox(nullptr)                                 DUMMY()
 NATNetwork::~NATNetwork()                                                       DUMMY()
 void    NATNetwork::uninit()                                                    DUMMY()
@@ -207,4 +211,4 @@ void Machine::ClientToken::getId(Utf8Str &strId)
 }
 
 HRESULT com::Initialize(bool fGui)                                              TRACE(S_OK)
-
+#endif

@@ -5,6 +5,8 @@
 #include <VBox/usbfilter.h>
 #include <USBProxyServiceGenode.h>
 
+#include "HostImpl.h"
+
 static bool debug = false;
 
 #define TRACE(X) \
