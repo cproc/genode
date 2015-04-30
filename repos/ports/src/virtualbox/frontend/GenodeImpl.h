@@ -1,11 +1,35 @@
 #ifndef ____H_GENODEIMPL
 #define ____H_GENODEIMPL
 
+/* miscellanious missing/unimplemented stuff */
+
+/* GuestControlSvc.h */
+
+typedef struct sdfkkd { } VRDEUSBDEVICEDESC;
+typedef struct sdfsdf3 { } VBOXGUESTCTRLHOSTCBCTX, *PVBOXGUESTCTRLHOSTCBCTX;
+typedef struct sdffsd2 { } VBOXGUESTCTRLHOSTCALLBACK, *PVBOXGUESTCTRLHOSTCALLBACK;
+enum GUEST_FILE_SEEKTYPE { };
+
+/* VBoxClipboardSvc.h */
+
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS  2
+
+/* intnet.h */
+
+#define INTNET_MAX_NETWORK_NAME     128
+
+enum INTNETTRUNKTYPE
+{
+    kIntNetTrunkType_WhateverNone,
+	kIntNetTrunkType_NetFlt,
+};
+
+#if 0
+
 #include <VBox/vmm/vmapi.h>
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
-#include <VBox/com/defs.h>
 #include <VBox/com/AutoLock.h>
 #include <VBox/com/EventQueue.h>
 
@@ -36,14 +60,7 @@ class Console;
 
 #define TRUNKTYPE_WHATEVER "whatever"
 #define TRUNKTYPE_NETFLT   "netflt"
-#define INTNET_MAX_NETWORK_NAME     128
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS  2
 
-enum INTNETTRUNKTYPE
-{
-    kIntNetTrunkType_WhateverNone,
-	kIntNetTrunkType_NetFlt,
-};
 
 class IHostNetworkInterface;
 class IFramebufferOverlay;
@@ -102,15 +119,6 @@ class VBoxVetoEvent;
 class VirtualBox;
 class VRDEServer;
 class VRDEServerInfo;
-
-class VirtualBoxErrorInfo {
-
-	public:
-		HRESULT init(HRESULT aResultCode, const GUID &aIID,
-		             const char *pcszComponent, const com::Utf8Str &strText,
-		             IVirtualBoxErrorInfo *aNext = NULL);
-		HRESULT FinalConstruct() { return S_OK; }
-};
 
 class IStateChangedEvent
 {
@@ -187,6 +195,7 @@ class IEventListener {
 */
  };
 
+#if 0
 template <typename X>
 class DummyClass {
 	public:
@@ -197,41 +206,16 @@ class DummyClass {
 		void fireNATNetworkPortForwardEvent(IEventSource*, CBSTR, BOOL, BOOL, CBSTR, NATProtocol_T, CBSTR, LONG, CBSTR, LONG);
 		void fireHostNameResolutionConfigurationChangeEvent(IEventSource*);
 		void fireHostPCIDevicePlugEvent(IEventSource*, CBSTR, BOOL, BOOL, IPCIDeviceAttachment*, CBSTR);
-		void fireStateChangedEvent(IEventSource*, MachineState_T);
-		void fireRuntimeErrorEvent(IEventSource*, BOOL, CBSTR, CBSTR);
 };
 
-#define ATL_NO_VTABLE
-#define DECLARE_CLASSFACTORY()
 #define VBOX_SCRIPTABLE_IMPL(X) public DummyClass<X>
-#define DECLARE_NOT_AGGREGATABLE(X)
-
-#define DECLARE_REGISTRY_RESOURCEID(X)
-#define DECLARE_PROTECT_FINAL_CONSTRUCT(Y)
-#define DECLARE_CLASSFACTORY_SINGLETON(X)
-
-#define BEGIN_COM_MAP(X)
-#define VBOX_DEFAULT_INTERFACE_ENTRIES(X)
-#define COM_INTERFACE_ENTRY(X)
-#define COM_INTERFACE_ENTRY2(X,Y)
-#define END_COM_MAP()
-
-#define DECLARE_EMPTY_CTOR_DTOR(X) public: X(); ~X();
-#define DEFINE_EMPTY_CTOR_DTOR(X)  X::X() {} X::~X() {}
-
-#define STDMETHODIMP HRESULT
-#define STDMETHOD(X) virtual HRESULT X
-
-#define Q_OBJECT
+#endif
 
 #include "BusAssignmentManager.h"
 
 #include "MediumFormatImpl.h"
 typedef MediumFormat IMediumFormat;
 
-typedef struct sdfkkd { } VRDEUSBDEVICEDESC;
-typedef struct sdfsdf3 { } VBOXGUESTCTRLHOSTCBCTX, *PVBOXGUESTCTRLHOSTCBCTX;
-typedef struct sdffsd2 { } VBOXGUESTCTRLHOSTCALLBACK, *PVBOXGUESTCTRLHOSTCALLBACK;
 typedef struct IFsObjInfo { } IFsObjInfo;
 
 #include "AdditionsFacilityImpl.h"
@@ -279,5 +263,7 @@ class ConsoleVRDPServer
 		void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
 		void Stop();
 };
+
+#endif
 
 #endif // !____H_GENODEIMPL

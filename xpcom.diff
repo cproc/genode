@@ -1,0 +1,274 @@
+xpcom.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/sdk/VirtualBox_XPCOM.h            |    4 ++--
+ src/VBox/Main/include/DisplayImpl.h       |    3 ++-
+ src/VBox/Main/include/HostUSBDeviceImpl.h |   10 +---------
+ src/VBox/Main/include/SessionImpl.h       |   11 +----------
+ src/VBox/Main/src-client/ConsoleImpl.cpp  |   21 ++++++++++++++++-----
+ src/VBox/Main/src-client/DisplayImpl.cpp  |   10 ++++++++++
+ 6 files changed, 32 insertions(+), 27 deletions(-)
+
+diff --git a/include/sdk/VirtualBox_XPCOM.h b/include/sdk/VirtualBox_XPCOM.h
+index f096daf..cffe0b7 100644
+--- a/include/sdk/VirtualBox_XPCOM.h
++++ b/include/sdk/VirtualBox_XPCOM.h
+@@ -7,11 +7,11 @@
+ 
+ 
+ #ifndef __gen_nsISupports_h__
+-#include "nsISupports.h"
++//#include "nsISupports.h"
+ #endif
+ 
+ #ifndef __gen_nsIException_h__
+-#include "nsIException.h"
++//#include "nsIException.h"
+ #endif
+ 
+ /* For IDL files that don't want to include root IDL files. */
+diff --git a/src/VBox/Main/include/DisplayImpl.h b/src/VBox/Main/include/DisplayImpl.h
+index 368453c..ecb58b9 100644
+--- a/src/VBox/Main/include/DisplayImpl.h
++++ b/src/VBox/Main/include/DisplayImpl.h
+@@ -132,7 +132,6 @@ class VMMDev;
+ 
+ class ATL_NO_VTABLE Display :
+     public VirtualBoxBase,
+-    public IEventListener,
+     VBOX_SCRIPTABLE_IMPL(IEventListener),
+     VBOX_SCRIPTABLE_IMPL(IDisplay),
+     public DisplayMouseInterface
+@@ -233,7 +232,9 @@ public:
+ 
+     static const PDMDRVREG  DrvReg;
+ 
++#if 0
+     static void fireGuestMonitorChangedEvent(EventSource*, GuestMonitorChangedEventType, int32_t, int32_t, int32_t, int32_t, int32_t);
++#endif
+ 
+ private:
+ 
+diff --git a/src/VBox/Main/include/HostUSBDeviceImpl.h b/src/VBox/Main/include/HostUSBDeviceImpl.h
+index 2b9e7a1..57023e1 100644
+--- a/src/VBox/Main/include/HostUSBDeviceImpl.h
++++ b/src/VBox/Main/include/HostUSBDeviceImpl.h
+@@ -168,15 +168,7 @@ typedef enum
+  * Object class used to hold Host USB Device properties.
+  */
+ class ATL_NO_VTABLE HostUSBDevice :
+-	/*
+-	 * Genode:
+-	 *
+-	 * Both 'HostUSBDevice' and 'OUSBDevice' must be compatible with
+-	 * 'IUSBDevice'. 'IUSBDevice' is typedef'd as 'OUSBDevice' on Genode,
+-	 * and 'HostUSBDevice' inherits 'IUSBDevice'. Since 'OUSBDevice' already
+-	 * inherits 'VirtualBoxBase', 'HostUSBDevice' does not do it again.
+-	 */
+-    public IUSBDevice,
++    public VirtualBoxBase,
+     VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
+ {
+ public:
+diff --git a/src/VBox/Main/include/SessionImpl.h b/src/VBox/Main/include/SessionImpl.h
+index 0db9d2c..bcd6b4c 100644
+--- a/src/VBox/Main/include/SessionImpl.h
++++ b/src/VBox/Main/include/SessionImpl.h
+@@ -30,18 +30,9 @@ class GenodeConsole;
+ [threading(free)]
+ #endif
+ class ATL_NO_VTABLE Session :
+-    public VirtualBoxBase
+-#if 0
+-    /*
+-     * Genode:
+-     *
+-     * Because both 'ISession' and 'IInternalSessionControl' are typedef'd as
+-     * 'Session', 'Session' would inherit from 'DummyClass<Session>' twice,
+-     * which is not allowed.
+-     */
++    public VirtualBoxBase,
+     VBOX_SCRIPTABLE_IMPL(ISession),
+     VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
+-#endif
+ #ifdef RT_OS_WINDOWS
+     , public CComCoClass<Session, &CLSID_Session>
+ #endif
+diff --git a/src/VBox/Main/src-client/ConsoleImpl.cpp b/src/VBox/Main/src-client/ConsoleImpl.cpp
+index 72f18e1..6c1605e 100644
+--- a/src/VBox/Main/src-client/ConsoleImpl.cpp
++++ b/src/VBox/Main/src-client/ConsoleImpl.cpp
+@@ -51,10 +51,11 @@
+ #include "KeyboardImpl.h"
+ #include "MouseImpl.h"
+ #include "DisplayImpl.h"
+-#include "MachineImpl.h"
+ #if 0
+ #include "MachineDebuggerImpl.h"
++#endif
+ #include "USBDeviceImpl.h"
++#if 0
+ #include "RemoteUSBDeviceImpl.h"
+ #endif
+ #include "SharedFolderImpl.h"
+@@ -64,9 +65,13 @@
+ #ifdef VBOX_WITH_USB_CARDREADER
+ # include "UsbCardReader.h"
+ #endif
++#endif
+ #include "ProgressImpl.h"
++#if 0
+ #include "ConsoleVRDPServer.h"
++#endif
+ #include "VMMDev.h"
++#if 0
+ #ifdef VBOX_WITH_EXTPACK
+ # include "ExtPackManagerImpl.h"
+ #endif
+@@ -6545,7 +6550,9 @@ void Console::onStateChange(MachineState_T machineState)
+ {
+     AutoCaller autoCaller(this);
+     AssertComRCReturnVoid(autoCaller.rc());
++#if 0
+     fireStateChangedEvent(mEventSource, machineState);
++#endif
+ }
+ 
+ #if 0
+@@ -6615,7 +6622,9 @@ void Console::onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
+     AutoCaller autoCaller(this);
+     AssertComRCReturnVoid(autoCaller.rc());
+ 
++#if 0
+     fireRuntimeErrorEvent(mEventSource, aFatal, aErrorID, aMessage);
++#endif
+ }
+ 
+ #if 0
+@@ -7188,7 +7197,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
+                 ++cOperations;
+                 ulTotalOperationsWeight += 1;
+             }
+-            rc = pPowerupProgress->init(pVirtualBox,
++            rc = pPowerupProgress->init(/*pVirtualBox,*/
+                                         static_cast<IConsole *>(this),
+                                         progressDesc.raw(),
+                                         TRUE, // Cancelable
+@@ -7202,14 +7211,14 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
+         else if (    mMachineState == MachineState_Saved
+             ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
+         {
+-            rc = pPowerupProgress->init(pVirtualBox,
++            rc = pPowerupProgress->init(/*pVirtualBox,*/
+                                         static_cast<IConsole *>(this),
+                                         progressDesc.raw(),
+                                         FALSE /* aCancelable */);
+         }
+         else if (fTeleporterEnabled)
+         {
+-            rc = pPowerupProgress->init(pVirtualBox,
++            rc = pPowerupProgress->init(/*pVirtualBox,*/
+                                         static_cast<IConsole *>(this),
+                                         progressDesc.raw(),
+                                         TRUE /* aCancelable */,
+@@ -7221,7 +7230,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
+         }
+         else if (fFaultToleranceSyncEnabled)
+         {
+-            rc = pPowerupProgress->init(pVirtualBox,
++            rc = pPowerupProgress->init(/*pVirtualBox,*/
+                                         static_cast<IConsole *>(this),
+                                         progressDesc.raw(),
+                                         TRUE /* aCancelable */,
+@@ -7468,6 +7477,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
+      * safe to release the object lock now if needed)
+      * ---------------------------------------------------------------------- */
+ 
++#if 0
+     /* Stop the VRDP server to prevent new clients connection while VM is being
+      * powered off. */
+     if (mConsoleVRDPServer)
+@@ -7482,6 +7492,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
+ 
+         alock.acquire();
+     }
++#endif
+ 
+     /* advance percent count */
+     if (aProgress)
+diff --git a/src/VBox/Main/src-client/DisplayImpl.cpp b/src/VBox/Main/src-client/DisplayImpl.cpp
+index bc3c334..61dde6c 100644
+--- a/src/VBox/Main/src-client/DisplayImpl.cpp
++++ b/src/VBox/Main/src-client/DisplayImpl.cpp
+@@ -4196,11 +4196,13 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
+                 if (pFBInfo->fDisabled)
+                 {
+                     pFBInfo->fDisabled = false;
++#if 0
+                     fireGuestMonitorChangedEvent(pDrv->pDisplay->mParent->getEventSource(),
+                                                  GuestMonitorChangedEventType_Enabled,
+                                                  uScreenId,
+                                                  pFBInfo->xOrigin, pFBInfo->yOrigin,
+                                                  pFBInfo->w, pFBInfo->h);
++#endif
+                 }
+ 
+                 pDrv->pDisplay->handleDisplayResize(uScreenId, pScreen->bitsPerPixel, (uint8_t *)pvVRAM + pFBInfo->u32Offset, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height, VBVA_SCREEN_F_ACTIVE);
+@@ -4640,11 +4642,13 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
+         if (pFBInfo->fDisabled)
+         {
+             pFBInfo->fDisabled = false;
++#if 0
+             fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                          GuestMonitorChangedEventType_Enabled,
+                                          uScreenId,
+                                          pFBInfo->xOrigin, pFBInfo->yOrigin,
+                                          pFBInfo->w, pFBInfo->h);
++#endif
+         }
+     }
+ 
+@@ -4950,10 +4954,12 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
+         pThis->handleDisplayResize(pScreen->u32ViewIndex, 0, (uint8_t *)NULL, 0,
+                                    u32Width, u32Height, pScreen->u16Flags);
+ 
++#if 0
+         fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                      GuestMonitorChangedEventType_Disabled,
+                                      pScreen->u32ViewIndex,
+                                      0, 0, 0, 0);
++#endif
+         return VINF_SUCCESS;
+     }
+ 
+@@ -4981,11 +4987,13 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
+     if (pFBInfo->fDisabled)
+     {
+         pFBInfo->fDisabled = false;
++#if 0
+         fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                      GuestMonitorChangedEventType_Enabled,
+                                      pScreen->u32ViewIndex,
+                                      pScreen->i32OriginX, pScreen->i32OriginY,
+                                      pScreen->u32Width, pScreen->u32Height);
++#endif
+         /* Continue to update pFBInfo. */
+     }
+ 
+@@ -5007,11 +5015,13 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
+ 
+     if (fNewOrigin)
+     {
++#if 0
+         fireGuestMonitorChangedEvent(pThis->mParent->getEventSource(),
+                                      GuestMonitorChangedEventType_NewOrigin,
+                                      pScreen->u32ViewIndex,
+                                      pScreen->i32OriginX, pScreen->i32OriginY,
+                                      0, 0);
++#endif
+     }
+ 
+     if (!fResize)

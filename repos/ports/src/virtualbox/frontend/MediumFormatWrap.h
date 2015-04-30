@@ -1,10 +1,15 @@
+#ifndef ____H_MEDIUMFORMATWRAP
+#define ____H_MEDIUMFORMATWRAP
+
 #include "VirtualBoxBase.h"
 
-class MediumFormatWrap : public VirtualBoxBase, public DummyClass<MediumFormatWrap> {
-
+class MediumFormatWrap :
+	public VirtualBoxBase,
+	VBOX_SCRIPTABLE_IMPL(IMediumFormatWrap)
+{
 	public:
-		virtual const char* getComponentName() const
-		{
-			return "MediumFormatWrap";
-		}
+
+		VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VirtualBoxErrorInfo, IVirtualBoxErrorInfo)
 };
+
+#endif /* ____H_MEDIUMFORMATWRAP */

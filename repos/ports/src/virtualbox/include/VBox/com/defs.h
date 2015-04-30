@@ -3,73 +3,142 @@
 
 #include <iprt/types.h>
 
-typedef       bool                 BOOL;
-typedef       unsigned char        BYTE;
 
-typedef       unsigned short       PRUint16;
-typedef       unsigned int         PRUint32;
+/* from C binding header? */
+
+typedef       bool                 PRBool;
+typedef       uint8_t              PRUint8;
+typedef       int16_t              PRInt16;
+typedef       uint16_t             PRUint16;
+typedef       int32_t              PRInt32;
+typedef       uint32_t             PRUint32;
+typedef       int64_t              PRInt64;
+typedef       uint64_t             PRUint64;
 typedef       PRUint16             PRUnichar;
 
-typedef       wchar_t              OLECHAR;
-typedef       PRUnichar          * BSTR;
-typedef const PRUnichar          * CBSTR;
-typedef       CBSTR                IN_BSTR;
+/* nscore.h */
+typedef       PRUint32             nsresult;
+
+/* nsID.h */
+typedef struct { char x [sizeof(RTUUID)]; } nsID; /* differs from original */
+
+/* nsBase.h */
+
+/* Standard "it worked" return value */
+#define NS_OK                              0
+
+#define NS_ERROR_BASE                      ((nsresult) 0xC1F30000)
+
+/* Returned by a not implemented function */
+#define NS_ERROR_NOT_IMPLEMENTED           ((nsresult) 0x80004001L)
+
+/* Returned when a given interface is not supported. */
+#define NS_NOINTERFACE                     ((nsresult) 0x80004002L)
+#define NS_ERROR_NO_INTERFACE              NS_NOINTERFACE
+
+#define NS_ERROR_INVALID_POINTER           ((nsresult) 0x80004003L)
+#define NS_ERROR_NULL_POINTER              NS_ERROR_INVALID_POINTER
+
+/* Returned when a function aborts */
+#define NS_ERROR_ABORT                     ((nsresult) 0x80004004L)
+
+/* Returned when a function fails */
+#define NS_ERROR_FAILURE                   ((nsresult) 0x80004005L)
+
+/* Returned when an IPC fails */
+#define NS_ERROR_CALL_FAILED               ((nsresult) 0x800706beL)
+
+/* Returned when an unexpected error occurs */
+#define NS_ERROR_UNEXPECTED                ((nsresult) 0x8000ffffL)
+
+/* Returned when a memory allocation fails */
+#define NS_ERROR_OUT_OF_MEMORY             ((nsresult) 0x8007000eL)
+
+/* Returned when an illegal value is passed */
+#define NS_ERROR_ILLEGAL_VALUE             ((nsresult) 0x80070057L)
+#define NS_ERROR_INVALID_ARG               NS_ERROR_ILLEGAL_VALUE
+
+
+/* defs.h */
+
+#define ATL_NO_VTABLE
+#define DECLARE_CLASSFACTORY()
+#define DECLARE_CLASSFACTORY_SINGLETON(X)
+#define DECLARE_REGISTRY_RESOURCEID(X)
+#define DECLARE_NOT_AGGREGATABLE(X)
+#define DECLARE_PROTECT_FINAL_CONSTRUCT(Y)
+#define BEGIN_COM_MAP(X)
+#define COM_INTERFACE_ENTRY(X)
+#define COM_INTERFACE_ENTRY2(X,Y)
+#define END_COM_MAP()
+
+#define HRESULT nsresult
+#define SUCCEEDED(X) ((X) == VINF_SUCCESS)
+#define FAILED(X) ((X) != VINF_SUCCESS)
+
+#define FAILED_DEAD_INTERFACE(rc)  (   (rc) == NS_ERROR_ABORT \
+                                    || (rc) == NS_ERROR_CALL_FAILED \
+                                   )
+
+typedef       PRBool               BOOL;
+typedef       PRUint8              BYTE;
+typedef       PRInt16              SHORT;
+typedef       PRUint16             USHORT;
+typedef       PRInt32              LONG;
+typedef       PRUint32             ULONG;
+typedef       PRInt64              LONG64;
+typedef       PRUint64             ULONG64;
 
 #define       FALSE                false
 #define       TRUE                 true
 
-#define SUCCEEDED(X) ((X) == VINF_SUCCESS)
-#define FAILED(X) ((X) != VINF_SUCCESS)
+typedef       wchar_t              OLECHAR;
+typedef       PRUnichar           *BSTR;
+typedef const PRUnichar           *CBSTR;
+typedef       CBSTR                IN_BSTR;
 
-#define ComSafeArrayInArg(aArg)             aArg##Size, aArg
-#define ComSafeArrayOutArg(aArg)            aArg##Size, aArg
-#define ComSafeArrayOut(aType, aArg)        PRUint32 *aArg##Size, aType **aArg
+#define       GUID                 nsID
+#define       IN_GUID              const nsID &
+#define       OUT_GUID             nsID **
+
+#define COMGETTER(n)    Get##n
+#define COMSETTER(n)    Set##n
+
 #define ComSafeArrayIn(aType, aArg)         unsigned aArg##Size, aType *aArg
+#define ComSafeArrayInIsNull(aArg)          ((aArg) == NULL)
+#define ComSafeArrayInArg(aArg)             aArg##Size, aArg
+
+#define ComSafeArrayOut(aType, aArg)        PRUint32 *aArg##Size, aType **aArg
+#define ComSafeArrayOutIsNull(aArg)         ((aArg) == NULL)
+#define ComSafeArrayOutArg(aArg)            aArg##Size, aArg
+
 #define ComSafeGUIDArrayIn(aArg)            PRUint32 aArg##Size, const nsID **aArg
 #define ComSafeGUIDArrayInArg(aArg)         ComSafeArrayInArg(aArg)
-#define ComSafeArrayOutIsNull(aArg)         ((aArg) == NULL)
-#define ComSafeArrayInIsNull(aArg)          ((aArg) == NULL)
 
-#define COM_STRUCT_OR_CLASS(I) class I
+/* OLE error codes */
+#define S_OK                ((nsresult)NS_OK)
+#define E_UNEXPECTED        NS_ERROR_UNEXPECTED
+#define E_NOTIMPL           NS_ERROR_NOT_IMPLEMENTED
+#define E_OUTOFMEMORY       NS_ERROR_OUT_OF_MEMORY
+#define E_INVALIDARG        NS_ERROR_INVALID_ARG
+#define E_NOINTERFACE       NS_ERROR_NO_INTERFACE
+#define E_POINTER           NS_ERROR_NULL_POINTER
+#define E_ABORT             NS_ERROR_ABORT
+#define E_FAIL              NS_ERROR_FAILURE
+/* Note: a better analog for E_ACCESSDENIED would probably be
+ * NS_ERROR_NOT_AVAILABLE, but we want binary compatibility for now. */
+#define E_ACCESSDENIED      ((nsresult)0x80070005L)
 
-#define FAILED_DEAD_INTERFACE(rc)  (   (rc) != VINF_SUCCESS )
-
-enum HRESULT {
-	S_OK,
-	E_ACCESSDENIED,
-	E_OUTOFMEMORY,
-	E_INVALIDARG,
-	E_FAIL,
-	E_POINTER,
-	E_NOTIMPL,
-	E_UNEXPECTED,
-	E_NOINTERFACE,
-	E_ABORT,
-	VBOX_E_VM_ERROR,
-	VBOX_E_INVALID_VM_STATE,
-	VBOX_E_INVALID_OBJECT_STATE,
-	VBOX_E_INVALID_SESSION_STATE,
-	VBOX_E_OBJECT_NOT_FOUND,
-	VBOX_E_FILE_ERROR,
-	VBOX_E_OBJECT_IN_USE,
-	VBOX_E_NOT_SUPPORTED,
-	VBOX_E_IPRT_ERROR,
-	VBOX_E_PDM_ERROR,
-	VBOX_E_HOST_ERROR,
-	VBOX_E_XML_ERROR,
-};
-
-typedef struct { char x [sizeof(RTUUID)]; } GUID;
+#define STDMETHOD(X) virtual HRESULT X
+#define STDMETHODIMP HRESULT
 
 inline GUID& stuffstuff() {
 	static GUID stuff;
 	return stuff;
 }
 #define COM_IIDOF(X) stuffstuff()
-#define getStaticClassIID() stuffstuff()
 
-#define IN_GUID GUID
-#define OUT_GUID GUID *
+#define COM_STRUCT_OR_CLASS(I) class I
 
 extern "C"
 {
@@ -81,12 +150,23 @@ extern "C"
 	unsigned int SysStringLen(BSTR bstr);
 }
 
-typedef signed   int   LONG;
-typedef unsigned int   ULONG;
-typedef unsigned short USHORT;
-typedef          short SHORT;
-typedef signed   long long LONG64;
-typedef unsigned long long ULONG64;
+namespace com {
+
+#define VBOX_SCRIPTABLE_IMPL(iface)                     \
+    public iface
+
+#define VBOX_DEFAULT_INTERFACE_ENTRIES(X)
+
+} /* namespace com */
+
+#if 0
+#define FAILED_DEAD_INTERFACE(rc)  (   (rc) != VINF_SUCCESS )
+
+
+
+#define getStaticClassIID() stuffstuff()
+
+
 
 /* capiidl.xsl */
 typedef enum VARTYPE
@@ -111,7 +191,9 @@ typedef struct SAFEARRAY
     void *pv;
     ULONG c;
 } SAFEARRAY;
+#endif
 
+#if 0
 enum AccessMode_T
 {
 	AccessMode_ReadOnly,
@@ -189,7 +271,6 @@ enum GuestMouseEventMode_T
 	GuestMouseEventMode_Relative,
 };
 
-enum GUEST_FILE_SEEKTYPE { };
 enum ProcessPriority_T
 {
 	ProcessPriority_Default,
@@ -640,5 +721,6 @@ enum USBDeviceState_T
     USBDeviceState_Held = 4,
     USBDeviceState_Captured = 5
 };
+#endif
 
 #endif /* !___VBox_com_defs_h */

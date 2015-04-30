@@ -3,18 +3,17 @@
 
 #include <base/printf.h>
 
-#include <iprt/asm.h>
+//#include <iprt/asm.h>
 #include <iprt/thread.h>
 
 #include <list>
 #include <map>
 
-#include "VBox/com/defs.h"
-#include "VBox/com/ptr.h"
-#include "VBox/com/string.h"
-
 #include "VBox/com/AutoLock.h"
+#include "VBox/com/string.h"
+#include "VBox/com/Guid.h"
 
+#include "VBox/com/VirtualBox.h"
 
 namespace com
 {
@@ -24,21 +23,15 @@ namespace com
 using namespace com;
 using namespace util;
 
+class AutoInitSpan;
+class AutoUninitSpan;
+
+class VirtualBox;
+class Machine;
 class Medium;
 
 typedef std::list<ComObjPtr<Medium> > MediaList;
 typedef std::list<Utf8Str> StringsList;
-
-class IUnknown
-{
-	public:
-
-		/* make the class polymorphic, so it can be used with 'dynamic_cast' */
-		virtual ~IUnknown() { }
-
-		void AddRef() { }
-		void Release() { }
-};
 
 class VirtualBoxTranslatable : public util::Lockable
 {
@@ -52,7 +45,7 @@ class VirtualBoxTranslatable : public util::Lockable
 		}
 };
 
-class VirtualBoxBase : public VirtualBoxTranslatable, public IUnknown
+class VirtualBoxBase : public VirtualBoxTranslatable
 {
 
 	public:
@@ -134,6 +127,16 @@ class VirtualBoxBase : public VirtualBoxTranslatable, public IUnknown
 
 		RWLockHandle * lockHandle() const;
 };
+
+
+/**
+ * Dummy macro that is used to shut down Qt's lupdate tool warnings in some
+ * situations. This macro needs to be present inside (better at the very
+ * beginning) of the declaration of the class that inherits from
+ * VirtualBoxTranslatable, to make lupdate happy.
+ */
+#define Q_OBJECT
+
 
 template <typename T>
 class Shareable
@@ -427,8 +430,9 @@ class Backupable : public Shareable<T>
     } while (0)
 
 
+#define DECLARE_EMPTY_CTOR_DTOR(X) public: X(); ~X();
 
-
+#define DEFINE_EMPTY_CTOR_DTOR(X)  X::X() {} X::~X() {}
 
 
 #define VIRTUALBOXBASE_ADD_VIRTUAL_COMPONENT_METHODS(cls, iface) \

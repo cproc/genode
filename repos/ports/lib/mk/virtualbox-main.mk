@@ -1,5 +1,7 @@
 include $(REP_DIR)/lib/mk/virtualbox-common.inc
 
+VBOX_CC_OPT += -DVBOX_COM_INPROC
+
 LIBS  += stdcxx
 
 SRC_CC += Main/xml/Settings.cpp
