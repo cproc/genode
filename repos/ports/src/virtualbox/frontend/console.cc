@@ -6,27 +6,11 @@
 #include "MachineImpl.h"
 #include "MouseImpl.h"
 
+#include "dummy/macros.h"
+
 #include "console.h"
 
 static const bool debug = false;
-
-#define DUMMY(X) \
-	{ \
-		PERR("%s called (%s), not implemented, eip=%p", __func__, __FILE__, \
-		     __builtin_return_address(0)); \
-		while (1) \
-			asm volatile ("ud2a"); \
-		\
-		return X; \
-	}
-
-#define TRACE(X) \
-	{ \
-		if (debug) \
-			PDBG(" called (%s) - eip=%p", __FILE__, \
-			     __builtin_return_address(0)); \
-		return X; \
-	}
 
 void    Console::uninit()                                                       DUMMY()
 HRESULT Console::resume(Reason_T aReason)                                       DUMMY(E_FAIL)
@@ -48,19 +32,21 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
 	TRACE(S_OK)
 }
 
-HRESULT Console::teleporterTrg(UVM*, Machine*, com::Utf8Str*, bool, Progress*,
+HRESULT Console::teleporterTrg(PUVM, IMachine*, com::Utf8Str*, bool, Progress*,
                                bool*)                                           DUMMY(E_FAIL)
 HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)        DUMMY(E_FAIL)
 HRESULT Console::saveState(Reason_T aReason, IProgress **aProgress)             DUMMY(E_FAIL)
-HRESULT Console::get_Debugger(MachineDebugger**)                                DUMMY(E_FAIL)
-HRESULT Console::get_USBDevices(unsigned int*, IUSBDevice***)                   DUMMY(E_FAIL)
-HRESULT Console::get_RemoteUSBDevices(unsigned int*, IHostUSBDevice***)         DUMMY(E_FAIL)
-HRESULT Console::get_VRDEServerInfo(VRDEServerInfo**)                           DUMMY(E_FAIL)
-HRESULT Console::get_SharedFolders(unsigned int*, SharedFolder***)              DUMMY(E_FAIL)
-HRESULT Console::get_AttachedPCIDevices(unsigned int*, PCIDeviceAttachment***)  DUMMY(E_FAIL)
-HRESULT Console::get_UseHostClipboard(bool*)                                    DUMMY(E_FAIL)
-HRESULT Console::set_UseHostClipboard(bool)                                     DUMMY(E_FAIL)
-HRESULT Console::get_EmulatedUSB(EmulatedUSB**)                                 DUMMY(E_FAIL)
+
+STDMETHODIMP Console::COMGETTER(Debugger)(IMachineDebugger **aDebugger)                                    DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(USBDevices)(ComSafeArrayOut(IUSBDevice *, aUSBDevices))                    DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(RemoteUSBDevices)(ComSafeArrayOut(IHostUSBDevice *, aRemoteUSBDevices))    DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(VRDEServerInfo)(IVRDEServerInfo **aVRDEServerInfo)                         DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(EmulatedUSB)(IEmulatedUSB **aEmulatedUSB)                                  DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(SharedFolders)(ComSafeArrayOut(ISharedFolder *, aSharedFolders))           DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(AttachedPCIDevices)(ComSafeArrayOut(IPCIDeviceAttachment *, aAttachments)) DUMMY(E_FAIL)
+STDMETHODIMP Console::COMGETTER(UseHostClipboard)(BOOL *aUseHostClipboard)                                 DUMMY(E_FAIL)
+STDMETHODIMP Console::COMSETTER(UseHostClipboard)(BOOL aUseHostClipboard)                                  DUMMY(E_FAIL)
+
 HRESULT Console::Reset()                                                        DUMMY(E_FAIL)
 HRESULT Console::Pause()                                                        DUMMY(E_FAIL)
 HRESULT Console::Resume()                                                       DUMMY(E_FAIL)
@@ -68,7 +54,7 @@ HRESULT Console::PowerButton()                                                  
 HRESULT Console::SleepButton()                                                  DUMMY(E_FAIL)
 HRESULT Console::GetPowerButtonHandled(bool*)                                   DUMMY(E_FAIL)
 HRESULT Console::GetGuestEnteredACPIMode(bool*)                                 DUMMY(E_FAIL)
-HRESULT Console::SaveState(Progress**)                                          DUMMY(E_FAIL)
+HRESULT Console::SaveState(IProgress**)                                         DUMMY(E_FAIL)
 HRESULT Console::AdoptSavedState(IN_BSTR)                                       DUMMY(E_FAIL)
 HRESULT Console::DiscardSavedState(bool)                                        DUMMY(E_FAIL)
 HRESULT Console::GetDeviceActivity(DeviceType_T, DeviceActivity_T*)             DUMMY(E_FAIL)
@@ -78,11 +64,11 @@ HRESULT Console::FindUSBDeviceByAddress(IN_BSTR, IUSBDevice**)                  
 HRESULT Console::FindUSBDeviceById(IN_BSTR, IUSBDevice**)                       DUMMY(E_FAIL)
 HRESULT Console::CreateSharedFolder(IN_BSTR, IN_BSTR, BOOL, BOOL)               DUMMY(E_FAIL)
 HRESULT Console::RemoveSharedFolder(IN_BSTR)                                    DUMMY(E_FAIL)
-HRESULT Console::TakeSnapshot(IN_BSTR, IN_BSTR, Progress**)                     DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshot(IN_BSTR, Progress**)                            DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotAndAllChildren(IN_BSTR, Progress**)              DUMMY(E_FAIL)
-HRESULT Console::DeleteSnapshotRange(IN_BSTR, IN_BSTR, Progress**)              DUMMY(E_FAIL)
-HRESULT Console::RestoreSnapshot(Snapshot*, Progress**)                         DUMMY(E_FAIL)
+HRESULT Console::TakeSnapshot(IN_BSTR, IN_BSTR, IProgress**)                    DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshot(IN_BSTR, IProgress**)                           DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotAndAllChildren(IN_BSTR, IProgress**)             DUMMY(E_FAIL)
+HRESULT Console::DeleteSnapshotRange(IN_BSTR, IN_BSTR, IProgress**)             DUMMY(E_FAIL)
+HRESULT Console::RestoreSnapshot(ISnapshot*, IProgress**)                       DUMMY(E_FAIL)
 HRESULT Console::Teleport(IN_BSTR, ULONG, IN_BSTR, ULONG, IProgress **)         DUMMY(E_FAIL)
 HRESULT Console::setDiskEncryptionKeys(const Utf8Str &strCfg)                   DUMMY(E_FAIL)
 
@@ -116,6 +102,18 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)             
 HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                    ULONG aSourceIdx, ULONG aTargetIdx,
                                    IProgress *aProgress)                        DUMMY(E_FAIL)
+
+void fireStateChangedEvent(IEventSource* aSource,
+                           MachineState_T a_state)                              DUMMY()
+
+void fireRuntimeErrorEvent(IEventSource* aSource, BOOL a_fatal,
+                           CBSTR a_id, CBSTR a_message)
+{
+	PERR("%s : %u %s %s", __func__, a_fatal,
+	     Utf8Str(a_id).c_str(), Utf8Str(a_message).c_str());
+
+	TRACE();
+}
 
 void GenodeConsole::eventWait(IKeyboard * gKeyboard, IMouse * gMouse)
 {
@@ -276,4 +274,3 @@ void GenodeConsole::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supports
 		gMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
 	}
 }
-

@@ -1,0 +1,233 @@
+xpcom.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/sdk/VirtualBox_XPCOM.h            |    4 ++--
+ src/VBox/Main/include/DisplayImpl.h       |    3 ++-
+ src/VBox/Main/include/HostUSBDeviceImpl.h |   10 +---------
+ src/VBox/Main/include/MediumFormatImpl.h  |    2 --
+ src/VBox/Main/include/SessionImpl.h       |   11 +----------
+ src/VBox/Main/src-client/ConsoleImpl.cpp  |   16 +++++++++++++---
+ src/VBox/Main/src-server/ClientToken.cpp  |    6 +-----
+ src/VBox/Main/src-server/MachineImpl.cpp  |    4 ++--
+ src/VBox/Main/src-server/MediumImpl.cpp   |    1 +
+ 9 files changed, 23 insertions(+), 34 deletions(-)
+
+diff --git a/include/sdk/VirtualBox_XPCOM.h b/include/sdk/VirtualBox_XPCOM.h
+index f096daf..cffe0b7 100644
+--- a/include/sdk/VirtualBox_XPCOM.h
++++ b/include/sdk/VirtualBox_XPCOM.h
+@@ -7,11 +7,11 @@
+ 
+ 
+ #ifndef __gen_nsISupports_h__
+-#include "nsISupports.h"
++//#include "nsISupports.h"
+ #endif
+ 
+ #ifndef __gen_nsIException_h__
+-#include "nsIException.h"
++//#include "nsIException.h"
+ #endif
+ 
+ /* For IDL files that don't want to include root IDL files. */
+diff --git a/src/VBox/Main/include/DisplayImpl.h b/src/VBox/Main/include/DisplayImpl.h
+index 368453c..ecb58b9 100644
+--- a/src/VBox/Main/include/DisplayImpl.h
++++ b/src/VBox/Main/include/DisplayImpl.h
+@@ -132,7 +132,6 @@ class VMMDev;
+ 
+ class ATL_NO_VTABLE Display :
+     public VirtualBoxBase,
+-    public IEventListener,
+     VBOX_SCRIPTABLE_IMPL(IEventListener),
+     VBOX_SCRIPTABLE_IMPL(IDisplay),
+     public DisplayMouseInterface
+@@ -233,7 +232,9 @@ public:
+ 
+     static const PDMDRVREG  DrvReg;
+ 
++#if 0
+     static void fireGuestMonitorChangedEvent(EventSource*, GuestMonitorChangedEventType, int32_t, int32_t, int32_t, int32_t, int32_t);
++#endif
+ 
+ private:
+ 
+diff --git a/src/VBox/Main/include/HostUSBDeviceImpl.h b/src/VBox/Main/include/HostUSBDeviceImpl.h
+index 2b9e7a1..57023e1 100644
+--- a/src/VBox/Main/include/HostUSBDeviceImpl.h
++++ b/src/VBox/Main/include/HostUSBDeviceImpl.h
+@@ -168,15 +168,7 @@ typedef enum
+  * Object class used to hold Host USB Device properties.
+  */
+ class ATL_NO_VTABLE HostUSBDevice :
+-	/*
+-	 * Genode:
+-	 *
+-	 * Both 'HostUSBDevice' and 'OUSBDevice' must be compatible with
+-	 * 'IUSBDevice'. 'IUSBDevice' is typedef'd as 'OUSBDevice' on Genode,
+-	 * and 'HostUSBDevice' inherits 'IUSBDevice'. Since 'OUSBDevice' already
+-	 * inherits 'VirtualBoxBase', 'HostUSBDevice' does not do it again.
+-	 */
+-    public IUSBDevice,
++    public VirtualBoxBase,
+     VBOX_SCRIPTABLE_IMPL(IHostUSBDevice)
+ {
+ public:
+diff --git a/src/VBox/Main/include/MediumFormatImpl.h b/src/VBox/Main/include/MediumFormatImpl.h
+index 88ac27c..2acdc6e 100644
+--- a/src/VBox/Main/include/MediumFormatImpl.h
++++ b/src/VBox/Main/include/MediumFormatImpl.h
+@@ -72,8 +72,6 @@ public:
+     /** Const, no need to lock */
+     const PropertyArray &i_getProperties() const { return m.maProperties; }
+ 
+-    HRESULT COMGETTER(Capabilities)(ComSafeArrayOut(MediumFormatCapabilities_T, aCapabilities));
+-
+ private:
+ 
+     // wrapped IMediumFormat properties
+diff --git a/src/VBox/Main/include/SessionImpl.h b/src/VBox/Main/include/SessionImpl.h
+index 0db9d2c..bcd6b4c 100644
+--- a/src/VBox/Main/include/SessionImpl.h
++++ b/src/VBox/Main/include/SessionImpl.h
+@@ -30,18 +30,9 @@ class GenodeConsole;
+ [threading(free)]
+ #endif
+ class ATL_NO_VTABLE Session :
+-    public VirtualBoxBase
+-#if 0
+-    /*
+-     * Genode:
+-     *
+-     * Because both 'ISession' and 'IInternalSessionControl' are typedef'd as
+-     * 'Session', 'Session' would inherit from 'DummyClass<Session>' twice,
+-     * which is not allowed.
+-     */
++    public VirtualBoxBase,
+     VBOX_SCRIPTABLE_IMPL(ISession),
+     VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
+-#endif
+ #ifdef RT_OS_WINDOWS
+     , public CComCoClass<Session, &CLSID_Session>
+ #endif
+diff --git a/src/VBox/Main/src-client/ConsoleImpl.cpp b/src/VBox/Main/src-client/ConsoleImpl.cpp
+index 72f18e1..6291b2f 100644
+--- a/src/VBox/Main/src-client/ConsoleImpl.cpp
++++ b/src/VBox/Main/src-client/ConsoleImpl.cpp
+@@ -51,10 +51,11 @@
+ #include "KeyboardImpl.h"
+ #include "MouseImpl.h"
+ #include "DisplayImpl.h"
+-#include "MachineImpl.h"
+ #if 0
+ #include "MachineDebuggerImpl.h"
++#endif
+ #include "USBDeviceImpl.h"
++#if 0
+ #include "RemoteUSBDeviceImpl.h"
+ #endif
+ #include "SharedFolderImpl.h"
+@@ -64,15 +65,20 @@
+ #ifdef VBOX_WITH_USB_CARDREADER
+ # include "UsbCardReader.h"
+ #endif
++#endif
+ #include "ProgressImpl.h"
++#if 0
+ #include "ConsoleVRDPServer.h"
++#endif
+ #include "VMMDev.h"
++#if 0
+ #ifdef VBOX_WITH_EXTPACK
+ # include "ExtPackManagerImpl.h"
+ #endif
+ #include "BusAssignmentManager.h"
+ #include "EmulatedUSBImpl.h"
+ #endif
++#include "VirtualBoxImpl.h"
+ 
+ #include "VBoxEvents.h"
+ #include "AutoCaller.h"
+@@ -7176,8 +7182,10 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
+         }
+ #endif
+ 
+-        ComPtr<IVirtualBox> pVirtualBox;
+-        mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
++        ComPtr<IVirtualBox> pIVirtualBox;
++        mMachine->COMGETTER(Parent)(pIVirtualBox.asOutParam());
++		VirtualBox *pVirtualBox =
++			dynamic_cast<VirtualBox*>(*pIVirtualBox.asOutParam());
+ 
+         // If there is immutable drive the process that.
+         VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
+@@ -7468,6 +7476,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
+      * safe to release the object lock now if needed)
+      * ---------------------------------------------------------------------- */
+ 
++#if 0
+     /* Stop the VRDP server to prevent new clients connection while VM is being
+      * powered off. */
+     if (mConsoleVRDPServer)
+@@ -7482,6 +7491,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
+ 
+         alock.acquire();
+     }
++#endif
+ 
+     /* advance percent count */
+     if (aProgress)
+diff --git a/src/VBox/Main/src-server/ClientToken.cpp b/src/VBox/Main/src-server/ClientToken.cpp
+index be0afb8..54d5ba4 100644
+--- a/src/VBox/Main/src-server/ClientToken.cpp
++++ b/src/VBox/Main/src-server/ClientToken.cpp
+@@ -179,11 +179,7 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
+         {
+             mClientToken = pToken;
+             if (mClientToken)
+-            {
+-                rc = mClientToken->AddRef();
+-                if (FAILED(rc))
+-                    mClientToken = NULL;
+-            }
++               mClientToken->AddRef();
+         }
+     }
+     pToken.setNull();
+diff --git a/src/VBox/Main/src-server/MachineImpl.cpp b/src/VBox/Main/src-server/MachineImpl.cpp
+index 984165a..0009cfd 100644
+--- a/src/VBox/Main/src-server/MachineImpl.cpp
++++ b/src/VBox/Main/src-server/MachineImpl.cpp
+@@ -3936,7 +3936,7 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
+         ComObjPtr<ProgressProxy> progress;
+         progress.createObject();
+         rc = progress->init(mParent,
+-                            nullptr,
++                            static_cast<IMachine*>(this),
+                             Bstr(tr("Starting VM")).raw(),
+                             TRUE /* aCancelable */,
+                             fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
+@@ -5613,7 +5613,7 @@ STDMETHODIMP Machine::DeleteConfig(ComSafeArrayIn(IMedium*, aMedia), IProgress *
+ 
+     pTask->pProgress.createObject();
+     pTask->pProgress->init(getVirtualBox(),
+-                           nullptr /* aInitiator */,
++                           static_cast<IMachine*>(this) /* aInitiator */,
+                            Bstr(tr("Deleting files")).raw(),
+                            true /* fCancellable */,
+                            pTask->llFilesToDelete.size() + pTask->llMediums.size() + 1,   // cOperations
+diff --git a/src/VBox/Main/src-server/MediumImpl.cpp b/src/VBox/Main/src-server/MediumImpl.cpp
+index 893ac88..ed4bb7a 100644
+--- a/src/VBox/Main/src-server/MediumImpl.cpp
++++ b/src/VBox/Main/src-server/MediumImpl.cpp
+@@ -22,6 +22,7 @@
+ #include "VirtualBoxImpl.h"
+ #include "TokenImpl.h"
+ 
++#include "Global.h"
+ #include "AutoCaller.h"
+ #include "Logging.h"
+ 

@@ -73,6 +73,7 @@ CC_OPT += -fshort-wchar
 LIBS += libc libm 
 
 INC_DIR += $(REP_DIR)/src/virtualbox/include
+INC_DIR += $(REP_DIR)/src/virtualbox/include/xpcom
 INC_DIR += $(VIRTUALBOX_DIR)/include
 INC_DIR += $(VBOX_DIR)/Devices/build
 

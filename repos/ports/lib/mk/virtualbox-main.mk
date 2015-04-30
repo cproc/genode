@@ -1,5 +1,7 @@
 include $(REP_DIR)/lib/mk/virtualbox-common.inc
 
+VBOX_CC_OPT += -DVBOX_WITH_GENERIC_SESSION_WATCHER
+
 LIBS  += stdcxx
 
 SRC_CC += Main/xml/Settings.cpp
@@ -34,6 +36,7 @@ SRC_CC += Main/src-server/AudioAdapterImpl.cpp
 SRC_CC += Main/src-server/BandwidthControlImpl.cpp
 SRC_CC += Main/src-server/BandwidthGroupImpl.cpp
 SRC_CC += Main/src-server/BIOSSettingsImpl.cpp
+SRC_CC += Main/src-server/ClientToken.cpp
 SRC_CC += Main/src-server/DHCPServerImpl.cpp
 SRC_CC += Main/src-server/GuestOSTypeImpl.cpp
 SRC_CC += Main/src-server/HostUSBDeviceImpl.cpp
@@ -68,6 +71,7 @@ SRC_CC += Main/glue/xpcom/helpers.cpp
 INC_DIR += $(VBOX_DIR)/Main/xml
 INC_DIR += $(VBOX_DIR)/Main/include
 INC_DIR += $(REP_DIR)/src/virtualbox/frontend
+INC_DIR += $(REP_DIR)/src/virtualbox/frontend/VBoxAPIWrap
 
 # search path to 'scan_code_set_2.h'
 INC_DIR += $(call select_from_repositories,src/drivers/input/ps2)
