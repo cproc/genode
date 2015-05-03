@@ -1,0 +1,955 @@
+vbox_usb_contrib.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/VBox/Devices/USB/DrvVUSBRootHub.cpp           |    1 
+ src/VBox/Devices/USB/USBProxyDevice.cpp           |   24 +++++++----
+ src/VBox/Devices/USB/VUSBDevice.cpp               |   11 +++++
+ src/VBox/Main/src-client/ConsoleImpl.cpp          |   29 ++++++++++---
+ src/VBox/Main/src-client/SessionImpl.cpp          |    1 
+ src/VBox/Main/src-server/HostUSBDeviceImpl.cpp    |   13 +++++-
+ src/VBox/Main/src-server/MachineImpl.cpp          |   10 ++++-
+ src/VBox/Main/src-server/USBDeviceFiltersImpl.cpp |    5 ++
+ src/VBox/Main/src-server/USBProxyService.cpp      |   46 ++++++++++++++++++++-
+ src/VBox/VMM/VMMR3/PDMDevice.cpp                  |    1 
+ src/VBox/VMM/VMMR3/PDMUsb.cpp                     |    6 ++-
+ 11 files changed, 120 insertions(+), 27 deletions(-)
+
+diff --git a/src/VBox/Devices/USB/DrvVUSBRootHub.cpp b/src/VBox/Devices/USB/DrvVUSBRootHub.cpp
+index 6db66b2..92c29be 100644
+--- a/src/VBox/Devices/USB/DrvVUSBRootHub.cpp
++++ b/src/VBox/Devices/USB/DrvVUSBRootHub.cpp
+@@ -256,6 +256,7 @@ static int vusbHubAttach(PVUSBHUB pHub, PVUSBDEV pDev)
+ /** @copydoc PDMUSBHUBREG::pfnAttachDevice */
+ static DECLCALLBACK(int) vusbPDMHubAttachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t *piPort)
+ {
++RTLogPrintf("vusbPDMHubAttachDevice(): return address = %p\n", __builtin_return_address(0));
+     PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+ 
+     /*
+diff --git a/src/VBox/Devices/USB/USBProxyDevice.cpp b/src/VBox/Devices/USB/USBProxyDevice.cpp
+index bed42e8..5fc6dc8 100644
+--- a/src/VBox/Devices/USB/USBProxyDevice.cpp
++++ b/src/VBox/Devices/USB/USBProxyDevice.cpp
+@@ -69,7 +69,9 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
+         Urb.enmDir = VUSBDIRECTION_IN;
+         Urb.fShortNotOk = false;
+         Urb.enmStatus = VUSBSTATUS_INVALID;
++RTLogPrintf("GetStdDescSync(): cbHint = %u\n", cbHint);
+         cbHint = RT_MIN(cbHint, sizeof(Urb.abData) - sizeof(VUSBSETUP));
++RTLogPrintf("GetStdDescSync(): cbHint = %u\n", cbHint);
+         Urb.cbData = cbHint + sizeof(VUSBSETUP);
+ 
+         PVUSBSETUP pSetup = (PVUSBSETUP)Urb.abData;
+@@ -131,7 +133,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
+             cbDesc = ((uint8_t *)pbDesc)[0];
+         }
+ 
+-        Log(("GetStdDescSync: got Urb.cbData=%u, cbDesc=%u cbHint=%u\n", Urb.cbData, cbDesc, cbHint));
++        RTLogPrintf("GetStdDescSync: got Urb.cbData=%u, cbDesc=%u cbHint=%u\n", Urb.cbData, cbDesc, cbHint);
+ 
+         if (    Urb.cbData == cbHint + sizeof(VUSBSETUP)
+             &&  cbDesc > Urb.cbData - sizeof(VUSBSETUP))
+@@ -142,6 +144,7 @@ static void *GetStdDescSync(PUSBPROXYDEV pProxyDev, uint8_t iDescType, uint8_t i
+                 AssertMsgFailed(("cbHint=%u\n", cbHint));
+                 break;
+             }
++            RTLogPrintf("continue\n");
+             continue;
+         }
+         Assert(cbDesc <= Urb.cbData - sizeof(VUSBSETUP));
+@@ -220,6 +223,7 @@ struct desc_counts
+ 
+ static int count_descriptors(struct desc_counts *cnt, uint8_t *buf, size_t len)
+ {
++RTLogPrintf("count_descriptors()\n");
+     PVUSBDESCCONFIG cfg;
+     uint8_t *tmp, *end;
+     uint32_t i, x;
+@@ -307,6 +311,7 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
+                           PVUSBDESCINTERFACEEX *id, PVUSBDESCENDPOINTEX *ed,
+                           uint8_t *buf, size_t len)
+ {
++RTLogPrintf("copy_interface()\n");
+     PVUSBDESCINTERFACEEX cur_if = NULL;
+     uint32_t altmap[4] = {0,};
+     uint8_t *tmp, *end = buf + len;
+@@ -422,8 +427,9 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
+     size_t tot_len;
+     size_t cbIface;
+     uint32_t i, x;
+-
++RTLogPrintf("copy_config(): idx = %u\n", idx);
+     descs = GetStdDescSync(pProxyDev, VUSB_DT_CONFIG, idx, 0, VUSB_DT_CONFIG_MIN_LEN);
++RTLogPrintf("copy_config(): descs = %p\n", descs);
+     if ( descs == NULL ) {
+         Log(("copy_config: GetStdDescSync failed\n"));
+         return false;
+@@ -441,8 +447,8 @@ static bool copy_config(PUSBPROXYDEV pProxyDev, uint8_t idx, PVUSBDESCCONFIGEX o
+         Log(("usb-proxy: config%u: bNumInterfaces %u != %u\n",
+             idx, cfg->bNumInterfaces, cnt.num_if));
+ 
+-    Log(("usb-proxy: config%u: %u bytes id=%u ed=%u if=%u\n",
+-        idx, tot_len, cnt.num_id, cnt.num_ed, cnt.num_if));
++    RTLogPrintf("usb-proxy: config%u: %u bytes id=%u ed=%u if=%u\n",
++        idx, tot_len, cnt.num_id, cnt.num_ed, cnt.num_if);
+ 
+     cbIface = cnt.num_if * sizeof(VUSBINTERFACE)
+            + cnt.num_id * sizeof(VUSBDESCINTERFACEEX)
+@@ -812,6 +818,7 @@ static int usbProxyQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx, PCFGMN
+ /** @copydoc PDMUSBREG::pfnConstruct */
+ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
+ {
++RTLogPrintf("usbProxyConstruct()\n");
+     PUSBPROXYDEV pThis = PDMINS_2_DATA(pUsbIns, PUSBPROXYDEV);
+     LogFlow(("usbProxyConstruct: pUsbIns=%p iInstance=%d\n", pUsbIns, iInstance));
+ 
+@@ -843,14 +850,12 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
+     /*
+      * Select backend and open the device.
+      */
+-
+-    return PDMUSB_SET_ERROR(pUsbIns, VERR_NOT_SUPPORTED, N_("USBProxy: not supported on Genode"));
+-#if 0
+     if (!fRemote)
+         pThis->pOps = &g_USBProxyDeviceHost;
++#if 0
+     else
+         pThis->pOps = &g_USBProxyDeviceVRDP;
+-#endif /* if 0 */
++#endif
+ 
+     pThis->pvInstanceDataR3 = RTMemAllocZ(pThis->pOps->cbBackend);
+     if (!pThis->pvInstanceDataR3)
+@@ -973,7 +978,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
+         if (pCfgGlobalDev)
+             pCfgGlobalDev = pCfgGlobal;
+     }
+-
++RTLogPrintf("usbProxyConstruct() check 1\n");
+     /*
+      * Query the rest of the configuration using the global as fallback.
+      */
+@@ -1066,6 +1071,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
+     pThis->DescCache.cLanguages = 0;
+     pThis->DescCache.fUseCachedDescriptors = fEdited;
+     pThis->DescCache.fUseCachedStringsDescriptors = false;
++RTLogPrintf("usbProxyConstruct() check 2\n");
+ 
+     /*
+      * Call the backend if it wishes to do some more initializing
+diff --git a/src/VBox/Devices/USB/VUSBDevice.cpp b/src/VBox/Devices/USB/VUSBDevice.cpp
+index 4efa818..44b22df 100644
+--- a/src/VBox/Devices/USB/VUSBDevice.cpp
++++ b/src/VBox/Devices/USB/VUSBDevice.cpp
+@@ -1096,8 +1096,10 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
+             PVUSBURB pNext = pUrb->VUsb.pNext;
+             Assert(pUrb->VUsb.pDev == pDev);
+ 
++#if 0
+             AssertMsgFailed(("%s: Leaking left over URB! state=%d pDev=%p[%s]\n",
+                              pUrb->pszDesc, pUrb->enmState, pDev, pDev->pUsbIns->pszName));
++#endif
+             vusbUrbUnlink(pUrb);
+             /* Unlink isn't enough, because boundary timer and detaching will try to reap it.
+              * It was tested with MSD & iphone attachment to vSMP guest, if
+@@ -1184,6 +1186,7 @@ int vusbDevUrbIoThreadCreate(PVUSBDEV pDev)
+  */
+ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev)
+ {
++RTLogPrintf("*** vusbDevUrbIoThreadDestroy() ***\n");
+     int rc = VINF_SUCCESS;
+     int rcThread = VINF_SUCCESS;
+ 
+@@ -1196,6 +1199,8 @@ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev)
+ 
+     pDev->hUrbIoThread = NIL_RTTHREAD;
+ 
++RTLogPrintf("*** vusbDevUrbIoThreadDestroy() finished ***\n");
++
+     return rc;
+ }
+ 
+@@ -1254,6 +1259,7 @@ int vusbDevDetach(PVUSBDEV pDev)
+  */
+ void vusbDevDestroy(PVUSBDEV pDev)
+ {
++RTLogPrintf("*** vusbDevDestroy() ***\n");
+     LogFlow(("vusbDevDestroy: pDev=%p[%s] enmState=%d\n", pDev, pDev->pUsbIns->pszName, pDev->enmState));
+ 
+     /*
+@@ -1359,6 +1365,7 @@ static DECLCALLBACK(void) vusbDevResetDoneTimer(PPDMUSBINS pUsbIns, PTMTIMER pTi
+  */
+ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer, PVUSBRESETARGS pArgs)
+ {
++RTLogPrintf("%s: return = %p\n", __PRETTY_FUNCTION__, __builtin_return_address(0));
+     int rc = VINF_SUCCESS;
+     uint64_t u64EndTS = TMTimerGet(pDev->pResetTimer) + TMTimerFromMilli(pDev->pResetTimer, 10);
+ 
+@@ -1414,6 +1421,7 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
+  */
+ DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
+ {
++RTLogPrintf("vusbDevReset(): return address = %p\n", __builtin_return_address(0));
+     PVUSBDEV pDev = (PVUSBDEV)pDevice;
+     Assert(!pfnDone || pVM);
+     LogFlow(("vusb: reset: [%s]/%i\n", pDev->pUsbIns->pszName, pDev->i16Port));
+@@ -1593,6 +1601,7 @@ size_t vusbDevMaxInterfaces(PVUSBDEV pDev)
+  */
+ DECLHIDDEN(int) vusbDevIoThreadExecV(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+ {
++RTLogPrintf("vusbDevIoThreadExecV(): return address = %p\n", __builtin_return_address(0));
+     int rc = VINF_SUCCESS;
+     PRTREQ hReq = NULL;
+ 
+@@ -1660,6 +1669,7 @@ DECLHIDDEN(int) vusbDevIoThreadExec(PVUSBDEV pDev, uint32_t fFlags, PFNRT pfnFun
+  */
+ DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsigned cArgs, ...)
+ {
++RTLogPrintf("vusbDevIoThreadExecSync(): return address = %p\n", __builtin_return_address(0));
+     int rc = VINF_SUCCESS;
+     va_list va;
+ 
+@@ -1685,6 +1695,7 @@ static DECLCALLBACK(int) vusbDevGetDescriptorCacheWorker(PPDMUSBINS pUsbIns, PCP
+  */
+ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
+ {
++RTLogPrintf("vusbDevInit()\n");
+     /*
+      * Initialize the device data members.
+      * (All that are Non-Zero at least.)
+diff --git a/src/VBox/Main/src-client/ConsoleImpl.cpp b/src/VBox/Main/src-client/ConsoleImpl.cpp
+index 607d501..6f821b7 100644
+--- a/src/VBox/Main/src-client/ConsoleImpl.cpp
++++ b/src/VBox/Main/src-client/ConsoleImpl.cpp
+@@ -53,7 +53,9 @@
+ #include "DisplayImpl.h"
+ #if 0
+ #include "MachineDebuggerImpl.h"
++#endif
+ #include "USBDeviceImpl.h"
++#if 0
+ #include "RemoteUSBDeviceImpl.h"
+ #endif
+ #include "SharedFolderImpl.h"
+@@ -107,9 +109,11 @@
+ #include <VBox/vmm/pdmapi.h>
+ #include <VBox/vmm/pdmasynccompletion.h>
+ #include <VBox/vmm/pdmnetifs.h>
++#endif
+ #ifdef VBOX_WITH_USB
+ # include <VBox/vmm/pdmusb.h>
+ #endif
++#if 0
+ #ifdef VBOX_WITH_NETSHAPER
+ # include <VBox/vmm/pdmnetshaper.h>
+ #endif /* VBOX_WITH_NETSHAPER */
+@@ -5382,7 +5386,7 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
+ 
+     return rc;
+ }
+-
++#endif
+ /**
+  * Called by IInternalSessionControl::OnUSBDeviceAttach() or locally by
+  * processRemoteUSBDevices() after IInternalMachineControl::RunUSBDeviceFilters()
+@@ -5400,6 +5404,7 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
+  */
+ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs)
+ {
++RTLogPrintf("Console::onUSBDeviceAttach(): aDevice = %p\n", aDevice);
+ #ifdef VBOX_WITH_USB
+     LogFlowThisFunc(("aDevice=%p aError=%p\n", aDevice, aError));
+ 
+@@ -5450,6 +5455,7 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
+             onUSBDeviceStateChange(aDevice, true /* aAttached */, pError);
+         }
+     }
++RTLogPrintf("Console::onUSBDeviceAttach() finished\n");
+ 
+     return rc;
+ 
+@@ -5549,7 +5555,7 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
+     return E_FAIL;
+ #endif  /* !VBOX_WITH_USB */
+ }
+-
++#if 0
+ /**
+  * Called by IInternalSessionControl::OnBandwidthGroupChange().
+  *
+@@ -8506,6 +8512,7 @@ void Console::changeDragAndDropMode(DragAndDropMode_T aDragAndDropMode)
+ 
+     pVMMDev->hgcmHostCall("VBoxDragAndDropSvc", DragAndDropSvc::HOST_DND_SET_MODE, 1, &parm);
+ }
++#endif /* 0 */
+ 
+ #ifdef VBOX_WITH_USB
+ /**
+@@ -8519,6 +8526,7 @@ void Console::changeDragAndDropMode(DragAndDropMode_T aDragAndDropMode)
+  */
+ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
+ {
++RTLogPrintf("Console::attachUSBDevice()\n");
+     AssertReturn(aHostDevice, E_FAIL);
+     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+ 
+@@ -8548,10 +8556,11 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
+     if (!ptrVM.isOk())
+         return ptrVM.rc();
+ 
+-    LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
+-                      Address.c_str(), uuid.raw()));
++    RTLogPrintf("Proxying USB device '%s' {%RTuuid}...\n",
++                      Address.c_str(), uuid.raw());
+ 
+     void *pvRemoteBackend = NULL;
++#if 0
+     if (fRemote)
+     {
+         RemoteUSBDevice *pRemoteUSBDevice = static_cast<RemoteUSBDevice *>(aHostDevice);
+@@ -8559,7 +8568,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
+         if (!pvRemoteBackend)
+             return E_INVALIDARG; /* The clientId is invalid then. */
+     }
+-
++#endif
+     USHORT portVersion = 1;
+     hrc = aHostDevice->COMGETTER(PortVersion)(&portVersion);
+     AssertComRCReturnRC(hrc);
+@@ -8603,7 +8612,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
+                 break;
+         }
+     }
+-
++RTLogPrintf("Console::attachUSBDevice() finished\n");
+     return hrc;
+ }
+ 
+@@ -8626,9 +8635,10 @@ Console::usbAttachCallback(Console *that, PUVM pUVM, IUSBDevice *aHostDevice, PC
+ 
+     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
+     AssertReturn(!that->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
+-
++RTLogPrintf("Console::usbAttachCallback()\n");
+     int vrc = PDMR3UsbCreateProxyDevice(pUVM, aUuid, aRemote, aAddress, pvRemoteBackend,
+                                         aPortVersion == 1 ? VUSB_STDVER_11 : VUSB_STDVER_20, aMaskedIfs);
++RTLogPrintf("Console::usbAttachCallback() finished\n");
+     LogFlowFunc(("vrc=%Rrc\n", vrc));
+     LogFlowFuncLeave();
+     return vrc;
+@@ -8670,12 +8680,13 @@ HRESULT Console::detachUSBDevice(const ComObjPtr<OUSBDevice> &aHostDevice)
+         setErrorStatic(hrc2, "GetRemote() failed");
+ 
+     PCRTUUID pUuid = aHostDevice->id().raw();
++#if 0
+     if (fRemote)
+     {
+         Guid guid(*pUuid);
+         consoleVRDPServer()->USBBackendReleasePointer(&guid);
+     }
+-
++#endif
+     alock.release();
+     int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
+                                (PFNRT)usbDetachCallback, 5,
+@@ -8720,6 +8731,7 @@ Console::usbDetachCallback(Console *that, PUVM pUVM, PCRTUUID aUuid)
+ }
+ #endif /* VBOX_WITH_USB */
+ 
++#if 0
+ /* Note: FreeBSD needs this whether netflt is used or not. */
+ #if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))
+ /**
+@@ -9114,6 +9126,7 @@ Console::setVMRuntimeErrorCallback(PUVM pUVM, void *pvUser, uint32_t fFlags,
+  */
+ HRESULT Console::captureUSBDevices(PUVM pUVM)
+ {
++RTLogPrintf("Console::captureUSBDevices()\n");
+     LogFlowThisFunc(("\n"));
+ 
+     /* sanity check */
+diff --git a/src/VBox/Main/src-client/SessionImpl.cpp b/src/VBox/Main/src-client/SessionImpl.cpp
+index 267be48..9aecdc6 100644
+--- a/src/VBox/Main/src-client/SessionImpl.cpp
++++ b/src/VBox/Main/src-client/SessionImpl.cpp
+@@ -815,6 +815,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
+                                         IVirtualBoxErrorInfo *aError,
+                                         ULONG aMaskedIfs)
+ {
++RTLogPrintf("Session::OnUSBDeviceAttach()\n");
+     LogFlowThisFunc(("\n"));
+ 
+     AutoCaller autoCaller(this);
+diff --git a/src/VBox/Main/src-server/HostUSBDeviceImpl.cpp b/src/VBox/Main/src-server/HostUSBDeviceImpl.cpp
+index 582d623..8b4c503 100644
+--- a/src/VBox/Main/src-server/HostUSBDeviceImpl.cpp
++++ b/src/VBox/Main/src-server/HostUSBDeviceImpl.cpp
+@@ -367,6 +367,7 @@ Utf8Str HostUSBDevice::getName()
+  */
+ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetError, ULONG aMaskedIfs /* = 0*/)
+ {
++RTLogPrintf("HostUSBDevice::requestCaptureForVM()\n");
+     /*
+      * Validate preconditions and input.
+      */
+@@ -422,7 +423,7 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
+     {
+         alock.release();
+         HRESULT hrc = attachToVM(aMachine, aMaskedIfs);
+-        return SUCCEEDED(hrc);
++        return hrc;
+     }
+ 
+     /*
+@@ -453,7 +454,7 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
+                             mName, mId.raw());
+         return E_FAIL;
+     }
+-
++RTLogPrintf("HostUSBDevice::requestCaptureForVM() finished\n");
+     return S_OK;
+ }
+ 
+@@ -476,6 +477,7 @@ HRESULT HostUSBDevice::requestCaptureForVM(SessionMachine *aMachine, bool aSetEr
+  */
+ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* = 0*/)
+ {
++RTLogPrintf("HostUSBDevice::attachToVM()\n");
+     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+     /*
+@@ -538,6 +540,7 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /*
+             hrc = E_UNEXPECTED;
+         }
+     }
++RTLogPrintf("HostUSBDevice::attachToVM() finished\n");
+     return hrc;
+ }
+ 
+@@ -1487,6 +1490,7 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
+  */
+ bool HostUSBDevice::updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+ {
++RTLogPrintf("HostUSBDevice::updateStateFake()\n");
+     Assert(!isWriteLockOnCurrentThread());
+     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+     const HostUSBDeviceState enmState = mUniState;
+@@ -1519,12 +1523,15 @@ bool HostUSBDevice::updateStateFake(PCUSBDEVICE aDev, bool *aRunFilters, Session
+                 alock.release();
+                 attachToVM(mMachine, mMaskedIfs);
+             }
++RTLogPrintf("HostUSBDevice::updateStateFake() finished 1\n");
+             return true;
+         }
+ 
+         default:
+             alock.release();
+-            return updateState(aDev, aRunFilters, aIgnoreMachine);
++            bool result = updateState(aDev, aRunFilters, aIgnoreMachine);
++RTLogPrintf("HostUSBDevice::updateStateFake() finished 2\n");
++			return result;
+     }
+ }
+ 
+diff --git a/src/VBox/Main/src-server/MachineImpl.cpp b/src/VBox/Main/src-server/MachineImpl.cpp
+index 5fcb53c..df7025e 100644
+--- a/src/VBox/Main/src-server/MachineImpl.cpp
++++ b/src/VBox/Main/src-server/MachineImpl.cpp
+@@ -13037,6 +13037,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
+          *
+          * This is identical to SessionMachine::DetachAllUSBDevices except
+          * for the aAbnormal argument. */
++        RTLogPrintf("SessionMachine::uninit()\n");
+         HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
+         AssertComRC(rc);
+         NOREF(rc);
+@@ -13583,6 +13584,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
+     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+ 
+ #ifdef VBOX_WITH_USB
++RTLogPrintf("SessionMachine::AutoCaptureUSBDevices()\n");
+     HRESULT rc = mUSBDeviceFilters->notifyProxy(true /* aInsertFilters */);
+     AssertComRC(rc);
+     NOREF(rc);
+@@ -13613,6 +13615,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
+     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+ 
+ #ifdef VBOX_WITH_USB
++	RTLogPrintf("SessionMachine::DetachAllUSBDevices()\n");
+     HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
+     AssertComRC(rc);
+     NOREF(rc);
+@@ -14616,6 +14619,7 @@ HRESULT SessionMachine::onUSBDeviceAttach(IUSBDevice *aDevice,
+                                           IVirtualBoxErrorInfo *aError,
+                                           ULONG aMaskedIfs)
+ {
++RTLogPrintf("SessionMachine::onUSBDeviceAttach()\n");
+     LogFlowThisFunc(("\n"));
+ 
+     AutoCaller autoCaller(this);
+@@ -14632,13 +14636,15 @@ HRESULT SessionMachine::onUSBDeviceAttach(IUSBDevice *aDevice,
+ 
+     /* fail on notifications sent after #OnSessionEnd() is called, it is
+      * expected by the caller */
+-    if (!directControl)
++    if (!directControl) {
++RTLogPrintf("SessionMachine::onUSBDeviceAttach(): !directControl\n");
+         return E_FAIL;
++    }
+ 
+     /* No locks should be held at this point. */
+     AssertMsg(RTLockValidatorWriteLockGetCount(RTThreadSelf()) == 0, ("%d\n", RTLockValidatorWriteLockGetCount(RTThreadSelf())));
+     AssertMsg(RTLockValidatorReadLockGetCount(RTThreadSelf()) == 0, ("%d\n", RTLockValidatorReadLockGetCount(RTThreadSelf())));
+-
++RTLogPrintf("calling directControl->OnUSBDeviceAttach()\n");
+     return directControl->OnUSBDeviceAttach(aDevice, aError, aMaskedIfs);
+ }
+ 
+diff --git a/src/VBox/Main/src-server/USBDeviceFiltersImpl.cpp b/src/VBox/Main/src-server/USBDeviceFiltersImpl.cpp
+index c179ca6..39ced79 100644
+--- a/src/VBox/Main/src-server/USBDeviceFiltersImpl.cpp
++++ b/src/VBox/Main/src-server/USBDeviceFiltersImpl.cpp
+@@ -393,6 +393,7 @@ STDMETHODIMP USBDeviceFilters::InsertDeviceFilter(ULONG aPosition,
+         ComAssertRet(pProxySvc, E_FAIL);
+ 
+         ComAssertRet(pFilter->getId() == NULL, E_FAIL);
++        RTLogPrintf("USBDeviceFilters::InsertDeviceFilter()\n");
+         pFilter->getId() = pProxySvc->insertFilter(&pFilter->getData().mUSBFilter);
+     }
+ 
+@@ -644,6 +645,7 @@ void USBDeviceFilters::rollback()
+                     {
+                         USBDeviceFilter *pFilter = *it; /* resolve ambiguity */
+                         Assert(pFilter->getId() == NULL);
++                        RTLogPrintf("USBDeviceFilters::rollback()\n");
+                         pFilter->getId() = pProxySvc->insertFilter(&pFilter->getData().mUSBFilter);
+                     }
+                 }
+@@ -854,6 +856,7 @@ HRESULT USBDeviceFilters::onDeviceFilterChange(USBDeviceFilter *aFilter,
+                 if (aFilter->getData().mActive)
+                 {
+                     ComAssertRet(aFilter->getId() == NULL, E_FAIL);
++                    RTLogPrintf("USBDeviceFilters::onDeviceFilterChange()\n");
+                     aFilter->getId() = pProxySvc->insertFilter(&aFilter->getData().mUSBFilter);
+                 }
+                 else
+@@ -873,6 +876,7 @@ HRESULT USBDeviceFilters::onDeviceFilterChange(USBDeviceFilter *aFilter,
+                 pProxySvc->removeFilter(aFilter->getId());
+                 if (aFilter->getData().mRemote.isMatch(false))
+                 {
++                    RTLogPrintf("USBDeviceFilters::onDeviceFilterChange()\n");
+                     aFilter->getId() = pProxySvc->insertFilter(&aFilter->getData().mUSBFilter);
+                 }
+             }
+@@ -1057,6 +1061,7 @@ HRESULT USBDeviceFilters::notifyProxy(bool aInsertFilters)
+             if (aInsertFilters)
+             {
+                 AssertReturn(pFilter->getId() == NULL, E_FAIL);
++                RTLogPrintf("USBDeviceFilters::notifyProxy()\n");
+                 pFilter->getId() = pProxySvc->insertFilter(&pFilter->getData().mUSBFilter);
+             }
+             else
+diff --git a/src/VBox/Main/src-server/USBProxyService.cpp b/src/VBox/Main/src-server/USBProxyService.cpp
+index ddc2103..84102f0 100644
+--- a/src/VBox/Main/src-server/USBProxyService.cpp
++++ b/src/VBox/Main/src-server/USBProxyService.cpp
+@@ -40,6 +40,7 @@ USBProxyService::USBProxyService(Host *aHost)
+     : mHost(aHost), mThread(NIL_RTTHREAD), mTerminate(false), mLastError(VINF_SUCCESS), mDevices()
+ {
+     LogFlowThisFunc(("aHost=%p\n", aHost));
++RTLogPrintf("USBProxyService::USBProxyService()\n");
+ }
+ 
+ 
+@@ -48,6 +49,7 @@ USBProxyService::USBProxyService(Host *aHost)
+  */
+ HRESULT USBProxyService::init(void)
+ {
++RTLogPrintf("USBProxyService::init()\n");
+     return S_OK;
+ }
+ 
+@@ -73,6 +75,7 @@ USBProxyService::~USBProxyService()
+  */
+ bool USBProxyService::isActive(void)
+ {
++RTLogPrintf("USBProxyService::isActive()\n");
+     return mThread != NIL_RTTHREAD;
+ }
+ 
+@@ -85,6 +88,7 @@ bool USBProxyService::isActive(void)
+  */
+ int USBProxyService::getLastError(void)
+ {
++RTLogPrintf("USBProxyService::getLastError()\n");
+     return mLastError;
+ }
+ 
+@@ -99,6 +103,7 @@ int USBProxyService::getLastError(void)
+  */
+ HRESULT USBProxyService::getLastErrorMessage(BSTR *aError)
+ {
++RTLogPrintf("USBProxyService::getLastErrorMessage()\n");
+     AssertPtrReturn(aError, E_POINTER);
+     mLastErrorMessage.cloneTo(aError);
+     return S_OK;
+@@ -116,6 +121,7 @@ HRESULT USBProxyService::getLastErrorMessage(BSTR *aError)
+  */
+ RWLockHandle *USBProxyService::lockHandle() const
+ {
++//RTLogPrintf("USBProxyService::lockHandle()\n");
+     return mHost->lockHandle();
+ }
+ 
+@@ -134,6 +140,7 @@ RWLockHandle *USBProxyService::lockHandle() const
+  */
+ HRESULT USBProxyService::getDeviceCollection(ComSafeArrayOut(IHostUSBDevice *, aUSBDevices))
+ {
++RTLogPrintf("USBProxyService::getDeviceCollection()\n");
+     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
+     CheckComArgOutSafeArrayPointerValid(aUSBDevices);
+ 
+@@ -166,6 +173,7 @@ HRESULT USBProxyService::getDeviceCollection(ComSafeArrayOut(IHostUSBDevice *, a
+  */
+ HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aId)
+ {
++RTLogPrintf("USBProxyService::captureDeviceForVM()\n");
+     ComAssertRet(aMachine, E_INVALIDARG);
+     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+ 
+@@ -208,6 +216,7 @@ HRESULT USBProxyService::captureDeviceForVM(SessionMachine *aMachine, IN_GUID aI
+  */
+ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aId, bool aDone)
+ {
++RTLogPrintf("USBProxyService::detachDeviceFromVM()\n");
+     LogFlowThisFunc(("aMachine=%p{%s} aId={%RTuuid} aDone=%RTbool\n",
+                      aMachine,
+                      aMachine->getName().c_str(),
+@@ -271,6 +280,7 @@ HRESULT USBProxyService::detachDeviceFromVM(SessionMachine *aMachine, IN_GUID aI
+  */
+ HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
+ {
++RTLogPrintf("USBProxyService::autoCaptureDevicesForVM()\n");
+     LogFlowThisFunc(("aMachine=%p{%s}\n",
+                      aMachine,
+                      aMachine->getName().c_str()));
+@@ -325,6 +335,7 @@ HRESULT USBProxyService::autoCaptureDevicesForVM(SessionMachine *aMachine)
+  */
+ HRESULT USBProxyService::detachAllDevicesFromVM(SessionMachine *aMachine, bool aDone, bool aAbnormal)
+ {
++RTLogPrintf("USBProxyService::detachAllDevicesFromVM()\n");
+     // get a list of all running machines while we're outside the lock
+     // (getOpenedMachines requests locks which are incompatible with the host object lock)
+     SessionMachinesList llOpenedMachines;
+@@ -394,6 +405,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
+                                                SessionMachinesList &llOpenedMachines,
+                                                SessionMachine *aIgnoreMachine)
+ {
++RTLogPrintf("USBProxyService::runAllFiltersOnDevice()\n");
+     LogFlowThisFunc(("{%s} ignoring=%p\n", aDevice->getName().c_str(), aIgnoreMachine));
+ 
+     /*
+@@ -505,6 +517,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
+  */
+ bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<HostUSBDevice> &aDevice)
+ {
++RTLogPrintf("USBProxyService::runMachineFilters()\n");
+     LogFlowThisFunc(("{%s} aMachine=%p \n", aDevice->getName().c_str(), aMachine));
+ 
+     /*
+@@ -540,6 +553,7 @@ bool USBProxyService::runMachineFilters(SessionMachine *aMachine, ComObjPtr<Host
+  */
+ void *USBProxyService::insertFilter(PCUSBFILTER aFilter)
+ {
++RTLogPrintf("USBProxyService::insertFilter()\n");
+     // return non-NULL to fake success.
+     NOREF(aFilter);
+     return (void *)1;
+@@ -553,6 +567,7 @@ void *USBProxyService::insertFilter(PCUSBFILTER aFilter)
+  */
+ void USBProxyService::removeFilter(void *aId)
+ {
++RTLogPrintf("USBProxyService::removeFilter()\n");
+     NOREF(aId);
+ }
+ 
+@@ -565,6 +580,7 @@ void USBProxyService::removeFilter(void *aId)
+  */
+ int USBProxyService::captureDevice(HostUSBDevice *aDevice)
+ {
++RTLogPrintf("USBProxyService::captureDevice()\n");
+     NOREF(aDevice);
+     return VERR_NOT_IMPLEMENTED;
+ }
+@@ -581,6 +597,7 @@ int USBProxyService::captureDevice(HostUSBDevice *aDevice)
+  */
+ void USBProxyService::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+ {
++RTLogPrintf("USBProxyService::captureDeviceCompleted()\n");
+     NOREF(aDevice);
+     NOREF(aSuccess);
+ }
+@@ -595,6 +612,7 @@ void USBProxyService::captureDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
+  */
+ void USBProxyService::detachingDevice(HostUSBDevice *aDevice)
+ {
++RTLogPrintf("USBProxyService::detachingDevice()\n");
+     NOREF(aDevice);
+ }
+ 
+@@ -607,6 +625,7 @@ void USBProxyService::detachingDevice(HostUSBDevice *aDevice)
+  */
+ int USBProxyService::releaseDevice(HostUSBDevice *aDevice)
+ {
++RTLogPrintf("USBProxyService::releaseDevice()\n");
+     NOREF(aDevice);
+     return VERR_NOT_IMPLEMENTED;
+ }
+@@ -623,6 +642,7 @@ int USBProxyService::releaseDevice(HostUSBDevice *aDevice)
+  */
+ void USBProxyService::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSuccess)
+ {
++RTLogPrintf("USBProxyService::releaseDeviceCompleted()\n");
+     NOREF(aDevice);
+     NOREF(aSuccess);
+ }
+@@ -639,6 +659,7 @@ void USBProxyService::releaseDeviceCompleted(HostUSBDevice *aDevice, bool aSucce
+  */
+ int USBProxyService::start(void)
+ {
++RTLogPrintf("USBProxyService::start()\n");
+     int rc = VINF_SUCCESS;
+     if (mThread == NIL_RTTHREAD)
+     {
+@@ -677,6 +698,7 @@ int USBProxyService::start(void)
+  */
+ int USBProxyService::stop(void)
+ {
++RTLogPrintf("USBProxyService::stop()\n");
+     int rc = VINF_SUCCESS;
+     if (mThread != NIL_RTTHREAD)
+     {
+@@ -730,6 +752,7 @@ int USBProxyService::stop(void)
+      */
+     for (;;)
+     {
++RTLogPrintf("USBProxyService::serviceThread()\n");
+         rc = pThis->wait(RT_INDEFINITE_WAIT);
+         if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
+             break;
+@@ -752,6 +775,7 @@ int USBProxyService::stop(void)
+  */
+ void USBProxyService::serviceThreadInit(void)
+ {
++RTLogPrintf("USBProxyService::serviceThreadInit()\n");
+ }
+ 
+ 
+@@ -761,6 +785,7 @@ void USBProxyService::serviceThreadInit(void)
+  */
+ void USBProxyService::serviceThreadTerm(void)
+ {
++RTLogPrintf("USBProxyService::serviceThreadTerm()\n");
+ }
+ 
+ 
+@@ -775,6 +800,7 @@ void USBProxyService::serviceThreadTerm(void)
+  */
+ int USBProxyService::wait(RTMSINTERVAL aMillies)
+ {
++RTLogPrintf("USBProxyService::wait()\n");
+     return RTThreadSleep(RT_MIN(aMillies, 250));
+ }
+ 
+@@ -788,6 +814,7 @@ int USBProxyService::wait(RTMSINTERVAL aMillies)
+  */
+ int USBProxyService::interruptWait(void)
+ {
++RTLogPrintf("USBProxyService::interruptWait()\n");
+     return VERR_NOT_IMPLEMENTED;
+ }
+ 
+@@ -850,6 +877,7 @@ static PUSBDEVICE sortDevices(PUSBDEVICE pDevices)
+  */
+ void USBProxyService::processChanges(void)
+ {
++RTLogPrintf("USBProxyService::processChanges()\n");
+     LogFlowThisFunc(("\n"));
+ 
+     /*
+@@ -873,6 +901,7 @@ void USBProxyService::processChanges(void)
+     while (    it != mDevices.end()
+             || pDevices)
+     {
++RTLogPrintf("USBProxyService::processChanges(): handling device\n");
+         ComObjPtr<HostUSBDevice> pHostDevice;
+ 
+         if (it != mDevices.end())
+@@ -940,7 +969,7 @@ void USBProxyService::processChanges(void)
+                 ComObjPtr<HostUSBDevice> NewObj;
+                 NewObj.createObject();
+                 NewObj->init(pNew, this);
+-                Log(("USBProxyService::processChanges: attached %p {%s} %s / %p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"}\n",
++                RTLogPrintf("USBProxyService::processChanges: attached %p {%s} %s / %p:{.idVendor=%#06x, .idProduct=%#06x, .pszProduct=\"%s\", .pszManufacturer=\"%s\"}\n",
+                      (HostUSBDevice *)NewObj,
+                      NewObj->getName().c_str(),
+                      NewObj->getStateName(),
+@@ -948,7 +977,7 @@ void USBProxyService::processChanges(void)
+                      pNew->idVendor,
+                      pNew->idProduct,
+                      pNew->pszProduct,
+-                     pNew->pszManufacturer));
++                     pNew->pszManufacturer);
+ 
+                 mDevices.insert(it, NewObj);
+ 
+@@ -984,7 +1013,7 @@ void USBProxyService::processChanges(void)
+             }
+         }
+     } /* while */
+-
++RTLogPrintf("USBProxyService::processChanges() finished\n");
+     LogFlowThisFunc(("returns void\n"));
+ }
+ 
+@@ -999,6 +1028,7 @@ void USBProxyService::processChanges(void)
+  */
+ PUSBDEVICE USBProxyService::getDevices(void)
+ {
++RTLogPrintf("USBProxyService::getDevices()\n");
+     return NULL;
+ }
+ 
+@@ -1016,6 +1046,7 @@ void USBProxyService::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
+                                   SessionMachinesList &llOpenedMachines,
+                                   PUSBDEVICE aUSBDevice)
+ {
++RTLogPrintf("USBProxyService::deviceAdded()\n");
+     /*
+      * Validate preconditions.
+      */
+@@ -1051,6 +1082,7 @@ void USBProxyService::deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
+  */
+ void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
+ {
++RTLogPrintf("USBProxyService::deviceRemoved()\n");
+     /*
+      * Validate preconditions.
+      */
+@@ -1082,6 +1114,7 @@ void USBProxyService::deviceRemoved(ComObjPtr<HostUSBDevice> &aDevice)
+  */
+ bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+ {
++RTLogPrintf("USBProxyService::updateDeviceStateFake()\n");
+     *aRunFilters = false;
+     *aIgnoreMachine = NULL;
+     AssertReturn(aDevice, false);
+@@ -1107,6 +1140,7 @@ bool USBProxyService::updateDeviceStateFake(HostUSBDevice *aDevice, PUSBDEVICE a
+  */
+ bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters, SessionMachine **aIgnoreMachine)
+ {
++RTLogPrintf("USBProxyService::updateDeviceState()\n");
+     AssertReturn(aDevice, false);
+     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
+ 
+@@ -1126,6 +1160,7 @@ bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBD
+  */
+ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList *pllOpenedMachines, SessionMachine *aIgnoreMachine)
+ {
++RTLogPrintf("USBProxyService::deviceChanged()\n");
+     /*
+      * Validate preconditions.
+      */
+@@ -1161,6 +1196,7 @@ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, SessionMa
+ /*static*/ void
+ USBProxyService::freeDeviceMembers(PUSBDEVICE pDevice)
+ {
++RTLogPrintf("USBProxyService::freeDeviceMembers()\n");
+     RTStrFree((char *)pDevice->pszManufacturer);
+     pDevice->pszManufacturer = NULL;
+     RTStrFree((char *)pDevice->pszProduct);
+@@ -1190,6 +1226,7 @@ USBProxyService::freeDeviceMembers(PUSBDEVICE pDevice)
+ /*static*/ void
+ USBProxyService::freeDevice(PUSBDEVICE pDevice)
+ {
++RTLogPrintf("USBProxyService::freeDevice()\n");
+     freeDeviceMembers(pDevice);
+     RTMemFree(pDevice);
+ }
+@@ -1204,6 +1241,7 @@ USBProxyService::freeDevice(PUSBDEVICE pDevice)
+ /*static*/ void
+ USBProxyService::initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice)
+ {
++RTLogPrintf("USBProxyService::initFilterFromDevice()\n");
+     PCUSBDEVICE pDev = aDevice->mUsb;
+     int vrc;
+ 
+@@ -1242,6 +1280,7 @@ USBProxyService::initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice
+  */
+ ComObjPtr<HostUSBDevice> USBProxyService::findDeviceById(IN_GUID aId)
+ {
++RTLogPrintf("USBProxyService::findDeviceById()\n");
+     Guid Id(aId);
+     ComObjPtr<HostUSBDevice> Dev;
+     for (HostUSBDeviceList::iterator it = mDevices.begin();
+@@ -1259,6 +1298,7 @@ ComObjPtr<HostUSBDevice> USBProxyService::findDeviceById(IN_GUID aId)
+ /*static*/
+ HRESULT USBProxyService::setError(HRESULT aResultCode, const char *aText, ...)
+ {
++RTLogPrintf("USBProxyService::setError()\n");
+     va_list va;
+     va_start(va, aText);
+     HRESULT rc = VirtualBoxBase::setErrorInternal(aResultCode,
+diff --git a/src/VBox/VMM/VMMR3/PDMDevice.cpp b/src/VBox/VMM/VMMR3/PDMDevice.cpp
+index 789c330..c77034b 100644
+--- a/src/VBox/VMM/VMMR3/PDMDevice.cpp
++++ b/src/VBox/VMM/VMMR3/PDMDevice.cpp
+@@ -108,6 +108,7 @@ static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const
+  */
+ int pdmR3DevInit(PVM pVM)
+ {
++RTLogPrintf("pdmR3DevInit()\n");
+     LogFlow(("pdmR3DevInit:\n"));
+ 
+     AssertRelease(!(RT_OFFSETOF(PDMDEVINS, achInstanceData) & 15));
+diff --git a/src/VBox/VMM/VMMR3/PDMUsb.cpp b/src/VBox/VMM/VMMR3/PDMUsb.cpp
+index 0e39f05..2b07a09 100644
+--- a/src/VBox/VMM/VMMR3/PDMUsb.cpp
++++ b/src/VBox/VMM/VMMR3/PDMUsb.cpp
+@@ -214,6 +214,7 @@ static int pdmR3UsbLoad(PVM pVM, PCPDMUSBREGCBINT pRegCB, const char *pszFilenam
+  */
+ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSBREG pReg)
+ {
++RTLogPrintf("pdmR3UsbReg_Register()\n");
+     /*
+      * Validate the registration structure.
+      */
+@@ -264,7 +265,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
+             pUsbPrev->pNext = pUsb;
+         else
+             pRegCB->pVM->pdm.s.pUsbDevs = pUsb;
+-        Log(("PDM: Registered USB device '%s'\n", pReg->szName));
++        RTLogPrintf("PDM: Registered USB device '%s'\n", pReg->szName);
+         return VINF_SUCCESS;
+     }
+     return VERR_NO_MEMORY;
+@@ -281,6 +282,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
+  */
+ int pdmR3UsbLoadModules(PVM pVM)
+ {
++RTLogPrintf("pdmR3UsbLoadModules()\n");
+     LogFlow(("pdmR3UsbLoadModules:\n"));
+ 
+     AssertRelease(!(RT_OFFSETOF(PDMUSBINS, achInstanceData) & 15));
+@@ -376,7 +378,7 @@ int pdmR3UsbLoadModules(PVM pVM)
+         if (RT_FAILURE(rc))
+             return rc;
+     }
+-
++RTLogPrintf("pdmR3UsbLoadModules() finished\n");
+     return VINF_SUCCESS;
+ }
+ 
