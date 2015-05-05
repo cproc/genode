@@ -47,6 +47,8 @@
 #ifndef _LINK_H_
 #define _LINK_H_
 
+#include <stddef.h>
+
 /*****************
  ** sys/types.h **
  *****************/
