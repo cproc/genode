@@ -16,6 +16,8 @@
 
 static int raw_probe(struct usb_device *udev)
 {
+	printk("raw_probe(): return = %p\n", __builtin_return_address(0));
+
 	printk("RAW: vendor: %x product: %x dev %p\n", 
 	       udev->descriptor.idVendor, udev->descriptor.idProduct, udev);
 
@@ -51,7 +53,7 @@ static int raw_intf_probe(struct usb_interface *intf,
 	return -ENODEV;
 }
 
-void raw_intf_disconnect(struct usb_interface *intf) { }
+void raw_intf_disconnect(struct usb_interface *intf) { printk("raw_intf_disconnect()\n"); }
 
 static const struct usb_device_id raw_intf_id_table[] = {
 	{ .driver_info = 1 }

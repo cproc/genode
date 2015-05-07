@@ -792,7 +792,7 @@ PDBG("raw_register_device()");
 
 void raw_unregister_device(struct usb_device *udev)
 {
-PDBG("raw_unregister_device()");
+PDBG("raw_unregister_device(): return address = %p", __builtin_return_address(0));
 	Device *dev = Device::device(udev->descriptor.idVendor,
 	                             udev->descriptor.idProduct);
 	if (dev) {
