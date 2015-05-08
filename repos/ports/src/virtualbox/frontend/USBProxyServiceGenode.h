@@ -25,7 +25,7 @@ class USBProxyServiceGenode : public USBProxyService
 {
 	private:
 
-		static constexpr bool debug = false;
+		static constexpr bool debug = true;
 
 		struct Device_list_change_signal_context : Genode::Signal_context { };
 		struct Timeout_signal_context            : Genode::Signal_context { };

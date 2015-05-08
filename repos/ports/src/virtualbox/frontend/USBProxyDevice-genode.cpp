@@ -23,7 +23,7 @@
 
 namespace Usb_proxy_device_genode {
 
-	static constexpr bool debug = false;
+	static constexpr bool debug = true;
 
 	struct State_change_signal_context : Genode::Signal_context { };
 	struct Ack_avail_signal_context : Genode::Signal_context { };
