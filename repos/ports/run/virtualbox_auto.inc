@@ -143,11 +143,11 @@ append_if [expr $use_usb] config {
 	<start name="usb_drv" priority="-1">
 		<resource name="RAM" quantum="8M"/>
 		<provides>
-			<service name="Input"/>
+			<!--<service name="Input"/>-->
 			<service name="Usb" />
 		</provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
-			<hid/>
+		<config uhci="yes" ehci="yes" xhci="no">
+			<!--<hid/>-->
 			<raw>
 				<report devices="yes"/>
 			</raw>
