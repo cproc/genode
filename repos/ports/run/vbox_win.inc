@@ -39,7 +39,7 @@ set config_of_app {
 append_if [expr $use_ps2] config_of_app {
 			<input label="ps2" /> }
 append_if [expr $use_usb] config_of_app {
-			<input label="usb_hid" />}
+			<!--<input label="usb_hid" />-->}
 append config_of_app {
 		</config>
 		<route> }
