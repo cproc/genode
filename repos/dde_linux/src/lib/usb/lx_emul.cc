@@ -767,16 +767,20 @@ int device_add(struct device *dev)
 {
 	if (dev->driver)
 		return 0;
-
+dde_kit_log(DEBUG_DRIVER, "device_add(): %p", __builtin_return_address(0));
 	/* foreach driver match and probe device */
 	for (Driver *driver = Driver::list()->first(); driver; driver = driver->next())
 		if (driver->match(dev)) {
 			int ret = driver->probe(dev);
 			dde_kit_log(DEBUG_DRIVER, "Probe return %d", ret);
 
-			if (!ret)
+			if (!ret) {
+				dde_kit_log(DEBUG_DRIVER, "device_add() finished 1");
 				return 0;
+			}
 		}
+
+	dde_kit_log(DEBUG_DRIVER, "device_add() finished 2");
 
 	return 0;
 }
