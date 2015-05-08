@@ -63,12 +63,16 @@ static void init(Services *services)
 	 * The RAW driver is initialized first to make sure that it doesn't miss
 	 * notifications about added devices.
 	 */
-	if (services->raw)
+	if (services->raw) {
 		/* low level interface */
+		PDBG("calling module_raw_driver_init()");
 		module_raw_driver_init();
+	}
 
 	/* USB */
+	PDBG("calling subsys_usb_init()");
 	subsys_usb_init();
+
 
 	/* input + HID */
 	if (services->hid) {
@@ -85,6 +89,7 @@ static void init(Services *services)
 	}
 
 	/* host controller */
+	PDBG("calling platform_hcd_init()");
 	platform_hcd_init(services);
 
 	/* storage */

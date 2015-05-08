@@ -48,7 +48,7 @@ static int raw_intf_probe(struct usb_interface *intf,
 	return -ENODEV;
 }
 
-void raw_intf_disconnect(struct usb_interface *intf) { }
+void raw_intf_disconnect(struct usb_interface *intf) { printk("raw_intf_disconnect()\n"); }
 
 static const struct usb_device_id raw_intf_id_table[] = {
 	{ .driver_info = 1 }
