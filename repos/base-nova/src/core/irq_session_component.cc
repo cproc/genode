@@ -64,6 +64,10 @@ static bool associate(unsigned irq, Genode::addr_t irq_sel,
 		return false;
 	}
 
+	/* nova syscall interface specifies msi addr/data to be 32bit */
+	msi_addr = msi_addr & ~0U;
+	msi_data = msi_data & ~0U;
+
 	return true;
 }
 
