@@ -27,8 +27,12 @@ routed to the ACPI-driver):
 !      <service name="PCI"/>
 !      <service name="IRQ" />
 !    </provides>
+!    <config>
+!      <policy label="acpi_drv">
+!        <pci class="ALL"/>
+!      </policy>
+!    </config>
 !    <route>
-!      <service name="PCI"> <any-child /> </service>
 !      <any-service> <parent/> <any-child /> </any-service>
 !    </route>
 !</start>
@@ -42,9 +46,8 @@ routed to the ACPI-driver):
 !  </route>
 !</start>
 
-Limitations and known issues
-----------------------------
-
-Currently there is no interface to set the interrupt mode for Irq_sessions
-(e.g., level or edge triggered). This is required by Fiasco.OCs kernel
-interface. We regard this as future work.
+The 'config' node on the 'acpi_drv' requires and entry that permits the
+'acpi_drv' to iterate over all pci devices in order to rewrite the
+interrupt numbers according to the 'MADT' table. Furthermore the whole 'config'
+node will be passed on the 'pci_drv' which requires policy entries for each
+client separately. Read the 'pci_drv' README for more details.
