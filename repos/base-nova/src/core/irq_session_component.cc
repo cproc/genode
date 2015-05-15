@@ -38,6 +38,10 @@ static bool irq_ctrl(Genode::addr_t irq_sel,
 	if (res != Nova::NOVA_OK)
 		PERR("setting up MSI failed - error %u", res);
 
+	/* nova syscall interface specifies msi addr/data to be 32bit */
+	msi_addr = msi_addr & ~0U;
+	msi_data = msi_data & ~0U;
+
 	return res == Nova::NOVA_OK;
 }
 
