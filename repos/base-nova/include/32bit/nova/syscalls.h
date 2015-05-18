@@ -161,7 +161,7 @@ namespace Nova {
 	{
 		mword_t status = eax(s, flags, sel);
 
-		asm volatile ("  push %%ebp;"
+		asm volatile ("  push %%ebx;"
 
 		              "  mov %%ecx, %%ebx;"
 		              "  movl %%esp, %%ecx;"
