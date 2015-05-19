@@ -112,7 +112,7 @@ class Vfs::Block_file_system : public Single_file_system
 		{
 			try { config.attribute("block_buffer_count").value(&_block_buffer_count); }
 			catch (...) { }
-
+PDBG("Block_file_system");
 			_block.info(&_block_count, &_block_size, &_block_ops);
 
 			_readable  = _block_ops.supported(Block::Packet_descriptor::READ);

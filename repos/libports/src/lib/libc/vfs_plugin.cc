@@ -382,6 +382,7 @@ class Libc::Vfs_plugin : public Libc::Plugin
 Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
                                               int libc_fd)
 {
+PDBG("path = %s", path);
 	typedef Vfs::Directory_service::Open_result Result;
 
 	Vfs::Vfs_handle *handle = 0;

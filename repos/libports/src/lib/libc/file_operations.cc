@@ -596,7 +596,7 @@ extern "C" int munmap(void *start, ::size_t length)
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
-	PDBGV("pathname = %s", pathname);
+	PDBG("pathname = %s", pathname);
 
 	Absolute_path resolved_path;
 
