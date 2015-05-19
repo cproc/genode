@@ -21,10 +21,11 @@ A policy may contain several nodes describing several devices. The entries of
 a policy may describe PCI devices as non PCI devices. A PCI device is
 explicitly configured by the triple 'bus', 'device', 'function':
 
-!<start name="pci">
+!<start name="pci_drv">
+! <resource name="RAM" quantum="8M" constrain_phys="yes"/>
 ! ...
 ! <config>
-!  <policy label="nic_drv">
+!  <policy label="usb_drv">
 !   <pci bus="0" device="19" function="0"/>
 !   <pci bus="0" device="18" function="3"/>
 !  </policy>
@@ -33,11 +34,12 @@ explicitly configured by the triple 'bus', 'device', 'function':
 
 or more fuzzy by a device class alias:
 
-!<start name="pci">
+!<start name="pci_drv">
+! <resource name="RAM" quantum="8M" constrain_phys="yes"/>
 ! ...
 ! <config>
-!  <policy label="nic_drv">
-!   <pci class="ETHERNET"/>
+!  <policy label="usb_drv">
+!   <pci class="USB"/>
 !  </policy>
 ! </config>
 !</start>
@@ -45,7 +47,8 @@ or more fuzzy by a device class alias:
 
 Non PCI devices, as the PS2 controller are named by a "dev" node in the policy:
 
-!<start name="pci">
+!<start name="pci_drv">
+! <resource name="RAM" quantum="8M" constrain_phys="yes"/>
 ! <config>
 !  <policy label="ps_drv">
 !   <dev name="PS2/>
@@ -65,7 +68,8 @@ discovery by the client with the fuzzy pci class policy.
 By default the driver will try to use MSIs if the device and the used kernel
 supports it. This behaviour can be overwritten:
 
-!<start name="pci">
+!<start name="pci_drv">
+! <resource name="RAM" quantum="8M" constrain_phys="yes"/>
 ! <config>
 !  <policy label="nic_drv" irq_mode="nomsi">
 !  ...
@@ -73,6 +77,14 @@ supports it. This behaviour can be overwritten:
 ! </config>
 !</start>
 
+The constrain_phys attribute is evaluated by init. If set to "yes" it
+permits a component, the pci driver, to restrict the allocation of memory to
+specific physical RAM ranges. The PCI driver uses this feature to ensure that
+the allocation of DMA capable memory consider several restrictions. For
+example, some drivers, as the UHCI controller, requires a
+physical memory address below 4G. Another example is that on 32bit hosts
+physical to virtual identical mappings of DMA memory for the device_pd
+(required when IOMMU is used) must be below the kernel memory boundary (3G).
 
 Supported PCI class aliases
 ---------------------------
@@ -95,8 +107,9 @@ Supported non PCI devices
 -------------------------
 
 The driver provides for the PS2 controller the IO_PORT and IRQ resources.
-To use the 
-!<start name="pci">
+
+!<start name="pci_drv">
+! <resource name="RAM" quantum="8M" constrain_phys="yes"/>
 ! <config>
 !  <policy label="ps_drv">
 !   <dev name="PS2/>
