@@ -32,6 +32,8 @@
 #
 # CONTRIB_DIR   - location of ported 3rd-party source codes
 #
+# REQUIRED_GCC_VERSION - GCC version required for building Genode
+#
 
 ##
 ## Define global configuration variables
@@ -82,6 +84,17 @@ DST_DIRS := $(filter-out all clean bin cleanall again run/%,$(MAKECMDGOALS))
 
 ifeq ($(MAKECMDGOALS),)
 DST_DIRS := *
+endif
+
+#
+# GCC version check
+#
+ifneq ($(DST_DIRS),)
+REQUIRED_GCC_VERSION ?= 4.9.2
+GCC_VERSION := $(filter $(REQUIRED_GCC_VERSION) ,$(shell $(CUSTOM_CXX) --version))
+ifneq ($(GCC_VERSION), $(REQUIRED_GCC_VERSION))
+$(error "GCC version $(REQUIRED_GCC_VERSION) is required")
+endif
 endif
 
 #
