@@ -2,8 +2,8 @@
 assert_spec nova
  
 if {[have_include "power_on/qemu"]} {
-	puts "\nRun script does not support Qemu.\n"
-	exit 0
+	#puts "\nRun script does not support Qemu.\n"
+	#exit 0
 }
 
 set vdi_image "${flavor}.vdi"
@@ -133,7 +133,11 @@ append config_of_app "
 append config_of_app {
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
 				<vfs>
-					<dir name="dev"> <log/> <rtc/> </dir>}
+					<dir name="dev">
+						<log/>
+						<rtc/>
+						<block name="sda2" label="home"/>
+					 </dir>}
 
 append_if [expr $use_ram_fs] config_of_app {
 					<dir name="ram">  <fs label="from_ram_fs"/> </dir>}
@@ -158,6 +162,7 @@ append config_of_app {
 			<service name="Framebuffer"> <child name="nit_fb" /> </service>
 			<service name="Input"> <child name="nit_fb" /> </service>
 			<service name="Report"><child name="report_rom" /></service>
+			<service name="Block"> <child name="part_blk"/> </service>
 			<service name="ROM">
 				<if-arg key="label" value="usb_devices"/> <child name="report_rom"/>
 			</service>
