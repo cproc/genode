@@ -1,8 +1,8 @@
 assert_spec nova
 
 if {[have_include "power_on/qemu"]} {
-	puts "\nRun script does not support Qemu.\n"
-	exit
+	#puts "\nRun script does not support Qemu.\n"
+	#exit
 }
 
 append build_components {
@@ -69,7 +69,8 @@ set config {
 			<any-service><child name="ahci_drv"/> <parent/><any-child/></any-service>
 		</route>
 		<config>
-			<policy label="rump_fs" partition="4"/>
+			<policy label="rump_fs" partition="1"/>
+			<policy label="vbox -> home" partition="2"/>
 		</config>
 	</start>
 	<start name="rump_fs" priority="-1">
