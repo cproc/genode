@@ -89,6 +89,8 @@ class Hw::Address_space : public Genode::Address_space
 		 */
 		Address_space(Kernel::Pd* pd);
 
+		~Address_space();
+
 		/**
 		 * Insert memory mapping into translation table of the address space
 		 *
