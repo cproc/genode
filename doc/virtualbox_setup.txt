@@ -1,0 +1,108 @@
+
+Linux VM running in VirtualBox on Genode and in VirtualBox on a minimal Ubuntu system
+=====================================================================================
+
+- prerequisites:
+  - Ubuntu 14.04.2 server installer on USB stick
+
+- install Ubuntu server
+  - manual partitioning (example for 128GB hard drive):
+    - primary partition 64.0 GB, ext2 file system, mount point: /genode
+    - primary partition 60.0 GB, 'do not use the partition' (will become encrypted /home in the VM later)
+    - primary partition 4.0 GB, ext4 file system, mount point: /
+  - continue installation, reboot
+
+- setup wireless network if needed (example with WPA2 encryption):
+
+  - create and edit /etc/wpa_supplicant/wpa_supplicant.conf as root:
+
+network={
+	ssid="<ssid>"
+	psk="<password>"
+	scan_ssid=1
+	proto=RSN
+	key_mgmt=WPA-PSK
+	pairwise=CCMP TKIP
+	group=CCMP TKIP
+}
+
+  - edit /etc/network/interfaces as root and add the following lines:
+
+auto wlan0
+iface wlan0 inet dhcp
+	wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+  - bring the interface up
+    - $ sudo ifup wlan0
+
+- add user to the 'disk' group (to allow VirtualBox raw access to /dev/sda2):
+  - $ sudo usermod -a -G disk <user name>
+  - log out and in again to apply the updated group configuration
+
+- update the APT database
+  - $ sudo apt-get update
+
+- install VirtualBox (SDL GUI, kernel module, X Server)
+  - $ sudo apt-get install --no-install-recommends virtualbox virtualbox-dkms xserver-xorg xinit
+
+- make the /genode directory user-accessible and change into it
+  - $ sudo chmod a+rwx /genode
+  - $ cd /genode
+
+- create image files for the Linux VM (32GB root disk, raw disk on /dev/sda2 for /home, ISO installer image)
+  - $ VBoxManage createhd --filename linux.vdi --size 32768
+  - $ VBoxManage internalcommands createrawvmdk -filename home.vmdk -rawdisk /dev/sda2
+  - $ wget <installer ISO image of preferred 32-bit Linux distribution>
+
+- setup the Linux VM using the VirtualBox Qt GUI and build the 'VirtualBox on Genode' system in the VM
+  - $ sudo apt-get install --no-install-recommends virtualbox-qt
+  - $ xinit /usr/bin/VirtualBox
+  - create the Linux VM
+    - attach the 3 image files from the /genode directory
+    - add a permanent shared folder (for the generated Genode binaries)
+  - start the VM
+    - install Linux
+      - if the Linux installer supports it, create an encrypted /home partition on /dev/sdb
+    - download the guest editions from http://dlc-cdn.sun.com/virtualbox/4.3.16/VBoxGuestAdditions_4.3.16.iso
+    - install the guest editions (needed for shared folder support)
+      - $ sudo mount -o loop VBoxGuestAdditions_4.3.16.iso /mnt
+      - $ sudo /mnt/VBoxLinuxAdditions.run
+      - reboot for higher screen resolution
+    - setup Genode (git clone, checkout staging branch, build tool chain, prepare ports, ...)
+      - cherry-pick "'vbox_linux' run scenario" commit:
+        - $ git remote add cproc_genode https://github.com/cproc/genode.git
+        - $ git fetch cproc_genode
+        - $ git cherry-pick 58679ea0e8b57337505de1215f78094c87863996
+    - $ make run/vbox_linux
+    - mount the shared folder
+      - $ sudo mount -t vboxsf -o uid=$UID <shared folder name> <mount point>
+    - copy var/run/vbox_linux into the shared folder
+    - shut down the VM and VirtualBox
+
+- move the content of the 'vbox_linux' directory into the /genode directory
+  - $ mv vbox_linux/* /genode/
+
+- edit /genode/vbox_linux/genode/vm_linux.vbox and adapt the UUIDs of the disk images (two locations per image)
+  - $ VBoxManage showhdinfo /genode/linux.vdi
+  - $ VBoxManage showhdinfo /genode/home.vmdk
+
+- create and edit /etc/grub.d/42_genode (as root):
+
+#!/bin/sh
+
+cat <<EOF
+menuentry 'Genode' {
+	insmod ext2
+	set root='hd0,msdos1'
+	legacy_configfile /boot/grub/menu.lst
+}
+EOF
+
+- make the file executable
+  - $ sudo chmod +x /etc/grub.d/42_genode
+
+- update the GRUB configuration
+  - $ sudo update-grub
+
+- reboot and start Genode or keep running VirtualBox on Linux
+  - $ xinit /usr/bin/VBoxSDL --startvm "<name of Linux VM>"
