@@ -1,4 +1,5 @@
 #include <base/printf.h>
+#include <trace/timestamp.h>
 
 #include <VBox/settings.h>
 
@@ -154,8 +155,10 @@ void GenodeConsole::eventWait(IKeyboard * gKeyboard, IMouse * gMouse)
 		 * Track press/release status of keys and buttons. Currently,
 		 * only the mouse-button states are actually used.
 		 */
-		if (is_press)
+		if (is_press) {
+			PDBG("%llu: key pressed", Genode::Trace::timestamp());
 			_key_status[ev.keycode()] = true;
+		}
 
 		if (is_release)
 			_key_status[ev.keycode()] = false;

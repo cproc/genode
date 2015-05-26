@@ -30,7 +30,7 @@ set boot_modules {
 
 set config_of_app {
 
-	<start name="input_merger">
+	<!--<start name="input_merger">
 		<resource name="RAM" quantum="1M" />
 		<provides>
 			<service name="Input" />
@@ -54,7 +54,7 @@ append_if [expr $use_usb] config_of_app {
 append config_of_app {
 			<any-service> <parent /> <any-child /> </any-service>
 		</route>
-	</start>
+	</start>-->
 
 	<!--
 		Note: to get network access in the VM, the virtual network adapter
@@ -85,7 +85,7 @@ append config_of_app {
 		<provides><service name="Nitpicker"/></provides>
 		<route>
 			<service name="Framebuffer"> <child name="fb_drv" /> </service>
-			<service name="Input"> <child name="input_merger" /> </service>
+			<service name="Input"> <child name="ps2_drv" /> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 		<config>
@@ -179,6 +179,7 @@ append boot_modules " ${vbox_file} "
 
 build_boot_image $boot_modules
 
+run_genode_until forever
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} 70
 run_genode_until {\[init -\> vbox\].*Guest Additions capability report:.*seamless: yes, hostWindowMapping: no, graphics: yes} 170 [output_spawn_id]
 

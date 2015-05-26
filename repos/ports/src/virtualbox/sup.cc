@@ -36,7 +36,7 @@ struct Attached_gip : Genode::Attached_ram_dataspace
 
 
 enum {
-	UPDATE_HZ  = 100,                     /* Hz */
+	UPDATE_HZ  = 250,                     /* Hz */
 	/* Note: UPDATE_MS < 10ms is not supported by alarm timer, take care !*/
 	UPDATE_MS  = 1000 / UPDATE_HZ,
 	UPDATE_NS  = UPDATE_MS * 1000 * 1000,
