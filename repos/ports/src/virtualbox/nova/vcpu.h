@@ -21,6 +21,7 @@
 #include <util/flex_iterator.h>
 #include <rom_session/connection.h>
 #include <timer_session/connection.h>
+#include <trace/timestamp.h>
 
 #include <vmm/vcpu_thread.h>
 #include <vmm/vcpu_dispatcher.h>
@@ -506,7 +507,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			/* Clear the pending trap. */
 			rc = TRPMResetTrap(pVCpu);
 			AssertRC(rc);
-
+if (u8Vector == 0x31)
+	Vmm::printf("%llu: %u / 0x%x\n", Genode::Trace::timestamp(), u8Vector, u8Vector);
 			Event.n.u8Vector = u8Vector;
 			Event.n.u1Valid  = 1;
 			Event.n.u32ErrorCode = u32ErrorCode;
