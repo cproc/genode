@@ -16,6 +16,8 @@
 #include <framebuffer_session/connection.h>
 #undef Framebuffer
 
+#include <trace/timestamp.h>
+
 /* VirtualBox includes */
 
 #include "Global.h"
@@ -98,6 +100,7 @@ class Genodefb :
 
 		HRESULT NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
 		{
+		//PDBG("%llu: %d, %d, %d, %d", Genode::Trace::timestamp(), x, y, w, h);
 			_fb.refresh(x, y, w, h);
 			return S_OK;
 		}

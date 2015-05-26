@@ -16,13 +16,20 @@ struct Load_thread : Genode::Thread<STACK_SIZE>
 
 int main()
 {
+
+#if 0
+	while(1);
+#endif
+
 	enum { TEST_COUNT = 10000 };
 
 	static Timer::Connection timer;
+
 #if 0
 	static Load_thread load_thread;
 	load_thread.start();
 #endif
+
 	Genode::uint64_t sum = 0;
 	Genode::uint64_t min = ~0ULL;
 	Genode::uint64_t max = 0;

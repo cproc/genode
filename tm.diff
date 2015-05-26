@@ -1,0 +1,200 @@
+tm.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/app/virtualbox/src/VBox/VMM/VMMR3/TM.cpp    |   38 +++++++++++
+ src/app/virtualbox/src/VBox/VMM/VMMR3/VMEmt.cpp |   81 ++++++++++++++++++++++-
+ 2 files changed, 113 insertions(+), 6 deletions(-)
+
+diff --git a/src/app/virtualbox/src/VBox/VMM/VMMR3/TM.cpp b/src/app/virtualbox/src/VBox/VMM/VMMR3/TM.cpp
+index c3bc22d..4147f75 100644
+--- a/src/app/virtualbox/src/VBox/VMM/VMMR3/TM.cpp
++++ b/src/app/virtualbox/src/VBox/VMM/VMMR3/TM.cpp
+@@ -566,7 +566,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
+     uint32_t u32Millies;
+     rc = CFGMR3QueryU32(pCfgHandle, "TimerMillies", &u32Millies);
+     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+-        u32Millies = 10;
++        u32Millies = 4;
+     else if (RT_FAILURE(rc))
+         return VMSetError(pVM, rc, RT_SRC_POS,
+                           N_("Configuration error: Failed to query uint32_t value \"TimerMillies\""));
+@@ -1938,6 +1938,42 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+  */
+ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+ {
++#if 0
++{
++	static uint64_t prev_tsc = 0;
++	static uint64_t sum_tsc_diff = 0;
++	static uint64_t min_tsc_diff = ~0ULL;
++	static uint64_t max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	//RTLogPrintf("%p\n", __builtin_return_address(0));
++
++	if ((unsigned long)__builtin_return_address(0) == 0x144b869/*0x13e41b7*/) {
++		uint64_t tsc = ASMReadTSC();
++
++		if (count++ > 0) {
++
++			uint64_t tsc_diff  = tsc - prev_tsc;
++
++		//RTLogPrintf("diff: %llu ns, %p\n", tsc_diff * 1000 / 2400, __builtin_return_address(0));
++
++			sum_tsc_diff += tsc_diff;
++
++			if (tsc_diff < min_tsc_diff)
++				min_tsc_diff = tsc_diff;
++			else if (tsc_diff > max_tsc_diff)
++				max_tsc_diff = tsc_diff;
++
++			if (count % 1000 == 0)
++				RTLogPrintf("min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		            		min_tsc_diff * 1000 / 2400, max_tsc_diff * 1000 / 2400,
++		            		(sum_tsc_diff / count) * 1000 / 2400);
++		}
++
++		prev_tsc = tsc;
++	}
++}
++#endif
+     /*
+      * Only the dedicated timer EMT should do stuff here.
+      * (fRunningQueues is only used as an indicator.)
+diff --git a/src/app/virtualbox/src/VBox/VMM/VMMR3/VMEmt.cpp b/src/app/virtualbox/src/VBox/VMM/VMMR3/VMEmt.cpp
+index 8135443..5f845ab 100644
+--- a/src/app/virtualbox/src/VBox/VMM/VMMR3/VMEmt.cpp
++++ b/src/app/virtualbox/src/VBox/VMM/VMMR3/VMEmt.cpp
+@@ -42,7 +42,7 @@
+ #include <iprt/thread.h>
+ #include <iprt/time.h>
+ 
+-
++#include <iprt/asm-amd64-x86.h>
+ /*******************************************************************************
+ *   Internal Functions                                                         *
+ *******************************************************************************/
+@@ -667,7 +667,39 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+     PVM     pVM   = pUVCpu->pVM;
+     Assert(VMMGetCpu(pVM) == pVCpu);
+     NOREF(u64Now);
++RTLogPrintf("1\n");
++#if 0
++{
++	static uint64_t prev_tsc = 0;
++	static uint64_t sum_tsc_diff = 0;
++	static uint64_t min_tsc_diff = ~0ULL;
++	static uint64_t max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	uint64_t tsc = ASMReadTSC();
++
++	if (count++ > 0) {
++
++		uint64_t tsc_diff  = tsc - prev_tsc;
++
++	//RTLogPrintf("diff: %llu ns, %p\n", tsc_diff * 1000 / 2400, __builtin_return_address(0));
++
++		sum_tsc_diff += tsc_diff;
+ 
++		if (tsc_diff < min_tsc_diff)
++			min_tsc_diff = tsc_diff;
++		else if (tsc_diff > max_tsc_diff)
++			max_tsc_diff = tsc_diff;
++
++		if (count % 1000 == 0)
++			RTLogPrintf("1: min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		            	min_tsc_diff * 1000 / 2400, max_tsc_diff * 1000 / 2400,
++		            	(sum_tsc_diff / count) * 1000 / 2400);
++	}
++
++	prev_tsc = tsc;
++}
++#endif
+     /*
+      * Halt loop.
+      */
+@@ -682,12 +714,46 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+          * Work the timers and check if we can exit.
+          */
+         uint64_t const u64StartTimers   = RTTimeNanoTS();
++
++{
++	static uint64_t prev_tsc = 0;
++	static uint64_t sum_tsc_diff = 0;
++	static uint64_t min_tsc_diff = ~0ULL;
++	static uint64_t max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	uint64_t tsc = ASMReadTSC();
++
++	if (count++ > 0) {
++
++		uint64_t tsc_diff  = tsc - prev_tsc;
++
++		RTLogPrintf("diff: %llu ns\n", tsc_diff * 1000 / 2400);
++
++		sum_tsc_diff += tsc_diff;
++
++		if (tsc_diff < min_tsc_diff)
++			min_tsc_diff = tsc_diff;
++		else if (tsc_diff > max_tsc_diff)
++			max_tsc_diff = tsc_diff;
++
++		if (count % 1000 == 0)
++			RTLogPrintf("2: min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		            	min_tsc_diff * 1000 / 2400, max_tsc_diff * 1000 / 2400,
++		            	(sum_tsc_diff / count) * 1000 / 2400);
++	}
++
++	prev_tsc = tsc;
++}
++
+         TMR3TimerQueuesDo(pVM);
+         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
+         if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+-            ||  VMCPU_FF_IS_PENDING(pVCpu, fMask))
++            ||  VMCPU_FF_IS_PENDING(pVCpu, fMask)) {
++		RTLogPrintf("break 1\n");
+             break;
++	}
+ 
+         /*
+          * Estimate time left to the next event.
+@@ -696,9 +762,11 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+         uint64_t u64Delta;
+         uint64_t u64GipTime = TMTimerPollGIP(pVM, pVCpu, &u64Delta);
+         if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+-            ||  VMCPU_FF_IS_PENDING(pVCpu, fMask))
++            ||  VMCPU_FF_IS_PENDING(pVCpu, fMask)) {
++		RTLogPrintf("break 2\n");
+             break;
+-
++	}
++RTLogPrintf("d: %llu ns\n", u64Delta);
+         /*
+          * Block if we're not spinning and the interval isn't all that small.
+          */
+@@ -706,14 +774,17 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+         {
+             VMMR3YieldStop(pVM);
+             if (    VM_FF_IS_PENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+-                ||  VMCPU_FF_IS_PENDING(pVCpu, fMask))
++                ||  VMCPU_FF_IS_PENDING(pVCpu, fMask)) {
++		RTLogPrintf("break 3\n");
+                 break;
++	}
+ 
+             //RTLogPrintf("loop=%-3d  u64GipTime=%'llu / %'llu   now=%'llu / %'llu\n", cLoops, u64GipTime, u64Delta, u64NowLog, u64GipTime - u64NowLog);
+             uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
+             rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, u64GipTime, NULL);
+             uint64_t const u64EndSchedHalt     = RTTimeNanoTS();
+             uint64_t const cNsElapsedSchedHalt = u64EndSchedHalt - u64StartSchedHalt;
++RTLogPrintf("h: %llu ns\n", cNsElapsedSchedHalt);
+             STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlock, cNsElapsedSchedHalt);
+ 
+             if (rc == VERR_INTERRUPTED)
