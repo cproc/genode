@@ -45,7 +45,7 @@ class Genode::Timeout_thread : public Thread_deprecated<2048*sizeof(long)>,
 {
 	private:
 
-		enum { JIFFIES_STEP_MS = 10 };
+		enum { JIFFIES_STEP_MS = 5 };
 
 		Timer::Connection   _timer;    /* timer session   */
 		Signal_context      _context;
