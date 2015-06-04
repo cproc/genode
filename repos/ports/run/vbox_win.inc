@@ -134,7 +134,7 @@ append config_of_app {
 			<service name="Framebuffer" />
 			<service name="Input" />
 		</provides>
-		<config width="1024" height="768"/>
+		<config width="1280" height="768"/>
 		<route>
 			<service name="Nitpicker"> <child name="wm"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
