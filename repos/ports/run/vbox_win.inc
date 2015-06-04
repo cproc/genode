@@ -17,6 +17,7 @@ set build_components {
 	app/vbox_pointer
 	server/nit_fb
 	server/report_rom
+	server/wm app/decorator app/floating_window_layouter
 }
 
 set boot_modules {
@@ -26,6 +27,7 @@ set boot_modules {
 	vbox_pointer
 	nit_fb
 	report_rom
+	wm decorator floating_window_layouter
 }
 
 set config_of_app {
@@ -110,10 +112,23 @@ append config_of_app {
 
 	<start name="vbox_pointer" priority="-1">
 		<resource name="RAM" quantum="1M"/>
+		<config>
+			<policy label="wm -> nit_fb" rom="shape"/>
+		</config>
 		<route>
 			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
 			<service name="ROM">       <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="wm" priority="-1">
+		<resource name="RAM" quantum="32M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<route>
+			<any-service>
+				<child name="nitpicker"/> <parent/> <any-child/>
+			</any-service>
 		</route>
 	</start>
 
@@ -123,6 +138,11 @@ append config_of_app {
 			<service name="Framebuffer" />
 			<service name="Input" />
 		</provides>
+		<config width="1024" height="768"/>
+		<route>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
 	<start name="vbox" priority="-2">
