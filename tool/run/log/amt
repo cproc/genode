@@ -42,6 +42,7 @@ proc run_log { wait_for_re timeout_value } {
 	set exit_result 1
 
 	while { $exit_result != 0 } {
+		exec sleep 2
 		set time_start [ clock seconds ]
 		eval spawn $amtterm
 		set output_spawn_id $spawn_id
