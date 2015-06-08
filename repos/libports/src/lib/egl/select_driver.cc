@@ -12,8 +12,8 @@
  */
 
 /* Genode includes */
-#include <pci_session/connection.h>
-#include <pci_device/client.h>
+#include <platform_session/connection.h>
+#include <platform_device/client.h>
 
 /* local includes */
 #include "select_driver.h"
@@ -93,19 +93,19 @@ const char *probe_gpu_and_select_driver()
 	const char *result = 0;
 	try {
 		I915_gpu_detector i915_detector;
-		Pci::Connection pci;
+		Platform::Connection pci;
 
 		/*
 		 * Iterate through the available PCI devices and present each to the
 		 * GPU detector(s).
 		 */
-		Pci::Device_capability cap = pci.first_device();
+		Platform::Device_capability cap = pci.first_device();
 		while (cap.valid()) {
 
-			Pci::Device_capability next_cap = pci.next_device(cap);
+			Platform::Device_capability next_cap = pci.next_device(cap);
 
-			unsigned short vendor_id = Pci::Device_client(cap).vendor_id(),
-			               device_id = Pci::Device_client(cap).device_id();
+			unsigned short vendor_id = Platform::Device_client(cap).vendor_id(),
+			               device_id = Platform::Device_client(cap).device_id();
 
 			if (i915_detector.detect(vendor_id, device_id))
 				result = i915_detector.driver_name();
