@@ -75,3 +75,19 @@ Core_mem_allocator::Mapped_mem_allocator::alloc_aligned(size_t size, void **out_
 
 	return Alloc_return::OK;
 }
+
+
+void Core_mem_allocator::Mapped_mem_allocator::free(void *addr, size_t size)
+{
+	size_t page_rounded_size = (size + get_page_size() - 1) & get_page_mask();
+	_unmap_local((addr_t)addr, page_rounded_size);
+	void * phys_addr = _virt_alloc->map_addr(addr);
+	_virt_alloc->free(addr, page_rounded_size);
+	_phys_alloc->free(phys_addr, page_rounded_size);
+}
+
+
+void Core_mem_allocator::Mapped_mem_allocator::free(void *addr)
+{
+	PWRN("Not implemented!");
+}
