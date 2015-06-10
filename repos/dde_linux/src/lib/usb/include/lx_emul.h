@@ -933,13 +933,13 @@ void *kcalloc(size_t n, size_t size, gfp_t flags);
 struct kmem_cache;
 
 /**
- * Create slab cache using DDE kit
+ * Create slab cache
  */
 struct kmem_cache *kmem_cache_create(const char *, size_t, size_t,
                                      unsigned long, void (*)(void *));
 
 /**
- * Destroy slab cache using DDE kit
+ * Destroy slab cache
  */
 void kmem_cache_destroy(struct kmem_cache *);
 

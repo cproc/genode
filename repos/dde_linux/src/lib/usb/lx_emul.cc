@@ -911,9 +911,6 @@ void mdelay(unsigned long msecs) { msleep(msecs); }
  ** linux/jiffies.h **
  *********************/
 
-/*
- * We use DDE kit's jiffies in 100Hz granularity.
- */
 enum { JIFFIES_TICK_MS = 1000 / HZ };
 
 unsigned long msecs_to_jiffies(const unsigned int m) { return m / JIFFIES_TICK_MS; }
@@ -997,9 +994,6 @@ void dma_free_coherent(struct device *, size_t size, void *vaddr, dma_addr_t)
  ** linux/dma-mapping.h **
  *************************/
 
-/**
- * Translate virt to phys using DDE-kit
- */
 dma_addr_t dma_map_single_attrs(struct device *dev, void *ptr,
                                 size_t size,
                                 enum dma_data_direction dir,
