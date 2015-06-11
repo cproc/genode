@@ -98,22 +98,9 @@ Hw::Address_space::Address_space(Kernel::Pd * pd)
 
 Hw::Address_space::~Address_space()
 {
-	Lock::Guard guard(_lock);
-
-	if (!_tt) return;
-
-	/*
-	 * TODO: normally we would use destroy here, which calls destructors
-	 * and frees the memory, but the allocator does not know the size to
-	 * free and the current implmentation of destroy does not deliver the
-	 * size to free to the allocator, therefore we do it by hand until
-	 * this issue (#1571) is fixed
-	 */
-	_tt->remove_translation(VIRT_ADDR_SPACE_START,
-	                        VIRT_ADDR_SPACE_SIZE, _pslab);
-	_pslab->~Page_slab();
-	_cma()->free(_tt,    sizeof(Genode::Translation_table));
-	_cma()->free(_pslab, sizeof(Genode::Page_slab));
+	flush(platform()->vm_start(), platform()->vm_size());
+	destroy(_cma(), _pslab);
+	destroy(_cma(), _tt);
 }
 
 
@@ -179,12 +166,6 @@ Platform_pd::Platform_pd(Allocator * md_alloc, char const *label)
 		PERR("failed to create kernel object");
 		throw Root::Unavailable();
 	}
-}
-
-
-Platform_pd::~Platform_pd()
-{
-	flush(platform()->vm_start(), platform()->vm_size());
 }
 
 
