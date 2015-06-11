@@ -104,7 +104,7 @@ namespace File_system {
 	 * Read file content
 	 */
 	static inline size_t read(Session &fs, File_handle const &file_handle,
-	                          void *dst, size_t count, off_t seek_offset = 0)
+	                          void *dst, size_t count, seek_off_t seek_offset = 0)
 	{
 		bool success = true;
 		Session::Tx::Source &source = *fs.tx();
@@ -161,7 +161,7 @@ namespace File_system {
 	 * Write file content
 	 */
 	static inline size_t write(Session &fs, File_handle const &file_handle,
-	                          void const *src, size_t count, off_t seek_offset = 0)
+	                          void const *src, size_t count, seek_off_t seek_offset = 0)
 	{
 		bool success = true;
 		Session::Tx::Source &source = *fs.tx();
