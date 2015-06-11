@@ -68,12 +68,16 @@ class Genode::Core_mem_allocator : public Genode::Core_mem_translator
 		 */
 		struct Metadata { void * map_addr; };
 
+		class Mapped_mem_allocator;
+
 		/**
 		 * Page-size granular allocator that links ranges to related ones.
 		 */
 		class Mapped_avl_allocator
 		: public Allocator_avl_tpl<Metadata, get_page_size()>
 		{
+			friend class Mapped_mem_allocator;
+
 			public:
 
 				/**

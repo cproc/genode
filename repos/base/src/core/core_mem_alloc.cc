@@ -79,11 +79,13 @@ Core_mem_allocator::Mapped_mem_allocator::alloc_aligned(size_t size, void **out_
 
 void Core_mem_allocator::Mapped_mem_allocator::free(void *addr, size_t size)
 {
-	size_t page_rounded_size = (size + get_page_size() - 1) & get_page_mask();
-	_unmap_local((addr_t)addr, page_rounded_size);
-	void * phys_addr = _virt_alloc->map_addr(addr);
-	_virt_alloc->free(addr, page_rounded_size);
-	_phys_alloc->free(phys_addr, page_rounded_size);
+	using Block = Mapped_avl_allocator::Block;
+	Block *b = static_cast<Block *>(_virt_alloc->_find_by_address((addr_t)addr));
+	if (!b) return;
+
+	_unmap_local((addr_t)addr, b->size());
+	_phys_alloc->free(b->map_addr, b->size());
+	_virt_alloc->free(addr, b->size());
 }
 
 
