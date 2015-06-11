@@ -42,6 +42,8 @@ struct Shape
 	enum { WIDTH = 16, HEIGHT = 16 };
 
 	String        const id;
+	unsigned      const x_hot;
+	unsigned      const y_hot;
 	unsigned char const map[WIDTH*HEIGHT];
 };
 
@@ -59,6 +61,9 @@ struct Shape_report : Vbox_pointer::Shape_report
 
 	void report(Shape const &s)
 	{
+		x_hot = s.x_hot;
+		y_hot = s.y_hot;
+
 		unsigned const w = Shape::WIDTH;
 		unsigned const h = Shape::HEIGHT;
 
@@ -77,7 +82,7 @@ struct Shape_report : Vbox_pointer::Shape_report
 		}
 
 		if (verbose)
-			Genode::printf(".%s.\n", s.id.string());
+			Genode::printf(".%s.%u.%u.\n", s.id.string(), s.x_hot, s.y_hot);
 
 		reporter.report(static_cast<Vbox_pointer::Shape_report *>(this),
 		                sizeof(Vbox_pointer::Shape_report));
@@ -85,7 +90,7 @@ struct Shape_report : Vbox_pointer::Shape_report
 };
 
 static Shape const shape[] = {
-	{ "arrow", {
+	{ "arrow", 0, 0, {
 		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
@@ -102,7 +107,7 @@ static Shape const shape[] = {
 		0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } },
-	{ "blade", {
+	{ "blade", 0, 0, {
 		1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -119,7 +124,7 @@ static Shape const shape[] = {
 		0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } },
-	{ "bladex", {
+	{ "bladex", 8, 8, {
 		1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,
 		1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,
 		0,1,0,1,0,0,0,0,0,0,0,0,1,0,1,0,
@@ -136,7 +141,7 @@ static Shape const shape[] = {
 		0,1,1,1,0,1,1,0,0,1,1,0,1,1,1,0,
 		0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } },
-	{ "smiley", {
+	{ "smiley", 8, 8, {
 		0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
 		0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,
 		0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,
@@ -153,7 +158,7 @@ static Shape const shape[] = {
 		0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,
 		0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,
 		0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0 } },
-	{ "yelims", {
+	{ "yelims", 8, 8, {
 		0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
 		0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,
 		0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,

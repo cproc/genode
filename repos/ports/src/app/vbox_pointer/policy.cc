@@ -80,7 +80,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 			}
 
 			_shape_size = Nitpicker::Area(shape_report->width, shape_report->height);
-			_shape_hot  = Nitpicker::Point(shape_report->x_hot, shape_report->y_hot);
+			_shape_hot  = Nitpicker::Point(-shape_report->x_hot, -shape_report->y_hot);
 
 			Texture<Pixel_rgb888>
 				texture(_texture_pixel_ds.local_addr<Pixel_rgb888>(),
