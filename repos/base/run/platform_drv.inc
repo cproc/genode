@@ -98,12 +98,13 @@ proc append_platform_drv_config {} {
 		</provides>
 		<route>}
 
-		if {[have_spec acpi]} {
-			append config {
+		append_if [have_spec acpi] config {
 			<service name="ROM">
 				<if-arg key="label" value="acpi"/> <child name="acpi_report_rom"/>
 			</service>}
-		}
+
+		append_if [have_spec rpi] config {
+			<service name="Timer"> <child/> </service>}
 
 		append config {
 			<any-service> <parent/> </any-service>
