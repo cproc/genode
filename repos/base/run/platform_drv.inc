@@ -104,7 +104,7 @@ proc append_platform_drv_config {} {
 			</service>}
 
 		append_if [have_spec rpi] config {
-			<service name="Timer"> <child/> </service>}
+			<service name="Timer"> <any-child/> </service>}
 
 		append config {
 			<any-service> <parent/> </any-service>
