@@ -1,0 +1,282 @@
+tm.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/VBox/Devices/PC/DevPit-i8254.cpp |    2 -
+ src/VBox/VMM/VMMAll/TMAll.cpp        |    1 
+ src/VBox/VMM/VMMAll/TMAllCpu.cpp     |    2 -
+ src/VBox/VMM/VMMR0/HMVMXR0.cpp       |    8 ++-
+ src/VBox/VMM/VMMR3/EM.cpp            |    6 ++
+ src/VBox/VMM/VMMR3/EMHM.cpp          |    3 +
+ src/VBox/VMM/VMMR3/TM.cpp            |   91 +++++++++++++++++++++++++++++++---
+ 7 files changed, 101 insertions(+), 12 deletions(-)
+
+diff --git a/src/VBox/Devices/PC/DevPit-i8254.cpp b/src/VBox/Devices/PC/DevPit-i8254.cpp
+index 6f4a329..3b79f8c 100644
+--- a/src/VBox/Devices/PC/DevPit-i8254.cpp
++++ b/src/VBox/Devices/PC/DevPit-i8254.cpp
+@@ -560,7 +560,7 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
+ 
+     if (expire_time != -1)
+     {
+-        Log3(("pit_irq_timer_update: next=%'RU64 now=%'RU64\n", expire_time, now));
++        RTLogPrintf("pit_irq_timer_update: next=%'RU64 now=%'RU64, diff=%llu ns\n", expire_time, now, expire_time - now);
+         pChan->u64NextTS = expire_time;
+         TMTimerSet(pChan->CTX_SUFF(pTimer), pChan->u64NextTS);
+     }
+diff --git a/src/VBox/VMM/VMMAll/TMAll.cpp b/src/VBox/VMM/VMMAll/TMAll.cpp
+index a1167a1..38ef89a 100644
+--- a/src/VBox/VMM/VMMAll/TMAll.cpp
++++ b/src/VBox/VMM/VMMAll/TMAll.cpp
+@@ -910,6 +910,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t
+         {
+             Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_PENDING(pVCpuDst, VMCPU_FF_TIMER)));
+             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
++RTLogPrintf("u64VirtualSyncNow = %llu ns, u64Expire2 = %llu, diff = %lld\n", u64VirtualSyncNow, u64Expire2, i64Delta2);
+ #if defined(IN_RING3) && defined(VBOX_WITH_REM)
+             REMR3NotifyTimerPending(pVM, pVCpuDst);
+ #endif
+diff --git a/src/VBox/VMM/VMMAll/TMAllCpu.cpp b/src/VBox/VMM/VMMAll/TMAllCpu.cpp
+index 36da1ae..fd16dd4 100644
+--- a/src/VBox/VMM/VMMAll/TMAllCpu.cpp
++++ b/src/VBox/VMM/VMMAll/TMAllCpu.cpp
+@@ -326,7 +326,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, bool *pfOf
+      *          b) the virtual sync clock hasn't been halted by an expired timer, and
+      *          c) we're not using warp drive (accelerated virtual guest time).
+      */
+-    if (    pVM->tm.s.fMaybeUseOffsettedHostTSC
++    if (0 &&    pVM->tm.s.fMaybeUseOffsettedHostTSC
+         &&  RT_LIKELY(pVCpu->tm.s.fTSCTicking)
+         &&  (   pVM->tm.s.fTSCUseRealTSC
+              || (   !pVM->tm.s.fVirtualSyncCatchUp
+diff --git a/src/VBox/VMM/VMMR0/HMVMXR0.cpp b/src/VBox/VMM/VMMR0/HMVMXR0.cpp
+index 92ff4db..22a6d76 100644
+--- a/src/VBox/VMM/VMMR0/HMVMXR0.cpp
++++ b/src/VBox/VMM/VMMR0/HMVMXR0.cpp
+@@ -5242,7 +5242,8 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PCPUMCTX pMi
+     if (pVM->hm.s.vmx.fUsePreemptTimer)
+     {
+         uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &fOffsettedTsc, &pVCpu->hm.s.vmx.u64TSCOffset);
+-
++RTLogPrintf("deadline: %llu ns\n", cTicksToDeadline * 1000 / 2491);
++	cTicksToDeadline = 2491000000;
+         /* Make sure the returned values have sane upper and lower boundaries. */
+         uint64_t u64CpuHz  = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+         cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */
+@@ -5251,10 +5252,11 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PCPUMCTX pMi
+ 
+         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
+         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);          AssertRC(rc);
++//RTLogPrintf("cPreemptionTickCount: %llu, %u\n", cPreemptionTickCount, pVM->hm.s.vmx.cPreemptTimerShift);
+     }
+     else
+         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset);
+-
++fOffsettedTsc = false;
+     if (fOffsettedTsc)
+     {
+         uint64_t u64CurTSC = ASMReadTSC();
+@@ -8177,6 +8179,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
+             HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
+         }
+     }
++RTLogPrintf("%d: %x\n", uExitReason, pMixedCtx->eip);
+ }
+ 
+ 
+@@ -9389,6 +9392,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
+  */
+ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+ {
++RTLogPrintf("hmR0VmxExitRdtsc()\n");
+     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
+     int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
+     AssertRCReturn(rc, rc);
+diff --git a/src/VBox/VMM/VMMR3/EM.cpp b/src/VBox/VMM/VMMR3/EM.cpp
+index 6ee8cbf..7c2e106 100644
+--- a/src/VBox/VMM/VMMR3/EM.cpp
++++ b/src/VBox/VMM/VMMR3/EM.cpp
+@@ -1621,6 +1621,7 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+  */
+ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+ {
++RTLogPrintf("fa\n");
+     STAM_REL_PROFILE_START(&pVCpu->em.s.StatForcedActions, a);
+ #ifdef VBOX_STRICT
+     int rcIrq = VINF_SUCCESS;
+@@ -1870,8 +1871,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+          * Timers before interrupts.
+          */
+         if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)
+-            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
++            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) {
++		RTLogPrintf("tqd1\n");
+             TMR3TimerQueuesDo(pVM);
++		RTLogPrintf("tqd2\n");
++	}
+ 
+         /*
+          * The instruction following an emulated STI should *always* be executed!
+diff --git a/src/VBox/VMM/VMMR3/EMHM.cpp b/src/VBox/VMM/VMMR3/EMHM.cpp
+index 39dd8df..fb26b2b 100644
+--- a/src/VBox/VMM/VMMR3/EMHM.cpp
++++ b/src/VBox/VMM/VMMR3/EMHM.cpp
+@@ -541,9 +541,11 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+ 
+         if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
+         {
++RTLogPrintf("hm1\n");
+             STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x);
+             rc = VMMR3HmRunGC(pVM, pVCpu);
+             STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x);
++RTLogPrintf("hm2\n");
+         }
+         else
+         {
+@@ -579,6 +581,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+ #ifdef VBOX_HIGH_RES_TIMERS_HACK
+         TMTimerPollVoid(pVM, pVCpu);
+ #endif
++
+         if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
+             ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
+         {
+diff --git a/src/VBox/VMM/VMMR3/TM.cpp b/src/VBox/VMM/VMMR3/TM.cpp
+index f6f6c8e..211d864 100644
+--- a/src/VBox/VMM/VMMR3/TM.cpp
++++ b/src/VBox/VMM/VMMR3/TM.cpp
+@@ -1617,8 +1617,10 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
+                 TM_UNLOCK_TIMERS(pVM);
+                 if (!RTThreadYield())
+                     RTThreadSleep(1);
+-                AssertMsgReturn(cRetries > 0, ("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, pTimer->pszDesc),
+-                                VERR_TM_UNSTABLE_STATE);
++                if (cRetries == 0) {
++                	RTLogPrintf("TMR3TimerDestroy(): Failed waiting for stable state. state=%d (%s), keeping trying...\n", pTimer->enmState, pTimer->pszDesc);
++                	cRetries = 1000;
++                }
+                 TM_LOCK_TIMERS(pVM);
+                 continue;
+ 
+@@ -1894,6 +1896,46 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
+  */
+ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t /*iTick*/)
+ {
++#if 1
++{
++	static uint64_t prev_tsc = 0;
++	static uint64_t sum_tsc_diff = 0;
++	static uint64_t min_tsc_diff = ~0ULL;
++	static uint64_t max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	uint64_t tsc = ASMReadTSC();
++
++	if ((prev_tsc > 0) && (++count > 0)) {
++
++		uint64_t tsc_diff  = tsc - prev_tsc;
++
++		RTLogPrintf("tc: %llu ns\n", tsc_diff * 1000 / 2491);
++
++		sum_tsc_diff += tsc_diff;
++
++		if (tsc_diff < min_tsc_diff)
++			min_tsc_diff = tsc_diff;
++
++		if (tsc_diff > max_tsc_diff)
++			max_tsc_diff = tsc_diff;
++
++		if (count % 1000 == 0) {
++			RTLogPrintf("tc: min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		            	min_tsc_diff * 1000 / 2491,
++		            	max_tsc_diff * 1000 / 2491,
++		            	(sum_tsc_diff * 1000) / (count * 2491));
++#if 0
++		    min_tsc_diff = ~0ULL;
++		    max_tsc_diff = 0;
++#endif
++		}
++	}
++
++	prev_tsc = tsc;
++}
++#endif
++
+     PVM     pVM      = (PVM)pvUser;
+     PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+     NOREF(pTimer);
+@@ -1936,6 +1978,41 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+  */
+ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+ {
++#if 1
++{
++	static uint64_t prev_tsc = 0;
++	static uint64_t sum_tsc_diff = 0;
++	static uint64_t min_tsc_diff = ~0ULL;
++	static uint64_t max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	uint64_t tsc = ASMReadTSC();
++
++	if ((prev_tsc > 0) && (++count > 1000)) {
++
++		uint64_t tsc_diff  = tsc - prev_tsc;
++
++		//RTLogPrintf("tqd: %llu ns, %p\n", tsc_diff * 1000 / 2491, __builtin_return_address(0));
++		RTLogPrintf("tqd: %llu ns (%llu - %llu)\n", tsc_diff * 1000 / 2491, tsc, prev_tsc);
++
++		sum_tsc_diff += tsc_diff;
++
++		if (tsc_diff < min_tsc_diff)
++			min_tsc_diff = tsc_diff;
++
++		if (tsc_diff > max_tsc_diff)
++			max_tsc_diff = tsc_diff;
++
++		if (count % 1000 == 0)
++			RTLogPrintf("tqd: min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		            	min_tsc_diff * 1000 / 2491,
++		            	max_tsc_diff * 1000 / 2491,
++		            	(sum_tsc_diff * 1000) / ((count - 1000) * 2491));
++	}
++
++	prev_tsc = tsc;
++}
++#endif
+     /*
+      * Only the dedicated timer EMT should do stuff here.
+      * (fRunningQueues is only used as an indicator.)
+@@ -1963,7 +2040,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+     PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+     ASMAtomicWriteBool(&pVM->tm.s.fRunningVirtualSyncQueue, true);
+     VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
+-
++RTLogPrintf("tqd: VMCPU_FF_TIMER cleared\n");
+     Assert(!pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule);
+     tmR3TimerQueueRunVirtualSync(pVM);
+     if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+@@ -2043,8 +2120,8 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
+         if (pCritSect)
+             PDMCritSectEnter(pCritSect, VERR_IGNORED);
+-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
+-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
++        RTLogPrintf("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
++              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc);
+         bool fRc;
+         TM_TRY_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_GET_UNLINK, TMTIMERSTATE_ACTIVE, fRc);
+         if (fRc)
+@@ -2231,8 +2308,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         if (pCritSect)
+             PDMCritSectEnter(pCritSect, VERR_IGNORED);
+ 
+-        Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
+-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
++        RTLogPrintf("tmR3TimerQueueRunVirtualSync: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
++              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc);
+ 
+         /* Advance the clock - don't permit timers to be out of order or armed
+            in the 'past'. */

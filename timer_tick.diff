@@ -1,0 +1,71 @@
+timer_tick.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ kernel/fiasco/src/kern/kernel_thread-std.cpp |    2 +
+ kernel/fiasco/src/kern/thread.cpp            |   37 ++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/kernel/fiasco/src/kern/kernel_thread-std.cpp b/kernel/fiasco/src/kern/kernel_thread-std.cpp
+index 4dca58e..7dd9586 100644
+--- a/kernel/fiasco/src/kern/kernel_thread-std.cpp
++++ b/kernel/fiasco/src/kern/kernel_thread-std.cpp
+@@ -28,6 +28,8 @@ IMPLEMENT
+ void
+ Kernel_thread::init_workload()
+ {
++printf("Kernel_thread::init_workload()\n");
++while(1);
+   auto g = lock_guard(cpu_lock);
+ 
+   if (Config::Jdb &&
+diff --git a/kernel/fiasco/src/kern/thread.cpp b/kernel/fiasco/src/kern/thread.cpp
+index 92e33d3..30e29c5 100644
+--- a/kernel/fiasco/src/kern/thread.cpp
++++ b/kernel/fiasco/src/kern/thread.cpp
+@@ -433,6 +433,43 @@ PUBLIC inline NEEDS ["config.h", "timeout.h"]
+ void
+ Thread::handle_timer_interrupt()
+ {
++
++#if 0
++{
++	static Unsigned64 prev_tsc = 0;
++	static Unsigned64 sum_tsc_diff = 0;
++	static Unsigned64 min_tsc_diff = ~0ULL;
++	static Unsigned64 max_tsc_diff = 0;
++	static unsigned int count = 0;
++
++	Unsigned64 tsc = Cpu::rdtsc();
++
++	if ((prev_tsc != 0) && (++count > 100)) {
++
++		Unsigned64 tsc_diff = tsc - prev_tsc;
++
++		//printf("k: %u: %llu ns\n", count, tsc_diff * 1000 / 2491);
++
++		sum_tsc_diff += tsc_diff;
++
++		if (tsc_diff < min_tsc_diff)
++			min_tsc_diff = tsc_diff;
++
++		if (tsc_diff > max_tsc_diff)
++			max_tsc_diff = tsc_diff;
++
++		if (count % 1000 == 0) {
++			printf("k: min: %llu ns, max: %llu ns, avg: %llu ns\n",
++		       	   min_tsc_diff * 1000 / 2491,
++		       	   max_tsc_diff * 1000 / 2491,
++		       	   (sum_tsc_diff * 1000) / ((count - 100) * 2491));
++		}
++	}
++
++	prev_tsc = tsc;
++}
++#endif
++
+   Cpu_number _cpu = cpu(true);
+   // XXX: This assumes periodic timers (i.e. bogus in one-shot mode)
+   if (!Config::Fine_grained_cputime)

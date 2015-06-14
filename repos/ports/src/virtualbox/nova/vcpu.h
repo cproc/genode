@@ -21,6 +21,7 @@
 #include <util/flex_iterator.h>
 #include <rom_session/connection.h>
 #include <timer_session/connection.h>
+#include <trace/timestamp.h>
 
 #include <vmm/vcpu_thread.h>
 #include <vmm/vcpu_dispatcher.h>
@@ -520,6 +521,44 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
 */
+
+#if 1
+if (u8Vector == 0x90)
+{
+	static uint64_t prev_tsc = 0;
+	static uint64_t sum_tsc_diff = 0;
+	static uint64_t min_tsc_diff = ~0ULL;
+	static uint64_t max_tsc_diff = 0;
+	static unsigned int count = 0;
+
+	uint64_t tsc = Genode::Trace::timestamp();
+
+	if ((prev_tsc > 0) && (++count > 100)) {
+
+		uint64_t tsc_diff  = tsc - prev_tsc;
+
+		//Vmm::printf("inj: %u: %llu ns\n", count, tsc_diff * 1000 / 2491);
+
+		sum_tsc_diff += tsc_diff;
+
+		if (tsc_diff < min_tsc_diff)
+			min_tsc_diff = tsc_diff;
+
+		if (tsc_diff > max_tsc_diff)
+			max_tsc_diff = tsc_diff;
+
+		if (count % 1000 == 0) {
+			Vmm::printf("inj: min: %llu ns, max: %llu ns, avg: %llu ns\n",
+		            	min_tsc_diff * 1000 / 2491,
+		            	max_tsc_diff * 1000 / 2491,
+		            	(sum_tsc_diff * 1000) / ((count - 100) * 2491));
+		}
+	}
+
+	prev_tsc = tsc;
+}
+#endif
+
 			utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
 			Nova::reply(_stack_reply);
 		}

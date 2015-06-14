@@ -64,7 +64,7 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			                    VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT |
 /*			                    VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT | */
 			/* we don't support tsc offsetting for now - so let the rdtsc exit */
-			                    VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+			                    /*VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT*/0;
 
 			next_utcb.ctrl[1] = VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC |
 			                    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT |
