@@ -103,7 +103,7 @@ proc append_platform_drv_config {} {
 				<if-arg key="label" value="acpi"/> <child name="acpi_report_rom"/>
 			</service>}
 
-		append_if [have_spec rpi] config {
+		append_if [have_spec platform_rpi] config {
 			<service name="Timer"> <any-child/> </service>}
 
 		append config {
