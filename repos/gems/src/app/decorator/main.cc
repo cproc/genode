@@ -151,6 +151,8 @@ void Decorator::Main::handle_nitpicker_sync(unsigned)
 
 			model_updated = true;
 
+			handle_pointer_update(0);
+
 		} catch (Xml_node::Invalid_syntax) {
 
 			/*
