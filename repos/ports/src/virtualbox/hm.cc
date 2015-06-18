@@ -128,7 +128,7 @@ VMMR3DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
 
 VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 {
-	if (!enabled_hm)
+	//if (!enabled_hm)
 		return false;
 
 	PVMCPU pVCpu = VMMGetCpu(pVM);

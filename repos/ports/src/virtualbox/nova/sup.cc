@@ -38,14 +38,61 @@
 #include "vcpu_svm.h"
 #include "vcpu_vmx.h"
 
+/* libc memory allocator */
+#include <libc_mem_alloc.h>
 
 static Vcpu_handler *vcpu_handler = 0;
 
 
-static Genode::Semaphore *r0_halt_sem()
+struct Halt_sem : Genode::List<Halt_sem>::Element
 {
-	static Genode::Semaphore sem;
-	return &sem;
+	VMCPUID           cpu_id;
+	Genode::Semaphore sem;
+
+	Halt_sem(VMCPUID cpu_id) : cpu_id(cpu_id) { }
+
+	void down() { sem.down(); }
+	void up()   { sem.up(); }
+};
+
+
+struct Halt_sem_registry
+{
+	Genode::List<Halt_sem> halt_sem_list;
+
+	Halt_sem *lookup(VMCPUID cpu_id)
+	{
+		for (Halt_sem *halt_sem = halt_sem_list.first();
+		     halt_sem;
+		     halt_sem = halt_sem->next())
+			if (halt_sem->cpu_id == cpu_id)
+				return halt_sem;
+
+		return 0;
+	}
+
+	void insert(VMCPUID cpu_id)
+	{
+	PDBG("%u", cpu_id);
+		Halt_sem *halt_sem = new Halt_sem(cpu_id);
+		halt_sem_list.insert(halt_sem);
+	}
+
+	void clear()
+	{
+		for (Halt_sem *halt_sem = halt_sem_list.first();
+		     halt_sem ; ) {
+			halt_sem_list.remove(halt_sem);
+			delete halt_sem;
+		}
+	}
+};
+
+
+static Halt_sem_registry &halt_sem_registry()
+{
+	static Halt_sem_registry _inst;
+	return _inst;
 }
 
 
@@ -89,14 +136,23 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 
 	case VMMR0_DO_GVMM_CREATE_VM:
 		genode_VMMR0_DO_GVMM_CREATE_VM(pReqHdr);
+		halt_sem_registry().insert(0);
+		return VINF_SUCCESS;
+
+	case VMMR0_DO_GVMM_REGISTER_VMCPU:
+		genode_VMMR0_DO_GVMM_REGISTER_VMCPU(pVMR0, idCpu);
+		halt_sem_registry().insert(idCpu);
 		return VINF_SUCCESS;
 
 	case VMMR0_DO_GVMM_SCHED_HALT:
-		r0_halt_sem()->down();
+	RTLogPrintf("SCHED_HALT %u\n", idCpu);
+		halt_sem_registry().lookup(idCpu)->down();
+	RTLogPrintf("SCHED_HALT %u returned\n", idCpu);
 		return VINF_SUCCESS;
 
 	case VMMR0_DO_GVMM_SCHED_WAKE_UP:
-		r0_halt_sem()->up();
+	RTLogPrintf("SCHED_WAKE_UP %u\n", idCpu);
+		halt_sem_registry().lookup(idCpu)->up();
 		return VINF_SUCCESS;
 
 	/* called by 'vmR3HaltGlobal1Halt' */
@@ -108,6 +164,9 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 		return VINF_SUCCESS;
 
 	case VMMR0_DO_GVMM_DESTROY_VM:
+		halt_sem_registry().clear();
+		return VINF_SUCCESS;
+
 	case VMMR0_DO_VMMR0_TERM:
 	case VMMR0_DO_HM_SETUP_VM:
 		return VINF_SUCCESS;
