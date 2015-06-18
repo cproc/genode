@@ -538,6 +538,7 @@ Affinity::Space Platform::affinity_space() const
 	l4_umword_t cpus_max;
 	l4_msgtag_t res = l4_scheduler_info(L4_BASE_SCHEDULER_CAP, &cpus_max,
 	                                    &cpus);
+PDBG("l4_scheduler_info() returned");
 	if (l4_error(res)) {
 		PERR("could not detect number of CPUs - assuming 1 CPU");
 		return 1;
