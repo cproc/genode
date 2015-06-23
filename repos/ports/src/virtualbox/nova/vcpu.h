@@ -74,7 +74,8 @@ extern "C" int MMIO2_MAPPED_SYNC(PVM pVM, RTGCPHYS GCPhys, size_t cbWrite,
                                  bool &writeable);
 
 
-class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
+class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
+                     public Genode::List<Vcpu_handler>::Element
 {
 	private:
 
@@ -86,6 +87,11 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 		Genode::addr_t _ec_sel; 
 		bool _irq_win;
+
+		unsigned int      _cpu_id;
+		Genode::Semaphore _halt_sem;
+
+		bool _first_run = true;
 
 		void fpu_save(char * data) {
 			Assert(!(reinterpret_cast<Genode::addr_t>(data) & 0xF));
@@ -215,6 +221,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		void _exc_memory(Genode::Thread_base * myself, Nova::Utcb * utcb,
 		                 bool unmap, Genode::addr_t reason)
 		{
+		if ((reason > 0xc0000) && (reason < 0xe0000000))
+			Vmm::printf("%u: _exc_memory(): reason: %zx\n", _cpu_id, reason);
+
 			using namespace Nova;
 			using namespace Genode;
 
@@ -222,7 +231,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			Assert(utcb->intr_state == INTERRUPT_STATE_NONE);
 
 			if (utcb->inj_info & IRQ_INJ_VALID_MASK)
-				Vmm::printf("inj_info %x\n", utcb->inj_info);
+				Vmm::printf("%u: inj_info = %x, inj_error = %x\n", _cpu_id, utcb->inj_info, utcb->inj_error);
 
 			Assert(!(utcb->inj_info & IRQ_INJ_VALID_MASK));
 
@@ -249,8 +258,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			}
 
 			/* emulator has to take over if fault region is not ram */	
-			if (!pv)
+			if (!pv) {
+				//Vmm::printf("%u: _exc_memory() finished 1\n", _cpu_id);
 				_fpu_save_and_longjmp();
+			}
 
 			/* fault region can be mapped - prepare utcb */
 			utcb->set_msg_word(0);
@@ -286,6 +297,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 					            flexpage.addr, 1UL << flexpage.log2_order,
 					            flexpage.hotspot, reason);
 			} while (res);
+		//Vmm::printf("%u: _exc_memory() finished 2\n", _cpu_id);
 
 			Nova::reply(_stack_reply);
 		}
@@ -444,6 +456,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 
 			unsigned vector = 0;
 			utcb->inj_info  = NOVA_REQ_IRQWIN_EXIT | vector;
+#if 0
+			if (_cpu_id == 1)
+				Vmm::printf("%u: ctriw(): %x\n", _cpu_id, utcb->inj_info);
+#endif
 			utcb->mtd      |= Nova::Mtd::INJ;
 
 			return true;
@@ -514,6 +530,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
 
 			utcb->inj_info  = Event.u; 
+#if 0
+			if (_cpu_id == 1)
+				Vmm::printf("%u: injecting %lx (%u)\n", _cpu_id, utcb->inj_info, u8Vector);
+#endif
 			utcb->inj_error = Event.n.u32ErrorCode;
 
 /*
@@ -609,15 +629,19 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 		Vcpu_handler(size_t stack_size, const pthread_attr_t *attr,
 		             void *(*start_routine) (void *), void *arg,
 		             Genode::Cpu_session * cpu_session,
-		             Genode::Affinity::Location location)
+		             Genode::Affinity::Location location,
+		             unsigned int cpu_id)
 		:
 			Vmm::Vcpu_dispatcher<pthread>(stack_size, _cap_connection,
 			                              cpu_session, location, 
 			                              attr ? *attr : 0, start_routine, arg),
 			_vcpu(cpu_session, location),
 			_ec_sel(Genode::cap_map()->insert()),
-			_irq_win(false)
+			_irq_win(false),
+			_cpu_id(cpu_id)
 		{ }
+
+		unsigned int cpu_id() { return _cpu_id; }
 
 		void start() {
 			_vcpu.start(_ec_sel);
@@ -632,6 +656,16 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 				Genode::Lock lock(Genode::Lock::LOCKED);
 				lock.lock();
 			}
+		}
+
+		void halt()
+		{
+			_halt_sem.down();
+		}
+
+		void wake_up()
+		{
+			_halt_sem.up();
 		}
 
 		inline void dump_register_state(PCPUMCTX pCtx)
@@ -716,10 +750,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>
 			PLOG("%x %x %x", utcb->intr_state, utcb->actv_state, utcb->mtd);
 		}
 
-		int run_hw(PVMR0 pVMR0, VMCPUID idCpu)
+		int run_hw(PVMR0 pVMR0)
 		{
+		if (_first_run) {
+			RTLogPrintf("run_hw()\n");
+			_first_run = false;
+		}
 			VM     * pVM   = reinterpret_cast<VM *>(pVMR0);
-			PVMCPU   pVCpu = &pVM->aCpus[idCpu];
+			PVMCPU   pVCpu = &pVM->aCpus[_cpu_id];
 			PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
 
 			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());

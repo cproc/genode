@@ -77,6 +77,7 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
 		/* nova kernel supports solely on 64bit the following features */
 		if (sizeof(void *) > 4 && enable_pae_nx) {
+RTLogPrintf("*** 333 ***\n");
 			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 		}
