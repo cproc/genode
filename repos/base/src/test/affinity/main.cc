@@ -65,6 +65,15 @@ int main(int argc, char **argv)
 
 	printf("--- test-affinity started ---\n");
 
+#if 0
+	for (;;) {
+		Affinity::Space cpus = env()->cpu_session()->affinity_space();
+		printf("Detected %ux%u CPU%s\n",
+	    	   cpus.width(), cpus.height(), cpus.total() > 1 ? "s." : ".");
+	  	//if (cpus.total() > 1)
+	  		//while(1);
+	}
+#endif
 	Affinity::Space cpus = env()->cpu_session()->affinity_space();
 	printf("Detected %ux%u CPU%s\n",
 	       cpus.width(), cpus.height(), cpus.total() > 1 ? "s." : ".");
