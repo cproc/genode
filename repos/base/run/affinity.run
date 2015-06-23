@@ -26,7 +26,8 @@ build $build_components
 create_boot_directory
 
 set config {
-	<config>
+	<config verbose="yes">
+		<!--<affinity-space width="4" height="1" />-->
 		<parent-provides>
 			<service name="LOG"/>
 			<service name="CPU"/>
@@ -49,6 +50,7 @@ append_if [have_spec platform_arndale] config {
 
 append config {
 		<start name="test-affinity">
+			<!--<affinity xpos="0" ypos="0" width="4" height="0" />-->
 			<resource name="RAM" quantum="10M"/>
 		</start>
 	</config> }
@@ -71,7 +73,7 @@ if {[have_include "power_on/qemu"]} {
 	set rounds "10"
 	if {[have_spec x86]} { set rounds "40" }
 }
-
+run_genode_until forever
 run_genode_until "Round $rounds:.*\n" 120
 
 set cpus [regexp -inline {Detected [0-9x]+ CPU[s\.]} $output]
