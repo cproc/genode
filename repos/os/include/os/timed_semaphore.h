@@ -45,7 +45,7 @@ class Genode::Timeout_thread : public Thread<4096>,
 {
 	private:
 
-		enum { JIFFIES_STEP_MS = 4 };
+		enum { JIFFIES_STEP_MS = 10 };
 
 		Timer::Connection   _timer;    /* timer session   */
 		Signal_context      _context;

@@ -31,6 +31,7 @@ create_boot_directory
 
 set config {
 <config verbose="yes" prio_levels="4">
+	<!--<affinity-space width="4" height="1" />-->
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>

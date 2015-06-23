@@ -147,6 +147,7 @@ append config_of_app {
 
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
+		<!--<affinity xpos="0" ypos="0" width="4" height="1" />-->
 		<resource name="RAM" quantum="1280M"/>}
 append config_of_app "
 			<config vbox_file=\"${vbox_file}\" vm_name=\"${flavor}\">"

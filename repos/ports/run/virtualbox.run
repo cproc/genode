@@ -28,7 +28,8 @@ build $build_components
 create_boot_directory
 
 set config {
-<config prio_levels="4">
+<config verbose="yes" prio_levels="4">
+	<affinity-space width="4" height="1" />
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -113,6 +114,7 @@ append config {
 		<config> <rom /> </config>
 	</start>
 	<start name="virtualbox" priority="-2">
+		<affinity xpos="0" ypos="0" width="4" height="1" />
 		<resource name="RAM" quantum="448M"/>
 		<config vbox_file="test.vbox" vm_name="TestVM">
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
