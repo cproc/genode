@@ -90,7 +90,7 @@ static int create_thread(pthread_t *thread, const pthread_attr_t *attr,
 		Genode::Cpu_session * cpu_session = cpu_connection(RTTHREADTYPE_EMULATION);
 		Genode::Affinity::Space space = cpu_session->affinity_space();
 		PDBG("space: %u * %u", space.width(), space.height());
-		Genode::Affinity::Location location/*(space.location_of_index(cpu_id))*/;
+		Genode::Affinity::Location location(space.location_of_index(cpu_id));
 
 		PDBG("location: (%u, %u)(%u, %u)", location.xpos(), location.ypos(), location.width(), location.height());
 

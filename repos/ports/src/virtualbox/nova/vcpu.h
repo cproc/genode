@@ -47,7 +47,7 @@
 
 #include <VBox/vmm/rem.h>
 
-static bool debug_map_memory = false;
+static bool debug_map_memory = /*false*/true;
 
 /*
  * VirtualBox stores segment attributes in Intel format using a 32-bit
@@ -150,6 +150,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (!setjmp(_env)) {
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
+#if 0
+				if (_cpu_id == 1) {
+					Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x, cr0: %x, cr3: %x, cr4: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+					            utcb->cr0, utcb->cr3, utcb->cr4);
+				}
+#endif
 				Nova::reply(_stack_reply);
 			}
 		}
@@ -159,6 +167,11 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
 
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
+
+			if (utcb->inj_info & IRQ_INJ_VALID_MASK)
+				Vmm::printf("%u: _default_handler(): exit_reason = %d, inj_info = %x, inj_error = %x\n",
+				            _cpu_id, exit_reason, utcb->inj_info, utcb->inj_error);
+
 			Assert(!(utcb->inj_info & IRQ_INJ_VALID_MASK));
 
 			/* go back to re-compiler */
@@ -183,6 +196,11 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 */
 				/* got recall during irq injection and X86_EFL_IF set for
 				 * delivery of IRQ - just continue */
+#if 0
+				if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip);
+#endif
 				Nova::reply(_stack_reply);
 			}
 
@@ -197,6 +215,11 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			utcb->mtd = Nova::Mtd::FPU;
 			if (check_to_request_irq_window(utcb, _current_vcpu)) {
 				_irq_win = true;
+#if 0
+				if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip);
+#endif
 				Nova::reply(_stack_reply);
 			}
 
@@ -213,6 +236,12 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			 */
 			continue_hw_accelerated(utcb, true);
 
+#if 0
+			if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip);
+#endif
+
 			Nova::reply(_stack_reply);
 		}
 
@@ -221,8 +250,11 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		void _exc_memory(Genode::Thread_base * myself, Nova::Utcb * utcb,
 		                 bool unmap, Genode::addr_t reason)
 		{
-		if ((reason > 0xc0000) && (reason < 0xe0000000))
-			Vmm::printf("%u: _exc_memory(): reason: %zx\n", _cpu_id, reason);
+#if 0
+			if ((_cpu_id == 1) || (reason > 0xc0000) && (reason < 0xe0000000))
+				Vmm::printf("%u: _exc_memory(): guest physical: %zx, qual[0]: %llx, qual[1]: %llx, cs: %x (%x - %x), ip: %x, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+				            _cpu_id, reason, utcb->qual[0], utcb->qual[1], utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip, utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+#endif
 
 			using namespace Nova;
 			using namespace Genode;
@@ -231,12 +263,17 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			Assert(utcb->intr_state == INTERRUPT_STATE_NONE);
 
 			if (utcb->inj_info & IRQ_INJ_VALID_MASK)
-				Vmm::printf("%u: inj_info = %x, inj_error = %x\n", _cpu_id, utcb->inj_info, utcb->inj_error);
-
-			//Assert(!(utcb->inj_info & IRQ_INJ_VALID_MASK));
+				Vmm::printf("%u: inj_info = %x, inj_error = %x, cr2 = %x, ip = %x\n",
+				            _cpu_id, utcb->inj_info, utcb->inj_error, utcb->cr2, utcb->ip);
 
 			if (unmap) {
 				PERR("unmap not implemented\n");
+
+#if 0
+				if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip);
+#endif
 				Nova::reply(_stack_reply);
 			}
 
@@ -258,14 +295,17 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			}
 
 			/* emulator has to take over if fault region is not ram */	
-			if (!pv) {
-				//Vmm::printf("%u: _exc_memory() finished 1\n", _cpu_id);
+			if (!pv)
 				_fpu_save_and_longjmp();
-			}
 
 			/* fault region can be mapped - prepare utcb */
 			utcb->set_msg_word(0);
 			utcb->mtd = Mtd::FPU;
+
+			/* XXX comment */
+			if (utcb->inj_info & IRQ_INJ_VALID_MASK)
+				utcb->mtd |= Nova::Mtd::INJ;
+
 			enum {
 				USER_PD   = false, GUEST_PGT = true,
 				READABLE  = true, EXECUTABLE = true
@@ -292,17 +332,54 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				                   permission);
 				res = utcb->append_item(crd, flexpage.hotspot, USER_PD, GUEST_PGT);
 
-				if (debug_map_memory)
+				if (debug_map_memory && (reason < 0xe0000000))
 					Vmm::printf("map guest mem %p+%x -> %lx - reason %lx\n",
 					            flexpage.addr, 1UL << flexpage.log2_order,
 					            flexpage.hotspot, reason);
 			} while (res);
-		//Vmm::printf("%u: _exc_memory() finished 2\n", _cpu_id);
 
-		//Assert(!(utcb->inj_info & IRQ_INJ_VALID_MASK));
+			if ((utcb->inj_info & IRQ_INJ_VALID_MASK) && (utcb->ip == 0x3a6)) {
 
-			if (utcb->inj_info & IRQ_INJ_VALID_MASK)
-				utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
+#if 0
+				for (Genode::addr_t a = 0x40002000; a < 0x400023b0; a += 4) {
+					Vmm::printf("%3x: %2x%2x%2x%2x\n",
+					            a,
+					            *(unsigned char*)(a + 0),
+					            *(unsigned char*)(a + 1),
+					            *(unsigned char*)(a + 2),
+					            *(unsigned char*)(a + 3));
+				}
+#endif
+
+				unsigned int pdpt_guest_base = /*utcb->cr3*/0x185000;
+				addr_t pdpt_host_base = 0x40000000 + pdpt_guest_base;
+
+				Vmm::printf("PDPT base: %lx\n", pdpt_guest_base);
+
+				Genode::uint64_t pd_guest_base = *(Genode::uint64_t*)(pdpt_host_base + 0 * sizeof(Genode::uint64_t));
+				addr_t pd_host_base = 0x40000000 + pd_guest_base & ~1;
+
+				Vmm::printf("PD base: %lx\n", pd_guest_base);
+
+				Genode::uint64_t pt_guest_base = *(Genode::uint64_t*)(pd_host_base + 0 * sizeof(Genode::uint64_t));
+				addr_t pt_host_base = 0x40000000 + pt_guest_base & ~3;
+
+				Vmm::printf("PT base: %lx\n", pt_guest_base);
+
+				Genode::uint64_t phys_guest_base = *(Genode::uint64_t*)(pt_host_base + 2 * sizeof(Genode::uint64_t));
+
+				Vmm::printf("phys guest base = %x\n", phys_guest_base);
+
+#if 0
+				addr_t pde_addr = 0x40000000 + *(unsigned int*)pdpte_addr;
+				Vmm::printf("PT base: %x\n", *(unsigned int*)pde_addr);
+#endif
+			}
+#if 0
+			if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x, cr3: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip, utcb->cr3);
+#endif
 
 			Nova::reply(_stack_reply);
 		}
@@ -473,6 +550,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 		__attribute__((noreturn)) void _irq_window()
 		{
+			//Vmm::printf("_irq_window()\n");
+
 			Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
 
 			PVMCPU   pVCpu = _current_vcpu;
@@ -541,11 +620,20 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 #endif
 			utcb->inj_error = Event.n.u32ErrorCode;
 
+			//Vmm::printf("%u: *** inj_info = %x\n", _cpu_id, utcb->inj_info);
+
 /*
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
 */
 			utcb->mtd = Nova::Mtd::INJ | Nova::Mtd::FPU;
+
+#if 0
+			if (_cpu_id == 1)
+					Vmm::printf("%u: VM entry: %u, cs: %x (%x - %x), ip: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip);
+#endif
+
 			Nova::reply(_stack_reply);
 		}
 
@@ -790,6 +878,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			/* check whether to request interrupt window for injection */
 			_irq_win = check_to_request_irq_window(utcb, pVCpu);
 
+			//volatile long int i = 0;
+			//while (i++ != 1024*1024);
+
 			/*
 			 * Flag vCPU to be "pokeable" by external events such as interrupts
 			 * from virtual devices. Only if this flag is set, the
@@ -798,7 +889,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			 * events. This function, in turn, will recall the vCPU.
 			 */
 			VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
+//Vmm::printf("E\n");
 			/* save current FPU state */
 			fpu_save(reinterpret_cast<char *>(&_emt_fpu_state));
 			/* write FPU state from pCtx to FPU registers */
@@ -810,6 +901,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			_current_vcpu = pVCpu;
 
 			_last_exit_was_recall = false;
+
+			//Vmm::printf("r\n"));
 
 			/* switch to hardware accelerated mode */
 			switch_to_hw();
@@ -828,7 +921,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
 			VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-
+//Vmm::printf("S\n");
 			/* Transfer vCPU state from Nova to vBox format */
 			if (!utcb_to_vbox(utcb, pVM, pVCpu) ||
 				!hw_save_state(utcb, pVM, pVCpu)) {
@@ -837,8 +930,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				return VERR_INTERNAL_ERROR;
 			}
 
+#if 0
+			if (_cpu_id == 1)
+				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%x - %x), ip: %x, cr0: %x, cr3: %x, cr4: %x\n",
+				            _cpu_id, exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+				            utcb->cr0, utcb->cr3, utcb->cr4);
+#endif
+
 			/* reset message transfer descriptor for next invocation */
-			Assert (!(utcb->inj_info & IRQ_INJ_VALID_MASK));
+			//Assert (!(utcb->inj_info & IRQ_INJ_VALID_MASK));
 			/* Reset irq window next time if we are still requesting it */
 			next_utcb.mtd = _irq_win ? Mtd::INJ : 0;
 

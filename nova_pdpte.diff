@@ -1,0 +1,172 @@
+diff --git a/include/mtd.hpp b/include/mtd.hpp
+index d4b47a0..4625255 100644
+--- a/include/mtd.hpp
++++ b/include/mtd.hpp
+@@ -50,6 +50,7 @@ class Mtd
+             STA             = 1UL << 18,
+             TSC             = 1UL << 19,
+             EFER            = 1UL << 20,
++            PDPTE           = 1UL << 21,
+             FPU             = 1UL << 31,
+         };
+ 
+diff --git a/include/utcb.hpp b/include/utcb.hpp
+index dc57bc7..c91fa99 100644
+--- a/include/utcb.hpp
++++ b/include/utcb.hpp
+@@ -76,6 +76,7 @@ class Utcb_data
+                 uint32          ctrl[2];
+                 uint64          reserved;
+                 mword           cr0, cr2, cr3, cr4;
++                uint64          pdpte[4];
+ #ifdef __x86_64__
+                 mword           cr8, efer;
+ #endif
+diff --git a/include/vmx.hpp b/include/vmx.hpp
+index 81b9d1e..ed8f67a 100644
+--- a/include/vmx.hpp
++++ b/include/vmx.hpp
+@@ -139,7 +139,10 @@ class Vmcs
+             GUEST_DEBUGCTL_HI       = 0x2803ul,
+             GUEST_EFER              = 0x2806ul,
+             GUEST_PERF_GLOBAL_CTRL  = 0x2808ul,
+-            GUEST_PDPTE             = 0x280aul,
++            GUEST_PDPTE0            = 0x280aul,
++            GUEST_PDPTE1            = 0x280cul,
++            GUEST_PDPTE2            = 0x280eul,
++            GUEST_PDPTE3            = 0x2810ul,
+ 
+             // 64-Bit Host State
+             HOST_EFER               = 0x2c02ul,
+diff --git a/src/ec_vmx.cpp b/src/ec_vmx.cpp
+index de5f09b..e175ffb 100644
+--- a/src/ec_vmx.cpp
++++ b/src/ec_vmx.cpp
+@@ -113,8 +119,56 @@ void Ec::vmx_cr()
+ 
+     switch (acc) {
+         case 0:     // MOV to CR
++        {
++	            Console::print("new CR%u: %lx, CR3: %lx, CR4: %lx, PDPTE0: %lx, shadow_cr: %lx",
++	                           cr, current->regs.vmx_read_gpr (gpr),
++	                           current->regs.read_cr<Vmcs>(3),
++	                           current->regs.read_cr<Vmcs>(4),
++	                           Vmcs::read(Vmcs::GUEST_PDPTE0),
++	                           current->regs.cr0_shadow);
++
++            mword old_cr0 = current->regs.read_cr<Vmcs>(0);
++            mword old_cr4 = current->regs.read_cr<Vmcs>(4);
++
+             current->regs.write_cr<Vmcs> (cr, current->regs.vmx_read_gpr (gpr));
++
++            /*
++             * Let the VMM update the PDPTE registers if necessary
++             * (Intel manual sections 4.4.1 of Vol. 3A and 26.3.2.4 of Vol. 3C)
++             */
++
++            /* no update needed if nested paging is not enabled */
++            if (!current->regs.nst_on)
++                break;
++
++            mword cr0 = current->regs.read_cr<Vmcs>(0);
++            mword cr4 = current->regs.read_cr<Vmcs>(4);
++
++            /* no update needed if not in protected mode with paging and PAE enabled */
++            if (!((cr0 & Cpu::CR0_PE) &&
++                  (cr0 & Cpu::CR0_PG) &&
++                  (cr4 & Cpu::CR4_PAE)))
++                break;
++
++            /* no update needed if no relevant bits of CR0 or CR4 have changed */
++            if ((cr != 3) &&
++                ((cr0 & Cpu::CR0_CD) == (old_cr0 & Cpu::CR0_CD)) &&
++                ((cr0 & Cpu::CR0_NW) == (old_cr0 & Cpu::CR0_NW)) &&
++                ((cr0 & Cpu::CR0_PG) == (old_cr0 & Cpu::CR0_PG)) &&
++                ((cr4 & Cpu::CR4_PAE) == (old_cr4 & Cpu::CR4_PAE)) &&
++                ((cr4 & Cpu::CR4_PGE) == (old_cr4 & Cpu::CR4_PGE)) &&
++                ((cr4 & Cpu::CR4_PSE) == (old_cr4 & Cpu::CR4_PSE)) &&
++                ((cr4 & Cpu::CR4_SMEP) == (old_cr4 & Cpu::CR4_SMEP)))
++               break;
++
++Console::print("old CR0: %lx, new CR0: %lx\n", old_cr0, cr0);
++
++            /* PDPTE register update necessary */
++   			current->regs.dst_portal = Vmcs::VMX_CR;
++   			send_msg<ret_user_vmresume>();
++
+             break;
++        }
+         case 1:     // MOV from CR
+             assert (cr != 0 && cr != 4);
+             current->regs.vmx_write_gpr (gpr, current->regs.read_cr<Vmcs> (cr));
+@@ -146,6 +200,24 @@ void Ec::handle_vmx()
+         case Vmcs::VMX_EPT_VIOLATION:
+             current->regs.nst_error = Vmcs::read (Vmcs::EXI_QUALIFICATION);
+             current->regs.nst_fault = Vmcs::read (Vmcs::INFO_PHYS_ADDR);
++#if 0
++            if ((current->regs.nst_fault > 0xc0000) &&
++                (current->regs.nst_fault < 0xe0000000)) {
++                mword intr_info = Vmcs::read (Vmcs::IDT_VECT_INFO);
++                Console::print("E: %lx, %lx", current->regs.nst_fault, intr_info);
++            }
++#endif
++#if 0
++            if ((current->regs.nst_fault > 0xc0000) &&
++                (current->regs.nst_fault < 0xe0000000)) {
++#endif
++			if (Vmcs::read (Vmcs::INFO_PHYS_ADDR) == 0x2000) {
++                Console::print("E: v: %lx, p: %lx, PDPTE0: %lx\n",
++                               Vmcs::read (Vmcs::GUEST_LINEAR_ADDRESS),
++                               Vmcs::read (Vmcs::INFO_PHYS_ADDR),
++                               Vmcs::read (Vmcs::GUEST_PDPTE0));
++            }
++
+             break;
+     }
+ 
+diff --git a/src/utcb.cpp b/src/utcb.cpp
+index 91584da..3459b49 100644
+--- a/src/utcb.cpp
++++ b/src/utcb.cpp
+@@ -180,8 +180,12 @@ bool Utcb::load_vmx (Cpu_regs *regs)
+             intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_INFO));
+             intr_error = static_cast<uint32>(Vmcs::read (Vmcs::ENT_INTR_ERROR));
+         } else {
+-            intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
++        	intr_info  = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_INFO));
+             intr_error = static_cast<uint32>(Vmcs::read (Vmcs::IDT_VECT_ERROR));
++        if ((regs->dst_portal == 48) && (intr_info != 0))
++        	Console::print("exit intr info: %x, idt intr info: %x\n",
++        	               static_cast<uint32>(Vmcs::read (Vmcs::EXI_INTR_INFO)),
++        	               intr_info);
+         }
+     }
+ 
+@@ -200,6 +204,13 @@ bool Utcb::load_vmx (Cpu_regs *regs)
+         efer = Vmcs::read (Vmcs::GUEST_EFER);
+ #endif
+ 
++	if (m & Mtd::PDPTE) {
++		pdpte[0] = Vmcs::read (Vmcs::GUEST_PDPTE0);
++		pdpte[1] = Vmcs::read (Vmcs::GUEST_PDPTE1);
++		pdpte[2] = Vmcs::read (Vmcs::GUEST_PDPTE2);
++		pdpte[3] = Vmcs::read (Vmcs::GUEST_PDPTE3);
++	}
++
+     barrier();
+     mtd = m;
+     items = sizeof (Utcb_data) / sizeof (mword);
+@@ -346,6 +357,13 @@ bool Utcb::save_vmx (Cpu_regs *regs)
+         regs->write_efer<Vmcs> (efer);
+ #endif
+ 
++	if (mtd & Mtd::PDPTE) {
++		Vmcs::write (Vmcs::GUEST_PDPTE0, pdpte[0]);
++		Vmcs::write (Vmcs::GUEST_PDPTE1, pdpte[1]);
++		Vmcs::write (Vmcs::GUEST_PDPTE2, pdpte[2]);
++		Vmcs::write (Vmcs::GUEST_PDPTE3, pdpte[3]);
++	}
++
+     return mtd & Mtd::FPU;
+ }
+ 
