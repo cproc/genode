@@ -663,6 +663,16 @@ class Vcpu_dispatcher : public Vcpu_handler,
 			_handle_vcpu(SKIP, CpuMessage::TYPE_WRMSR);
 		}
 
+		void _vmx_mov_crx()
+		{
+			/**
+			 * XXX: update the PDPTE registers with the corresponding values
+			 *      from guest physical memory
+			 */
+			Logging::panic("%s: not implemented, but needed for VMs using PAE "
+			               "and nested paging.", __PRETTY_FUNCTION__);
+		}
+
 		/**
 		 * Shortcut for calling 'Vmm::Vcpu_dispatcher::register_handler'
 		 * with 'Vcpu_dispatcher' as template argument
@@ -747,6 +757,8 @@ class Vcpu_dispatcher : public Vcpu_handler,
 					(exc_base, MTD_RIP_LEN | MTD_GPR_ACDB | MTD_TSC | MTD_STATE);
 				_register_handler<18, &This::_vmx_vmcall>
 					(exc_base, MTD_RIP_LEN | MTD_GPR_ACDB);
+				_register_handler<28, &This::_vmx_mov_crx>
+					(exc_base, MTD_ALL);
 				_register_handler<30, &This::_vmx_ioio>
 					(exc_base, MTD_RIP_LEN | MTD_QUAL | MTD_GPR_ACDB | MTD_STATE | MTD_RFLAGS);
 				_register_handler<31, &This::_vmx_msr_read>

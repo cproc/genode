@@ -1,0 +1,12 @@
+diff --git a/genode/include/sys/utcb.h b/genode/include/sys/utcb.h
+index f788f83..a4c1331 100644
+--- a/genode/include/sys/utcb.h
++++ b/genode/include/sys/utcb.h
+@@ -95,6 +95,7 @@ struct Utcb
+       unsigned     ctrl[2];
+       long long reserved;
+       mword    cr0, cr2, cr3, cr4;
++      mword pdpte[4];
+ #ifdef __x86_64__
+       mword        cr8;
+       mword        : 64;          // reserved
