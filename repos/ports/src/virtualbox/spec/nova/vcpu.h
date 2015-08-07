@@ -148,6 +148,29 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (!setjmp(_env)) {
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
+
+				Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
+#if 1
+				extern bool log_exits;
+				if ((log_exits) &&
+				    (exit_reason != 255)) {
+					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+					            utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+				
+#if 0
+					if (exit_reason == 2)
+						for (Genode::addr_t a = 0x40100000; a < 0x40100400; a += 4) {
+					     	 Vmm::printf("%3x: %2x%2x%2x%2x\n",
+					     	 a,
+					     	 *(unsigned char*)(a + 0),
+					     	 *(unsigned char*)(a + 1),
+					     	 *(unsigned char*)(a + 2),
+					     	 *(unsigned char*)(a + 3));
+						}
+#endif
+				}
+#endif
 				Nova::reply(_stack_reply);
 			}
 		}
@@ -224,6 +247,10 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		{
 			using namespace Nova;
 			using namespace Genode;
+
+			if ((reason > 0xc0000) && (reason < 0xe0000000))
+				Vmm::printf("%u: _exc_memory(): guest physical: %zx, qual[0]: %llx, qual[1]: %llx, cs: %x (%x - %x), ip: %x, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+				            _cpu_id, reason, utcb->qual[0], utcb->qual[1], utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip, utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
 
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
 
@@ -334,6 +361,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				utcb->si   = pCtx->rsi;
 				utcb->di   = pCtx->rdi;
 
+				utcb->r8  = pCtx->r8;
+				utcb->r9  = pCtx->r9;
+				utcb->r10 = pCtx->r10;
+				utcb->r11 = pCtx->r11;
+				utcb->r12 = pCtx->r12;
+				utcb->r13 = pCtx->r13;
+				utcb->r14 = pCtx->r14;
+				utcb->r15 = pCtx->r15;
+
 				utcb->mtd |= Mtd::EFL;
 				utcb->flags = pCtx->rflags.u;
 
@@ -416,6 +452,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			pCtx->rsi = utcb->si;
 			pCtx->rdi = utcb->di;
 			pCtx->rflags.u = utcb->flags;
+
+			pCtx->r8  = utcb->r8;
+			pCtx->r9  = utcb->r9;
+			pCtx->r10 = utcb->r10;
+			pCtx->r11 = utcb->r11;
+			pCtx->r12 = utcb->r12;
+			pCtx->r13 = utcb->r13;
+			pCtx->r14 = utcb->r14;
+			pCtx->r15 = utcb->r15;
 
 			pCtx->dr[7] = utcb->dr7;
 
@@ -839,7 +884,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				PERR("saving vCPU state failed");
 				return VERR_INTERNAL_ERROR;
 			}
-
+#if 0
+			extern bool log_exits;
+			if (log_exits) {
+				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%x - %x), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+					        _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+					        utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+			}
+#endif
 			/* reset message transfer descriptor for next invocation */
 			Assert (!(utcb->inj_info & IRQ_INJ_VALID_MASK));
 			/* Reset irq window next time if we are still requesting it */
