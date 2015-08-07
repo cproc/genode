@@ -79,6 +79,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			void *exit_status = _start_routine(_arg);
 			pthread_exit(exit_status);
 
+			Vmm::printf("%u\n", exit_reason);
+
 			Nova::reply(nullptr);
 		}
 
@@ -87,8 +89,14 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			using namespace Nova;
 
-			Vmm::printf("triple fault - dead\n");
+			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
 
+			Vmm::printf("_vmx_triple(): %u, cs: %x (%x - %x), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x, si: %zx, di: %zx\n",
+			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+			            utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer, utcb->si, utcb->di);
+
+			Vmm::printf("triple fault - dead\n");
+while(1);
 			_default_handler();
 		}
 
@@ -127,6 +135,15 @@ class Vcpu_handler_vmx : public Vcpu_handler
 		{
 			unsigned long value;
 			void *stack_reply = reinterpret_cast<void *>(&value - 1);
+
+			Vmm::printf("_vmx_mov_crx()\n");
+
+			static int count = 0;
+			count++;
+			if (count == 4) {
+				extern bool log_exits;
+				log_exits = true;
+			}
 
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
