@@ -226,7 +226,7 @@ namespace Nova {
 				FPU   = 1U << 31,  /* FPU state */
 
 				IRQ   = EFL | STA | INJ | TSC,
-				ALL   = 0x000fffff & ~CTRL,
+				ALL   = (0x000fffff & ~CTRL) | EFER,
 			};
 
 			Mtd(mword_t value) : _value(value) { }
