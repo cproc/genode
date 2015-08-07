@@ -38,7 +38,7 @@
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 
-
+bool log_exits = false;
 /**
  * xpcom style memory allocation
  */
