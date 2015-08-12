@@ -369,8 +369,33 @@ int SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 		VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
 resume:
+#if 0
+		PDBG("en: %d, cs: %x, eip: %x, cr3: %x, cr4: %x, eax: %x, ebx: %x, ecx: %x, edx: %x, efl: %x",
+		     cur_state->Exit_reason,
+		     cur_state->cs.sel,
+		     cur_state->Rip,
+		     cur_state->Cr3,
+		     cur_state->Cr4,
+		     cur_state->Regs.Rax,
+		     cur_state->Regs.Rbx,
+		     cur_state->Regs.Rcx,
+		     cur_state->Regs.Rdx,
+		     cur_state->Rflags);
+#endif
 		vm_handler.run_vm();
-
+#if 0
+		PDBG("ex: %d, cs: %x, eip: %x, cr3: %x, cr4: %x, eax: %x, ebx: %x, ecx: %x, edx: %x, efl: %x",
+		     cur_state->Exit_reason,
+		     cur_state->cs.sel,
+		     cur_state->Rip,
+		     cur_state->Cr3,
+		     cur_state->Cr4,
+		     cur_state->Regs.Rax,
+		     cur_state->Regs.Rbx,
+		     cur_state->Regs.Rcx,
+		     cur_state->Regs.Rdx,
+		     cur_state->Rflags);
+#endif
 		switch(cur_state->Exit_reason)
 		{
 			case 0x1c: // Control-register access
@@ -551,6 +576,7 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 			return VINF_SUCCESS;
 
 		case VMMR0_DO_GVMM_SCHED_POKE:
+			//RTLogPrintf("POKE\n");
 			vm_handler.poke();
 			return VINF_SUCCESS;
 

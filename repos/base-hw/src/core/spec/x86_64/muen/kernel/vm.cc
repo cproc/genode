@@ -37,9 +37,11 @@ void Kernel::Vm::exception(unsigned const cpu_id)
 {
 	if (_state->trapno == 200) {
 		pause();
+		Genode::printf("\nve\n");
 		_context->submit(1);
 		return;
 	}
+Genode::printf("\ne%x\n", _state->trapno);
 
 	if (_state->trapno >= Genode::Cpu_state::INTERRUPTS_START &&
 		_state->trapno <= Genode::Cpu_state::INTERRUPTS_END)
@@ -56,6 +58,7 @@ void Kernel::Vm::exception(unsigned const cpu_id)
 
 void Kernel::Vm::proceed(unsigned const cpu_id)
 {
+Genode::printf("p\n");
 	mtc()->switch_to(reinterpret_cast<Cpu::Context*>(_state), cpu_id,
 	                 (addr_t) &_vt_vm_entry, (addr_t) &_mt_client_context_ptr);
 }

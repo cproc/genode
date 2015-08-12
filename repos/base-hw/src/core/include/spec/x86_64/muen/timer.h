@@ -78,7 +78,10 @@ class Genode::Timer
 
 		inline void start_one_shot(uint32_t const tics, unsigned)
 		{
-			_timer_page->value = rdtsc() + tics;
+			Genode::uint64_t value = rdtsc() + tics;
+			Genode::printf("\nso: %llx\n", value);
+			_timer_page->value = value;
+			Genode::printf("\nso\n");
 		}
 
 		uint32_t ms_to_tics(unsigned const ms)

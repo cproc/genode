@@ -1,0 +1,241 @@
+muen_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ components/dbgserver/src/dbg-buffers.adb |   45 ++++++++++++--------
+ kernel/src/sk-scheduler.adb              |   67 ++++++++++++++++++++++++++++--
+ 2 files changed, 88 insertions(+), 24 deletions(-)
+
+diff --git a/components/dbgserver/src/dbg-buffers.adb b/components/dbgserver/src/dbg-buffers.adb
+index c4a9f81..e5b2973 100644
+--- a/components/dbgserver/src/dbg-buffers.adb
++++ b/components/dbgserver/src/dbg-buffers.adb
+@@ -105,29 +105,36 @@ is
+       Output_Queue : in out Byte_Queue.Queue_Type)
+    is
+    begin
+-      Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--      Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
+ 
+-      Byte_Queue.Format.Append_Number
+-        (Queue => Output_Queue,
+-         Item  => Interfaces.Unsigned_64 (Subject),
+-         Len   => 4);
++--      Byte_Queue.Format.Append_Number
++--        (Queue => Output_Queue,
++--         Item  => Interfaces.Unsigned_64 (Subject),
++--         Len   => 4);
+ 
+       if New_Epoch then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '%');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '%');
++         end if;
+       elsif Overrun then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '#');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '#');
++         end if;
+       elsif Continuation then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '>');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '>');
++         end if;
+       else
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '|');
++         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--         Byte_Queue.Format.Append_Character
++--           (Queue => Output_Queue,
++--            Item  => '|');
+       end if;
+    end Add_Line_Prefix;
+ 
+@@ -212,9 +219,9 @@ is
+       if not Buffer.Is_Idle and then
+         Byte_Queue.Bytes_Free (Queue => Output_Queue) >= 5
+       then
+-         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
+          Byte_Queue.Format.Append_String (Queue => Output_Queue,
+-                                          Item  => "---");
++                                          Item  => "");
+          Buffer.Is_Idle := True;
+       end if;
+    end Idle_Mark;
+diff --git a/kernel/src/sk-scheduler.adb b/kernel/src/sk-scheduler.adb
+index 0543ded..6dad628 100644
+--- a/kernel/src/sk-scheduler.adb
++++ b/kernel/src/sk-scheduler.adb
+@@ -23,6 +23,7 @@ with Skp.Interrupts;
+ with Skp.Scheduling;
+ with Skp.Subjects;
+ 
++with SK.KC;
+ with SK.VMX;
+ with SK.Constants;
+ with SK.CPU;
+@@ -31,7 +32,10 @@ with SK.Dump;
+ 
+ package body SK.Scheduler
+ with
+-   Refined_State => (State                 => Major_Frame_Start,
++   Refined_State => (State                 => (Major_Frame_Start,
++                                               Exit_Count,
++                                               Inject_Count,
++                                               Timer_Count),
+                      Tau0_Kernel_Interface => (New_Major))
+ is
+ 
+@@ -44,16 +48,21 @@ is
+    --  Current major frame start time in CPU cycles.
+    Major_Frame_Start : SK.Word64 := 0;
+ 
++   Exit_Count : SK.Word32 := 0;
++   Inject_Count : SK.Word32 := 0;
++   Timer_Count : SK.Word32 := 0;
++
+    -------------------------------------------------------------------------
+ 
+    --  Inject pending event into subject identified by ID.
+    procedure Inject_Event (Subject_Id : Skp.Subject_Id_Type)
+    with
+-      Global  => (Input  => Subjects.State,
++      Global  => (Input  => (Subjects.State, Inject_Count),
+                   In_Out => (Events.State, X86_64.State)),
+       Depends =>
+         ((Events.State, X86_64.State) =>
+-            (Events.State, Subjects.State, Subject_Id, X86_64.State))
++            (Events.State, Subjects.State, Subject_Id, X86_64.State,
++             Inject_Count))
+    is
+       RFLAGS        : SK.Word64;
+       Intr_State    : SK.Word64;
+@@ -79,10 +88,23 @@ is
+                                Event   => Event);
+ 
+          if Event_Present then
++            Inject_Count := Inject_Count + 1;
++--            if Inject_Count mod 1000 = 0 then
++            if Subject_Id = 2 then
++               pragma Debug (KC.New_Line);
++--               pragma Debug (KC.Put_Line (Item => "|"));
++               pragma Debug (Dump.Print_Message_8 (Msg  => "|",
++                                                   Item => Event));
++            end if;
+             VMX.VMCS_Write
+               (Field => Constants.VM_ENTRY_INTERRUPT_INFO,
+                Value => Constants.VM_INTERRUPT_INFO_VALID + SK.Word64 (Event));
+          end if;
++--      else
++--         if Subject_Id = 2 then
++--            pragma Debug (KC.New_Line);
++--            pragma Debug (KC.Put_Line (Item => "!"));
++--         end if;
+       end if;
+ 
+       Events.Has_Pending_Events (Subject       => Subject_Id,
+@@ -452,6 +474,11 @@ is
+       Vect_Nr : Skp.Interrupts.Remapped_Vector_Type;
+       Route   : Skp.Interrupts.Vector_Route_Type;
+    begin
++
++      pragma Debug (KC.New_Line);
++      pragma Debug (Dump.Print_Message_8 (Msg => "+",
++                                          Item => Vector));
++
+       if Vector >= Skp.Interrupts.Remap_Offset then
+          if Vector = SK.Constants.VTd_Fault_Vector then
+             VTd.Process_Fault;
+@@ -571,7 +598,7 @@ is
+    procedure Handle_Vmx_Exit (Subject_Registers : in out SK.CPU_Registers_Type)
+    with
+       Refined_Global  =>
+-        (Input  => New_Major,
++        (Input  => (New_Major, Exit_Count, Timer_Count),
+          In_Out => (CPU_Global.State, Events.State, FPU.State,
+                     Major_Frame_Start, MP.Barrier, Subjects.State,
+                     Timers.State, VTd.State, X86_64.State)),
+@@ -590,7 +617,8 @@ is
+                                 Subject_Registers, X86_64.State),
+          X86_64.State      =>+ (CPU_Global.State, Events.State, FPU.State,
+                                 Major_Frame_Start, New_Major, Subjects.State,
+-                                Timers.State, Subject_Registers))
++                                Timers.State, Subject_Registers, Exit_Count,
++                                Timer_Count))
+    is
+       Exit_Status     : SK.Word64;
+       Current_Subject : Skp.Subject_Id_Type;
+@@ -626,6 +654,15 @@ is
+ 
+       FPU.Save_State (ID => Current_Subject);
+ 
++      Exit_Count := Exit_Count + 1;
++      if Exit_Count mod 1000 = 0 then
++         begin
++            pragma Debug (KC.New_Line);
++            pragma Debug (Dump.Print_Message_64 (Msg => "~",
++                                                 Item => Exit_Status));
++         end;
++      end if;
++
+       if Exit_Status = Constants.EXIT_REASON_EXTERNAL_INT then
+          Handle_Irq (Vector => SK.Byte'Mod (Subjects.Get_Interrupt_Info
+                      (Id => Current_Subject)));
+@@ -639,6 +676,10 @@ is
+          Update_Scheduling_Info (Current_Subject => Current_Subject);
+       elsif Exit_Status = Constants.EXIT_REASON_INTERRUPT_WINDOW then
+ 
++         pragma Debug (KC.New_Line);
++         pragma Debug (Dump.Print_Message_32(Msg => "IW:",
++                       Item => SK.Word32(CPU_Global.Get_Current_Subject_ID)));
++
+          --  Resume subject to inject pending event.
+ 
+          VMX.VMCS_Set_Interrupt_Window (Value => False);
+@@ -658,6 +699,9 @@ is
+                               Value   => Timer_Value,
+                               Vector  => Timer_Vector);
+             if Timer_Value <= CPU.RDTSC64 then
++               pragma Debug (KC.New_Line);
++               pragma Debug (Dump.Print_Message_64 (Msg => "tv3:",
++                                                    Item => Timer_Value));
+                Subject_Handover (New_Id   => 2,
+                                  New_VMCS => Skp.Subjects.Get_VMCS_Address
+                                    (Subject_Id => 2));
+@@ -670,7 +714,20 @@ is
+             Timers.Get_Timer (Subject => Current_Subject,
+                               Value   => Timer_Value,
+                               Vector  => Timer_Vector);
++            Timer_Count := Timer_Count + 1;
++--            if Timer_Count mod 1000 = 0 then
++--               pragma Debug (KC.New_Line);
++--               pragma Debug (Dump.Print_Message_64 (Msg => "$1",
++--                                                    Item => Timer_Value));
++--               pragma Debug (Dump.Print_Message_64 (Msg => "$2",
++--                                                    Item => CPU.RDTSC64));
++--            end if;
+             if Timer_Value <= CPU.RDTSC64 then
++               if Current_Subject = 2 then
++                  pragma Debug (KC.New_Line);
++                  pragma Debug (Dump.Print_Message_64 (Msg => "tv2:",
++                                                       Item => Timer_Value));
++               end if;
+                Events.Insert_Event (Subject => Current_Subject,
+                                     Event   => Timer_Vector);
+                Timers.Clear_Timer (Subject => Current_Subject);
