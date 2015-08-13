@@ -252,13 +252,18 @@ inline void inject_irq(PVMCPU pVCpu)
 	rc = TRPMResetTrap(pVCpu);
 	AssertRC(rc);
 
+PDBG("int %u", u8Vector);
+
 	switch (u8Vector) {
+#if 1
 		case 8: // Non-remapped RTC
 			asm volatile ("vmcall" : : "a" (8) : "memory");
 			break;
-		case 48: // Timer
+#endif
+		case 32: // Timer
 			asm volatile ("vmcall" : : "a" (2) : "memory");
 			break;
+#if 0
 		case 49: // Kbd
 			asm volatile ("vmcall" : : "a" (3) : "memory");
 			break;
@@ -271,12 +276,15 @@ inline void inject_irq(PVMCPU pVCpu)
 		case 63: // Ata
 			asm volatile ("vmcall" : : "a" (4) : "memory");
 			break;
-		case 239: // LOC (Local timer interrupts)
+#endif
+		case 160: // LOC (Local timer interrupts)
 			asm volatile ("vmcall" : : "a" (5) : "memory");
 			break;
+#if 0
 		case 246: // Work
 			asm volatile ("vmcall" : : "a" (7) : "memory");
 			break;
+#endif
 		default:
 			PDBG("No event to inject interrupt %u", u8Vector);
 	}
@@ -287,6 +295,8 @@ int SUPR3QueryVTxSupported(void) { return VINF_SUCCESS; }
 
 int SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 {
+	//return VINF_EM_RAW_EMULATE_INSTR;
+
 	static Genode::Attached_io_mem_dataspace subject_state(0xf00000000, 0x1000);
 
 	switch (uOperation) {
@@ -369,8 +379,37 @@ int SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 		VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
 resume:
-		vm_handler.run_vm();
+#if 1
+		if (cur_state->Exit_reason != 48)
+			PDBG("en: %d, cs: %x, eip: %x, cr3: %x, cr4: %x, eax: %x, ebx: %x, ecx: %x, edx: %x, efl: %x, info: %x",
+			     cur_state->Exit_reason,
+			     cur_state->cs.sel,
+			     cur_state->Rip,
+			     cur_state->Cr3,
+			     cur_state->Cr4,
+			     cur_state->Regs.Rax,
+			     cur_state->Regs.Rbx,
+			     cur_state->Regs.Rcx,
+			     cur_state->Regs.Rdx,
+			     cur_state->Rflags,
+			     cur_state->Interrupt_info);
+#endif
 
+		vm_handler.run_vm();
+#if 1
+		if (cur_state->Exit_reason != 48)
+			PDBG("ex: %d, cs: %x, eip: %x, cr3: %x, cr4: %x, eax: %x, ebx: %x, ecx: %x, edx: %x, efl: %x",
+			     cur_state->Exit_reason,
+			     cur_state->cs.sel,
+			     cur_state->Rip,
+			     cur_state->Cr3,
+			     cur_state->Cr4,
+			     cur_state->Regs.Rax,
+			     cur_state->Regs.Rbx,
+			     cur_state->Regs.Rcx,
+			     cur_state->Regs.Rdx,
+			     cur_state->Rflags);
+#endif
 		switch(cur_state->Exit_reason)
 		{
 			case 0x1c: // Control-register access
@@ -525,10 +564,13 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 			return VINF_SUCCESS;
 
 		case VMMR0_DO_GVMM_SCHED_HALT:
+			RTLogPrintf("HALT\n");
 			r0_halt_sem()->down();
+			RTLogPrintf("HALT returned\n");
 			return VINF_SUCCESS;
 
 		case VMMR0_DO_GVMM_SCHED_WAKE_UP:
+			RTLogPrintf("WAKE\n");
 			r0_halt_sem()->up();
 			return VINF_SUCCESS;
 
@@ -551,6 +593,7 @@ int SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned
 			return VINF_SUCCESS;
 
 		case VMMR0_DO_GVMM_SCHED_POKE:
+			//RTLogPrintf("POKE\n");
 			vm_handler.poke();
 			return VINF_SUCCESS;
 
