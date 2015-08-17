@@ -1,0 +1,68 @@
+muen_debug_scheduler.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ kernel/src/sk-scheduler.adb |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/kernel/src/sk-scheduler.adb b/kernel/src/sk-scheduler.adb
+index 0543ded..711de0e 100644
+--- a/kernel/src/sk-scheduler.adb
++++ b/kernel/src/sk-scheduler.adb
+@@ -23,6 +23,7 @@ with Skp.Interrupts;
+ with Skp.Scheduling;
+ with Skp.Subjects;
+ 
++with SK.KC;
+ with SK.VMX;
+ with SK.Constants;
+ with SK.CPU;
+@@ -79,6 +80,11 @@ is
+                                Event   => Event);
+ 
+          if Event_Present then
++            if Subject_Id = 3 then
++               pragma Debug (KC.New_Line);
++               pragma Debug (Dump.Print_Message_64 (Msg => "inj:",
++                                                   Item => SK.Word64 (Event)));
++            end if;
+             VMX.VMCS_Write
+               (Field => Constants.VM_ENTRY_INTERRUPT_INFO,
+                Value => Constants.VM_INTERRUPT_INFO_VALID + SK.Word64 (Event));
+@@ -89,6 +95,10 @@ is
+                                  Event_Pending => Event_Pending);
+ 
+       if Event_Pending then
++         if Subject_Id = 3 then
++            pragma Debug (KC.New_Line);
++            pragma Debug (KC.Put_Line (Item => "riw"));
++         end if;
+          VMX.VMCS_Set_Interrupt_Window (Value => True);
+       end if;
+    end Inject_Event;
+@@ -409,6 +419,11 @@ is
+ 
+          if Event.Dst_Subject /= Skp.Invalid_Subject then
+             if Event.Dst_Vector /= Skp.Invalid_Vector then
++               if Event.Dst_Subject = 3 then
++                  pragma Debug (KC.New_Line);
++                  pragma Debug (Dump.Print_Message_8 (Msg => "hyp:",
++                                 Item => SK.Byte (Event.Dst_Vector)));
++               end if;
+                Events.Insert_Event (Subject => Event.Dst_Subject,
+                                     Event   => SK.Byte (Event.Dst_Vector));
+ 
+@@ -639,6 +654,11 @@ is
+          Update_Scheduling_Info (Current_Subject => Current_Subject);
+       elsif Exit_Status = Constants.EXIT_REASON_INTERRUPT_WINDOW then
+ 
++         if CPU_Global.Get_Current_Subject_ID = 3 then
++            pragma Debug (KC.New_Line);
++            pragma Debug (KC.Put_Line (Item => "iw3"));
++         end if;
++
+          --  Resume subject to inject pending event.
+ 
+          VMX.VMCS_Set_Interrupt_Window (Value => False);

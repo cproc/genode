@@ -1,0 +1,48 @@
+muen_nova.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ policy/xml/genode-base_hw.xml |   11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/policy/xml/genode-base_hw.xml b/policy/xml/genode-base_hw.xml
+index c534e90..c5a9783 100644
+--- a/policy/xml/genode-base_hw.xml
++++ b/policy/xml/genode-base_hw.xml
+@@ -90,6 +90,7 @@
+ 		<event name="trap_to_sm_1" mode="switch"/>
+ 		<event name="resume_guest_vm" mode="switch"/>
+ 		<event name="trap_to_base_hw" mode="switch"/>
++		<event name="guest_vm_rtc" mode="async"/>
+ 		<event name="guest_vm_pit" mode="async"/>
+ 		<event name="guest_vm_kbd" mode="async"/>
+ 		<event name="guest_vm_ptr" mode="async"/>
+@@ -232,6 +233,9 @@
+ 						<event id="7" logical="guest_vm_wrk" action="continue">
+ 							<notify physical="guest_vm_wrk"/>
+ 						</event>
++						<event id="8" logical="guest_vm_rtc" action="continue">
++							<notify physical="guest_vm_rtc"/>
++						</event>
+ 					</group>
+ 				</source>
+ 				<target>
+@@ -271,11 +275,14 @@
+ 				</source>
+ 				<target>
+ 					<event logical="resume_after_trap" physical="resume_guest_vm" vector="none"/>
+-					<event logical="pit" physical="guest_vm_pit" vector="48"/>
++					<event logical="rtc" physical="guest_vm_rtc" vector="8"/>
++					<!--<event logical="pit" physical="guest_vm_pit" vector="48"/>-->
++					<event logical="pit" physical="guest_vm_pit" vector="32"/>
+ 					<event logical="kbd" physical="guest_vm_kbd" vector="49"/>
+ 					<event logical="ptr" physical="guest_vm_ptr" vector="60"/>
+ 					<event logical="ata" physical="guest_vm_ata" vector="63"/>
+-					<event logical="loc" physical="guest_vm_loc" vector="239"/>
++					<!--<event logical="loc" physical="guest_vm_loc" vector="239"/>-->
++					<event logical="loc" physical="guest_vm_loc" vector="160"/>
+ 					<event logical="wrk" physical="guest_vm_wrk" vector="246"/>
+ 				</target>
+ 			</events>

@@ -1,0 +1,79 @@
+muen_debug_buffers.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ components/dbgserver/src/dbg-buffers.adb |   45 +++++++++++++++++-------------
+ 1 file changed, 26 insertions(+), 19 deletions(-)
+
+diff --git a/components/dbgserver/src/dbg-buffers.adb b/components/dbgserver/src/dbg-buffers.adb
+index c4a9f81..e5b2973 100644
+--- a/components/dbgserver/src/dbg-buffers.adb
++++ b/components/dbgserver/src/dbg-buffers.adb
+@@ -105,29 +105,36 @@ is
+       Output_Queue : in out Byte_Queue.Queue_Type)
+    is
+    begin
+-      Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--      Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
+ 
+-      Byte_Queue.Format.Append_Number
+-        (Queue => Output_Queue,
+-         Item  => Interfaces.Unsigned_64 (Subject),
+-         Len   => 4);
++--      Byte_Queue.Format.Append_Number
++--        (Queue => Output_Queue,
++--         Item  => Interfaces.Unsigned_64 (Subject),
++--         Len   => 4);
+ 
+       if New_Epoch then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '%');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '%');
++         end if;
+       elsif Overrun then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '#');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '#');
++         end if;
+       elsif Continuation then
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '>');
++         if Subject /= 1 then
++            Byte_Queue.Format.Append_Character
++              (Queue => Output_Queue,
++               Item  => '>');
++         end if;
+       else
+-         Byte_Queue.Format.Append_Character
+-           (Queue => Output_Queue,
+-            Item  => '|');
++         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--         Byte_Queue.Format.Append_Character
++--           (Queue => Output_Queue,
++--            Item  => '|');
+       end if;
+    end Add_Line_Prefix;
+ 
+@@ -212,9 +219,9 @@ is
+       if not Buffer.Is_Idle and then
+         Byte_Queue.Bytes_Free (Queue => Output_Queue) >= 5
+       then
+-         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
++--         Byte_Queue.Format.Append_New_Line (Queue => Output_Queue);
+          Byte_Queue.Format.Append_String (Queue => Output_Queue,
+-                                          Item  => "---");
++                                          Item  => "");
+          Buffer.Is_Idle := True;
+       end if;
+    end Idle_Mark;

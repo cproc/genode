@@ -1,0 +1,81 @@
+muen_dbgserver.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ policy/xml/genode-base_hw.xml |   28 ++++++++++++++++++++++++++--
+ 1 file changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/policy/xml/genode-base_hw.xml b/policy/xml/genode-base_hw.xml
+index b5f28bf..c534e90 100644
+--- a/policy/xml/genode-base_hw.xml
++++ b/policy/xml/genode-base_hw.xml
+@@ -303,41 +303,65 @@
+ 		<majorFrame>
+ 			<cpu id="0">
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 			</cpu>
+ 			<cpu id="1">
+ 				<minorFrame subject="tau0" ticks="10"/>
+-				<minorFrame subject="dbgserver" ticks="110"/>
++				<minorFrame subject="tau0" ticks="230"/>
+ 			</cpu>
+ 		</majorFrame>
+ 		<majorFrame>
+ 			<cpu id="0">
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 				<minorFrame subject="base_hw" ticks="10"/>
++				<minorFrame subject="dbgserver" ticks="10"/>
+ 			</cpu>
+ 			<cpu id="1">
+ 				<minorFrame subject="tau0" ticks="20"/>
+-				<minorFrame subject="dbgserver" ticks="100"/>
++				<minorFrame subject="tau0" ticks="220"/>
+ 			</cpu>
+ 		</majorFrame>
+ 	</scheduling>
