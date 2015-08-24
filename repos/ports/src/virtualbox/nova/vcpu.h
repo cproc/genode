@@ -91,6 +91,9 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		unsigned int      _cpu_id;
 		Genode::Semaphore _halt_sem;
 
+		char _trace_buf[128];
+		char _trace_buf2[128];
+
 		void fpu_save(char * data) {
 			Assert(!(reinterpret_cast<Genode::addr_t>(data) & 0xF));
  			asm volatile ("fxsave %0" : "=m" (*data));
@@ -167,11 +170,22 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		{
 			Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
 
+			Genode::snprintf(_trace_buf, sizeof(_trace_buf),
+			                 "fa: %x\n", _current_vcpu->fLocalForcedActions);
+
+			if (_irq_win && !check_to_request_irq_window(utcb, _current_vcpu, false)) {
+				Vmm::printf("%d: ###1, %p\n", _cpu_id, _current_vcpu);
+				Vmm::printf("fa: %x\n", _current_vcpu->fLocalForcedActions);
+				Vmm::printf("%s", _trace_buf);
+				Vmm::printf("%s", _trace_buf2);
+				extern int pic_cleared;
+				Vmm::printf("pic_cleared: %d\n", pic_cleared);
+				while(1);
+			}
+
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
 			if (utcb->intr_state != INTERRUPT_STATE_NONE)
 				Vmm::printf("intr state %x %x\n", utcb->intr_state, utcb->intr_state & 0xF);
-
-			Assert(utcb->intr_state == INTERRUPT_STATE_NONE);
 
 			if (utcb->inj_info & IRQ_INJ_VALID_MASK) {
 				Assert(utcb->flags & X86_EFL_IF);
@@ -191,15 +205,24 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				_fpu_save_and_longjmp();
 			}
 
+#if 0
+			if (_irq_win && !check_to_request_irq_window(utcb, _current_vcpu, false))
+				Vmm::printf("###2\n");
+#endif
+
 			/* check whether we have to request irq injection window */
 			utcb->mtd = Nova::Mtd::FPU;
 			if (check_to_request_irq_window(utcb, _current_vcpu)) {
 				_irq_win = true;
+				Genode::snprintf(_trace_buf, sizeof(_trace_buf), "%d: 11\n", _cpu_id);
 				Nova::reply(_stack_reply);
 			}
 
 			/* nothing to do at all - continue hardware accelerated */
-
+#if 0
+			if (_irq_win && !check_to_request_irq_window(utcb, _current_vcpu, false))
+				Vmm::printf("###3\n");
+#endif
 			Assert(!_irq_win);
 
 			/*
@@ -464,16 +487,23 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		}
 
 
-		inline bool check_to_request_irq_window(Nova::Utcb * utcb, PVMCPU pVCpu)
+		inline bool check_to_request_irq_window(Nova::Utcb * utcb, PVMCPU pVCpu, bool set_mtd = true)
 		{
+			Genode::snprintf(_trace_buf2, sizeof(_trace_buf2),
+			                 "%x, %d\n", pVCpu->fLocalForcedActions,
+			                 VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC |
+			                                     VMCPU_FF_INTERRUPT_PIC)));
+
 			if (!TRPMHasTrap(pVCpu) &&
 				!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC |
 				                             VMCPU_FF_INTERRUPT_PIC)))
 				return false;
 
-			unsigned vector = 0;
-			utcb->inj_info  = NOVA_REQ_IRQWIN_EXIT | vector;
-			utcb->mtd      |= Nova::Mtd::INJ;
+			if (set_mtd) {
+				unsigned vector = 0;
+				utcb->inj_info  = NOVA_REQ_IRQWIN_EXIT | vector;
+				utcb->mtd      |= Nova::Mtd::INJ;
+			}
 
 			return true;
 		}
@@ -492,6 +522,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			Assert(_irq_win);
 			_irq_win = false;
+			Genode::snprintf(_trace_buf, sizeof(_trace_buf), "%d: 01\n", _cpu_id);
 
 			if (!TRPMHasTrap(pVCpu)) {
 
@@ -786,9 +817,25 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				PERR("loading vCPU state failed");
 				return VERR_INTERNAL_ERROR;
 			}
-			
+#if 0			
+			if (_irq_win && !check_to_request_irq_window(utcb, _current_vcpu, false))
+				Vmm::printf("***2\n");
+#endif
 			/* check whether to request interrupt window for injection */
 			_irq_win = check_to_request_irq_window(utcb, pVCpu);
+
+			//Assert(!(_irq_win && !check_to_request_irq_window(utcb, pVCpu, false)));
+
+			extern int pic_cleared;
+			pic_cleared = 0;
+
+			if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_PIC)) {
+				Vmm::printf("loop\n");
+				while (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_PIC)) ;
+				Vmm::printf("pic_cleared: %d, %p\n", pic_cleared, pVCpu);
+			}
+
+			Vmm::printf("%u: en: %u\n", _cpu_id, exit_reason);
 
 			/*
 			 * Flag vCPU to be "pokeable" by external events such as interrupts
@@ -855,6 +902,14 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			/* XXX see VMM/VMMR0/HMVMXR0.cpp - not necessary every time ! XXX */
 			REMFlushTBs(pVM);
 #endif
+#if 0
+			if (_irq_win && !check_to_request_irq_window(utcb, pVCpu, false))
+				Vmm::printf("***1\n");
+#endif
+			//Assert(!(_irq_win && !check_to_request_irq_window(utcb, pVCpu, false)));
+//Vmm::printf("%u: %d\n", _cpu_id, _irq_win);
+
+			Genode::snprintf(_trace_buf, sizeof(_trace_buf), "%u: ex\n", _cpu_id);
 
 			return _last_exit_was_recall ? VINF_SUCCESS : VINF_EM_RAW_EMULATE_INSTR;
 		}

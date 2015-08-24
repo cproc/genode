@@ -38,7 +38,7 @@
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 
-
+int pic_cleared = 0;
 /**
  * xpcom style memory allocation
  */
