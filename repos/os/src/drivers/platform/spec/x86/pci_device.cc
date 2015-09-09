@@ -28,18 +28,26 @@ Genode::Io_port_session_capability Platform::Device_component::io_port(Genode::u
 			continue;
 		}
 
-		if (_io_port_conn[v_id] == nullptr)
-			_io_port_conn[v_id] = new (_slab_ioport) Genode::Io_port_connection(res.base(), res.size());
+		if (_io_port_conn[v_id] != nullptr)
+			return _io_port_conn[v_id]->cap();
 
-		return _io_port_conn[v_id]->cap();
+		try {
+			_io_port_conn[v_id] = new (_slab_ioport) Genode::Io_port_connection(res.base(), res.size());
+			return _io_port_conn[v_id]->cap();
+		} catch (...) {
+			return Genode::Io_port_session_capability();
+		}
 	}
 
 	return Genode::Io_port_session_capability();
 }
 
-Genode::Io_mem_session_capability Platform::Device_component::io_mem(Genode::uint8_t v_id)
+Genode::Io_mem_session_capability Platform::Device_component::io_mem(Genode::uint8_t const v_id,
+                                                                     Genode::Cache_attribute const caching,
+                                                                     Genode::addr_t const offset,
+                                                                     Genode::size_t const size)
 {
-	Genode::uint8_t max = sizeof(_io_mem_conn) / sizeof(_io_mem_conn[0]);
+	Genode::uint8_t max = sizeof(_io_mem) / sizeof(_io_mem[0]);
 	Genode::uint8_t i = 0, r_id = 0;
 
 	for (Resource res = resource(0); i < max; i++, res = resource(i))
@@ -52,17 +60,32 @@ Genode::Io_mem_session_capability Platform::Device_component::io_mem(Genode::uin
 			continue;
 		}
 
-		if (_io_mem_conn[v_id] == nullptr)
-			_io_mem_conn[v_id] = new (_slab_iomem) Genode::Io_mem_connection(res.base(), res.size());
+		Genode::size_t res_size = size;
+		if (res_size <= 0 || res_size > res.size())
+			res_size = res.size();
 
-		return _io_mem_conn[v_id]->cap();
+		if (offset >= res.size() || offset > res.size() - res_size)
+			return Genode::Io_mem_session_capability();
+
+		try {
+			bool const wc = caching == Genode::Cache_attribute::WRITE_COMBINED;
+			Io_mem * io_mem = new (_slab_iomem) Io_mem(res.base() + offset,
+			                                           res_size, wc);
+			_io_mem[i].insert(io_mem);
+			return io_mem->cap();
+		} catch (Genode::Allocator::Out_of_memory) {
+			throw Platform::Device::Quota_exceeded();
+		} catch (...) {
+			return Genode::Io_mem_session_capability();
+		}
 	}
 
 	return Genode::Io_mem_session_capability();
 }
 
-void Platform::Device_component::config_write(unsigned char address, unsigned value,
-                                         Access_size size)
+void Platform::Device_component::config_write(unsigned char address,
+                                              unsigned value,
+                                              Access_size size)
 {
 	/* white list of ports which we permit to write */
 	switch (address) {
@@ -99,4 +122,3 @@ void Platform::Device_component::config_write(unsigned char address, unsigned va
 	_device_config.write(&_config_access, address, value, size,
 	                     _device_config.DONT_TRACK_ACCESS);
 }
-
