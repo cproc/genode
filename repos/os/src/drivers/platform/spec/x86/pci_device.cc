@@ -60,9 +60,8 @@ Genode::Io_mem_session_capability Platform::Device_component::io_mem(Genode::uin
 			continue;
 		}
 
-		Genode::size_t res_size = size;
-		if (res_size <= 0 || res_size > res.size())
-			res_size = res.size();
+		/* limit IO_MEM session size to resource size */
+		Genode::size_t const res_size = Genode::min(size, res.size());
 
 		if (offset >= res.size() || offset > res.size() - res_size)
 			return Genode::Io_mem_session_capability();
