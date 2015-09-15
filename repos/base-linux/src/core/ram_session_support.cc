@@ -38,7 +38,16 @@ void Ram_session_component::_export_ram_ds(Dataspace_component *ds)
 	snprintf(fname, sizeof(fname), "%s/ds-%d", resource_path(), ram_ds_cnt++);
 	lx_unlink(fname);
 	int const fd = lx_open(fname, O_CREAT|O_RDWR|O_TRUNC|LX_O_CLOEXEC, S_IRWXU);
+
+	if (fd < 0) {
+		PERR("%s: lx_open failed with %d", __PRETTY_FUNCTION__, fd);
+		/* TODO: cleanup */
+		throw Alloc_failed();
+	}
+
 	lx_ftruncate(fd, ds->size());
+
+	PRAW("opened %d for %s", fd, _label);
 
 	/* remember file descriptor in dataspace component object */
 	ds->fd(fd);
@@ -56,6 +65,9 @@ void Ram_session_component::_export_ram_ds(Dataspace_component *ds)
 void Ram_session_component::_revoke_ram_ds(Dataspace_component *ds)
 {
 	int const fd = ds->fd().dst().socket;
+
+	PRAW("revoke: %d, %d", fd, ds->fd2());
+
 	if (fd != -1)
 		lx_close(fd);
 }

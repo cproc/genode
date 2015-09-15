@@ -124,6 +124,8 @@ namespace Genode {
 				enum { DUMMY_LOCAL_NAME = 0 };
 				return Untyped_capability(Dst(_fd), DUMMY_LOCAL_NAME);
 			}
+
+			int fd2() { return _fd; }
 	};
 }
 

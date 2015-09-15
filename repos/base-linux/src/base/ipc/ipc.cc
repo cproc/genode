@@ -432,8 +432,12 @@ static inline void lx_reply(int reply_socket,
 		return;
 	}
 
-	if (ret < 0)
-		PRAW("[%d] lx_sendmsg failed with %d in lx_reply()", lx_getpid(), ret);
+	if (ret < 0) {
+		PRAW("[%d] lx_sendmsg failed with %d in lx_reply() for fd %d", lx_gettid(), ret, reply_socket);
+		for (unsigned i = 0; i < send_msgbuf.used_caps(); i++) {
+			PRAW("sd %u = %d", i, send_msgbuf.cap(i));
+		}
+	}
 }
 
 
