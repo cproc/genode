@@ -19,9 +19,9 @@
 
 using namespace Genode;
 
-
 Heap::Dataspace_pool::~Dataspace_pool()
 {
+PDBG("*****");
 	/* free all ram_dataspaces */
 	for (Dataspace *ds; (ds = first()); ) {
 
@@ -72,6 +72,8 @@ Heap::Dataspace *Heap::_allocate_dataspace(size_t size, bool enforce_separate_me
 		_ds_pool.ram_session->free(new_ds_cap);
 		return 0;
 	}
+
+	_ram_session_used += size;
 
 	if (enforce_separate_metadata) {
 
@@ -214,6 +216,8 @@ void Heap::free(void *addr, size_t size)
 		_ds_pool.ram_session->free(ds->cap);
 
 		_quota_used -= ds->size;
+
+		_ram_session_used -= ds->size;
 
 		/* have the destructor of the 'cap' member called */
 		delete ds;

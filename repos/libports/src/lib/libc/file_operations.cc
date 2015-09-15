@@ -390,7 +390,8 @@ extern "C" int mkdir(const char *path, mode_t mode)
 	}
 }
 
-
+static size_t mmap_allocated = 0;
+static unsigned int count = 0;
 extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
                       int libc_fd, ::off_t offset)
 {
@@ -399,6 +400,8 @@ extern "C" void *mmap(void *addr, ::size_t length, int prot, int flags,
 	if (!addr && libc_fd == -1) {
 		void *start = Libc::mem_alloc()->alloc(length, PAGE_SHIFT);
 		mmap_registry()->insert(start, length, 0);
+		mmap_allocated += length;
+		PDBG("allocated via mmap(): %zu", mmap_allocated);
 		return start;
 	}
 
@@ -434,8 +437,11 @@ extern "C" int munmap(void *start, ::size_t length)
 	int ret = 0;
 	if (plugin)
 		ret = plugin->munmap(start, length);
-	else
+	else {
 		Libc::mem_alloc()->free(start);
+		mmap_allocated -= length;
+		PDBG("allocated via mmap(): %zu", mmap_allocated);
+	}
 
 	mmap_registry()->remove(start);
 	return ret;

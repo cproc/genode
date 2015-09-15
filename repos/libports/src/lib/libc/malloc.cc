@@ -28,6 +28,8 @@ extern "C" {
 
 typedef unsigned long Block_header;
 
+static unsigned int count = 0;
+
 namespace Genode {
 
 	class Slab_alloc : public Slab
@@ -100,6 +102,8 @@ class Malloc : public Genode::Allocator
 		 * Allocator interface
 		 */
 
+		Genode::size_t allocated = 0;
+
 		bool alloc(size_t size, void **out_addr) override
 		{
 			Genode::Lock::Guard lock_guard(_lock);
@@ -118,7 +122,7 @@ class Malloc : public Genode::Allocator
 			void *addr = 0;
 
 			/* use backing store if requested memory is larger than largest slab */
-			if (msb > SLAB_STOP) {
+			if (/*msb > SLAB_STOP*/true) {
 
 				if (!(_backing_store->alloc(real_size, &addr)))
 					return false;
@@ -129,6 +133,9 @@ class Malloc : public Genode::Allocator
 
 			*(Block_header *)addr = real_size;
 			*out_addr = (Block_header *)addr + 1;
+
+			allocated += real_size;
+
 			return true;
 		}
 
@@ -139,11 +146,27 @@ class Malloc : public Genode::Allocator
 			unsigned long *addr = ((unsigned long *)ptr) - 1;
 			unsigned long  real_size = *addr;
 
-			if (real_size > (1U << SLAB_STOP))
+			if (/*real_size > (1U << SLAB_STOP)*/true) {
+
+				//PDBG("allocated via malloc() before free(): %zu", allocated);
+				//PDBG("consumed from heap before free(): %zu", Genode::env()->heap()->consumed());
+				//PDBG("available in RAM session before free(): %zu", Genode::env()->ram_session()->avail());
+
 				_backing_store->free(addr, real_size);
-			else {
+
+				allocated -= real_size;
+
+				if (++count % 10000 == 0) {
+					PDBG("allocated via malloc() after free(): %zu", allocated);
+					PDBG("consumed from heap backend: %zu", Genode::env()->heap()->consumed());
+					PDBG("consumed from RAM session: %zu", Genode::env()->ram_session()->used());
+				}
+
+			} else {
 				unsigned long msb = _slab_log2(real_size);
 				_allocator[msb - SLAB_START]->free(addr);
+
+				allocated -= real_size;
 			}
 		}
 

@@ -101,6 +101,7 @@ class Genode::Heap : public Allocator
 		Allocator_avl  _alloc;        /* local allocator    */
 		size_t         _quota_limit;
 		size_t         _quota_used;
+		size_t         _ram_session_used;
 		size_t         _chunk_size;
 
 		/**
@@ -142,7 +143,7 @@ class Genode::Heap : public Allocator
 		:
 			_ds_pool(ram_session, rm_session),
 			_alloc(0),
-			_quota_limit(quota_limit), _quota_used(0),
+			_quota_limit(quota_limit), _quota_used(0), _ram_session_used(0),
 			_chunk_size(MIN_CHUNK_SIZE)
 		{
 			if (static_addr)
@@ -170,7 +171,7 @@ class Genode::Heap : public Allocator
 
 		bool   alloc(size_t, void **) override;
 		void   free(void *, size_t) override;
-		size_t consumed() const override { return _quota_used; }
+		size_t consumed() const override { return /*_quota_used*/_ram_session_used; }
 		size_t overhead(size_t size) const override { return _alloc.overhead(size); }
 		bool   need_size_for_free() const override { return false; }
 };
