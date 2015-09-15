@@ -1,6 +1,22 @@
+/*
+ * \brief  Port of VirtualBox to Genod
+ * \author Norman Feske
+ * \author Alexander Boettcher
+ */
+
+/*
+ * Copyright (C) 2013-2015 Genode Labs GmbH
+ *
+ * This file is distributed under the terms of the GNU General Public License
+ * version 2.
+ */
+
 #include <base/printf.h>
+#include <util/xml_node.h>
 
 #include <VBox/settings.h>
+#include <SharedClipboard/VBoxClipboard.h>
+#include <VBox/HostServices/VBoxClipboardSvc.h>
 
 #include "ConsoleImpl.h"
 #include "MachineImpl.h"
@@ -15,11 +31,13 @@
 
 static const bool debug = false;
 
+static Genode::Attached_rom_dataspace *clipboard_rom = nullptr;
+static Genode::Reporter               *clipboard_reporter = nullptr;
+
 void    Console::uninit()                                                       DUMMY()
 HRESULT Console::resume(Reason_T aReason)                                       DUMMY(E_FAIL)
 HRESULT Console::pause(Reason_T aReason)                                        DUMMY(E_FAIL)
 void    Console::enableVMMStatistics(BOOL aEnable)                              DUMMY()
-void    Console::changeClipboardMode(ClipboardMode_T aClipboardMode)            DUMMY()
 HRESULT Console::updateMachineState(MachineState_T aMachineState)               DUMMY(E_FAIL)
 
 HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
@@ -299,6 +317,41 @@ void GenodeConsole::handle_mode_change(unsigned)
 	update_video_mode();
 }
 
+void GenodeConsole::init_clipboard()
+{
+	if (!&*machine())
+		return;
+
+	ClipboardMode_T mode;
+	machine()->COMGETTER(ClipboardMode)(&mode);
+
+	if (mode == ClipboardMode_Bidirectional ||
+	    mode == ClipboardMode_HostToGuest) {
+
+		_clipboard_rom = new Genode::Attached_rom_dataspace("clipboard");
+		_clipboard_rom->sigh(_clipboard_signal_dispatcher);
+
+		clipboard_rom = _clipboard_rom;
+	}
+
+	if (mode == ClipboardMode_Bidirectional ||
+	    mode == ClipboardMode_GuestToHost) {
+
+		_clipboard_reporter = new Genode::Reporter("clipboard");
+		_clipboard_reporter->enabled(true);
+
+		clipboard_reporter = _clipboard_reporter;
+	}
+}
+
+void GenodeConsole::handle_cb_rom_change(unsigned)
+{
+	if (!_clipboard_rom)
+		return;
+
+	vboxClipboardSync(nullptr);
+}
+
 void GenodeConsole::event_loop(IKeyboard * gKeyboard, IMouse * gMouse)
 {
 	_vbox_keyboard = gKeyboard;
@@ -329,4 +382,135 @@ void GenodeConsole::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supports
 		Mouse *gMouse = getMouse();
 		gMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
 	}
+}
+
+
+
+
+/**********************
+ * Clipboard handling *
+ **********************/
+
+struct _VBOXCLIPBOARDCONTEXT
+{
+    VBOXCLIPBOARDCLIENTDATA *pClient;
+};
+
+static VBOXCLIPBOARDCONTEXT context;
+
+int vboxClipboardInit (void) { return VINF_SUCCESS; }
+
+void vboxClipboardDestroy (void)
+{
+	clipboard_rom = nullptr;
+}
+
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+{
+	if (!pClient || context.pClient != NULL)
+		return VERR_NOT_SUPPORTED;
+
+	vboxSvcClipboardLock();
+
+	pClient->pCtx = &context;
+	pClient->pCtx->pClient = pClient;
+
+	vboxSvcClipboardUnlock();
+
+	int rc = vboxClipboardSync (pClient);
+
+	return rc;
+}
+
+void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+{
+	if (!pClient || !pClient->pCtx)
+		return;
+
+	vboxSvcClipboardLock();
+	pClient->pCtx->pClient = NULL;
+	vboxSvcClipboardUnlock();
+}
+
+void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
+                                  uint32_t formats)
+{
+	if (!pClient)
+		return;
+
+	vboxSvcClipboardReportMsg (pClient,
+	                           VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+	                           formats);
+}
+
+int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t format,
+                           void *pv, uint32_t const cb, uint32_t *pcbActual)
+{
+	if (!clipboard_rom || format != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+		return VERR_NOT_SUPPORTED;
+
+	if (!pv || !pcbActual || cb == 0)
+		return VERR_INVALID_PARAMETER;
+
+	clipboard_rom->update();
+	char * data = clipboard_rom->local_addr<char>();
+
+	Genode::Xml_node node(data);
+	if (!node.has_type("clipboard")) {
+		PERR("invalid clipboard xml syntax");
+		return VERR_INVALID_PARAMETER;
+	}
+
+	size_t const len = node.content_size();
+	size_t written = 0;
+
+	PRTUTF16 utf16_string = reinterpret_cast<PRTUTF16>(pv);
+	int rc = RTLatin1ToUtf16Ex(node.content_base(), len, &utf16_string, cb, &written);
+
+	if (RT_SUCCESS(rc)) {
+		if (written + 2 > cb)
+			written = cb - 2;
+
+		/* +2 stuff required for Windows guests ... linux guest doesn't care */
+		*pcbActual = written + 2;
+
+		((char *)pv)[written]   = 0;
+		((char *)pv)[written+1] = 0;
+	} else
+		*pcbActual = 0;
+
+	return VINF_SUCCESS;
+}
+
+void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
+                             uint32_t cb, uint32_t format)
+{
+	if (format != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT || !pv || !pClient ||
+	    !clipboard_reporter)
+		return;
+
+	PCRTUTF16 utf16str = reinterpret_cast<PCRTUTF16>(pv);
+	char * message = 0;
+
+	RTUtf16ToLatin1(utf16str, &message);
+
+	if (!message)
+		return;
+
+	Genode::Reporter::Xml_generator xml(*clipboard_reporter, [&] () {
+		xml.content(message, RTStrCalcLatin1Len(message)); });
+}
+
+int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
+{
+	if (!pClient)
+		pClient = context.pClient;
+
+	if (!pClient)
+		return VERR_NOT_SUPPORTED;
+
+	vboxSvcClipboardReportMsg (pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
+	                           VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+
+	return VINF_SUCCESS;
 }

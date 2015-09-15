@@ -1,0 +1,22 @@
++++ a/src/app/virtualbox/src/VBox/Runtime/common/string/utf-16-latin-1.cpp
+@@ -295,9 +295,8 @@
+ 
+ 
+ /**
+- * Calculates the UTF-16 length of a Latin1 string.  In fact this is just the
+- * original length, but the function saves us nasty comments to that effect
+- * all over the place.
++ * Calculates the UTF-16 length of a Latin1 string.  In fact this is the double
++ * length of the original length.
+  *
+  * @returns IPRT status code.
+  * @param   psz     Pointer to the Latin1 string.
+@@ -307,7 +306,7 @@
+  */
+ static int rtLatin1CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
+ {
+-    *pcwc = RTStrNLen(psz, cch);
++    *pcwc = 2 * RTStrNLen(psz, cch);
+     return VINF_SUCCESS;
+ }
+ 
