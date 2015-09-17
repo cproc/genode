@@ -178,6 +178,12 @@ class Genode::Xml_generator
 					_attr_offset += gap;
 				}
 
+				void content(char const *data, size_t len)
+				{
+					_content_buffer();
+					_out_buffer.append(data, len);
+				}
+
 				template <typename FUNC>
 				Node(Xml_generator &xml, char const *name, FUNC const &func)
 				:
@@ -256,6 +262,11 @@ class Genode::Xml_generator
 			char buf[64];
 			Genode::snprintf(buf, sizeof(buf), "%ld", value);
 			_curr_node->insert_attribute(name, buf);
+		}
+
+		void content(char const *data, size_t len)
+		{
+			_curr_node->content(data, len);
 		}
 
 		size_t used() const { return _out_buffer.used(); }
