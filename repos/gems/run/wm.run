@@ -57,6 +57,7 @@ append_if [have_spec sdl] config {
 			<service name="Input"/>
 			<service name="Framebuffer"/>
 		</provides>
+		<config width="640" height="480"/>
 	</start>}
 
 append_platform_drv_config
