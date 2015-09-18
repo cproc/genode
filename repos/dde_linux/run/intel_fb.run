@@ -6,6 +6,7 @@ set build_components {
 	core init
 	drivers/timer
 	drivers/framebuffer/intel
+	test/framebuffer
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -15,22 +16,12 @@ build $build_components
 
 create_boot_directory
 
-proc platform_drv_policy {} {
-	return {
-		<policy label="intel_fb_drv">
-			<pci class="VGA"/>
-			<pci bus="0" device="0" function="0"/>
-			<pci class="ISABRIDGE"/>
-		</policy>
-	}
-}
-
 #
 # Generate config
 #
 
 append config {
-<config>
+<config verbose="yes">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -56,8 +47,11 @@ append config {
 		<provides><service name="Timer"/></provides>
 	</start>
 	<start name="intel_fb_drv">
+		<resource name="RAM" quantum="20M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>
+	<start name="test-framebuffer">
 		<resource name="RAM" quantum="10M"/>
-		<provides><service name="Input"/></provides>
 	</start>
 </config>}
 
@@ -70,6 +64,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer intel_fb_drv
+	test-framebuffer
 }
 
 append_platform_drv_boot_modules

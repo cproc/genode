@@ -26,6 +26,7 @@ namespace Lx {
 	class Mapped_io_mem_range;
 
 	void *ioremap(resource_size_t, unsigned long, Genode::Cache_attribute);
+	Genode::Dataspace_capability ioremap_lookup(Genode::addr_t, Genode::size_t);
 }
 
 /**
@@ -56,15 +57,27 @@ class Lx::Mapped_io_mem_range : public Lx::List<Mapped_io_mem_range>::Element
 
 		Genode::addr_t phys() const { return _phys; }
 		Genode::addr_t virt() const { return _virt; }
+		Genode::Dataspace_capability cap() { return _ds.cap(); }
 
 		/**
 		 * Return true if the mapped range contains the specified sub range
 		 */
-		bool contains(Genode::addr_t phys, Genode::size_t size) const
+		bool phys_range(Genode::addr_t phys, Genode::size_t size) const
 		{
 			return (phys >= _phys) && (phys + size - 1 <= _phys + _size - 1);
 		}
+
+		/**
+		 * Return true if the mapped range contains the specified sub range
+		 */
+		bool virt_range(Genode::addr_t virt, Genode::size_t size) const
+		{
+			return (virt >= _virt) && (virt + size - 1 <= _virt + _size - 1);
+		}
 };
+
+
+static Lx::List<Lx::Mapped_io_mem_range> ranges;
 
 
 void *Lx::ioremap(resource_size_t phys_addr, unsigned long size,
@@ -72,12 +85,10 @@ void *Lx::ioremap(resource_size_t phys_addr, unsigned long size,
 {
 	using namespace Genode;
 
-	static Lx::List<Lx::Mapped_io_mem_range> ranges;
-
 	/* search for the requested region within the already mapped ranges */
 	for (Lx::Mapped_io_mem_range *r = ranges.first(); r; r = r->next()) {
 
-		if (r->contains(phys_addr, size)) {
+		if (r->phys_range(phys_addr, size)) {
 			void * const virt = (void *)(r->virt() + phys_addr - r->phys());
 			PLOG("ioremap: return sub range phys 0x%lx (size %lx) to virt 0x%lx",
 			     (long)phys_addr, (long)size, (long)virt);
@@ -107,6 +118,18 @@ void *Lx::ioremap(resource_size_t phys_addr, unsigned long size,
 
 	addr_t const sub_page_offset = phys_addr & 0xfff;
 	return (void *)(io_mem->virt() + sub_page_offset);
+}
+
+
+Genode::Dataspace_capability
+Lx::ioremap_lookup(Genode::addr_t virt_addr, Genode::size_t size)
+{
+	/* search for the requested region within the already mapped ranges */
+	for (Lx::Mapped_io_mem_range *r = ranges.first(); r; r = r->next())
+		if (r->virt_range(virt_addr, size))
+			return r->cap();
+
+	return Genode::Dataspace_capability();
 }
 
 #endif /* _LX_EMUL__IMPL__INTERNAL__MAPPED_IO_MEM_RANGE_H_ */

@@ -15,10 +15,13 @@
 #include <base/printf.h>
 #include <os/server.h>
 
+#include <component.h>
+
 /* Linux emulation environment includes */
 #include <lx_emul.h>
 #include <lx_emul/impl/internal/scheduler.h>
 #include <lx_emul/impl/internal/timer.h>
+#include <lx_emul/impl/internal/irq.h>
 #include <lx_emul/impl/internal/pci_dev_registry.h>
 #include <lx_emul/impl/internal/pci_backend_alloc.h>
 
@@ -36,6 +39,13 @@ Lx::Scheduler & Lx::scheduler()
 Lx::Timer & Lx::timer(Server::Entrypoint *ep, unsigned long *jiffies)
 {
 	return _timer_impl(ep, jiffies);
+}
+
+
+Lx::Irq & Lx::Irq::irq(Server::Entrypoint *ep)
+{
+	static Lx::Irq irq(*ep);
+	return irq;
 }
 
 
@@ -58,17 +68,22 @@ namespace Lx {
 };
 
 
+Framebuffer::Root * Framebuffer::root = nullptr;
+
+
 extern "C" int postcore_i2c_init(); /* i2c-core.c */
 extern "C" int module_i915_init();  /* i915_drv.c */
 
 
-static void run_linux(void *)
+static void run_linux(void * ep)
 {
 	PDBG("postcore_i915_init");
 	postcore_i2c_init();
 
 	PDBG("module_i915_init");
 	module_i915_init();
+
+	Genode::env()->parent()->announce(reinterpret_cast<Server::Entrypoint*>(ep)->manage(*Framebuffer::root));
 
 	while (1) {
 		Lx::scheduler().current()->block_and_schedule();
@@ -83,16 +98,23 @@ struct Server::Main
 {
 	Entrypoint &ep;
 
+	Framebuffer::Root root_component { &ep.rpc_ep(), Genode::env()->heap() };
+
 	/* init singleton Lx::Timer */
 	Lx::Timer &timer = Lx::timer(&ep, &jiffies);
 
+	/* init singleton Lx::Irq */
+	Lx::Irq &irq = Lx::Irq::irq(&ep);
+
 	/* Linux task that handles the initialization */
-	Lx::Task linux { run_linux, nullptr, "linux",
+	Lx::Task linux { run_linux, reinterpret_cast<void*>(&ep), "linux",
 	                 Lx::Task::PRIORITY_0, Lx::scheduler() };
 
 	Main(Entrypoint &ep) : ep(ep)
 	{
 		Genode::printf("--- intel framebuffer driver ---\n");
+
+		Framebuffer::root = &root_component;
 
 		/* give all task a first kick before returning */
 		Lx::scheduler().schedule();
