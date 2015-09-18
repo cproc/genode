@@ -18,6 +18,7 @@
 
 /* Qt includes */
 #include <QtGui/private/qguiapplication_p.h>
+#include "qgenodeclipboard.h"
 #include "qnitpickerglcontext.h"
 #include "qnitpickerintegration.h"
 #include "qnitpickerplatformwindow.h"
@@ -91,6 +92,15 @@ QPlatformFontDatabase *QNitpickerIntegration::fontDatabase() const
     return &db;
 }
 
+
+#ifndef QT_NO_CLIPBOARD
+QPlatformClipboard *QNitpickerIntegration::clipboard() const
+{
+qDebug("*** clipboard() ***");
+	static QGenodeClipboard cb;
+	return &cb;
+}
+#endif
 
 QPlatformOpenGLContext *QNitpickerIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
