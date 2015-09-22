@@ -16,6 +16,7 @@
 
 #include <util/string.h>
 #include <base/snprintf.h>
+#include <os/print_lines.h>
 
 namespace Genode { class Xml_generator; }
 
@@ -178,6 +179,21 @@ class Genode::Xml_generator
 					_attr_offset += gap;
 				}
 
+				void append(char const *src, size_t src_len)
+				{
+					Out_buffer content_buffer = _content_buffer();
+
+					auto append_line = [&] (char const *line) {
+						content_buffer.append('\t', _indent_level + 1);
+						content_buffer.append(line);
+					};
+
+					enum { MAX_LINE_LEN = 200 };
+					print_lines<MAX_LINE_LEN>(src, src_len, append_line);
+
+					_commit_content(content_buffer);
+				}
+
 				template <typename FUNC>
 				Node(Xml_generator &xml, char const *name, FUNC const &func)
 				:
@@ -256,6 +272,16 @@ class Genode::Xml_generator
 			char buf[64];
 			Genode::snprintf(buf, sizeof(buf), "%ld", value);
 			_curr_node->insert_attribute(name, buf);
+		}
+
+		/**
+		 * Append content to XML node
+		 *
+		 * This method must not be followed by calls of 'attribute'.
+		 */
+		void append(char const *str, size_t str_len)
+		{
+			_curr_node->append(str, str_len);
 		}
 
 		size_t used() const { return _out_buffer.used(); }
