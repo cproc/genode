@@ -45,6 +45,63 @@ namespace Vfs_server {
 			Genode::sleep_forever();
 		}
 	}
+
+	/* XXX what a hack! */
+	struct Ticker;
+	struct Tick_transmitter;
+
+	struct Root_file_system;
+};
+
+
+struct Vfs_server::Tick_transmitter : Genode::Signal_transmitter,
+                                      List<Tick_transmitter>::Element
+{
+	Tick_transmitter(Genode::Signal_context_capability cap)
+	: Genode::Signal_transmitter(cap) { }
+};
+
+
+class Vfs_server::Ticker : public Vfs::Ticker
+{
+	private:
+
+		Lock                    _lock;
+		List<Tick_transmitter>  _transmitter;
+
+	public:
+
+		void register_for_tick(Tick_transmitter *transmitter)
+		{
+			Lock::Guard guard(_lock);
+
+			_transmitter.insert(transmitter);
+		}
+
+		void unregister_from_tick(Tick_transmitter *transmitter)
+		{
+			Lock::Guard guard(_lock);
+
+			_transmitter.remove(transmitter);
+		}
+
+		void tick() override
+		{
+			Lock::Guard guard(_lock);
+
+			for (Tick_transmitter *l = _transmitter.first(); l; l = l->next())
+				l->submit();
+		}
+};
+
+
+struct Vfs_server::Root_file_system : Vfs::Dir_file_system, Vfs_server::Ticker
+{
+	Root_file_system(Xml_node node, File_system_factory &fs_factory)
+	: Vfs::Dir_file_system(node, fs_factory)
+	{
+		fs_factory.register_ticker(*this);
+	}
 };
 
 
@@ -72,10 +129,17 @@ class Vfs_server::Session_component :
 
 		Genode::Signal_rpc_member<Session_component>
 		                        _process_packet_dispatcher;
-		Vfs::Dir_file_system   &_vfs;
+		Root_file_system       &_vfs;
 		Directory               _root;
 		bool                    _writable;
 
+		/*
+		 * XXX Currently, we have only one packet in backlog, which must finish
+		 *     processing before new packets can be processed.
+		 */
+		Packet_descriptor _backlog_packet;
+
+		Tick_transmitter _tick { _process_packet_dispatcher };
 
 		/****************************
 		 ** Handle to node mapping **
@@ -141,8 +205,10 @@ class Vfs_server::Session_component :
 			size_t     const length  = packet.length();
 			seek_off_t const seek    = packet.position();
 
+			/* assume failure by default */
+			packet.succeeded(false);
+
 			if ((!(content && length)) || (packet.length() > packet.size())) {
-				packet.succeeded(false);
 				return;
 			}
 
@@ -174,20 +240,57 @@ class Vfs_server::Session_component :
 			packet.succeeded(!!res_length);
 		}
 
-		void _process_packet()
+		bool _try_process_packet_op(Packet_descriptor &packet)
+		{
+			try {
+				_process_packet_op(packet);
+				return true;
+			} catch (Node::Operation_would_block) {
+				_backlog_packet = packet;
+			}
+
+			return false;
+		}
+
+		bool _process_backlog()
+		{
+			/* indicate success if there's no backlog */
+			if (!_backlog_packet.size())
+				return true;
+
+			/* only start processing if acknowledgement is possible */
+			if (!tx_sink()->ready_to_ack())
+				return false;
+
+			if (!_try_process_packet_op(_backlog_packet))
+				return false;
+
+			/*
+			 * The 'acknowledge_packet' function cannot block because we
+			 * checked for 'ready_to_ack' in '_process_packets'.
+			 */
+			tx_sink()->acknowledge_packet(_backlog_packet);
+
+			/* invalidate backlog packet */
+			_backlog_packet = Packet_descriptor();
+
+			return true;
+		}
+
+		bool _process_packet()
 		{
 			Packet_descriptor packet = tx_sink()->get_packet();
 
-			/* assume failure by default */
-			packet.succeeded(false);
-
-			_process_packet_op(packet);
+			if (!_try_process_packet_op(packet))
+				return false;
 
 			/*
 			 * The 'acknowledge_packet' function cannot block because we
 			 * checked for 'ready_to_ack' in '_process_packets'.
 			 */
 			tx_sink()->acknowledge_packet(packet);
+
+			return true;
 		}
 
 		/**
@@ -196,6 +299,16 @@ class Vfs_server::Session_component :
 		 */
 		void _process_packets(unsigned)
 		{
+			/*
+			 * XXX Process client backlog before looking at new requests. This
+			 *     limits the number of simultaneously addressed handles (which
+			 *     was also the case before adding the backlog in case of
+			 *     blocking operations).
+			 */
+			if (!_process_backlog())
+				/* backlog not cleared - block for next condition change */
+				return;
+
 			while (tx_sink()->packet_avail()) {
 
 				/*
@@ -213,7 +326,8 @@ class Vfs_server::Session_component :
 				if (!tx_sink()->ready_to_ack())
 					return;
 
-				_process_packet();
+				if (!_process_packet())
+					return;
 			}
 		}
 
@@ -221,7 +335,7 @@ class Vfs_server::Session_component :
 		 * Check if string represents a valid path (must start with '/')
 		 */
 		static void _assert_valid_path(char const *path) {
-			if (path[0] != '/') throw Lookup_failed(); }
+			if (!path || path[0] != '/') throw Lookup_failed(); }
 
 		/**
 		 * Check if string represents a valid name (must not contain '/')
@@ -248,7 +362,7 @@ class Vfs_server::Session_component :
 		                  char          const *label,
 		                  size_t               ram_quota,
 		                  size_t               tx_buf_size,
-		                  Vfs::Dir_file_system &vfs,
+		                  Root_file_system     &vfs,
 		                  char           const *root_path,
 		                  bool                  writable)
 		:
@@ -276,6 +390,8 @@ class Vfs_server::Session_component :
 
 			_ram.ref_account(Genode::env()->ram_session_cap());
 			Genode::env()->ram_session()->transfer_quota(_ram.cap(), ram_quota);
+
+			_vfs.register_for_tick(&_tick);
 		}
 
 		/**
@@ -285,6 +401,8 @@ class Vfs_server::Session_component :
 		{
 			Dataspace_capability ds = tx_sink()->dataspace();
 			env()->ram_session()->free(static_cap_cast<Genode::Ram_dataspace>(ds));
+
+			_vfs.unregister_from_tick(&_tick);
 		}
 
 		void upgrade(char const *args)
@@ -292,6 +410,7 @@ class Vfs_server::Session_component :
 			size_t new_quota =
 				Genode::Arg_string::find_arg(args, "ram_quota").ulong_value(0);
 			Genode::env()->ram_session()->transfer_quota(_ram.cap(), new_quota);
+			PWRN("ram quota upgraded to %zd for %s", _ram.quota(), _label.string());
 		}
 
 
@@ -431,7 +550,7 @@ class Vfs_server::Session_component :
 			listener = Listener();
 		}
 
-		Status status(Node_handle node_handle) override
+		Status status(Node_handle node_handle)
 		{
 			Directory_service::Stat vfs_stat;
 			File_system::Status      fs_stat;
@@ -466,7 +585,7 @@ class Vfs_server::Session_component :
 			return fs_stat;
 		}
 
-		void unlink(Dir_handle dir_handle, Name const &name) override
+		void unlink(Dir_handle dir_handle, Name const &name)
 		{
 			if (!_writable) throw Permission_denied();
 
@@ -481,11 +600,13 @@ class Vfs_server::Session_component :
 			dir.mark_as_updated();
 		}
 
-		void truncate(File_handle file_handle, file_size_t size) override {
-			_lookup(file_handle).truncate(size); }
+		void truncate(File_handle file_handle, file_size_t size)
+		{
+			_lookup(file_handle).truncate(size);
+		}
 
 		void move(Dir_handle from_dir_handle, Name const &from_name,
-		          Dir_handle to_dir_handle,   Name const &to_name) override
+		          Dir_handle to_dir_handle,   Name const &to_name)
 		{
 			if (!_writable)
 				throw Permission_denied();
@@ -554,8 +675,7 @@ class Vfs_server::Root :
 {
 	private:
 
-		Vfs::Dir_file_system _vfs =
-			{ vfs_config(), Vfs::global_file_system_factory() };
+		Root_file_system _vfs { vfs_config(), Vfs::global_file_system_factory() };
 
 		Server::Entrypoint &_ep;
 
@@ -619,15 +739,15 @@ class Vfs_server::Root :
 				tx_buf_size;
 
 			if (session_size > ram_quota) {
-				error("insufficient 'ram_quota' from '", label, "' "
-				      "got ", ram_quota, ", need ", session_size);
+				PERR("insufficient 'ram_quota' from %s, got %zd, need %zd",
+				     label.string(), ram_quota, session_size);
 				throw Root::Quota_exceeded();
 			}
 			ram_quota -= session_size;
 
 			/* check if the session root exists */
 			if (!((session_root == "/") || _vfs.directory(session_root.base()))) {
-				error("session root '", session_root, "' not found for '", label, "'");
+				PERR("session root '%s' not found for '%s'", session_root.base(), label.string());
 				throw Root::Unavailable();
 			}
 
@@ -640,7 +760,7 @@ class Vfs_server::Root :
 				                  session_root.base(),
 				                  writeable);
 
-			Genode::log("session opened for '", label, "' at '", session_root, "'");
+			PLOG("session opened for '%s' at '%s'", label.string(), session_root.base());
 			return session;
 		}
 
@@ -681,6 +801,7 @@ struct Vfs_server::Main
 	Main(Server::Entrypoint &ep) : ep(ep)
 	{
 		env()->parent()->announce(ep.manage(fs_root));
+		PLOG("virtual file system server started");
 	}
 };
 

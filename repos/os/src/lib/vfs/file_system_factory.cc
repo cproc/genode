@@ -30,6 +30,9 @@
 #include <vfs/symlink_file_system.h>
 
 
+static Vfs::Ticker *vfs_ticker;
+
+
 class Default_file_system_factory : public Vfs::Global_file_system_factory
 {
 	private:
@@ -138,6 +141,16 @@ class Default_file_system_factory : public Vfs::Global_file_system_factory
 
 				Query_fn query_fn = shared_object->lookup<Query_fn>(_factory_symbol());
 
+				/* XXX hack */
+				try {
+					Vfs::Ticker ***ticker = shared_object->lookup<Vfs::Ticker ***>("vfs_ticker");
+
+					*ticker = &vfs_ticker;
+
+				} catch (Genode::Shared_object::Invalid_symbol) {
+					PWRN("%s: Genode::Shared_object::Invalid_symbol", lib_name.string());
+				}
+
 				return *query_fn();
 
 			} catch (Genode::Shared_object::Invalid_file) {
@@ -169,24 +182,21 @@ class Default_file_system_factory : public Vfs::Global_file_system_factory
 
 		Vfs::File_system *create(Genode::Xml_node node) override
 		{
-			try {
-				/* try if type is handled by the currently registered fs types */
+			/* try if type is handled by the currently registered fs types */
+			if (Vfs::File_system *fs = _try_create(node))
+				return fs;
+
+			/* probe for file system implementation available as shared lib */
+			if (_probe_external_factory(node)) {
+				/* try again with the new file system type loaded */
 				if (Vfs::File_system *fs = _try_create(node))
 					return fs;
-				/* if the builtin fails, do not try loading an external */
-			} catch (...) { return 0; }
-
-			try {
-				/* probe for file system implementation available as shared lib */
-				if (_probe_external_factory(node)) {
-					/* try again with the new file system type loaded */
-					if (Vfs::File_system *fs = _try_create(node))
-						return fs;
-				}
-			} catch (...) { }
+			}
 
 			return 0;
 		}
+
+		void register_ticker(Vfs::Ticker &ticker) override { vfs_ticker = &ticker; }
 
 		void extend(char const *name, File_system_factory &factory) override
 		{

@@ -25,12 +25,22 @@ namespace Vfs {
 	 * Return singleton instance of a file-system factory
 	 */
 	Global_file_system_factory &global_file_system_factory();
+
+	struct Ticker;
 }
+
+
+struct Vfs::Ticker
+{
+	virtual ~Ticker() { }
+	virtual void tick() = 0;
+};
 
 
 struct Vfs::File_system_factory
 {
 	virtual File_system *create(Xml_node node) = 0;
+	virtual void register_ticker(Ticker &) { }
 };
 
 
