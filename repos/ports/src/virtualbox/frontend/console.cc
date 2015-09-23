@@ -1,5 +1,5 @@
 /*
- * \brief  Port of VirtualBox to Genod
+ * \brief  Port of VirtualBox to Genode
  * \author Norman Feske
  * \author Alexander Boettcher
  */
@@ -465,7 +465,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t format,
 	size_t written = 0;
 
 	PRTUTF16 utf16_string = reinterpret_cast<PRTUTF16>(pv);
-	int rc = RTLatin1ToUtf16Ex(node.content_base(), len, &utf16_string, cb, &written);
+	int rc = RTStrToUtf16Ex(node.content_base(), len, &utf16_string, cb, &written);
 
 	if (RT_SUCCESS(rc)) {
 		if (written + 2 > cb)
@@ -492,13 +492,15 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
 	PCRTUTF16 utf16str = reinterpret_cast<PCRTUTF16>(pv);
 	char * message = 0;
 
-	RTUtf16ToLatin1(utf16str, &message);
+	int rc = RTUtf16ToUtf8(utf16str, &message);
 
-	if (!message)
+	if (!RT_SUCCESS(rc) || !message)
 		return;
 
 	Genode::Reporter::Xml_generator xml(*clipboard_reporter, [&] () {
-		xml.content(message, RTStrCalcLatin1Len(message)); });
+		xml.append(message, strlen(message)); });
+
+	RTStrFree(message);
 }
 
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)

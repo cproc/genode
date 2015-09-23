@@ -105,7 +105,6 @@ SRC_CC += Runtime/common/string/utf-8.cpp
 SRC_CC += Runtime/common/string/utf-8-case.cpp
 SRC_CC += Runtime/common/string/utf-16.cpp
 SRC_CC += Runtime/common/string/utf-16-case.cpp
-SRC_CC += Runtime/common/string/utf-16-latin-1.cpp
 SRC_CC += Runtime/common/table/avlpv.cpp
 SRC_CC += Runtime/common/table/avlroioport.cpp
 SRC_CC += Runtime/common/table/avlrogcphys.cpp

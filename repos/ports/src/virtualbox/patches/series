@@ -22,4 +22,3 @@ rem_irq.patch
 usb.patch
 tm_smp.patch
 hostservice.patch
-latinutf16.patch
