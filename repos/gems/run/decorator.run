@@ -50,7 +50,7 @@ append config {
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="ROM" />
 		           <service name="Report" /> </provides>
-		<config>
+		<config verbose="yes">
 			<rom>
 				<policy label="decorator -> pointer" report="nitpicker -> pointer"/>
 			</rom>
@@ -77,10 +77,16 @@ append config {
 			<rom name="decorator.config">
 				<inline description="initial config">
 					<config gradient="0">
+						<controls>
+							<maximizer/>
+							<title/>
+							<minimizer/>
+							<closer/>
+						</controls>
 						<policy label="Launchpad" color="#000000" />
 					</config>
 				</inline>
-				<sleep milliseconds="2000" />
+				<sleep milliseconds="100000" />
 				<inline description="alternative config">
 					<config>
 						<policy label="Arora" color="#12235a" />
@@ -93,7 +99,7 @@ append config {
 				<inline description="change focus to window 3">
 					<window_layout>
 						<window id="1" title="Genode Toolchain (running)"
-						        xpos="100" ypos="50" width="200" height="200" />
+						        xpos="100" ypos="50" width="200" height="200" closer="yes" maximizer="yes" minimizer="yes"/>
 						<window id="3" title="Launchpad"
 						        xpos="210" ypos="350" width="400" height="200"
 						        focused="yes" />
@@ -101,7 +107,7 @@ append config {
 						        xpos="170" ypos="150" width="300" height="200" />
 					</window_layout>
 				</inline>
-				<sleep milliseconds="100000" />
+				<sleep milliseconds="400000" />
 				<inline description="move window 3">
 					<window_layout>
 						<window id="1" title="Genode Toolchain"
