@@ -453,31 +453,42 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t format,
 		return VERR_INVALID_PARAMETER;
 
 	clipboard_rom->update();
+
+	if (!clipboard_rom->is_valid()) {
+		PERR("invalid clipboard dataspace");
+		return VERR_NOT_SUPPORTED;
+	}
+
 	char * data = clipboard_rom->local_addr<char>();
 
-	Genode::Xml_node node(data);
-	if (!node.has_type("clipboard")) {
+	try {
+
+		Genode::Xml_node node(data);
+		if (!node.has_type("clipboard")) {
+			PERR("invalid clipboard xml syntax");
+			return VERR_INVALID_PARAMETER;
+		}
+
+		size_t const len = node.content_size();
+		size_t written = 0;
+
+		PRTUTF16 utf16_string = reinterpret_cast<PRTUTF16>(pv);
+		int rc = RTStrToUtf16Ex(node.content_base(), len, &utf16_string, cb, &written);
+
+		if (RT_SUCCESS(rc)) {
+			if ((written * 2) + 2 > cb)
+				written = (cb - 2) / 2;
+
+			/* +1 stuff required for Windows guests ... linux guest doesn't care */
+			*pcbActual = (written + 1) * 2;
+			utf16_string[written] = 0;
+		} else
+			*pcbActual = 0;
+
+	} catch (Genode::Xml_node::Invalid_syntax) {
 		PERR("invalid clipboard xml syntax");
 		return VERR_INVALID_PARAMETER;
 	}
-
-	size_t const len = node.content_size();
-	size_t written = 0;
-
-	PRTUTF16 utf16_string = reinterpret_cast<PRTUTF16>(pv);
-	int rc = RTStrToUtf16Ex(node.content_base(), len, &utf16_string, cb, &written);
-
-	if (RT_SUCCESS(rc)) {
-		if (written + 2 > cb)
-			written = cb - 2;
-
-		/* +2 stuff required for Windows guests ... linux guest doesn't care */
-		*pcbActual = written + 2;
-
-		((char *)pv)[written]   = 0;
-		((char *)pv)[written+1] = 0;
-	} else
-		*pcbActual = 0;
 
 	return VINF_SUCCESS;
 }
