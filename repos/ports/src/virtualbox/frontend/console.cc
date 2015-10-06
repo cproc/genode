@@ -508,8 +508,12 @@ void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
 	if (!RT_SUCCESS(rc) || !message)
 		return;
 
-	Genode::Reporter::Xml_generator xml(*clipboard_reporter, [&] () {
-		xml.append(message, strlen(message)); });
+	try {
+		Genode::Reporter::Xml_generator xml(*clipboard_reporter, [&] () {
+			xml.append_sanitized(message, strlen(message)); });
+	} catch (...) {
+		PERR("could not write clipboard data");
+	}
 
 	RTStrFree(message);
 }
