@@ -442,7 +442,6 @@ namespace File_system {
 			}
 
 			/* merely readonly, no need to sync */
-			void sync() { }
 	};
 
 
