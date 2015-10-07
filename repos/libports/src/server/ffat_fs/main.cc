@@ -854,7 +854,6 @@ namespace File_system {
 			}
 
 			/* ffat only supports fsync(2) */
-			void sync() { }
 	};
 
 
