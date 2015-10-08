@@ -55,7 +55,7 @@ extern char _binary_default_tff_start;
 
 struct Status_bar_buffer
 {
-	enum { HEIGHT = 18, LABEL_GAP = 15 };
+	enum { HEIGHT = 18 + 10, LABEL_GAP = 15 };
 
 	Nitpicker::Connection &nitpicker;
 
@@ -155,9 +155,9 @@ void Status_bar_buffer::draw(Domain_name const &domain_name,
 
 	/* draw slightly shaded background */
 	for (unsigned i = 1; i < area.h() - 1; i++) {
-		r -= r > 3 ? 4 : 0;
-		g -= g > 3 ? 4 : 0;
-		b -= b > 4 ? 4 : 0;
+		r -= r > 3 ? 3 : 0;
+		g -= g > 3 ? 3 : 0;
+		b -= b > 4 ? 3 : 0;
 
 		Box_painter::paint(surface,
 		                   Rect(Point(0, i), Area(view_rect.w(), 1)),
@@ -169,8 +169,9 @@ void Status_bar_buffer::draw(Domain_name const &domain_name,
 	                   Rect(Point(0, view_rect.h() - 1), Area(view_rect.w(), 1)),
 	                    Color(r / 4, g / 4, b / 4));
 
-	_draw_label(surface, view_rect.center(_label_size(domain_name, label)),
-	            domain_name, label, color);
+	if (0)
+		_draw_label(surface, view_rect.center(_label_size(domain_name, label)),
+		            domain_name, label, color);
 
 	nitpicker.framebuffer()->refresh(0, 0, area.w(), area.h());
 }
