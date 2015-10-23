@@ -1,0 +1,275 @@
+msr.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/msr.hpp   |    1 +
+ include/mtd.hpp   |    1 +
+ include/stdio.hpp |    3 ++
+ include/utcb.hpp  |    6 +++++
+ include/vmx.hpp   |   34 +++++++++++++++++++++++++++
+ src/cpu.cpp       |    4 +++
+ src/ec.cpp        |   20 +++++++++++++++-
+ src/entry.S       |    5 ++++
+ src/utcb.cpp      |   67 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 9 files changed, 139 insertions(+), 2 deletions(-)
+
+diff --git a/include/msr.hpp b/include/msr.hpp
+index 3234925..93c3c18 100644
+--- a/include/msr.hpp
++++ b/include/msr.hpp
+@@ -85,6 +85,7 @@ class Msr
+             IA32_STAR               = 0xc0000081,
+             IA32_LSTAR              = 0xc0000082,
+             IA32_FMASK              = 0xc0000084,
++            IA32_KERNEL_GS_BASE     = 0xc0000102,
+ 
+             AMD_IPMR                = 0xc0010055,
+             AMD_SVM_HSAVE_PA        = 0xc0010117,
+diff --git a/include/mtd.hpp b/include/mtd.hpp
+index 4625255..863c749 100644
+--- a/include/mtd.hpp
++++ b/include/mtd.hpp
+@@ -51,6 +51,7 @@ class Mtd
+             TSC             = 1UL << 19,
+             EFER            = 1UL << 20,
+             PDPTE           = 1UL << 21,
++            SYSCALL_SWAPGS  = 1UL << 22,
+             FPU             = 1UL << 31,
+         };
+ 
+diff --git a/include/stdio.hpp b/include/stdio.hpp
+index 0614c97..13df5e2 100644
+--- a/include/stdio.hpp
++++ b/include/stdio.hpp
+@@ -81,6 +81,7 @@ unsigned const trace_mask =
+ //                            TRACE_RCU       |
+ //                            TRACE_FPU       |
+ //                            TRACE_SYSCALL   |
+-                            TRACE_ERROR     |
+ #endif
++                            TRACE_ERROR     |
++
+                             0;
+diff --git a/include/utcb.hpp b/include/utcb.hpp
+index 490464b..034cc9d 100644
+--- a/include/utcb.hpp
++++ b/include/utcb.hpp
+@@ -79,6 +79,12 @@ class Utcb_data
+ #ifdef __x86_64__
+                 mword           cr8, efer;
+ #endif
++
++				uint64          star;
++				uint64          lstar;
++				uint64          fmask;
++				uint64          kernel_gs_base;
++
+                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
+                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
+                 uint64          tsc_val, tsc_off;
+diff --git a/include/vmx.hpp b/include/vmx.hpp
+index 0b537b7..b783aa1 100644
+--- a/include/vmx.hpp
++++ b/include/vmx.hpp
+@@ -21,6 +21,7 @@
+ #pragma once
+ 
+ #include "assert.hpp"
++#include "msr.hpp"
+ 
+ class Vmcs
+ {
+@@ -443,3 +444,36 @@ class Vmcs
+ 
+         static void init();
+ };
++
++struct PACKED Msr_entry
++{
++    uint32 msr_index;
++    uint32 reserved;
++    uint64 msr_data;
++
++    Msr_entry(uint32 index)
++    : msr_index(index), reserved(0), msr_data(0) { }
++};
++
++struct Msr_area
++{
++	enum { MSR_COUNT = 4 };
++
++    Msr_entry ia32_star           { Msr::IA32_STAR };
++    Msr_entry ia32_lstar          { Msr::IA32_LSTAR };
++    Msr_entry ia32_fmask          { Msr::IA32_FMASK };
++    Msr_entry ia32_kernel_gs_base { Msr::IA32_KERNEL_GS_BASE };
++
++    ALWAYS_INLINE
++    static inline void *operator new (size_t, Quota &quota)
++    {
++    	/* allocate one page */
++        return Buddy::allocator.alloc (0, quota, Buddy::FILL_0);
++    }
++
++    ALWAYS_INLINE
++    static inline void destroy(Msr_area *obj, Quota &quota)
++    {
++        Buddy::allocator.free (reinterpret_cast<mword>(obj), quota);
++    }
++};
+diff --git a/src/cpu.cpp b/src/cpu.cpp
+index bcaeace..605aa50 100644
+--- a/src/cpu.cpp
++++ b/src/cpu.cpp
+@@ -170,6 +170,10 @@ void Cpu::setup_sysenter()
+     Msr::write<mword>(Msr::IA32_STAR,  static_cast<mword>(SEL_USER_CODE) << 48 | static_cast<mword>(SEL_KERN_CODE) << 32);
+     Msr::write<mword>(Msr::IA32_LSTAR, reinterpret_cast<mword>(&entry_sysenter));
+     Msr::write<mword>(Msr::IA32_FMASK, Cpu::EFL_DF | Cpu::EFL_IF);
++Console::print("STAR: CS: %lx, SS: %lx, LSTAR: %lx\n",
++               static_cast<mword>(SEL_KERN_CODE),
++               static_cast<mword>(SEL_KERN_CODE) + 8,
++               reinterpret_cast<mword>(&entry_sysenter));
+ #endif
+ }
+ 
+diff --git a/src/ec.cpp b/src/ec.cpp
+index 5fea356..c412148 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -97,6 +97,16 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
+                                               pd->ept.root(pd->quota));
+ 
+             regs.nst_ctrl<Vmcs>();
++
++			/* register the host MSR area */
++			mword host_msr_area_phys = Buddy::ptr_to_phys(new (pd->quota) Msr_area);
++			Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, host_msr_area_phys);
++
++			/* register the guest MSR area */
++			mword guest_msr_area_phys = Buddy::ptr_to_phys(new (pd->quota) Msr_area);
++			Vmcs::write(Vmcs::ENT_MSR_LD_ADDR, guest_msr_area_phys);
++			Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
++
+             regs.vmcs->clear();
+             cont = send_msg<ret_user_vmresume>;
+             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
+@@ -148,8 +158,16 @@ Ec::~Ec()
+     /* vCPU cleanup */
+     Vtlb::destroy(regs.vtlb, pd->quota);
+ 
+-    if (Hip::feature() & Hip::FEAT_VMX)
++    if (Hip::feature() & Hip::FEAT_VMX) {
++
++		Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Vmcs::read(Vmcs::EXI_MSR_LD_ADDR));
++    	Msr_area::destroy(host_msr_area, pd->quota);
++
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Vmcs::read(Vmcs::EXI_MSR_ST_ADDR));
++    	Msr_area::destroy(guest_msr_area, pd->quota);
++
+         Vmcs::destroy(regs.vmcs, pd->quota);
++    }
+     else if (Hip::feature() & Hip::FEAT_SVM)
+         Vmcb::destroy(regs.vmcb, pd->quota);
+ }
+diff --git a/src/entry.S b/src/entry.S
+index 3588152..3bd92a2 100644
+--- a/src/entry.S
++++ b/src/entry.S
+@@ -202,6 +202,11 @@ entry_sysenter_db:      mov     12(%esp), %esp
+ /*
+  * System-Call Entry
+  */
++/*.align                  4, 0x90
++                        ud2
++                        ud2
++                        ud2
++                        ud2*/
+ .align                  4, 0x90
+ .globl                  entry_sysenter
+ entry_sysenter:         LOAD_KSP
+diff --git a/src/utcb.cpp b/src/utcb.cpp
+index 6f27600..07cf7ae 100644
+--- a/src/utcb.cpp
++++ b/src/utcb.cpp
+@@ -207,6 +207,24 @@ bool Utcb::load_vmx (Cpu_regs *regs)
+         pdpte[3] = Vmcs::read (Vmcs::GUEST_PDPTE3);
+     }
+ 
++	if (mtd & Mtd::SYSCALL_SWAPGS) {
++
++		mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
++		star = guest_msr_area->ia32_star.msr_data;
++		lstar = guest_msr_area->ia32_lstar.msr_data;
++		fmask = guest_msr_area->ia32_fmask.msr_data;
++		kernel_gs_base = guest_msr_area->ia32_kernel_gs_base.msr_data;
++
++#if 0
++		Console::print("load_vmx(): guest: star: %llx, lstar: %llx, fmask: %llx, kernel_gs_base: %llx",
++		               guest_msr_area->ia32_star.msr_data,
++		               guest_msr_area->ia32_lstar.msr_data,
++		               guest_msr_area->ia32_fmask.msr_data,
++		               guest_msr_area->ia32_kernel_gs_base.msr_data);
++#endif
++	}
++
+     barrier();
+     mtd = m;
+     items = sizeof (Utcb_data) / sizeof (mword);
+@@ -360,6 +378,55 @@ bool Utcb::save_vmx (Cpu_regs *regs)
+         Vmcs::write (Vmcs::GUEST_PDPTE3, pdpte[3]);
+     }
+ 
++	if (mtd & Mtd::SYSCALL_SWAPGS) {
++
++		/* save the host MSRs */
++
++		mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
++		Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
++		host_msr_area->ia32_star.msr_data = Msr::read<uint64>(Msr::IA32_STAR);
++		host_msr_area->ia32_lstar.msr_data = Msr::read<uint64>(Msr::IA32_LSTAR);
++		host_msr_area->ia32_fmask.msr_data = Msr::read<uint64>(Msr::IA32_FMASK);
++		host_msr_area->ia32_kernel_gs_base.msr_data = Msr::read<uint64>(Msr::IA32_KERNEL_GS_BASE);
++
++#if 0
++		Console::print("save_vmx(): host: star: %llx, lstar: %llx, fmask: %llx, kernel_gs_base: %llx",
++		               host_msr_area->ia32_star.msr_data,
++		               host_msr_area->ia32_lstar.msr_data,
++		               host_msr_area->ia32_fmask.msr_data,
++		               host_msr_area->ia32_kernel_gs_base.msr_data);
++#endif
++		//Vmcs::write(Vmcs::EXI_MSR_LD_CNT, Msr_area::MSR_COUNT);
++
++#if 1
++		/* load the guest MSRs */
++
++		mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
++		guest_msr_area->ia32_star.msr_data = star;
++		guest_msr_area->ia32_lstar.msr_data = lstar;
++		guest_msr_area->ia32_fmask.msr_data = fmask;
++		guest_msr_area->ia32_kernel_gs_base.msr_data = kernel_gs_base;
++
++#if 0
++		Console::print("save_vmx(): guest: star: %llx, lstar: %llx, fmask: %llx, kernel_gs_base: %llx",
++		               guest_msr_area->ia32_star.msr_data,
++		               guest_msr_area->ia32_lstar.msr_data,
++		               guest_msr_area->ia32_fmask.msr_data,
++		               guest_msr_area->ia32_kernel_gs_base.msr_data);
++#endif
++
++		//Vmcs::write(Vmcs::ENT_MSR_LD_CNT, Msr_area::MSR_COUNT);
++		//Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
++#endif
++	} else {
++
++		Vmcs::write(Vmcs::EXI_MSR_LD_CNT, 0);
++		Vmcs::write(Vmcs::ENT_MSR_LD_CNT, 0);
++		Vmcs::write(Vmcs::EXI_MSR_ST_CNT, 0);
++
++	}
++
+     return mtd & Mtd::FPU;
+ }
+ 

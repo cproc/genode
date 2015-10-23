@@ -51,7 +51,7 @@ static bool debug_map_memory = false;
 
 /*
  * VirtualBox stores segment attributes in Intel format using a 32-bit
- * value. NOVA represents the attributes in packet format using a 16-bit
+ * value. NOVA represents the attributes in packed format using a 16-bit
  * value.
  */
 static inline Genode::uint16_t sel_ar_conv_to_nova(Genode::uint32_t v)
@@ -150,13 +150,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
 
 				Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
-#if 1
+#if 0
 				extern bool log_exits;
 				if ((log_exits) &&
 				    (exit_reason != 255)) {
-					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %xi, ax: %zx\n",
 					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
-					            utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+					            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+					            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+					            utcb->ax);
 				
 #if 0
 					if (exit_reason == 2)
@@ -430,6 +432,19 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 					utcb->pdpte[3] = pdpte[3];
 				}
 
+#if 0
+				utcb->mtd |= Mtd::SYSCALL_SWAPGS;
+				utcb->star = pCtx->msrSTAR;
+				utcb->lstar = pCtx->msrLSTAR;
+				utcb->fmask = pCtx->msrSFMASK;
+				utcb->kernel_gs_base = pCtx->msrKERNELGSBASE;
+
+#if 0
+				if ((utcb->star != 0) || (utcb->lstar != 0))
+					Vmm::printf("star: %lx, lstar: %lx\n", utcb->star, utcb->lstar);
+#endif
+#endif
+
 			Assert(!(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)));
 
 			return true;
@@ -494,6 +509,20 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (pCtx->cr4 != utcb->cr4)
 				CPUMSetGuestCR4(pVCpu, utcb->cr4);
+
+#if 0
+			if (pCtx->msrSTAR != utcb->star)
+				CPUMSetGuestMsr(pVCpu, MSR_K6_STAR, utcb->star);
+			
+			if (pCtx->msrLSTAR != utcb->lstar)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_LSTAR, utcb->lstar);
+
+			if (pCtx->msrSFMASK != utcb->fmask)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_SF_MASK, utcb->fmask);
+
+			if (pCtx->msrKERNELGSBASE != utcb->kernel_gs_base)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, utcb->kernel_gs_base);
+#endif
 
 			VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
 
@@ -884,12 +913,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				PERR("saving vCPU state failed");
 				return VERR_INTERNAL_ERROR;
 			}
-#if 0
+#if 1
 			extern bool log_exits;
-			if (log_exits) {
-				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%x - %x), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
-					        _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
-					        utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+			if (/*(log_exits) &&*/
+               (exit_reason == 32)) {
+				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, ax: %zx, bx: %zx, cx: %zx, dx: %zx\n",
+				            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+				            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+				            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+				            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
 			}
 #endif
 			/* reset message transfer descriptor for next invocation */
