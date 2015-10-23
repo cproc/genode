@@ -70,7 +70,6 @@ set config {
 		</route>
 		<config>
 			<policy label="rump_fs" partition="1"/>
-			<policy label="vbox -> home" partition="2"/>
 		</config>
 	</start>
 	<start name="rump_fs" priority="-1">

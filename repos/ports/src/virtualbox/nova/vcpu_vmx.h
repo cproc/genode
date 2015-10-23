@@ -89,9 +89,10 @@ class Vcpu_handler_vmx : public Vcpu_handler
 
 			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
 
-			Vmm::printf("_vmx_triple(): %u, cs: %x (%x - %x), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x, si: %zx, di: %zx\n",
+			Vmm::printf("_vmx_triple(): %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x\n",
 			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
-			            utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer, utcb->si, utcb->di);
+			            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+			            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar);
 
 			Vmm::printf("triple fault - dead\n");
 while(1);
