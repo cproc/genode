@@ -19,6 +19,7 @@
 
 using namespace Genode;
 
+/* contains physical pointer to multiboot */
 extern "C" Genode::addr_t __initial_bx;
 
 
@@ -31,17 +32,12 @@ Native_region * Platform::_core_only_mmio_regions(unsigned const i)
 		{ 0, 0}
 	};
 
-	unsigned const max = sizeof(_regions) / sizeof(_regions[0]) - 1;
+	unsigned const max = sizeof(_regions) / sizeof(_regions[0]);
 
-	if (i < max)
-		return &_regions[i];
+	if (!_regions[max - 1].size)
+		_regions[max - 1] = { __initial_bx & ~0xFFFUL, get_page_size() };
 
-	if (i > max)
-		return 0;
-
-	_regions[i] = { __initial_bx & ~0xFFFUL, 4096 };
-
-	return &_regions[i];
+	return i < max ? &_regions[i] : nullptr;
 }
 
 
