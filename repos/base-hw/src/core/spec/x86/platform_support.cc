@@ -3,8 +3,6 @@
  * \author  Norman Feske
  * \author  Reto Buerki
  * \date    2013-04-05
- *
- * XXX dimension allocators according to the available physical memory
  */
 
 /*
@@ -19,15 +17,43 @@
 #include <board.h>
 #include <cpu.h>
 
+#include <multiboot.h>
+
+extern "C" Genode::addr_t __initial_bx;
+
 using namespace Genode;
 
 Native_region * Platform::_ram_regions(unsigned const i)
 {
-	static Native_region _regions[] =
-	{
-		{ 2*1024*1024, 1024*1024*254 }
-	};
-	return i < sizeof(_regions)/sizeof(_regions[0]) ? &_regions[i] : 0;
+	static Native_region _regions[16];
+
+	Genode::Multiboot_info amb(__initial_bx);
+
+	Multiboot_info::Mmap v = amb.phys_ram(i);
+	if (!v.base)
+		return nullptr;
+
+	Genode::uint64_t base = v.read<Multiboot_info::Mmap::Addr>();
+	Genode::uint64_t size = v.read<Multiboot_info::Mmap::Length>();
+
+	if (i >= sizeof(_regions) / sizeof(_regions[0])) {
+		PWRN("physical ram region 0x%llx+0x%llx will be not used", base, size);
+		return nullptr;
+	}
+
+	if (!_regions[i].size) {
+		if (base == 0 && size >= 4096) {
+			/*
+			 * Exclude first physical page, so that it will become part of the
+			 * MMIO allocator. The framebuffer requests this page as MMIO.
+			 */
+			base  = 4096;
+			size -= 4096;
+		}
+		_regions[i] = { base, size };
+	}
+
+	return &_regions[i];
 }
 
 
@@ -55,6 +81,10 @@ void Platform::_init_io_mem_alloc()
 	_io_mem_alloc.add_range(0, ~0x0UL);
 	alloc_exclude_regions(&_io_mem_alloc, _ram_regions);
 	alloc_exclude_regions(&_io_mem_alloc, _core_only_ram_regions);
+	alloc_exclude_regions(&_io_mem_alloc, _core_only_mmio_regions);
+
+	/* exclude all mmio regions from virt allocator of core */
+	alloc_exclude_regions(_core_mem_alloc.virt_alloc(), _core_only_mmio_regions);
 }
 
 
