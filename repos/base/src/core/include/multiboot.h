@@ -96,12 +96,10 @@ class Genode::Multiboot_info : Mmio
 			if (!read<Flags::Mem_map>())
 				return Mmap(0);
 
-			using Genode::uint32_t;
+			Mmap_length::access_t const mmap_length = read<Mmap_length>();
+			Mmap_addr::access_t const mmap_start  = read<Mmap_addr>();
 
-			uint32_t const mmap_length = read<Mmap_length>();
-			uint32_t const mmap_start  = read<Mmap_addr>();
-
-			for (uint32_t j = 0, mmap = mmap_start;
+			for (Genode::uint32_t j = 0, mmap = mmap_start;
 			     mmap < mmap_start + mmap_length;) {
 
 				enum { MMAP_SIZE_SIZE_OF = 4, MMAP_SIZE_OF = 4 + 8 + 1 };
