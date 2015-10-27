@@ -87,6 +87,43 @@ class Genode::Multiboot_info : Mmio
 		 * The module is marked as invalid in MBI and cannot be gotten again
 		 */
 		Rom_module get_module(unsigned num);
+
+		/**
+		 * Physical ram regions
+		 */
+		Mmap phys_ram(unsigned i, bool solely_within_4k_base = true) {
+
+			if (!read<Flags::Mem_map>())
+				return Mmap(0);
+
+			using Genode::uint32_t;
+
+			uint32_t const mmap_length = read<Mmap_length>();
+			uint32_t const mmap_start  = read<Mmap_addr>();
+
+			for (uint32_t j = 0, mmap = mmap_start;
+			     mmap < mmap_start + mmap_length;) {
+
+				enum { MMAP_SIZE_SIZE_OF = 4, MMAP_SIZE_OF = 4 + 8 + 1 };
+
+				if (solely_within_4k_base &&
+				    (mmap + MMAP_SIZE_OF >= Genode::align_addr(base, 12)))
+					return Mmap(0);
+
+				Mmap r(mmap);
+				mmap += r.read<Mmap::Size>() + MMAP_SIZE_SIZE_OF;
+
+				if (!r.read<Mmap::Type::Memory>())
+					continue;
+
+				if (i == j)
+					return r;
+
+				j++;
+			}
+
+			return Mmap(0);
+		}
 };
 
 #endif /* _CORE__INCLUDE__MULTIBOOT_H_ */
