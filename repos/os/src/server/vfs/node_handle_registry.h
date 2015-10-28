@@ -2,7 +2,8 @@
  * \brief  Facility for managing the session-local node-handle namespace
  * \author Norman Feske
  * \date   2012-04-11
- * \date   2015-09-03
+ *
+ * This file is derived from os/include/file_system/node_handle_registry.h.
  */
 
 #ifndef _VFS__NODE_HANDLE_REGISTRY_H_

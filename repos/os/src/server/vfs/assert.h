@@ -27,7 +27,7 @@ namespace File_system {
 		typedef Directory_service::Mkdir_result Result;
 
 		switch (r) {
-		case Result::MKDIR_ERR_NAME_TOO_LONG: throw Invalid_name();
+		case Result::MKDIR_ERR_NAME_TOO_LONG: throw Name_too_long();
 		case Result::MKDIR_ERR_NO_ENTRY:      throw Lookup_failed();
 		case Result::MKDIR_ERR_NO_SPACE:      throw No_space();
 		case Result::MKDIR_ERR_NO_PERM:       throw Permission_denied();

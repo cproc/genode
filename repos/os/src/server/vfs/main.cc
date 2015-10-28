@@ -18,6 +18,8 @@
 #include <vfs/dir_file_system.h>
 #include <os/server.h>
 #include <os/session_policy.h>
+#include <vfs/file_system_factory.h>
+#include <os/config.h>
 
 /* Local includes */
 #include "assert.h"
@@ -35,6 +37,13 @@ namespace File_system {
 
 	typedef Genode::Path<MAX_PATH_LEN> Subpath;
 
+	Vfs::File_system *root()
+	{
+		static Vfs::Dir_file_system _root(config()->xml_node().sub_node("vfs"),
+		                                  Vfs::global_file_system_factory());
+
+		return &_root;
+	}
 };
 
 
@@ -436,8 +445,8 @@ class File_system::Root : public Root_component<Session_component>
 			Subpath session_root;
 			bool writeable = false;
 
-			Session_label  label(args);
-			char const *label_str = label.string();
+			Session_label const label(args);
+
 			try {
 				Session_policy policy(label);
 				char buf[MAX_PATH_LEN];
@@ -461,11 +470,9 @@ class File_system::Root : public Root_component<Session_component>
 					writeable = Arg_string::find_arg(args, "writeable").bool_value(false);
 
 			} catch (Session_policy::No_policy_defined) {
-				PERR("rejecting session request, no matching policy for %s", label_str);
+				PERR("rejecting session request, no matching policy for %s", label.string());
 				throw Root::Unavailable();
 			}
-			char const *root_str = session_root.base();
-
 
 			size_t ram_quota   = Arg_string::find_arg(args, "ram_quota"  ).ulong_value(0);
 			size_t tx_buf_size = Arg_string::find_arg(args, "tx_buf_size").ulong_value(0);
@@ -479,21 +486,20 @@ class File_system::Root : public Root_component<Session_component>
 			 */
 			size_t session_size = sizeof(Session_component) + tx_buf_size;
 			if (max((size_t)4096, session_size) > ram_quota) {
-				Session_label label(args);
 				PERR("insufficient 'ram_quota' from %s, got %zd, need %zd",
-				     label_str, ram_quota, session_size);
+				     label.string(), ram_quota, session_size);
 				throw Root::Quota_exceeded();
 			}
 
 			/* check if the session root exists */
 			if (!root()->is_directory(session_root.base())) {
-				PERR("session root '%s' not found for '%s'", root_str, label_str);
+				PERR("session root '%s' not found for '%s'", session_root.base(), label.string());
 				throw Root::Unavailable();
 			}
 
 			Session_component *session = new(md_alloc())
 				Session_component(_ep, _cache, tx_buf_size, session_root, writeable);
-			PLOG("session opened for '%s' at '%s'", label_str, root_str);
+			PLOG("session opened for '%s' at '%s'", label.string(), session_root.base());
 			return session;
 		}
 
