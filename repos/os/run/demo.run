@@ -132,23 +132,30 @@ append config {
 					<has_value input="xray_enabled" value="no" />
 					<then>
 						<inline>
+							<domain name="launchpad" layer="3"
+							        content="client" label="no" hover="always" focus="none"
+							        ypos="18" height="-18" />
 							<domain name="" layer="3"
-							        content="client" label="no" hover="always"
+							        content="client" label="no" hover="always" focus="none"
 							        ypos="18" height="-18" />
 						</inline>
 					</then>
 					<else>
 						<inline>
+							<domain name="launchpad" layer="3" color="#dd0000"
+							        content="tinted" label="yes" hover="focused" focus="transient"
+							        ypos="18" height="-18" />
 							<domain name="" layer="3" color="#55dd34"
-							        content="tinted" label="yes" hover="focused"
+							        content="tinted" label="yes" hover="focused" focus="click"
 							        ypos="18" height="-18" />
 						</inline>
 					</else>
 				</if>
 				<inline>
-					<policy label="pointer"    domain="pointer"/>
-					<policy label="status_bar" domain="panel"/>
-					<policy label=""           domain=""/>
+					<policy label="pointer"            domain="pointer"/>
+					<policy label="status_bar"         domain="panel"/>
+					<policy label="scout -> launchpad" domain="launchpad"/>
+					<policy label=""                   domain=""/>
 
 					<global-key name="KEY_SCROLLLOCK" label="xray_trigger" />
 					<global-key name="KEY_F1"         label="xray_trigger" />

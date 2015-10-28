@@ -169,6 +169,16 @@ class Session : public Session_list::Element
 			return s && (s->_domain == _domain);
 		}
 
+		bool has_click_focusable_domain()
+		{
+			return has_valid_domain() && _domain->focus_click();
+		}
+
+		bool has_transient_focusable_domain()
+		{
+			return has_valid_domain() && _domain->focus_transient();
+		}
+
 		bool has_valid_domain() const
 		{
 			return _domain;

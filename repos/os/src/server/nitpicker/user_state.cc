@@ -123,6 +123,8 @@ void User_state::handle_event(Input::Event ev)
 	 */
 	if (type == Event::PRESS && Mode::has_key_cnt(1)) {
 
+		::Session *global_receiver = nullptr;
+
 		/* update focused session */
 		if (pointed_session != Mode::focused_session() && _mouse_button(keycode)) {
 
@@ -141,7 +143,10 @@ void User_state::handle_event(Input::Event ev)
 				pointed_session->submit_input_event(focus_ev);
 			}
 
-			focused_session(_pointed_session);
+			if (_pointed_session->has_transient_focusable_domain())
+				global_receiver = _pointed_session;
+			else if (_pointed_session->has_click_focusable_domain())
+				focused_session(_pointed_session);
 		}
 
 		/*
@@ -154,7 +159,9 @@ void User_state::handle_event(Input::Event ev)
 		 * to the global receiver. To reflect that change, we need to update
 		 * the whole screen.
 		 */
-		::Session * const global_receiver = _global_keys.global_receiver(keycode);
+		if (!global_receiver)
+			global_receiver = _global_keys.global_receiver(keycode);
+
 		if (global_receiver) {
 			_global_key_sequence    = true;
 			_input_receiver         = global_receiver;

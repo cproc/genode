@@ -31,6 +31,7 @@ class Domain_registry
 				enum Label   { LABEL_NO, LABEL_YES };
 				enum Content { CONTENT_CLIENT, CONTENT_TINTED };
 				enum Hover   { HOVER_FOCUSED, HOVER_ALWAYS };
+				enum Focus   { FOCUS_NONE, FOCUS_CLICK, FOCUS_TRANSIENT };
 
 				/**
 				 * Origin of the domain's coordiate system
@@ -44,25 +45,26 @@ class Domain_registry
 
 			private:
 
-				Name     _name;
-				Color    _color;
-				Label    _label;
-				Content  _content;
-				Hover    _hover;
-				Origin   _origin;
-				unsigned _layer;
-				Point    _offset;
-				Point    _area;
+				Name      _name;
+				Color     _color;
+				Label     _label;
+				Content   _content;
+				Hover     _hover;
+				Focus     _focus;
+				Origin    _origin;
+				unsigned  _layer;
+				Point     _offset;
+				Point     _area;
 
 				friend class Domain_registry;
 
 				Entry(Name const &name, Color color, Label label,
-				      Content content, Hover hover, Origin origin,
-				      unsigned layer, Point offset, Point area)
+				      Content content, Hover hover, Focus focus,
+				      Origin origin, unsigned layer, Point offset, Point area)
 				:
 					_name(name), _color(color), _label(label),
-					_content(content), _hover(hover), _origin(origin),
-					_layer(layer), _offset(offset), _area(area)
+					_content(content), _hover(hover), _focus(focus),
+					_origin(origin), _layer(layer), _offset(offset), _area(area)
 				{ }
 
 				Point _corner(Area screen_area) const
@@ -82,18 +84,19 @@ class Domain_registry
 
 				bool has_name(Name const &name) const { return name == _name; }
 
-				Name     name()    const { return _name;    }
-				Color    color()   const { return _color;   }
-				unsigned layer()   const { return _layer;   }
-				Content  content() const { return _content; }
-				Hover    hover()   const { return _hover;   }
+				Name      name()      const { return _name;    }
+				Color     color()     const { return _color;   }
+				unsigned  layer()     const { return _layer;   }
+				Content   content()   const { return _content; }
+				Hover     hover()     const { return _hover;   }
 
-				bool label_visible() const { return _label == LABEL_YES; }
-				bool content_client() const { return _content == CONTENT_CLIENT; }
-				bool hover_focused() const { return _hover == HOVER_FOCUSED; }
-				bool hover_always() const { return _hover == HOVER_ALWAYS; }
-
-				bool origin_pointer() const { return _origin == ORIGIN_POINTER; }
+				bool label_visible()   const { return _label == LABEL_YES; }
+				bool content_client()  const { return _content == CONTENT_CLIENT; }
+				bool hover_focused()   const { return _hover == HOVER_FOCUSED; }
+				bool hover_always()    const { return _hover == HOVER_ALWAYS; }
+				bool focus_click()     const { return _focus == FOCUS_CLICK; }
+				bool focus_transient() const { return _focus == FOCUS_TRANSIENT; }
+				bool origin_pointer()  const { return _origin == ORIGIN_POINTER; }
 
 				Point phys_pos(Point pos, Area screen_area) const
 				{
@@ -147,6 +150,19 @@ class Domain_registry
 
 			PWRN("invalid value of hover attribute in <domain>");
 			return Entry::HOVER_FOCUSED;
+		}
+
+		static Entry::Focus _focus(Genode::Xml_node domain)
+		{
+			typedef Genode::String<32> Value;
+			Value const value = domain.attribute_value("focus", Value("none"));
+
+			if (value == "none")      return Entry::FOCUS_NONE;
+			if (value == "click")     return Entry::FOCUS_CLICK;
+			if (value == "transient") return Entry::FOCUS_TRANSIENT;
+
+			PWRN("invalid value of focus attribute in <domain>");
+			return Entry::FOCUS_NONE;
 		}
 
 		static Entry::Origin _origin(Genode::Xml_node domain)
@@ -203,6 +219,7 @@ class Domain_registry
 
 			_entries.insert(new (_alloc) Entry(name, color, _label(domain),
 			                                   _content(domain), _hover(domain),
+			                                   _focus(domain),
 			                                   _origin(domain), layer, offset, area));
 		}
 
