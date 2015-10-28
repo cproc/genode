@@ -171,6 +171,7 @@ append config {
 			<hover domain="panel"/>
 		</config>
 		<route>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<service name="ROM"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
