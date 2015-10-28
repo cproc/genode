@@ -536,9 +536,9 @@ class Launcher::Panel_dialog : Input_event_handler, Dialog_generator,
 
 			for (; e && !_is_focused(*e); e = e->next());
 
-			/* none of our subsystems is focused, ignore the focus switch */
+			/* none of our subsystems is focused, start with the first one */
 			if (!e)
-				return;
+				e = _elements.first();
 
 			/*
 			 * Determine next session in the list, if we reach the end, start
