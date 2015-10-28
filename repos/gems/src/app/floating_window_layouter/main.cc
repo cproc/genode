@@ -190,6 +190,11 @@ class Floating_window_layouter::Window : public List<Window>::Element
 
 		bool label_matches(Label const &label) const { return label == _label; }
 
+		bool contains(Point pos)
+		{
+			return (_geometry.contains(pos));
+		}
+
 		/**
 		 * Return true if user drags a window border
 		 */
@@ -377,6 +382,16 @@ struct Floating_window_layouter::Main
 	{
 		for (Window *w = windows.first(); w; w = w->next())
 			if (w->has_id(id))
+				return w;
+
+		return nullptr;
+	}
+
+
+	Window *lookup_window_by_location(Point location)
+	{
+		for (Window *w = windows.first(); w; w = w->next())
+			if (w->contains(location))
 				return w;
 
 		return nullptr;
@@ -830,6 +845,22 @@ void Floating_window_layouter::Main::handle_input(unsigned)
 
 						need_regenerate_window_layout_model  = true;
 						need_regenerate_resize_request_model = true;
+					}
+				}
+
+				/*
+				 * XXX Workaround for the case that the decorator did not send
+				 *     a hover report. This can happen if the mouse moves so
+				 *     fast that the decorator does not get any motion events
+				 *     for the window border.
+				 */
+				if (hovered_element == Window::Element::UNDEFINED) {
+					/* determine the hovered window from the mouse location */
+					Window *hovered_window_by_location =
+						lookup_window_by_location(Point(e.ax(), e.ay()));
+					if (hovered_window_by_location) {
+						hovered_window = hovered_window_by_location;
+						hovered_window_id = hovered_window->id();
 					}
 				}
 
