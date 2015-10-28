@@ -20,9 +20,6 @@
 #include <util/avl_string.h>
 #include <util/noncopyable.h>
 
-/* Local includes */
-#include "root.h"
-
 namespace File_system {
 
 	struct Node;
@@ -33,7 +30,9 @@ namespace File_system {
 
 	typedef Avl_string<MAX_PATH_LEN> Avl_path_string;
 
+	Vfs::File_system *root();
 }
+
 
 /**
  * Reference counted node object that can be inserted
