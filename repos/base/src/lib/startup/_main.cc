@@ -246,6 +246,8 @@ extern "C" int _main()
 	/* call real main function */
 	int ret = main(genode_argc, genode_argv, genode_envp);
 
+	inhibit_tracing = true;
+
 	genode_exit(ret);
 
 	/* not reached */
