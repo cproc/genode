@@ -9,7 +9,7 @@ set feature(Nic) 1
 append build_components [qt5_build_components feature]
 
 append build_components {
-	server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
+	server/clipboard server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
 	app/arora
 }
 
@@ -45,6 +45,21 @@ append config {
 append config [qt5_start_nodes feature]
 
 append config {
+
+	<start name="clipboard">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="ROM"/>
+			<service name="Report"/>
+		</provides>
+		<config verbose="yes">
+			<policy label="arora -> clipboard"  domain=""  />
+		</config>
+		<route>
+			<any-service> <child name="report_rom"/> <parent/> </any-service>
+		</route>
+	</start>
+
 	<start name="loader">
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Loader"/></provides>
@@ -59,6 +74,14 @@ append config {
 				</vfs>
 			</libc>
 		</config>
+		<route>
+			<service name="Report"> <child name="clipboard"/> </service>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<service name="ROM">
+				<if-arg key="label" value="clipboard"/> <child name="clipboard"/>
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 </config>}
 
@@ -71,6 +94,7 @@ install_config $config
 append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
+	clipboard
 	loader
 	tar_rom
 	nit_fb

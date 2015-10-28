@@ -109,6 +109,7 @@ proc qt5_start_nodes { feature_arg } {
 					<policy label="decorator -> pointer"        report="wm -> pointer"/>
 					<policy label="layouter -> hover"           report="decorator -> hover"/>
 					<policy label="wm -> focus"                 report="layouter -> focus"/>
+					<policy label="clipboard -> focus"          report="nitpicker -> focus"/>
 				</rom>
 			</config>
 		</start>
