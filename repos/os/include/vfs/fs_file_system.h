@@ -252,13 +252,10 @@ class Vfs::Fs_file_system : public File_system
 				::File_system::Node_handle node = _fs.node(path);
 				Fs_handle_guard node_guard(_fs, node);
 				status = _fs.status(node);
-			} catch (::File_system::Lookup_failed) {
+			} catch (...) {
 				if (verbose)
 					PDBG("stat failed for path '%s'", path);
 				return STAT_ERR_NO_ENTRY;
-			} catch (::File_system::Out_of_node_handles) {
-				PERR("out of node handles");
-				throw;
 			}
 
 			memset(&out, 0, sizeof(out));
@@ -349,13 +346,11 @@ class Vfs::Fs_file_system : public File_system
 				Fs_handle_guard dir_guard(_fs, dir);
 
 				_fs.unlink(dir, file_name.base() + 1);
-				return UNLINK_OK;
 			}
 			catch (::File_system::Permission_denied) { return UNLINK_ERR_NO_PERM; }
-			catch (::File_system::Invalid_name)      {  }
-			catch (::File_system::Lookup_failed)     {  }
+			catch (...)                              { return UNLINK_ERR_NO_ENTRY; }
 
-			return UNLINK_ERR_NO_ENTRY;
+			return UNLINK_OK;
 		}
 
 		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
@@ -408,12 +403,11 @@ class Vfs::Fs_file_system : public File_system
 
 				_fs.move(from_dir, from_file_name.base() + 1,
 				         to_dir,   to_file_name.base() + 1);
-				return RENAME_OK;
 			}
 			catch (::File_system::Lookup_failed) { return RENAME_ERR_NO_ENTRY; }
-			catch (...) { }
+			catch (...)                          { return RENAME_ERR_NO_PERM; }
 
-			return RENAME_ERR_NO_PERM;
+			return RENAME_OK;
 		}
 
 		Mkdir_result mkdir(char const *path, unsigned mode) override
@@ -425,16 +419,15 @@ class Vfs::Fs_file_system : public File_system
 
 			try {
 				_fs.close(_fs.dir(abs_path.base(), true));
-				return MKDIR_OK;
 			}
 			catch (::File_system::Permission_denied)   { return MKDIR_ERR_NO_PERM; }
 			catch (::File_system::Node_already_exists) { return MKDIR_ERR_EXISTS; }
 			catch (::File_system::Lookup_failed)       { return MKDIR_ERR_NO_ENTRY; }
 			catch (::File_system::Name_too_long)       { return MKDIR_ERR_NAME_TOO_LONG; }
 			catch (::File_system::No_space)            { return MKDIR_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_node_handles) { PERR("out of node handles"); throw; }
+			catch (::File_system::Out_of_node_handles) { return MKDIR_ERR_NO_ENTRY; }
 
-			return MKDIR_ERR_NO_PERM;
+			return MKDIR_OK;
 		}
 
 		Symlink_result symlink(char const *from, char const *to) override
@@ -463,7 +456,6 @@ class Vfs::Fs_file_system : public File_system
 				Fs_handle_guard symlink_guard(_fs, symlink_handle);
 
 				_write(symlink_handle, from, strlen(from) + 1, 0);
-				return SYMLINK_OK;
 			}
 			catch (::File_system::Invalid_handle)      { return SYMLINK_ERR_NO_ENTRY; }
 			catch (::File_system::Node_already_exists) { return SYMLINK_ERR_EXISTS;   }
@@ -471,9 +463,9 @@ class Vfs::Fs_file_system : public File_system
 			catch (::File_system::Lookup_failed)       { return SYMLINK_ERR_NO_ENTRY; }
 			catch (::File_system::Permission_denied)   { return SYMLINK_ERR_NO_PERM;  }
 			catch (::File_system::No_space)            { return SYMLINK_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_node_handles) { PERR("out of node handles"); throw; }
+			catch (::File_system::Out_of_node_handles) { return SYMLINK_ERR_NO_ENTRY; }
 
-			return SYMLINK_ERR_NO_ENTRY;
+			return SYMLINK_OK;
 		}
 
 		file_size num_dirent(char const *path) override
@@ -504,14 +496,18 @@ class Vfs::Fs_file_system : public File_system
 
 				return status.is_directory();
 			}
-			catch (::File_system::Lookup_failed) { return false; }
+			catch (...) { return false; }
 		}
 
 		char const *leaf_path(char const *path) override
 		{
 			/* check if node at path exists within file system */
-			try { _fs.close(_fs.node(path)); }
-			catch (::File_system::Lookup_failed) { return 0; }
+			try {
+				::File_system::Node_handle node = _fs.node(path);
+				_fs.close(node);
+			}
+			catch (...) { return 0; }
+
 			return path;
 		}
 
@@ -548,7 +544,6 @@ class Vfs::Fs_file_system : public File_system
 				                                           mode, create);
 
 				*out_handle = new (env()->heap()) Fs_vfs_handle(*this, vfs_mode, file);
-				return OPEN_OK;
 			}
 			catch (::File_system::Permission_denied)   { return OPEN_ERR_NO_PERM; }
 			catch (::File_system::Invalid_handle)      { return OPEN_ERR_NO_PERM; }
@@ -556,9 +551,9 @@ class Vfs::Fs_file_system : public File_system
 			catch (::File_system::Node_already_exists) { return OPEN_ERR_EXISTS;  }
 			catch (::File_system::Invalid_name)        { return OPEN_ERR_NAME_TOO_LONG; }
 			catch (::File_system::No_space)            { return OPEN_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_node_handles) { PERR("out of node handles"); throw; }
+			catch (::File_system::Out_of_node_handles) { return OPEN_ERR_UNACCESSIBLE; }
 
-			return OPEN_ERR_UNACCESSIBLE;
+			return OPEN_OK;
 		}
 
 
@@ -574,7 +569,7 @@ class Vfs::Fs_file_system : public File_system
 				::File_system::Node_handle node = _fs.node(path);
 				Fs_handle_guard node_guard(_fs, node);
 				_fs.sync(node);
-			} catch (::File_system::Lookup_failed) { }
+			} catch (...) { }
 		}
 
 

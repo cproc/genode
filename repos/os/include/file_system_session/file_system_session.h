@@ -229,7 +229,6 @@ struct File_system::Session : public Genode::Session
 	 * \throw Invalid_name         file name contains invalid characters
 	 * \throw Out_of_node_handles  server cannot allocate metadata
 	 * \throw No_space
-	 *
 	 */
 	virtual Symlink_handle symlink(Dir_handle, Name const &name, bool create) = 0;
 
