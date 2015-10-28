@@ -1,0 +1,22 @@
+arora_destruction.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/browserapplication.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/browserapplication.cpp b/src/browserapplication.cpp
+index cb3a872..3383914 100644
+--- a/src/browserapplication.cpp
++++ b/src/browserapplication.cpp
+@@ -174,7 +174,7 @@ BrowserApplication::~BrowserApplication()
+     delete s_downloadManager;
+     qDeleteAll(m_mainWindows);
+     delete s_networkAccessManager;
+-    delete s_bookmarksManager;
++    //delete s_bookmarksManager;
+     delete s_languageManager;
+     delete s_historyManager;
+     delete s_autoFillManager;
