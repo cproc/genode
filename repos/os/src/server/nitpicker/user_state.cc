@@ -85,6 +85,11 @@ void User_state::handle_event(Input::Event ev)
 	if (type == Event::PRESS)                   Mode::inc_key_cnt();
 	if (type == Event::RELEASE && Mode::drag()) Mode::dec_key_cnt();
 
+	if (type == Event::PRESS && keycode == Input::BTN_LEFT)
+		Mode::left_mouse_button_pressed(true);
+	if (type == Event::RELEASE && keycode == Input::BTN_LEFT)
+		Mode::left_mouse_button_pressed(false);
+
 	View const * const pointed_view    = find_view(_pointer_pos);
 	::Session  * const pointed_session = pointed_view ? &pointed_view->session() : 0;
 

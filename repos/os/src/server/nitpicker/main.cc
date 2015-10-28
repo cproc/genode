@@ -1277,7 +1277,7 @@ void Nitpicker::Main::handle_input(unsigned)
 	}
 
 	/* report hover changes */
-	if (!user_state.Mode::key_is_pressed()
+	if (!user_state.Mode::left_mouse_button_pressed()
 	 && old_pointed_session != new_pointed_session) {
 		report_session(hover_reporter, new_pointed_session);
 	}

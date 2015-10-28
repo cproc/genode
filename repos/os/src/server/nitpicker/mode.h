@@ -26,6 +26,8 @@ class Mode
 		 */
 		unsigned _key_cnt = 0;
 
+		bool _left_mouse_button_pressed = false;
+
 		Session *_focused_session = nullptr;
 
 		Session *_next_focused_session = nullptr;
@@ -48,6 +50,13 @@ class Mode
 
 		void inc_key_cnt() { _key_cnt++; }
 		void dec_key_cnt() { _key_cnt--; }
+
+		void left_mouse_button_pressed(bool pressed)
+		{
+			_left_mouse_button_pressed = pressed;
+		}
+
+		bool left_mouse_button_pressed() { return _left_mouse_button_pressed; }
 
 		bool has_key_cnt(unsigned cnt) const { return cnt == _key_cnt; }
 
