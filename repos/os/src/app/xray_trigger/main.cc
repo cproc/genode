@@ -19,6 +19,7 @@
 #include <os/reporter.h>
 #include <input/event.h>
 #include <input/keycodes.h>
+#include <timer_session/connection.h>
 
 
 namespace Xray_trigger { struct Main; }
@@ -55,6 +56,11 @@ struct Xray_trigger::Main
 	Genode::Reporter _xray_reporter { "xray" };
 
 	/**
+	 * Timer to delay the xray report
+	 */
+	Timer::Connection _timer;
+
+	/**
 	 * X-Ray criterion depending on key events
 	 */
 	bool _key_xray = false;
@@ -85,9 +91,22 @@ struct Xray_trigger::Main
 		});
 	}
 
+	/**
+	 * Handler that is called after the xray report delay
+	 */
+	void _handle_timeout(unsigned)
+	{
+		_report_xray();
+	}
+
+	Genode::Signal_rpc_member<Main> _timeout_dispatcher =
+		{ _ep, *this, &Main::_handle_timeout };
+
 	Main(Server::Entrypoint &ep) : _ep(ep)
 	{
 		Genode::config()->sigh(_update_dispatcher);
+
+		_timer.sigh(_timeout_dispatcher);
 
 		/* enable xray reporter and produce initial xray report */
 		_xray_reporter.enabled(true);
@@ -214,7 +233,7 @@ void Xray_trigger::Main::_handle_update(unsigned)
 
 	/* generate new X-Ray report if the X-Ray mode changed */
 	if (_xray() != orig_xray)
-		_report_xray();
+		_timer.trigger_once(125000);
 }
 
 
