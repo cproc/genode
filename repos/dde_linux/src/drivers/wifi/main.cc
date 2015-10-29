@@ -188,7 +188,7 @@ struct Wlan_configration
 		if (node.has_attribute("protection")) {
 			String<PROT_LENGTH> prot;
 			node.attribute("protection").value(&prot);
-			use_protection = (prot == String<PROT_LENGTH>("WPA-PSK"));
+			use_protection = (prot == "WPA-PSK");
 		}
 
 		String<MAX_PSK_LENGTH> psk;
