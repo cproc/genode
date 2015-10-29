@@ -114,7 +114,7 @@ proc qt5_start_nodes { feature_arg } {
 		</start>
 
 		<start name="wm">
-			<resource name="RAM" quantum="8M"/>
+			<resource name="RAM" quantum="12M"/>
 			<provides>
 				<service name="Nitpicker"/>
 			</provides>
@@ -141,7 +141,7 @@ proc qt5_start_nodes { feature_arg } {
 
 		<start name="decorator">
 			<binary name="decorator"/>
-			<resource name="RAM" quantum="8M"/>
+			<resource name="RAM" quantum="12M"/>
 			<route>
 				<any-service>
 					<child name="wm"/> <child name="report_rom"/> <parent/> <any-child/>
