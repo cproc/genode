@@ -130,6 +130,8 @@ inline void assert_unlink(Vfs::Directory_service::Unlink_result r)
 		PERR("UNLINK_ERR_NO_ENTRY"); break;
 	case Result::UNLINK_ERR_NO_PERM:
 		PERR("UNLINK_ERR_NO_PERM"); break;
+	case Result::UNLINK_ERR_NOT_EMPTY:
+		PERR("UNLINK_ERR_NOT_EMPTY"); break;
 	}
 	throw Exception();
 }
@@ -438,7 +440,19 @@ struct Unlink_thread : public Stress_thread
 
 	void entry()
 	{
+		typedef Vfs::Directory_service::Unlink_result Result;
 		try {
+			Result r = vfs.unlink(path.base());
+			switch (r) {
+			case Result::UNLINK_ERR_NOT_EMPTY: break;
+			case Result::UNLINK_OK:
+				PLOG("recursive unlink supported");
+				return;
+			default:
+				assert_unlink(r);
+			}
+			PLOG("recursive unlink not supported");
+
 			empty_dir(path.base());
 			vfs.unlink(path.base());
 		} catch (...) { }
