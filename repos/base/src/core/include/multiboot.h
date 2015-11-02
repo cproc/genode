@@ -111,7 +111,7 @@ class Genode::Multiboot_info : Mmio
 				Mmap r(mmap);
 				mmap += r.read<Mmap::Size>() + MMAP_SIZE_SIZE_OF;
 
-				if (!r.read<Mmap::Type::Memory>())
+				if (r.read<Mmap::Type>() != r.read<Mmap::Type::Memory>())
 					continue;
 
 				if (i == j)
