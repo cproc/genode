@@ -45,10 +45,7 @@ class Genode::Multiboot_info : Mmio
 			struct Size   : Register <0x00, 32> { };
 			struct Addr   : Register <0x04, 64> { };
 			struct Length : Register <0x0c, 64> { };
-			struct Type   : Register <0x14,  8> {
-				struct Memory   : Bitfield<0, 1> { };
-				struct Reserved : Bitfield<1, 1> { };
-			};
+			struct Type   : Register <0x14,  8> { enum { MEMORY = 1 }; };
 
 			Mmap(addr_t mmap = 0) : Mmio(mmap) { }
 		};
@@ -111,7 +108,7 @@ class Genode::Multiboot_info : Mmio
 				Mmap r(mmap);
 				mmap += r.read<Mmap::Size>() + MMAP_SIZE_SIZE_OF;
 
-				if (r.read<Mmap::Type>() != r.read<Mmap::Type::Memory>())
+				if (r.read<Mmap::Type>() != Mmap::Type::MEMORY)
 					continue;
 
 				if (i == j)
