@@ -99,6 +99,7 @@ append config_of_app {
 				<policy label="vbox_pointer -> shape"       report="vbox -> shape"/>
 				<policy label="vbox -> usb_devices"         report="usb_drv -> devices"/>
 				<policy label="layouter -> window_list"     report="wm -> window_list"/>
+				<policy label="layouter -> focus_request"   report="wm -> focus_request"/>
 				<policy label="decorator -> window_layout"  report="layouter -> window_layout"/>
 				<policy label="wm -> resize_request"        report="layouter -> resize_request"/>
 				<policy label="decorator -> pointer"        report="wm -> pointer"/>
@@ -120,9 +121,9 @@ append config_of_app {
 		<config>
 			<report focus="yes" hover="yes" xray="yes" />
 
-			<domain name="pointer" layer="1" content="origin" label="no" origin="pointer" />
-			<domain name="vbox"    layer="2" content="origin" focus="click" hover="always" />
-			<domain name=""        layer="2" content="origin" focus="click" hover="always" />
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="vbox"    layer="2" content="client" label="no" focus="click" hover="always" />
+			<domain name=""        layer="2" content="client" label="no" focus="click" hover="always" />
 
 			<policy label="vbox_pointer" domain="pointer"/>
 			<policy label="nit_fb"       domain="vbox"/>
