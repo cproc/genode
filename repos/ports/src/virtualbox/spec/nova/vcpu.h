@@ -432,6 +432,19 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 					utcb->pdpte[3] = pdpte[3];
 				}
 
+#if 0
+				utcb->mtd |= Mtd::SYSCALL_SWAPGS;
+				utcb->star = pCtx->msrSTAR;
+				utcb->lstar = pCtx->msrLSTAR;
+				utcb->fmask = pCtx->msrSFMASK;
+				utcb->kernel_gs_base = pCtx->msrKERNELGSBASE;
+
+#if 1
+				if ((utcb->star != 0) || (utcb->lstar != 0))
+					Vmm::printf("star: %lx, lstar: %lx\n", utcb->star, utcb->lstar);
+#endif
+#endif
+
 			Assert(!(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)));
 
 			return true;
@@ -496,6 +509,20 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (pCtx->cr4 != utcb->cr4)
 				CPUMSetGuestCR4(pVCpu, utcb->cr4);
+
+#if 0
+			if (pCtx->msrSTAR != utcb->star)
+				CPUMSetGuestMsr(pVCpu, MSR_K6_STAR, utcb->star);
+			
+			if (pCtx->msrLSTAR != utcb->lstar)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_LSTAR, utcb->lstar);
+
+			if (pCtx->msrSFMASK != utcb->fmask)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_SF_MASK, utcb->fmask);
+
+			if (pCtx->msrKERNELGSBASE != utcb->kernel_gs_base)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, utcb->kernel_gs_base);
+#endif
 
 			VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
 
