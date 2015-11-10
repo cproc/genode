@@ -97,6 +97,8 @@ class File_system::Sync : public Genode::Thread_deprecated<1024 * sizeof(Genode:
 
 		void _process_sync(unsigned)
 		{
+			static int cnt = 0;
+			PDBG("sync %d", cnt++);
 			/* sync through front-end */
 			rump_sys_sync();
 			/* sync Genode back-end */
