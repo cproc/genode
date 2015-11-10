@@ -1,0 +1,39 @@
+efer.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/vmx.hpp |    1 +
+ src/vmx.cpp     |    5 ++++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/vmx.hpp b/include/vmx.hpp
+index 3d4a1ec..0b537b7 100644
+--- a/include/vmx.hpp
++++ b/include/vmx.hpp
+@@ -262,6 +262,7 @@ class Vmcs
+         {
+             EXI_HOST_64             = 1UL << 9,
+             EXI_INTA                = 1UL << 15,
++            EXI_SAVE_EFER           = 1UL << 20,
+             EXI_LOAD_EFER           = 1UL << 21,
+         };
+ 
+diff --git a/src/vmx.cpp b/src/vmx.cpp
+index aef7bcc..680f678 100644
+--- a/src/vmx.cpp
++++ b/src/vmx.cpp
+@@ -75,8 +75,11 @@ Vmcs::Vmcs (mword esp, mword bmp, mword cr3, uint64 eptp) : rev (basic.revision)
+ 
+ #ifdef __x86_64__
+     write (HOST_EFER, Msr::read<uint64>(Msr::IA32_EFER));
+-    exi |= EXI_LOAD_EFER | EXI_HOST_64;
++    exi |= EXI_SAVE_EFER | EXI_LOAD_EFER | EXI_HOST_64;
+     ent |= ENT_LOAD_EFER;
++
++    Console::print("exi: %x\n", (exi | ctrl_exi.set) & ctrl_exi.clr);
++    Console::print("ent: %x\n", (ent | ctrl_ent.set) & ctrl_ent.clr);
+ #endif
+ 
+     write (PIN_CONTROLS, (pin | ctrl_pin.set) & ctrl_pin.clr);

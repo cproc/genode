@@ -2,7 +2,7 @@
 # Linux in VirtualBox
 #
 
-set flavor   "linux"
+set flavor   "debian64"
 
 # Write overlay back to harddisk if set to 0
 set use_ram_fs 0

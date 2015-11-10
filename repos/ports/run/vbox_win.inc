@@ -202,7 +202,7 @@ append config_of_app {
 					<dir name="dev">
 						<log/>
 						<rtc/>
-						<block name="sda2" label="home"/>
+						<!--<block name="sda2" label="home"/>-->
 					 </dir>}
 
 append_if [expr $use_ram_fs] config_of_app {
