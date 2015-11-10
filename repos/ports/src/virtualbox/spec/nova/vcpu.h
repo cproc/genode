@@ -51,7 +51,7 @@ static bool debug_map_memory = false;
 
 /*
  * VirtualBox stores segment attributes in Intel format using a 32-bit
- * value. NOVA represents the attributes in packet format using a 16-bit
+ * value. NOVA represents the attributes in packed format using a 16-bit
  * value.
  */
 static inline Genode::uint16_t sel_ar_conv_to_nova(Genode::uint32_t v)
@@ -150,13 +150,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
 
 				Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
-#if 1
+#if 0
 				extern bool log_exits;
 				if ((log_exits) &&
 				    (exit_reason != 255)) {
-					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %xi, ax: %zx\n",
 					            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
-					            utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+					            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+					            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+					            utcb->ax);
 				
 #if 0
 					if (exit_reason == 2)
@@ -886,10 +888,13 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			}
 #if 0
 			extern bool log_exits;
-			if (log_exits) {
-				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%x - %x), ip: %zx, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
-					        _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
-					        utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
+			if ((log_exits) &&
+               (exit_reason != 255)) {
+				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, ax: %zx, bx: %zx, cx: %zx, dx: %zx\n",
+				            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+				            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+				            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+				            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
 			}
 #endif
 			/* reset message transfer descriptor for next invocation */

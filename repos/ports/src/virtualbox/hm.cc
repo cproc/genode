@@ -80,6 +80,7 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
 	if (rc == VINF_SUCCESS) {
 		CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
+		CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
 
 		/* nova kernel supports solely on 64bit the following features */
 		if (sizeof(void *) > 4 && enable_pae_nx) {
