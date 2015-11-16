@@ -77,6 +77,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			void *exit_status = _start_routine(_arg);
 			pthread_exit(exit_status);
 
+			Vmm::printf("%u\n", exit_reason);
+
 			Nova::reply(nullptr);
 		}
 
@@ -85,8 +87,17 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			using namespace Nova;
 
-			Vmm::printf("triple fault - dead\n");
+			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
 
+			Vmm::printf("_vmx_triple(): %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %lx, bx: %lx, cx: %lx, dx: %lx\n",
+			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+			            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+			            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+			            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+			            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
+
+			Vmm::printf("triple fault - dead\n");
+while(1);
 			_default_handler();
 		}
 
@@ -110,6 +121,13 @@ class Vcpu_handler_vmx : public Vcpu_handler
 				            utcb->inj_info, utcb->inj_error,
 				            utcb->intr_state, utcb->actv_state);
 
+			Vmm::printf("_vmx_invalid(): %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %lx, bx: %lx, cx: %lx, dx: %lx\n",
+			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+			            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+			            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+			            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+			            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
+while(1);
 			Vcpu_handler::_default_handler();
 		}
 
@@ -125,6 +143,15 @@ class Vcpu_handler_vmx : public Vcpu_handler
 		{
 			unsigned long value;
 			void *stack_reply = reinterpret_cast<void *>(&value - 1);
+
+			Vmm::printf("_vmx_mov_crx()\n");
+
+			static int count = 0;
+			count++;
+			if (count == 4) {
+				extern bool log_exits;
+				log_exits = true;
+			}
 
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
@@ -174,6 +201,10 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			register_handler<VMX_EXIT_HLT, This,
 				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);
 
+#if 0
+			register_handler<VMX_EXIT_MWAIT, This,
+				&This::_vmx_mwait> (exc_base, Mtd::ALL | Mtd::FPU);
+#endif
 			/* we don't support tsc offsetting for now - so let the rdtsc exit */
 			register_handler<VMX_EXIT_RDTSC, This,
 				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);

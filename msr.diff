@@ -1,0 +1,221 @@
+msr.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/msr.hpp  |    1 +
+ include/mtd.hpp  |    1 +
+ include/utcb.hpp |    4 ++++
+ include/vmx.hpp  |   34 ++++++++++++++++++++++++++++++++++
+ src/ec.cpp       |   25 +++++++++++++++++++++++--
+ src/ec_vmx.cpp   |    2 ++
+ src/regs.cpp     |    1 +
+ src/utcb.cpp     |   30 ++++++++++++++++++++++++++++++
+ 8 files changed, 96 insertions(+), 2 deletions(-)
+
+diff --git a/include/msr.hpp b/include/msr.hpp
+index 3234925..93c3c18 100644
+--- a/include/msr.hpp
++++ b/include/msr.hpp
+@@ -85,6 +85,7 @@ class Msr
+             IA32_STAR               = 0xc0000081,
+             IA32_LSTAR              = 0xc0000082,
+             IA32_FMASK              = 0xc0000084,
++            IA32_KERNEL_GS_BASE     = 0xc0000102,
+ 
+             AMD_IPMR                = 0xc0010055,
+             AMD_SVM_HSAVE_PA        = 0xc0010117,
+diff --git a/include/mtd.hpp b/include/mtd.hpp
+index 4625255..863c749 100644
+--- a/include/mtd.hpp
++++ b/include/mtd.hpp
+@@ -51,6 +51,7 @@ class Mtd
+             TSC             = 1UL << 19,
+             EFER            = 1UL << 20,
+             PDPTE           = 1UL << 21,
++            SYSCALL_SWAPGS  = 1UL << 22,
+             FPU             = 1UL << 31,
+         };
+ 
+diff --git a/include/utcb.hpp b/include/utcb.hpp
+index beeac9d..b8f6c45 100644
+--- a/include/utcb.hpp
++++ b/include/utcb.hpp
+@@ -79,6 +79,10 @@ class Utcb_data
+                 mword           pdpte[4];
+ #ifdef __x86_64__
+                 mword           cr8, efer;
++				uint64          star;
++				uint64          lstar;
++				uint64          fmask;
++				uint64          kernel_gs_base;
+ #endif
+                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
+                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
+diff --git a/include/vmx.hpp b/include/vmx.hpp
+index 92d4940..f504c84 100644
+--- a/include/vmx.hpp
++++ b/include/vmx.hpp
+@@ -21,6 +21,7 @@
+ #pragma once
+ 
+ #include "assert.hpp"
++#include "msr.hpp"
+ 
+ class Vmcs
+ {
+@@ -442,3 +443,36 @@ class Vmcs
+ 
+         static void init();
+ };
++
++struct PACKED Msr_entry
++{
++    uint32 msr_index;
++    uint32 reserved;
++    uint64 msr_data;
++
++    Msr_entry(uint32 index)
++    : msr_index(index), reserved(0), msr_data(0) { }
++};
++
++struct Msr_area
++{
++	enum { MSR_COUNT = 4 };
++
++    Msr_entry ia32_star           { Msr::IA32_STAR };
++    Msr_entry ia32_lstar          { Msr::IA32_LSTAR };
++    Msr_entry ia32_fmask          { Msr::IA32_FMASK };
++    Msr_entry ia32_kernel_gs_base { Msr::IA32_KERNEL_GS_BASE };
++
++    ALWAYS_INLINE
++    static inline void *operator new (size_t)
++    {
++    	/* allocate one page */
++        return Buddy::allocator.alloc (0, Buddy::FILL_0);
++    }
++
++    ALWAYS_INLINE
++    static inline void operator delete(void *obj)
++    {
++        Buddy::allocator.free (reinterpret_cast<mword>(obj));
++    }
++};
+diff --git a/src/ec.cpp b/src/ec.cpp
+index 1a342e3..360aa3f 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -92,6 +92,19 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
+                                   pd->ept.root());
+ 
+             regs.nst_ctrl<Vmcs>();
++
++			/* register the host MSR area */
++			mword host_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
++			Vmcs::write(Vmcs::EXI_MSR_LD_ADDR, host_msr_area_phys);
++			Vmcs::write(Vmcs::EXI_MSR_LD_CNT, Msr_area::MSR_COUNT);
++
++			/* register the guest MSR area */
++			mword guest_msr_area_phys = Buddy::ptr_to_phys(new Msr_area);
++			Vmcs::write(Vmcs::ENT_MSR_LD_ADDR, guest_msr_area_phys);
++			Vmcs::write(Vmcs::ENT_MSR_LD_CNT, Msr_area::MSR_COUNT);
++			Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
++			Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
++
+             regs.vmcs->clear();
+             cont = send_msg<ret_user_vmresume>;
+             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
+@@ -137,9 +150,17 @@ Ec::~Ec()
+     /* vCPU cleanup */
+     delete regs.vtlb;
+ 
+-    if (Hip::feature() & Hip::FEAT_VMX)
++    if (Hip::feature() & Hip::FEAT_VMX) {
++		mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
++		Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
++    	delete host_msr_area;
++
++		mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
++    	delete guest_msr_area;
++
+         delete regs.vmcs;
+-    else if (Hip::feature() & Hip::FEAT_SVM)
++    } else if (Hip::feature() & Hip::FEAT_SVM)
+         delete regs.vmcb;
+ }
+ 
+diff --git a/src/ec_vmx.cpp b/src/ec_vmx.cpp
+index 72b6d7c..fa5f59a 100644
+--- a/src/ec_vmx.cpp
++++ b/src/ec_vmx.cpp
+@@ -133,6 +133,8 @@ void Ec::vmx_cr()
+             mword cr0 = current->regs.read_cr<Vmcs>(0);
+             mword cr4 = current->regs.read_cr<Vmcs>(4);
+ 
++Console::print("mov to cr: %u, %lx", cr, cr0);
++
+             /* no update needed if not in protected mode with paging and PAE enabled */
+             if (!((cr0 & Cpu::CR0_PE) &&
+                   (cr0 & Cpu::CR0_PG) &&
+diff --git a/src/regs.cpp b/src/regs.cpp
+index af4203e..e41dca8 100644
+--- a/src/regs.cpp
++++ b/src/regs.cpp
+@@ -435,6 +435,7 @@ void Exc_regs::write_cr (unsigned cr, mword val)
+             break;
+ 
+         default:
++        	Console::print("cr %u: UNREACHED", cr);
+             UNREACHED;
+     }
+ }
+diff --git a/src/utcb.cpp b/src/utcb.cpp
+index f026546..f11be12 100644
+--- a/src/utcb.cpp
++++ b/src/utcb.cpp
+@@ -228,6 +228,15 @@ bool Utcb::load_vmx (Cpu_regs *regs)
+ #ifdef __x86_64__
+     if (m & Mtd::EFER)
+         efer = Vmcs::read (Vmcs::GUEST_EFER);
++
++	if (m & Mtd::SYSCALL_SWAPGS) {
++		mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
++		star = guest_msr_area->ia32_star.msr_data;
++		lstar = guest_msr_area->ia32_lstar.msr_data;
++		fmask = guest_msr_area->ia32_fmask.msr_data;
++		kernel_gs_base = guest_msr_area->ia32_kernel_gs_base.msr_data;
++	}
+ #endif
+ 
+     if (m & Mtd::PDPTE) {
+@@ -391,6 +400,27 @@ bool Utcb::save_vmx (Cpu_regs *regs)
+ #ifdef __x86_64__
+     if (mtd & Mtd::EFER)
+         regs->write_efer<Vmcs> (efer);
++
++	/* save the host MSRs */
++
++	mword host_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_LD_ADDR);
++	Msr_area *host_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(host_msr_area_phys));
++	host_msr_area->ia32_star.msr_data = Msr::read<uint64>(Msr::IA32_STAR);
++	host_msr_area->ia32_lstar.msr_data = Msr::read<uint64>(Msr::IA32_LSTAR);
++	host_msr_area->ia32_fmask.msr_data = Msr::read<uint64>(Msr::IA32_FMASK);
++	host_msr_area->ia32_kernel_gs_base.msr_data = Msr::read<uint64>(Msr::IA32_KERNEL_GS_BASE);
++
++	if (mtd & Mtd::SYSCALL_SWAPGS) {
++
++		/* load the guest MSRs */
++
++		mword guest_msr_area_phys = Vmcs::read(Vmcs::EXI_MSR_ST_ADDR);
++		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
++		guest_msr_area->ia32_star.msr_data = star;
++		guest_msr_area->ia32_lstar.msr_data = lstar;
++		guest_msr_area->ia32_fmask.msr_data = fmask;
++		guest_msr_area->ia32_kernel_gs_base.msr_data = kernel_gs_base;
++	}
+ #endif
+ 
+     if (mtd & Mtd::PDPTE) {
