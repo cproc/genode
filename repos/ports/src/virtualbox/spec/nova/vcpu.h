@@ -51,7 +51,7 @@ static bool debug_map_memory = false;
 
 /*
  * VirtualBox stores segment attributes in Intel format using a 32-bit
- * value. NOVA represents the attributes in packet format using a 16-bit
+ * value. NOVA represents the attributes in packed format using a 16-bit
  * value.
  */
 static inline Genode::uint16_t sel_ar_conv_to_nova(Genode::uint32_t v)
@@ -148,6 +148,32 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (!setjmp(_env)) {
 				_stack_reply = reinterpret_cast<void *>(&value - 1);
+
+				Nova::Utcb * utcb = reinterpret_cast<Nova::Utcb *>(Thread_base::utcb());
+#if 0
+				extern bool log_exits;
+				if ((log_exits) &&
+				    (exit_reason != 255) && (exit_reason != 48) && (exit_reason != 30)) {
+					Vmm::printf("%u: VM entry: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %zx, bx: %zx, cx: %zx, dx: %zx, di: %zx\n\n",
+				            	_cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+				            	utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+				            	utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+				            	utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+				            	utcb->ax, utcb->bx, utcb->cx, utcb->dx, utcb->di);
+				
+#if 0
+					if (exit_reason == 2)
+						for (Genode::addr_t a = 0x40100000; a < 0x40100400; a += 4) {
+					     	 Vmm::printf("%3x: %2x%2x%2x%2x\n",
+					     	 a,
+					     	 *(unsigned char*)(a + 0),
+					     	 *(unsigned char*)(a + 1),
+					     	 *(unsigned char*)(a + 2),
+					     	 *(unsigned char*)(a + 3));
+						}
+#endif
+				}
+#endif
 				Nova::reply(_stack_reply);
 			}
 		}
@@ -224,6 +250,12 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 		{
 			using namespace Nova;
 			using namespace Genode;
+
+			if ((reason < 0xa0000)
+			 || ((reason >= 0xc0000) && (reason < 0xe0000000))
+		     || (reason >= 0x100000000))
+				Vmm::printf("%u: _exc_memory(): guest physical: %zx, qual[0]: %llx, qual[1]: %llx, cs: %x (%x - %x), ip: %x, cr0: %x, cr3: %x, cr4: %x, efer: %x\n",
+				            _cpu_id, reason, utcb->qual[0], utcb->qual[1], utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip, utcb->cr0, utcb->cr3, utcb->cr4, utcb->efer);
 
 			Assert(utcb->actv_state == ACTIVITY_STATE_ACTIVE);
 
@@ -334,6 +366,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				utcb->si   = pCtx->rsi;
 				utcb->di   = pCtx->rdi;
 
+				utcb->r8  = pCtx->r8;
+				utcb->r9  = pCtx->r9;
+				utcb->r10 = pCtx->r10;
+				utcb->r11 = pCtx->r11;
+				utcb->r12 = pCtx->r12;
+				utcb->r13 = pCtx->r13;
+				utcb->r14 = pCtx->r14;
+				utcb->r15 = pCtx->r15;
+
 				utcb->mtd |= Mtd::EFL;
 				utcb->flags = pCtx->rflags.u;
 
@@ -394,6 +435,41 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 					utcb->pdpte[3] = pdpte[3];
 				}
 
+#if 1
+				utcb->mtd |= Mtd::SYSCALL_SWAPGS;
+				utcb->star = pCtx->msrSTAR;
+				utcb->lstar = pCtx->msrLSTAR;
+				utcb->fmask = pCtx->msrSFMASK;
+				utcb->kernel_gs_base = pCtx->msrKERNELGSBASE;
+
+#if 0
+				if (utcb->kernel_gs_base != 0)
+					Vmm::printf("star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx\n",
+					            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base);
+#endif
+#endif
+
+#if 1
+				/* from HMVMXR0.cpp */
+				bool interrupt_pending  = false;
+				uint8_t tpr             = 0;
+				uint8_t pending_interrupt = 0;
+				PDMApicGetTPR(pVCpu, &tpr, &interrupt_pending, &pending_interrupt);
+				utcb->mtd |= Mtd::TPR;
+				utcb->tpr = tpr;
+				utcb->tpr_threshold = 0;
+				if (interrupt_pending) {
+					const uint8_t pending_priority = (pending_interrupt >> 4) & 0xf;
+					const uint8_t tpr_priority = (tpr >> 4) & 0xf;
+					if (pending_priority <= tpr_priority)
+						utcb->tpr_threshold = pending_priority;
+					else
+						utcb->tpr_threshold = tpr_priority;
+				}
+#endif
+				//Vmm::printf("tpr: %u, tpr_threshold: %u\n", utcb->tpr, utcb->tpr_threshold);
+
+
 			Assert(!(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)));
 
 			return true;
@@ -416,6 +492,15 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			pCtx->rsi = utcb->si;
 			pCtx->rdi = utcb->di;
 			pCtx->rflags.u = utcb->flags;
+
+			pCtx->r8  = utcb->r8;
+			pCtx->r9  = utcb->r9;
+			pCtx->r10 = utcb->r10;
+			pCtx->r11 = utcb->r11;
+			pCtx->r12 = utcb->r12;
+			pCtx->r13 = utcb->r13;
+			pCtx->r14 = utcb->r14;
+			pCtx->r15 = utcb->r15;
 
 			pCtx->dr[7] = utcb->dr7;
 
@@ -449,6 +534,23 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 
 			if (pCtx->cr4 != utcb->cr4)
 				CPUMSetGuestCR4(pVCpu, utcb->cr4);
+
+#if 1
+			if (pCtx->msrSTAR != utcb->star)
+				CPUMSetGuestMsr(pVCpu, MSR_K6_STAR, utcb->star);
+			
+			if (pCtx->msrLSTAR != utcb->lstar)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_LSTAR, utcb->lstar);
+
+			if (pCtx->msrSFMASK != utcb->fmask)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_SF_MASK, utcb->fmask);
+
+			if (pCtx->msrKERNELGSBASE != utcb->kernel_gs_base)
+				CPUMSetGuestMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, utcb->kernel_gs_base);
+
+			PDMApicSetTPR(pVCpu, utcb->tpr);
+
+#endif
 
 			VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
 
@@ -839,7 +941,18 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				PERR("saving vCPU state failed");
 				return VERR_INTERNAL_ERROR;
 			}
-
+#if 0
+			extern bool log_exits;
+			if ((log_exits) &&
+               (exit_reason != 255) && (exit_reason != 48) && (exit_reason != 30)) {
+				Vmm::printf("%u: VM exit for REM: %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %zx, bx: %zx, cx: %zx, dx: %zx, di: %zx\n\n",
+				            _cpu_id,  exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+				            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+				            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+				            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+				            utcb->ax, utcb->bx, utcb->cx, utcb->dx, utcb->di);
+			}
+#endif
 			/* reset message transfer descriptor for next invocation */
 			Assert (!(utcb->inj_info & IRQ_INJ_VALID_MASK));
 			/* Reset irq window next time if we are still requesting it */

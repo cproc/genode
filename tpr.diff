@@ -1,0 +1,96 @@
+tpr.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/mtd.hpp  |    1 +
+ include/utcb.hpp |    2 ++
+ src/ec.cpp       |    8 ++++++++
+ src/utcb.cpp     |   15 +++++++++++++++
+ 4 files changed, 26 insertions(+)
+
+diff --git a/include/mtd.hpp b/include/mtd.hpp
+index 863c749..026bc0c 100644
+--- a/include/mtd.hpp
++++ b/include/mtd.hpp
+@@ -52,6 +52,7 @@ class Mtd
+             EFER            = 1UL << 20,
+             PDPTE           = 1UL << 21,
+             SYSCALL_SWAPGS  = 1UL << 22,
++            TPR             = 1UL << 23,
+             FPU             = 1UL << 31,
+         };
+ 
+diff --git a/include/utcb.hpp b/include/utcb.hpp
+index b8f6c45..2084717 100644
+--- a/include/utcb.hpp
++++ b/include/utcb.hpp
+@@ -83,6 +83,8 @@ class Utcb_data
+ 				uint64          lstar;
+ 				uint64          fmask;
+ 				uint64          kernel_gs_base;
++				uint32          tpr;
++				uint32          tpr_threshold;
+ #endif
+                 mword           dr7, sysenter_cs, sysenter_rsp, sysenter_rip;
+                 Utcb_segment    es, cs, ss, ds, fs, gs, ld, tr, gd, id;
+diff --git a/src/ec.cpp b/src/ec.cpp
+index 903ce34..20e90bc 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -105,6 +105,10 @@ Ec::Ec (Pd *own, mword sel, Pd *p, void (*f)(), unsigned c, unsigned e, mword u,
+ 			Vmcs::write(Vmcs::EXI_MSR_ST_ADDR, guest_msr_area_phys);
+ 			Vmcs::write(Vmcs::EXI_MSR_ST_CNT, Msr_area::MSR_COUNT);
+ 
++			/* allocate and register the virtual APIC page */
++			mword virtual_apic_page_phys = Buddy::ptr_to_phys(Buddy::allocator.alloc(0, Buddy::FILL_0)); 
++			Vmcs::write(Vmcs::APIC_VIRT_ADDR, virtual_apic_page_phys);
++
+             regs.vmcs->clear();
+             cont = send_msg<ret_user_vmresume>;
+             trace (TRACE_SYSCALL, "EC:%p created (PD:%p VMCS:%p VTLB:%p)", this, p, regs.vmcs, regs.vtlb);
+@@ -159,6 +163,10 @@ Ec::~Ec()
+ 		Msr_area *guest_msr_area = reinterpret_cast<Msr_area*>(Buddy::phys_to_ptr(guest_msr_area_phys));
+     	delete guest_msr_area;
+ 
++		mword virtual_apic_page_phys = Vmcs::read(Vmcs::APIC_VIRT_ADDR);
++		void *virtual_apic_page = Buddy::phys_to_ptr(virtual_apic_page_phys);
++		Buddy::allocator.free(reinterpret_cast<mword>(virtual_apic_page));
++
+         delete regs.vmcs;
+     } else if (Hip::feature() & Hip::FEAT_SVM)
+         delete regs.vmcb;
+diff --git a/src/utcb.cpp b/src/utcb.cpp
+index f11be12..cec44ea 100644
+--- a/src/utcb.cpp
++++ b/src/utcb.cpp
+@@ -237,6 +237,13 @@ bool Utcb::load_vmx (Cpu_regs *regs)
+ 		fmask = guest_msr_area->ia32_fmask.msr_data;
+ 		kernel_gs_base = guest_msr_area->ia32_kernel_gs_base.msr_data;
+ 	}
++
++	if (m & Mtd::TPR) {
++		mword virtual_apic_page_phys = Vmcs::read(Vmcs::APIC_VIRT_ADDR);
++		uint8 *virtual_apic_page = reinterpret_cast<uint8*>(Buddy::phys_to_ptr(virtual_apic_page_phys));
++		tpr = virtual_apic_page[0x80];
++		tpr_threshold = static_cast<uint32>(Vmcs::read(Vmcs::TPR_THRESHOLD));
++	}
+ #endif
+ 
+     if (m & Mtd::PDPTE) {
+@@ -421,6 +428,14 @@ bool Utcb::save_vmx (Cpu_regs *regs)
+ 		guest_msr_area->ia32_fmask.msr_data = fmask;
+ 		guest_msr_area->ia32_kernel_gs_base.msr_data = kernel_gs_base;
+ 	}
++#if 1
++	if (mtd & Mtd::TPR) {
++		mword virtual_apic_page_phys = Vmcs::read(Vmcs::APIC_VIRT_ADDR);
++		uint8 *virtual_apic_page = reinterpret_cast<uint8*>(Buddy::phys_to_ptr(virtual_apic_page_phys));
++		virtual_apic_page[0x80] = tpr;
++		Vmcs::write(Vmcs::TPR_THRESHOLD, tpr_threshold);
++	}
++#endif
+ #endif
+ 
+     if (mtd & Mtd::PDPTE) {
