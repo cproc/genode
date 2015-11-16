@@ -23,8 +23,9 @@
 #include "sup.h"
 
 
-static bool enabled_hm = true;
-static bool enable_pae_nx  = false;
+static bool enabled_hm    = true;
+static bool enable_pae_nx = false;
+static bool enable_64bit  = false;
 
 VMMR3DECL(int) HMR3Init(PVM pVM)
 {
@@ -39,6 +40,11 @@ VMMR3DECL(int) HMR3Init(PVM pVM)
 	rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "EnablePAE", &enable_pae_nx,
 	                        false);
 	AssertRCReturn(rc, rc);
+
+	/* check whether to enable long-mode bit - in 64bit host mode */
+	rc = CFGMR3QueryBoolDef(pCfgHM, "64bitEnabled", &enable_64bit, false);
+	AssertRCReturn(rc, rc);
+	PLOG("enable_64bit=%u", enable_64bit);
 
 	/*
 	 * We always set the fHMEnabled flag. Otherwise, the EM won't
@@ -79,6 +85,11 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 		if (sizeof(void *) > 4 && enable_pae_nx) {
 			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+		}
+		if (sizeof(void *) > 4 && enable_64bit) {
+			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+			CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
+	        CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
 		}
 	}
 

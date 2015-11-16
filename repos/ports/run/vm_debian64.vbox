@@ -6,19 +6,19 @@
 ** Use VBoxManage or the VirtualBox Manager GUI to make changes.
 -->
 <VirtualBox xmlns="http://www.innotek.de/VirtualBox-settings" version="1.14-linux">
-  <Machine uuid="{179f623e-40a1-4827-995d-251537a53129}" name="Win8" OSType="Windows81_64" snapshotFolder="Snapshots" lastStateChange="2015-01-08T11:27:52Z">
+  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Xubuntu" OSType="Ubuntu" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{4def7eeb-7836-4f3e-9b6c-a850b307ef10}" location="/win81_64.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}" location="/ram/overlay_win81_64.vdi" format="VDI" autoReset="false"/>
-        </HardDisk>
+        <HardDisk uuid="{c5a644d4-6a97-4c99-a4bb-0ec04e4d5783}" location="/Debian64.vdi" format="VDI"/>
       </HardDisks>
-      <DVDImages/>
+      <DVDImages>
+        <!--<Image uuid="{9727be82-5567-4c9c-ad53-33900e0cbdf6}" location="/xubuntu-14.04.2-desktop-amd64.iso"/>-->
+      </DVDImages>
       <FloppyImages/>
     </MediaRegistry>
     <ExtraData>
       <ExtraDataItem name="GUI/LastGuestSizeHint" value="1024,768"/>
-      <ExtraDataItem name="GUI/LastNormalWindowPosition" value="0,12,1439,863"/>
+      <ExtraDataItem name="GUI/LastNormalWindowPosition" value="513,100,1024,790"/>
     </ExtraData>
     <Hardware version="2">
       <CPU count="1" hotplug="false">
@@ -31,17 +31,17 @@
         <HardwareVirtExLargePages enabled="false"/>
         <HardwareVirtForce enabled="false"/>
       </CPU>
-      <Memory RAMSize="6000" PageFusion="false"/>
+      <Memory RAMSize="1024" PageFusion="false"/>
       <HID Pointing="PS2Mouse" Keyboard="PS2Keyboard"/>
       <HPET enabled="false"/>
       <Chipset type="PIIX3"/>
       <Boot>
-        <Order position="1" device="Floppy"/>
+        <Order position="1" device="HardDisk"/>
         <Order position="2" device="DVD"/>
-        <Order position="3" device="HardDisk"/>
+        <Order position="3" device="None"/>
         <Order position="4" device="None"/>
       </Boot>
-      <Display VRAMSize="128" monitorCount="1" accelerate3D="false" accelerate2DVideo="false"/>
+      <Display VRAMSize="20" monitorCount="1" accelerate3D="false" accelerate2DVideo="false"/>
       <VideoCapture enabled="false" screens="18446744073709551615" horzRes="1024" vertRes="768" rate="512" fps="25"/>
       <RemoteDisplay enabled="false" authType="Null"/>
       <BIOS>
@@ -57,17 +57,10 @@
           <Controller name="OHCI" type="OHCI"/>
         </Controllers>
         <DeviceFilters>
-			<DeviceFilter name="USB Keyboard" active="true" vendorId="046a" productId="0001" remote="0"/>
-			<DeviceFilter name="USB Keyboard 2" active="true" vendorId="04f2" productId="0402" remote="0"/>
-			<DeviceFilter name="USB Optical Mouse" active="true" vendorId="04b3" productId="310c" remote="0"/>
-			<DeviceFilter name="USB Stick" active="true" vendorId="05e3" productId="0738" remote="0"/>
-			<DeviceFilter name="USB Stick 2" active="true" vendorId="058f" productId="6387" remote="0"/>
-			<DeviceFilter name="USB Scanner" active="true" vendorId="04a9" productId="2220" remote="0"/>
-			<DeviceFilter name="USB Printer" active="true" vendorId="0482" productId="0015" remote="0"/>
-		</DeviceFilters>
+        </DeviceFilters>
       </USB>
       <Network>
-        <Adapter slot="0" enabled="false" MACAddress="080027235455" cable="true" speed="0" type="82540EM">
+        <Adapter slot="0" enabled="false" MACAddress="0800271D7901" cable="true" speed="0" type="82540EM">
           <HostInterface/>
           <DisabledModes/>
         </Adapter>
@@ -80,7 +73,7 @@
         <Port slot="0" enabled="false" IOBase="0x378" IRQ="7"/>
         <Port slot="1" enabled="false" IOBase="0x378" IRQ="7"/>
       </LPT>
-      <AudioAdapter controller="HDA" driver="Pulse" enabled="true"/>
+      <AudioAdapter controller="AC97" driver="Pulse" enabled="false"/>
       <RTC localOrUTC="UTC"/>
       <SharedFolders/>
       <Clipboard mode="Disabled"/>
@@ -96,19 +89,17 @@
         <CardReader enabled="false"/>
       </EmulatedUSB>
       <Guest memoryBalloonSize="0"/>
-      <GuestProperties>
-        <GuestProperty name="/VirtualBox/HostInfo/GUI/LanguageID" value="en_US" timestamp="1420716068888210000" flags=""/>
-      </GuestProperties>
+      <GuestProperties/>
     </Hardware>
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{28eeb1e3-17cc-476a-866f-ceb859dc7a86}"/>
+          <Image uuid="{c5a644d4-6a97-4c99-a4bb-0ec04e4d5783}"/>
         </AttachedDevice>
-        <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
+        <AttachedDevice passthrough="false" type="DVD" port="1" device="0">
+          <Image uuid="{9727be82-5567-4c9c-ad53-33900e0cbdf6}"/>
+        </AttachedDevice>
       </StorageController>
-	  <!--<StorageController name="SATA" type="AHCI" PortCount="1" useHostIOCache="false" Bootable="true" IDE0MasterEmulationPort="0" IDE0SlaveEmulationPort="1" IDE1MasterEmulationPort="2" IDE1SlaveEmulationPort="3">
-	  </StorageController>-->
     </StorageControllers>
   </Machine>
 </VirtualBox>

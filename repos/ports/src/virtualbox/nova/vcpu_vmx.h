@@ -59,8 +59,9 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			                    VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT |
 			                    VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT |
 */
-			                    VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT |
-			                    VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT |
+/*			                    VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT |
+			                    VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT |*/
+			                    VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW |
 			                    VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT |
 /*			                    VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT | */
 			/* we don't support tsc offsetting for now - so let the rdtsc exit */
@@ -77,6 +78,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			void *exit_status = _start_routine(_arg);
 			pthread_exit(exit_status);
 
+			Vmm::printf("%u\n", exit_reason);
+
 			Nova::reply(nullptr);
 		}
 
@@ -85,8 +88,17 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			using namespace Nova;
 
-			Vmm::printf("triple fault - dead\n");
+			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
 
+			Vmm::printf("_vmx_triple(): %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %lx, bx: %lx, cx: %lx, dx: %lx\n",
+			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+			            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+			            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+			            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+			            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
+
+			Vmm::printf("triple fault - dead\n");
+while(1);
 			_default_handler();
 		}
 
@@ -110,6 +122,13 @@ class Vcpu_handler_vmx : public Vcpu_handler
 				            utcb->inj_info, utcb->inj_error,
 				            utcb->intr_state, utcb->actv_state);
 
+			Vmm::printf("_vmx_invalid(): %u, cs: %x (%zx - %zx), ip: %zx, cr0: %zx, cr2: %zx, cr3: %zx, cr4: %zx, efer: %zx, sp: %zx, ds: %x, es: %x, ss: %x, fs: %x, gs: %x, gs.base: %zx, gs.ar: %x, star: %lx, lstar: %lx, fmask: %lx, kgsb: %lx, ax: %lx, bx: %lx, cx: %lx, dx: %lx\n",
+			            exit_reason, utcb->cs.sel, utcb->cs.base, utcb->cs.limit, utcb->ip,
+			            utcb->cr0, utcb->cr2, utcb->cr3, utcb->cr4, utcb->efer, utcb->sp,
+			            utcb->ds.sel, utcb->es.sel, utcb->ss.sel, utcb->fs.sel, utcb->gs.sel, utcb->gs.base, utcb->gs.ar,
+			            utcb->star, utcb->lstar, utcb->fmask, utcb->kernel_gs_base,
+			            utcb->ax, utcb->bx, utcb->cx, utcb->dx);
+while(1);
 			Vcpu_handler::_default_handler();
 		}
 
@@ -126,8 +145,22 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			unsigned long value;
 			void *stack_reply = reinterpret_cast<void *>(&value - 1);
 
+			static int count = 0;
+			count++;
+			if (count == 4) {
+				extern bool log_exits;
+				log_exits = true;
+			}
+
 			Genode::Thread_base *myself = Genode::Thread_base::myself();
 			Nova::Utcb *utcb = reinterpret_cast<Nova::Utcb *>(myself->utcb());
+
+			unsigned int cr = utcb->qual[0] & 0xf;
+
+			//Vmm::printf("MOV to/from CR%u\n\n", cr);
+
+			if (cr == 8)
+				_default_handler();
 
 			Genode::uint64_t *pdpte = (Genode::uint64_t*)
 				guest_memory()->lookup(utcb->cr3, sizeof(utcb->pdpte));
@@ -174,6 +207,10 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			register_handler<VMX_EXIT_HLT, This,
 				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);
 
+#if 0
+			register_handler<VMX_EXIT_MWAIT, This,
+				&This::_vmx_mwait> (exc_base, Mtd::ALL | Mtd::FPU);
+#endif
 			/* we don't support tsc offsetting for now - so let the rdtsc exit */
 			register_handler<VMX_EXIT_RDTSC, This,
 				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);
@@ -195,6 +232,8 @@ class Vcpu_handler_vmx : public Vcpu_handler
 			register_handler<VMX_EXIT_MOV_CRX, This,
 				&This::_vmx_mov_crx> (exc_base, Mtd::ALL | Mtd::FPU);
 			register_handler<VMX_EXIT_MOV_DRX, This,
+				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);
+			register_handler<VMX_EXIT_TPR_BELOW_THRESHOLD, This,
 				&This::_vmx_default> (exc_base, Mtd::ALL | Mtd::FPU);
 			register_handler<VMX_EXIT_EPT_VIOLATION, This,
 				&This::_vmx_ept<VMX_EXIT_EPT_VIOLATION>> (exc_base, Mtd::ALL | Mtd::FPU);
