@@ -88,7 +88,7 @@ append config {
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name=""        layer="2" content="client" label="no" focus="click" hover="always" />
 			<policy label="pointer" domain="pointer"/>
-			<policy label=""        domain=""/>
+			<policy domain=""/>
 		</config>
 		<route>
 			<service name="Input">       <child name="input_drv"/> </service>

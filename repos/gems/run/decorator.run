@@ -62,7 +62,7 @@ append config {
 		<config>
 			<report pointer="yes" />
 			<domain name="" layer="2" content="client" label="no"/>
-			<policy label="" domain=""/>
+			<policy domain=""/>
 		</config>
 	</start>
 	<start name="dynamic_rom">

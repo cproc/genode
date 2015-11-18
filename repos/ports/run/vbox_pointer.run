@@ -100,7 +100,7 @@ set config {
 
 			<policy label="pointer"            domain="pointer"/>
 			<policy label="test-domain-smiley" domain="smiley"/>
-			<policy label=""                   domain=""/>
+			<policy domain=""/>
 
 			<background color="#00426f"/> <!-- indigo -->
 		</config>
