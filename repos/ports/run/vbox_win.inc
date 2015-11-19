@@ -178,9 +178,9 @@ append config_of_app {
 
 	<start name="vbox" priority="-2">
 		<binary name="virtualbox" />
-		<resource name="RAM" quantum="7000M"/>}
+		<resource name="RAM" quantum="5000M"/>}
 append config_of_app "
-			<config vbox_file=\"${vbox_file}\" vm_name=\"${flavor}\">"
+			<config ld_verbose=\"yes\" vbox_file=\"${vbox_file}\" vm_name=\"${flavor}\">"
 append config_of_app {
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
 				<vfs>
