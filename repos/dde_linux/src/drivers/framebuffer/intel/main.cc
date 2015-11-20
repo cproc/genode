@@ -86,7 +86,16 @@ struct Server::Main
 {
 	Entrypoint &ep;
 
-	Framebuffer::Root root_component { &ep.rpc_ep(), Genode::env()->heap() };
+	bool _buffered_from_config()
+	{
+		try {
+			return Genode::config()->xml_node().attribute_value("buffered",
+			                                                    false);
+		} catch (...) { return false; }
+	}
+
+	Framebuffer::Root root_component { &ep.rpc_ep(), Genode::env()->heap(),
+	                                   _buffered_from_config() };
 
 	/* init singleton Lx::Timer */
 	Lx::Timer &timer = Lx::timer(&ep, &jiffies);

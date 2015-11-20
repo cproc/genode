@@ -9,6 +9,7 @@
 #include <os/attached_io_mem_dataspace.h>
 
 /* local includes */
+#include <component.h>
 #include "lx_emul_private.h"
 
 /* DRM-specific includes */
@@ -1057,8 +1058,6 @@ struct apertures_struct *alloc_apertures(unsigned int max_num)
 	a->count = max_num;
 	return a;
 }
-
-#include <component.h>
 
 extern "C" void update_framebuffer_config()
 {
