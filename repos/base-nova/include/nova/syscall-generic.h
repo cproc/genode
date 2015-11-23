@@ -208,32 +208,34 @@ namespace Nova {
 		public:
 
 			enum {
-				ACDB  = 1U << 0,   /* eax, ecx, edx, ebx */
-				EBSD  = 1U << 1,   /* ebp, esi, edi */
-				ESP   = 1U << 2,
-				EIP   = 1U << 3,
-				EFL   = 1U << 4,   /* eflags */
-				ESDS  = 1U << 5,
-				FSGS  = 1U << 6,
-				CSSS  = 1U << 7,
-				TR    = 1U << 8,
-				LDTR  = 1U << 9,
-				GDTR  = 1U << 10,
-				IDTR  = 1U << 11,
-				CR    = 1U << 12,
-				DR    = 1U << 13,  /* DR7 */
-				SYS   = 1U << 14,  /* Sysenter MSRs CS, ESP, EIP */
-				QUAL  = 1U << 15,  /* exit qualification */
-				CTRL  = 1U << 16,  /* execution controls */
-				INJ   = 1U << 17,  /* injection info */
-				STA   = 1U << 18,  /* interruptibility state */
-				TSC   = 1U << 19,  /* time-stamp counter */
-				EFER  = 1U << 20,  /* EFER MSR */
-				PDPTE = 1U << 21,  /* PDPTE0 .. PDPTE3 */
-				FPU   = 1U << 31,  /* FPU state */
+				ACDB           = 1U << 0,   /* eax, ecx, edx, ebx */
+				EBSD           = 1U << 1,   /* ebp, esi, edi */
+				ESP            = 1U << 2,
+				EIP            = 1U << 3,
+				EFL            = 1U << 4,   /* eflags */
+				ESDS           = 1U << 5,
+				FSGS           = 1U << 6,
+				CSSS           = 1U << 7,
+				TR             = 1U << 8,
+				LDTR           = 1U << 9,
+				GDTR           = 1U << 10,
+				IDTR           = 1U << 11,
+				CR             = 1U << 12,
+				DR             = 1U << 13,  /* DR7 */
+				SYS            = 1U << 14,  /* Sysenter MSRs CS, ESP, EIP */
+				QUAL           = 1U << 15,  /* exit qualification */
+				CTRL           = 1U << 16,  /* execution controls */
+				INJ            = 1U << 17,  /* injection info */
+				STA            = 1U << 18,  /* interruptibility state */
+				TSC            = 1U << 19,  /* time-stamp counter */
+				EFER           = 1U << 20,  /* EFER MSR */
+				PDPTE          = 1U << 21,  /* PDPTE0 .. PDPTE3 */
+				SYSCALL_SWAPGS = 1U << 22,  /* SYSCALL and SWAPGS MSRs */
+				TPR            = 1U << 23,  /* TPR and TPR threshold */
+				FPU            = 1U << 31,  /* FPU state */
 
 				IRQ   = EFL | STA | INJ | TSC,
-				ALL   = 0x000fffff & ~CTRL,
+				ALL   = (0x000fffff & ~CTRL) | EFER | SYSCALL_SWAPGS | TPR,
 			};
 
 			Mtd(mword_t value) : _value(value) { }
@@ -475,6 +477,12 @@ namespace Nova {
 				mword_t pdpte[4];
 #ifdef __x86_64__
 				mword_t cr8, efer;
+				unsigned long long star;
+				unsigned long long lstar;
+				unsigned long long fmask;
+				unsigned long long kernel_gs_base;
+				unsigned tpr;
+				unsigned tpr_threshold;
 #endif
 				mword_t dr7, sysenter_cs, sysenter_sp, sysenter_ip;
 
