@@ -18,6 +18,7 @@ set build_components {
 	app/vbox_pointer
 	server/nit_fb
 	server/report_rom
+	server/wm app/decorator app/floating_window_layouter
 }
 
 set boot_modules {
@@ -28,6 +29,7 @@ set boot_modules {
 	vbox_pointer
 	nit_fb
 	report_rom
+	wm decorator floating_window_layouter
 }
 
 set config_of_app {
@@ -92,10 +94,17 @@ append config_of_app {
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
 			<rom>
-				<policy label="vbox_pointer -> hover" report="nitpicker -> hover"/>
-				<policy label="vbox_pointer -> xray"  report="nitpicker -> xray"/>
-				<policy label="vbox_pointer -> shape" report="vbox -> shape"/>
-				<policy label="vbox -> usb_devices"   report="usb_drv -> devices"/>
+				<policy label="vbox_pointer -> hover"       report="nitpicker -> hover"/>
+				<policy label="vbox_pointer -> xray"        report="nitpicker -> xray"/>
+				<policy label="vbox_pointer -> shape"       report="vbox -> shape"/>
+				<policy label="vbox -> usb_devices"         report="usb_drv -> devices"/>
+				<policy label="layouter -> window_list"     report="wm -> window_list"/>
+				<policy label="layouter -> focus_request"   report="wm -> focus_request"/>
+				<policy label="decorator -> window_layout"  report="layouter -> window_layout"/>
+				<policy label="wm -> resize_request"        report="layouter -> resize_request"/>
+				<policy label="decorator -> pointer"        report="wm -> pointer"/>
+				<policy label="layouter -> hover"           report="decorator -> hover"/>
+				<policy label="wm -> focus"                 report="layouter -> focus"/>
 			</rom>
 		</config>
 	</start>
@@ -122,10 +131,48 @@ append config_of_app {
 
 	<start name="vbox_pointer" priority="-1">
 		<resource name="RAM" quantum="1M"/>
+		<config>
+			<policy label="wm -> nit_fb" rom="shape"/>
+		</config>
 		<route>
 			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
 			<service name="ROM">       <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="wm" priority="-1">
+		<resource name="RAM" quantum="32M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<policy label="decorator" role="decorator"/>
+			<policy label="layouter"  role="layouter"/>
+		</config>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<service name="ROM"> <child name="report_rom"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="layouter" priority="-1">
+		<binary name="floating_window_layouter"/>
+		<resource name="RAM" quantum="4M"/>
+		<route>
+			<any-service>
+				<child name="wm"/> <child name="report_rom"/> <parent/> <any-child/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="decorator" priority="-1">
+		<binary name="decorator"/>
+		<resource name="RAM" quantum="8M"/>
+		<route>
+			<any-service>
+				<child name="wm"/> <child name="report_rom"/> <parent/> <any-child/>
+			</any-service>
 		</route>
 	</start>
 
@@ -135,6 +182,11 @@ append config_of_app {
 			<service name="Framebuffer" />
 			<service name="Input" />
 		</provides>
+		<config width="1024" height="768"/>
+		<route>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
 	<start name="vbox" priority="-2">
