@@ -10,7 +10,7 @@
     <MediaRegistry>
       <HardDisks>
         <HardDisk uuid="{4def7eeb-7836-4f3e-9b6c-a850b307ef10}" location="/win81_64.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{9d5f52e5-81ef-45ef-8334-5c644f5a4ef0}" location="/ram/overlay_win81_64.vdi" format="VDI" autoReset="true"/>
+          <HardDisk uuid="{9d5f52e5-81ef-45ef-8334-5c644f5a4ef0}" location="/ram/overlay_win81_64.vdi" format="VDI" autoReset="false"/>
         </HardDisk>
       </HardDisks>
       <DVDImages/>
