@@ -152,10 +152,10 @@ append config {
 					</else>
 				</if>
 				<inline>
-					<policy label="pointer"            domain="pointer"/>
-					<policy label="status_bar"         domain="panel"/>
-					<policy label="scout -> launchpad" domain="launchpad"/>
-					<policy domain=""/>
+					<policy label="pointer"                   domain="pointer"/>
+					<policy label="status_bar"                domain="panel"/>
+					<policy label_prefix="scout -> launchpad" domain="launchpad"/>
+					<policy                                   domain=""/>
 
 					<global-key name="KEY_SCROLLLOCK" label="xray_trigger" />
 					<global-key name="KEY_F1"         label="xray_trigger" />
