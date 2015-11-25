@@ -7,6 +7,7 @@
 /* Genode includes */
 #include <base/printf.h>
 #include <os/attached_io_mem_dataspace.h>
+#include <os/reporter.h>
 
 /* local includes */
 #include <component.h>
@@ -1182,6 +1183,55 @@ int acpi_lid_notifier_register(struct notifier_block *nb)
 {
 	TRACE;
 	return 0;
+}
+
+void update_genode_report()
+{
+	static Genode::Reporter reporter("connector_list");
+	reporter.enabled(true);
+
+	try {
+		Genode::Reporter::Xml_generator xml(reporter, [&] ()
+		{
+			struct drm_device *dev = singleton_drm_device;
+			struct drm_connector *connector;
+			struct list_head panel_list;
+
+			INIT_LIST_HEAD(&panel_list);
+
+			list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
+				xml.node("connector", [&] ()
+				{
+					bool connected = connector->status == connector_status_connected;
+					xml.attribute("name", drm_get_connector_name(connector));
+					xml.attribute("connected", connected);
+
+					struct drm_display_mode *mode;
+					struct list_head mode_list;
+					INIT_LIST_HEAD(&mode_list);
+					list_for_each_entry(mode, &connector->modes, head) {
+						xml.node("mode", [&] ()
+						{
+							xml.attribute("width", mode->hdisplay);
+							xml.attribute("height", mode->vdisplay);
+							xml.attribute("hz", mode->vrefresh);
+						});
+					}
+					INIT_LIST_HEAD(&mode_list);
+					list_for_each_entry(mode, &connector->probed_modes, head) {
+						xml.node("mode", [&] ()
+						{
+							xml.attribute("width", mode->hdisplay);
+							xml.attribute("height", mode->vdisplay);
+							xml.attribute("hz", mode->vrefresh);
+						});
+					}
+				});
+			}
+		});
+	} catch (...) {
+		PWRN("Failed to generate report");
+	}
 }
 
 int drm_sysfs_connector_add(struct drm_connector *connector)

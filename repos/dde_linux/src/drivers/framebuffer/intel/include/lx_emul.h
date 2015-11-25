@@ -1604,6 +1604,8 @@ enum { CONFIG_DRM_I915_PRELIMINARY_HW_SUPPORT = 1 };
 
 #define CONFIG_DRM_I915_FBDEV 1
 
+void update_genode_report();
+
 /**************************
  ** Dummy trace funtions **
  **************************/
