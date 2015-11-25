@@ -26,6 +26,7 @@ namespace Framebuffer {
 	class Root;
 
 	extern Root * root;
+	Genode::Dataspace_capability framebuffer_dataspace();
 }
 
 
@@ -35,20 +36,15 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Session>
 
 		int                               _height;
 		int                               _width;
-		Genode::Dataspace_capability      _fb_ds_cap;
 		Genode::Signal_context_capability _mode_sigh;
 		Timer::Connection                 _timer;
 
 	public:
 
-		Session_component(int height, int width,
-		                  Genode::Dataspace_capability fb_ds_cap)
-		: _height(height), _width(width), _fb_ds_cap(fb_ds_cap) {}
+		Session_component() : _height(0), _width(0) {}
 
-		void update(int height, int width,
-		            Genode::Dataspace_capability fb_ds_cap)
+		void update(int height, int width)
 		{
-			_fb_ds_cap = fb_ds_cap;
 			_height = height;
 			_width  = width;
 			if (_mode_sigh.valid())
@@ -61,7 +57,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Session>
 		 ***********************************/
 
 		Genode::Dataspace_capability dataspace() override {
-			return _fb_ds_cap; }
+			return framebuffer_dataspace(); }
 
 		Mode mode() const override {
 			return Mode(_width, _height, Mode::RGB565); }
@@ -94,12 +90,10 @@ class Framebuffer::Root
 
 		Root(Genode::Rpc_entrypoint *session_ep, Genode::Allocator *md_alloc)
 		: Genode::Root_component<Session_component,
-		                         Genode::Single_client>(session_ep, md_alloc),
-		_single_session(0, 0, Genode::Dataspace_capability()) {}
+		                         Genode::Single_client>(session_ep, md_alloc) {}
 
-		void update(int height, int width,
-		            Genode::Dataspace_capability fb_ds_cap) {
-			_single_session.update(height, width, fb_ds_cap); }
+		void update(int height, int width) {
+			_single_session.update(height, width); }
 };
 
 #endif /* __COMPONENT_H__ */

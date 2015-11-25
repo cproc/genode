@@ -19,7 +19,8 @@ SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/lib/*.c))
 # Reduce build noise of compiling contrib code
 #
 CC_WARN = -Wall -Wno-uninitialized -Wno-unused-but-set-variable \
-          -Wno-unused-variable -Wno-unused-function
+          -Wno-unused-variable -Wno-unused-function \
+          -Wno-pointer-arith -Wno-pointer-sign
 
 vpath %.c $(LX_CONTRIB_DIR)/drivers/char/agp
 vpath %.c $(LX_CONTRIB_DIR)/drivers/i2c

@@ -54,6 +54,7 @@ class Lx::Pci_dev : public pci_dev, public Lx::List<Pci_dev>::Element
 		Platform::Device_client _client;
 
 		Io_port _io_port;
+		Genode::Io_mem_session_capability _io_mem[DEVICE_COUNT_RESOURCE];
 
 		/* offset used in PCI config space */
 		enum Pci_config { IRQ = 0x3c, REV = 0x8, CMD = 0x4,
@@ -184,6 +185,19 @@ class Lx::Pci_dev : public pci_dev, public Lx::List<Pci_dev>::Element
 		Platform::Device &client() { return _client; }
 
 		Io_port &io_port() { return _io_port; }
+
+		Genode::Io_mem_session_capability io_mem(unsigned bar,
+		                                         Genode::Cache_attribute cache_attribute)
+		{
+			if (bar >= DEVICE_COUNT_RESOURCE)
+				return Genode::Io_mem_session_capability();
+
+			if (!_io_mem[bar].valid())
+				_io_mem[bar] = _client.io_mem(_client.phys_bar_to_virt(bar),
+				                              cache_attribute);
+
+			return _io_mem[bar];
+		}
 };
 
 

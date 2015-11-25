@@ -173,8 +173,9 @@ PATCH_OPT(patches/libnl.patch) := -p1 -d ${DIR(libnl)}
 PATCH_OPT(patches/wpa_supplicant.patch) := -p1 -d ${DIR(wpa_supplicant)}
 
 # Intel fb
-PATCH_OPT(patches/intel_fb_16bit.patch) := -p1 -d ${DIR(intel_fb)}
-PATCH_OPT(patches/intel_fb_edp.patch)   := -p1 -d ${DIR(intel_fb)}
-PATCH_OPT(patches/intel_fb_x201.patch)  := -p1 -d ${DIR(intel_fb)}
+PATCH_OPT(patches/intel_fb_16bit.patch)  := -p1 -d ${DIR(intel_fb)}
+PATCH_OPT(patches/intel_fb_edp.patch)    := -p1 -d ${DIR(intel_fb)}
+PATCH_OPT(patches/intel_fb_update.patch) := -p1 -d ${DIR(intel_fb)}
+PATCH_OPT(patches/intel_fb_x201.patch)   := -p1 -d ${DIR(intel_fb)}
 
 # vi: set ft=make :

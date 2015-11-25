@@ -88,6 +88,13 @@ extern "C" size_t pci_resource_start(struct pci_dev *dev, unsigned bar)
 	return dev->resource[bar].start;
 }
 
+extern "C" size_t pci_resource_end(struct pci_dev *dev, unsigned bar)
+{
+	if (bar >= DEVICE_COUNT_RESOURCE)
+		return 0;
+
+	return dev->resource[bar].end;
+}
 
 extern "C" size_t pci_resource_len(struct pci_dev *dev, unsigned bar)
 {

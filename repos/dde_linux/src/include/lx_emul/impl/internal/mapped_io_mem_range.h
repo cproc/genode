@@ -26,6 +26,7 @@ namespace Lx {
 	class Mapped_io_mem_range;
 
 	void *ioremap(resource_size_t, unsigned long, Genode::Cache_attribute);
+	void  iounmap(volatile void*);
 	Genode::Dataspace_capability ioremap_lookup(Genode::addr_t, Genode::size_t);
 }
 
@@ -38,26 +39,27 @@ class Lx::Mapped_io_mem_range : public Lx::List<Mapped_io_mem_range>::Element
 {
 	private:
 
-		Genode::Attached_dataspace _ds;
-
-		Genode::size_t const _size;
-		Genode::addr_t const _phys;
-		Genode::addr_t const _virt;
+		Genode::size_t const        _size;
+		Genode::addr_t const        _phys;
+		Genode::Rm_connection       _rm;
+		Genode::Attached_dataspace  _ds;
+		Genode::addr_t const        _virt;
 
 	public:
 
 		Mapped_io_mem_range(Genode::addr_t phys, Genode::size_t size,
-		                    Genode::Io_mem_dataspace_capability ds_cap)
-		:
-			_ds(ds_cap),
-			_size(size),
-			_phys(phys),
-			_virt((Genode::addr_t)_ds.local_addr<void>() | (phys & 0xfffUL))
-		{ }
+		                    Genode::Io_mem_dataspace_capability ds_cap,
+		                    Genode::addr_t offset)
+		: _size(size),
+		  _phys(phys),
+		  _rm(0, size),
+		  _ds(_rm.dataspace()),
+		  _virt((Genode::addr_t)_ds.local_addr<void>() | (phys &0xfffUL)) {
+			_rm.attach_at(ds_cap, 0, size, offset); }
 
 		Genode::addr_t phys() const { return _phys; }
 		Genode::addr_t virt() const { return _virt; }
-		Genode::Dataspace_capability cap() { return _ds.cap(); }
+		Genode::Dataspace_capability cap() const { return _ds.cap(); }
 
 		/**
 		 * Return true if the mapped range contains the specified sub range
@@ -96,20 +98,20 @@ void *Lx::ioremap(resource_size_t phys_addr, unsigned long size,
 		}
 	}
 
+	addr_t offset;
 	Io_mem_dataspace_capability ds_cap =
-		Lx::pci_dev_registry()->io_mem(phys_addr, cache_attribute, size);
+		Lx::pci_dev_registry()->io_mem(phys_addr, cache_attribute,
+		                               size, offset);
 
 	if (!ds_cap.valid()) {
-
 		PERR("Failed to request I/O memory: [%zx,%lx)", phys_addr,
 		     phys_addr + size);
 		return nullptr;
 	}
 
-	Genode::size_t const ds_size = Genode::Dataspace_client(ds_cap).size();
-
 	Lx::Mapped_io_mem_range *io_mem =
-		new (env()->heap()) Lx::Mapped_io_mem_range(phys_addr, ds_size, ds_cap);
+		new (env()->heap()) Lx::Mapped_io_mem_range(phys_addr, size,
+		                                            ds_cap, offset);
 
 	ranges.insert(io_mem);
 
@@ -120,6 +122,20 @@ void *Lx::ioremap(resource_size_t phys_addr, unsigned long size,
 	return (void *)(io_mem->virt() + sub_page_offset);
 }
 
+void Lx::iounmap(volatile void * virt)
+{
+	using namespace Genode;
+
+	/* search for the requested region within the already mapped ranges */
+	for (Lx::Mapped_io_mem_range *r = ranges.first(); r; r = r->next()) {
+
+		if (r->virt() == (addr_t)virt) {
+			ranges.remove(r);
+			destroy(env()->heap(), r);
+			return;
+		}
+	}
+}
 
 Genode::Dataspace_capability
 Lx::ioremap_lookup(Genode::addr_t virt_addr, Genode::size_t size)

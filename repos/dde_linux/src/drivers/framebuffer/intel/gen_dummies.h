@@ -151,11 +151,6 @@ void drm_gem_object_unreference(struct drm_gem_object *obj)
 	TRACE_AND_STOP;
 }
 
-void drm_gem_object_unreference_unlocked(struct drm_gem_object *obj)
-{
-	TRACE_AND_STOP;
-}
-
 int drm_gem_prime_fd_to_handle(struct drm_device *dev, struct drm_file *file_priv, int prime_fd, uint32_t *handle)
 {
 	TRACE_AND_STOP;
@@ -551,11 +546,6 @@ void io_mapping_unmap_atomic(void *vaddr)
 }
 
 void io_schedule(void)
-{
-	TRACE_AND_STOP;
-}
-
-void  iounmap(volatile void *addr)
 {
 	TRACE_AND_STOP;
 }
@@ -972,18 +962,6 @@ void yield(void)
 	TRACE_AND_STOP;
 }
 
-long simple_strtol(const char *,char **,unsigned int)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
-size_t strlen(const char *)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
 int hdmi_avi_infoframe_init(struct hdmi_avi_infoframe *frame)
 {
 	TRACE_AND_STOP;
@@ -1029,12 +1007,6 @@ void cpufreq_cpu_put(struct cpufreq_policy *policy)
 	TRACE_AND_STOP;
 }
 
-int atomic_notifier_chain_unregister(struct atomic_notifier_head *nh, struct notifier_block *nb)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
 void cfb_copyarea(struct fb_info *info, const struct fb_copyarea *area)
 {
 	TRACE_AND_STOP;
@@ -1053,22 +1025,5 @@ void cfb_imageblit(struct fb_info *info, const struct fb_image *image)
 void fb_set_suspend(struct fb_info *info, int state)
 {
 	TRACE_AND_STOP;
-}
-
-void framebuffer_release(struct fb_info *info)
-{
-	TRACE_AND_STOP;
-}
-
-int unregister_framebuffer(struct fb_info *fb_info)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
-int unregister_sysrq_key(int key, struct sysrq_key_op *op)
-{
-	TRACE_AND_STOP;
-	return -1;
 }
 

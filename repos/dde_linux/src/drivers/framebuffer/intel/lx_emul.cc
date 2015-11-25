@@ -70,6 +70,20 @@ int memcmp(const void *cs, const void *ct, size_t count)
 	return res;
 }
 
+size_t strlen(const char *s)
+{
+	return Genode::strlen(s);
+}
+
+long simple_strtol(const char *cp, char **endp, unsigned int base)
+{
+	unsigned long result = 0;
+	size_t ret = Genode::ascii_to_unsigned(cp, result, base);
+	if (endp) *endp = (char*)cp + ret;
+	return result;
+}
+
+
 /*****************
  ** linux/dmi.h **
  *****************/
@@ -389,6 +403,13 @@ struct io_mapping *io_mapping_create_wc(resource_size_t base, unsigned long size
 }
 
 
+void iounmap(volatile void *addr)
+{
+	/* do not unmap here, but when client requests new dataspace */
+	TRACE;
+}
+
+
 /****************
  ** linux/io.h **
  ****************/
@@ -628,6 +649,7 @@ static void drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int 
 	*minor = new_minor;
 }
 
+static struct drm_device * singleton_drm_device = nullptr;
 
 static void drm_dev_register(struct drm_device *dev, unsigned long flags)
 {
@@ -639,6 +661,8 @@ static void drm_dev_register(struct drm_device *dev, unsigned long flags)
 
 	drm_get_minor(dev, &dev->primary, DRM_MINOR_LEGACY);
 
+	ASSERT(!singleton_drm_device);
+	singleton_drm_device = dev;
 	ASSERT(!dev->driver->load(dev, flags));
 }
 
@@ -1013,6 +1037,11 @@ struct fb_info *framebuffer_alloc(size_t size, struct device *dev)
 	return info;
 }
 
+void framebuffer_release(struct fb_info *info)
+{
+	kfree(info);
+}
+
 
 /****************
  ** linux/fb.h **
@@ -1031,20 +1060,47 @@ struct apertures_struct *alloc_apertures(unsigned int max_num)
 
 #include <component.h>
 
+extern "C" void update_framebuffer_config()
+{
+	struct drm_i915_private *dev_priv = (struct drm_i915_private*)singleton_drm_device->dev_private;
+	struct intel_framebuffer * ifb = &dev_priv->fbdev->ifb;
+
+	struct drm_connector *connector;
+	list_for_each_entry(connector, &singleton_drm_device->mode_config.connector_list, head)
+		connector->force = DRM_FORCE_UNSPECIFIED;
+	intel_fbdev_fini(singleton_drm_device);
+	i915_gem_object_release_stolen(ifb->obj);
+	drm_mode_config_reset(singleton_drm_device);
+	intel_fbdev_init(singleton_drm_device);
+	intel_fbdev_initial_config(singleton_drm_device);
+}
+
+static Genode::addr_t new_fb_ds_base = 0;
+static Genode::addr_t cur_fb_ds_base = 0;
+static Genode::size_t cur_fb_ds_size = 0;
+
+Genode::Dataspace_capability Framebuffer::framebuffer_dataspace()
+{
+	if (cur_fb_ds_base)
+		Lx::iounmap((void*)cur_fb_ds_base);
+	cur_fb_ds_base = new_fb_ds_base;
+	return Lx::ioremap_lookup(cur_fb_ds_base, cur_fb_ds_size);
+}
+
 int register_framebuffer(struct fb_info *fb_info)
 {
 	using namespace Genode;
 
 	fb_info->fbops->fb_set_par(fb_info);
-	Genode::Dataspace_capability fb_ds_cap =
-		Lx::ioremap_lookup((addr_t)fb_info->screen_base, (size_t)fb_info->screen_size);
-	Framebuffer::root->update(fb_info->var.yres_virtual,
-	                          fb_info->fix.line_length / 2, fb_ds_cap);
-	//static Rm_connection rm_helper(0, fb_info->screen_size);
-	//try {
-	//rm_helper.attach_at(ds_cap, 0);
-	//framebuffer_dataspace_capability = rm_helper.dataspace();
-	//} catch(Rm_session::Region_conflict) { PERR("Could not attach to zero"); }
+	new_fb_ds_base = (addr_t)fb_info->screen_base;
+	cur_fb_ds_size = (size_t)fb_info->screen_size;
+	Framebuffer::root->update(fb_info->var.yres_virtual, fb_info->fix.line_length / 2);
+	return 0;
+}
+
+int unregister_framebuffer(struct fb_info *fb_info)
+{
+	TRACE;
 	return 0;
 }
 
@@ -1179,9 +1235,41 @@ void spin_unlock_irq(spinlock_t *lock)
 	TRACE;
 }
 
+#include <os/config.h>
+
 int fb_get_options(const char *name, char **option)
 {
-	TRACE;
+	using namespace Genode;
+
+	String<64> con_to_scan(name);
+
+	/* try to read custom user config */
+	try {
+		config()->reload();
+		Xml_node node = config()->xml_node();
+		Xml_node xn = node.sub_node();
+		for (unsigned i = 0; i < node.num_sub_nodes(); xn = xn.next()) {
+			if (!xn.has_type("connector")) continue;
+
+			String<64> con_policy;
+			xn.attribute("name").value(&con_policy);
+			if (!(con_policy == con_to_scan)) continue;
+
+			bool enabled = xn.attribute("enabled").has_value("true");
+			if (!enabled) {
+				*option = (char*)"d";
+				return 0;
+			}
+
+			unsigned width, height;
+			xn.attribute("width").value(&width);
+			xn.attribute("height").value(&height);
+
+			*option = (char*)kmalloc(64, GFP_KERNEL);
+			Genode::snprintf(*option, 64, "%ux%u", width, height);
+			PLOG("set connector %s to %ux%u", con_policy.string(), width, height);
+		}
+	} catch (...) { }
 	return 0;
 }
 
@@ -1223,6 +1311,23 @@ struct cpufreq_policy *cpufreq_cpu_get(unsigned int cpu)
 {
 	TRACE;
 	return NULL;
+}
+
+int atomic_notifier_chain_unregister(struct atomic_notifier_head *nh, struct notifier_block *nb)
+{
+	TRACE;
+	return 0;
+}
+
+int unregister_sysrq_key(int key, struct sysrq_key_op *op)
+{
+	TRACE;
+	return 0;
+}
+
+void drm_gem_object_unreference_unlocked(struct drm_gem_object *obj)
+{
+	TRACE;
 }
 
 DEFINE_SPINLOCK(mchdev_lock);
