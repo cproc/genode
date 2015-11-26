@@ -12,9 +12,6 @@ SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/gpu/drm/i915/*.c))
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/video/*.c))
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/lib/*.c))
 
-#SRC_C := $(filter-out intel_dp.c,$(SRC_C))
-#SRC_C := intel_panel.c
-
 #
 # Reduce build noise of compiling contrib code
 #
