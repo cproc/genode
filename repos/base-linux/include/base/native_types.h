@@ -25,6 +25,7 @@
  * who includes this header file. We want to cleanly separate
  * Genode from POSIX.
  */
+extern Genode::addr_t _context_area_start;
 
 namespace Genode {
 
@@ -131,8 +132,9 @@ namespace Genode {
 		 * Please update platform-specific files after changing these
 		 * values, e.g., 'base-linux/src/platform/context_area.*.ld'.
 		 */
-		static constexpr addr_t context_area_virtual_base() {
-			return 0x40000000UL; }
+		static addr_t context_area_virtual_base() {
+			return align_addr((addr_t)&_context_area_start, 20); }
+
 		static constexpr addr_t context_area_virtual_size() {
 			return 0x10000000UL; }
 

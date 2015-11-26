@@ -76,6 +76,10 @@ class Linker::Reloc_non_plt : public Reloc_non_plt_generic
 				if (second_pass && rel->type() != R_GLOB_DAT)
 					continue;
 
+				/* linker text relocation */
+				if (!_dep->root && addr < &etext)
+					continue;
+
 				switch (rel->type()) {
 
 					case R_32      : _glob_dat(rel, addr, true); break;

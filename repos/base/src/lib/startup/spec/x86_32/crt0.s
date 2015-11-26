@@ -41,6 +41,20 @@
 	 */
 	leal _stack_high@GOTOFF(%ebx), %esp
 
+	jmp 1f
+
+	/* ld.lib.so entry point for Linux */
+	.global _start_initial_stack
+	_start_initial_stack:
+
+	/* set GOT */
+	call 3f
+	3:
+	pop %ebx
+	addl $_GLOBAL_OFFSET_TABLE_ + 1, %ebx
+1:
+	push %esp
+
 	/* if this is the dynamic linker, init_rtld relocates the linker */
 	call init_rtld
 
@@ -48,7 +62,7 @@
 	call init_main_thread
 
 	/* apply environment that was created by init_main_thread */
-	movl init_main_thread_result, %esp
+	movl init_main_thread_result@GOTOFF(%ebx), %esp
 
 	/* clear the base pointer in order that stack backtraces will work */
 	xor %ebp, %ebp

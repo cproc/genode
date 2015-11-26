@@ -23,9 +23,6 @@
 	.global _start
 	_start:
 
-	/* initialize GLOBAL OFFSET TABLE */
-	leaq _GLOBAL_OFFSET_TABLE_(%rip), %r15
-
 	/* make initial value of some registers available to higher-level code */
 	movq __initial_ax@GOTPCREL(%rip), %rbx
 	movq %rax, (%rbx)
@@ -41,7 +38,15 @@
 	leaq _stack_high@GOTPCREL(%rip),%rax
 	movq (%rax), %rsp
 
+	/* ld.lib.so entry point for Linux */
+	.global _start_initial_stack
+	_start_initial_stack:
+
+	/* initialize GLOBAL OFFSET TABLE */
+	leaq _GLOBAL_OFFSET_TABLE_(%rip), %r15
+
 	/* if this is the dynamic linker, init_rtld relocates the linker */
+	movq %rsp, %rdi
 	call init_rtld
 
 	/* create proper environment for the main thread */

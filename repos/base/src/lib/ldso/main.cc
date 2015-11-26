@@ -64,8 +64,9 @@ struct Linker::Elf_object : Object, Genode::Fifo<Elf_object>::Element
 	unsigned flags     = 0;
 	bool     relocated = false;
 
-	Elf_object(Dependency const *dep) : dyn(dep)
-	{ }
+	Elf_object(Dependency const *dep, Elf::Addr reloc_base)
+	:  Object(reloc_base), dyn(dep)
+	{}
 
 	Elf_object(char const *path, Dependency const *dep, unsigned flags = 0)
 	:
@@ -248,7 +249,8 @@ struct Linker::Elf_object : Object, Genode::Fifo<Elf_object>::Element
  */
 struct Linker::Ld : Dependency, Elf_object
 {
-	Ld() : Dependency(this, nullptr), Elf_object(this)
+	Ld()
+	: Dependency(this, nullptr), Elf_object(this, relocation_address())
 	{
 		Genode::strncpy(_name, linker_name(), Object::MAX_PATH);
 	}
@@ -511,7 +513,7 @@ void Linker::load_linker_phdr()
  * Called before anything else, even '_main', we cannot access any global data
  * here, we have to relocate our own ELF first
  */
-extern "C" void init_rtld()
+extern "C" void init_rtld(Genode::addr_t *sp)
 {
 	/*
 	 * Allocate on stack, since the linker has not been relocated yet, the vtable
@@ -524,8 +526,11 @@ extern "C" void init_rtld()
 	/* make sure this does not get destroyed the usual way */
 	linker_stack.ref_count++;
 
+	extern Genode::addr_t * __initial_sp;
+	__initial_sp = sp;
+
 	/*
-	 * Create actual linker object with different vtable type  and set PLT to new
+	 * Create actual linker object with different vtable type and set PLT to new
 	 * DAG.
 	 */
 	Ld::linker()->dynamic()->plt_setup();
@@ -569,8 +574,12 @@ int main()
 
 	/* print loaded object information */
 	try {
-		if (Genode::config()->xml_node().attribute("ld_verbose").has_value("yes"))
+		if (Genode::config()->xml_node().attribute("ld_verbose").has_value("yes")) {
+			PINF("  %lx .. %lx: context area", Genode::Native_config::context_area_virtual_base(),
+			     Genode::Native_config::context_area_virtual_base() +
+			     Genode::Native_config::context_area_virtual_size() - 1);
 			dump_loaded();
+		}
 	} catch (...) {  }
 
 	Link_map::dump();
