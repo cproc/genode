@@ -29,6 +29,9 @@
 	ldr r4, =__initial_sp
 	str sp, [r4]
 
+	/* arg0 to init_rtld */
+	mov r0, sp
+
 	/*
 	 * Install initial temporary environment that is replaced later by the
 	 * environment that init_main_thread creates.
