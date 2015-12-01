@@ -19,10 +19,10 @@ PHDRS
 SECTIONS
 {
 	. = 0x40000000;
-	_context_area_start =.;
+	_context_area_start = .;
 	/*
 	 * Since Linux loads ldso page aligned, we align the context area after
-	 * loading to 1MB boundary, therefore we reserve one MB more here.
+	 * loading to a 1 MiB boundary, therefore we reserve one MiB more here.
 	 */
 	.context_area : { . += 0x10100000; } : context_area
 }

@@ -65,8 +65,8 @@ struct Linker::Elf_object : Object, Genode::Fifo<Elf_object>::Element
 	bool     relocated = false;
 
 	Elf_object(Dependency const *dep, Elf::Addr reloc_base)
-	:  Object(reloc_base), dyn(dep)
-	{}
+	: Object(reloc_base), dyn(dep)
+	{ }
 
 	Elf_object(char const *path, Dependency const *dep, unsigned flags = 0)
 	:

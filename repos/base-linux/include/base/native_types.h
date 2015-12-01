@@ -20,11 +20,12 @@
 
 /*
  * We cannot just include <semaphore.h> and <pthread.h> here
- * because this would impy the nested inclusion of a myriad
+ * because this would imply the nested inclusion of a myriad
  * of Linux types and would pollute the namespace for everyone
  * who includes this header file. We want to cleanly separate
  * Genode from POSIX.
  */
+
 extern Genode::addr_t _context_area_start;
 
 namespace Genode {
@@ -130,7 +131,7 @@ namespace Genode {
 		 * Thread-context area configuration.
 		 *
 		 * Please update platform-specific files after changing these
-		 * values, e.g., 'base-linux/src/platform/context_area.*.ld'.
+		 * functions, e.g., 'base-linux/src/ld/context_area.*.ld'.
 		 */
 		static addr_t context_area_virtual_base() {
 			return align_addr((addr_t)&_context_area_start, 20); }
