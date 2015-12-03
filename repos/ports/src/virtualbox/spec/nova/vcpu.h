@@ -266,7 +266,7 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 				 * so the event needs to be injected again.
 				 */
 				utcb->mtd |= Mtd::INJ;
-				utcb->inj_error = _last_inj_error;
+				utcb->inj_info = _last_inj_info;
 				utcb->inj_error = _last_inj_error;
 			}
 
