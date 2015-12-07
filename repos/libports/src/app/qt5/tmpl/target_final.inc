@@ -30,6 +30,11 @@ ifeq ($(findstring network, $(QT)), network)
 LIBS += qt5_network
 endif
 
+# QtOpenGL
+ifeq ($(findstring opengl, $(QT)), opengl)
+LIBS += qt5_opengl
+endif
+
 # QtQuick
 ifeq ($(findstring quick, $(QT)), quick)
 LIBS += qt5_quick

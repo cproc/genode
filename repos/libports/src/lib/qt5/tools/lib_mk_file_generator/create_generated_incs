@@ -8,6 +8,7 @@ cd qtbase/src/corelib                        && ../../../create_generated_inc qt
 cd qtbase/src/gui                            && ../../../create_generated_inc qt5_gui               && cp qt5_gui_generated.inc ../../..               && cd ../../..
 cd qtbase/src/network                        && ../../../create_generated_inc qt5_network           && cp qt5_network_generated.inc ../../..           && cd ../../..
 cd qtbase/src/printsupport                   && ../../../create_generated_inc qt5_printsupport      && cp qt5_printsupport_generated.inc ../../..      && cd ../../..
+cd qtbase/src/opengl                         && ../../../create_generated_inc qt5_opengl            && cp qt5_opengl_generated.inc ../../..            && cd ../../..
 cd qtbase/src/sql                            && ../../../create_generated_inc qt5_sql               && cp qt5_sql_generated.inc ../../..               && cd ../../..
 cd qtbase/src/widgets                        && ../../../create_generated_inc qt5_widgets           && cp qt5_widgets_generated.inc ../../..           && cd ../../..
 cd qtbase/src/xml                            && ../../../create_generated_inc qt5_xml               && cp qt5_xml_generated.inc ../../..               && cd ../../..
