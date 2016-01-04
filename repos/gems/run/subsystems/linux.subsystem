@@ -45,7 +45,7 @@
 					<dir name="dev">
 						<log/>
 						<rtc/>
-						<block name="sda2" label="home" block_buffer_count="128" />
+						<block name="sdb2" label="data" block_buffer_count="128" />
 					 </dir>
 					<rom name="vm_linux.vbox"/>
 					<dir name="shared"> <fs label="shared"/> </dir>

@@ -9,8 +9,8 @@
   <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="Xubuntu" OSType="Ubuntu" snapshotFolder="Snapshots" lastStateChange="2014-11-14T11:58:35Z">
     <MediaRegistry>
       <HardDisks>
-        <HardDisk uuid="{c060c830-c3d6-4c5f-bba6-d1a832fb4b00}" location="/linux.vdi" format="VDI"/>
-        <HardDisk uuid="{ddb9fb22-8acc-423e-87c5-c71a14060c5f}" location="/home.vmdk" format="VMDK"/>
+        <HardDisk uuid="{01068ebe-20db-4a10-9ec1-dae9d0b1a8a7}" location="/vm/Xubuntu Genode/linux.vdi" format="VDI"/>
+        <HardDisk uuid="{98abfbd1-9ad3-4238-9fe1-d09d005c8e8a}" location="/vm/Xubuntu Genode/data.vmdk" format="VMDK"/>
       </HardDisks>
       <DVDImages>
         <!--<Image uuid="{9727be82-5567-4c9c-ad53-33900e0cbdf6}" location="/xubuntu-14.04.2-desktop-i386.iso"/>-->
@@ -29,7 +29,7 @@
         <HardwareVirtExVPID enabled="true"/>
         <HardwareVirtExUX enabled="true"/>
         <PAE enabled="true"/>
-        <LongMode enabled="false"/>
+        <LongMode enabled="true"/>
         <HardwareVirtExLargePages enabled="false"/>
         <HardwareVirtForce enabled="false"/>
       </CPU>
@@ -99,10 +99,10 @@
     <StorageControllers>
       <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
         <AttachedDevice type="HardDisk" port="0" device="0">
-          <Image uuid="{c060c830-c3d6-4c5f-bba6-d1a832fb4b00}"/>
+          <Image uuid="{01068ebe-20db-4a10-9ec1-dae9d0b1a8a7}"/>
         </AttachedDevice>
         <AttachedDevice type="HardDisk" port="0" device="1">
-          <Image uuid="{ddb9fb22-8acc-423e-87c5-c71a14060c5f}"/>
+          <Image uuid="{98abfbd1-9ad3-4238-9fe1-d09d005c8e8a}"/>
         </AttachedDevice>
         <AttachedDevice passthrough="false" type="DVD" port="1" device="0">
           <!--<Image uuid="{9727be82-5567-4c9c-ad53-33900e0cbdf6}"/>-->
