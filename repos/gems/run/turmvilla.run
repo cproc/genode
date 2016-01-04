@@ -4,7 +4,7 @@ set build_components {
 	server/part_blk
 	server/rump_fs
 	drivers/ahci
-	drivers/framebuffer/intel
+	drivers/framebuffer
 	drivers/timer
 	server/input_merger
 	drivers/nic
@@ -66,7 +66,7 @@ exec tar cfv bin/vim.tar       -h -C bin/vim .
 create_boot_directory
 
 set config {
-<config verbose="no" prio_levels="4">
+<config verbose="yes" prio_levels="4">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -91,7 +91,7 @@ set config {
 	</start>
 
 	<start name="acpi_drv" priority="0">
-		<resource name="RAM" quantum="2M"/>
+		<resource name="RAM" quantum="4M"/>
 		<route>
 			<service name="LOG"> <parent/> </service>
 			<service name="IO_MEM"> <parent/> </service>
@@ -161,7 +161,7 @@ set config {
 		</route>
 		<config>
 			<policy label="rump_fs" partition="1"/>
-			<policy label="cli_monitor -> linux -> vbox -> home" partition="2"/>
+			<policy label="cli_monitor -> linux -> vbox -> data" partition="2"/>
 		</config>
 	</start>
 
@@ -193,7 +193,7 @@ set config {
 		</route>
 	</start>
 
-	<start name="rump_fs" priority="-2">
+	<start name="rump_fs" priority="-1">
 		<resource name="RAM" quantum="32M" />
 		<provides><service name="File_system"/></provides>
 		<config ld_verbose="yes" fs="ext2fs">
@@ -213,6 +213,14 @@ set config {
 		</route>
 	</start>
 
+	<start name="nic_drv">
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Nic"/>
+		</provides>
+	</start>
+
+	<!--
 	<start name="wifi_drv" priority="-2">
 		<resource name="RAM" quantum="64M"/>
 		<provides> <service name="Nic"/> </provides>
@@ -237,7 +245,9 @@ set config {
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
+	-->
 
+	<!--
 	<start name="ps2_drv" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Input"/></provides>
@@ -245,6 +255,7 @@ set config {
 			<any-service> <parent /> <any-child /></any-service>
 		</route>
 	</start>
+	-->
 
 	<start name="usb_drv" priority="-1">
 		<resource name="RAM" quantum="8M"/>
@@ -283,14 +294,15 @@ set config {
 
 	<!-- use high priority because the fb driver is used at timing source
 	     for nitpicker and depending components -->
-	<!--<start name="fb_drv" priority="0">
+	<start name="fb_drv" priority="-1">
 		<resource name="RAM" quantum="6M"/>
 		<provides><service name="Framebuffer"/></provides>
-		<config buffered="yes" />
-	</start>-->
+		<config buffered="yes" width="1920" height="1080" />
+		<!--<config buffered="yes" width="1680" height="1050" />-->
+	</start>
 
 	<!-- use high priority because periodic sync signals are used as time source -->
-	<start name="intel_fb_drv" priority="0">
+	<!--<start name="intel_fb_drv" priority="0">
 		<resource name="RAM" quantum="20M"/>
 		<provides><service name="Framebuffer"/></provides>
 		<configfile name="fb_drv.config"/>
@@ -300,7 +312,7 @@ set config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-	<alias name="fb_drv" child="intel_fb_drv"/>
+	<alias name="fb_drv" child="intel_fb_drv"/>-->
 
 	<start name="rtc_drv" priority="-1">
 		<resource name="RAM" quantum="1M"/>
@@ -345,7 +357,7 @@ set config {
 			<service name="Input" />
 		</provides>
 		<config>
-			<input label="ps2" />
+			<!--<input label="ps2" />-->
 			<input label="usb_hid" />
 		</config>
 		<route>
@@ -520,7 +532,7 @@ set config {
 			<service name="ROM" label="decorator -> pointer">
 				<child name="wm_report_rom"/> </service>
 			<service name="Report"> <child name="wm_report_rom"/> </service>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="ROM"> <child name="rom"/> </service>
 			<any-service> <child name="wm"/> <parent/> <any-child/> </any-service>
 		</route>
@@ -706,7 +718,7 @@ set config {
 				</inline>
 
 				<inline name="decorator_init.config">
-<config>
+<config verbose="yes">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -863,8 +875,8 @@ set config {
 		</route>
 	</start>
 
-	<start name="cli_monitor" priority="-3">
-		<resource name="RAM" quantum="3G"/>
+	<start name="cli_monitor" priority="-1">
+		<resource name="RAM" quantum="15G"/>
 		<config>
 			<vfs>
 				<dir name="subsystems">
@@ -904,12 +916,12 @@ set config {
 			<service name="Block">  <child name="part_blk"/>   </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service>
-				<child name="log"/>
+				<!--<child name="log"/>-->
 				<child name="rump_fs"/>
 				<child name="rom"/>
 				<child name="cli_terminal"/>
 				<child name="wm"/>
-				<child name="wifi_drv"/>
+				<child name="nic_drv"/>
 				<child name="mixer"/>
 				<parent/> <any-child/>
 			</any-service>
@@ -968,7 +980,7 @@ append boot_modules {
 	cpu_load_display
 	xray_trigger
 	rom_filter
-	intel_fb_drv
+	fb_drv
 	backdrop
 	mixer
 	libpng.lib.so zlib.lib.so
