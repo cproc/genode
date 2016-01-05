@@ -136,7 +136,11 @@ class Cpu_load_display::Timeline : public Genode::List<Timeline>::Element
 
 		unsigned subject_id() const { return _subject_id; }
 
-		void hovered(bool hovered) { _hovered = hovered; }
+		void hovered(bool hovered) {
+			if (hovered != _hovered)
+				PDBG("*** %s", _label.string());
+			_hovered = hovered;
+		}
 };
 
 
