@@ -302,6 +302,8 @@ struct Ata_driver : Port_driver
 
 				ack_irq();
 			}
+
+			ack_irq();
 			break;
 
 		case READY:
