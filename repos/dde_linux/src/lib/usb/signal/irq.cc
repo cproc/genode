@@ -53,6 +53,8 @@ class Irq_context : public Genode::List<Irq_context>::Element
 		Genode::Irq_session_capability         _irq_cap;
 		Genode::Irq_session_client             _irq_client;
 
+		unsigned long long handle_count = 0;
+
 		static Genode::List<Irq_context> *_list()
 		{
 			static Genode::List<Irq_context> _l;
@@ -101,6 +103,13 @@ class Irq_context : public Genode::List<Irq_context>::Element
 		bool _handle()
 		{
 			bool handled = false;
+
+			handle_count++;
+
+			if (handle_count % 10000 == 0) {
+				unsigned int *ehci_regs_status = (unsigned int*)0x24024;
+				PDBG("IRQ %u handled %llu times, status: %x", _irq, handle_count, *ehci_regs_status);
+			}
 
 			/* report IRQ to all clients */
 			for (Irq_handler *h = _handler_list.first(); h; h = h->next())
