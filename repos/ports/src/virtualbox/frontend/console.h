@@ -132,7 +132,8 @@ class GenodeConsole : public Console {
 		{
 			return keycode == Input::BTN_LEFT
 			    || keycode == Input::BTN_RIGHT
-			    || keycode == Input::BTN_MIDDLE;
+			    || keycode == Input::BTN_MIDDLE
+			    || keycode == Input::BTN_EXTRA;
 		}
 
 	public:
