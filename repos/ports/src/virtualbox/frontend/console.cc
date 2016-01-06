@@ -232,7 +232,9 @@ void GenodeConsole::handle_input(unsigned)
 		if (mouse_event) {
 			unsigned const buttons = (_key_status[Input::BTN_LEFT]   ? MouseButtonState_LeftButton : 0)
 			                       | (_key_status[Input::BTN_RIGHT]  ? MouseButtonState_RightButton : 0)
-			                       | (_key_status[Input::BTN_MIDDLE] ? MouseButtonState_MiddleButton : 0);
+			                       | (_key_status[Input::BTN_MIDDLE] ? MouseButtonState_MiddleButton : 0)
+					               | (_key_status[Input::BTN_EXTRA] ? MouseButtonState_MiddleButton : 0);
+
 			if (ev.absolute_motion()) {
 
 				_last_received_motion_event_was_absolute = true;
