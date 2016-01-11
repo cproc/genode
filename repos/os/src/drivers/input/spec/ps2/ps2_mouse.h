@@ -29,6 +29,7 @@ class Ps2_mouse : public Input_driver
 		CMD_ENABLE_STREAM  = 0xf4,
 		CMD_DISABLE_STREAM = 0xf5,
 		CMD_SET_DEFAULTS   = 0xf6,
+		CMD_RESET          = 0xff,
 	};
 
 	enum Return
@@ -168,16 +169,22 @@ class Ps2_mouse : public Input_driver
 		{
 			for (unsigned i = 0; i < NUM_BUTTONS; ++i)
 				_button_state[i] = false;
+
 			reset();
 		}
 
 		void reset()
 		{
-			_aux.write(CMD_SET_DEFAULTS);
+			_aux.write(CMD_RESET);
 			if (_aux.read() != RET_ACK)
-				PWRN("Could not set defaults");
+				PWRN("Could not reset");
+			if (_aux.read() != 0xaa)
+				PWRN("Could not reset");
+			if (_aux.read() != 0x00)
+				PWRN("Could not reset");
 
 			_aux.write(CMD_ENABLE_STREAM);
+
 			if (_aux.read() != RET_ACK)
 				PWRN("Could not enable stream");
 
