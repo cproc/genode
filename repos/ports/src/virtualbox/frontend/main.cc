@@ -35,6 +35,9 @@
 #include "console.h"
 #include "fb.h"
 
+uint8_t last_vector = 0;
+uint64_t irq_start_tsc = 0;
+
 static char c_vbox_file[128];
 static char c_vbox_vmname[128];
 

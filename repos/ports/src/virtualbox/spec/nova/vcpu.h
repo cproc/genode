@@ -616,6 +616,33 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			_last_inj_info = utcb->inj_info;
 			_last_inj_error = utcb->inj_error;
 
+			extern uint8_t last_vector;
+			extern uint64_t irq_start_tsc;
+			if ((_cpu_id == 2) && 
+			    (u8Vector == last_vector) &&
+			    ((u8Vector == 0xfb) || (u8Vector == 0xfd))) {
+			    static uint64_t count = 0;
+			    static uint64_t tot_diff = 0;
+			    static uint64_t min_diff = ~0ULL;
+			    static uint64_t max_diff = 0;
+
+			    count++;
+				uint64_t tsc_diff = Genode::Trace::timestamp() - irq_start_tsc;
+				tot_diff += tsc_diff;
+				min_diff = Genode::min(min_diff, tsc_diff);
+				max_diff = Genode::max(max_diff, tsc_diff);
+
+				Vmm::printf("vector: %x, min: %llu ns, max: %llu ns, avg: %llu ns\n",
+				            u8Vector,
+				            min_diff * 1000 / 2300,
+				            max_diff * 1000 / 2300,
+				            (tot_diff / count) * 1000 / 2300);
+			}
+
+#if 0
+			if (u8Vector != 0xef)
+				Vmm::printf("%llu: %u: inj: %x\n", Genode::Trace::timestamp(), _cpu_id, u8Vector);
+#endif
 /*
 			Vmm::printf("type:info:vector %x:%x:%x intr:actv - %x:%x mtd %x\n",
 			     Event.n.u3Type, utcb->inj_info, u8Vector, utcb->intr_state, utcb->actv_state, utcb->mtd);
