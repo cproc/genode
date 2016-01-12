@@ -43,7 +43,7 @@
 		<binary name="virtualbox" />
 		<resource name="RAM" quantum="8300M"/>
 		<exit propagate="yes"/>
-			<config vbox_file="vm_linux.vbox" vm_name="linux">
+			<config vbox_file="vm_xubuntu32.vbox" vm_name="linux">
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
 				<vfs>
 					<dir name="dev">
