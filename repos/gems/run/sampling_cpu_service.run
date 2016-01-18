@@ -1,0 +1,66 @@
+build {
+	core
+	init
+	drivers/timer
+	server/sampling_cpu_service
+	test/sampling_cpu_service
+}
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="CAP"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="RAM"/>
+			<service name="ROM"/>
+			<service name="RM"/>
+			<service name="SIGNAL"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides>
+				<service name="Timer"/>
+			</provides>
+		</start>
+		<start name="sampling_cpu_service">
+			<resource name="RAM" quantum="10M"/>
+			<provides>
+				<service name="CPU"/>
+			</provides>
+		</start>
+		<start name="init">
+			<resource name="RAM" quantum="16M"/>
+			<config>
+				<parent-provides>
+					<service name="CAP"/>
+					<service name="LOG"/>
+					<service name="RM"/>
+					<service name="SIGNAL"/>
+				</parent-provides>
+				<default-route>
+					<any-service> <parent/> </any-service>
+				</default-route>
+				<start name="test-sampling_cpu_service">
+					<resource name="RAM" quantum="4M"/>
+				</start>
+			</config>
+			<route>
+				<service name="CPU"> <child name="sampling_cpu_service"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image "core init timer sampling_cpu_service test-sampling_cpu_service"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until forever
