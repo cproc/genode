@@ -12,6 +12,7 @@ set build_components {
 	app/vbox_pointer
 	server/nit_fb
 	server/report_rom
+	server/sampling_cpu_service
 	drivers/input
 	drivers/usb
 	drivers/acpi
@@ -586,6 +587,14 @@ set config {
 	<report activity="yes" affinity="yes"/>
 </config>
 				</inline>
+
+				<inline name="sampling_cpu_service.config">
+<config sample_interval_ms="1000" sample_duration_ms="10000">
+	<libc> <vfs> <fs/> </vfs> </libc>
+	<!--<policy label="cli_monitor -> noux" />-->
+</config>
+				</inline>
+
 				<inline name="nitpicker.config">
 <config>
 	<input name="xray_enabled" rom="xray" node="xray">
@@ -812,6 +821,33 @@ set config {
 		</config>
 	</start>
 
+	<start name="sample_fs" priority="-1">
+		<binary name="ram_fs"/>
+		<resource name="RAM" quantum="64M"/>
+		<provides>
+			<service name="File_system"/>
+		</provides>
+		<config>
+			<policy label="sampling_cpu_service" root="/" writeable="yes" />
+			<policy label="cli_monitor -> noux -> noux -> samples" root="/" writeable="yes" />
+		</config>
+	</start>
+
+	<start name="sampling_cpu_service" priority="-1">
+		<resource name="RAM" quantum="32M"/>
+		<provides>
+			<service name="CPU"/>
+		</provides>
+		<configfile name="sampling_cpu_service.config"/>
+		<route>
+			<service name="File_system"> <child name="sample_fs"/> </service>
+			<service name="ROM" label="sampling_cpu_service.config">
+				<child name="config_rom"/>
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
 	<start name="xray_trigger" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<config>
@@ -887,12 +923,17 @@ set config {
 			</vfs>
 		</config>
 		<route>
+			<service name="CPU" label="cpu_load_display"> <child name="sampling_cpu_service"/> </service>
+			<service name="CPU" label="noux"> <child name="sampling_cpu_service"/> </service>
+
 			<service name="File_system" label_prefix="noux" label_suffix="-> genode">
 				<child name="rump_fs" /> </service>
 			<service name="File_system" label_prefix="noux" label_suffix="-> shared">
 				<child name="shared_fs" /> </service>
 			<service name="File_system" label_prefix="noux" label_suffix="-> config">
 				<child name="config_fs" /> </service>
+			<service name="File_system" label_prefix="noux" label_suffix="-> samples">
+				<child name="sample_fs" /> </service>
 
 			<service name="File_system" label="linux -> vbox -> rump_fs"> <child name="rump_fs"/>   </service>
 			<service name="File_system" label="linux -> vbox -> shared">  <child name="shared_fs"/> </service>
@@ -962,6 +1003,7 @@ append boot_modules {
 	vbox_pointer
 	nit_fb
 	report_rom
+	sampling_cpu_service
 	wm decorator
 	floating_window_layouter
 	noux terminal ram_fs libc_noux.lib.so ncurses.lib.so
