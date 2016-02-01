@@ -64,6 +64,10 @@ append config {
 	<start name="loader">
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Loader"/></provides>
+		<route>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
 	<start name="arora">
