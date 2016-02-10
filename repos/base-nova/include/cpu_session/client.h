@@ -45,11 +45,30 @@ namespace Genode {
 
 		void pause(Thread_capability thread)
 		{
-			Native_capability block = call<Rpc_pause_sync>(thread);
-			if (!block.valid())
-				return;
+			for (;;) {
 
-			Nova::sm_ctrl(block.local_name(), Nova::SEMAPHORE_DOWN);
+				PDBG("calling Rpc_pause_sync");
+				Native_capability block = call<Rpc_pause_sync>(thread);
+
+				if (block.valid()) {
+					PDBG("blocking");
+					Nova::sm_ctrl(block.local_name(), Nova::SEMAPHORE_DOWN);
+					PDBG("unblocked");
+					return;
+				}
+
+				try {
+					PDBG("calling state()");
+					/* check if the thread state is valid */
+					state(thread);
+					PDBG("state valid");
+					/* the thread is blocked in the kernel */
+					return;
+				} catch (State_access_failed) {
+					/* the thread is (most likely) running on a different CPU */
+					PDBG("state invalid");
+				}
+			}
 		}
 
 		void resume(Thread_capability thread) {

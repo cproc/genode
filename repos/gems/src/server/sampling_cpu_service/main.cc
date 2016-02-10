@@ -55,6 +55,9 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 
 	void handle_timeout(unsigned num)
 	{
+		if (verbose && (num > 1))
+			PDBG("missed %u timeouts (sample interval too short?)", num - 1);
+
 		for (List_element<Thread_data> *thread_data_element = selected_thread_list.first();
 		     thread_data_element;
 		     thread_data_element = thread_data_element->next()) {
@@ -112,7 +115,10 @@ PDBG("calling thread_list_changed()");
 		thread_list_changed();
 PDBG("thread_list_changed() returned, setting timeout");
 
-		timer.trigger_periodic(timeout_us);
+		if (sample_index < max_sample_index)
+			timer.trigger_periodic(timeout_us);
+		else
+			timer.trigger_once(timeout_us);
 	}
 
 

@@ -72,21 +72,24 @@ namespace Genode {
 			addr_t _client_exc_pt_sel;
 			addr_t _client_exc_vcpu;
 
+			Lock   _state_lock;
+
 			struct
 			{
 				struct Thread_state thread;
 				addr_t sel_client_ec;
 				enum {
-					BLOCKED        = 0x1U,
-					DEAD           = 0x2U,
-					SINGLESTEP     = 0x4U,
-					NOTIFY_REQUEST = 0x8U,
-					SIGNAL_SM      = 0x10U,
-					DISSOLVED      = 0x20U,
-					SUBMIT_SIGNAL  = 0x40U,
-					SKIP_EXCEPTION = 0x80U,
+					BLOCKED          = 0x1U,
+					DEAD             = 0x2U,
+					SINGLESTEP       = 0x4U,
+					NOTIFY_REQUEST   = 0x8U,
+					SIGNAL_SM        = 0x10U,
+					DISSOLVED        = 0x20U,
+					SUBMIT_SIGNAL    = 0x40U,
+					SKIP_EXCEPTION   = 0x80U,
+					RECALL_REQUESTED = 0x100U,
 				};
-				uint8_t _status;
+				uint16_t _status;
 
 				/* convenience function to access pause/recall state */
 				inline bool blocked() { return _status & BLOCKED;}
@@ -115,6 +118,11 @@ namespace Genode {
 				inline bool skip_requested() { return _status & SKIP_EXCEPTION; }
 				inline void skip_request() { _status |= SKIP_EXCEPTION; }
 				inline void skip_reset() { _status &= ~SKIP_EXCEPTION; }
+
+				inline bool recall_requested() { return _status & RECALL_REQUESTED; }
+				inline void recall_request() { _status |= RECALL_REQUESTED; }
+				inline void recall_reset() { _status &= ~RECALL_REQUESTED; }
+
 			} _state;
 
 			Thread_capability  _thread_cap;
@@ -237,8 +245,10 @@ namespace Genode {
 			 */
 			bool copy_thread_state(Thread_state * state_dst)
 			{
-				if (!state_dst || !_state.blocked())
+				if (!state_dst || !_state.blocked()) {
+					PDBG("failed: %u, %u", (bool)state_dst, (bool)_state.blocked());
 					return false;
+				}
 
 				*state_dst = _state.thread;
 
@@ -251,7 +261,7 @@ namespace Genode {
 			 */
 			void    client_cancel_blocking();
 
-			uint8_t client_recall();
+			uint8_t client_recall(unsigned long *ipc_state = nullptr, bool is_worker = false);
 			void    client_set_ec(addr_t ec) { _state.sel_client_ec = ec; }
 
 			inline Native_capability single_step(bool on)

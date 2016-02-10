@@ -192,9 +192,17 @@ namespace Nova {
 
 
 	ALWAYS_INLINE
-	inline uint8_t ec_ctrl(Ec_op op, mword_t ec = ~0UL, mword_t para = ~0UL)
+	inline uint8_t ec_ctrl(Ec_op op, mword_t ec = ~0UL, mword_t para = ~0UL,
+	                       mword_t *state = nullptr)
 	{
-		return syscall_1(NOVA_EC_CTRL, op, ec, para);
+		mword_t state_sys = 0;
+
+		uint8_t res = syscall_1(NOVA_EC_CTRL, op, ec, para, &state_sys);
+
+		if (state)
+			*state = state_sys;
+
+		return res;
 	}
 
 

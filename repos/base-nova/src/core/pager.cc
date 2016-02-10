@@ -187,6 +187,18 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	Pager_object *    obj = reinterpret_cast<Pager_object *>(pager_obj);
 	Utcb         *   utcb = reinterpret_cast<Utcb *>(myself->utcb());
 
+	obj->_state_lock.lock();
+
+	if (!obj->_state.recall_requested()) {
+		obj->_state_lock.unlock();
+
+		/* just resume execution */
+		utcb->set_msg_word(0);
+		reply(myself->stack_top());
+
+	} else
+		obj->_state_lock.unlock();
+
 	/* save state - can be requested via cpu_session->state */
 	obj->_copy_state(utcb);
 
@@ -194,6 +206,8 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	obj->_state.thread.sp     = utcb->sp;
 
 	obj->_state.thread.eflags = utcb->flags;
+
+	PDBG("recall_handler updated the state");
 
 	/* thread becomes blocked */
 	obj->_state.block();
@@ -221,6 +235,8 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 		} else
 			utcb->mtd = 0;
 	}
+
+	obj->_state_lock.unlock();
 
 	/* block until cpu_session()->resume() respectively wake_up() call */
 	utcb->set_msg_word(0);
@@ -359,6 +375,11 @@ void Pager_object::_invoke_handler(addr_t pager_obj)
 
 void Pager_object::wake_up()
 {
+	Lock::Guard _state_lock_guard(_state_lock);
+
+	if (_state.recall_requested())
+		_state.recall_reset();
+
 	if (!_state.blocked())
 		return;
 
@@ -385,9 +406,44 @@ void Pager_object::client_cancel_blocking()
 }
 
 
-uint8_t Pager_object::client_recall()
+uint8_t Pager_object::client_recall(unsigned long *state, bool is_worker)
 {
-	return ec_ctrl(EC_RECALL, _state.sel_client_ec);
+	Lock::Guard _state_lock_guard(_state_lock);
+
+	enum { STATE_REQUESTED = 1 };
+
+	_state.recall_request();
+
+	uint8_t res = ec_ctrl(EC_RECALL, _state.sel_client_ec,
+	                      state ? STATE_REQUESTED : ~0UL, state);
+
+	if (res != NOVA_OK) {
+		_state.recall_reset();
+		return res;
+	}
+
+	if (state) {
+
+		enum { IN_SYSCALL = 1, INCOMING_IPC = 2 };
+
+		if ((*state & IN_SYSCALL) || (is_worker && !(*state & INCOMING_IPC))) {
+
+			/*
+			 * The thread might be blocked in the kernel for a long time, can't
+			 * wait for the recall handler to read the state.
+			 */
+
+			Utcb *utcb = reinterpret_cast<Utcb *>(Thread_base::myself()->utcb());
+			_copy_state(utcb);
+			_state.thread.ip     = utcb->ip;
+			_state.thread.sp     = utcb->sp;
+			_state.thread.eflags = utcb->flags;
+			_state.block();
+		}
+		PDBG("is_worker: %u, in_syscall: %u, incoming_ipc: %u", is_worker, (bool)(*state & IN_SYSCALL), (bool)(*state & INCOMING_IPC));
+	}
+
+	return res;
 }
 
 

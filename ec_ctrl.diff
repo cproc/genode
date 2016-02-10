@@ -1,0 +1,83 @@
+in_ipc.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/syscall.hpp |    9 +++++++++
+ src/syscall.cpp     |   26 ++++++++++++++++++++++++--
+ 2 files changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/include/syscall.hpp b/include/syscall.hpp
+index 98bc68a..1d05701 100644
+--- a/include/syscall.hpp
++++ b/include/syscall.hpp
+@@ -179,6 +179,15 @@ class Sys_ec_ctrl : public Sys_regs
+ 
+         ALWAYS_INLINE
+         inline unsigned op() const { return flags() & 0x3; }
++
++        ALWAYS_INLINE
++        inline bool state_requested() const { return ARG_2 == 1; }
++
++        ALWAYS_INLINE
++        inline void set_state(bool in_syscall, bool incoming_ipc)
++        {
++            ARG_2 = ((incoming_ipc ? 1 : 0) << 1) | (in_syscall ? 1 : 0);
++        }
+ };
+ 
+ class Sys_sc_ctrl : public Sys_regs
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 8546b19..845a548 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -528,6 +528,7 @@ void Ec::sys_create_sm()
+ 
+ void Ec::sys_revoke()
+ {
++Console::print("revoke");
+     Sys_revoke *r = static_cast<Sys_revoke *>(current->sys_regs());
+ 
+     trace (TRACE_SYSCALL, "EC:%p SYS_REVOKE", current);
+@@ -567,7 +568,7 @@ void Ec::sys_revoke()
+             sm->add_to_rcu();
+         }
+     }
+-
++Console::print("revoke finished");
+     sys_finish<Sys_regs::SUCCESS>();
+ }
+ 
+@@ -609,9 +610,30 @@ void Ec::sys_ec_ctrl()
+ 
+         ec->regs.set_hazard (HZD_RECALL);
+ 
+-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
++        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec) {
+             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
++            if (r->state_requested()) {
++                Console::print("timeout");
++                sys_finish<Sys_regs::COM_TIM>();
++            }
++   	    }
++    }
+ 
++    if (r->state_requested()) {
++        //Console::print("%u: ec: %p, cpu: %u, ipc: in: %p, out: %p", Cpu::id, ec, ec->cpu, ec->rcap, ec->partner);
++        Console::print("%u: in syscall: %u, IP in kernel: %lx, %lx", ec->cpu, ec->cont != ret_user_iret, ec->regs.REG(ip), ec->regs.ARG_IP);
++        if (current->utcb) {
++            if (ec->cont != ret_user_iret) {
++                ec->regs.REG(ip) = ec->regs.ARG_IP;
++                ec->regs.REG(sp) = ec->regs.ARG_SP;
++            }
++            /* the 'if' avoids an "unused result" warning */
++            if (current->utcb->load_exc (&ec->regs)) {}
++		}
++        /*
++         * An interrupted thread was most likely not in a syscall (possible exception: revoke?).
++         */
++       r->set_state(ec->cont != ret_user_iret, ec->rcap != nullptr);
+     }
+ }
+             break;
