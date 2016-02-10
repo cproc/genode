@@ -29,10 +29,12 @@ class Genode::Core_console : public X86_uart_base, public Console
 
 		void _out_char(char c)
 		{
+#if 0
 			if (c == '\n')
 				put_char('\r');
 
 			put_char(c);
+#endif
 		}
 
 	public:

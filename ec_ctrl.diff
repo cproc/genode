@@ -1,0 +1,122 @@
+in_ipc.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/syscall.hpp |    9 +++++++++
+ src/ec.cpp          |   22 +++++++++++++++++++---
+ src/syscall.cpp     |   29 +++++++++++++++++++++++++++--
+ 3 files changed, 55 insertions(+), 5 deletions(-)
+
+diff --git a/include/syscall.hpp b/include/syscall.hpp
+index 98bc68a..1d05701 100644
+--- a/include/syscall.hpp
++++ b/include/syscall.hpp
+@@ -179,6 +179,15 @@ class Sys_ec_ctrl : public Sys_regs
+ 
+         ALWAYS_INLINE
+         inline unsigned op() const { return flags() & 0x3; }
++
++        ALWAYS_INLINE
++        inline bool state_requested() const { return ARG_2 == 1; }
++
++        ALWAYS_INLINE
++        inline void set_state(bool in_syscall, bool incoming_ipc)
++        {
++            ARG_2 = ((incoming_ipc ? 1 : 0) << 1) | (in_syscall ? 1 : 0);
++        }
+ };
+ 
+ class Sys_sc_ctrl : public Sys_regs
+diff --git a/src/ec.cpp b/src/ec.cpp
+index a52560c..21ea886 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -212,8 +212,15 @@ void Ec::handle_hazard (mword hzd, void (*func)())
+             send_msg<ret_user_vmrun>();
+         }
+ 
+-        if (func == ret_user_sysexit)
++		if (Cpu::id == 1) {
++			Console::print("recall");
++		}
++
++        if (func == ret_user_sysexit) {
++        	if (Cpu::id == 1)
++        		Console::print("redirect_to_iret()");
+             current->redirect_to_iret();
++        }
+ 
+         current->regs.dst_portal = NUM_EXC - 1;
+         send_msg<ret_user_iret>();
+@@ -253,8 +260,12 @@ void Ec::handle_hazard (mword hzd, void (*func)())
+ void Ec::ret_user_sysexit()
+ {
+     mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_DS_ES | HZD_SCHED);
+-    if (EXPECT_FALSE (hzd))
++    if (EXPECT_FALSE (hzd)) {
++    	if ((Cpu::id == 1) && (hzd & HZD_RECALL))
++	        Console::print("ret_user_sysexit: in syscall: %u, IP in kernel: %lx, %lx",
++                           current->cont != ret_user_iret, current->regs.REG(ip), current->regs.ARG_IP);
+         handle_hazard (hzd, ret_user_sysexit);
++    }
+ 
+     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current->regs) : "memory");
+ 
+@@ -265,8 +276,13 @@ void Ec::ret_user_iret()
+ {
+     // No need to check HZD_DS_ES because IRET will reload both anyway
+     mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_SCHED);
+-    if (EXPECT_FALSE (hzd))
++    if (EXPECT_FALSE (hzd)) {
++    	if ((Cpu::id == 1) && (hzd & HZD_RECALL))
++	        Console::print("ret_user_iret: in syscall: %u, IP in kernel: %lx, %lx",
++                           current->cont != ret_user_iret, current->regs.REG(ip), current->regs.ARG_IP);
++
+         handle_hazard (hzd, ret_user_iret);
++    }
+ 
+     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG RET_USER_EXC) : : "m" (current->regs) : "memory");
+ 
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 8546b19..d6ca44f 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -609,9 +609,34 @@ void Ec::sys_ec_ctrl()
+ 
+         ec->regs.set_hazard (HZD_RECALL);
+ 
+-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
++        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec) {
+             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
+-
++            if (r->state_requested()) {
++                Console::print("timeout");
++                sys_finish<Sys_regs::COM_TIM>();
++            }
++   	    }
++    }
++
++    if (r->state_requested()) {
++        //Console::print("%u: ec: %p, cpu: %u, ipc: in: %p, out: %p", Cpu::id, ec, ec->cpu, ec->rcap, ec->partner);
++        Console::print("%u: in syscall: %u, IP in kernel: %lx, %lx", ec->cpu, ec->cont != ret_user_iret, ec->regs.REG(ip), ec->regs.ARG_IP);
++        if ((ec->cont == ret_user_iret) && (ec->regs.REG(ip) >= 0x800000) && (ec->regs.REG(ip) < 0x800100))
++        	Console::print("RAX: %lx, RBX: %lx, RCX: %lx, RDX: %lx, RSI: %lx, RDI: %lx, RBP: %lx, RSP: %lx",
++        	               ec->regs.REG(ax), ec->regs.REG(bx), ec->regs.REG(cx), ec->regs.REG(dx), ec->regs.REG(si), ec->regs.REG(di),
++        	               ec->regs.REG(bp), ec->regs.REG(sp));
++        if (current->utcb) {
++            if (ec->cont != ret_user_iret) {
++                ec->regs.REG(ip) = ec->regs.ARG_IP;
++                ec->regs.REG(sp) = ec->regs.ARG_SP;
++            }
++            /* the 'if' avoids an "unused result" warning */
++            if (current->utcb->load_exc (&ec->regs)) {}
++		}
++        /*
++         * An interrupted thread was most likely not in a syscall (possible exception: revoke?).
++         */
++       r->set_state(ec->cont != ret_user_iret, ec->rcap != nullptr);
+     }
+ }
+             break;

@@ -32,9 +32,9 @@ class Sampling_cpu_service::Thread_data
 	private:
 
 		enum {
-			LABEL_LEN = 128,                     /* number of characters of 'Session_label' */
+			LABEL_LEN = 128,                      /* number of characters of 'Session_label' */
 			SAMPLE_BUF_SIZE = 4096,
-			SAMPLE_SIZE = 2 * sizeof(addr_t)+ 1, /* number of hex characters + newline */
+			SAMPLE_SIZE = 2 * sizeof(addr_t) + 1, /* number of hex characters + newline */
 		};
 
 		Cpu_session_component &_cpu_session_component;

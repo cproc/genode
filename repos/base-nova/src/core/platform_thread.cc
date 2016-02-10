@@ -217,19 +217,31 @@ Native_capability Platform_thread::pause()
 		return notify_sm;
 	}
 
-	if (_pager->client_recall() != Nova::NOVA_OK) {
-		PDBG("recall failed");
+	unsigned long state = 0;
+
+	PDBG("calling client_recall()");
+
+	uint8_t res = _pager->client_recall(&state, is_worker());
+
+	if (res != Nova::NOVA_OK) {
+
+		if (res == Nova::NOVA_TIMEOUT)
+			PDBG("timeout");
+		else
+			PDBG("recall failed");
+
 		return Native_capability();
 	}
 
-	/* If the thread is blocked in its own SM, get him out */
-	cancel_blocking();
+	enum { IN_SYSCALL = 1, INCOMING_IPC = 2 };
 
-	/* local thread may never get be canceled if it doesn't receive an IPC */
-	if (is_worker()) {
-		PDBG("is_worker()");
+	//if ((state & IN_SYSCALL) || (is_worker() && !(state & INCOMING_IPC))) {
+		/*
+		 * The thread might be blocked in the kernel for a long time, can't
+		 * wait for the recall handler.
+		 */
 		return Native_capability();
-	}
+	//}
 
 	return notify_sm;
 }
@@ -264,11 +276,6 @@ Thread_state Platform_thread::state()
 
 	if (_pager->copy_thread_state(&s))
 		return s;
-
-	if (is_worker()) {
-		s.sp = _pager->initial_esp();
-		return s;
-	}
 
 	throw Cpu_session::State_access_failed();
 }
