@@ -1,0 +1,228 @@
+ec_ctrl.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/ec.hpp      |    7 +++++++
+ include/syscall.hpp |    9 +++++++++
+ src/console.cpp     |    2 ++
+ src/ec.cpp          |   27 ++++++++++++++++++++++++---
+ src/sc.cpp          |    6 +++++-
+ src/syscall.cpp     |   48 +++++++++++++++++++++++++++++++++++++++++++++---
+ 6 files changed, 92 insertions(+), 7 deletions(-)
+
+diff --git a/include/ec.hpp b/include/ec.hpp
+index ef1f715..38c0be9 100644
+--- a/include/ec.hpp
++++ b/include/ec.hpp
+@@ -451,4 +451,11 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
+ 
+         template <void(*C)()>
+         static void check(mword, bool = true);
++
++        ALWAYS_INLINE
++        inline bool in_syscall()
++        {
++        	/* TODO: check if xcpu_return is correct here */
++			return ((cont != ret_user_iret) && (cont != recv_kern) && (cont != xcpu_return));
++        }
+ };
+diff --git a/include/syscall.hpp b/include/syscall.hpp
+index 98bc68a..1d05701 100644
+--- a/include/syscall.hpp
++++ b/include/syscall.hpp
+@@ -179,6 +179,15 @@ class Sys_ec_ctrl : public Sys_regs
+ 
+         ALWAYS_INLINE
+         inline unsigned op() const { return flags() & 0x3; }
++
++        ALWAYS_INLINE
++        inline bool state_requested() const { return ARG_2 == 1; }
++
++        ALWAYS_INLINE
++        inline void set_state(bool in_syscall, bool incoming_ipc)
++        {
++            ARG_2 = ((incoming_ipc ? 1 : 0) << 1) | (in_syscall ? 1 : 0);
++        }
+ };
+ 
+ class Sys_sc_ctrl : public Sys_regs
+diff --git a/src/console.cpp b/src/console.cpp
+index fc20d2b..b68d74d 100644
+--- a/src/console.cpp
++++ b/src/console.cpp
+@@ -176,12 +176,14 @@ void Console::print (char const *format, ...)
+ {
+     Lock_guard <Spinlock> guard (lock);
+ 
++#if 0
+     for (Console *c = list; c; c = c->next) {
+         va_list args;
+         va_start (args, format);
+         c->vprintf (format, args);
+         va_end (args);
+     }
++#endif
+ }
+ 
+ void Console::panic (char const *format, ...)
+diff --git a/src/ec.cpp b/src/ec.cpp
+index a52560c..536dd68 100644
+--- a/src/ec.cpp
++++ b/src/ec.cpp
+@@ -212,8 +212,16 @@ void Ec::handle_hazard (mword hzd, void (*func)())
+             send_msg<ret_user_vmrun>();
+         }
+ 
+-        if (func == ret_user_sysexit)
++		if (Cpu::id == 1) {
++			Console::print("%u: recall", Cpu::id);
++		}
++
++        if (func == ret_user_sysexit) {
++        	if (Cpu::id == 1) {
++        		Console::print("%u: redirect_to_iret()", Cpu::id);
++        	}
+             current->redirect_to_iret();
++        }
+ 
+         current->regs.dst_portal = NUM_EXC - 1;
+         send_msg<ret_user_iret>();
+@@ -253,8 +261,14 @@ void Ec::handle_hazard (mword hzd, void (*func)())
+ void Ec::ret_user_sysexit()
+ {
+     mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_DS_ES | HZD_SCHED);
+-    if (EXPECT_FALSE (hzd))
++    if (EXPECT_FALSE (hzd)) {
++    	if ((hzd & HZD_RECALL)) {
++    		if (Cpu::id == 1)
++		        Console::print("%u: ret_user_sysexit: current: %p, in syscall: %u, IP in kernel: %lx, %lx",
++    	                       Cpu::id, current, current->in_syscall(), current->regs.REG(ip), current->regs.ARG_IP);
++        }
+         handle_hazard (hzd, ret_user_sysexit);
++    }
+ 
+     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR RET_USER_HYP) : : "m" (current->regs) : "memory");
+ 
+@@ -265,8 +279,15 @@ void Ec::ret_user_iret()
+ {
+     // No need to check HZD_DS_ES because IRET will reload both anyway
+     mword hzd = (Cpu::hazard | current->regs.hazard()) & (HZD_RECALL | HZD_STEP | HZD_RCU | HZD_FPU | HZD_SCHED);
+-    if (EXPECT_FALSE (hzd))
++    if (EXPECT_FALSE (hzd)) {
++    	if ((hzd & HZD_RECALL)) {
++    		if (Cpu::id == 1)
++		        Console::print("%u: ret_user_iret: current: %p, in syscall: %u, IP in kernel: %lx, %lx, cont: %p",
++    	                       Cpu::id, current, current->in_syscall(), current->regs.REG(ip), current->regs.ARG_IP, current->cont);
++        }
++
+         handle_hazard (hzd, ret_user_iret);
++    }
+ 
+     asm volatile ("lea %0," EXPAND (PREG(sp); LOAD_GPR LOAD_SEG RET_USER_EXC) : : "m" (current->regs) : "memory");
+ 
+diff --git a/src/sc.cpp b/src/sc.cpp
+index 31dfc64..1d31a7d 100644
+--- a/src/sc.cpp
++++ b/src/sc.cpp
+@@ -188,8 +188,12 @@ void Sc::rrq_handler()
+ 
+ void Sc::rke_handler()
+ {
+-    if (Pd::current->Space_mem::htlb.chk (Cpu::id))
++	Console::print("%u: rke_handler(): current: %p, cont: %p, rcap: %p, partner: %p, IP: %lx/%lx",
++	               Cpu::id, Ec::current, Ec::current->cont, Ec::current->rcap, Ec::current->partner, Ec::current->regs.REG(ip), Ec::current->regs.ARG_IP);
++    if (Pd::current->Space_mem::htlb.chk (Cpu::id)) {
++    	Console::print("%u: rke_handler(): HZD_SCHED", Cpu::id);
+         Cpu::hazard |= HZD_SCHED;
++    }
+ }
+ 
+ void Sc::operator delete (void *ptr) { cache.free (ptr, static_cast<Sc *>(ptr)->ec->pd->quota); }
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 8546b19..fcdbe33 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -33,6 +33,8 @@
+ #include "utcb.hpp"
+ #include "vectors.hpp"
+ 
++static Ec *target_ec = 0;
++
+ template <Sys_regs::Status S, bool T>
+ void Ec::sys_finish()
+ {
+@@ -103,8 +105,13 @@ void Ec::send_msg()
+     Pt *pt = static_cast<Pt *>(obj);
+     Ec *ec = pt->ec;
+ 
+-    if (EXPECT_FALSE (current->cpu != ec->xcpu))
++    if (EXPECT_FALSE (current->cpu != ec->xcpu)) {
++    	Console::print("%u: current: %p, ec: %p, current->cpu: %u, ec->xcpu: %u, C: %p",  Cpu::id, current, ec, current->cpu, ec->xcpu, C);
+         die ("PT wrong CPU");
++    }
++
++	//if ((current == target_ec) || (ec == target_ec))
++		//Console::print("%u: %s: current: %p, ec: %p", Cpu::id, __PRETTY_FUNCTION__, current, ec);
+ 
+     if (EXPECT_TRUE (!ec->cont)) {
+         current->cont = C;
+@@ -225,6 +232,12 @@ void Ec::sys_reply()
+     Ec *ec = current->rcap;
+     Sm *sm = nullptr;
+ 
++	if ((Cpu::id == 1) && (target_ec) /*&& (ec == target_ec)*/) {
++		/* return from pager (recall handler) */
++        Sys_reply *r = static_cast<Sys_reply *>(current->sys_regs());
++		Console::print("%u: reply(): current: %p, ec: %p, current->cont: %p, ec->cont: %p, r->sm: %lx", Cpu::id, current, ec, current->cont, ec->cont, r->sm());
++	}
++
+     if (EXPECT_TRUE (ec)) {
+ 
+         enum { SYSCALL_REPLY = 1 };
+@@ -605,13 +618,42 @@ void Ec::sys_ec_ctrl()
+ 
+     Ec *ec = static_cast<Ec *>(cap.obj());
+ 
++	if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec && r->state_requested())
++    	Console::print("%u: (1) ec: %p on CPU %u: timeout, cont: %p, rcap: %p, partner: %p, IP: %lx/%lx", Cpu::id, ec, ec->cpu, ec->cont, ec->rcap, ec->partner, ec->regs.REG(ip), ec->regs.ARG_IP);
++
+     if (!(ec->regs.hazard() & HZD_RECALL)) {
+ 
+         ec->regs.set_hazard (HZD_RECALL);
+ 
+-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
++        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec) {
+             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
+-
++            if (r->state_requested()) {
++        		target_ec = ec;
++                Console::print("%u: (2) ec: %p on CPU %u: timeout, cont: %p, rcap: %p, partner: %p, IP: %lx/%lx", Cpu::id, ec, ec->cpu, ec->cont, ec->rcap, ec->partner, ec->regs.REG(ip), ec->regs.ARG_IP);
++                sys_finish<Sys_regs::COM_TIM>();
++            }
++   	    }
++    }
++
++    if (r->state_requested()) {
++        //Console::print("%u: ec: %p, cpu: %u, ipc: in: %p, out: %p", Cpu::id, ec, ec->cpu, ec->rcap, ec->partner);
++        Console::print("%u: ec: %p on CPU %u: in syscall: %u, IP in kernel: %lx, %lx", Cpu::id, ec, ec->cpu, ec->in_syscall(), ec->regs.REG(ip), ec->regs.ARG_IP);
++        if ((ec->cont == ret_user_iret) && (ec->regs.REG(ip) >= 0x800000) && (ec->regs.REG(ip) < 0x800100))
++        	Console::print("%u: RAX: %lx, RBX: %lx, RCX: %lx, RDX: %lx, RSI: %lx, RDI: %lx, RBP: %lx, RSP: %lx",
++        	               ec->cpu, ec->regs.REG(ax), ec->regs.REG(bx), ec->regs.REG(cx), ec->regs.REG(dx), ec->regs.REG(si), ec->regs.REG(di),
++        	               ec->regs.REG(bp), ec->regs.REG(sp));
++        if (current->utcb) {
++            if (ec->in_syscall()) {
++                ec->regs.REG(ip) = ec->regs.ARG_IP;
++                ec->regs.REG(sp) = ec->regs.ARG_SP;
++            }
++            /* the 'if' avoids an "unused result" warning */
++            if (current->utcb->load_exc (&ec->regs)) {}
++		}
++        /*
++         * An interrupted thread was most likely not in a syscall (possible exception: revoke?).
++         */
++       r->set_state(ec->in_syscall(), ec->rcap != nullptr);
+     }
+ }
+             break;

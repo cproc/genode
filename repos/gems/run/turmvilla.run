@@ -921,8 +921,8 @@ set config {
 			</vfs>
 		</config>
 		<route>
-			<!--<service name="CPU" label="cpu_load_display"> <child name="sampling_cpu_service"/> </service>
-			<service name="CPU" label="noux"> <child name="sampling_cpu_service"/> </service>-->
+			<!--<service name="CPU" label="cpu_load_display"> <child name="sampling_cpu_service"/> </service>-->
+			<service name="CPU" label="noux"> <child name="sampling_cpu_service"/> </service>
 			<service name="CPU" label_prefix="linux"> <child name="sampling_cpu_service"/> </service>
 
 			<service name="File_system" label_prefix="noux" label_suffix="-> genode">

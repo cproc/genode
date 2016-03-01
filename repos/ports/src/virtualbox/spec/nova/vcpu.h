@@ -925,7 +925,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<pthread>,
 			/* XXX see VMM/VMMR0/HMVMXR0.cpp - not necessary every time ! XXX */
 			REMFlushTBs(pVM);
 #endif
-			while(1);
+			//while(1);
+
 			return vm_exit_requires_instruction_emulation() ? VINF_EM_RAW_EMULATE_INSTR
 			                                                : VINF_SUCCESS;
 		}
