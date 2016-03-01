@@ -206,7 +206,7 @@ int Platform_thread::start(void *ip, void *sp)
 
 void Platform_thread::pause()
 {
-	PDBG("pause()");
+	PDBG("%p: pause()", this);
 
 	if (!_pager) {
 		PDBG("!_pager");
@@ -221,7 +221,7 @@ void Platform_thread::resume()
 {
 	using namespace Nova;
 
-	PDBG("resume()");
+	PDBG("%p: resume()", this);
 
 	if (!is_worker()) {
 		uint8_t res;
