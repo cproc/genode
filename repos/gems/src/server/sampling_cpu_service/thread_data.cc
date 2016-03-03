@@ -125,12 +125,11 @@ PDBG("state() returned");
 			format_string = "%8X\n";
 
 		snprintf(&_sample_buf[_sample_buf_index], SAMPLE_SIZE + 1,
-	         	 format_string, thread_state.ip);
-
+		         format_string, thread_state.ip);
+PDBG("IP: %s", &_sample_buf[_sample_buf_index]);
+		_sample_buf_index += SAMPLE_SIZE;
 		if (_sample_buf_index + SAMPLE_SIZE + 1 >= SAMPLE_BUF_SIZE)
 			flush();
-		else
-			_sample_buf_index += SAMPLE_SIZE;
 PDBG("calling resume()");
 		_cpu_session_component.resume(_thread_cap);
 PDBG("resume() returned");

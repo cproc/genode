@@ -129,6 +129,10 @@ class Malloc : public Genode::Allocator
 
 			*(Block_header *)addr = real_size;
 			*out_addr = (Block_header *)addr + 1;
+
+			if (((unsigned long)*out_addr <= 0x800000) && ((unsigned long)*out_addr + size >= 0x800000))
+				PDBG("#### %p", *out_addr);
+
 			return true;
 		}
 

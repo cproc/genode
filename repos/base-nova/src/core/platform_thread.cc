@@ -204,40 +204,24 @@ int Platform_thread::start(void *ip, void *sp)
 }
 
 
-Native_capability Platform_thread::pause()
+void Platform_thread::pause()
 {
+	PDBG("pause()");
+
 	if (!_pager) {
 		PDBG("!_pager");
-		return Native_capability();
+		return;
 	}
 
-	Native_capability notify_sm = _pager->notify_sm();
-	if (!notify_sm.valid()) {
-		PDBG("!notify_sm.valid()");
-		return notify_sm;
-	}
-
-	if (_pager->client_recall() != Nova::NOVA_OK) {
-		PDBG("recall failed");
-		return Native_capability();
-	}
-
-	/* If the thread is blocked in its own SM, get him out */
-	cancel_blocking();
-
-	/* local thread may never get be canceled if it doesn't receive an IPC */
-	if (is_worker()) {
-		PDBG("is_worker()");
-		return Native_capability();
-	}
-
-	return notify_sm;
+	_pager->client_recall(true);
 }
 
 
 void Platform_thread::resume()
 {
 	using namespace Nova;
+
+	PDBG("resume()");
 
 	if (!is_worker()) {
 		uint8_t res;
@@ -269,11 +253,6 @@ Thread_state Platform_thread::state()
 
 	if (_pager->copy_thread_state(&s))
 		return s;
-
-	if (is_worker()) {
-		s.sp = _pager->initial_esp();
-		return s;
-	}
 
 	throw Cpu_session::State_access_failed();
 }
@@ -312,15 +291,11 @@ void Platform_thread::cancel_blocking()
 }
 
 
-Native_capability Platform_thread::single_step(bool on)
+void Platform_thread::single_step(bool on)
 {
-	if (!_pager) return Native_capability();
+	if (!_pager) return;
 
-	Native_capability cap = _pager->single_step(on);
-
-	if (is_worker()) return Native_capability();
-
-	return cap;
+	_pager->single_step(on);
 }
 
 
