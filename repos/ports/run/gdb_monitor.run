@@ -129,10 +129,11 @@ append gdb_cmds [gdb_main_breakpoint_cmds $gdb_target_binary]
 
 # run GDB and redirect stderr to stdio to get the relevant output into the expect buffer  
 eval spawn [gdb] bin/$gdb_target_binary -n $gdb_cmds 2&>1
+set gdb_id $spawn_id
 
 # test: breakpoint in 'main()'
 
-run_genode_until {\(gdb\)} 60 $spawn_id
+run_genode_until {\(gdb\)} 60 $gdb_id
 
 if {![regexp {Breakpoint 2, main ()} $output]} {
 	puts stderr "Error: Breakpoint in main() did not trigger"
@@ -142,9 +143,9 @@ if {![regexp {Breakpoint 2, main ()} $output]} {
 # test: breakpoint in shared library
 
 send "b puts\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 send "c\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {Breakpoint 3, puts ()} $output]} {
 	puts "Error: Breakpoint in shared library did not trigger"
@@ -154,7 +155,7 @@ if {![regexp {Breakpoint 3, puts ()} $output]} {
 # test: stack trace when not in syscall
 
 send "bt\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {#0  puts} $output] ||
     ![regexp {in func2()} $output] ||
@@ -168,7 +169,7 @@ if {![regexp {#0  puts} $output] ||
 # test: modify variable
 
 send "print test_var\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {\$1 = 1} $output]} {
 	puts stderr "Error: first 'print test_var' command didn't result in the expected output"
@@ -176,10 +177,10 @@ if {![regexp {\$1 = 1} $output]} {
 }
 
 send "set var test_var=2\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 send "print test_var\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {\$2 = 2} $output]} {
 	puts stderr "Error: second 'print test_var' command didn't result in the expected output"
@@ -190,7 +191,7 @@ if {![regexp {\$2 = 2} $output]} {
 
 if {![have_spec nova]} {
 	send "call test_var_func()\n"
-	run_genode_until {\(gdb\)} 60 $spawn_id
+	run_genode_until {\(gdb\)} 60 $gdb_id
 
 	if {![regexp {\$3 = 3} $output]} {
 		puts stderr "Error: 'call' command didn't result in the expected output"
@@ -201,10 +202,10 @@ if {![have_spec nova]} {
 # test: thread info
 
 send "b Test_thread::entry()\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 send "c\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {Breakpoint 4, Test_thread::entry()} $output]} {
 	puts stderr "Error: Breakpoint in test thread did not trigger"
@@ -212,7 +213,7 @@ if {![regexp {Breakpoint 4, Test_thread::entry()} $output]} {
 }
 
 send "info threads\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {\* 2    Thread 2          Test_thread::entry} $output] || 
     ![regexp {  1    Thread 1} $output]} {
@@ -223,10 +224,10 @@ if {![regexp {\* 2    Thread 2          Test_thread::entry} $output] ||
 # test: step into function
 
 send "step\n"
-run_genode_until {\(gdb\)} 30 $spawn_id
+run_genode_until {\(gdb\)} 30 $gdb_id
 
 send "thread 2\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {Test_thread::step_func} $output]} {
 	puts stderr "Error: Step into function didn't result in the expected output"
@@ -236,7 +237,7 @@ if {![regexp {Test_thread::step_func} $output]} {
 # test: catch segmentation fault
 
 send "c\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {Program received signal SIGSEGV, Segmentation fault.} $output]} {
 	puts stderr "Error: Segmentation fault exception was not catched"
@@ -246,10 +247,10 @@ if {![regexp {Program received signal SIGSEGV, Segmentation fault.} $output]} {
 # test: stack trace when in syscall
 
 send "thread 1\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 send "bt\n"
-run_genode_until {\(gdb\)} 20 $spawn_id
+run_genode_until {\(gdb\)} 20 $gdb_id
 
 if {![regexp {Genode::Cancelable_lock::lock\(\)} $output] ||
     ![regexp {Genode::Thread_base::join\(\)} $output] ||
