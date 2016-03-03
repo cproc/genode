@@ -33,6 +33,7 @@ extern void (*libc_select_notify)();
 
 namespace Libc_pipe {
 
+	using namespace Genode;
 
 	enum Type { READ_END, WRITE_END };
 	enum { PIPE_BUF_SIZE = 4096 };
