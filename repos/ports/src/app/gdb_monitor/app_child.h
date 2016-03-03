@@ -64,12 +64,12 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 		Rm_root                       _rm_root;
 		Rm_session_capability         _rm_session_cap;
 
-		Pd_connection                 _pd;
-
 		Cpu_root                      _cpu_root;
 		Cpu_session_capability        _cpu_session_cap;
 
 		Ram_session_capability        _ram_session_cap;
+
+		Pd_connection                 _pd;
 
 		Child                         _child;
 
