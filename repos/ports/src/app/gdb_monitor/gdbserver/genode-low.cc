@@ -107,6 +107,7 @@ extern "C" void genode_detect_all_threads()
 
 extern "C" void genode_stop_all_threads()
 {
+PDBG("genode_stop_all_threads()");
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->first();
@@ -120,6 +121,7 @@ extern "C" void genode_stop_all_threads()
 
 extern "C" void genode_resume_all_threads()
 {
+PDBG("genode_resume_all_threads()");
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->first();
@@ -152,6 +154,7 @@ int genode_kill(int pid)
 
 void genode_interrupt_thread(unsigned long lwpid)
 {
+	PDBG("genode_interrupt_thread()");
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
@@ -167,6 +170,7 @@ void genode_interrupt_thread(unsigned long lwpid)
 
 void genode_continue_thread(unsigned long lwpid, int single_step)
 {
+PDBG("genode_continue_thread()");
 	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);

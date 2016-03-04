@@ -67,15 +67,7 @@ Thread_capability
 Cpu_session_component::create_thread(size_t weight, Name const &name,
                                      addr_t utcb)
 {
-	Thread_capability thread_cap =
-		_parent_cpu_session.create_thread(weight, name.string(), utcb);
-
-	if (thread_cap.valid()) {
-		Thread_info *thread_info = new (env()->heap()) Thread_info(thread_cap, new_lwpid++);
-		_thread_list.append(thread_info);
-	}
-
-	return thread_cap;
+	return _parent_cpu_session.create_thread(weight, name.string(), utcb);
 }
 
 
@@ -131,6 +123,11 @@ int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
+
+	if (!thread_info && thread_cap.valid()) {
+		thread_info = new (env()->heap()) Thread_info(thread_cap, new_lwpid++);
+		_thread_list.append(thread_info);
+	}
 
 	if (thread_info)
 		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));

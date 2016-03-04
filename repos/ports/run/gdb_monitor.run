@@ -129,7 +129,7 @@ append gdb_cmds [gdb_main_breakpoint_cmds $gdb_target_binary]
 
 # run GDB and redirect stderr to stdio to get the relevant output into the expect buffer  
 eval spawn [gdb] bin/$gdb_target_binary -n $gdb_cmds 2&>1
-set gdb_id $spawn_id
+set gdb_id [list $spawn_id $genode_id]
 
 puts ""
 puts "----- test: breakpoint in 'main()' -----"
