@@ -1,0 +1,79 @@
+ec_ctrl.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/ec.hpp      |    6 ++++++
+ include/syscall.hpp |    3 +++
+ src/syscall.cpp     |   26 +++++++++++++++++++++++++-
+ 3 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/include/ec.hpp b/include/ec.hpp
+index ef1f715..56b905b 100644
+--- a/include/ec.hpp
++++ b/include/ec.hpp
+@@ -451,4 +451,10 @@ class Ec : public Kobject, public Refcount, public Queue<Sc>
+ 
+         template <void(*C)()>
+         static void check(mword, bool = true);
++
++        ALWAYS_INLINE
++        inline bool in_syscall()
++        {
++			return ((cont != ret_user_iret) && (cont != recv_kern));
++        }
+ };
+diff --git a/include/syscall.hpp b/include/syscall.hpp
+index 98bc68a..32d461e 100644
+--- a/include/syscall.hpp
++++ b/include/syscall.hpp
+@@ -179,6 +179,9 @@ class Sys_ec_ctrl : public Sys_regs
+ 
+         ALWAYS_INLINE
+         inline unsigned op() const { return flags() & 0x3; }
++
++        ALWAYS_INLINE
++        inline bool state_requested() const { return ARG_2 == 1; }
+ };
+ 
+ class Sys_sc_ctrl : public Sys_regs
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 8546b19..82f6325 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -609,9 +609,33 @@ void Ec::sys_ec_ctrl()
+ 
+         ec->regs.set_hazard (HZD_RECALL);
+ 
+-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
++        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec) {
+             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
++            if (r->state_requested())
++                sys_finish<Sys_regs::COM_TIM>();
++   	    }
++    }
++
++    if (r->state_requested() && current->utcb) {
++
++       	Cpu_regs regs(ec->regs);
++
++       	regs.mtd = Mtd::GPR_ACDB |
++       	           Mtd::GPR_BSD |
++#ifdef __x86_64__
++                   Mtd::GPR_R8_R15 |
++#endif
++       	           Mtd::RSP |
++       	           Mtd::RIP_LEN |
++       	           Mtd::RFLAGS;
++
++        if (ec->in_syscall()) {
++            regs.REG(ip) = ec->regs.ARG_IP;
++            regs.REG(sp) = ec->regs.ARG_SP;
++        }
+ 
++        /* the 'if' avoids an "unused result" warning */
++        if (current->utcb->load_exc (&regs)) {}
+     }
+ }
+             break;
