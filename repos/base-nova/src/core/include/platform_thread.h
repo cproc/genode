@@ -88,7 +88,7 @@ namespace Genode {
 			/**
 			 * Pause this thread
 			 */
-			Native_capability pause();
+			void pause();
 
 			/**
 			 * Resume this thread
@@ -164,7 +164,7 @@ namespace Genode {
 				if (main_thread) _features |= MAIN_THREAD;
 			}
 
-			Native_capability single_step(bool on);
+			void single_step(bool on);
 
 			/**
 			 * Set CPU quota of the thread to 'quota'

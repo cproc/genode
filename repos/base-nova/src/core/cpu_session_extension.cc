@@ -11,41 +11,18 @@
  * under the terms of the GNU General Public License version 2.
  */
 
-/* Genode includes */
-#include <base/stdint.h>
-
 /* Core includes */
 #include <cpu_session_component.h>
 
 using namespace Genode;
 
-
-Native_capability
-Cpu_session_component::pause_sync(Thread_capability thread_cap)
+void Cpu_session_component::single_step(Thread_capability thread_cap, bool enable)
 {
-	auto lambda = [] (Cpu_thread_component *thread) {
-		if (!thread || !thread->platform_thread())
-			return Native_capability();
+	auto lambda = [&] (Cpu_thread_component *thread) {
+		if (!thread) return;
 
-		return thread->platform_thread()->pause();
+		thread->platform_thread()->single_step(enable);
 	};
-	return _thread_ep->apply(thread_cap, lambda);
+	_thread_ep->apply(thread_cap, lambda);
 }
 
-
-Native_capability
-Cpu_session_component::single_step_sync(Thread_capability thread_cap, bool enable)
-{
-	using namespace Genode;
-
-	auto lambda = [enable] (Cpu_thread_component *thread) {
-		if (!thread || !thread->platform_thread())
-			return Native_capability();
-
-		return thread->platform_thread()->single_step(enable);
-	};
-	return _thread_ep->apply(thread_cap, lambda);
-}
-
-
-void Cpu_session_component::single_step(Thread_capability, bool) { return; }
