@@ -137,21 +137,16 @@ void Pager_object::exception(uint8_t exit_id)
 	uint8_t res        = 0xFF;
 	addr_t  mtd        = 0;
 
-	if (_state.skip_requested()) {
-		_state.skip_reset();
-
-		utcb->set_msg_word(0);
-		utcb->mtd = 0;
-		reply(myself->stack_top());
-	}
+	_state_lock.lock();
 
 	/* remember exception type for cpu_session()->state() calls */
 	_state.thread.trapno = exit_id;
-	_state.thread.ip     = fault_ip;
 
 	if (_exception_sigh.valid()) {
 		_state.submit_signal();
-		res = client_recall();
+		_state_lock.unlock();
+		res = client_recall(true);
+		_state_lock.lock();
 	}
 
 	if (res != NOVA_OK) {
@@ -174,6 +169,8 @@ void Pager_object::exception(uint8_t exit_id)
 		}
 	}
 
+	_state_lock.unlock();
+
 	utcb->set_msg_word(0);
 	utcb->mtd = mtd;
 
@@ -187,27 +184,7 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	Pager_object *    obj = reinterpret_cast<Pager_object *>(pager_obj);
 	Utcb         *   utcb = reinterpret_cast<Utcb *>(myself->utcb());
 
-	/* save state - can be requested via cpu_session->state */
-	obj->_copy_state(utcb);
-
-	obj->_state.thread.ip     = utcb->ip;
-	obj->_state.thread.sp     = utcb->sp;
-
-	obj->_state.thread.eflags = utcb->flags;
-
-	/* thread becomes blocked */
-	obj->_state.block();
-
-	/* deliver signal if it was requested */
-	if (obj->_state.to_submit())
-		obj->submit_exception_signal();
-
-	/* notify callers of cpu_session()->pause that the state is now valid */
-	if (obj->_state.notify_requested()) {
-		obj->_state.notify_cancel();
-		if (sm_ctrl(obj->sel_sm_notify(), SEMAPHORE_UP) != NOVA_OK)
-			PWRN("paused notification failed");
-	}
+	obj->_state_lock.lock();
 
 	/* switch on/off single step */
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
@@ -222,9 +199,22 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 			utcb->mtd = 0;
 	}
 
+	/* deliver signal if it was requested */
+	if (obj->_state.to_submit()) {
+		PDBG("submitting signal");
+		obj->submit_exception_signal();
+	}
+
 	/* block until cpu_session()->resume() respectively wake_up() call */
+
+	unsigned long sm = obj->_state.blocked() ? obj->sel_sm_block() : 0;
+
+	obj->_state_lock.unlock();
+
+	PDBG("recall handler");
+
 	utcb->set_msg_word(0);
-	reply(myself->stack_top(), obj->sel_sm_block());
+	reply(myself->stack_top(), sm);
 }
 
 
@@ -359,6 +349,10 @@ void Pager_object::_invoke_handler(addr_t pager_obj)
 
 void Pager_object::wake_up()
 {
+	PDBG("wake_up()");
+
+	Lock::Guard _state_lock_guard(_state_lock);
+
 	if (!_state.blocked())
 		return;
 
@@ -385,9 +379,28 @@ void Pager_object::client_cancel_blocking()
 }
 
 
-uint8_t Pager_object::client_recall()
+uint8_t Pager_object::client_recall(bool get_state_and_block)
 {
-	return ec_ctrl(EC_RECALL, _state.sel_client_ec);
+	Lock::Guard _state_lock_guard(_state_lock);
+
+	enum { STATE_REQUESTED = 1 };
+
+	uint8_t res = ec_ctrl(EC_RECALL, _state.sel_client_ec,
+	                      get_state_and_block ? STATE_REQUESTED : ~0UL);
+
+	if (res != NOVA_OK)
+		return res;
+
+	if (get_state_and_block) {
+		Utcb *utcb = reinterpret_cast<Utcb *>(Thread_base::myself()->utcb());
+		_copy_state(utcb);
+		_state.thread.ip     = utcb->ip;
+		_state.thread.sp     = utcb->sp;
+		_state.thread.eflags = utcb->flags;
+		_state.block();
+	}
+
+	return res;
 }
 
 
@@ -512,6 +525,7 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	addr_t pd_sel        = __core_pd_sel;
 	_state._status       = 0;
 	_state.sel_client_ec = Native_thread::INVALID_INDEX;
+	_state.block();
 
 	if (Native_thread::INVALID_INDEX == _selectors ||
 	    Native_thread::INVALID_INDEX == _client_exc_pt_sel)
@@ -561,12 +575,6 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	                    reinterpret_cast<addr_t>(_invoke_handler), this);
 	if (res != Nova::NOVA_OK) {
 		PERR("could not create pager cleanup portal, error = %u\n", res);
-		throw Rm_session::Invalid_thread();
-	}
-
-	/* used to notify caller of as soon as pause succeeded */
-	res = Nova::create_sm(sel_sm_notify(), pd_sel, 0);
-	if (res != Nova::NOVA_OK) {
 		throw Rm_session::Invalid_thread();
 	}
 
