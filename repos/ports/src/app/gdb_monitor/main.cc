@@ -27,7 +27,7 @@ extern "C" int  getpid()      { return -1; }
 extern "C" int  sigprocmask() { return -1; }
 extern "C" int _sigprocmask() { return -1; }
 
-extern "C" int gdbserver_main(const char *port);
+extern "C" int gdbserver_main(int argc, const char *argv[]);
 
 int main()
 {
@@ -39,5 +39,8 @@ int main()
 		PDBG("ld.lib.so not found");
 	}
 
-	return gdbserver_main("/dev/terminal");
+	int argc = 2;
+	const char *argv[] = { "gdbserver", "/dev/terminal" };
+
+	return gdbserver_main(argc, argv);
 }

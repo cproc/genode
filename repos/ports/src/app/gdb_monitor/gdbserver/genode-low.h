@@ -18,8 +18,6 @@
 #ifndef GENODE_LOW_H
 #define GENODE_LOW_H
 
-void *genode_start_inferior();
-
 void genode_wait_for_target_main_thread();
 #if 0
 void genode_detect_all_threads();

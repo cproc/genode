@@ -26,13 +26,17 @@ SRC_C   =  event-loop.c \
            tracepoint.c \
            utils.c
 
-SRC_C  +=  linux-low.c
+#SRC_C  +=  linux-low.c
 
-CC_OPT += -DGDBSERVER
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.3.1\"" -DREPORT_BUGS_TO="\"\""
+
+# needed for the DUMMY* macros
+CC_OPT_genode-low += -fpermissive
 
 CC_OPT_linux-low += -Wno-unused-function
 
 SRC_CC  =  genode-low.cc \
+           genode-low-cc.cc \
            cpu_session_component.cc \
            ram_session_component.cc \
            rm_session_component.cc \

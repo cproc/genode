@@ -1,0 +1,55 @@
+gdbserver_alternative_backend.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/server.c |    9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 37c5e7a..29818de 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2294,7 +2294,7 @@ handle_status (char *own_buf)
+ 	strcpy (own_buf, "W00");
+     }
+ }
+-#ifndef __GENODE__
++#ifdef __GENODE__ /* FIXME */
+ static void
+ gdbserver_version (void)
+ {
+@@ -2458,13 +2458,12 @@ join_inferiors_callback (struct inferior_list_entry *entry)
+ 
+ int
+ #ifdef __GENODE__
+-gdbserver_main(char *port)
++gdbserver_main(int argc, char *argv[])
+ #else
+ main (int argc, char *argv[])
+ #endif
+ {
+ fprintf(stderr, "gdbserver_main()\n");
+-#ifndef __GENODE__
+   int bad_attach;
+   int pid;
+   char *arg_end, *port;
+@@ -2598,7 +2597,7 @@ fprintf(stderr, "gdbserver_main()\n");
+       gdbserver_usage (stderr);
+       exit (1);
+     }
+-#endif
++
+ fprintf(stderr, "calling initialize_inferiors()\n");
+   initialize_inferiors ();
+   initialize_async_io ();
+@@ -2609,7 +2608,7 @@ fprintf(stderr, "calling initialize_inferiors()\n");
+   own_buf = xmalloc (PBUFSIZ + 1);
+   mem_buf = xmalloc (PBUFSIZ);
+ 
+-#ifndef __GENODE__
++#ifdef __GENODE__ /* FIXME */
+   if (pid == 0 && *next_arg != NULL)
+     {
+       int i, n;
