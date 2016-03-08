@@ -211,7 +211,7 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 
 	obj->_state_lock.unlock();
 
-	PDBG("recall handler");
+	PDBG("%p: recall handler(): %lu", obj, sm);
 
 	utcb->set_msg_word(0);
 	reply(myself->stack_top(), sm);
@@ -223,6 +223,8 @@ void Pager_object::_startup_handler(addr_t pager_obj)
 	Thread_base  *myself = Thread_base::myself();
 	Pager_object *   obj = reinterpret_cast<Pager_object *>(pager_obj);
 	Utcb         *  utcb = reinterpret_cast<Utcb *>(myself->utcb());
+
+PDBG("%p: _startup_handler(): IP: %lx, SP: %lx", obj, obj->_initial_eip, obj->_initial_esp);
 
 	utcb->ip  = obj->_initial_eip;
 	utcb->sp  = obj->_initial_esp;
@@ -355,7 +357,7 @@ void Pager_object::_invoke_handler(addr_t pager_obj)
 
 void Pager_object::wake_up()
 {
-	PDBG("wake_up()");
+	PDBG("%p: wake_up()", this);
 
 	Lock::Guard _state_lock_guard(_state_lock);
 
@@ -388,6 +390,8 @@ void Pager_object::client_cancel_blocking()
 uint8_t Pager_object::client_recall(bool get_state_and_block)
 {
 	Lock::Guard _state_lock_guard(_state_lock);
+
+	PDBG("%p: client_recall(): %u", this, get_state_and_block);
 
 	enum { STATE_REQUESTED = 1 };
 

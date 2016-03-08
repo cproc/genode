@@ -1,0 +1,26 @@
+nova_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/ec_exc.cpp |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/ec_exc.cpp b/src/ec_exc.cpp
+index 8f24cdc..53eb687 100644
+--- a/src/ec_exc.cpp
++++ b/src/ec_exc.cpp
+@@ -177,8 +177,11 @@ void Ec::handle_exc (Exc_regs *r)
+             break;
+     }
+ 
+-    if (r->user())
++    if (r->user()) {
++    	if (r->vec != 14)
++	    	Console::print("exception %u", r->vec);
+         send_msg<ret_user_iret>();
++    }
+ 
+     die ("EXC", r);
+ }
