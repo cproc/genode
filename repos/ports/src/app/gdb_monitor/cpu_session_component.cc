@@ -188,6 +188,7 @@ Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 
 Thread_capability Cpu_session_component::create_thread(size_t weight, Cpu_session::Name const &name, addr_t utcb)
 {
+PDBG("create_thread()");
 	Thread_capability thread_cap =
 		_parent_cpu_session.create_thread(weight, name.string(), utcb);
 
@@ -241,6 +242,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		/* register the exception handler */
 		exception_handler(thread_cap,
 		                  thread_info->exception_signal_context_cap());
+
+		PDBG("start() with single-step");
 
 		/* make the thread stop at the second instruction */
 		single_step(thread_cap, true);

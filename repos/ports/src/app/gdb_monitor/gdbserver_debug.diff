@@ -1,0 +1,40 @@
+gdbserver_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/server.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index d5d5c9a..085ec24 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -52,7 +52,7 @@ static char **program_argv, **wrapper_argv;
+ 
+ /* Enable miscellaneous debugging output.  The name is historical - it
+    was originally used to debug LinuxThreads support.  */
+-int debug_threads = 1;
++int debug_threads = /*1*/0;
+ 
+ /* Enable debugging of h/w breakpoint/watchpoint support.  */
+ int debug_hw_points;
+@@ -2799,7 +2799,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
+-  /*if (debug_threads)*/ printf("GDB command = %s\n", own_buf);
++  if (debug_threads) printf("GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3191,7 +3191,7 @@ process_serial_event (void)
+       own_buf[0] = '\0';
+       break;
+     }
+-  /*if (debug_threads)*/ printf("GDBserver response = %s\n", own_buf);
++  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else
