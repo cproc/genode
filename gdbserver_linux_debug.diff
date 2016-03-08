@@ -1,0 +1,63 @@
+gdbserver_linux_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-x86-low.c |    2 ++
+ gdb/gdbserver/server.c        |    7 +++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
+index 82dcf83..6278056 100644
+--- a/gdb/gdbserver/linux-x86-low.c
++++ b/gdb/gdbserver/linux-x86-low.c
+@@ -552,6 +552,8 @@ i386_dr_low_get_status (void)
+ static int
+ x86_insert_point (char type, CORE_ADDR addr, int len)
+ {
++fprintf(stderr, "x86_insert_point(%lx)\n", addr);
++
+   struct process_info *proc = current_process ();
+   switch (type)
+     {
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 2f4484f..06aa6bf 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -47,7 +47,7 @@ static char **program_argv, **wrapper_argv;
+ 
+ /* Enable miscellaneous debugging output.  The name is historical - it
+    was originally used to debug LinuxThreads support.  */
+-int debug_threads;
++int debug_threads = 1;
+ 
+ /* Enable debugging of h/w breakpoint/watchpoint support.  */
+ int debug_hw_points;
+@@ -254,7 +254,9 @@ start_inferior (char **argv)
+   signal (SIGTTIN, SIG_DFL);
+ #endif
+ 
++fprintf(stderr, "start_inferior(): calling create_inferior()\n");
+   signal_pid = create_inferior (new_argv[0], new_argv);
++fprintf(stderr, "start_inferior(): create_inferior() returned\n");
+ 
+   /* FIXME: we don't actually know at this point that the create
+      actually succeeded.  We won't know that until we wait.  */
+@@ -301,7 +303,7 @@ start_inferior (char **argv)
+       current_inferior->last_status = last_status;
+       return signal_pid;
+     }
+-
++fprintf(stderr, "start_inferior(): waiting for stop at first instruction\n");
+   /* Wait till we are at 1st instruction in program, return new pid
+      (assuming success).  */
+   last_ptid = mywait (pid_to_ptid (signal_pid), &last_status, 0, 0);
+@@ -309,6 +311,7 @@ start_inferior (char **argv)
+   if (last_status.kind != TARGET_WAITKIND_EXITED
+       && last_status.kind != TARGET_WAITKIND_SIGNALLED)
+     {
++fprintf(stderr, "start_inferior(): stopped\n");
+       current_inferior->last_resume_kind = resume_stop;
+       current_inferior->last_status = last_status;
+     }

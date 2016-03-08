@@ -127,6 +127,7 @@ int Cpu_session_component::send_signal(Thread_capability thread_cap,
 
 	switch (signo) {
 		case SIGSTOP:
+			PDBG("sending SIGSTOP to thread %lu", thread_info->lwpid());
 			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
 			return 1;
 		case SIGINT:
@@ -274,11 +275,17 @@ int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
-
+PDBG("start(%lx, %lx)", ip, sp);
 	if (thread_cap.valid() && !thread_info) {
 
 		/* valid thread and not started yet */
 
+#if 0
+		//PDBG("start() with single-step");
+
+		/* make the thread stop at the second instruction */
+		single_step(thread_cap, true);
+#endif
 		Thread_info *thread_info = new (env()->heap())
 			Thread_info(this, thread_cap, new_lwpid++);
 
@@ -286,8 +293,10 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		_thread_start_lock.unlock();
 		_thread_start_lock.lock();
 
+PDBG("calling genode_add_thread()");
 		/* inform gdbserver about the new thread */
 		genode_add_thread(thread_info->lwpid());
+PDBG("calling _thread_start_lock.lock()");
 
 		if (thread_info->lwpid() != GENODE_LWP_BASE) {
 			/*
@@ -301,7 +310,7 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 			 */
 			_thread_start_lock.lock();
 		}
-
+PDBG("calling _thread_list.append()");
 		/* add the thread to the thread list */
 		_thread_list.append(thread_info);
 
@@ -329,6 +338,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		_thread_list.remove(thread_info);
 		destroy(env()->heap(), thread_info);
 	}
+
+	PDBG("start() finished");
 
 	return result;
 }

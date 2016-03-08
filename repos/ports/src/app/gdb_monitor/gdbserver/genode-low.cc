@@ -79,6 +79,7 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
+PDBG("waitpid(%d, %d)", pid, flags);
 	while(1) {
 		
 		FD_ZERO (&readset);
@@ -93,6 +94,7 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 			Thread_capability thread_cap = csc->first();
 
 			while (thread_cap.valid()) {
+				PDBG("adding signal pipe fd of lwpid %lu to set", csc->lwpid(thread_cap));
 				FD_SET(csc->signal_pipe_read_fd(thread_cap), &readset);
 				thread_cap = csc->next(thread_cap);
 			}
@@ -132,8 +134,12 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 		struct timeval wnohang_timeout = {0, 0};
 		struct timeval *timeout = (flags & WNOHANG) ? &wnohang_timeout : NULL;
 
+//PDBG("calling select()");
 		/* TODO: determine the highest fd in the set for optimization */
 		int res = select(FD_SETSIZE, &readset, 0, 0, timeout);
+
+		//if (debug_threads)
+			//PDBG("select() returned %d", res);
 
 		if (res > 0) {
 
@@ -180,7 +186,7 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 
 				unsigned long lwpid = csc->lwpid(thread_cap);
 
-				if (verbose)
+				//if (debug_threads)
 					PDBG("thread %lu received signal %d", lwpid, signal);
 
 				if (signal == SIGSTOP) {
@@ -348,6 +354,8 @@ extern "C" int fork()
 	/* wait until the target's main thread is ready */
 	main_thread_ready_lock().lock();
 
+	PDBG("main thread ready");
+
 	return GENODE_LWP_BASE;
 }
 
@@ -377,6 +385,7 @@ void genode_add_thread(unsigned long lwpid)
 
 		main_thread_ready_lock().unlock();
 	} else {
+PDBG("writing new lwpid: %lu", lwpid);
 		/* the main thread is handled in genode_create_inferior() */
 		write(_new_thread_pipe[1], &lwpid, sizeof(lwpid));
 	}
@@ -393,6 +402,7 @@ void genode_remove_thread(unsigned long lwpid)
 
 extern "C" void genode_stop_all_threads()
 {
+PDBG("genode_stop_all_threads()");
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Lock::Guard stop_new_threads_lock_guard(csc->stop_new_threads_lock());
@@ -410,6 +420,7 @@ extern "C" void genode_stop_all_threads()
 
 void genode_resume_all_threads()
 {
+PDBG("genode_resume_all_threads()");
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
    	Lock::Guard stop_new_threads_guard(csc->stop_new_threads_lock());
@@ -445,6 +456,7 @@ int genode_kill(int pid)
 
 void genode_stop_thread(unsigned long lwpid)
 {
+PDBG("genode_stop_thread(%lu)", lwpid);
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
@@ -461,6 +473,7 @@ void genode_stop_thread(unsigned long lwpid)
 
 void genode_continue_thread(unsigned long lwpid, int single_step)
 {
+PDBG("genode_continue_thread(%lu, %d)", lwpid, single_step);
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
@@ -498,7 +511,7 @@ void genode_fetch_registers(struct regcache *regcache, int regno)
 
 void genode_store_registers(struct regcache *regcache, int regno)
 {
-	if (verbose) PDBG("genode_store_registers(): regno = %d", regno);
+	if (debug_threads) PDBG("genode_store_registers(): regno = %d", regno);
 
 	unsigned long reg_content = 0;
 
@@ -677,7 +690,7 @@ unsigned char genode_read_memory_byte(void *addr)
 
 int genode_read_memory(CORE_ADDR memaddr, unsigned char *myaddr, int len)
 {
-	if (verbose)
+	if (debug_threads)
 		PDBG("genode_read_memory(%llx, %p, %d)", memaddr, myaddr, len);
 
 	if (myaddr)
@@ -700,7 +713,7 @@ void genode_write_memory_byte(void *addr, unsigned char value)
 
 int genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
 {
-	if (verbose)
+	if (debug_threads)
 		PDBG("genode_write_memory(%llx, %p, %d)", memaddr, myaddr, len);
 
 	if (myaddr && (len > 0)) {

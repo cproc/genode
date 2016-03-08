@@ -250,6 +250,7 @@ namespace Genode {
 
 			inline void single_step(bool on)
 			{
+				PDBG("single_step(%d)", on);
 				if (_state.is_dead() || !_state.blocked() ||
 				    (on && (_state._status & _state.SINGLESTEP)) ||
 				    (!on && !(_state._status & _state.SINGLESTEP)))
