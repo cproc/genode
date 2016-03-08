@@ -1,0 +1,223 @@
+gdbserver_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-low.c    |   32 +++++++++++++++++++++++++++-----
+ gdb/gdbserver/remote-utils.c |    2 +-
+ gdb/gdbserver/server.c       |   11 +++++++----
+ 3 files changed, 35 insertions(+), 10 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index a9ba481..5fb5e60 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -285,6 +285,9 @@ elf_64_file_p (const char *file)
+ static void
+ delete_lwp (struct lwp_info *lwp)
+ {
++  if (debug_threads)
++    printf("delete_lwp(%lu)\n", lwpid_of(lwp));
++
+   remove_thread (get_lwp_thread (lwp));
+   remove_inferior (&all_lwps, &lwp->head);
+   free (lwp->arch_private);
+@@ -320,8 +323,9 @@ my_waitpid (int pid, int *status, int flags)
+ {
+   int ret, out_errno;
+ 
+-  if (debug_threads)
+-    fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
++  //if (debug_threads)
++    fprintf (stderr, "my_waitpid (%d, 0x%x): ret: %p\n", pid, flags,
++             __builtin_return_address(0));
+ 
+   if (flags & __WALL)
+     {
+@@ -345,6 +349,7 @@ my_waitpid (int pid, int *status, int flags)
+ 	  /* Since all signals are blocked, there's no need to check
+ 	     for EINTR here.  */
+ 	  ret = waitpid (pid, status, flags);
++	  fprintf(stderr, "waitpid() returned %d\n", ret);
+ 	  out_errno = errno;
+ 
+ 	  if (ret == -1 && out_errno != ECHILD)
+@@ -379,7 +384,7 @@ my_waitpid (int pid, int *status, int flags)
+       out_errno = errno;
+     }
+ 
+-  if (debug_threads)
++  //if (debug_threads)
+     fprintf (stderr, "my_waitpid (%d, 0x%x): status(%x), %d\n",
+ 	     pid, flags, status ? *status : -1, ret);
+ 
+@@ -538,6 +543,10 @@ get_stop_pc (struct lwp_info *lwp)
+ static void *
+ add_lwp (ptid_t ptid)
+ {
++
++  if (debug_threads)
++    printf("add_lwp(%u, %lu, %lu)\n", ptid.pid, ptid.lwp, ptid.tid);
++
+   struct lwp_info *lwp;
+ 
+   lwp = (struct lwp_info *) xmalloc (sizeof (*lwp));
+@@ -1046,6 +1055,8 @@ retry:
+ 
+   child = find_lwp_pid (pid_to_ptid (ret));
+ 
++fprintf(stderr, "linux_wait_for_lwp(): child: %p\n", child);
++
+   /* If we didn't find a process, one of two things presumably happened:
+      - A process we started and then detached from has exited.  Ignore it.
+      - A process we are controlling has forked and the new child's stop
+@@ -1511,7 +1522,7 @@ static int
+ linux_wait_for_event_1 (ptid_t ptid, int *wstat, int options)
+ {
+   struct lwp_info *event_child, *requested_child;
+-
++fprintf(stderr, "linux_wait_for_event_1()\n");
+   event_child = NULL;
+   requested_child = NULL;
+ 
+@@ -1566,8 +1577,9 @@ linux_wait_for_event_1 (ptid_t ptid, int *wstat, int options)
+      events.  */
+   while (1)
+     {
++fprintf(stderr, "calling linux_wait_for_lwp()\n");
+       event_child = linux_wait_for_lwp (ptid, wstat, options);
+-
++fprintf(stderr, "linux_wait_for_lwp() returned\n");
+       if ((options & WNOHANG) && event_child == NULL)
+ 	{
+ 	  if (debug_threads)
+@@ -2823,6 +2835,10 @@ static void
+ linux_resume_one_lwp (struct lwp_info *lwp,
+ 		      int step, int signal, siginfo_t *info)
+ {
++  if (debug_threads)
++	  printf("linux_resume_one_lwp(lwpid = %lu, step = %d, signal = %d)\n",
++	         lwpid_of(lwp), step, signal);
++
+   struct thread_info *saved_inferior;
+   int fast_tp_collecting;
+ 
+@@ -3378,6 +3394,8 @@ finish_step_over (struct lwp_info *lwp)
+ static int
+ linux_resume_one_thread (struct inferior_list_entry *entry, void *arg)
+ {
++  if (debug_threads) printf("linux_resume_one_thread()\n");
++
+   struct lwp_info *lwp;
+   struct thread_info *thread;
+   int step;
+@@ -3489,6 +3507,8 @@ linux_resume_one_thread (struct inferior_list_entry *entry, void *arg)
+ static void
+ linux_resume (struct thread_resume *resume_info, size_t n)
+ {
++  if (debug_threads) printf("linux_resume(%zd)\n", n);
++
+   struct thread_resume_array array = { resume_info, n };
+   struct lwp_info *need_step_over = NULL;
+   int any_pending;
+@@ -3537,6 +3557,8 @@ linux_resume (struct thread_resume *resume_info, size_t n)
+ 
+   if (need_step_over)
+     start_step_over (need_step_over);
++
++  if (debug_threads) printf("linux_resume() finished\n");
+ }
+ 
+ /* This function is called once per thread.  We check the thread's
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index 7a53e77..124bdda 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -179,7 +179,6 @@ handle_accept_event (int err, gdb_client_data client_data)
+ 
+ #ifndef USE_WIN32API
+   close (listen_desc);		/* No longer need this */
+-
+   signal (SIGPIPE, SIG_IGN);	/* If we don't do this, then gdbserver simply
+ 				   exits when the remote side dies.  */
+ #else
+@@ -288,6 +287,7 @@ remote_open (char *name)
+ 
+       /* Register the event loop handler.  */
+       add_file_handler (remote_desc, handle_serial_event, NULL);
++
+ #endif /* USE_WIN32API */
+     }
+   else
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 4f48e47..5d30be5 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -52,7 +52,7 @@ static char **program_argv, **wrapper_argv;
+ 
+ /* Enable miscellaneous debugging output.  The name is historical - it
+    was originally used to debug LinuxThreads support.  */
+-int debug_threads;
++int debug_threads = 1;
+ 
+ /* Enable debugging of h/w breakpoint/watchpoint support.  */
+ int debug_hw_points;
+@@ -1745,6 +1745,7 @@ static void gdb_wants_all_threads_stopped (void);
+ void
+ handle_v_cont (char *own_buf)
+ {
++  if (debug_threads) printf("handle_v_cont()\n");
+   char *p, *q;
+   int n = 0, i = 0;
+   struct thread_resume *resume_info;
+@@ -2119,6 +2120,7 @@ handle_v_requests (char *own_buf, int packet_len, int *new_packet_len)
+ static void
+ myresume (char *own_buf, int step, int sig)
+ {
++  if (debug_threads) printf("myresume()\n");
+   struct thread_resume resume_info[2];
+   int n = 0;
+   int valid_cont_thread;
+@@ -2255,6 +2257,7 @@ gdb_reattached_process (struct inferior_list_entry *entry)
+ static void
+ handle_status (char *own_buf)
+ {
++	if (debug_threads) printf("handle_status()\n");
+   /* GDB is connected, don't forward events to the target anymore.  */
+   for_each_inferior (&all_processes, gdb_reattached_process);
+ 
+@@ -2334,7 +2337,6 @@ gdbserver_show_disableable (FILE *stream)
+ 	   "  threads     \tAll of the above\n");
+ }
+ 
+-
+ #undef require_running
+ #define require_running(BUF)			\
+   if (!target_running ())			\
+@@ -2594,7 +2596,7 @@ fprintf(stderr, "gdbserver_main()\n");
+       gdbserver_usage (stderr);
+       exit (1);
+     }
+-
++fprintf(stderr, "calling initialize_inferiors()\n");
+   initialize_inferiors ();
+   initialize_async_io ();
+   initialize_low ();
+@@ -2765,6 +2767,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
++  if (debug_threads) printf("GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3156,7 +3159,7 @@ process_serial_event (void)
+       own_buf[0] = '\0';
+       break;
+     }
+-  /*if (debug_threads)*/ printf("GDBserver response = %s\n", own_buf);
++  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else
