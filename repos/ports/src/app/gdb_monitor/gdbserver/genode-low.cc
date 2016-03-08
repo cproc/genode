@@ -411,6 +411,7 @@ PDBG("genode_stop_all_threads()");
 
 void genode_resume_all_threads()
 {
+PDBG("genode_resume_all_threads()");
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
    	Lock::Guard stop_new_threads_guard(csc->stop_new_threads_lock());
@@ -446,6 +447,7 @@ int genode_kill(int pid)
 
 void genode_stop_thread(unsigned long lwpid)
 {
+PDBG("genode_stop_thread(%lu)", lwpid);
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
@@ -462,6 +464,7 @@ void genode_stop_thread(unsigned long lwpid)
 
 void genode_continue_thread(unsigned long lwpid, int single_step)
 {
+PDBG("genode_continue_thread(%lu, %d)", lwpid, single_step);
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
