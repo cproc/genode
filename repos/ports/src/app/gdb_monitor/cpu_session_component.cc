@@ -127,6 +127,7 @@ int Cpu_session_component::send_signal(Thread_capability thread_cap,
 
 	switch (signo) {
 		case SIGSTOP:
+			PDBG("sending SIGSTOP to thread %lu", thread_info->lwpid());
 			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
 			return 1;
 		case SIGINT:
@@ -262,7 +263,7 @@ int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
-
+PDBG("start(%lx, %lx)", ip, sp);
 	if (thread_cap.valid() && !thread_info) {
 
 		/* valid thread and not started yet */
@@ -293,6 +294,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		_thread_list.remove(thread_info);
 		destroy(env()->heap(), thread_info);
 	}
+
+	PDBG("start() finished");
 
 	return result;
 }
