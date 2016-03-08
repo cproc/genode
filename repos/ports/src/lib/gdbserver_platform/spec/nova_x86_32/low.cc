@@ -18,15 +18,18 @@
 
 using namespace Genode;
 
-#undef PDBG
-#define PDBG(...)
+//#undef PDBG
+//#define PDBG(...)
 
 extern "C" int genode_fetch_register(int regno, unsigned long *reg_content)
 {
 	Thread_state thread_state;
 
 	try { thread_state = get_current_thread_state(); }
-	catch (...) { return -1; }
+	catch (...) {
+		PERR("%s: could not get current thread state (%p)", __PRETTY_FUNCTION__, __builtin_return_address(0));
+		return -1;
+	}
 
 	switch((enum reg_index)regno)
 	{

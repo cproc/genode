@@ -24,8 +24,8 @@ extern "C" {
 
 #include "genode_child_resources.h"
 
-#undef PDBG
-#define PDBG(...)
+//#undef PDBG
+//#define PDBG(...)
 
 using namespace Genode;
 
