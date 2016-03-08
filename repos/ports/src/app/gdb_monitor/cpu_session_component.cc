@@ -188,6 +188,7 @@ Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 
 Thread_capability Cpu_session_component::create_thread(size_t weight, Cpu_session::Name const &name, addr_t utcb)
 {
+PDBG("create_thread()");
 	Thread_capability thread_cap =
 		_parent_cpu_session.create_thread(weight, name.string(), utcb);
 
@@ -235,12 +236,14 @@ int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
-
+PDBG("start()");
 	if (thread_info) {
 
 		/* register the exception handler */
 		exception_handler(thread_cap,
 		                  thread_info->exception_signal_context_cap());
+
+		PDBG("start() with single-step");
 
 		/* make the thread stop at the second instruction */
 		single_step(thread_cap, true);
@@ -255,6 +258,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		/* inform gdbserver about the new thread */
 		genode_add_thread(thread_info->lwpid());
 	}
+
+	PDBG("start() finished");
 
 	return result;
 }
