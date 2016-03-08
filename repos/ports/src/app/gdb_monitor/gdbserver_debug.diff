@@ -1,0 +1,100 @@
+gdbserver_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gdb/gdbserver/linux-low.c |   19 ++++++++++---------
+ gdb/gdbserver/server.c    |    4 ++--
+ 2 files changed, 12 insertions(+), 11 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index f1b9f2b..0d5c6a0 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -325,14 +325,11 @@ linux_add_process (int pid, int attached)
+ static int
+ my_waitpid (int pid, int *status, int flags)
+ {
+-
+-  if (debug_threads)
+-    fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
+-
+   int ret, out_errno;
+ 
+-  if (debug_threads)
+-    fprintf (stderr, "my_waitpid (%d, 0x%x)\n", pid, flags);
++  //if (debug_threads)
++    fprintf (stderr, "my_waitpid (%d, 0x%x): ret: %p\n", pid, flags,
++             __builtin_return_address(0));
+ 
+   if (flags & __WALL)
+     {
+@@ -356,6 +353,7 @@ my_waitpid (int pid, int *status, int flags)
+ 	  /* Since all signals are blocked, there's no need to check
+ 	     for EINTR here.  */
+ 	  ret = waitpid (pid, status, flags);
++	  fprintf(stderr, "waitpid() returned %d\n", ret);
+ 	  out_errno = errno;
+ 
+ 	  if (ret == -1 && out_errno != ECHILD)
+@@ -390,7 +388,7 @@ my_waitpid (int pid, int *status, int flags)
+       out_errno = errno;
+     }
+ 
+-  if (debug_threads)
++  //if (debug_threads)
+     fprintf (stderr, "my_waitpid (%d, 0x%x): status(%x), %d\n",
+ 	     pid, flags, status ? *status : -1, ret);
+ 
+@@ -1115,6 +1113,8 @@ retry:
+ 
+   child = find_lwp_pid (pid_to_ptid (ret));
+ 
++fprintf(stderr, "linux_wait_for_lwp(): child: %p\n", child);
++
+   /* If we didn't find a process, one of two things presumably happened:
+      - A process we started and then detached from has exited.  Ignore it.
+      - A process we are controlling has forked and the new child's stop
+@@ -1580,7 +1580,7 @@ static int
+ linux_wait_for_event_1 (ptid_t ptid, int *wstat, int options)
+ {
+   struct lwp_info *event_child, *requested_child;
+-
++fprintf(stderr, "linux_wait_for_event_1()\n");
+   event_child = NULL;
+   requested_child = NULL;
+ 
+@@ -1635,8 +1635,9 @@ linux_wait_for_event_1 (ptid_t ptid, int *wstat, int options)
+      events.  */
+   while (1)
+     {
++fprintf(stderr, "calling linux_wait_for_lwp()\n");
+       event_child = linux_wait_for_lwp (ptid, wstat, options);
+-
++fprintf(stderr, "linux_wait_for_lwp() returned\n");
+       if ((options & WNOHANG) && event_child == NULL)
+ 	{
+ 	  if (debug_threads)
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index 4f31330..5d30be5 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -2767,7 +2767,7 @@ process_serial_event (void)
+ 
+   i = 0;
+   ch = own_buf[i++];
+-  /*if (debug_threads)*/ printf("GDB command = %s\n", own_buf);
++  if (debug_threads) printf("GDB command = %s\n", own_buf);
+   switch (ch)
+     {
+     case 'q':
+@@ -3159,7 +3159,7 @@ process_serial_event (void)
+       own_buf[0] = '\0';
+       break;
+     }
+-  /*if (debug_threads)*/ printf("GDBserver response = %s\n", own_buf);
++  if (debug_threads) printf("GDBserver response = %s\n", own_buf);
+   if (new_packet_len != -1)
+     putpkt_binary (own_buf, new_packet_len);
+   else

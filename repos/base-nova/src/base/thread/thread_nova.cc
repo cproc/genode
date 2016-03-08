@@ -147,6 +147,7 @@ void Thread_base::_deinit_platform_thread()
 
 void Thread_base::start()
 {
+//PDBG("start()");
 	if (_tid.ec_sel < Native_thread::INVALID_INDEX - 1)
 		throw Cpu_session::Thread_creation_failed();
 
@@ -204,6 +205,7 @@ void Thread_base::start()
 	if (global)
 		/* request creation of SC to let thread run*/
 		_cpu_session->resume(_thread_cap);
+//	PDBG("start() finished");
 }
 
 
