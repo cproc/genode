@@ -206,7 +206,7 @@ int Platform_thread::start(void *ip, void *sp)
 
 void Platform_thread::pause()
 {
-	PDBG("pause()");
+	PDBG("%p: pause(%p)", this, _pager);
 
 	if (!_pager) {
 		PDBG("!_pager");
@@ -221,7 +221,7 @@ void Platform_thread::resume()
 {
 	using namespace Nova;
 
-	PDBG("resume()");
+	PDBG("%p: resume(%p)", this, _pager);
 
 	if (!is_worker()) {
 		uint8_t res;
@@ -231,15 +231,19 @@ void Platform_thread::resume()
 				     __PRETTY_FUNCTION__);
 				return;
 			}
+			PDBG("%p: calling create_sc(): %p", this, _pager);
 			res = create_sc(_sel_sc(), _pd->pd_sel(), _sel_ec(),
 			                Qpd(Qpd::DEFAULT_QUANTUM, _priority));
+			PDBG("%p: create_sc() returned", this);
 		} while (res == Nova::NOVA_PD_OOM && Nova::NOVA_OK == _pager->handle_oom());
+
+		PDBG("res == NOVA_OK: %u", res == NOVA_OK);
 
 		if (res == NOVA_OK) return;
 	}
 
 	if (!_pager) return;
-
+PDBG("calling _pager->wake_up()");
 	/* Thread was paused beforehand and blocked in pager - wake up pager */
 	_pager->wake_up();
 }
