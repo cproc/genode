@@ -1,0 +1,39 @@
+ec_ctrl2.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/syscall.cpp |   13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 82f6325..177b7b8 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -627,14 +627,23 @@ void Ec::sys_ec_ctrl()
+ #endif
+        	           Mtd::RSP |
+        	           Mtd::RIP_LEN |
+-       	           Mtd::RFLAGS;
++       	           Mtd::RFLAGS |
++       	           Mtd::QUAL;
+ 
+         if (ec->in_syscall()) {
+             regs.REG(ip) = ec->regs.ARG_IP;
+             regs.REG(sp) = ec->regs.ARG_SP;
+         }
+ 
+-        /* the 'if' avoids an "unused result" warning */
++#if 0
++		if ((ec->cont == ret_user_iret_exc) && (regs.vec != Cpu::EXC_PF)) {
++			/* let the exception state be transferred into utcb->qual[0] */
++			regs.err = 1;
++		} else
++#endif
++			regs.err = 0;
++
++        /* the 'if' avoids the "unused result" warning */
+         if (current->utcb->load_exc (&regs)) {}
+     }
+ }
