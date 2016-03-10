@@ -79,7 +79,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_lock_pipe.lib.so libc_terminal.lib.so
+	ld.lib.so libc.lib.so libc_pipe.lib.so libc_terminal.lib.so
 	uart_drv
 	gdb_monitor test-gdb_monitor
 }
@@ -121,7 +121,7 @@ append gdb_cmds {-ex "set interactive-mode auto" }
 
 puts "command: [gdb] bin/$gdb_target_binary $gdb_cmds"
 
-exec [terminal] -e "/usr/local/genode-gcc/bin/[gdb] bin/$gdb_target_binary $gdb_cmds" &
+exec [terminal] -e "/usr/local/genode-gcc/bin/[gdb] bin/ld.lib.so $gdb_cmds" &
 
 interact -i [output_spawn_id]
 
