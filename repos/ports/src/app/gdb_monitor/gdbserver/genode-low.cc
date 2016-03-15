@@ -12,9 +12,14 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+#include <signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 extern "C" {
 #define private _private
 #include "genode-low.h"
+#include "server.h"
 #include "linux-low.h"
 #define _private private
 
@@ -22,16 +27,29 @@ int linux_detach_one_lwp (struct inferior_list_entry *entry, void *args);
 }
 
 #include <base/printf.h>
+#include <base/service.h>
+#include <cap_session/connection.h>
 #include <dataspace/client.h>
+#include <os/config.h>
+#include <ram_session/connection.h>
+#include <rom_session/connection.h>
+#include <util/xml_node.h>
 
+#include "app_child.h"
 #include "cpu_session_component.h"
-
-#include "gdb_stub_thread.h"
+#include "genode_child_resources.h"
+#include "rom.h"
+#include "signal_handler_thread.h"
 
 static bool verbose = false;
 
+static int _new_thread_pipe[2];
+
 using namespace Genode;
 using namespace Gdb_monitor;
+
+
+extern "C" void *add_lwp(ptid_t ptid);
 
 
 static Lock &main_thread_ready_lock()
@@ -41,35 +59,271 @@ static Lock &main_thread_ready_lock()
 }
 
 
-static Lock &gdbserver_ready_lock()
+Genode_child_resources *genode_child_resources()
 {
-	static Lock _gdbserver_ready_lock(Lock::LOCKED);
-	return _gdbserver_ready_lock;
+	return (Genode_child_resources*)(current_process()->_private->genode_child_resources);
 }
 
 
-Gdb_stub_thread *gdb_stub_thread()
+static int
+add_signal_pipe_read_fd_to_set(struct inferior_list_entry *entry, void *args)
 {
-	return (Gdb_stub_thread*)(current_process()->_private->gdb_stub_thread);
+	fd_set *readset = (fd_set*)args;
+
+	FD_SET(genode_thread_signal_pipe_read_fd(ptid_get_lwp(entry->id)), readset);
+
+	return 0;
 }
 
 
-extern "C" int genode_signal_fd()
+static int
+signal_pipe_read_fd_in_set(struct inferior_list_entry *entry, void *args)
 {
-	return gdb_stub_thread()->signal_fd();
+	fd_set *readset = (fd_set*)args;
+
+	return FD_ISSET(genode_thread_signal_pipe_read_fd(ptid_get_lwp(entry->id)), readset);
+}
+
+
+extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
+{
+	extern int remote_desc;
+
+	fd_set readset;
+PDBG("waitpid(%d, %d)", pid, flags);
+	while(1) {
+
+		FD_ZERO (&readset);
+
+		if (remote_desc != -1)
+			FD_SET (remote_desc, &readset);
+
+		if (pid == -1) {
+			FD_SET(genode_new_thread_pipe_read_fd(), &readset);
+			find_inferior(&all_threads, add_signal_pipe_read_fd_to_set, &readset);
+		} else
+			FD_SET(genode_thread_signal_pipe_read_fd(pid), &readset);
+
+		struct timeval wnohang_timeout = {0, 0};
+		struct timeval *timeout = (flags & WNOHANG) ? &wnohang_timeout : NULL;
+
+PDBG("calling select()");
+		/* TODO: determine the highest fd in the set for optimization */
+		int res = select(FD_SETSIZE, &readset, 0, 0, timeout);
+
+		//if (debug_threads)
+			PDBG("select() returned %d", res);
+
+		if (res > 0) {
+
+			if ((remote_desc != -1) && FD_ISSET(remote_desc, &readset)) {
+
+				/* received input from GDB */
+
+				int cc;
+				char c = 0;
+
+				cc = read (remote_desc, &c, 1);
+
+				if (cc == 1 && c == '\003' && current_inferior != NULL) {
+					/* this causes a SIGINT to be delivered to one of the threads */
+					(*the_target->request_interrupt)();
+					continue;
+				} else {
+					PDBG("input_interrupt, count = %d c = %d ('%c')", cc, c, c);
+				}
+
+			} else if (FD_ISSET(genode_new_thread_pipe_read_fd(), &readset)) {
+
+#if 0
+				/* read the lwpid of the new thread from the pipe */
+				unsigned long new_lwpid;
+				read(genode_new_thread_pipe_read_fd(), &new_lwpid, sizeof(new_lwpid));
+				
+				PDBG("new thread with lwpid: %lu", new_lwpid);
+
+				/* make the new thread known to gdbserver */
+				{
+					ptid_t ptid = ptid_build (GENODE_LWP_BASE, new_lwpid, 0);
+					struct lwp_info *new_lwp = (struct lwp_info *) add_lwp (ptid);
+					add_thread (ptid, new_lwp);
+				}
+
+				/* consume the SIGTRAP signal caused by initial single-stepping */
+				{
+					int signal;
+					read(genode_thread_signal_pipe_read_fd(new_lwpid), &signal, sizeof(signal));
+					fprintf(stderr, "new thread received signal %d\n", signal);
+					if (signal != SIGTRAP)
+						fprintf(stderr, "Error: first signal received by the new thread was not SIGTRAP\n");
+				}
+
+				/* resume the new thread */
+				if (new_lwpid != GENODE_LWP_BASE)
+					genode_continue_thread(new_lwpid, 0);
+
+				continue;
+#else
+				*status = _WSTOPPED | (SIGINFO << 8);
+#endif
+				return GENODE_LWP_BASE;
+
+			} else {
+
+				/* received a signal */
+
+				/* find a thread whose signal pipe is ready for reading */
+				struct thread_info *thread = (struct thread_info*)
+					find_inferior(&all_threads, signal_pipe_read_fd_in_set, &readset);
+PDBG("thread: %p", thread);
+				if (!thread)
+					continue;
+
+				unsigned long lwpid = ptid_get_lwp(thread->entry.id);
+				int signal;
+				read(genode_thread_signal_pipe_read_fd(lwpid), &signal, sizeof(signal));
+
+				//if (debug_threads)
+					PDBG("thread %lu received signal %d", lwpid, signal);
+
+				if (signal == SIGSTOP) {
+
+					/*
+					 * Check if a SIGTRAP is pending
+					 * 
+					 * This can happen if a single-stepped thread gets paused while gdbserver
+					 * handles a signal of a different thread and the exception signal after
+					 * the single step has not arrived yet. In this case, the SIGTRAP must be
+					 * delivered first, otherwise gdbserver would single-step the thread again.
+					 */
+
+					Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+					Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+					Thread_state thread_state = csc->state(thread_cap);
+
+					if (thread_state.exception) {
+						/* resend the SIGSTOP signal */
+						csc->send_signal(thread_cap, SIGSTOP, 0);
+						continue;
+					}
+				}
+
+				*status = _WSTOPPED | (signal << 8);
+
+				return lwpid;
+			}
+		} else {
+			return res;
+		}
+	}
+}
+
+
+void *genode_start_inferior()
+{
+	/* extract target filename from config file */
+
+	static char filename[32] = "";
+
+	try {
+		config()->xml_node().sub_node("target").attribute("name").value(filename, sizeof(filename));
+	} catch (Xml_node::Nonexistent_sub_node) {
+		PERR("Error: Missing '<target>' sub node.");
+		return 0;
+	} catch (Xml_node::Nonexistent_attribute) {
+		PERR("Error: Missing 'name' attribute of '<target>' sub node.");
+		return 0;
+	}
+
+	/* extract target node from config file */
+	Xml_node target_node = config()->xml_node().sub_node("target");
+
+	/*
+	 * preserve the configured amount of memory for gdb_monitor and give the
+	 * remainder to the child
+	 */
+	Number_of_bytes preserved_ram_quota = 0;
+	try {
+		Xml_node preserve_node = config()->xml_node().sub_node("preserve");
+		if (preserve_node.attribute("name").has_value("RAM"))
+			preserve_node.attribute("quantum").value(&preserved_ram_quota);
+		else
+			throw Xml_node::Exception();
+	} catch (...) {
+		PERR("Error: could not find a valid <preserve> config node");
+		return 0;
+	}
+
+	Number_of_bytes ram_quota = env()->ram_session()->avail() - preserved_ram_quota;
+
+	/* start the application */
+	char *unique_name = filename;
+	Capability<Rom_dataspace> file_cap;
+	try {
+		static Rom_connection rom(filename, unique_name);
+		file_cap = rom.dataspace();
+	} catch (Rom_connection::Rom_connection_failed) {
+		Genode::printf("Error: Could not access file \"%s\" from ROM service.\n", filename);
+		return 0;
+	}
+
+	/* copy ELF image to writable dataspace */
+	Genode::size_t elf_size = Dataspace_client(file_cap).size();
+	Capability<Dataspace> elf_cap = clone_rom(file_cap);
+
+	/* create ram session for child with some of our own quota */
+	static Ram_connection ram;
+	ram.ref_account(env()->ram_session_cap());
+	env()->ram_session()->transfer_quota(ram.cap(), (Genode::size_t)ram_quota - elf_size);
+
+	/* cap session for allocating capabilities for parent interfaces */
+	static Cap_connection cap_session;
+
+	static Service_registry parent_services;
+
+	enum { CHILD_ROOT_EP_STACK = 1024*sizeof(addr_t) };
+	static Rpc_entrypoint child_root_ep(&cap_session, CHILD_ROOT_EP_STACK,
+	                                    "child_root_ep");
+
+	static Signal_receiver signal_receiver;
+
+	static Gdb_monitor::Signal_handler_thread
+		signal_handler_thread(&signal_receiver);
+	signal_handler_thread.start();
+
+	App_child *child = new (env()->heap()) App_child(unique_name,
+	                                                 elf_cap,
+	                                                 ram.cap(),
+	                                                 &cap_session,
+	                                                 &parent_services,
+	                                                 &child_root_ep,
+	                                                 &signal_receiver,
+	                                                 target_node);
+
+	return child->genode_child_resources();
+}
+
+
+int genode_new_thread_pipe_read_fd()
+{
+	return _new_thread_pipe[0];
 }
 
 
 void genode_add_thread(unsigned long lwpid)
 {
 	if (lwpid == GENODE_LWP_BASE) {
+
+		if (pipe(_new_thread_pipe) != 0)
+			PERR("could not create the 'new thread' pipe");
+
 		main_thread_ready_lock().unlock();
 	} else {
-		if (lwpid == GENODE_LWP_BASE + 1) {
-			/* make sure gdbserver is ready to attach new threads */
-			gdbserver_ready_lock().lock();
-		}
-		linux_attach_lwp(lwpid);
+PDBG("writing new lwpid: %lu\n", lwpid);
+		/* the main thread is handled in genode_create_inferior() */
+		write(_new_thread_pipe[1], &lwpid, sizeof(lwpid));
 	}
 }
 
@@ -84,17 +338,15 @@ void genode_remove_thread(unsigned long lwpid)
 
 void genode_wait_for_target_main_thread()
 {
-	/* gdbserver is now ready to attach new threads */
-	gdbserver_ready_lock().unlock();
-
 	/* wait until the target's main thread has been created */
 	main_thread_ready_lock().lock();
 }
 
 
+#if 0
 extern "C" void genode_detect_all_threads()
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->next(csc->first()); /* second thread */
 
@@ -103,11 +355,49 @@ extern "C" void genode_detect_all_threads()
 		thread_cap = csc->next(thread_cap);
 	}
 }
+#endif
 
+
+/*
+ * Return 1 if the list entry has the lwpid given in 'args'.
+ */
+static int has_lwpid(struct inferior_list_entry *entry, void *args)
+{
+	unsigned long *lwpid = (unsigned long*)args;
+
+	return ((unsigned long)ptid_get_lwp(entry->id) == *lwpid);
+}
+
+#if 0
+extern "C" unsigned long genode_find_lwpid_of_new_thread()
+{
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->first();
+
+	while (thread_cap.valid()) {
+		unsigned long lwpid = csc->lwpid(thread_cap);
+		if (!find_inferior(&all_threads, has_lwpid, &lwpid)) {
+			PDBG("new thread has lwpid %lu", lwpid);
+			return lwpid;
+		}
+		thread_cap = csc->next(thread_cap);
+	}
+
+	PERR("could not find out the lwpid of the new thread");
+
+	return 0;
+}
+#endif
 
 extern "C" void genode_stop_all_threads()
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+PDBG("genode_stop_all_threads()");
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+	Lock::Guard stop_new_threads_lock_guard(csc->stop_new_threads_lock());
+
+	csc->stop_new_threads(true);
 
 	Thread_capability thread_cap = csc->first();
 
@@ -120,11 +410,16 @@ extern "C" void genode_stop_all_threads()
 
 extern "C" void genode_resume_all_threads()
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+   	Lock::Guard stop_new_threads_guard(csc->stop_new_threads_lock());
+
+	csc->stop_new_threads(false);
 
 	Thread_capability thread_cap = csc->first();
 
 	while (thread_cap.valid()) {
+		csc->single_step(thread_cap, false);
 		csc->resume(thread_cap);
 		thread_cap = csc->next(thread_cap);
 	}
@@ -133,8 +428,6 @@ extern "C" void genode_resume_all_threads()
 
 int genode_detach(int pid)
 {
-    find_inferior (&all_threads, linux_detach_one_lwp, &pid);
-
     genode_resume_all_threads();
 
     return 0;
@@ -150,14 +443,15 @@ int genode_kill(int pid)
 }
 
 
-void genode_interrupt_thread(unsigned long lwpid)
+void genode_stop_thread(unsigned long lwpid)
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
 
 	if (!thread_cap.valid()) {
-		PERR("could not find thread capability for lwpid %lu", lwpid);
+		PERR("%s: could not find thread capability for lwpid %lu",
+		     __PRETTY_FUNCTION__, lwpid);
 		return;
 	}
 
@@ -167,12 +461,13 @@ void genode_interrupt_thread(unsigned long lwpid)
 
 void genode_continue_thread(unsigned long lwpid, int single_step)
 {
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);
 
 	if (!thread_cap.valid()) {
-		PERR("could not find thread capability for lwpid %lu", lwpid);
+		PERR("%s: could not find thread capability for lwpid %lu",
+		     __PRETTY_FUNCTION__, lwpid);
 		return;
 	}
 
@@ -181,49 +476,35 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 }
 
 
-/*
- * This function returns the first thread with a page fault that it finds.
- * Multiple page-faulted threads are currently not supported.
- */
-
-unsigned long genode_find_segfault_lwpid()
+int genode_thread_signal_pipe_read_fd(unsigned long lwpid)
 {
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
-	Cpu_session_component *csc = gdb_stub_thread()->cpu_session_component();
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
 
-	/*
-	 * It can happen that the thread state of the thread which caused the
-	 * page fault is not accessible yet. In that case, we'll retry until
-	 * it is accessible.
-	 */
-
-	while (1) {
-
-		Thread_capability thread_cap = csc->first();
-
-		while (thread_cap.valid()) {
-
-			try {
-
-				Thread_state thread_state = csc->state(thread_cap);
-
-				if (thread_state.unresolved_page_fault) {
-
-					/*
-					 * On base-foc it is necessary to pause the thread before
-					 * IP and SP are available in the thread state.
-					 */
-					csc->pause(thread_cap);
-
-					return csc->lwpid(thread_cap);
-				}
-
-			} catch (Cpu_session::State_access_failed) { }
-
-			thread_cap = csc->next(thread_cap);
-		}
-
+	if (!thread_cap.valid()) {
+		PERR("%s: could not find thread capability for lwpid %lu",
+		     __PRETTY_FUNCTION__, lwpid);
+		return -1;
 	}
+
+	return csc->signal_pipe_read_fd(thread_cap);
+}
+
+
+int genode_send_signal_to_thread(unsigned long lwpid, int signo, unsigned long *payload)
+{
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
+	Thread_capability thread_cap = csc->thread_cap(lwpid);
+
+	if (!thread_cap.valid()) {
+		PERR("%s: could not find thread capability for lwpid %lu",
+		     __PRETTY_FUNCTION__, lwpid);
+		return -1;
+	}
+
+	return csc->send_signal(thread_cap, signo, payload);
 }
 
 
@@ -314,6 +595,9 @@ class Memory_model
 
 	public:
 
+		/* exception type */
+		struct No_memory_at_address { };
+
 		Memory_model(Rm_session_component *address_space)
 		:
 			_address_space(address_space), _evict_idx(0)
@@ -332,7 +616,7 @@ class Memory_model
 
 			if (!local_base) {
 				PWRN("Memory model: no memory at address %p", addr);
-				return 0;
+				throw No_memory_at_address();
 			}
 
 			unsigned char value =
@@ -360,7 +644,7 @@ class Memory_model
 			if (!local_base) {
 				PWRN("Memory model: no memory at address %p", addr);
 				PWRN("(attempted to write %x)", (int)value);
-				return;
+				throw No_memory_at_address();
 			}
 
 			local_base[offset_in_region] = value;
@@ -373,18 +657,28 @@ class Memory_model
  */
 static Memory_model *memory_model()
 {
-	static Memory_model inst(gdb_stub_thread()->rm_session_component());
+	static Memory_model inst(genode_child_resources()->rm_session_component());
 	return &inst;
 }
 
 
-unsigned char genode_read_memory_byte(void *addr)
+int genode_read_memory_byte(void *addr, unsigned char *value)
 {
-	return memory_model()->read(addr);
+	try {
+		*value = memory_model()->read(addr);
+		return 0;
+	} catch (Memory_model::No_memory_at_address) {
+		return -1;
+	}
 }
 
 
-void genode_write_memory_byte(void *addr, unsigned char value)
+int genode_write_memory_byte(void *addr, unsigned char value)
 {
-	return memory_model()->write(addr, value);
+	try {
+		memory_model()->write(addr, value);
+		return 0;
+	} catch (Memory_model::No_memory_at_address) {
+		return -1;
+	}
 }
