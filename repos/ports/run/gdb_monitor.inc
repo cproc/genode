@@ -19,9 +19,6 @@ proc gdb_main_breakpoint_cmds { target_binary_name } {
 	# don't ask for y/n when loading a new symbol file
 	append gdb_cmds {-ex "set interactive-mode off" }
 
-	# load the symbols of ld.lib.so
-	append gdb_cmds {-ex "symbol-file bin/ld.lib.so" }
-
 	# set a breakpoint in the 'Linker::Binary::call_entry_point' function
 	append gdb_cmds {-ex "b Linker::Binary::call_entry_point" }
 
@@ -32,7 +29,7 @@ proc gdb_main_breakpoint_cmds { target_binary_name } {
 	append gdb_cmds {-ex "delete 1" }
 
 	# load the symbols of the test application
-	append gdb_cmds "-ex \"symbol-file bin/$target_binary_name\" "
+	append gdb_cmds "-ex \"file bin/$target_binary_name\" "
 
 	# set a breakpoint in the application's 'main()' function
 	append gdb_cmds {-ex "b main" }
