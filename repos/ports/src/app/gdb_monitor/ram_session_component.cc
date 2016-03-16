@@ -18,7 +18,7 @@
 #include "ram_session_component.h"
 
 using namespace Genode;
-
+using namespace Gdb_monitor;
 
 Ram_session_component::Ram_session_component(const char *args)
 : _parent_ram_session(env()->parent()->session<Ram_session>(args))
