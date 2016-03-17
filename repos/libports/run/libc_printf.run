@@ -1,0 +1,30 @@
+build "core init test/libc_printf"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="RM"/>
+			<service name="ROM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<start name="test-libc_printf">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log">
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+				</libc>
+			</config>
+		</start>
+	</config>
+}
+
+build_boot_image "core init test-libc_printf libc.lib.so ld.lib.so"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until {.*child "test-libc_printf" exited with exit value 0.*} 10
