@@ -356,6 +356,8 @@ void Pager_object::wake_up()
 	if (!_state.blocked())
 		return;
 
+	_state.thread.exception = false;
+
 	_state.unblock();
 
 	uint8_t res = sm_ctrl(sel_sm_block(), SEMAPHORE_UP);
@@ -397,6 +399,7 @@ uint8_t Pager_object::client_recall(bool get_state_and_block)
 		_state.thread.ip     = utcb->ip;
 		_state.thread.sp     = utcb->sp;
 		_state.thread.eflags = utcb->flags;
+		_state.thread.exception = utcb->qual[0];
 		_state.block();
 	}
 

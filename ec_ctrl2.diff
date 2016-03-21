@@ -1,0 +1,49 @@
+ec_ctrl2.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/syscall.cpp |   23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 82f6325..58a4e8e 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -627,13 +627,34 @@ void Ec::sys_ec_ctrl()
+ #endif
+        	           Mtd::RSP |
+        	           Mtd::RIP_LEN |
+-       	           Mtd::RFLAGS;
++       	           Mtd::RFLAGS |
++       	           Mtd::QUAL;
+ 
+         if (ec->in_syscall()) {
+             regs.REG(ip) = ec->regs.ARG_IP;
+             regs.REG(sp) = ec->regs.ARG_SP;
+         }
+ 
++        /*
++         * Find out if the EC is in exception handling state, which is the
++         * case if it has called an exception handler portal. The exception
++         * numbers in the comparison are the ones handled as exception in
++         * 'entry.S'. Page fault exceptions are not of interest for GDB, which
++         * is currently the only user of this status information.
++         */
++		if ((ec->cont == ret_user_iret) &&
++		    (ec->partner != nullptr) && 
++		    (ec->partner->cont == recv_kern) &&
++		    (((regs.dst_portal >= 0x00) && (regs.dst_portal <= 0x01)) ||
++		     ((regs.dst_portal >= 0x03) && (regs.dst_portal <= 0x07)) ||
++		     ((regs.dst_portal >= 0x0a) && (regs.dst_portal <= 0x0d)) ||
++		     ((regs.dst_portal >= 0x10) && (regs.dst_portal <= 0x13)))) {
++		
++			/* let the exception state be transferred into utcb->qual[0] */
++			regs.err = 1;
++		} else
++			regs.err = 0;
++
+         /* the 'if' avoids an "unused result" warning */
+         if (current->utcb->load_exc (&regs)) {}
+     }

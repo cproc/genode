@@ -17,6 +17,7 @@
 
 #include <sys/ptrace.h>
 
+#if 0
 long ptrace(enum __ptrace_request request, ...)
 {
 	char *request_str = 0;
@@ -41,3 +42,4 @@ long ptrace(enum __ptrace_request request, ...)
 	errno = EINVAL;
 	return -1;
 }
+#endif
