@@ -216,8 +216,10 @@ namespace Genode {
 			 */
 			bool copy_thread_state(Thread_state * state_dst)
 			{
-				if (!state_dst || !_state.blocked())
+				if (!state_dst || !_state.blocked()) {
+					PDBG("failed: %u, %u", (bool)state_dst, (bool)_state.blocked());
 					return false;
+				}
 
 				*state_dst = _state.thread;
 
