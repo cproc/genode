@@ -196,7 +196,7 @@ if {![regexp {\$2 = 2} $output]} {
 }
 
 # does not work on NOVA yet
-if {![have_spec nova]} {
+if {![have_spec novaxxxxxxxxxxx]} {
 
 	puts "\n"
 	puts "----- test: 'call' command -----"

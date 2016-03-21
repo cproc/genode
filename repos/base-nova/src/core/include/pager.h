@@ -115,7 +115,8 @@ namespace Genode {
 
 			addr_t _pd;
 
-			void _copy_state(Nova::Utcb * utcb);
+			void _copy_state_from_utcb(Nova::Utcb * utcb);
+			void _copy_state_to_utcb(Nova::Utcb * utcb);
 
 			addr_t sel_pt_cleanup() const { return _selectors; }
 			addr_t sel_sm_block()   const { return _selectors + 1; }
@@ -219,6 +220,19 @@ namespace Genode {
 					return false;
 
 				*state_dst = _state.thread;
+
+				return true;
+			}
+
+			/*
+			 * Copy thread state to recalled thread.
+			 */
+			bool copy_thread_state(Thread_state state_src)
+			{
+				if (!_state.blocked())
+					return false;
+
+				_state.thread = state_src;
 
 				return true;
 			}

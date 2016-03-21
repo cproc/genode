@@ -19,16 +19,43 @@
 
 using namespace Genode;
 
-void Pager_object::_copy_state(Nova::Utcb * utcb)
+void Pager_object::_copy_state_from_utcb(Nova::Utcb * utcb)
 {
-	_state.thread.ebp = utcb->bp;
-	_state.thread.eax = utcb->ax;
-	_state.thread.ebx = utcb->bx;
-	_state.thread.ecx = utcb->cx;
-	_state.thread.edx = utcb->dx;
-	_state.thread.esi = utcb->si;
-	_state.thread.edi = utcb->di;
+	_state.thread.ebp       = utcb->bp;
+	_state.thread.eax       = utcb->ax;
+	_state.thread.ebx       = utcb->bx;
+	_state.thread.ecx       = utcb->cx;
+	_state.thread.edx       = utcb->dx;
+	_state.thread.esi       = utcb->si;
+	_state.thread.edi       = utcb->di;
 
-	_state.thread.gs  = utcb->gs.sel;
-	_state.thread.fs  = utcb->fs.sel;
+	_state.thread.gs        = utcb->gs.sel;
+	_state.thread.fs        = utcb->fs.sel;
+
+	_state.thread.ip        = utcb->ip;
+	_state.thread.sp        = utcb->sp;
+	_state.thread.eflags    = utcb->flags;
+
+	_state.thread.exception = utcb->qual[0];
+}
+
+void Pager_object::_copy_state_to_utcb(Nova::Utcb * utcb)
+{
+	utcb->bp     = _state.thread.ebp;
+	utcb->ax     = _state.thread.eax;
+	utcb->bx     = _state.thread.ebx;
+	utcb->cx     = _state.thread.ecx;
+	utcb->dx     = _state.thread.edx;
+	utcb->si     = _state.thread.esi;
+	utcb->di     = _state.thread.edi;
+
+	utcb->ip     = _state.thread.ip;
+	utcb->sp     = _state.thread.sp;
+	utcb->flags  = _state.thread.eflags;
+
+	utcb->mtd = Nova::Mtd::ACDB |
+	            Nova::Mtd::EBSD |
+	            Nova::Mtd::ESP |
+	            Nova::Mtd::EIP |
+	            Nova::Mtd::EFL;
 }
