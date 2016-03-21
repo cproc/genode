@@ -66,9 +66,14 @@ void Pager_object::_copy_state_to_utcb(Nova::Utcb * utcb)
 	utcb->r14    = _state.thread.r14;
 	utcb->r15    = _state.thread.r15;
                    
-	utcb->ss.sel = _state.thread.ss;
-
 	utcb->ip     = _state.thread.ip;
 	utcb->sp     = _state.thread.sp;
 	utcb->flags  = _state.thread.eflags;
+
+	utcb->mtd = Nova::Mtd::ACDB |
+	            Nova::Mtd::EBSD |
+	            Nova::Mtd::R8_R15 |
+	            Nova::Mtd::ESP |
+	            Nova::Mtd::EIP |
+	            Nova::Mtd::EFL;
 }
