@@ -42,6 +42,16 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		bool _stop_new_threads = true;
 		Lock _stop_new_threads_lock;
 
+		Lock _thread_start_lock;
+		Lock _thread_added_to_list_lock;
+
+		/* data for breakpoint at first instruction */
+		enum { MAX_BREAKPOINT_LEN = 8 }; /* value from mem-break.c */
+		unsigned char _original_instructions[MAX_BREAKPOINT_LEN];
+		addr_t _breakpoint_ip;
+
+		void _set_breakpoint_at_first_instruction(addr_t ip);
+
 		Thread_info *_thread_info(Thread_capability thread_cap);
 
 	public:
@@ -65,6 +75,9 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		void stop_new_threads(bool stop);
 		bool stop_new_threads();
 		Lock &stop_new_threads_lock();
+		Lock &thread_start_lock();
+		Lock &thread_added_to_list_lock();
+		void remove_breakpoint_at_first_instruction();
 		Thread_capability first();
 		Thread_capability next(Thread_capability);
 

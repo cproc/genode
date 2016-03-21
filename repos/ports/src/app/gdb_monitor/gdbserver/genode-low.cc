@@ -51,6 +51,7 @@ using namespace Gdb_monitor;
 
 static Genode_child_resources *_genode_child_resources = 0;
 
+
 static Lock &main_thread_ready_lock()
 {
 	static Lock _main_thread_ready_lock(Lock::LOCKED);
@@ -70,51 +71,68 @@ Genode_child_resources *genode_child_resources()
 }
 
 
-int genode_thread_signal_pipe_read_fd(unsigned long lwpid)
-{
-	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
-
-	Thread_capability thread_cap = csc->thread_cap(lwpid);
-
-	if (!thread_cap.valid()) {
-		PERR("%s: could not find thread capability for lwpid %lu",
-		     __PRETTY_FUNCTION__, lwpid);
-		return -1;
-	}
-
-	return csc->signal_pipe_read_fd(thread_cap);
-}
-
-
 extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 {
 	extern int remote_desc;
 
 	fd_set readset;
+
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+
 PDBG("waitpid(%d, %d)", pid, flags);
 	while(1) {
-
+		
 		FD_ZERO (&readset);
-
+#if 0
 		if (remote_desc != -1)
 			FD_SET (remote_desc, &readset);
-
+#endif
 		if (pid == -1) {
 
-			FD_SET(genode_new_thread_pipe_read_fd(), &readset);
+			if (remote_desc != -1)
+				FD_SET (remote_desc, &readset);
 
-			Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+			FD_SET(genode_new_thread_pipe_read_fd(), &readset);
 
 			Thread_capability thread_cap = csc->first();
 
 			while (thread_cap.valid()) {
 				PDBG("adding signal pipe fd of lwpid %lu to set", csc->lwpid(thread_cap));
-				FD_SET(genode_thread_signal_pipe_read_fd(csc->lwpid(thread_cap)), &readset);
+				FD_SET(csc->signal_pipe_read_fd(thread_cap), &readset);
 				thread_cap = csc->next(thread_cap);
 			}
 
-		} else
-			FD_SET(genode_thread_signal_pipe_read_fd(pid), &readset);
+		} else {
+
+			Thread_capability thread_cap = csc->thread_cap(pid);
+
+			if (thread_cap.valid()) {
+
+				if (remote_desc != -1)
+					FD_SET (remote_desc, &readset);
+
+			} else {
+
+				/* the thread has not been started yet */
+
+				/* not adding 'remote_desc' to the readset to avoid interruption */
+
+				/* reset the 'thread_added_to_list' lock to locked state */
+				csc->thread_added_to_list_lock().unlock();
+				csc->thread_added_to_list_lock().lock();
+
+				/* let Cpu_session_component::start() start the thread */
+				csc->thread_start_lock().unlock();
+
+				/*
+				 * wait until the thread has been added to the thread list
+				 * in 'Cpu_session_component::start()'
+				 */
+				csc->thread_added_to_list_lock().lock();
+			}
+
+			FD_SET(csc->signal_pipe_read_fd(csc->thread_cap(pid)), &readset);
+		}
 
 		struct timeval wnohang_timeout = {0, 0};
 		struct timeval *timeout = (flags & WNOHANG) ? &wnohang_timeout : NULL;
@@ -155,24 +173,21 @@ PDBG("waitpid(%d, %d)", pid, flags);
 
 				/* received a signal */
 
-				Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
-
 				Thread_capability thread_cap = csc->first();
 
-				unsigned long lwpid = 0;
 				while (thread_cap.valid()) {
-					if (FD_ISSET(genode_thread_signal_pipe_read_fd(csc->lwpid(thread_cap)), &readset)) {
-						lwpid = csc->lwpid(thread_cap);
+					if (FD_ISSET(csc->signal_pipe_read_fd(thread_cap), &readset))
 						break;
-					}
 					thread_cap = csc->next(thread_cap);
 				}
 
-				if (lwpid == 0)
+				if (!thread_cap.valid())
 					continue;
 
 				int signal;
-				read(genode_thread_signal_pipe_read_fd(lwpid), &signal, sizeof(signal));
+				read(csc->signal_pipe_read_fd(thread_cap), &signal, sizeof(signal));
+
+				unsigned long lwpid = csc->lwpid(thread_cap);
 
 				//if (debug_threads)
 					PDBG("thread %lu received signal %d", lwpid, signal);
@@ -187,8 +202,6 @@ PDBG("waitpid(%d, %d)", pid, flags);
 					 * the single step has not arrived yet. In this case, the SIGTRAP must be
 					 * delivered first, otherwise gdbserver would single-step the thread again.
 					 */
-
-					Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 					Thread_capability thread_cap = csc->thread_cap(lwpid);
 
@@ -339,8 +352,7 @@ extern "C" int fork()
 
 	_genode_child_resources = child->genode_child_resources();
 
-	if (!_genode_child_resources)
-		return -1;
+	child->start();
 
 	/* wait until the target's main thread is ready */
 	main_thread_ready_lock().lock();

@@ -35,13 +35,16 @@
 
 namespace Gdb_monitor { class App_child; }
 
-class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_enforce_labeling
+class Gdb_monitor::App_child : public Child_policy,
+                               public Init::Child_policy_enforce_labeling
 {
 	private:
 
 		enum { STACK_SIZE = 4*1024*sizeof(long) };
 
 		const char                    *_unique_name;
+
+		Genode::Dataspace_capability  _elf_ds;
 
 		Rpc_entrypoint                _entrypoint;
 
@@ -71,7 +74,7 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 
 		Pd_connection                 _pd;
 
-		Child                         _child;
+		Child                        *_child;
 
 		Rom_service                   _rom_service;
 
@@ -286,6 +289,7 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 				  Xml_node                        target_node)
 		: Init::Child_policy_enforce_labeling(unique_name),
 		  _unique_name(unique_name),
+		  _elf_ds(elf_ds),
 		  _entrypoint(cap_session, STACK_SIZE, "GDB monitor entrypoint name"),
 		  _parent_services(parent_services),
 		  _root_ep(root_ep),
@@ -295,18 +299,16 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 		  _unresolved_page_fault_dispatcher(*signal_receiver,
 		                                    *this,
 		                                    &App_child::_dispatch_unresolved_page_fault),
-		  _rm_root(&_entrypoint, env()->heap() /* should be _child.heap() */,
+		  _rm_root(&_entrypoint, env()->heap() /* should be _child.heap()? */,
 				   &_managed_ds_map, &_genode_child_resources),
 		  _rm_session_cap(_get_rm_session_cap()),
-		  _cpu_root(&_entrypoint, env()->heap() /* should be _child.heap() */,
+		  _cpu_root(&_entrypoint, env()->heap() /* should be _child.heap()? */,
 					signal_receiver, &_genode_child_resources),
 		  _cpu_session_cap(_get_cpu_session_cap()),
 		  _ram_session_cap(ram_session),
 		  _pd(unique_name),
-		  _child(elf_ds, _pd.cap(), ram_session, _cpu_session_cap,
-		         _rm_session_cap, &_entrypoint, this),
-		  _rom_service(&_entrypoint, _child.heap()),
-		  _rm_service(&_entrypoint, _child.heap(), &_managed_ds_map)
+		  _rom_service(&_entrypoint, env()->heap()),
+		  _rm_service(&_entrypoint, env()->heap(), &_managed_ds_map)
 		{
 			_local_services.insert(&_rm_service);
 			_local_services.insert(&_rom_service);
@@ -314,12 +316,24 @@ class Gdb_monitor::App_child : public Child_policy, public Init::Child_policy_en
 
 		~App_child()
 		{
+			destroy(env()->heap(), _child);
 			_rm_root.close(_rm_session_cap);
 		}
 
 		Genode_child_resources *genode_child_resources()
 		{
 			return &_genode_child_resources;
+		}
+
+		void start()
+		{
+			_child = new (env()->heap()) Child(_elf_ds,
+			                                   _pd.cap(),
+			                                   _ram_session_cap,
+			                                   _cpu_session_cap,
+		                                       _rm_session_cap,
+		                                       &_entrypoint,
+		                                       this);
 		}
 
 		/****************************

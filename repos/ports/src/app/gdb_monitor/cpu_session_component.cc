@@ -24,14 +24,47 @@
 #include "config.h"
 #include "thread_info.h"
 
-extern void genode_add_thread(unsigned long lwpid);
-extern void genode_remove_thread(unsigned long lwpid);
 
 using namespace Genode;
 using namespace Gdb_monitor;
 
+
+/* mem-break.c */
+extern "C" int breakpoint_len;
+extern "C" const unsigned char *breakpoint_data;
+
+/* genode-low.cc */
+extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
+extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
+extern void genode_add_thread(unsigned long lwpid);
+extern void genode_remove_thread(unsigned long lwpid);
+
+
 /* FIXME: use an allocator */
 static unsigned long new_lwpid = GENODE_LWP_BASE;
+
+
+void Cpu_session_component::_set_breakpoint_at_first_instruction(addr_t ip)
+{
+	_breakpoint_ip = ip;
+
+	if (genode_read_memory(_breakpoint_ip, _original_instructions,
+	                       breakpoint_len) != 0)
+		PERR("Could not read memory at thread start address");
+
+	if (genode_write_memory(_breakpoint_ip, breakpoint_data,
+	                        breakpoint_len) != 0)
+		PERR("Could not set breakpoint at thread start address");
+
+}
+
+
+void Cpu_session_component::remove_breakpoint_at_first_instruction()
+{
+	if (genode_write_memory(_breakpoint_ip, _original_instructions,
+	                        breakpoint_len) != 0)
+		PERR("Could not remove breakpoint at thread start address");
+}
 
 
 Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
@@ -166,6 +199,18 @@ Lock &Cpu_session_component::stop_new_threads_lock()
 }
 
 
+Lock &Cpu_session_component::thread_start_lock()
+{
+	return _thread_start_lock;
+}
+
+
+Lock &Cpu_session_component::thread_added_to_list_lock()
+{
+	return _thread_added_to_list_lock;
+}
+
+
 Thread_capability Cpu_session_component::first()
 {
 	Thread_info *thread_info = _thread_list.first();
@@ -188,18 +233,7 @@ Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 
 Thread_capability Cpu_session_component::create_thread(size_t weight, Cpu_session::Name const &name, addr_t utcb)
 {
-PDBG("create_thread()");
-	Thread_capability thread_cap =
-		_parent_cpu_session.create_thread(weight, name.string(), utcb);
-
-	if (thread_cap.valid()) {
-		Thread_info *thread_info = new (env()->heap())
-			Thread_info(this, thread_cap, new_lwpid++);
-		_thread_list.append(thread_info);
-	} else
-		PERR("%s: thread creation failed", __PRETTY_FUNCTION__);
-
-	return thread_cap;
+	return _parent_cpu_session.create_thread(weight, name.string(), utcb);
 }
 
 
@@ -236,27 +270,63 @@ int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
-PDBG("start()");
-	if (thread_info) {
+PDBG("start(%lx, %lx)", ip, sp);
+	if (thread_cap.valid() && !thread_info) {
+
+		/* valid thread and not started yet */
+
+#if 0
+		//PDBG("start() with single-step");
+
+		/* make the thread stop at the second instruction */
+		single_step(thread_cap, true);
+#endif
+		Thread_info *thread_info = new (env()->heap())
+			Thread_info(this, thread_cap, new_lwpid++);
+
+		/* reset the _thread_start_lock to locked state */
+		_thread_start_lock.unlock();
+		_thread_start_lock.lock();
+
+PDBG("calling genode_add_thread()");
+		/* inform gdbserver about the new thread */
+		genode_add_thread(thread_info->lwpid());
+PDBG("calling _thread_start_lock.lock()");
+
+		if (thread_info->lwpid() != GENODE_LWP_BASE) {
+			/*
+			 * block until gdbserver waits for the initial SIGSTOP in waitpid()
+			 *
+			 * waitpid() will unlock the lock when it detects that the thread is
+			 * not in the thread list yet. We cannot block for the main thread,
+			 * because it is started from gdbserver itself. But in that case
+			 * calling 'waitpid()' to wait for the initial SIGSTOP is the next
+			 * thing gdbserver will do.
+			 */
+			_thread_start_lock.lock();
+		}
+PDBG("calling _thread_list.append()");
+		/* add the thread to the thread list */
+		_thread_list.append(thread_info);
+
+		/* let 'waitpid()' wait for the first signal */
+		_thread_added_to_list_lock.unlock();
 
 		/* register the exception handler */
 		exception_handler(thread_cap,
 		                  thread_info->exception_signal_context_cap());
 
-		PDBG("start() with single-step");
+		/* set breakpoint at first instruction */
+		_set_breakpoint_at_first_instruction(ip);
 
-		/* make the thread stop at the second instruction */
-		single_step(thread_cap, true);
-
-	} else
-		PERR("%s: could not find thread info for the given thread capability",
-		     __PRETTY_FUNCTION__);
+	}
 
 	int result = _parent_cpu_session.start(thread_cap, ip, sp);
 
-	if ((result == 0) && thread_info) {
-		/* inform gdbserver about the new thread */
-		genode_add_thread(thread_info->lwpid());
+	if ((result != 0) && thread_info) {
+		genode_remove_thread(thread_info->lwpid());
+		_thread_list.remove(thread_info);
+		destroy(env()->heap(), thread_info);
 	}
 
 	PDBG("start() finished");

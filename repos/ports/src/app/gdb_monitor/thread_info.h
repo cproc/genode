@@ -119,6 +119,8 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 
 				_initial_sigtrap_pending = false;
 
+				_cpu_session_component->remove_breakpoint_at_first_instruction();
+
 				/*
 				 * The lock guard prevents an interruption by
 				 * 'genode_stop_all_threads()', which could cause
@@ -130,7 +132,7 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 					_cpu_session_component->stop_new_threads_lock());
 
 				if (!_cpu_session_component->stop_new_threads()) {
-					_cpu_session_component->single_step(_thread_cap, false);
+					//_cpu_session_component->single_step(_thread_cap, false);
 					_cpu_session_component->resume(_thread_cap);
 				}
 
