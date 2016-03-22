@@ -18,9 +18,13 @@
 #include <base/rpc_server.h>
 #include <ram_session/client.h>
 
-using namespace Genode;
+namespace Gdb_monitor
+{
+	class Ram_session_component;
+	using namespace Genode;
+}
 
-class Ram_session_component : public Rpc_object<Ram_session>
+class Gdb_monitor::Ram_session_component : public Rpc_object<Ram_session>
 {
 	private:
 
