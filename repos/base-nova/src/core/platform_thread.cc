@@ -254,26 +254,37 @@ Thread_state Platform_thread::state()
 
 void Platform_thread::state(Thread_state s)
 {
-	/* you can do it only once */
-	if (_sel_exc_base != Native_thread::INVALID_INDEX)
-		throw Cpu_session::State_access_failed();
+	if (_sel_exc_base == Native_thread::INVALID_INDEX) {
 
-	/*
-	 * s.sel_exc_base exception base of thread in caller
-	 *                protection domain - not in Core !
-	 * s.is_vcpu      If true it will run as vCPU,
-	 *                otherwise it will be a thread.
-	 */
-	if (!is_main_thread())
-		_sel_exc_base = s.sel_exc_base;
+		/* you can do it only once */
 
-	if (!s.is_vcpu)
-		return;
+		/*
+	 	 * s.sel_exc_base exception base of thread in caller
+	 	 *                protection domain - not in Core !
+	 	 * s.is_vcpu      If true it will run as vCPU,
+	 	 *                otherwise it will be a thread.
+	 	 */
+		if (!is_main_thread())
+			_sel_exc_base = s.sel_exc_base;
 
-	_features |= VCPU;
+		if (!s.is_vcpu)
+			return;
 
-	if (is_main_thread() && _pager)
-		_pager->prepare_vCPU_portals();
+		_features |= VCPU;
+
+		if (is_main_thread() && _pager)
+			_pager->prepare_vCPU_portals();
+
+	} else {
+
+		if (!_pager) throw Cpu_session::State_access_failed();
+
+		if (!_pager->copy_thread_state(s))
+			throw Cpu_session::State_access_failed();
+
+		/* the new state is transferred to the kernel by the recall handler */
+		_pager->client_recall(false);
+	}
 }
 
 
