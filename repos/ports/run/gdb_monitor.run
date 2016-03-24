@@ -90,7 +90,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_lock_pipe.lib.so libc_terminal.lib.so
+	ld.lib.so libc.lib.so libc_pipe.lib.so libc_terminal.lib.so
 	uart_drv
 	gdb_monitor test-gdb_monitor
 }
@@ -195,20 +195,16 @@ if {![regexp {\$2 = 2} $output]} {
 	exit -1
 }
 
-# does not work on NOVA yet
-if {![have_spec nova]} {
+puts "\n"
+puts "----- test: 'call' command -----"
+puts ""
 
-	puts "\n"
-	puts "----- test: 'call' command -----"
-	puts ""
+send "call test_var_func()\n"
+run_genode_until {\(gdb\)} 60 $gdb_id
 
-	send "call test_var_func()\n"
-	run_genode_until {\(gdb\)} 60 $gdb_id
-
-	if {![regexp {\$3 = 3} $output]} {
-		puts stderr "*** Error: 'call' command didn't result in the expected output"
-		exit -1
-	}
+if {![regexp {\$3 = 3} $output]} {
+	puts stderr "*** Error: 'call' command didn't result in the expected output"
+	exit -1
 }
 
 puts "\n"
