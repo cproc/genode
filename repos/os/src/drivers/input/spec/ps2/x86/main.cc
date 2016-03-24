@@ -83,6 +83,6 @@ struct Main
 
 namespace Server {
 	char const *name()             { return "ps2_drv_ep";      }
-	size_t stack_size()            { return 1024*sizeof(long); }
+	size_t stack_size()            { return 2*1024*sizeof(long); }
 	void construct(Entrypoint &ep) { static Main server(ep);   }
 }
