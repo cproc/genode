@@ -15,11 +15,12 @@
 #include <base/sleep.h>
 #include <base/printf.h>
 
-extern void genode_exit(int status) __attribute__((noreturn));
+namespace Libc { void schedule_exit(int status) __attribute__((noreturn)); }
+
 
 extern "C" void _exit(int status)
 {
-	genode_exit(status);
+	Libc::schedule_exit(status);
 }
 
 

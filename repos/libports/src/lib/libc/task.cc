@@ -165,6 +165,23 @@ namespace Libc {
 	{
 		task->schedule_suspend(suspended);
 	}
+
+	void schedule_exit(int status) __attribute__((noreturn));
+}
+
+
+extern void genode_exit(int status) __attribute__((noreturn));
+
+static int exit_status;
+static void exit_on_suspend() { genode_exit(exit_status); }
+
+void Libc::schedule_exit(int status)
+{
+	exit_status = status;
+	schedule_suspend(exit_on_suspend);
+
+	PERR("exit_on_suspend should not return");
+	while (1) ;
 }
 
 
