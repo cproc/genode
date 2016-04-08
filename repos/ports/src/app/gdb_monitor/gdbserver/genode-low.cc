@@ -66,6 +66,7 @@ Genode_child_resources *genode_child_resources()
 
 static void genode_stop_thread(unsigned long lwpid)
 {
+PDBG("genode_stop_thread(%lu)", lwpid);
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
 	Thread_capability thread_cap = csc->thread_cap(lwpid);

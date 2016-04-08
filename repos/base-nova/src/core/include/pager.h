@@ -88,6 +88,7 @@ namespace Genode {
 					SUBMIT_SIGNAL    = 0x20U,
 				};
 				uint8_t _status;
+				bool modified;
 
 				/* convenience function to access pause/recall state */
 				inline bool blocked() { return _status & BLOCKED;}
@@ -119,9 +120,10 @@ namespace Genode {
 			void _copy_state_from_utcb(Nova::Utcb * utcb);
 			void _copy_state_to_utcb(Nova::Utcb * utcb);
 
-			addr_t sel_pt_cleanup() const { return _selectors; }
-			addr_t sel_sm_block()   const { return _selectors + 1; }
-			addr_t sel_oom_portal() const { return _selectors + 2; }
+			addr_t sel_pt_cleanup()     const { return _selectors; }
+			addr_t sel_sm_block_pause() const { return _selectors + 1; }
+			addr_t sel_sm_block()       const { return _selectors + 2; }
+			addr_t sel_oom_portal()     const { return _selectors + 3; }
 
 			__attribute__((regparm(1)))
 			static void _page_fault_handler(addr_t pager_obj);
@@ -217,13 +219,17 @@ namespace Genode {
 			 */
 			bool copy_thread_state(Thread_state * state_dst)
 			{
+				PDBG("lock?");
+				Lock::Guard _state_lock_guard(_state_lock);
+				PDBG("lock!");
+
 				if (!state_dst || !_state.blocked()) {
 					PDBG("failed: %u, %u", (bool)state_dst, (bool)_state.blocked());
 					return false;
 				}
 
 				*state_dst = _state.thread;
-
+PDBG("unlock");
 				return true;
 			}
 
@@ -232,11 +238,15 @@ namespace Genode {
 			 */
 			bool copy_thread_state(Thread_state state_src)
 			{
+			PDBG("lock?");
+				Lock::Guard _state_lock_guard(_state_lock);
+PDBG("lock!");
 				if (!_state.blocked())
 					return false;
 
 				_state.thread = state_src;
-
+				_state.modified = true;
+PDBG("unlock");
 				return true;
 			}
 
@@ -252,15 +262,22 @@ namespace Genode {
 			inline void single_step(bool on)
 			{
 				PDBG("single_step(%d)", on);
+PDBG("lock?");
+				_state_lock.lock();
+PDBG("lock!");
 				if (_state.is_dead() || !_state.blocked() ||
 				    (on && (_state._status & _state.SINGLESTEP)) ||
 				    (!on && !(_state._status & _state.SINGLESTEP)))
+				    PDBG("unlock");
+				    _state_lock.unlock();
 					return;
 
 				if (on)
 					_state._status |= _state.SINGLESTEP;
 				else
 					_state._status &= ~_state.SINGLESTEP;
+PDBG("unlock");
+				_state_lock.unlock();
 
 				/* force client in exit and thereby apply single_step change */
 				client_recall(false);
@@ -279,6 +296,10 @@ namespace Genode {
 			 */
 			void unresolved_page_fault_occurred()
 			{
+				PDBG("lock?");
+				Lock::Guard _state_lock_guard(_state_lock);
+				PDBG("lock!");
+
 				_state.thread.unresolved_page_fault = true;
 			}
 
