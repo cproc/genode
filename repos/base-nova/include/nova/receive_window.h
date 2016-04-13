@@ -75,6 +75,8 @@ struct Genode::Receive_window
 		enum { FREE_INVALID, FREE_SEL, UNUSED_CAP, USED_CAP }
 			_rcv_pt_cap_free [MAX_CAP_ARGS];
 
+	public:
+
 		/**
 		 * Read counter for unmarshalling portal capability
 		 * selectors

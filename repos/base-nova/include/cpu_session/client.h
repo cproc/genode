@@ -28,8 +28,11 @@ namespace Genode {
 		explicit Cpu_session_client(Cpu_session_capability session)
 		: Rpc_client<Nova_cpu_session>(static_cap_cast<Nova_cpu_session>(session)) { }
 
-		Thread_capability create_thread(size_t weight, Name const &name, addr_t utcb = 0) {
-			return call<Rpc_create_thread>(weight, name, utcb); }
+		Thread_capability create_thread(size_t quota, Name const &name, addr_t utcb = 0) {
+			Thread_capability cap = call<Rpc_create_thread>(quota, name, utcb);
+			PDBG("new thread has client-side cap local_name=%ld", cap.local_name());
+			return cap;
+		}
 
 		Ram_dataspace_capability utcb(Thread_capability thread) {
 			return call<Rpc_utcb>(thread); }

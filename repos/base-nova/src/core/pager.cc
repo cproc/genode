@@ -453,8 +453,10 @@ void Exception_handlers::register_handler(Pager_object *obj, Mtd mtd,
 	addr_t entry = func ? (addr_t)func : (addr_t)(&_handler<EV>);
 	uint8_t res = create_portal(obj->exc_pt_sel_client() + EV,
 	                            __core_pd_sel, ec_sel, mtd, entry, obj);
-	if (res != Nova::NOVA_OK)
+	if (res != Nova::NOVA_OK) {
+		PDBG("register_handler: create_portal failed");
 		throw Rm_session::Invalid_thread();
+	}
 }
 
 
@@ -518,8 +520,10 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	_state.sel_client_ec = Native_thread::INVALID_INDEX;
 
 	if (Native_thread::INVALID_INDEX == _selectors ||
-	    Native_thread::INVALID_INDEX == _client_exc_pt_sel)
+	    Native_thread::INVALID_INDEX == _client_exc_pt_sel) {
+	    PDBG("Pager_object construction failed");
 		throw Rm_session::Invalid_thread();
+	}
 
 	/* ypos information not supported by now */
 	if (location.ypos()) {
@@ -557,6 +561,7 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	 */
 	res = Nova::create_sm(exc_pt_sel_client() + SM_SEL_EC, pd_sel, 0);
 	if (res != Nova::NOVA_OK) {
+		PDBG("create_sm failed");
 		throw Rm_session::Invalid_thread();
 	}
 
@@ -571,12 +576,14 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	/* used to notify caller of as soon as pause succeeded */
 	res = Nova::create_sm(sel_sm_notify(), pd_sel, 0);
 	if (res != Nova::NOVA_OK) {
+		PDBG("create_sm 2 failed");
 		throw Rm_session::Invalid_thread();
 	}
 
 	/* semaphore used to block paged thread during page fault or recall */
 	res = Nova::create_sm(sel_sm_block(), pd_sel, 0);
 	if (res != Nova::NOVA_OK) {
+		PDBG("create_sm 3 failed");
 		throw Rm_session::Invalid_thread();
 	}
 }

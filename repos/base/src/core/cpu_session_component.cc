@@ -79,7 +79,12 @@ Thread_capability Cpu_session_component::create_thread(size_t weight,
 
 	_trace_sources.insert(thread->trace_source());
 
-	return _thread_ep->manage(thread);
+	Thread_capability cap = _thread_ep->manage(thread);
+
+	PDBG("new thread %s at ep %p, cap: local_name=%ld",
+	     name.string(), _thread_ep, cap.local_name());
+
+	return cap;
 }
 
 

@@ -134,7 +134,7 @@ void Rpc_entrypoint::_activation_entry()
 	if (utcb.msg_words() < 2) {
 		ep._rcv_buf.word(0) = ~0UL; /* invalid opcode */
 	} else {
-		copy_utcb_to_msgbuf(utcb, rcv_window, ep._rcv_buf);
+		copy_utcb_to_msgbuf(utcb, rcv_window, ep._rcv_buf, true);
 	}
 
 	Ipc_unmarshaller unmarshaller(ep._rcv_buf);
@@ -173,10 +173,11 @@ void Rpc_entrypoint::_activation_entry()
 	};
 	ep.apply(id_pt, lambda);
 
+	ep._rcv_buf.reset();
+
 	if (!rcv_window.prepare_rcv_window(*(Nova::Utcb *)ep.utcb()))
 		PWRN("out of capability selectors for handling server requests");
 
-	ep._rcv_buf.reset();
 	reply(utcb, exc, ep._snd_buf);
 }
 

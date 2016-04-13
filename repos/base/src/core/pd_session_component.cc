@@ -26,8 +26,12 @@ using namespace Genode;
 
 int Pd_session_component::bind_thread(Thread_capability thread)
 {
+	PDBG("thread local_name=%ld", thread.local_name());
 	return _thread_ep.apply(thread, [&] (Cpu_thread_component *cpu_thread) {
-		if (!cpu_thread) return -1;
+		if (!cpu_thread) {
+			PERR("bind_thread lookup failed");
+			return -1;
+		}
 
 		if (cpu_thread->bound()) {
 			PWRN("rebinding of threads not supported");

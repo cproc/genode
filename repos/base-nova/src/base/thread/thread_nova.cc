@@ -105,8 +105,10 @@ void Thread_base::_init_platform_thread(size_t weight, Type type)
 	revoke(Mem_crd(utcb >> 12, 0, rwx));
 
 	native_thread().exc_pt_sel = cap_map()->insert(NUM_INITIAL_PT_LOG2);
-	if (native_thread().exc_pt_sel == Native_thread::INVALID_INDEX)
+	if (native_thread().exc_pt_sel == Native_thread::INVALID_INDEX) {
+		PDBG("exc_pt_sel == Native_thread::INVALID_INDEX");
 		throw Cpu_session::Thread_creation_failed();
+	}
 
 	/* if no cpu session is given, use it from the environment */
 	if (!_cpu_session)
@@ -117,12 +119,16 @@ void Thread_base::_init_platform_thread(size_t weight, Type type)
 	name(buf, sizeof(buf));
 
 	_thread_cap = _cpu_session->create_thread(weight, buf);
-	if (!_thread_cap.valid())
+	if (!_thread_cap.valid()) {
+		PDBG("_cpu_session->create_thread returned invalid cap");
 		throw Cpu_session::Thread_creation_failed();
+	}
 
 	/* assign thread to protection domain */
-	if (env()->pd_session()->bind_thread(_thread_cap))
+	if (env()->pd_session()->bind_thread(_thread_cap)) {
+		PDBG("bind_thread failed");
 		throw Cpu_session::Thread_creation_failed();
+	}
 
 }
 

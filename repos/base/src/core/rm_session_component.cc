@@ -577,10 +577,15 @@ Pager_capability Rm_session_component::add_client(Thread_capability thread)
 	Affinity::Location location;
 	Weak_ptr<Address_space> address_space;
 
+	PDBG("thread: valid=%d, local_name=%ld", thread.valid(), thread.local_name());
+
 	{
 		/* lookup thread and setup correct parameters */
 		auto lambda = [&] (Cpu_thread_component *cpu_thread) {
-			if (!cpu_thread) throw Invalid_thread();
+			if (!cpu_thread) {
+				PDBG("add_client failed to look up thread, thread_ep=%p", _thread_ep);
+				throw Invalid_thread();
+			}
 
 			/* determine identification of client when faulting */
 			badge = cpu_thread->platform_thread()->pager_object_badge();

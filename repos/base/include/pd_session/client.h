@@ -26,6 +26,7 @@ struct Genode::Pd_session_client : Rpc_client<Pd_session>
 	: Rpc_client<Pd_session>(session) { }
 
 	int bind_thread(Thread_capability thread) override {
+		PDBG("bind thread with local cap local_name=%ld", thread.local_name());
 		return call<Rpc_bind_thread>(thread); }
 
 	int assign_parent(Capability<Parent> parent) override {

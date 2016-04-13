@@ -28,7 +28,8 @@
  */
 static inline Nova::mword_t copy_utcb_to_msgbuf(Nova::Utcb             &utcb,
                                                 Genode::Receive_window &rcv_window,
-                                                Genode::Msgbuf_base    &rcv_msg)
+                                                Genode::Msgbuf_base    &rcv_msg,
+                                                bool server = false)
 {
 	using namespace Genode;
 	using namespace Nova;
@@ -62,7 +63,14 @@ static inline Nova::mword_t copy_utcb_to_msgbuf(Nova::Utcb             &utcb,
 	for (unsigned i = 0; i < rcv_window.num_received_caps(); i++) {
 		Native_capability cap;
 		rcv_window.rcv_pt_sel(cap);
+		if (server)
+			PDBG("got cap argument local_name=%ld", cap.local_name());
 		rcv_msg.insert(cap);
+	}
+
+	if (server) {
+		PDBG("_rcv_pt_sel_cnt=%d _rcv_pt_sel_max=%d",
+		     rcv_window._rcv_pt_sel_cnt, rcv_window._rcv_pt_sel_max);
 	}
 
 	return protocol_word;

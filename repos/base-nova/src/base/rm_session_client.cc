@@ -34,6 +34,7 @@ void Rm_session_client::detach(Local_addr local_addr) {
 
 Pager_capability Rm_session_client::add_client(Thread_capability thread)
 {
+	PDBG("client-side thread cap: local_name=%ld", thread.local_name());
 	return call<Rpc_add_client>(thread);
 }
 
