@@ -75,6 +75,7 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		Lock &thread_start_lock();
 		Lock &thread_added_to_list_lock();
 		void remove_breakpoint_at_first_instruction();
+		int handle_initial_breakpoint(unsigned long lwpid);
 		Thread_capability first();
 		Thread_capability next(Thread_capability);
 

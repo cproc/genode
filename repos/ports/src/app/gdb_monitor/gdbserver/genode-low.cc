@@ -46,6 +46,13 @@ static bool verbose = false;
 
 static int _new_thread_pipe[2];
 
+/*
+ * When 'waitpid()' reports a SIGTRAP, this variable stores the lwpid of the
+ * corresponding thread. This information is used in the initial breakpoint
+ * handler to let the correct thread handle the event.
+ */
+static unsigned long sigtrap_lwpid;
+
 using namespace Genode;
 using namespace Gdb_monitor;
 
@@ -176,7 +183,11 @@ PDBG("waitpid(%d, %d)", pid, flags);
 				//if (debug_threads)
 					PDBG("thread %lu received signal %d", lwpid, signal);
 
-				if (signal == SIGSTOP) {
+				if (signal == SIGTRAP) {
+
+					sigtrap_lwpid = lwpid;
+					
+				} else if (signal == SIGSTOP) {
 
 					/*
 					 * Check if a SIGTRAP is pending
@@ -369,6 +380,20 @@ extern "C" int kill(pid_t pid, int sig)
 	}
 
 	return csc->send_signal(thread_cap, sig, 0);
+}
+
+
+extern "C" int initial_breakpoint_handler(CORE_ADDR addr)
+{
+	PDBG("*** initial_breakpoint_handler() called");
+	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
+	return csc->handle_initial_breakpoint(sigtrap_lwpid);
+}
+
+
+void genode_set_initial_breakpoint_at(CORE_ADDR addr)
+{
+	set_breakpoint_at(addr, initial_breakpoint_handler);
 }
 
 

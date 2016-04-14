@@ -89,15 +89,15 @@ void Pager_object::_page_fault_handler(addr_t pager_obj)
 	/* good case - found a valid region which is mappable */
 	if (!ret)
 		ipc_pager.reply_and_wait_for_fault();
-PDBG("lock?");
+//PDBG("lock?");
 	obj->_state_lock.lock();
-PDBG("lock!");
+//PDBG("lock!");
 	obj->_state.thread.ip     = ipc_pager.fault_ip();
 	obj->_state.thread.sp     = 0;
 	obj->_state.thread.trapno = PT_SEL_PAGE_FAULT;
 
 	obj->_state.block();
-PDBG("unlock");
+//PDBG("unlock");
 	obj->_state_lock.unlock();
 
 	char const * client = reinterpret_cast<char const *>(obj->_badge);
@@ -145,20 +145,20 @@ void Pager_object::exception(uint8_t exit_id)
 	uint8_t res        = 0xFF;
 	addr_t  mtd        = 0;
 
-PDBG("lock?");
+//PDBG("lock?");
 	_state_lock.lock();
-PDBG("lock!");
+//PDBG("lock!");
 	/* remember exception type for cpu_session()->state() calls */
 	_state.thread.trapno = exit_id;
 
 	if (_exception_sigh.valid()) {
 		_state.submit_signal();
-		PDBG("unlock");
+//PDBG("unlock");
 		_state_lock.unlock();
 		res = client_recall(true);
-		PDBG("lock?");
+//PDBG("lock?");
 		_state_lock.lock();
-		PDBG("lock!");
+//PDBG("lock!");
 	}
 
 	if (res != NOVA_OK) {
@@ -180,7 +180,7 @@ PDBG("lock!");
 			mtd      = Mtd::EIP;
 		}
 	}
-PDBG("unlock");
+//PDBG("unlock");
 	_state_lock.unlock();
 
 	utcb->set_msg_word(0);
@@ -195,22 +195,32 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	Thread_base  * myself = Thread_base::myself();
 	Pager_object *    obj = reinterpret_cast<Pager_object *>(pager_obj);
 	Utcb         *   utcb = reinterpret_cast<Utcb *>(myself->utcb());
-
-	PDBG("lock?");
+#if 1
+//PDBG("lock?");
 
 	obj->_state_lock.lock();
-PDBG("lock!");
+//PDBG("lock!");
+PDBG("utcb->flags & 0x100UL: %x", utcb->flags & 0x100UL);
 	if (obj->_state.modified) {
+PDBG("transferring state to UTCB");
 		obj->_copy_state_to_utcb(utcb);
 		obj->_state.modified = false;
-	}
+	} else
+		utcb->mtd = 0;
 
 	/* switch on/off single step */
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
-	if (obj->_state.singlestep() && !singlestep_state)
+	PDBG("singlestep_state: %x, single step requested: %x",
+	     singlestep_state, obj->_state.singlestep());
+	if (obj->_state.singlestep() && !singlestep_state) {
+		PDBG("setting single-step flag");
 		utcb->flags |= 0x100UL;
-	else if (!obj->_state.singlestep() && singlestep_state)
+		utcb->mtd |= Mtd::EFL;
+	} else if (!obj->_state.singlestep() && singlestep_state) {
+		PDBG("clearing single-step flag");
 		utcb->flags &= ~0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
 
 	/* deliver signal if it was requested */
 	if (obj->_state.to_submit()) {
@@ -221,13 +231,20 @@ PDBG("lock!");
 	/* block until cpu_session()->resume() respectively wake_up() call */
 
 	unsigned long sm = obj->_state.blocked() ? obj->sel_sm_block_pause() : 0;
-PDBG("unlock");
+//PDBG("unlock");
 	obj->_state_lock.unlock();
 
 	PDBG("%p: recall handler(): %lu", obj, sm);
 
 	utcb->set_msg_word(0);
 	reply(myself->stack_top(), sm);
+#else
+PDBG("_recall_handler()");
+	utcb->flags &= ~0x100;
+	utcb->mtd = Mtd::EFL;
+	utcb->set_msg_word(0);
+	reply(myself->stack_top());
+#endif
 }
 
 
@@ -243,8 +260,18 @@ PDBG("%p: _startup_handler(): IP: %lx, SP: %lx", obj, obj->_initial_eip, obj->_i
 	utcb->sp  = obj->_initial_esp;
 
 	utcb->mtd = Mtd::EIP | Mtd::ESP;
-	utcb->set_msg_word(0);
 
+#if 1
+	if (obj->_state.singlestep()) {
+	PDBG("setting single-step flag");
+		utcb->flags = 0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
+#endif
+	obj->_state.unblock();
+
+	utcb->set_msg_word(0);
+PDBG("_startup_handler() finished");
 	reply(myself->stack_top());
 }
 
@@ -365,13 +392,14 @@ void Pager_object::_invoke_handler(addr_t pager_obj)
 void Pager_object::wake_up()
 {
 	PDBG("%p: wake_up()", this);
-PDBG("lock?");
+//PDBG("lock?");
 	Lock::Guard _state_lock_guard(_state_lock);
 
-	PDBG("lock!");
+//PDBG("lock!");
 
 	if (!_state.blocked()) {
 		PDBG("!_state.blocked()");
+//PDBG("unlock");
 		return;
 	}
 
@@ -380,7 +408,7 @@ PDBG("lock?");
 	uint8_t res = sm_ctrl(sel_sm_block_pause(), SEMAPHORE_UP);
 	if (res != NOVA_OK)
 		PWRN("canceling blocked client failed (thread sm)");
-	PDBG("unlock");
+//PDBG("unlock");
 }
 
 
@@ -401,25 +429,29 @@ void Pager_object::client_cancel_blocking()
 
 uint8_t Pager_object::client_recall(bool get_state_and_block)
 {
-PDBG("lock?");
+	PDBG("%p: client_recall(): %u", this, get_state_and_block);
+
+//PDBG("lock?");
 	Lock::Guard _state_lock_guard(_state_lock);
-PDBG("lock!");
+//PDBG("lock!");
 	enum { STATE_REQUESTED = 1 };
 
 	uint8_t res = ec_ctrl(EC_RECALL, _state.sel_client_ec,
 	                      get_state_and_block ? STATE_REQUESTED : ~0UL);
 
-	if (res != NOVA_OK)
+	if (res != NOVA_OK) {
+PDBG("client_recall() failed");
 		return res;
+	}
 
 	if (get_state_and_block) {
 		Utcb *utcb = reinterpret_cast<Utcb *>(Thread_base::myself()->utcb());
 		_copy_state_from_utcb(utcb);
 		_state.block();
+		PDBG("IP: %lx", utcb->ip);
 	}
 
-	PDBG("%p: client_recall(): %u", this, get_state_and_block);
-PDBG("unlock");
+//PDBG("unlock");
 	return res;
 }
 
