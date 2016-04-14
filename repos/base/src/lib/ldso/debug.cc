@@ -13,6 +13,12 @@
 
 #include <debug.h>
 
+/*
+ * GDB can set a breakpoint at this function to find out when ldso has loaded
+ * the binary into memory.
+ */
+void binary_ready_hook_for_gdb() { }
+
 /**
  * C-break function for GDB
  */

@@ -591,6 +591,8 @@ void Component::construct(Genode::Environment &env)
 
 	Link_map::dump();
 
+	binary_ready_hook_for_gdb();
+
 	/* start binary */
 	binary->call_entry_point(env);
 }
