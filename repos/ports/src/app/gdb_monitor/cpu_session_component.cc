@@ -36,8 +36,8 @@ extern "C" const unsigned char *breakpoint_data;
 /* genode-low.cc */
 extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
 extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
-extern void genode_add_thread(unsigned long lwpid);
 extern void genode_remove_thread(unsigned long lwpid);
+extern void genode_set_initial_breakpoint_at(long long addr);
 
 
 /* FIXME: use an allocator */
@@ -72,14 +72,24 @@ void Cpu_session_component::remove_breakpoint_at_first_instruction()
 }
 
 
+int Cpu_session_component::handle_initial_breakpoint(unsigned long lwpid)
+{
+	Thread_info *thread_info = _thread_list.first();
+	while (thread_info) {
+		if (thread_info->lwpid() == lwpid)
+			return thread_info->handle_initial_breakpoint();
+		thread_info = thread_info->next();
+	}
+	return 0;
+}
+
+
 Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 {
 	Thread_info *thread_info = _thread_list.first();
 	while (thread_info) {
-		if (thread_info->thread_cap().local_name() == thread_cap.local_name()) {
+		if (thread_info->thread_cap().local_name() == thread_cap.local_name())
 			return thread_info;
-			break;
-		}
 		thread_info = thread_info->next();
 	}
 	return 0;
@@ -96,9 +106,8 @@ Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
 	Thread_info *thread_info = _thread_list.first();
 	while (thread_info) {
-		if (thread_info->lwpid() == lwpid) {
+		if (thread_info->lwpid() == lwpid)
 			return thread_info->thread_cap();
-		}
 		thread_info = thread_info->next();
 	}
 	return Thread_capability();
@@ -258,17 +267,22 @@ int Cpu_session_component::set_pager(Thread_capability thread_cap,
 }
 
 
+extern void genode_add_thread(unsigned long lwpid);
+extern "C" int set_gdb_breakpoint_at(long long where);
+
 int Cpu_session_component::start(Thread_capability thread_cap,
                                  addr_t ip, addr_t sp)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
+PDBG("start(%lx, %lx)", ip, sp);
+PDBG("thread_cap.valid(): %u, thread_info: %p", thread_cap.valid(), thread_info);
 	if (thread_cap.valid() && !thread_info) {
-
+PDBG("creating thread_info");
 		/* valid thread and not started yet */
 
-		Thread_info *thread_info = new (env()->heap())
-			Thread_info(this, thread_cap, new_lwpid++);
+		thread_info = new (env()->heap())
+			Thread_info(this, thread_cap, new_lwpid++, ip);
 
 		/* add the thread to the thread list */
 		_thread_list.append(thread_info);
@@ -277,14 +291,17 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		exception_handler(thread_cap,
 		                  thread_info->exception_signal_context_cap());
 
+		//genode_add_thread(thread_info->lwpid());
+
 		/* set breakpoint at first instruction */
-		if (!_set_breakpoint_at_first_instruction(ip)) {
-			/*
-			 * This can happen with NOVA worker threads.
-			 * Try single-stepping instead.
-			 */
-			single_step(thread_cap, true);
-		}
+		if (thread_info->lwpid() == GENODE_LWP_BASE)
+			_set_breakpoint_at_first_instruction(ip);
+		else
+			genode_set_initial_breakpoint_at(ip);
+
+#if 0
+		single_step(thread_cap, true);
+#endif
 	}
 
 	int result = _parent_cpu_session.start(thread_cap, ip, sp);
@@ -293,6 +310,16 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		_thread_list.remove(thread_info);
 		destroy(env()->heap(), thread_info);
 	}
+
+	//if (ip == 0) {
+		/*
+		 * Probably a NOVA local thread.
+		 * Using single-stepping to stop at second instruction.
+		 */
+		//single_step(thread_cap, true);
+	//}
+
+	PDBG("start() finished");
 
 	return result;
 }

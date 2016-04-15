@@ -197,14 +197,18 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	if (obj->_state.modified) {
 		obj->_copy_state_to_utcb(utcb);
 		obj->_state.modified = false;
-	}
+	} else
+		utcb->mtd = 0;
 
 	/* switch on/off single step */
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
-	if (obj->_state.singlestep() && !singlestep_state)
+	if (obj->_state.singlestep() && !singlestep_state) {
 		utcb->flags |= 0x100UL;
-	else if (!obj->_state.singlestep() && singlestep_state)
+		utcb->mtd |= Mtd::EFL;
+	} else if (!obj->_state.singlestep() && singlestep_state) {
 		utcb->flags &= ~0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
 
 	/* deliver signal if it was requested */
 	if (obj->_state.to_submit())
@@ -231,6 +235,14 @@ void Pager_object::_startup_handler(addr_t pager_obj)
 	utcb->sp  = obj->_initial_esp;
 
 	utcb->mtd = Mtd::EIP | Mtd::ESP;
+
+	if (obj->_state.singlestep()) {
+		utcb->flags = 0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
+
+	obj->_state.unblock();
+
 	utcb->set_msg_word(0);
 
 	reply(myself->stack_top());

@@ -23,17 +23,20 @@
 #include "append_list.h"
 #include "cpu_session_component.h"
 
+extern "C" int delete_gdb_breakpoint_at(long long where);
+
 namespace Gdb_monitor { class Thread_info; }
 
 class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 {
 	private:
 
-		static constexpr bool _verbose = false;
+		static constexpr bool _verbose = /*false*/true;
 
 		Cpu_session_component          *_cpu_session_component;
 		Thread_capability               _thread_cap;
 		unsigned long                   _lwpid;
+		addr_t                          _initial_ip;
 		
 		/*
 		 * SIGTRAP, SIGSTOP and SIGINT must get delivered to the gdbserver code
@@ -48,6 +51,7 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 		int                             _pipefd[2];
 		Lock                            _pipe_lock;
 		bool                            _initial_sigtrap_pending = true;
+		bool                            _initial_breakpoint_handled = false;
 
 		void _dispatch_exception(unsigned)
 		{
@@ -68,10 +72,12 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 
 		Thread_info(Cpu_session_component *cpu_session_component,
 					Thread_capability thread_cap,
-					unsigned long lwpid)
+					unsigned long lwpid,
+					addr_t initial_ip)
 		: _cpu_session_component(cpu_session_component),
 		  _thread_cap(thread_cap),
 		  _lwpid(lwpid),
+		  _initial_ip(initial_ip),
 		  _exception_dispatcher(
 		      *_cpu_session_component->exception_signal_receiver(),
 		      *this,
@@ -115,14 +121,33 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 
 		int signal_pipe_read_fd() { return _pipefd[0]; }
 
+		int handle_initial_breakpoint()
+		{
+			if (!_initial_breakpoint_handled) {
+				_initial_breakpoint_handled = true;
+				PDBG("deleting initial breakpoint for this thread");
+				return 1;
+			}
+			PDBG("initial breakpoint for this thread already deleted");
+			return 0;
+		}
+
 		int deliver_signal(int signo, unsigned long *payload)
 		{
+#if 1
 			if ((signo == SIGTRAP) && _initial_sigtrap_pending) {
 
 				_initial_sigtrap_pending = false;
 
-				_cpu_session_component->remove_breakpoint_at_first_instruction();
-
+				PDBG("received initial SIGTRAP for lwpid %u", _lwpid);
+#if 1
+				if (_lwpid == GENODE_LWP_BASE)
+					_cpu_session_component->remove_breakpoint_at_first_instruction();
+				else {
+					//PDBG("deleting initial breakpoint"); 
+					//delete_gdb_breakpoint_at(_initial_ip);
+				}
+#endif
 				/*
 				 * The lock guard prevents an interruption by
 				 * 'genode_stop_all_threads()', which could cause
@@ -146,7 +171,7 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 				 */
 				signo = SIGINFO;
 			}
-
+#endif
 			switch (signo) {
 				case SIGSTOP:
 					if (_verbose)

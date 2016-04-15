@@ -84,13 +84,10 @@ int Platform_thread::start(void *ip, void *sp)
 
 		_pager->assign_pd(_pd->pd_sel());
 
-		/* ip == 0 means that caller will use the thread as worker */
-		bool thread_global = ip;
-
 		uint8_t res;
 		do {
 			res = create_ec(_sel_ec(), _pd->pd_sel(), _location.xpos(),
-			                utcb, initial_sp, _sel_exc_base, thread_global);
+			                utcb, initial_sp, _sel_exc_base, !is_worker());
 			if (res == Nova::NOVA_PD_OOM && Nova::NOVA_OK != _pager->handle_oom()) {
 				_pager->assign_pd(Native_thread::INVALID_INDEX);
 				PERR("creation of new thread failed %u", res);
@@ -98,9 +95,7 @@ int Platform_thread::start(void *ip, void *sp)
 			}
 		} while (res != Nova::NOVA_OK);
 
-		if (!thread_global) {
-			_features |= WORKER;
-
+		if (is_worker()) {
 			/* local/worker threads do not require a startup portal */
 			revoke(Obj_crd(_pager->exc_pt_sel_client() + PT_SEL_STARTUP, 0));
 		}
@@ -268,6 +263,9 @@ void Platform_thread::state(Thread_state s)
 	 	 */
 		if (!is_main_thread())
 			_sel_exc_base = s.sel_exc_base;
+
+		if (!s.is_global_thread)
+			_features |= WORKER;
 
 		if (!s.is_vcpu)
 			return;
