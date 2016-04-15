@@ -209,14 +209,18 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 	}
 
 	/* deliver signal if it was requested */
-	if (obj->_state.to_submit())
+	if (obj->_state.to_submit()) {
+		PDBG("submitting signal");
 		obj->submit_exception_signal();
+	}
 
 	/* block until cpu_session()->resume() respectively wake_up() call */
 
 	unsigned long sm = obj->_state.blocked() ? obj->sel_sm_block_pause() : 0;
 
 	obj->_state_lock.unlock();
+
+	PDBG("recall handler");
 
 	utcb->set_msg_word(0);
 	reply(myself->stack_top(), sm);
@@ -362,12 +366,12 @@ void Pager_object::_invoke_handler(addr_t pager_obj)
 
 void Pager_object::wake_up()
 {
+	PDBG("wake_up()");
+
 	Lock::Guard _state_lock_guard(_state_lock);
 
 	if (!_state.blocked())
 		return;
-
-	_state.thread.exception = false;
 
 	_state.unblock();
 
