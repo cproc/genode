@@ -18,31 +18,30 @@
 
 #include "ram_session_component.h"
 
-namespace Genode {
+namespace Gdb_monitor { class Ram_root; }
 
-	class Ram_root : public Root_component<Ram_session_component>
-	{
-		protected:
+class Gdb_monitor::Ram_root : public Root_component<Ram_session_component>
+{
+	protected:
 
-			Ram_session_component *_create_session(const char *args)
-			{
-				return new (md_alloc())
-					Ram_session_component(args);
-			}
+		Ram_session_component *_create_session(const char *args)
+		{
+			return new (md_alloc())
+				Ram_session_component(args);
+		}
 
-		public:
+	public:
 
-			/**
-			 * Constructor
-			 *
-			 * \param session_ep  entry point for managing ram session objects
-			 * \param md_alloc    meta-data allocator to be used by root component
-			 */
-			Ram_root(Rpc_entrypoint *session_ep,
-			         Allocator      *md_alloc)
-			: Root_component<Ram_session_component>(session_ep, md_alloc)
-			{ }
-	};
-}
+		/**
+		 * Constructor
+		 *
+		 * \param session_ep  entry point for managing ram session objects
+		 * \param md_alloc    meta-data allocator to be used by root component
+		 */
+		Ram_root(Rpc_entrypoint *session_ep,
+				 Allocator      *md_alloc)
+		: Root_component<Ram_session_component>(session_ep, md_alloc)
+		{ }
+};
 
 #endif /* _RAM_ROOT_H_ */

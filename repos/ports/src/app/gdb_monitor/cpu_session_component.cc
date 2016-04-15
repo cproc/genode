@@ -14,20 +14,62 @@
 /* Genode includes */
 #include <base/env.h>
 #include <base/printf.h>
+#include <base/sleep.h>
 #include <cpu_session_component.h>
 #include <util/list.h>
 
+#include <signal.h>
+
 /* GDB monitor includes */
 #include "config.h"
+#include "thread_info.h"
 
-extern void genode_add_thread(unsigned long lwpid);
-extern void genode_remove_thread(unsigned long lwpid);
 
 using namespace Genode;
 using namespace Gdb_monitor;
 
+
+/* mem-break.c */
+extern "C" int breakpoint_len;
+extern "C" const unsigned char *breakpoint_data;
+
+/* genode-low.cc */
+extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
+extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
+extern void genode_add_thread(unsigned long lwpid);
+extern void genode_remove_thread(unsigned long lwpid);
+
+
 /* FIXME: use an allocator */
 static unsigned long new_lwpid = GENODE_LWP_BASE;
+
+
+bool Cpu_session_component::_set_breakpoint_at_first_instruction(addr_t ip)
+{
+	_breakpoint_ip = ip;
+
+	if (genode_read_memory(_breakpoint_ip, _original_instructions,
+	                       breakpoint_len) != 0) {
+		PWRN("%s: could not read memory at thread start address", __PRETTY_FUNCTION__);
+		return false;
+	}
+
+	if (genode_write_memory(_breakpoint_ip, breakpoint_data,
+	                        breakpoint_len) != 0) {
+		PWRN("%s: could not set breakpoint at thread start address", __PRETTY_FUNCTION__);
+		return false;
+	}
+
+	return true;
+}
+
+
+void Cpu_session_component::remove_breakpoint_at_first_instruction()
+{
+	if (genode_write_memory(_breakpoint_ip, _original_instructions,
+	                        breakpoint_len) != 0)
+		PWRN("%s: could not remove breakpoint at thread start address", __PRETTY_FUNCTION__);
+}
 
 
 Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
@@ -44,9 +86,9 @@ Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
 }
 
 
-unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
+Signal_receiver *Cpu_session_component::exception_signal_receiver()
 {
-	return _thread_info(thread_cap)->lwpid();
+	return _exception_signal_receiver;
 }
 
 
@@ -63,40 +105,101 @@ Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 }
 
 
-Thread_capability
-Cpu_session_component::create_thread(size_t weight, Name const &name,
-                                     addr_t utcb)
+unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
 {
-	Thread_capability thread_cap =
-		_parent_cpu_session.create_thread(weight, name.string(), utcb);
-
-	if (thread_cap.valid()) {
-		Thread_info *thread_info = new (env()->heap()) Thread_info(thread_cap, new_lwpid++);
-		_thread_list.append(thread_info);
-	}
-
-	return thread_cap;
+	return _thread_info(thread_cap)->lwpid();
 }
 
 
-Ram_dataspace_capability Cpu_session_component::utcb(Thread_capability thread)
+int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
 {
-	return _parent_cpu_session.utcb(thread);
+	return _thread_info(thread_cap)->signal_pipe_read_fd();
 }
 
 
-void Cpu_session_component::kill_thread(Thread_capability thread_cap)
+int Cpu_session_component::send_signal(Thread_capability thread_cap,
+                                       int signo,
+                                       unsigned long *payload)
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
-	if (thread_info) {
-		_exception_signal_receiver->dissolve(thread_info);
-		genode_remove_thread(thread_info->lwpid());
-		_thread_list.remove(thread_info);
-		destroy(env()->heap(), thread_info);
-	}
+	_parent_cpu_session.pause(thread_cap);
 
-	_parent_cpu_session.kill_thread(thread_cap);
+	switch (signo) {
+		case SIGSTOP:
+			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
+			return 1;
+		case SIGINT:
+			Signal_transmitter(thread_info->sigint_signal_context_cap()).submit();
+			return 1;
+		default:
+			PERR("unexpected signal %d", signo);
+			return 0;
+	}
+}
+
+
+/*
+ * This function delivers a SIGSEGV to the first thread with an unresolved
+ * page fault that it finds. Multiple page-faulted threads are currently
+ * not supported.
+ */
+
+void Cpu_session_component::handle_unresolved_page_fault()
+{
+	/*
+	 * It can happen that the thread state of the thread which caused the
+	 * page fault is not accessible yet. In that case, we'll retry until
+	 * it is accessible.
+	 */
+
+	while (1) {
+
+		Thread_capability thread_cap = first();
+
+		while (thread_cap.valid()) {
+
+			try {
+
+				Thread_state thread_state = _parent_cpu_session.state(thread_cap);
+
+				if (thread_state.unresolved_page_fault) {
+
+					/*
+					 * On base-foc it is necessary to pause the thread before
+					 * IP and SP are available in the thread state.
+					 */
+					_parent_cpu_session.pause(thread_cap);
+
+					_thread_info(thread_cap)->deliver_signal(SIGSEGV, 0);
+
+					return;
+				}
+
+			} catch (Cpu_session::State_access_failed) { }
+
+			thread_cap = next(thread_cap);
+		}
+
+	}
+}
+
+
+void Cpu_session_component::stop_new_threads(bool stop)
+{
+	_stop_new_threads = stop;
+}
+
+
+bool Cpu_session_component::stop_new_threads()
+{
+	return _stop_new_threads;
+}
+
+
+Lock &Cpu_session_component::stop_new_threads_lock()
+{
+	return _stop_new_threads_lock;
 }
 
 
@@ -120,6 +223,34 @@ Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 }
 
 
+Thread_capability Cpu_session_component::create_thread(size_t weight, Cpu_session::Name const &name, addr_t utcb)
+{
+	return _parent_cpu_session.create_thread(weight, name.string(), utcb);
+}
+
+
+Ram_dataspace_capability Cpu_session_component::utcb(Thread_capability thread)
+{
+	return _parent_cpu_session.utcb(thread);
+}
+
+
+void Cpu_session_component::kill_thread(Thread_capability thread_cap)
+{
+	Thread_info *thread_info = _thread_info(thread_cap);
+
+	if (thread_info) {
+		genode_remove_thread(thread_info->lwpid());
+		_thread_list.remove(thread_info);
+		destroy(env()->heap(), thread_info);
+	} else
+		PERR("%s: could not find thread info for the given thread capability",
+		     __PRETTY_FUNCTION__);
+
+	_parent_cpu_session.kill_thread(thread_cap);
+}
+
+
 int Cpu_session_component::set_pager(Thread_capability thread_cap,
                                      Pager_capability  pager_cap)
 {
@@ -132,17 +263,35 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
-	if (thread_info)
-		exception_handler(thread_cap, _exception_signal_receiver->manage(thread_info));
+	if (thread_cap.valid() && !thread_info) {
+
+		/* valid thread and not started yet */
+
+		Thread_info *thread_info = new (env()->heap())
+			Thread_info(this, thread_cap, new_lwpid++);
+
+		/* add the thread to the thread list */
+		_thread_list.append(thread_info);
+
+		/* register the exception handler */
+		exception_handler(thread_cap,
+		                  thread_info->exception_signal_context_cap());
+
+		/* set breakpoint at first instruction */
+		if (!_set_breakpoint_at_first_instruction(ip)) {
+			/*
+			 * This can happen with NOVA worker threads.
+			 * Try single-stepping instead.
+			 */
+			single_step(thread_cap, true);
+		}
+	}
 
 	int result = _parent_cpu_session.start(thread_cap, ip, sp);
 
-	if (thread_info) {
-		/* pause the first thread */
-		if (thread_info->lwpid() == GENODE_LWP_BASE)
-			pause(thread_cap);
-
-		genode_add_thread(thread_info->lwpid());
+	if ((result != 0) && thread_info) {
+		_thread_list.remove(thread_info);
+		destroy(env()->heap(), thread_info);
 	}
 
 	return result;

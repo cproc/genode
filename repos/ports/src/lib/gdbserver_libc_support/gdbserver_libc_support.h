@@ -29,8 +29,4 @@ struct user {
 		unsigned long int u_debugreg [8];
 };
 
-/* Missing in libc's sys/wait.h */
-
-#define __WCLONE 0
-
 #endif /* GDBSERVER_LIBC_DUMMIES_H */

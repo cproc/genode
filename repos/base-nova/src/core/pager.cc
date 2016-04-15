@@ -190,18 +190,14 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 
 	obj->_state_lock.lock();
 
+	obj->_copy_state_to_utcb(utcb);
+
 	/* switch on/off single step */
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
-	if (obj->_state.singlestep() && !singlestep_state) {
-		utcb->flags = obj->_state.thread.eflags | 0x100UL;
-		utcb->mtd = Nova::Mtd(Mtd::EFL).value();
-	} else {
-		if (!obj->_state.singlestep() && singlestep_state) {
-			utcb->flags = obj->_state.thread.eflags & ~0x100UL;
-			utcb->mtd = Nova::Mtd(Mtd::EFL).value();
-		} else
-			utcb->mtd = 0;
-	}
+	if (obj->_state.singlestep() && !singlestep_state)
+		utcb->flags |= 0x100UL;
+	else if (!obj->_state.singlestep() && singlestep_state)
+		utcb->flags &= ~0x100UL;
 
 	/* deliver signal if it was requested */
 	if (obj->_state.to_submit())
@@ -354,6 +350,8 @@ void Pager_object::wake_up()
 	if (!_state.blocked())
 		return;
 
+	_state.thread.exception = false;
+
 	_state.unblock();
 
 	uint8_t res = sm_ctrl(sel_sm_block(), SEMAPHORE_UP);
@@ -391,10 +389,7 @@ uint8_t Pager_object::client_recall(bool get_state_and_block)
 
 	if (get_state_and_block) {
 		Utcb *utcb = reinterpret_cast<Utcb *>(Thread_base::myself()->utcb());
-		_copy_state(utcb);
-		_state.thread.ip     = utcb->ip;
-		_state.thread.sp     = utcb->sp;
-		_state.thread.eflags = utcb->flags;
+		_copy_state_from_utcb(utcb);
 		_state.block();
 	}
 
