@@ -45,15 +45,20 @@ namespace Genode {
 		{
 			for (;;) {
 
+				PDBG("calling Rpc_pause");
+
 				call<Rpc_pause>(thread);
 
 				try {
+					PDBG("calling state()");
 					/* check if the thread state is valid */
 					state(thread);
+					PDBG("state valid");
 					/* the thread is blocked in the kernel */
 					return;
 				} catch (State_access_failed) {
 					/* the thread is (most likely) running on a different CPU */
+					PDBG("state invalid");
 				}
 			}
 		}

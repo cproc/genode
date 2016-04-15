@@ -221,8 +221,10 @@ namespace Genode {
 			{
 				Lock::Guard _state_lock_guard(_state_lock);
 
-				if (!state_dst || !_state.blocked())
+				if (!state_dst || !_state.blocked()) {
+					PDBG("failed: %u, %u", (bool)state_dst, (bool)_state.blocked());
 					return false;
+				}
 
 				*state_dst = _state.thread;
 
