@@ -207,6 +207,7 @@ void Thread_base::start()
 	if (global)
 		/* request creation of SC to let thread run*/
 		_cpu_session->resume(_thread_cap);
+//	PDBG("start() finished");
 }
 
 

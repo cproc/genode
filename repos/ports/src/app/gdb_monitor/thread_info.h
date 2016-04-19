@@ -31,7 +31,7 @@ class Gdb_monitor::Thread_info : public Append_list<Thread_info>::Element
 {
 	private:
 
-		static constexpr bool _verbose = false;
+		static constexpr bool _verbose = true;
 
 		Cpu_session_component          *_cpu_session_component;
 		Thread_capability               _thread_cap;
