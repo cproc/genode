@@ -28,4 +28,4 @@
 #define __GENODE__
 
 /* first process id */
-#define GENODE_LWP_BASE 1
+#define GENODE_MAIN_LWPID 1
