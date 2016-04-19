@@ -84,13 +84,10 @@ int Platform_thread::start(void *ip, void *sp)
 
 		_pager->assign_pd(_pd->pd_sel());
 
-		/* ip == 0 means that caller will use the thread as worker */
-		bool thread_global = ip;
-
 		uint8_t res;
 		do {
 			res = create_ec(_sel_ec(), _pd->pd_sel(), _location.xpos(),
-			                utcb, initial_sp, _sel_exc_base, thread_global);
+			                utcb, initial_sp, _sel_exc_base, !is_worker());
 			if (res == Nova::NOVA_PD_OOM && Nova::NOVA_OK != _pager->handle_oom()) {
 				_pager->assign_pd(Native_thread::INVALID_INDEX);
 				PERR("creation of new thread failed %u", res);
@@ -98,9 +95,7 @@ int Platform_thread::start(void *ip, void *sp)
 			}
 		} while (res != Nova::NOVA_OK);
 
-		if (!thread_global) {
-			_features |= WORKER;
-
+		if (is_worker()) {
 			/* local/worker threads do not require a startup portal */
 			revoke(Obj_crd(_pager->exc_pt_sel_client() + PT_SEL_STARTUP, 0));
 		}
@@ -256,26 +251,40 @@ Thread_state Platform_thread::state()
 
 void Platform_thread::state(Thread_state s)
 {
-	/* you can do it only once */
-	if (_sel_exc_base != Native_thread::INVALID_INDEX)
-		throw Cpu_session::State_access_failed();
+	if (_sel_exc_base == Native_thread::INVALID_INDEX) {
 
-	/*
-	 * s.sel_exc_base exception base of thread in caller
-	 *                protection domain - not in Core !
-	 * s.is_vcpu      If true it will run as vCPU,
-	 *                otherwise it will be a thread.
-	 */
-	if (!is_main_thread())
-		_sel_exc_base = s.sel_exc_base;
+		/* you can do it only once */
 
-	if (!s.is_vcpu)
-		return;
+		/*
+	 	 * s.sel_exc_base exception base of thread in caller
+	 	 *                protection domain - not in Core !
+	 	 * s.is_vcpu      If true it will run as vCPU,
+	 	 *                otherwise it will be a thread.
+	 	 */
+		if (!is_main_thread())
+			_sel_exc_base = s.sel_exc_base;
 
-	_features |= VCPU;
+		if (!s.is_global_thread)
+			_features |= WORKER;
 
-	if (is_main_thread() && _pager)
-		_pager->prepare_vCPU_portals();
+		if (!s.is_vcpu)
+			return;
+
+		_features |= VCPU;
+
+		if (is_main_thread() && _pager)
+			_pager->prepare_vCPU_portals();
+
+	} else {
+
+		if (!_pager) throw Cpu_session::State_access_failed();
+
+		if (!_pager->copy_thread_state(s))
+			throw Cpu_session::State_access_failed();
+
+		/* the new state is transferred to the kernel by the recall handler */
+		_pager->client_recall(false);
+	}
 }
 
 

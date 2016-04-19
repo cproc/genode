@@ -90,11 +90,15 @@ void Pager_object::_page_fault_handler(addr_t pager_obj)
 	if (!ret)
 		ipc_pager.reply_and_wait_for_fault();
 
+	obj->_state_lock.lock();
+
 	obj->_state.thread.ip     = ipc_pager.fault_ip();
 	obj->_state.thread.sp     = 0;
 	obj->_state.thread.trapno = PT_SEL_PAGE_FAULT;
 
 	obj->_state.block();
+
+	obj->_state_lock.unlock();
 
 	char const * client = reinterpret_cast<char const *>(obj->_badge);
 	/* region manager fault - to be handled */
@@ -190,17 +194,20 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 
 	obj->_state_lock.lock();
 
+	if (obj->_state.modified) {
+		obj->_copy_state_to_utcb(utcb);
+		obj->_state.modified = false;
+	} else
+		utcb->mtd = 0;
+
 	/* switch on/off single step */
 	bool singlestep_state = obj->_state.thread.eflags & 0x100UL;
 	if (obj->_state.singlestep() && !singlestep_state) {
-		utcb->flags = obj->_state.thread.eflags | 0x100UL;
-		utcb->mtd = Nova::Mtd(Mtd::EFL).value();
-	} else {
-		if (!obj->_state.singlestep() && singlestep_state) {
-			utcb->flags = obj->_state.thread.eflags & ~0x100UL;
-			utcb->mtd = Nova::Mtd(Mtd::EFL).value();
-		} else
-			utcb->mtd = 0;
+		utcb->flags |= 0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	} else if (!obj->_state.singlestep() && singlestep_state) {
+		utcb->flags &= ~0x100UL;
+		utcb->mtd |= Mtd::EFL;
 	}
 
 	/* deliver signal if it was requested */
@@ -209,7 +216,7 @@ void Pager_object::_recall_handler(addr_t pager_obj)
 
 	/* block until cpu_session()->resume() respectively wake_up() call */
 
-	unsigned long sm = obj->_state.blocked() ? obj->sel_sm_block() : 0;
+	unsigned long sm = obj->_state.blocked() ? obj->sel_sm_block_pause() : 0;
 
 	obj->_state_lock.unlock();
 
@@ -228,6 +235,14 @@ void Pager_object::_startup_handler(addr_t pager_obj)
 	utcb->sp  = obj->_initial_esp;
 
 	utcb->mtd = Mtd::EIP | Mtd::ESP;
+
+	if (obj->_state.singlestep()) {
+		utcb->flags = 0x100UL;
+		utcb->mtd |= Mtd::EFL;
+	}
+
+	obj->_state.unblock();
+
 	utcb->set_msg_word(0);
 
 	reply(myself->stack_top());
@@ -354,9 +369,11 @@ void Pager_object::wake_up()
 	if (!_state.blocked())
 		return;
 
+	_state.thread.exception = false;
+
 	_state.unblock();
 
-	uint8_t res = sm_ctrl(sel_sm_block(), SEMAPHORE_UP);
+	uint8_t res = sm_ctrl(sel_sm_block_pause(), SEMAPHORE_UP);
 	if (res != NOVA_OK)
 		PWRN("canceling blocked client failed (thread sm)");
 }
@@ -391,10 +408,7 @@ uint8_t Pager_object::client_recall(bool get_state_and_block)
 
 	if (get_state_and_block) {
 		Utcb *utcb = reinterpret_cast<Utcb *>(Thread_base::myself()->utcb());
-		_copy_state(utcb);
-		_state.thread.ip     = utcb->ip;
-		_state.thread.sp     = utcb->sp;
-		_state.thread.eflags = utcb->flags;
+		_copy_state_from_utcb(utcb);
 		_state.block();
 	}
 
@@ -522,6 +536,7 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 
 	addr_t pd_sel        = __core_pd_sel;
 	_state._status       = 0;
+	_state.modified      = false;
 	_state.sel_client_ec = Native_thread::INVALID_INDEX;
 	_state.block();
 
@@ -573,6 +588,12 @@ Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
 	                    reinterpret_cast<addr_t>(_invoke_handler), this);
 	if (res != Nova::NOVA_OK) {
 		PERR("could not create pager cleanup portal, error = %u\n", res);
+		throw Rm_session::Invalid_thread();
+	}
+
+	/* semaphore used to block paged thread during recall */
+	res = Nova::create_sm(sel_sm_block_pause(), pd_sel, 0);
+	if (res != Nova::NOVA_OK) {
 		throw Rm_session::Invalid_thread();
 	}
 
