@@ -117,7 +117,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libc_lock_pipe.lib.so libc_terminal.lib.so
+	ld.lib.so libc.lib.so libc_pipe.lib.so libc_terminal.lib.so
 	uart_drv
 	gdb_monitor
 	nitpicker pointer scout
@@ -145,7 +145,7 @@ append qemu_args " -serial mon:stdio "
 
 # connect comport 1 with TCP port $local_port
 append qemu_args " -serial chardev:uart "
-append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait "
+append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait,ipv4 "
 
 run_genode_until {.*Remote debugging using /dev/terminal.*} 30
 
