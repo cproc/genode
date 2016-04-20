@@ -38,6 +38,7 @@
 
 namespace Genode {
 
+	class Cpu_thread_component;
 	class Dataspace_component;
 	class Region_map_component;
 	class Rm_client;
@@ -270,10 +271,6 @@ class Genode::Region_map_component : public Rpc_object<Region_map>,
 				void sub_rm(Native_capability cap) { _rm_cap = cap; }
 		};
 
-
-		typedef Synced_allocator<Tslab<Rm_client, 1024> > Client_slab_alloc;
-		Client_slab_alloc             _client_slab;  /* backing store for
-		                                                client structures, synchronized */
 		Tslab<Rm_region_ref, 1024>    _ref_slab;     /* backing store for
 		                                                region list */
 		Allocator_avl_tpl<Rm_region>  _map;          /* region map for attach,
@@ -384,14 +381,21 @@ class Genode::Region_map_component : public Rpc_object<Region_map>,
 			return _apply_to_dataspace(addr, f, 0, RECURSION_LIMIT);
 		}
 
+		/**
+		 * Register thread as user of the region map as its address space
+		 *
+		 * Called at thread-construction time only.
+		 */
+		void add_client(Rm_client &);
+		void remove_client(Rm_client &);
+
+
 		/**************************
 		 ** Region map interface **
 		 **************************/
 
 		Local_addr       attach        (Dataspace_capability, size_t, off_t, bool, Local_addr, bool) override;
 		void             detach        (Local_addr) override;
-		Pager_capability add_client    (Thread_capability) override;
-		void             remove_client (Pager_capability) override;
 		void             fault_handler (Signal_context_capability handler) override;
 		State            state         () override;
 

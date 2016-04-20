@@ -56,10 +56,9 @@ class Cpu_session_component : public Rpc_object<Cpu_session>
 		 ** CPU session interface **
 		 ***************************/
 
-		Thread_capability create_thread(size_t, Name const &, addr_t);
+		Thread_capability create_thread(Capability<Pd_session>, size_t, Name const &, addr_t);
 		Ram_dataspace_capability utcb(Thread_capability thread);
 		void kill_thread(Thread_capability);
-		int set_pager(Thread_capability, Pager_capability);
 		int start(Thread_capability, addr_t, addr_t);
 		void pause(Thread_capability thread_cap);
 		void resume(Thread_capability thread_cap);

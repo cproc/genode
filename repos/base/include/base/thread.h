@@ -90,11 +90,6 @@ class Genode::Thread_base
 		Thread_capability _thread_cap;
 
 		/**
-		 * Capability to pager paging this thread (created by _start())
-		 */
-		Pager_capability  _pager_cap;
-
-		/**
 		 * Pointer to cpu session used for this thread
 		 */
 		Cpu_session *_cpu_session = nullptr;

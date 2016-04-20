@@ -24,6 +24,7 @@
 /* core includes */
 #include <pager.h>
 #include <cpu_thread_allocator.h>
+#include <pd_session_component.h>
 #include <platform_thread.h>
 #include <trace/control_area.h>
 #include <trace/source_registry.h>
@@ -55,20 +56,69 @@ namespace Genode {
 
 		private:
 
+			Rpc_entrypoint           &_ep;
+			Pager_entrypoint         &_pager_ep;
+			Capability<Pd_session>    _pd;
+			Region_map_component     &_address_space_region_map;
 			size_t              const _weight;
 			Session_label       const _session_label;
 			Thread_name         const _name;
 			Platform_thread           _platform_thread;
-			bool                      _bound;            /* pd binding flag */
+			bool                const _bound_to_pd;
+
+			bool _bind_to_pd(Pd_session_component &pd)
+			{
+				if (!pd.bind_thread(_platform_thread))
+					throw Cpu_session::Thread_creation_failed();
+				return true;
+			}
+
 			Signal_context_capability _sigh;             /* exception handler */
-			unsigned            const _trace_control_index;
-			Trace::Source             _trace_source;
+
+			struct Trace_control_slot
+			{
+				unsigned index = 0;
+				Trace::Control_area &trace_control_area;
+
+				Trace_control_slot(Trace::Control_area &trace_control_area)
+				: trace_control_area(trace_control_area)
+				{
+					if (!trace_control_area.alloc(index))
+						throw Cpu_session::Out_of_metadata();
+				}
+
+				~Trace_control_slot()
+				{
+					trace_control_area.free(index);
+				}
+
+				Trace::Control &control()
+				{
+					return *trace_control_area.at(index);
+				}
+			};
+
+			Trace_control_slot _trace_control_slot;
+
+			Trace::Source _trace_source { *this, _trace_control_slot.control() };
+
+			Weak_ptr<Address_space> _address_space = _platform_thread.address_space();
+
+			Rm_client _rm_client { &_address_space_region_map,
+			                       _platform_thread.pager_object_badge(),
+			                       _address_space,
+			                       _platform_thread.affinity() };
 
 		public:
 
 			/**
 			 * Constructor
 			 *
+			 * \param ep         entrypoint used for managing the thread RPC
+			 *                   object
+			 * \param pager_ep   pager entrypoint used for handling the page
+			 *                   faults of the thread
+			 * \param pd         PD session where the thread is executed
 			 * \param weight     weighting regarding the CPU session quota
 			 * \param quota      initial quota counter-value of the weight
 			 * \param labal      label of the threads session
@@ -77,23 +127,43 @@ namespace Genode {
 			 * \param utcb       user-local UTCB base
 			 * \param sigh       initial exception handler
 			 */
-			Cpu_thread_component(size_t const weight,
+			Cpu_thread_component(Rpc_entrypoint &ep,
+			                     Pager_entrypoint &pager_ep,
+			                     Pd_session_component &pd,
+			                     Trace::Control_area &trace_control_area,
+			                     size_t const weight,
 			                     size_t const quota,
 			                     Session_label const &label,
 			                     Thread_name const &name,
 			                     unsigned priority, addr_t utcb,
-			                     Signal_context_capability sigh,
-			                     unsigned trace_control_index,
-			                     Trace::Control &trace_control)
+			                     Signal_context_capability sigh)
 			:
+				_ep(ep), _pager_ep(pager_ep), _pd(pd.cap()),
+				_address_space_region_map(pd.address_space_region_map()),
 				_weight(weight),
 				_session_label(label), _name(name),
 				_platform_thread(quota, name.string(), priority, utcb),
-				_bound(false), _sigh(sigh),
-				_trace_control_index(trace_control_index),
-				_trace_source(*this, trace_control)
+				_bound_to_pd(_bind_to_pd(pd)),
+				_sigh(sigh),
+				_trace_control_slot(trace_control_area)
 			{
+				_ep.manage(this);
 				update_exception_sigh();
+
+				_address_space_region_map.add_client(_rm_client);
+
+				/* acquaint thread with its pager object */
+				_pager_ep.manage(&_rm_client);
+				_platform_thread.pager(&_rm_client);
+				_rm_client.thread_cap(cap());
+			}
+
+			~Cpu_thread_component()
+			{
+				_pager_ep.dissolve(&_rm_client);
+				_ep.dissolve(this);
+
+				_address_space_region_map.remove_client(_rm_client);
 			}
 
 
@@ -113,11 +183,13 @@ namespace Genode {
 			 ** Accessor functions **
 			 ************************/
 
+			Capability<Pd_session> pd() const { return _pd; }
+
 			Platform_thread *platform_thread() { return &_platform_thread; }
-			bool             bound()     const { return _bound; }
-			void             bound(bool b)     { _bound = b; }
-			Trace::Source   *trace_source()    { return &_trace_source; }
-			size_t           weight() const    { return _weight; }
+
+			Trace::Source *trace_source() { return &_trace_source; }
+
+			size_t weight() const { return _weight; }
 
 			void sigh(Signal_context_capability sigh)
 			{
@@ -133,7 +205,7 @@ namespace Genode {
 			/**
 			 * Return index within the CPU-session's trace control area
 			 */
-			unsigned trace_control_index() const { return _trace_control_index; }
+			unsigned trace_control_index() const { return _trace_control_slot.index; }
 	};
 
 
@@ -257,10 +329,9 @@ namespace Genode {
 			 ** CPU session interface **
 			 ***************************/
 
-			Thread_capability create_thread(size_t, Name const &, addr_t);
+			Thread_capability create_thread(Capability<Pd_session>, size_t, Name const &, addr_t);
 			Ram_dataspace_capability utcb(Thread_capability thread);
 			void kill_thread(Thread_capability);
-			int set_pager(Thread_capability, Pager_capability);
 			int start(Thread_capability, addr_t, addr_t);
 			void pause(Thread_capability thread_cap);
 			void resume(Thread_capability thread_cap);
