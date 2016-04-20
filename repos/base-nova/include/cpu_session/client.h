@@ -28,17 +28,16 @@ namespace Genode {
 		explicit Cpu_session_client(Cpu_session_capability session)
 		: Rpc_client<Nova_cpu_session>(static_cap_cast<Nova_cpu_session>(session)) { }
 
-		Thread_capability create_thread(size_t weight, Name const &name, addr_t utcb = 0) {
-			return call<Rpc_create_thread>(weight, name, utcb); }
+		Thread_capability
+		create_thread(Capability<Pd_session> pd, size_t quota, Name const &name,
+		              addr_t utcb = 0) override {
+			return call<Rpc_create_thread>(pd, quota, name, utcb); }
 
 		Ram_dataspace_capability utcb(Thread_capability thread) {
 			return call<Rpc_utcb>(thread); }
 
 		void kill_thread(Thread_capability thread) {
 			call<Rpc_kill_thread>(thread); }
-
-		int set_pager(Thread_capability thread, Pager_capability pager) {
-			return call<Rpc_set_pager>(thread, pager); }
 
 		int start(Thread_capability thread, addr_t ip, addr_t sp) {
 			return call<Rpc_start>(thread, ip, sp); }

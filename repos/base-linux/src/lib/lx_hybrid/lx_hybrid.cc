@@ -470,7 +470,7 @@ Thread_base::Thread_base(size_t weight, const char *name, size_t stack_size,
 
 	native_thread().meta_data->wait_for_construction();
 
-	_thread_cap = _cpu_session->create_thread(weight, name);
+	_thread_cap = _cpu_session->create_thread(env()->pd_session_cap(), weight, name);
 
 	Linux_native_cpu_client native_cpu(_cpu_session->native_cpu());
 	native_cpu.thread_id(_thread_cap, native_thread().pid, native_thread().tid);

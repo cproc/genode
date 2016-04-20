@@ -36,8 +36,9 @@ namespace Noux {
 	{
 		private:
 
-			bool const        _forked;
-			Cpu_connection    _cpu;
+			Pd_session_capability _core_pd;
+			bool const            _forked;
+			Cpu_connection        _cpu;
 
 			enum { MAX_THREADS = 8, MAIN_THREAD_IDX = 0 };
 
@@ -48,16 +49,19 @@ namespace Noux {
 			/**
 			 * Constructor
 			 *
-			 * \param forked  false if the CPU session belongs to a child
-			 *                created via execve or to the init process, or
-			 *                true if the CPU session belongs to a newly forked
-			 *                process.
+			 * \param core_pd  capability of PD session at core to be used
+			 *                 as argument of 'create_thread'
+			 * \param forked   false if the CPU session belongs to a child
+			 *                 created via execve or to the init process, or
+			 *                 true if the CPU session belongs to a newly
+			 *                 forked process.
 			 *
 			 * The 'forked' parameter controls the policy applied to the
 			 * startup of the main thread.
 			 */
-			Cpu_session_component(char const *label, bool forked)
-			: _forked(forked), _cpu(label) { }
+			Cpu_session_component(char const *label,
+			                      Pd_session_capability core_pd, bool forked)
+			: _core_pd(core_pd), _forked(forked), _cpu(label) { }
 
 			/**
 			 * Explicitly start main thread, only meaningful when
@@ -75,15 +79,23 @@ namespace Noux {
 			 ** Cpu_session interface **
 			 ***************************/
 
-			Thread_capability create_thread(size_t weight, Name const &name,
-			                                addr_t utcb)
+			Thread_capability create_thread(Capability<Pd_session>,
+			                                size_t weight, Name const &name,
+			                                addr_t utcb) override
 			{
 				/* create thread at core, keep local copy (needed on NOVA) */
 				for (unsigned i = 0; i < MAX_THREADS; i++) {
 					if (_threads[i].valid())
 						continue;
 
-					Thread_capability cap =_cpu.create_thread(weight, name, utcb);
+					/*
+					 * Note that we don't use the PD-capability argument (which
+					 * refers to our virtualized PD session) but the physical
+					 * core PD.
+					 */
+					Thread_capability cap =
+						_cpu.create_thread(_core_pd, weight, name, utcb);
+
 					_threads[i] = cap;
 					return cap;
 				}
@@ -104,10 +116,6 @@ namespace Noux {
 
 				_cpu.kill_thread(thread);
 			}
-
-			int set_pager(Thread_capability thread,
-			              Pager_capability  pager) {
-				return _cpu.set_pager(thread, pager); }
 
 			int start(Thread_capability thread, addr_t ip, addr_t sp)
 			{
