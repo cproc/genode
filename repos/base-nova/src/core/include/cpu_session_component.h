@@ -126,7 +126,7 @@ namespace Genode {
 	};
 
 
-	class Cpu_session_component : public Rpc_object<Nova_cpu_session>
+	class Cpu_session_component : public Rpc_object<Cpu_session>
 	{
 		public:
 
