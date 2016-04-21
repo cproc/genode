@@ -27,7 +27,6 @@
 /* NOVA includes */
 #include <nova/syscalls.h>
 #include <nova/util.h>
-#include <nova_cpu_session/connection.h>
 
 using namespace Genode;
 
@@ -168,11 +167,12 @@ void Thread_base::start()
 
 	/* create EC at core */
 	Thread_state state;
-	state.sel_exc_base = native_thread().exc_pt_sel;
-	state.is_vcpu      = native_thread().is_vcpu;
+	state.sel_exc_base     = native_thread().exc_pt_sel;
+	state.is_vcpu          = native_thread().is_vcpu;
+	state.is_global_thread = global;
 
 	/* local thread have no start instruction pointer - set via portal entry */
-	addr_t thread_ip = global ? reinterpret_cast<addr_t>(_thread_start) : 0;
+	addr_t thread_ip = global ? reinterpret_cast<addr_t>(_thread_start) : native_thread().initial_ip;
 
 	try { _cpu_session->state(_thread_cap, state); }
 	catch (...) { throw Cpu_session::Thread_creation_failed(); }

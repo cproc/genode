@@ -22,7 +22,6 @@
 #include <base/tslab.h>
 #include <base/lock.h>
 #include <base/rpc_server.h>
-#include <nova_cpu_session/nova_cpu_session.h>
 
 /* core includes */
 #include <pager.h>
@@ -126,7 +125,7 @@ namespace Genode {
 	};
 
 
-	class Cpu_session_component : public Rpc_object<Nova_cpu_session>
+	class Cpu_session_component : public Rpc_object<Cpu_session>
 	{
 		public:
 
