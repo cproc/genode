@@ -18,9 +18,15 @@
 #include <base/rpc_server.h>
 #include <pd_session/connection.h>
 
-using namespace Genode;
+/* GDB monitor includes */
+#include "region_map_component.h"
 
-class Pd_session_component : public Rpc_object<Pd_session>
+namespace Gdb_monitor {
+	class Pd_session_component;
+	using namespace Genode;
+}
+
+class Gdb_monitor::Pd_session_component : public Rpc_object<Pd_session>
 {
 	private:
 
@@ -41,9 +47,9 @@ class Pd_session_component : public Rpc_object<Pd_session>
 		                     Dataspace_pool &managed_ds_map)
 		:
 			_ep(ep), _pd(binary_name),
-			_address_space(_ep, managed_ds_map, _pd.address_space()),
-			_stack_area   (_ep, managed_ds_map, _pd.stack_area()),
-			_linker_area  (_ep, managed_ds_map, _pd.linker_area())
+			_address_space(_ep, managed_ds_map, _pd, _pd.address_space()),
+			_stack_area   (_ep, managed_ds_map, _pd, _pd.stack_area()),
+			_linker_area  (_ep, managed_ds_map, _pd, _pd.linker_area())
 		{
 			_ep.manage(this);
 		}
