@@ -40,6 +40,18 @@ namespace File_system {
 
 	enum { MAX_NAME_LEN = 256, MAX_PATH_LEN = 1024 };
 
+	/**
+	 * File offset constant for reading or writing to the end of a file
+	 *
+	 * Clients are unable to reliably append to the end of a file where there
+	 * may be other writes to the same offset in the queues of other clients.
+	 * The SEEK_TAIL constant resolves this contention by aligning packet
+	 * operations with the end of the file at the time the packet is dequeued.
+	 *
+	 * SEEK_TAIL behavior with directory and symlink nodes is undefined.
+	 */
+	enum { SEEK_TAIL = ~0ULL };
+
 	typedef Genode::Rpc_in_buffer<MAX_NAME_LEN> Name;
 	typedef Genode::Rpc_in_buffer<MAX_PATH_LEN> Path;
 
