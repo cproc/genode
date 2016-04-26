@@ -576,6 +576,11 @@ Pager_capability Region_map_component::add_client(Thread_capability thread)
 		auto lambda = [&] (Cpu_thread_component *cpu_thread) {
 			if (!cpu_thread) throw Invalid_thread();
 
+			if (!cpu_thread->bound()) {
+				PERR("attempt to create pager for unbound thread");
+				throw Region_map::Unbound_thread();
+			}
+
 			/* determine identification of client when faulting */
 			badge = cpu_thread->platform_thread()->pager_object_badge();
 
