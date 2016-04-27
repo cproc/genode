@@ -59,7 +59,8 @@ struct Genode::Expanding_cpu_session_client : Upgradeable_client<Genode::Cpu_ses
 };
 
 
-class Genode::Platform_env : public Genode::Env, public Emergency_ram_reserve
+class Genode::Platform_env : public Genode::Env_deprecated,
+                             public Emergency_ram_reserve
 {
 	private:
 
@@ -144,9 +145,9 @@ class Genode::Platform_env : public Genode::Env, public Emergency_ram_reserve
 		}
 
 
-		/*******************
-		 ** Env interface **
-		 *******************/
+		/******************************
+		 ** Env_deprecated interface **
+		 ******************************/
 
 		Parent                 *parent()          override { return &_parent_client; }
 		Ram_session            *ram_session()     override { return &_resources.ram; }
