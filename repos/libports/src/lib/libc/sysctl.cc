@@ -1,19 +1,19 @@
 /*
- * \brief  C-library back end
- * \author Norman Feske
- * \date   2008-11-11
+ * \brief  Sysctl facade
+ * \author Emery Hemingway
+ * \date   2016-04-27
  */
 
 /*
- * Copyright (C) 2008-2016 Genode Labs GmbH
+ * Copyright (C) 2016 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
  */
 
 /* Genode includes */
-#include <base/printf.h>
 #include <util/string.h>
+#include <base/env.h>
 
 /* Genode-specific libc interfaces */
 #include <libc-plugin/plugin.h>
@@ -25,7 +25,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "libc_debug.h"
+#include "libc_errno.h"
+
+
+enum { PAGESIZE = 4096 };
+
+
+extern "C" long sysconf(int name)
+{
+	switch (name) {
+	case _SC_PAGESIZE: return PAGESIZE;
+	case _SC_PHYS_PAGES:
+		return Genode::env()->ram_session()->quota() / PAGESIZE;
+	default:
+		PWRN("unhandled request for sysconf code %d", name);
+		return -1;
+	}
+}
+
 
 extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
                         void *newp, size_t newlen)
@@ -51,33 +68,39 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 	int index_b = name[1];
 	int fd;
 
-	if (namelen != 2) goto enoent;
-	if (index_a >= CTL_MAXID) goto einval;
+	if (namelen != 2) return Libc::Errno(ENOENT);
+	if (index_a >= CTL_MAXID) return Libc::Errno(EINVAL);
 
 	sysctl_path.append(ctl_names[index_a].ctl_name);
 	sysctl_path.append("/");
 
 	switch(index_a) {
 	case CTL_KERN:
-		if (index_b >= KERN_MAXID) goto einval;
+		if (index_b >= KERN_MAXID) return Libc::Errno(EINVAL);
 		ctl = &ctl_kern_names[index_b]; break;
 
 	case CTL_HW:
-		if (index_b >= HW_MAXID) goto einval;
+		if (index_b >= HW_MAXID) return Libc::Errno(EINVAL);
 		ctl = &ctl_hw_names[index_b]; break;
 
 	case CTL_USER:
-		if (index_b >= USER_MAXID) goto einval;
+		if (index_b >= USER_MAXID) return Libc::Errno(EINVAL);
 		ctl = &ctl_user_names[index_b]; break;
 
 	case CTL_P1003_1B:
-		if (index_b >= CTL_P1003_1B_MAXID) goto einval;
+		if (index_b >= CTL_P1003_1B_MAXID) return Libc::Errno(EINVAL);
 		ctl = &ctl_p1003_1b_names[index_b]; break;
 	}
-	if (!ctl) goto einval;
+	if (!ctl) return Libc::Errno(EINVAL);
 
 	sysctl_path.append(ctl->ctl_name);
 
+	/*
+	 * read from /.sysctl/...
+	 *
+	 * The abstracted libc interface is used to read files here
+	 * rather than to explicity resolve a file system plugin.
+	 */
 	fd = open(sysctl_path.base(), 0);
 	if (fd != -1) {
 
@@ -99,13 +122,12 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 
 		default:
 			PERR("unhandle sysctl data type for %s", sysctl_path.base());
-			goto einval;
-		} else {
-			PERR("no read");
+			return Libc::Errno(EINVAL);
 		}
 
-	} else {
-
+	}
+	/* fallthru to some baked-in defaults */
+	{
 		switch(index_a) {
 
 		case CTL_KERN:
@@ -130,7 +152,7 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 				*oldlenp = Genode::strlen(buf);
 				return 0;
 
-			default:
+			case KERN_HOSTNAME:
 				*buf = '\0';
 				*oldlenp = 1;
 				return 0;
@@ -144,13 +166,18 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 				*oldlenp = Genode::strlen(buf);
 				return 0;
 
-			case HW_PAGESIZE:
-				*(int*)oldp = 4096;
+			case HW_NCPU:
+				*(int*)oldp = 1;
 				*oldlenp = sizeof(int);
 				return 0;
 
-			case HW_FLOATINGPT:
-				*(int*)oldp = 0;
+			case HW_PHYSMEM:
+				*(unsigned long*)oldp = Genode::env()->ram_session()->quota();
+				*oldlenp = sizeof(unsigned long);
+				return 0;
+
+			case HW_PAGESIZE:
+				*(int*)oldp = PAGESIZE;
 				*oldlenp = sizeof(int);
 				return 0;
 
@@ -158,11 +185,6 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 			case HW_MACHINE_ARCH:
 				Genode::strncpy(buf, "unknown", *oldlenp);
 				*oldlenp = Genode::strlen(buf);
-				return 0;
-
-			default:
-				*buf = '\0';
-				*oldlenp = 1;
 				return 0;
 
 			} break;
@@ -180,10 +202,6 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 	}
 
 	PWRN("sysctl %s not found", sysctl_path.base());
-
-	enoent:
-		return errno = ENOENT; return -1;
-	einval:
-		return errno = EINVAL; return -1;
+	return Libc::Errno(ENOENT);
 }
 
