@@ -24,7 +24,14 @@ namespace Genode {
 
 	class Allocator_avl_base;
 
-	template <typename, unsigned SLAB_BLOCK_SIZE = 256*sizeof(addr_t)>
+	/*
+	 * The default slab block size is dimensioned such that slab-block
+	 * allocations make effective use of entire memory pages. To account for
+	 * the common pattern of using a 'Sliced_heap' as backing store for the
+	 * 'Allocator_avl'. We remove 8 words from the slab-block size to take the
+	 * meta-data overhead of each sliced-heap block into account.
+	 */
+	template <typename, unsigned SLAB_BLOCK_SIZE = (1024 - 8)*sizeof(addr_t)>
 	class Allocator_avl_tpl;
 
 	/**
