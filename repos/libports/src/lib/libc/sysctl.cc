@@ -17,6 +17,7 @@
 
 /* Genode-specific libc interfaces */
 #include <libc-plugin/plugin.h>
+#include <libc-plugin/fd_alloc.h>
 
 /* Libc includes */
 #include <sys/sysctl.h>
@@ -34,13 +35,28 @@ enum { PAGESIZE = 4096 };
 extern "C" long sysconf(int name)
 {
 	switch (name) {
-	case _SC_PAGESIZE: return PAGESIZE;
+	case _SC_CHILD_MAX:        return CHILD_MAX;
+	case _SC_OPEN_MAX:         return MAX_NUM_FDS;
+	case _SC_NPROCESSORS_CONF: return 1;
+	case _SC_NPROCESSORS_ONLN: return 1;
+	case _SC_PAGESIZE:         return PAGESIZE;
+
 	case _SC_PHYS_PAGES:
 		return Genode::env()->ram_session()->quota() / PAGESIZE;
 	default:
 		PWRN("unhandled request for sysconf code %d", name);
 		return -1;
 	}
+}
+
+
+/* non-standard FreeBSD function not supported */
+extern "C" int sysctlbyname(char const *name, void *oldp, size_t *oldlenp,
+                            void *newp, size_t newlen)
+{
+	PLOG("%s not implemented (name=%s)", __func__, name);
+	errno = ENOENT;
+	return -1;
 }
 
 
