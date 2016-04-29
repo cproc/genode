@@ -232,6 +232,7 @@ Rpc_entrypoint::Rpc_entrypoint(Pd_session *pd_session, size_t stack_size,
 
 		/* magic value evaluated by thread_nova.cc to start a local thread */
 		native_thread().ec_sel = Native_thread::INVALID_INDEX - 1;
+		native_thread().initial_ip = (addr_t)&_activation_entry;
 	} else {
 		/* tell affinity CPU in 'core' via stack */
 		reinterpret_cast<Affinity::Location *>(stack_base())[0] = location;
