@@ -119,7 +119,7 @@ set config {
 	</start>
 
 	<start name="platform_drv" priority="0">
-		<resource name="RAM" quantum="3M" constrain_phys="yes"/>
+		<resource name="RAM" quantum="4M" constrain_phys="yes"/>
 		<provides> <service name="Platform"/> </provides>
 		<config>
 			<policy label="ps2_drv">  <device name="PS2"/> </policy>
@@ -258,7 +258,7 @@ set config {
 	-->
 
 	<start name="usb_drv" priority="-1">
-		<resource name="RAM" quantum="8M"/>
+		<resource name="RAM" quantum="12M"/>
 		<provides>
 			<service name="Input"/>
 			<service name="Usb" />
@@ -415,7 +415,7 @@ set config {
 	</start>
 
 	<start name="backdrop" priority="-1">
-		<resource name="RAM" quantum="12M"/>
+		<resource name="RAM" quantum="32M"/>
 		<configfile name="backdrop.config"/>
 		<route>
 			<service name="Nitpicker"> <child name="nitpicker"/> </service>
@@ -541,7 +541,7 @@ set config {
 	</start>
 
 	<start name="vbox_pointer" priority="-1">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<config>
 			<policy label="wm -> cli_monitor -> linux -> nit_fb" rom="shape"/>
 			<policy label="wm -> cli_monitor -> win7 -> nit_fb"  rom="win7_shape"/>
