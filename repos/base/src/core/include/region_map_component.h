@@ -181,16 +181,18 @@ class Genode::Rm_client : public Pager_object, public Rm_faulter,
 		/**
 		 * Constructor
 		 *
-		 * \param rm       region map to which the client belongs
-		 * \param badge    pager-object badge used of identifying the client
-		 *                 when a page-fault occurs
-		 * \param location affinity to physical CPU
+		 * \param rm        address-space region map of the client
+		 * \param badge     pager-object badge used of identifying the client
+		 *                  when a page fault occurs
+		 * \param location  affinity to physical CPU
 		 */
-		Rm_client(Region_map_component *rm, unsigned long badge,
+		Rm_client(Cpu_session_capability cpu_session,
+		          Thread_capability thread,
+		          Region_map_component *rm, unsigned long badge,
 		          Weak_ptr<Address_space> &address_space,
 		          Affinity::Location location)
 		:
-			Pager_object(badge, location), Rm_faulter(this),
+			Pager_object(cpu_session, thread, badge, location), Rm_faulter(this),
 			_region_map(rm), _address_space(address_space)
 		{ }
 

@@ -68,7 +68,7 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 		Lock::Guard slab_lock_guard(_thread_alloc_lock);
 		thread = new (&_thread_alloc)
 			Cpu_thread_component(
-				*_thread_ep, *_pager_ep, *pd, _trace_control_area,
+				cap(), *_thread_ep, *_pager_ep, *pd, _trace_control_area,
 				weight, _weight_to_quota(weight),
 				_thread_affinity(affinity), _label, thread_name,
 				_priority, utcb, _default_exception_handler);

@@ -660,6 +660,8 @@ Region_map_component::~Region_map_component()
 	/* dissolve all clients from pager entrypoint */
 	Rm_client *cl;
 	do {
+		Cpu_session_capability cpu_session_cap;
+		Thread_capability      thread_cap;
 		{
 			Lock::Guard lock_guard(_lock);
 			cl = _clients.first();
@@ -667,15 +669,18 @@ Region_map_component::~Region_map_component()
 
 			cl->dissolve_from_faulting_region_map(this);
 
-			/* lookup thread and reset pager pointer */
-			auto lambda = [&] (Cpu_thread_component *cpu_thread) {
-				if (cpu_thread && (cpu_thread->platform_thread()->pager() == cl))
-					cpu_thread->platform_thread()->pager(0);
-			};
-			_thread_ep->apply(cl->thread_cap(), lambda);
+			cpu_session_cap = cl->cpu_session_cap();
+			thread_cap      = cl->thread_cap();
 
 			_clients.remove(cl);
 		}
+
+		/* destroy thread */
+		auto lambda = [&] (Cpu_session_component *cpu_session) {
+			if (cpu_session)
+				cpu_session->kill_thread(thread_cap);
+		};
+		_thread_ep->apply(cpu_session_cap, lambda);
 	} while (cl);
 
 	/* detach all regions */

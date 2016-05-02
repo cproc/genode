@@ -502,12 +502,15 @@ Exception_handlers::Exception_handlers(Pager_object *obj)
  ******************/
 
 
-Pager_object::Pager_object(unsigned long badge, Affinity::Location location)
+Pager_object::Pager_object(Cpu_session_capability cpu_session_cap,
+                           Thread_capability thread_cap, unsigned long badge,
+                           Affinity::Location location)
 :
 	_badge(badge),
 	_selectors(cap_map()->insert(2)),
 	_client_exc_pt_sel(cap_map()->insert(NUM_INITIAL_PT_LOG2)),
 	_client_exc_vcpu(Native_thread::INVALID_INDEX),
+	_cpu_session_cap(cpu_session_cap), _thread_cap(thread_cap),
 	_exceptions(this),
 	location(location)
 {

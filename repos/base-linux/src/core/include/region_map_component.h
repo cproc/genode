@@ -70,7 +70,8 @@ struct Genode::Rm_member { Region_map_component *member_rm() { return 0; } };
 
 struct Genode::Rm_client : Pager_object, Rm_member
 {
-	Rm_client(Region_map_component *rm, unsigned long badge,
+	Rm_client(Cpu_session_capability, Thread_capability, 
+	          Region_map_component *rm, unsigned long badge,
 	          Weak_ptr<Address_space> &address_space,
 	          Affinity::Location location)
 	{ }

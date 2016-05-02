@@ -104,10 +104,7 @@ namespace Genode {
 
 			Weak_ptr<Address_space> _address_space = _platform_thread.address_space();
 
-			Rm_client _rm_client { &_address_space_region_map,
-			                       _platform_thread.pager_object_badge(),
-			                       _address_space,
-			                       _platform_thread.affinity() };
+			Rm_client _rm_client;
 
 		public:
 
@@ -127,7 +124,8 @@ namespace Genode {
 			 * \param utcb       user-local UTCB base
 			 * \param sigh       initial exception handler
 			 */
-			Cpu_thread_component(Rpc_entrypoint &ep,
+			Cpu_thread_component(Cpu_session_capability cpu_session_cap,
+			                     Rpc_entrypoint &ep,
 			                     Pager_entrypoint &pager_ep,
 			                     Pd_session_component &pd,
 			                     Trace::Control_area &trace_control_area,
@@ -146,9 +144,12 @@ namespace Genode {
 				_platform_thread(quota, name.string(), priority, affinity, utcb),
 				_bound_to_pd(_bind_to_pd(pd)),
 				_sigh(sigh),
-				_trace_control_slot(trace_control_area)
+				_trace_control_slot(trace_control_area),
+				_rm_client(cpu_session_cap, _ep.manage(this),
+				           &_address_space_region_map,
+				           _platform_thread.pager_object_badge(),
+				           _address_space, _platform_thread.affinity())
 			{
-				_ep.manage(this);
 				update_exception_sigh();
 
 				_address_space_region_map.add_client(_rm_client);
@@ -156,7 +157,6 @@ namespace Genode {
 				/* acquaint thread with its pager object */
 				_pager_ep.manage(&_rm_client);
 				_platform_thread.pager(&_rm_client);
-				_rm_client.thread_cap(cap());
 			}
 
 			~Cpu_thread_component()
