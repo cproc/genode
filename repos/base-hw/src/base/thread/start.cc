@@ -44,7 +44,7 @@ void Thread_base::_init_platform_thread(size_t weight, Type type)
 		name(buf, sizeof(buf));
 		addr_t const utcb = (addr_t)&_stack->utcb();
 		_thread_cap = _cpu_session->create_thread(env()->pd_session_cap(),
-		                                          weight, buf, utcb);
+		                                          weight, buf, _affinity, utcb);
 		return;
 	}
 	/* if we got reinitialized we have to get rid of the old UTCB */

@@ -133,6 +133,7 @@ namespace Genode {
 			                     Trace::Control_area &trace_control_area,
 			                     size_t const weight,
 			                     size_t const quota,
+			                     Affinity::Location affinity,
 			                     Session_label const &label,
 			                     Thread_name const &name,
 			                     unsigned priority, addr_t utcb,
@@ -142,7 +143,7 @@ namespace Genode {
 				_address_space_region_map(pd.address_space_region_map()),
 				_weight(weight),
 				_session_label(label), _name(name),
-				_platform_thread(quota, name.string(), priority, utcb),
+				_platform_thread(quota, name.string(), priority, affinity, utcb),
 				_bound_to_pd(_bind_to_pd(pd)),
 				_sigh(sigh),
 				_trace_control_slot(trace_control_area)
@@ -164,6 +165,11 @@ namespace Genode {
 				_ep.dissolve(this);
 
 				_address_space_region_map.remove_client(_rm_client);
+			}
+
+			void affinity(Affinity::Location affinity)
+			{
+				_platform_thread.affinity(affinity);
 			}
 
 
@@ -301,6 +307,11 @@ namespace Genode {
 			 */
 			void _unsynchronized_kill_thread(Thread_capability cap);
 
+			/**
+			 * Convert session-local affinity location to physical location
+			 */
+			Affinity::Location _thread_affinity(Affinity::Location) const;
+
 		public:
 
 			/**
@@ -329,7 +340,8 @@ namespace Genode {
 			 ** CPU session interface **
 			 ***************************/
 
-			Thread_capability create_thread(Capability<Pd_session>, size_t, Name const &, addr_t);
+			Thread_capability create_thread(Capability<Pd_session>, size_t, Name const &,
+			                                Affinity::Location, addr_t);
 			Ram_dataspace_capability utcb(Thread_capability thread);
 			void kill_thread(Thread_capability);
 			int start(Thread_capability, addr_t, addr_t);

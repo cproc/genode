@@ -60,7 +60,7 @@ void Thread_base::start()
 	enum { WEIGHT = Cpu_session::DEFAULT_WEIGHT };
 	addr_t const utcb = (addr_t)&_stack->utcb();
 	_thread_cap = _cpu_session->create_thread(env()->pd_session_cap(),
-	                                          WEIGHT, buf, utcb);
+	                                          WEIGHT, buf, _affinity, utcb);
 	if (!_thread_cap.valid())
 		throw Cpu_session::Thread_creation_failed();
 

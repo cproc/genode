@@ -815,12 +815,10 @@ addr_t Pager_object::get_oom_portal()
 
 Pager_activation_base::Pager_activation_base(const char *name, size_t stack_size)
 :
-	Thread_base(Cpu_session::DEFAULT_WEIGHT, name, stack_size),
+	Thread_base(Cpu_session::DEFAULT_WEIGHT, name, stack_size,
+	            Affinity::Location(which_cpu(this), 0)),
 	_cap(Native_capability()), _ep(0), _cap_valid(Lock::LOCKED)
 {
-	/* tell thread starting code on which CPU to let run the pager */
-	reinterpret_cast<Affinity::Location *>(stack_base())[0] = Affinity::Location(which_cpu(this), 0);
-
 	/* creates local EC */
 	Thread_base::start();
 

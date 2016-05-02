@@ -116,7 +116,7 @@ void Thread_base::_init_platform_thread(size_t weight, Type type)
 	char buf[48];
 	name(buf, sizeof(buf));
 
-	_thread_cap = _cpu_session->create_thread(env()->pd_session_cap(), weight, buf);
+	_thread_cap = _cpu_session->create_thread(env()->pd_session_cap(), weight, buf, _affinity);
 	if (!_thread_cap.valid())
 		throw Cpu_session::Thread_creation_failed();
 }

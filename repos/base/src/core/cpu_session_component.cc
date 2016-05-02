@@ -37,6 +37,7 @@ void Cpu_thread_component::update_exception_sigh()
 Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd_cap,
                                                        size_t weight,
                                                        Name const &name,
+                                                       Affinity::Location affinity,
                                                        addr_t utcb)
 {
 	Trace::Thread_name thread_name(name.string());
@@ -68,7 +69,8 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 		thread = new (&_thread_alloc)
 			Cpu_thread_component(
 				*_thread_ep, *_pager_ep, *pd, _trace_control_area,
-				weight, _weight_to_quota(weight), _label, thread_name,
+				weight, _weight_to_quota(weight),
+				_thread_affinity(affinity), _label, thread_name,
 				_priority, utcb, _default_exception_handler);
 	};
 
@@ -76,14 +78,30 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 	catch (Region_map::Out_of_metadata) { throw Out_of_metadata(); }
 	catch (Allocator::Out_of_memory)    { throw Out_of_metadata(); }
 
-	/* set default affinity defined by CPU session */
-	thread->platform_thread()->affinity(_location);
-
 	_thread_list.insert(thread);
 
 	_trace_sources.insert(thread->trace_source());
 
 	return thread->cap();
+}
+
+
+Affinity::Location Cpu_session_component::_thread_affinity(Affinity::Location location) const
+{
+	/* convert session-local location to physical location */
+	int const x1 = location.xpos() + _location.xpos(),
+	          y1 = location.ypos() + _location.ypos(),
+	          x2 = location.xpos() +  location.width(),
+	          y2 = location.ypos() +  location.height();
+
+	int const clipped_x1 = max(_location.xpos(), x1),
+	          clipped_y1 = max(_location.ypos(), y1),
+	          clipped_x2 = max(_location.xpos() + (int)_location.width()  - 1, x2),
+	          clipped_y2 = max(_location.ypos() + (int)_location.height() - 1, y2);
+
+	return Affinity::Location(clipped_x1, clipped_y1,
+	                          clipped_x2 - clipped_x1 + 1,
+	                          clipped_y2 - clipped_y1 + 1);
 }
 
 
@@ -246,20 +264,7 @@ void Cpu_session_component::affinity(Thread_capability  thread_cap,
 	auto lambda = [&] (Cpu_thread_component *thread) {
 		if (!thread) return;
 
-		/* convert session-local location to physical location */
-		int const x1 = location.xpos() + _location.xpos(),
-			y1 = location.ypos() + _location.ypos(),
-			x2 = location.xpos() +  location.width(),
-			y2 = location.ypos() +  location.height();
-
-		int const clipped_x1 = max(_location.xpos(), x1),
-			clipped_y1 = max(_location.ypos(), y1),
-			clipped_x2 = max(_location.xpos() + (int)_location.width()  - 1, x2),
-			clipped_y2 = max(_location.ypos() + (int)_location.height() - 1, y2);
-
-		thread->platform_thread()->affinity(Affinity::Location(clipped_x1, clipped_y1,
-		                                    clipped_x2 - clipped_x1 + 1,
-		                                    clipped_y2 - clipped_y1 + 1));
+		thread->affinity(_thread_affinity(location));
 	};
 	_thread_ep->apply(thread_cap, lambda);
 }

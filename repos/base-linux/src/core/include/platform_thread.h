@@ -84,7 +84,8 @@ namespace Genode {
 			/**
 			 * Constructor
 			 */
-			Platform_thread(size_t, const char *name, unsigned priority, addr_t);
+			Platform_thread(size_t, const char *name, unsigned priority, 
+			                Affinity::Location, addr_t);
 
 			~Platform_thread();
 
