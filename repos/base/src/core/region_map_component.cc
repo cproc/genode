@@ -676,9 +676,6 @@ Region_map_component::~Region_map_component()
 
 			_clients.remove(cl);
 		}
-
-		/* call platform specific dissolve routines */
-		_pager_ep->dissolve(cl);
 	} while (cl);
 
 	/* detach all regions */
