@@ -346,6 +346,11 @@ class Genode::Allocator_avl_tpl : public Allocator_avl_base
 		~Allocator_avl_tpl() { _revert_allocations_and_ranges(); }
 
 		/**
+		 * Return size of slab blocks used for meta data
+		 */
+		static constexpr size_t slab_block_size() { return SLAB_BLOCK_SIZE; }
+
+		/**
 		 * Assign custom meta data to block at specified address
 		 */
 		void metadata(void *addr, BMDT bmd) const
