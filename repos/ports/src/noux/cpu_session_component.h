@@ -81,6 +81,7 @@ namespace Noux {
 
 			Thread_capability create_thread(Capability<Pd_session>,
 			                                size_t weight, Name const &name,
+			                                Affinity::Location affinity,
 			                                addr_t utcb) override
 			{
 				/* create thread at core, keep local copy (needed on NOVA) */
@@ -94,7 +95,7 @@ namespace Noux {
 					 * core PD.
 					 */
 					Thread_capability cap =
-						_cpu.create_thread(_core_pd, weight, name, utcb);
+						_cpu.create_thread(_core_pd, weight, name, affinity, utcb);
 
 					_threads[i] = cap;
 					return cap;

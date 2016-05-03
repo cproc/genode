@@ -61,14 +61,16 @@ struct Genode::Cpu_session : Session
 	/**
 	 * Create a new thread
 	 *
-	 * \param pd     protection domain where the thread will be executed
-	 * \param quota  CPU quota that shall be granted to the thread
-	 * \param name   name for the thread
-	 * \param utcb   Base of the UTCB that will be used by the thread
-	 * \return       capability representing the new thread
-	 * \throw        Thread_creation_failed
-	 * \throw        Out_of_metadata
-	 * \throw        Quota_exceeded
+	 * \param pd        protection domain where the thread will be executed
+	 * \param quota     CPU quota that shall be granted to the thread
+	 * \param name      name for the thread
+	 * \param affinity  CPU affinity, referring to the session-local
+	 *                  affinity space
+	 * \param utcb      Base of the UTCB that will be used by the thread
+	 * \return          capability representing the new thread
+	 * \throw           Thread_creation_failed
+	 * \throw           Out_of_metadata
+	 * \throw           Quota_exceeded
 	 */
 	virtual Thread_capability create_thread(Capability<Pd_session> pd,
 	                                        size_t                 quota,
