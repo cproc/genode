@@ -17,16 +17,14 @@
 #include <base/rpc_client.h>
 #include <base/thread.h>
 
-#include <cpu_session/capability.h>
-
-#include <nova_cpu_session/nova_cpu_session.h>
+#include <cpu_session/cpu_session.h>
 
 namespace Genode {
 
-	struct Cpu_session_client : Rpc_client<Nova_cpu_session>
+	struct Cpu_session_client : Rpc_client<Cpu_session>
 	{
 		explicit Cpu_session_client(Cpu_session_capability session)
-		: Rpc_client<Nova_cpu_session>(static_cap_cast<Nova_cpu_session>(session)) { }
+		: Rpc_client<Cpu_session>(static_cap_cast<Cpu_session>(session)) { }
 
 		Thread_capability
 		create_thread(Capability<Pd_session> pd, size_t quota, Name const &name,
@@ -44,11 +42,19 @@ namespace Genode {
 
 		void pause(Thread_capability thread)
 		{
-			Native_capability block = call<Rpc_pause_sync>(thread);
-			if (!block.valid())
-				return;
+			for (;;) {
 
-			Nova::sm_ctrl(block.local_name(), Nova::SEMAPHORE_DOWN);
+				call<Rpc_pause>(thread);
+
+				try {
+					/* check if the thread state is valid */
+					state(thread);
+					/* the thread is blocked in the kernel */
+					return;
+				} catch (State_access_failed) {
+					/* the thread is (most likely) running on a different CPU */
+				}
+			}
 		}
 
 		void resume(Thread_capability thread) {
@@ -66,14 +72,8 @@ namespace Genode {
 		void exception_handler(Thread_capability thread, Signal_context_capability handler) {
 			call<Rpc_exception_handler>(thread, handler); }
 
-		void single_step(Thread_capability thread, bool enable)
-		{
-			Native_capability block = call<Rpc_single_step_sync>(thread, enable);
-			if (!block.valid())
-				return;
-
-			Nova::sm_ctrl(block.local_name(), Nova::SEMAPHORE_DOWN);
-		}
+		void single_step(Thread_capability thread, bool enable) {
+			call<Rpc_single_step>(thread, enable); }
 
 		Affinity::Space affinity_space() const {
 			return call<Rpc_affinity_space>(); }
@@ -102,14 +102,6 @@ namespace Genode {
 		Quota quota() override { return call<Rpc_quota>(); }
 
 		Capability<Native_cpu> native_cpu() override { return call<Rpc_native_cpu>(); }
-
-		private:
-
-			Native_capability pause_sync(Thread_capability) {
-				return Native_capability(); }
-
-			Native_capability single_step_sync(Thread_capability, bool) {
-				return Native_capability(); }
 	};
 }
 
