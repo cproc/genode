@@ -178,7 +178,7 @@ class Genode::Thread_base
 		 * information such as the thread's name.
 		 */
 		Thread_base(size_t weight, const char *name, size_t stack_size,
-		            Affinity::Location affinity)
+		            Affinity::Location affinity = Affinity::Location())
 		: Thread_base(weight, name, stack_size, NORMAL, affinity) { }
 
 		/**
