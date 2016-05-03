@@ -69,7 +69,7 @@ class Vmm::Vcpu_other_pd : public Vmm::Vcpu_thread
 
 			enum { WEIGHT = Cpu_session::DEFAULT_WEIGHT };
 			Thread_capability vcpu_vm =
-				_cpu_session->create_thread(_pd_session, WEIGHT, "vCPU");
+				_cpu_session->create_thread(_pd_session, WEIGHT, "vCPU", _location);
 
 			/* tell parent that this will be a vCPU */
 			Thread_state state;
@@ -89,9 +89,6 @@ class Vmm::Vcpu_other_pd : public Vmm::Vcpu_thread
 			 * creation.
 			 */
 			delegate_vcpu_portals(pager_cap, exc_base());
-
-			/* place the thread on CPU described by location object */
-			_cpu_session->affinity(vcpu_vm, _location);
 
 			/* start vCPU in separate PD */
 			_cpu_session->start(vcpu_vm, 0, 0);
@@ -116,7 +113,7 @@ class Vmm::Vcpu_same_pd : public Vmm::Vcpu_thread, Genode::Thread_base
 		Vcpu_same_pd(size_t stack_size, Cpu_session * cpu_session,
 		             Genode::Affinity::Location location)
 		:
-			Thread_base(WEIGHT, "vCPU", stack_size, Type::NORMAL, cpu_session)
+			Thread_base(WEIGHT, "vCPU", stack_size, Type::NORMAL, cpu_session, location)
 		{
 			/* release pre-allocated selectors of Thread */
 			Genode::cap_map()->remove(native_thread().exc_pt_sel, Nova::NUM_INITIAL_PT_LOG2);
@@ -126,9 +123,6 @@ class Vmm::Vcpu_same_pd : public Vmm::Vcpu_thread, Genode::Thread_base
 
 			/* tell generic thread code that this becomes a vCPU */
 			this->native_thread().is_vcpu = true;
-
-			/* place the thread on CPU described by location object */
-			cpu_session->affinity(Thread_base::cap(), location);
 		}
 
 		~Vcpu_same_pd()
