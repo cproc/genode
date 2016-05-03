@@ -69,11 +69,8 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 	static const ctlname ctl_p1003_1b_names[] = CTL_P1003_1B_NAMES;
 
 	/* read only */
-	if (!oldp || (*oldlenp < sizeof(unsigned long))) {
-		/* check for write attempt */
-		errno = newp ? EPERM : EINVAL;
-		return -1;
-	}
+	if (!oldp) /* check for write attempt */
+		return Libc::Errno(newp ? EPERM : EINVAL);
 
 	ctlname const *ctl = nullptr;
 	char *buf = (char*)oldp;
@@ -100,8 +97,19 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 		if (index_b >= CTL_P1003_1B_MAXID) return Libc::Errno(EINVAL);
 		ctl = &ctl_p1003_1b_names[index_b]; break;
 	}
+
 	if (!ctl) return Libc::Errno(EINVAL);
 
+	int value_size;
+	if (((ctl->ctl_type == CTLTYPE_INT)    && (*oldlenp < sizeof(int))) ||
+	    ((ctl->ctl_type == CTLTYPE_STRING) && (*oldlenp < 1)) ||
+	    ((ctl->ctl_type == CTLTYPE_QUAD)   && (*oldlenp < sizeof(Genode::uint64_t))) ||
+	    ((ctl->ctl_type == CTLTYPE_UINT)   && (*oldlenp < sizeof(unsigned int))) ||
+	    ((ctl->ctl_type == CTLTYPE_LONG)   && (*oldlenp < sizeof(long))) ||
+	    ((ctl->ctl_type == CTLTYPE_ULONG)  && (*oldlenp < sizeof(unsigned long))))
+	{
+		return Libc::Errno(EINVAL);
+	}
 
 	/* builtins */
 	{
@@ -115,7 +123,7 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 				return 0;
 
 			case HW_PAGESIZE:
-				*(int*)oldp = PAGESIZE;
+				*(int*)oldp = (int)PAGESIZE;
 				*oldlenp = sizeof(int);
 				return 0;
 
@@ -159,6 +167,34 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 				return 0;
 			}
 
+			case CTLTYPE_STRING:
+				*oldlenp = n;
+				return 0;
+
+			case CTLTYPE_QUAD: {
+				Genode::uint64_t value = 0;
+				Genode::ascii_to((char*)oldp, value);
+				*(Genode::uint64_t*)oldp = value;
+				*oldlenp = sizeof(Genode::uint64_t);
+				return 0;
+			}
+
+			case CTLTYPE_UINT: {
+				unsigned value = 0;
+				Genode::ascii_to((char*)oldp, value);
+				*(unsigned*)oldp = value;
+				*oldlenp = sizeof(unsigned);
+				return 0;
+			}
+
+			case CTLTYPE_LONG: {
+				long value = 0;
+				Genode::ascii_to((char*)oldp, value);
+				*(long*)oldp = value;
+				*oldlenp = sizeof(long);
+				return 0;
+			}
+
 			case CTLTYPE_ULONG: {
 				unsigned long value = 0;
 				Genode::ascii_to((char*)oldp, value);
@@ -166,10 +202,6 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 				*oldlenp = sizeof(unsigned long);
 				return 0;
 			}
-
-			case CTLTYPE_STRING:
-				*oldlenp = n;
-				return 0;
 
 			default:
 				PERR("unhandle sysctl data type for %s", sysctl_path.base());
@@ -233,4 +265,3 @@ extern "C" int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp,
 	     ctl_names[index_a].ctl_name, ctl->ctl_name);
 	return Libc::Errno(ENOENT);
 }
-
