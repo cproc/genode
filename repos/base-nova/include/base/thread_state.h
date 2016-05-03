@@ -24,11 +24,10 @@ namespace Genode {
 	{
 		bool is_vcpu;
 		addr_t sel_exc_base;
+		bool is_global_thread;
 
-		Thread_state() : is_vcpu(false), sel_exc_base(~0UL) { }
-
-		Thread_state(bool is_vcpu, addr_t sel_exc_base)
-		: is_vcpu(is_vcpu), sel_exc_base(sel_exc_base) { }
+		Thread_state()
+		: is_vcpu(false), sel_exc_base(~0UL), is_global_thread(true) { }
 	};
 }
 
