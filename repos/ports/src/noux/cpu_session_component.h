@@ -105,10 +105,10 @@ namespace Noux {
 				throw Thread_creation_failed();
 			}
 
-			Ram_dataspace_capability utcb(Thread_capability thread) {
+			Ram_dataspace_capability utcb(Thread_capability thread) override {
 				return _cpu.utcb(thread); }
 
-			void kill_thread(Thread_capability thread)
+			void kill_thread(Thread_capability thread) override
 			{
 				/* purge local copy of thread capability */
 				for (unsigned i = 0; i < MAX_THREADS; i++)
@@ -118,7 +118,7 @@ namespace Noux {
 				_cpu.kill_thread(thread);
 			}
 
-			int start(Thread_capability thread, addr_t ip, addr_t sp)
+			int start(Thread_capability thread, addr_t ip, addr_t sp) override
 			{
 				if (_forked) {
 					PINF("defer attempt to start thread at ip 0x%lx", ip);
@@ -127,44 +127,44 @@ namespace Noux {
 				return _cpu.start(thread, ip, sp);
 			}
 
-			void pause(Thread_capability thread) {
+			void pause(Thread_capability thread) override {
 				_cpu.pause(thread); }
 
-			void resume(Thread_capability thread) {
+			void resume(Thread_capability thread) override {
 				_cpu.resume(thread); }
 
-			void cancel_blocking(Thread_capability thread) {
+			void cancel_blocking(Thread_capability thread) override {
 				_cpu.cancel_blocking(thread); }
 
-			Thread_state state(Thread_capability thread) {
+			Thread_state state(Thread_capability thread) override {
 				return _cpu.state(thread); }
 
-			void state(Thread_capability thread, Thread_state const &state) {
+			void state(Thread_capability thread, Thread_state const &state) override {
 				_cpu.state(thread, state); }
 
 			void exception_handler(Thread_capability         thread,
-			                       Signal_context_capability handler) {
+			                       Signal_context_capability handler) override {
 				_cpu.exception_handler(thread, handler); }
 
-			void single_step(Thread_capability thread, bool enable) {
+			void single_step(Thread_capability thread, bool enable) override {
 				_cpu.single_step(thread, enable); }
 
-			Affinity::Space affinity_space() const {
+			Affinity::Space affinity_space() const override {
 				return _cpu.affinity_space(); }
 
-			void affinity(Thread_capability thread, Affinity::Location location) {
+			void affinity(Thread_capability thread, Affinity::Location location) override {
 				_cpu.affinity(thread, location); }
 
-			Dataspace_capability trace_control() {
+			Dataspace_capability trace_control() override {
 				return _cpu.trace_control(); }
 
-			unsigned trace_control_index(Thread_capability thread) {
+			unsigned trace_control_index(Thread_capability thread) override {
 				return _cpu.trace_control_index(thread); }
 
-			Dataspace_capability trace_buffer(Thread_capability thread) {
+			Dataspace_capability trace_buffer(Thread_capability thread) override {
 				return _cpu.trace_buffer(thread); }
 
-			Dataspace_capability trace_policy(Thread_capability thread) {
+			Dataspace_capability trace_policy(Thread_capability thread) override {
 				return _cpu.trace_policy(thread); }
 
 			Quota quota() override { return _cpu.quota(); }
