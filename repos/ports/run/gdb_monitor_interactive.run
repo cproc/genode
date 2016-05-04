@@ -112,7 +112,7 @@ set gdb_target_binary "test-gdb_monitor"
 set gdb_cmds ""
 append gdb_cmds "-ex \"target remote localhost:$local_port\" "
 
-append gdb_cmds [gdb_main_breakpoint_cmds $gdb_target_binary]
+#append gdb_cmds [gdb_main_breakpoint_cmds $gdb_target_binary]
 
 # ask the user for confirmations again
 append gdb_cmds {-ex "set interactive-mode auto" }
