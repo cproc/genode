@@ -39,9 +39,12 @@ void Thread::exception(unsigned const cpu)
 		return;
 	case UNDEFINED_INSTRUCTION:
 		if (_cpu->retry_undefined_instr(*this)) { return; }
+#if 0
 		PWRN("%s -> %s: undefined instruction at ip=%p",
 		     pd_label(), label(), (void*)ip);
 		_stop();
+#endif
+		_exception();
 		return;
 	case RESET:
 		return;
@@ -76,6 +79,16 @@ void Thread::_mmu_exception()
 	     "DFAR=0x%08x ip=0x%08lx sp=0x%08lx", pd_label(), label(),
 	     cpu_exception == DATA_ABORT ? "data abort" : "prefetch abort",
 	     Cpu::Dfsr::read(), Cpu::Ifsr::read(), Cpu::Dfar::read(), ip, sp);
+}
+
+
+void Thread::_exception()
+{
+PDBG("_exception()");
+	_become_inactive(AWAITS_RESUME);
+	//_become_inactive(STOPPED);
+	_exception_event.submit();
+	return;
 }
 
 

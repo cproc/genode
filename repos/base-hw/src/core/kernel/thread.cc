@@ -111,6 +111,7 @@ void Thread::_await_request_failed()
 
 bool Thread::_resume()
 {
+PDBG("%p: _resume(): %p", this, __builtin_return_address(0));
 	switch (_state) {
 	case AWAITS_RESUME:
 		_become_active();
@@ -154,6 +155,7 @@ void Thread::_activate_used_shares()
 
 void Thread::_become_active()
 {
+//PDBG("%p: _become_active(): %p", this, __builtin_return_address(0));
 	if (_state != ACTIVE) { _activate_used_shares(); }
 	_state = ACTIVE;
 }
@@ -161,6 +163,7 @@ void Thread::_become_active()
 
 void Thread::_become_inactive(State const s)
 {
+PDBG("%p: _become_inactive()", this);
 	if (_state == ACTIVE) { _deactivate_used_shares(); }
 	_state = s;
 }
@@ -629,7 +632,7 @@ Thread::Thread(unsigned const priority, unsigned const quota,
                        char const * const label)
 :
 	Cpu_job(priority, quota), _fault(this), _fault_pd(0), _fault_addr(0),
-	_fault_writes(0), _fault_signal(0), _state(AWAITS_START),
+	_fault_writes(0), _fault_signal(0), _exception_event(this), _state(AWAITS_START),
 	_signal_receiver(0), _label(label)
 {
 	_init();
@@ -638,7 +641,8 @@ Thread::Thread(unsigned const priority, unsigned const quota,
 
 Thread_event Thread::* Thread::_event(unsigned const id) const
 {
-	static Thread_event Thread::* _events[] = { &Thread::_fault };
+	static Thread_event Thread::* _events[] = { &Thread::_fault,
+	                                            &Thread::_exception_event };
 	return id < sizeof(_events)/sizeof(_events[0]) ? _events[id] : 0;
 }
 
