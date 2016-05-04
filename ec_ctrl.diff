@@ -1,0 +1,85 @@
+ec_ctrl.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/syscall.hpp |    3 +++
+ src/syscall.cpp     |   48 +++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 50 insertions(+), 1 deletion(-)
+
+diff --git a/include/syscall.hpp b/include/syscall.hpp
+index 98bc68a..32d461e 100644
+--- a/include/syscall.hpp
++++ b/include/syscall.hpp
+@@ -179,6 +179,9 @@ class Sys_ec_ctrl : public Sys_regs
+ 
+         ALWAYS_INLINE
+         inline unsigned op() const { return flags() & 0x3; }
++
++        ALWAYS_INLINE
++        inline bool state_requested() const { return ARG_2 == 1; }
+ };
+ 
+ class Sys_sc_ctrl : public Sys_regs
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 8546b19..256831c 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -609,9 +609,55 @@ void Ec::sys_ec_ctrl()
+ 
+         ec->regs.set_hazard (HZD_RECALL);
+ 
+-        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec)
++        if (Cpu::id != ec->cpu && Ec::remote (ec->cpu) == ec) {
+             Lapic::send_ipi (ec->cpu, VEC_IPI_RKE);
++            if (r->state_requested())
++                sys_finish<Sys_regs::COM_TIM>();
++        }
++    }
++
++    if (r->state_requested() && current->utcb) {
++
++        Cpu_regs regs(ec->regs);
++
++        regs.mtd = Mtd::GPR_ACDB |
++                   Mtd::GPR_BSD |
++#ifdef __x86_64__
++                   Mtd::GPR_R8_R15 |
++#endif
++                   Mtd::RSP |
++                   Mtd::RIP_LEN |
++                   Mtd::RFLAGS |
++                   Mtd::QUAL;
++
++        if (((ec->cont != ret_user_iret) && (ec->cont != recv_kern))) {
++            /* in syscall */
++            regs.REG(ip) = ec->regs.ARG_IP;
++            regs.REG(sp) = ec->regs.ARG_SP;
++        }
+ 
++        /*
++         * Find out if the EC is in exception handling state, which is the
++         * case if it has called an exception handler portal. The exception
++         * numbers in the comparison are the ones handled as exception in
++         * 'entry.S'. Page fault exceptions are not of interest for GDB, which
++         * is currently the only user of this status information.
++         */
++        if ((ec->cont == ret_user_iret) &&
++            (ec->partner != nullptr) && 
++            (ec->partner->cont == recv_kern) &&
++            ((regs.dst_portal <= 0x01) ||
++             ((regs.dst_portal >= 0x03) && (regs.dst_portal <= 0x07)) ||
++             ((regs.dst_portal >= 0x0a) && (regs.dst_portal <= 0x0d)) ||
++             ((regs.dst_portal >= 0x10) && (regs.dst_portal <= 0x13)))) {
++		
++            /* 'regs.err' will be transferred into utcb->qual[0] */
++            regs.err = 1;
++        } else
++            regs.err = 0;
++
++        /* the 'if' avoids an "unused result" warning */
++        if (current->utcb->load_exc (&regs)) {}
+     }
+ }
+             break;
