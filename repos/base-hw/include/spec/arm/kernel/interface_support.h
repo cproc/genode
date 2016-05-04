@@ -27,7 +27,10 @@ namespace Kernel
 	 */
 	struct Thread_event_id
 	{
-		enum { FAULT = 0 };
+		enum {
+			FAULT = 0,
+			EXCEPTION = 1
+		};
 	};
 }
 

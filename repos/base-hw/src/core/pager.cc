@@ -77,7 +77,14 @@ void Pager_object::start_paging(Kernel::Signal_receiver * receiver)
 	Entry::cap(Object::_cap);
 }
 
-void Pager_object::exception_handler(Signal_context_capability) { }
+void Pager_object::exception_handler(Signal_context_capability cap)
+{
+	Platform_thread * const pt = (Platform_thread *)badge();
+
+	if (route_thread_event(pt->kernel_object(), Kernel::Thread_event_id::EXCEPTION,
+	                       cap.dst()))
+		PERR("failed to set exception handler for thread %s", pt->label());
+}
 
 void Pager_object::unresolved_page_fault_occurred()
 {

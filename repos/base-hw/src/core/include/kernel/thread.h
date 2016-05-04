@@ -38,6 +38,9 @@ class Kernel::Thread_event : public Signal_ack_handler
 		Thread * const   _thread;
 		Signal_context * _signal_context;
 
+		/* XXX */
+		bool _page_fault_event;
+
 
 		/************************
 		 ** Signal_ack_handler **
@@ -52,7 +55,7 @@ class Kernel::Thread_event : public Signal_ack_handler
 		 *
 		 * \param t  thread that blocks on the event
 		 */
-		Thread_event(Thread * const t);
+		Thread_event(Thread * const t, bool page_fault_event = true);
 
 		/**
 		 * Submit to listening handlers just like a signal context
@@ -103,6 +106,7 @@ class Kernel::Thread
 		addr_t             _fault_addr;
 		addr_t             _fault_writes;
 		addr_t             _fault_signal;
+		Thread_event       _exception_event;
 		State              _state;
 		Signal_receiver *  _signal_receiver;
 		char const * const _label;
@@ -182,6 +186,11 @@ class Kernel::Thread
 		 * Handle an exception thrown by the memory management unit
 		 */
 		void _mmu_exception();
+
+		/**
+		 * Handle an exception
+		 */
+		void _exception();
 
 		/**
 		 * Handle kernel-call request of the thread
