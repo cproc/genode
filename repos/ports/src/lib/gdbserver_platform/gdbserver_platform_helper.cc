@@ -28,7 +28,7 @@ using namespace Gdb_monitor;
 extern Genode_child_resources *genode_child_resources();
 
 
-static constexpr bool verbose = false;
+static constexpr bool verbose = true;
 
 
 Thread_state get_current_thread_state()

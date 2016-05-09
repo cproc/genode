@@ -58,6 +58,7 @@ namespace Genode {
 		}
 
 		void resume(Thread_capability thread) override {
+			PDBG("calling Rpc_resume()");
 			call<Rpc_resume>(thread); }
 
 		void cancel_blocking(Thread_capability thread) override {

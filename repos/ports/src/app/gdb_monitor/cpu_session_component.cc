@@ -66,9 +66,15 @@ bool Cpu_session_component::_set_breakpoint_at_first_instruction(addr_t ip)
 
 void Cpu_session_component::remove_breakpoint_at_first_instruction()
 {
+#if 1
+	Thread_state thread_state = state(thread_cap(GENODE_MAIN_LWPID));
+	if (thread_state.ip != _breakpoint_ip)
+		PERR("IP: %lx != breakpoint IP: %lx", thread_state.ip, _breakpoint_ip);
+
 	if (genode_write_memory(_breakpoint_ip, _original_instructions,
 	                        breakpoint_len) != 0)
 		PWRN("%s: could not remove breakpoint at thread start address", __PRETTY_FUNCTION__);
+#endif
 }
 
 
@@ -136,6 +142,7 @@ int Cpu_session_component::send_signal(Thread_capability thread_cap,
 
 	switch (signo) {
 		case SIGSTOP:
+			PDBG("sending SIGSTOP to thread %lu", thread_info->lwpid());
 			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
 			return 1;
 		case SIGINT:
@@ -287,8 +294,10 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 {
 	Thread_info *thread_info = _thread_info(thread_cap);
 
+PDBG("start(%lx, %lx)", ip, sp);
+PDBG("thread_cap.valid(): %u, thread_info: %p", thread_cap.valid(), thread_info);
 	if (thread_cap.valid() && !thread_info) {
-
+PDBG("creating thread_info");
 		/* valid thread and not started yet */
 
 		thread_info = new (env()->heap())
@@ -315,6 +324,8 @@ int Cpu_session_component::start(Thread_capability thread_cap,
 		destroy(env()->heap(), thread_info);
 	}
 
+	PDBG("start() finished");
+
 	return result;
 }
 
@@ -327,7 +338,10 @@ void Cpu_session_component::pause(Thread_capability thread_cap)
 
 void Cpu_session_component::resume(Thread_capability thread_cap)
 {
+	PDBG("resume()");
+#if 1
 	_parent_cpu_session.resume(thread_cap);
+#endif
 }
 
 
