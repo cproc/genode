@@ -69,6 +69,7 @@ Dataspace_capability Cpu_thread_component::utcb()
 
 void Cpu_thread_component::start(addr_t ip, addr_t sp)
 {
+PDBG("start(%lx, %lx)", ip, sp);
 	_lwpid = new_lwpid++;
 	_initial_ip = ip;
 
@@ -82,17 +83,20 @@ void Cpu_thread_component::start(addr_t ip, addr_t sp)
 		genode_set_initial_breakpoint_at(ip);
 
 	_parent_cpu_thread.start(ip, sp);
+PDBG("start() finished");
 }
 
 
 void Cpu_thread_component::pause()
 {
+PDBG("pause()");
 	_parent_cpu_thread.pause();
 }
 
 
 void Cpu_thread_component::resume()
 {
+PDBG("resume()");
 	_parent_cpu_thread.resume();
 }
 
