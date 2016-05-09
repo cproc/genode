@@ -103,6 +103,7 @@ int Cpu_session_component::send_signal(Thread_capability thread_cap,
 
 	switch (signo) {
 		case SIGSTOP:
+			PDBG("sending SIGSTOP to thread %lu", cpu_thread->lwpid());
 			Signal_transmitter(cpu_thread->sigstop_signal_context_cap()).submit();
 			return 1;
 		case SIGINT:

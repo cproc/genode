@@ -111,7 +111,7 @@ void Thread::_await_request_failed()
 
 bool Thread::_resume()
 {
-PDBG("%p: _resume(): %p", this, __builtin_return_address(0));
+//PDBG("%p: _resume(): %p", this, __builtin_return_address(0));
 	switch (_state) {
 	case AWAITS_RESUME:
 		_become_active();
@@ -135,6 +135,9 @@ PDBG("%p: _resume(): %p", this, __builtin_return_address(0));
 
 void Thread::_pause()
 {
+	if (!(_state == AWAITS_RESUME || _state == ACTIVE))
+		PDBG("_state: %u", _state);
+
 	assert(_state == AWAITS_RESUME || _state == ACTIVE || _state == AWAITS_IPC);
 	_become_inactive(AWAITS_RESUME);
 }
@@ -163,8 +166,8 @@ void Thread::_become_active()
 
 void Thread::_become_inactive(State const s)
 {
-PDBG("%p: _become_inactive()", this);
-	if (_state == ACTIVE) { _deactivate_used_shares(); }
+//PDBG("%p: _become_inactive()", this);
+	if (_state == ACTIVE || _state == AWAITS_IPC) { _deactivate_used_shares(); }
 	_state = s;
 }
 
