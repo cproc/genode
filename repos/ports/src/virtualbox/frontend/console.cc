@@ -232,7 +232,7 @@ void GenodeConsole::handle_input(unsigned)
 			unsigned const buttons = (_key_status[Input::BTN_LEFT]   ? MouseButtonState_LeftButton : 0)
 					               | (_key_status[Input::BTN_RIGHT]  ? MouseButtonState_RightButton : 0)
 					               | (_key_status[Input::BTN_MIDDLE] ? MouseButtonState_MiddleButton : 0);
-			if (ev.is_absolute_motion()) {
+			if (ev.absolute_motion()) {
 
 				_last_received_motion_event_was_absolute = true;
 
@@ -251,7 +251,7 @@ void GenodeConsole::handle_input(unsigned)
 				_ax = ev.ax();
 				_ay = ev.ay();
 
-			} else if (ev.is_relative_motion()) {
+			} else if (ev.relative_motion()) {
 
 				_last_received_motion_event_was_absolute = false;
 
@@ -314,7 +314,7 @@ void GenodeConsole::handle_input(unsigned)
 			};
 
 			int status = MultiTouch::InContact | MultiTouch::InRange;
-			if (ev.is_touch_release())
+			if (ev.touch_release())
 				status = MultiTouch::None;
 
 			uint16_t const s = RT_MAKE_U16(slot, status);
@@ -476,7 +476,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t format,
 
 	clipboard_rom->update();
 
-	if (!clipboard_rom->is_valid()) {
+	if (!clipboard_rom->valid()) {
 		PERR("invalid clipboard dataspace");
 		return VERR_NOT_SUPPORTED;
 	}

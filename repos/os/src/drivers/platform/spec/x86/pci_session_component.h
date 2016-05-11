@@ -751,7 +751,7 @@ namespace Platform {
 
 				Io_mem_dataspace_capability io_mem = device->get_config_space();
 
-				if (!_device_pd.is_constructed())
+				if (!_device_pd.constructed())
 					_device_pd.construct(_device_pd_ep, _md_alloc,
 					                     _resources.ram().cap(),
 					                     _label.string());
@@ -779,7 +779,7 @@ namespace Platform {
 
 			Ram_capability alloc_dma_buffer(Genode::size_t const size)
 			{
-				if (!_device_pd.is_constructed())
+				if (!_device_pd.constructed())
 					_device_pd.construct(_device_pd_ep, _md_alloc,
 					                     _resources.ram().cap(),
 					                     _label.string());

@@ -220,7 +220,7 @@ struct Wm::Decorator_nitpicker_session : Genode::Rpc_object<Nitpicker::Session>,
 		Input::Event const * const events =
 			_nitpicker_input_ds.local_addr<Input::Event>();
 
-		while (_nitpicker_input.is_pending()) {
+		while (_nitpicker_input.pending()) {
 
 			size_t const num_events = _nitpicker_input.flush();
 

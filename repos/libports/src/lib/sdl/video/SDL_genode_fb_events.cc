@@ -59,7 +59,7 @@ extern "C" {
 
 	void Genode_Fb_PumpEvents(SDL_VideoDevice *t)
 	{
-		if (!input->is_pending())
+		if (!input->pending())
 			return;
 		int num_ev = input->flush();
 		for (int src_ev_cnt = 0; src_ev_cnt < num_ev; src_ev_cnt++)

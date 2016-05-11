@@ -250,7 +250,7 @@ struct Floating_window_layouter::Main : Operations
 	 */
 	void handle_input(unsigned)
 	{
-		while (input.is_pending())
+		while (input.pending())
 			_user_state.handle_input(input_ds.local_addr<Input::Event>(),
 			                         input.flush(), Genode::config()->xml_node());
 	}

@@ -115,11 +115,11 @@ class Genode::Trace::Source
 			return true;
 		}
 
-		bool is_owned_by(Source_owner const *owner) { return owner == _owner; }
+		bool owned_by(Source_owner const *owner) { return owner == _owner; }
 
 		void release_ownership(Source_owner const *owner)
 		{
-			if (is_owned_by(owner))
+			if (owned_by(owner))
 				_owner = 0;
 		}
 

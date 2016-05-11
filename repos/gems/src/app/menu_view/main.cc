@@ -251,10 +251,10 @@ void Menu_view::Main::handle_frame_timer(unsigned)
 
 		frame_cnt = 0;
 
-		Area const old_size = buffer.is_constructed() ? buffer->size() : Area();
+		Area const old_size = buffer.constructed() ? buffer->size() : Area();
 		Area const size     = root_widget.min_size();
 
-		if (!buffer.is_constructed() || size != old_size)
+		if (!buffer.constructed() || size != old_size)
 			buffer.construct(nitpicker, size, *env()->ram_session());
 		else
 			buffer->reset_surface();

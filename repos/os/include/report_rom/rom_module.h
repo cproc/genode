@@ -239,7 +239,7 @@ struct Rom::Module : Module_list::Element, Readable_module
 			 * report. This way, we do not need to trust report clients to
 			 * append a zero termination to textual reports.
 			 */
-			if (!_ds.is_constructed() || _ds->size() < (src_len + 1))
+			if (!_ds.constructed() || _ds->size() < (src_len + 1))
 				_ds.construct(Genode::env()->ram_session(), (src_len + 1));
 
 			/* copy content into backing store */
@@ -264,7 +264,7 @@ struct Rom::Module : Module_list::Element, Readable_module
 		 */
 		size_t read_content(Reader const &reader, char *dst, size_t dst_len) const override
 		{
-			if (!_ds.is_constructed() || !_last_writer)
+			if (!_ds.constructed() || !_last_writer)
 				return 0;
 
 			if (!_read_policy.read_permitted(*this, *_last_writer, reader))

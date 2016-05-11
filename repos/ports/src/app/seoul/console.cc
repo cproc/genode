@@ -257,7 +257,7 @@ void Vancouver_console::entry()
 	_startup_lock.unlock();
 
 	while (1) {
-		while (!input.is_pending()) {
+		while (!input.pending()) {
 
 			/* transfer text buffer content into chunky canvas */
 			if (_regs && ++count % 10 == 0 && _regs->mode == 0
