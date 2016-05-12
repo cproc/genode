@@ -30,6 +30,7 @@ int linux_detach_one_lwp (struct inferior_list_entry *entry, void *args);
 #include <base/printf.h>
 #include <base/service.h>
 #include <cap_session/connection.h>
+#include <cpu_thread/client.h>
 #include <dataspace/client.h>
 #include <os/config.h>
 #include <ram_session/connection.h>
@@ -38,6 +39,7 @@ int linux_detach_one_lwp (struct inferior_list_entry *entry, void *args);
 
 #include "app_child.h"
 #include "cpu_session_component.h"
+#include "cpu_thread_component.h"
 #include "genode_child_resources.h"
 #include "rom.h"
 #include "signal_handler_thread.h"
@@ -69,15 +71,15 @@ static void genode_stop_thread(unsigned long lwpid)
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
-	Thread_capability thread_cap = csc->thread_cap(lwpid);
+	Cpu_thread_component *cpu_thread = csc->cpu_thread(lwpid);
 
-	if (!thread_cap.valid()) {
-		PERR("%s: could not find thread capability for lwpid %lu",
+	if (!cpu_thread) {
+		PERR("%s: could not find CPU thread object for lwpid %lu",
 		     __PRETTY_FUNCTION__, lwpid);
 		return;
 	}
 
-	csc->pause(thread_cap);
+	cpu_thread->pause();
 }
 
 
@@ -186,13 +188,13 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 					 * delivered first, otherwise gdbserver would single-step the thread again.
 					 */
 
-					Thread_capability thread_cap = csc->thread_cap(lwpid);
+					Cpu_thread_component *cpu_thread = csc->cpu_thread(lwpid);
 
-					Thread_state thread_state = csc->state(thread_cap);
+					Thread_state thread_state = cpu_thread->state();
 
 					if (thread_state.exception) {
 						/* resend the SIGSTOP signal */
-						csc->send_signal(thread_cap, SIGSTOP, 0);
+						csc->send_signal(cpu_thread->cap(), SIGSTOP);
 						continue;
 					}
 
@@ -380,7 +382,7 @@ extern "C" int kill(pid_t pid, int sig)
 		return -1;
 	}
 
-	return csc->send_signal(thread_cap, sig, 0);
+	return csc->send_signal(thread_cap, sig);
 }
 
 
@@ -408,35 +410,14 @@ void genode_remove_thread(unsigned long lwpid)
 extern "C" void genode_stop_all_threads()
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
-
-	Lock::Guard stop_new_threads_lock_guard(csc->stop_new_threads_lock());
-
-	csc->stop_new_threads(true);
-
-	Thread_capability thread_cap = csc->first();
-
-	while (thread_cap.valid()) {
-		csc->pause(thread_cap);
-		thread_cap = csc->next(thread_cap);
-	}
+	csc->pause_all_threads();
 }
 
 
 void genode_resume_all_threads()
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
-
-   	Lock::Guard stop_new_threads_guard(csc->stop_new_threads_lock());
-
-	csc->stop_new_threads(false);
-
-	Thread_capability thread_cap = csc->first();
-
-	while (thread_cap.valid()) {
-		csc->single_step(thread_cap, false);
-		csc->resume(thread_cap);
-		thread_cap = csc->next(thread_cap);
-	}
+	csc->resume_all_threads();
 }
 
 
@@ -461,16 +442,16 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 {
 	Cpu_session_component *csc = genode_child_resources()->cpu_session_component();
 
-	Thread_capability thread_cap = csc->thread_cap(lwpid);
+	Cpu_thread_component *cpu_thread = csc->cpu_thread(lwpid);
 
-	if (!thread_cap.valid()) {
-		PERR("%s: could not find thread capability for lwpid %lu",
+	if (!cpu_thread) {
+		PERR("%s: could not find CPU thread object for lwpid %lu",
 		     __PRETTY_FUNCTION__, lwpid);
 		return;
 	}
 
-	csc->single_step(thread_cap, single_step);
-	csc->resume(thread_cap);
+	cpu_thread->single_step(single_step);
+	cpu_thread->resume();
 }
 
 

@@ -18,81 +18,31 @@
 #include <cpu_session_component.h>
 #include <util/list.h>
 
-#include <signal.h>
-
 /* GDB monitor includes */
-#include "config.h"
-#include "thread_info.h"
+#include "cpu_thread_component.h"
 
+/* genode-low.cc */
+extern void genode_remove_thread(unsigned long lwpid);
 
 using namespace Genode;
 using namespace Gdb_monitor;
 
 
-/* mem-break.c */
-extern "C" int breakpoint_len;
-extern "C" const unsigned char *breakpoint_data;
-extern "C" int set_gdb_breakpoint_at(long long where);
-
-/* genode-low.cc */
-extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
-extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
-extern void genode_remove_thread(unsigned long lwpid);
-extern void genode_set_initial_breakpoint_at(long long addr);
-
-
-static unsigned long new_lwpid = GENODE_MAIN_LWPID;
-
-
-bool Cpu_session_component::_set_breakpoint_at_first_instruction(addr_t ip)
+Cpu_thread_component *Cpu_session_component::_cpu_thread(Thread_capability thread_cap)
 {
-	_breakpoint_ip = ip;
-
-	if (genode_read_memory(_breakpoint_ip, _original_instructions,
-	                       breakpoint_len) != 0) {
-		PWRN("%s: could not read memory at thread start address", __PRETTY_FUNCTION__);
-		return false;
-	}
-
-	if (genode_write_memory(_breakpoint_ip, breakpoint_data,
-	                        breakpoint_len) != 0) {
-		PWRN("%s: could not set breakpoint at thread start address", __PRETTY_FUNCTION__);
-		return false;
-	}
-
-	return true;
-}
-
-
-void Cpu_session_component::remove_breakpoint_at_first_instruction()
-{
-	if (genode_write_memory(_breakpoint_ip, _original_instructions,
-	                        breakpoint_len) != 0)
-		PWRN("%s: could not remove breakpoint at thread start address", __PRETTY_FUNCTION__);
-}
-
-
-int Cpu_session_component::handle_initial_breakpoint(unsigned long lwpid)
-{
-	Thread_info *thread_info = _thread_list.first();
-	while (thread_info) {
-		if (thread_info->lwpid() == lwpid)
-			return thread_info->handle_initial_breakpoint();
-		thread_info = thread_info->next();
+	Cpu_thread_component *cpu_thread = _thread_list.first();
+	while (cpu_thread) {
+		if (cpu_thread->thread_cap().local_name() == thread_cap.local_name())
+			return cpu_thread;
+		cpu_thread = cpu_thread->next();
 	}
 	return 0;
 }
 
 
-Thread_info *Cpu_session_component::_thread_info(Thread_capability thread_cap)
+Cpu_session &Cpu_session_component::parent_cpu_session()
 {
-	Thread_info *thread_info = _thread_list.first();
-	while (thread_info) {
-		if (thread_info->thread_cap().local_name() == thread_cap.local_name())
-			return thread_info;
-		thread_info = thread_info->next();
-	}
-	return 0;
+	return _parent_cpu_session;
 }
 
 
@@ -104,42 +54,53 @@ Signal_receiver *Cpu_session_component::exception_signal_receiver()
 
 Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
 {
-	Thread_info *thread_info = _thread_list.first();
-	while (thread_info) {
-		if (thread_info->lwpid() == lwpid)
-			return thread_info->thread_cap();
-		thread_info = thread_info->next();
+	Cpu_thread_component *cpu_thread = _thread_list.first();
+	while (cpu_thread) {
+		if (cpu_thread->lwpid() == lwpid)
+			return cpu_thread->thread_cap();
+		cpu_thread = cpu_thread->next();
 	}
 	return Thread_capability();
 }
 
 
+Cpu_thread_component *Cpu_session_component::cpu_thread(unsigned long lwpid)
+{
+	Cpu_thread_component *cpu_thread = _thread_list.first();
+	while (cpu_thread) {
+		if (cpu_thread->lwpid() == lwpid)
+			return cpu_thread;
+		cpu_thread = cpu_thread->next();
+	}
+	return nullptr;
+}
+
+
 unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
 {
-	return _thread_info(thread_cap)->lwpid();
+	return _cpu_thread(thread_cap)->lwpid();
 }
 
 
 int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
 {
-	return _thread_info(thread_cap)->signal_pipe_read_fd();
+	return _cpu_thread(thread_cap)->signal_pipe_read_fd();
 }
 
 
 int Cpu_session_component::send_signal(Thread_capability thread_cap,
-                                       int signo,
-                                       unsigned long *payload)
+                                       int signo)
 {
-	Thread_info *thread_info = _thread_info(thread_cap);
+	Cpu_thread_component *cpu_thread = _cpu_thread(thread_cap);
 
-	_parent_cpu_session.pause(thread_cap);
+	cpu_thread->pause();
 
 	switch (signo) {
 		case SIGSTOP:
-			Signal_transmitter(thread_info->sigstop_signal_context_cap()).submit();
+			Signal_transmitter(cpu_thread->sigstop_signal_context_cap()).submit();
 			return 1;
 		case SIGINT:
-			Signal_transmitter(thread_info->sigint_signal_context_cap()).submit();
+			Signal_transmitter(cpu_thread->sigint_signal_context_cap()).submit();
 			return 1;
 		default:
 			PERR("unexpected signal %d", signo);
@@ -170,7 +131,9 @@ void Cpu_session_component::handle_unresolved_page_fault()
 
 			try {
 
-				Thread_state thread_state = _parent_cpu_session.state(thread_cap);
+				Cpu_thread_component *cpu_thread = _cpu_thread(thread_cap);
+
+				Thread_state thread_state = cpu_thread->state();
 
 				if (thread_state.unresolved_page_fault) {
 
@@ -178,14 +141,13 @@ void Cpu_session_component::handle_unresolved_page_fault()
 					 * On base-foc it is necessary to pause the thread before
 					 * IP and SP are available in the thread state.
 					 */
-					_parent_cpu_session.pause(thread_cap);
-
-					_thread_info(thread_cap)->deliver_signal(SIGSEGV);
+					cpu_thread->pause();
+					cpu_thread->deliver_signal(SIGSEGV);
 
 					return;
 				}
 
-			} catch (Cpu_session::State_access_failed) { }
+			} catch (Cpu_thread::State_access_failed) { }
 
 			thread_cap = next(thread_cap);
 		}
@@ -212,11 +174,54 @@ Lock &Cpu_session_component::stop_new_threads_lock()
 }
 
 
+int Cpu_session_component::handle_initial_breakpoint(unsigned long lwpid)
+{
+	Cpu_thread_component *cpu_thread = _thread_list.first();
+	while (cpu_thread) {
+		if (cpu_thread->lwpid() == lwpid)
+			return cpu_thread->handle_initial_breakpoint();
+		cpu_thread = cpu_thread->next();
+	}
+	return 0;
+}
+
+
+void Cpu_session_component::pause_all_threads()
+{
+	Lock::Guard stop_new_threads_lock_guard(stop_new_threads_lock());
+
+	stop_new_threads(true);
+
+	for (Cpu_thread_component *cpu_thread = _thread_list.first();
+	     cpu_thread;
+		 cpu_thread = cpu_thread->next()) {
+
+		cpu_thread->pause();
+	}
+}
+
+
+void Cpu_session_component::resume_all_threads()
+{
+   	Lock::Guard stop_new_threads_guard(stop_new_threads_lock());
+
+	stop_new_threads(false);
+
+	for (Cpu_thread_component *cpu_thread = _thread_list.first();
+	     cpu_thread;
+		 cpu_thread = cpu_thread->next()) {
+
+		cpu_thread->single_step(false);
+		cpu_thread->resume();
+	}
+}
+
+
 Thread_capability Cpu_session_component::first()
 {
-	Thread_info *thread_info = _thread_list.first();
-	if (thread_info)
-		return thread_info->thread_cap();
+	Cpu_thread_component *cpu_thread = _thread_list.first();
+	if (cpu_thread)
+		return cpu_thread->thread_cap();
 	else
 		return Thread_capability();
 }
@@ -224,9 +229,9 @@ Thread_capability Cpu_session_component::first()
 
 Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
 {
-	Thread_info *next_thread_info = _thread_info(thread_cap)->next();
-	if (next_thread_info)
-		return next_thread_info->thread_cap();
+	Cpu_thread_component *next_cpu_thread = _cpu_thread(thread_cap)->next();
+	if (next_cpu_thread)
+		return next_cpu_thread->thread_cap();
 	else
 		return Thread_capability();
 }
@@ -238,42 +243,26 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
                                                        Weight weight,
                                                        addr_t utcb)
 {
-	/* create thread at parent, keep local copy (needed on NOVA) */
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		if (_threads[i].valid())
-			continue;
+PDBG("create_thread()");
+	Cpu_thread_component *cpu_thread =
+		new (_md_alloc) Cpu_thread_component(*this, *_thread_ep, _core_pd, name,
+		                                     affinity, weight, utcb);
+PDBG("create_thread2");
+	_thread_list.append(cpu_thread);
 
-		Thread_capability cap =
-			_parent_cpu_session.create_thread(_core_pd, name, affinity, weight, utcb);
-		_threads[i] = cap;
-
-		return cap;
-	}
-
-	PERR("maximum number of threads per session reached");
-	throw Thread_creation_failed();
-}
-
-
-Ram_dataspace_capability Cpu_session_component::utcb(Thread_capability thread)
-{
-	return _parent_cpu_session.utcb(thread);
+	return cpu_thread->cap();
 }
 
 
 void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 {
-	/* purge local copy of thread capability */
-	for (unsigned i = 0; i < MAX_THREADS; i++)
-		if (_threads[i].local_name() == thread_cap.local_name())
-			_threads[i] = Thread_capability();
+	Cpu_thread_component *cpu_thread = _cpu_thread(thread_cap);
 
-	Thread_info *thread_info = _thread_info(thread_cap);
-
-	if (thread_info) {
-		genode_remove_thread(thread_info->lwpid());
-		_thread_list.remove(thread_info);
-		destroy(env()->heap(), thread_info);
+	if (cpu_thread) {
+		genode_remove_thread(cpu_thread->lwpid());
+		_thread_list.remove(cpu_thread);
+		_thread_ep->dissolve(cpu_thread);
+		destroy(_md_alloc, cpu_thread);
 	} else
 		PERR("%s: could not find thread info for the given thread capability",
 		     __PRETTY_FUNCTION__);
@@ -282,84 +271,9 @@ void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 }
 
 
-int Cpu_session_component::start(Thread_capability thread_cap,
-                                 addr_t ip, addr_t sp)
+void Cpu_session_component::exception_sigh(Signal_context_capability handler)
 {
-	Thread_info *thread_info = _thread_info(thread_cap);
-
-	if (thread_cap.valid() && !thread_info) {
-
-		/* valid thread and not started yet */
-
-		thread_info = new (env()->heap())
-			Thread_info(this, thread_cap, new_lwpid++, ip);
-
-		/* add the thread to the thread list */
-		_thread_list.append(thread_info);
-
-		/* register the exception handler */
-		exception_handler(thread_cap,
-		                  thread_info->exception_signal_context_cap());
-
-		/* set breakpoint at first instruction */
-		if (thread_info->lwpid() == GENODE_MAIN_LWPID)
-			_set_breakpoint_at_first_instruction(ip);
-		else
-			genode_set_initial_breakpoint_at(ip);
-	}
-
-	int result = _parent_cpu_session.start(thread_cap, ip, sp);
-
-	if ((result != 0) && thread_info) {
-		_thread_list.remove(thread_info);
-		destroy(env()->heap(), thread_info);
-	}
-
-	return result;
-}
-
-
-void Cpu_session_component::pause(Thread_capability thread_cap)
-{
-	_parent_cpu_session.pause(thread_cap);
-}
-
-
-void Cpu_session_component::resume(Thread_capability thread_cap)
-{
-	_parent_cpu_session.resume(thread_cap);
-}
-
-
-void Cpu_session_component::cancel_blocking(Thread_capability thread_cap)
-{
-	_parent_cpu_session.cancel_blocking(thread_cap);
-}
-
-
-void Cpu_session_component::state(Thread_capability thread_cap,
-                                 Thread_state const &state)
-{
-	_parent_cpu_session.state(thread_cap, state);
-}
-
-
-Thread_state Cpu_session_component::state(Thread_capability thread_cap)
-{
-	return _parent_cpu_session.state(thread_cap);
-}
-
-
-void Cpu_session_component::exception_handler(Thread_capability         thread_cap,
-                                              Signal_context_capability sigh_cap)
-{
-	_parent_cpu_session.exception_handler(thread_cap, sigh_cap);
-}
-
-
-void Cpu_session_component::single_step(Thread_capability thread_cap, bool enable)
-{
-	_parent_cpu_session.single_step(thread_cap, enable);
+	_parent_cpu_session.exception_sigh(handler);
 }
 
 
@@ -369,34 +283,9 @@ Affinity::Space Cpu_session_component::affinity_space() const
 }
 
 
-void Cpu_session_component::affinity(Thread_capability thread_cap,
-                                     Affinity::Location location)
-{
-	_parent_cpu_session.affinity(thread_cap, location);
-}
-
-
 Dataspace_capability Cpu_session_component::trace_control()
 {
 	return _parent_cpu_session.trace_control();
-}
-
-
-unsigned Cpu_session_component::trace_control_index(Thread_capability thread)
-{
-	return _parent_cpu_session.trace_control_index(thread);
-}
-
-
-Dataspace_capability Cpu_session_component::trace_buffer(Thread_capability thread)
-{
-	return _parent_cpu_session.trace_buffer(thread);
-}
-
-
-Dataspace_capability Cpu_session_component::trace_policy(Thread_capability thread)
-{
-	return _parent_cpu_session.trace_policy(thread);
 }
 
 
@@ -406,10 +295,14 @@ Capability<Cpu_session::Native_cpu> Cpu_session_component::native_cpu()
 }
 
 
-Cpu_session_component::Cpu_session_component(Pd_session_capability core_pd,
+Cpu_session_component::Cpu_session_component(Rpc_entrypoint *thread_ep,
+                                             Allocator *md_alloc,
+                                             Pd_session_capability core_pd,
                                              Signal_receiver *exception_signal_receiver,
                                              const char *args)
-: _core_pd(core_pd),
+: _thread_ep(thread_ep),
+  _md_alloc(md_alloc),
+  _core_pd(core_pd),
   _parent_cpu_session(env()->parent()->session<Cpu_session>(args)),
   _exception_signal_receiver(exception_signal_receiver)
 {
@@ -418,10 +311,19 @@ Cpu_session_component::Cpu_session_component(Pd_session_capability core_pd,
 
 Cpu_session_component::~Cpu_session_component()
 {
+	for (Cpu_thread_component *cpu_thread = _thread_list.first();
+	     cpu_thread; cpu_thread = _thread_list.first()) {
+	     _thread_list.remove(cpu_thread);
+	     _thread_ep->dissolve(cpu_thread);
+	     destroy(_md_alloc, cpu_thread);
+	}
 }
+
 
 int Cpu_session_component::ref_account(Cpu_session_capability) { return -1; }
 
+
 int Cpu_session_component::transfer_quota(Cpu_session_capability, size_t) { return -1; }
+
 
 Cpu_session::Quota Cpu_session_component::quota() { return Quota(); }

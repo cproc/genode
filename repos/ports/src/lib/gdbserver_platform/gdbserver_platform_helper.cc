@@ -19,6 +19,8 @@ extern "C" {
 #define _private private
 }
 
+#include <cpu_thread/client.h>
+
 #include "cpu_session_component.h"
 #include "genode_child_resources.h"
 
@@ -37,7 +39,9 @@ Thread_state get_current_thread_state()
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
-	return csc->state(csc->thread_cap(ptid.lwp));
+	Cpu_thread_client cpu_thread(csc->thread_cap(ptid.lwp));
+
+	return cpu_thread.state();
 }
 
 
@@ -47,7 +51,9 @@ void set_current_thread_state(Thread_state thread_state)
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
-	csc->state(csc->thread_cap(ptid.lwp), thread_state);
+	Cpu_thread_client cpu_thread(csc->thread_cap(ptid.lwp));
+
+	cpu_thread.state(thread_state);
 }
 
 

@@ -73,6 +73,8 @@ class Gdb_monitor::App_child : public Child_policy,
 
 		Region_map_client             _address_space { _pd.address_space() };
 
+		Child::Initial_thread         _initial_thread;
+
 		Parent_service                _parent_pd_service { "" };
 		Parent_service                _parent_ram_service { "" };
 		Parent_service                _parent_cpu_service { "" };
@@ -268,6 +270,7 @@ class Gdb_monitor::App_child : public Child_policy,
 					signal_receiver, &_genode_child_resources),
 		  _cpu_session(_get_cpu_session_cap()),
 		  _ram_session(ram_session),
+		  _initial_thread(_cpu_session, _pd.cap(), unique_name),
 		  _rom_service(&_entrypoint, env()->heap())
 		{
 			_genode_child_resources.region_map_component(&_pd.region_map());
@@ -294,7 +297,7 @@ class Gdb_monitor::App_child : public Child_policy,
 			                                   _ram_session,
 			                                   _ram_session,
 			                                   _cpu_session,
-			                                   _cpu_session,
+			                                   _initial_thread,
 			                                   *Genode::env()->rm_session(),
 			                                   _address_space,
 		                                       _entrypoint,

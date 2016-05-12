@@ -29,6 +29,8 @@ class Gdb_monitor::Cpu_root : public Root_component<Cpu_session_component>
 {
 	private:
 
+		Rpc_entrypoint          *_thread_ep;
+		Allocator               *_md_alloc;
 		Pd_session_capability    _core_pd;
 		Genode::Signal_receiver *_signal_receiver;
 		Genode_child_resources  *_genode_child_resources;
@@ -39,7 +41,11 @@ class Gdb_monitor::Cpu_root : public Root_component<Cpu_session_component>
 		{
 			Cpu_session_component *cpu_session_component =
 				new (md_alloc())
-					Cpu_session_component(_core_pd, _signal_receiver, args);
+					Cpu_session_component(_thread_ep,
+					                      _md_alloc,
+					                      _core_pd,
+					                      _signal_receiver,
+					                      args);
 			_genode_child_resources->cpu_session_component(cpu_session_component);
 			return cpu_session_component;
 		}
@@ -53,13 +59,15 @@ class Gdb_monitor::Cpu_root : public Root_component<Cpu_session_component>
 		 * \param thread_ep    entry point for managing threads
 		 * \param md_alloc     meta data allocator to be used by root component
 		 */
-		Cpu_root(Rpc_entrypoint *session_ep,
+		Cpu_root(Rpc_entrypoint *thread_ep,
 				 Allocator *md_alloc,
 				 Pd_session_capability core_pd,
 				 Genode::Signal_receiver *signal_receiver,
 				 Genode_child_resources *genode_child_resources)
 		:
-			Root_component<Cpu_session_component>(session_ep, md_alloc),
+			Root_component<Cpu_session_component>(thread_ep, md_alloc),
+			_thread_ep(thread_ep),
+			_md_alloc(md_alloc),
 			_core_pd(core_pd),
 			_signal_receiver(signal_receiver),
 			_genode_child_resources(genode_child_resources)
