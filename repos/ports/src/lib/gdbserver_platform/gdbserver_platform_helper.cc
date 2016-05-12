@@ -19,8 +19,6 @@ extern "C" {
 #define _private private
 }
 
-#include <cpu_thread/client.h>
-
 #include "cpu_session_component.h"
 #include "gdb_stub_thread.h"
 
@@ -35,9 +33,7 @@ Thread_state get_current_thread_state()
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
-	Cpu_thread_client cpu_thread(csc->thread_cap(ptid.lwp));
-
-	return cpu_thread.state();
+	return csc->state(csc->thread_cap(ptid.lwp));
 }
 
 void set_current_thread_state(Thread_state thread_state)
@@ -46,8 +42,6 @@ void set_current_thread_state(Thread_state thread_state)
 
 	ptid_t ptid = ((struct inferior_list_entry*)current_inferior)->id;
 
-	Cpu_thread_client cpu_thread(csc->thread_cap(ptid.lwp));
-
-	cpu_thread.state(thread_state);
+	csc->state(csc->thread_cap(ptid.lwp), thread_state);
 }
 
