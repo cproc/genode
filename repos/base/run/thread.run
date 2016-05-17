@@ -10,6 +10,7 @@ proc pause_resume_supported { } {
 	if {[have_spec pistachio]} { return 0 }
 	if {[have_spec linux]}     { return 0 }
 	if {[have_spec fiasco]}    { return 0 }
+	if {[have_spec nova]}      { return 0 }
 	return 1;
 }
 
