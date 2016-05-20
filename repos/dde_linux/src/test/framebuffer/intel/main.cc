@@ -12,7 +12,9 @@
  */
 
 #include <base/allocator_avl.h>
-#include <base/printf.h>
+#include <base/component.h>
+#include <base/heap.h>
+#include <base/log.h>
 #include <file_system_session/connection.h>
 #include <file_system/util.h>
 #include <os/attached_rom_dataspace.h>
@@ -22,7 +24,32 @@
 using namespace Genode;
 
 
-static inline void update_connector_config(Xml_generator & xml, Xml_node & node)
+struct Framebuffer_controller
+{
+	Attached_rom_dataspace                 rom;
+	Signal_handler<Framebuffer_controller> rom_sigh;
+	Heap                                   heap;
+	Allocator_avl                          fs_alloc;
+	File_system::Connection                fs;
+
+	void update_connector_config(Xml_generator & xml, Xml_node & node);
+	void update_fb_config(Xml_node & report);
+	void report_changed();
+
+	Framebuffer_controller(Env &env)
+	: rom("connectors"),
+	  rom_sigh(env.ep(), *this, &Framebuffer_controller::report_changed),
+	  heap(env.ram(), env.rm()),
+	  fs_alloc(&heap),
+	  fs(fs_alloc, 128*1024, "")
+	{
+		rom.sigh(rom_sigh);
+	}
+};
+
+
+void Framebuffer_controller::update_connector_config(Xml_generator & xml,
+                                                     Xml_node & node)
 {
 	xml.node("connector", [&] {
 		String<64> name;
@@ -51,12 +78,12 @@ static inline void update_connector_config(Xml_generator & xml, Xml_node & node)
 }
 
 
-void update_fb_config(Xml_node & report)
+void Framebuffer_controller::update_fb_config(Xml_node & report)
 {
 	try {
 		static char buf[4096];
 
-		Genode::Xml_generator xml(buf, sizeof(buf), "config", [&] {
+		Xml_generator xml(buf, sizeof(buf), "config", [&] {
 			xml.attribute("buffered", "yes");
 			xml.node("report", [&] {
 				xml.attribute("connectors", "yes");
@@ -67,37 +94,34 @@ void update_fb_config(Xml_node & report)
 		});
 		buf[xml.used()] = 0;
 
-		static Allocator_avl fs_packet_alloc { env()->heap() };
-		static File_system::Connection fs { fs_packet_alloc, 128*1024, "" };
 		File_system::Dir_handle root_dir = fs.dir("/", false);
 		File_system::File_handle file =
 			fs.file(root_dir, "fb_drv.config", File_system::READ_WRITE, false);
 		if (File_system::write(fs, file, buf, xml.used()) == 0)
-			PERR("Could not write config");
+			error("Could not write config");
 		fs.close(file);
 	} catch (...) {
-		PERR("Cannot update config");
+		error("Cannot update config");
 	}
 }
 
 
-int main(int argc, char **argv)
+void Framebuffer_controller::report_changed()
 {
-	Signal_receiver sig_rec;
-	Signal_context  sig_ctx;
-	Signal_context_capability sig_cap = sig_rec.manage(&sig_ctx);
+	rom.update();
+	if (!rom.is_valid()) return;
 
-	Attached_rom_dataspace rom("connectors");
-	rom.sigh(sig_cap);
-
-	for (;;) {
-		sig_rec.wait_for_signal();
-		rom.update();
-		if (!rom.is_valid()) continue;
-
-		Xml_node report(rom.local_addr<char>(), rom.size());
-		update_fb_config(report);
-	}
-
-	return 0;
+	Xml_node report(rom.local_addr<char>(), rom.size());
+	update_fb_config(report);
 }
+
+
+void Component::construct(Genode::Env &env)
+{
+	log("--- Framebuffer controller ---\n");
+	static Framebuffer_controller controller(env);
+}
+
+
+size_t Component::stack_size() {
+	return 4*1024*sizeof(long); }
