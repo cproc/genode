@@ -2,6 +2,7 @@
  * \brief  Basic test for framebuffer session
  * \author Martin Stein
  * \author Christian Helmuth
+ * \author Stefan Kalkowski
  * \date   2012-01-09
  */
 
@@ -13,20 +14,12 @@
  */
 
 /* Genode includes */
-#include <framebuffer_session/connection.h>
+#include <base/component.h>
+#include <base/log.h>
 #include <dataspace/client.h>
-#include <base/printf.h>
-#include <base/env.h>
+#include <framebuffer_session/connection.h>
 #include <os/attached_dataspace.h>
-#include <os/server.h>
 #include <util/volatile_object.h>
-
-namespace Server {
-
-	char const *name()             { return "framebuffer-test"; }
-	Genode::size_t stack_size()    { return 4*1024*sizeof(long); }
-	void construct(Entrypoint &ep);
-}
 
 
 class Test_environment
@@ -45,20 +38,20 @@ class Test_environment
 
 		enum State { STRIPES, ALL_BLUE, ALL_GREEN, ALL_RED, COLORED };
 
-		Framebuffer::Connection                     _fb;
-		Framebuffer::Mode                           _mode;
-		Ds                                          _fb_ds;
-		Genode::Signal_rpc_member<Test_environment> _mode_sigh;
-		Genode::Signal_rpc_member<Test_environment> _sync_sigh;
-		unsigned long                               _sync_cnt = 0;
-		State                                       _state = STRIPES;
+		Framebuffer::Connection                  _fb;
+		Framebuffer::Mode                        _mode;
+		Ds                                       _fb_ds;
+		Genode::Signal_handler<Test_environment> _mode_sigh;
+		Genode::Signal_handler<Test_environment> _sync_sigh;
+		unsigned long                            _sync_cnt = 0;
+		State                                    _state = STRIPES;
 
 		enum { FRAME_CNT = 200 };
 
 		void _draw();
-		void _mode_handle(unsigned);
+		void _mode_handle();
 
-		void _sync_handle(unsigned) {
+		void _sync_handle() {
 			if (_sync_cnt++ % FRAME_CNT == 0) _draw(); }
 
 		Genode::size_t _fb_bpp()  { return _mode.bytes_per_pixel(); }
@@ -68,24 +61,15 @@ class Test_environment
 
 	public:
 
-		Test_environment(Server::Entrypoint &ep)
+		Test_environment(Genode::Entrypoint &ep)
 		: _mode_sigh(ep, *this, &Test_environment::_mode_handle),
 		  _sync_sigh(ep, *this, &Test_environment::_sync_handle)
 		{
 			_fb.mode_sigh(_mode_sigh);
 			_fb.sync_sigh(_sync_sigh);
-			_mode_handle(0);
+			_mode_handle();
 		}
 };
-
-
-void Server::construct(Entrypoint &ep)
-{
-	using namespace Genode;
-
-	printf("--- Test framebuffer ---\n");
-	static Test_environment te(ep);
-}
 
 
 void Test_environment::_draw()
@@ -95,7 +79,7 @@ void Test_environment::_draw()
 	switch(_state) {
 	case STRIPES:
 		{
-			PINF("black & white stripes");
+			Genode::log("black & white stripes");
 			addr_t const stripe_width = _mode.width() / 4;
 			addr_t stripe_o = 0;
 			bool stripe = 0;
@@ -112,7 +96,7 @@ void Test_environment::_draw()
 		}
 	case ALL_BLUE:
 		{
-			PINF("blue");
+			Genode::log("blue");
 			for (addr_t o = 0; o < _fb_size(); o += _fb_bpp())
 				*(uint16_t volatile *)(_fb_base() + o) = BLUE;
 			_state = ALL_GREEN;
@@ -120,7 +104,7 @@ void Test_environment::_draw()
 		}
 	case ALL_GREEN:
 		{
-			PINF("green");
+			Genode::log("green");
 			for (addr_t o = 0; o < _fb_size(); o += _fb_bpp())
 				*(uint16_t volatile *)(_fb_base() + o) = GREEN;
 			_state = ALL_RED;
@@ -128,7 +112,7 @@ void Test_environment::_draw()
 		}
 	case ALL_RED:
 		{
-			PINF("red");
+			Genode::log("red");
 			for (addr_t o = 0; o < _fb_size(); o += _fb_bpp())
 				*(uint16_t volatile *)(_fb_base() + o) = RED;
 			_state = COLORED;
@@ -136,7 +120,7 @@ void Test_environment::_draw()
 		}
 	case COLORED:
 		{
-			PINF("all colors mixed");
+			Genode::log("all colors mixed");
 			unsigned i = 0;
 			for (addr_t o = 0; o < _fb_size(); o += _fb_bpp(), i++)
 				*(uint16_t volatile *)(_fb_base() + o) = i;
@@ -147,7 +131,7 @@ void Test_environment::_draw()
 }
 
 
-void Test_environment::_mode_handle(unsigned)
+void Test_environment::_mode_handle()
 {
 	_mode = _fb.mode();
 	if (_fb_ds.is_constructed())
@@ -155,13 +139,26 @@ void Test_environment::_mode_handle(unsigned)
 
 	_fb_ds.construct(_fb.dataspace());
 
-	PINF("framebuffer is %dx%d@%d",
-	     _mode.width(), _mode.height(), _mode.format());
+	Genode::log("framebuffer is ", _mode.width(), "x", _mode.height(),
+	            "@", (int)_mode.format());
 
 	if (_mode.bytes_per_pixel() != 2) {
-		PERR("pixel format not supported");
+		Genode::error("pixel format not supported");
 		throw -1;
 	}
 
 	_draw();
 }
+
+
+void Component::construct(Genode::Env &env)
+{
+	using namespace Genode;
+
+	Genode::log("--- Test framebuffer ---\n");
+	static Test_environment te(env.ep());
+}
+
+
+Genode::size_t Component::stack_size() {
+	return 4*1024*sizeof(long); }
