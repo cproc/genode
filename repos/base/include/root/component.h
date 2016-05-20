@@ -20,6 +20,7 @@
 #include <root/root.h>
 #include <base/rpc_server.h>
 #include <base/heap.h>
+#include <base/entrypoint.h>
 #include <ram_session/ram_session.h>
 #include <util/arg_string.h>
 #include <base/printf.h>
