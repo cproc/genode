@@ -1,7 +1,7 @@
 
                      A simple client-server scenario
 
-                      Björn Döbel and Norman Feske
+                      BjÃ¶rn DÃ¶bel and Norman Feske
 
 Abstract
 ########
