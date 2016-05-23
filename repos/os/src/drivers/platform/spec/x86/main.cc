@@ -97,6 +97,8 @@ struct Platform::Main
 			/* for ACPI support, wait for the first valid acpi report */
 			acpi_rom.construct("acpi");
 			acpi_rom->sigh(_acpi_report);
+			/* check if already valid */
+			acpi_update();
 			return;
 		}
 
