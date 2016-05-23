@@ -806,7 +806,7 @@ unsigned long round_jiffies_up_relative(unsigned long j)
  ** DRM implementation **
  ************************/
 
-unsigned int drm_debug = 0xffffffff;
+unsigned int drm_debug = 0x0;
 
 
 extern "C" int drm_pci_init(struct drm_driver *driver, struct pci_driver *pdriver)
@@ -932,8 +932,32 @@ void drm_gem_private_object_init(struct drm_device *dev,
                                  struct drm_gem_object *obj, size_t size)
 {
 	obj->dev = dev;
+	kref_init(&obj->refcount);
 	obj->filp = NULL;
 	obj->size = size;
+}
+
+
+void drm_gem_object_free(struct kref *kref)
+{
+	struct drm_gem_object *obj =
+		container_of(kref, struct drm_gem_object, refcount);
+	struct drm_device *dev = obj->dev;
+
+	if (dev->driver->gem_free_object != NULL)
+		dev->driver->gem_free_object(obj);
+}
+
+
+void drm_gem_free_mmap_offset(struct drm_gem_object *obj)
+{
+	TRACE;
+}
+
+
+void drm_gem_object_release(struct drm_gem_object *obj)
+{
+	TRACE;
 }
 
 
@@ -1027,6 +1051,13 @@ int sg_alloc_table(struct sg_table *table, unsigned int nents, gfp_t gfp_mask)
 	return 0;
 }
 
+
+void sg_free_table(struct sg_table *table)
+{
+	TRACE;
+}
+
+
 static inline bool sg_is_last(scatterlist * sg) {
 	return (sg->page_link & 0x02); }
 
@@ -1076,6 +1107,36 @@ bool __sg_page_iter_next(struct sg_page_iter *piter)
 dma_addr_t sg_page_iter_dma_address(struct sg_page_iter *piter)
 {
 	return sg_dma_address(piter->sg) + (piter->sg_pgoffset << PAGE_SHIFT);
+}
+
+
+struct page *sg_page_iter_page(struct sg_page_iter *piter)
+{
+	return (page*)(PAGE_SIZE * (page_to_pfn((sg_page(piter->sg))) + (piter->sg_pgoffset)));
+}
+
+
+void dma_unmap_sg_attrs(struct device *dev, struct scatterlist *sg, int nents, enum dma_data_direction dir, struct dma_attrs *attrs)
+{
+	TRACE;
+}
+
+
+void mark_page_accessed(struct page *p)
+{
+	//TRACE;
+}
+
+
+void put_page(struct page *page)
+{
+	//TRACE;
+}
+
+unsigned long invalidate_mapping_pages(struct address_space *mapping, pgoff_t start, pgoff_t end)
+{
+	TRACE;
+	return 0;
 }
 
 

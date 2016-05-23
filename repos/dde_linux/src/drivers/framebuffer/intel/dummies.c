@@ -158,11 +158,6 @@ void dma_unmap_page(struct device *dev, dma_addr_t dma_address, size_t size, enu
 	TRACE_AND_STOP;
 }
 
-void dma_unmap_sg_attrs(struct device *dev, struct scatterlist *sg, int nents, enum dma_data_direction dir, struct dma_attrs *attrs)
-{
-	TRACE_AND_STOP;
-}
-
 void down_read(struct rw_semaphore *sem)
 {
 	TRACE_AND_STOP;
@@ -213,11 +208,6 @@ int drm_gem_dumb_destroy(struct drm_file *file, struct drm_device *dev, uint32_t
 	return -1;
 }
 
-void drm_gem_free_mmap_offset(struct drm_gem_object *obj)
-{
-	TRACE_AND_STOP;
-}
-
 int drm_gem_handle_create(struct drm_file *file_priv, struct drm_gem_object *obj, u32 *handlep)
 {
 	TRACE_AND_STOP;
@@ -230,20 +220,10 @@ int drm_gem_mmap(struct file *filp, struct vm_area_struct *vma)
 	return -1;
 }
 
-void drm_gem_object_free(struct kref *kref)
-{
-	TRACE_AND_STOP;
-}
-
 struct drm_gem_object *drm_gem_object_lookup(struct drm_device *dev, struct drm_file *filp, u32 handle)
 {
 	TRACE_AND_STOP;
 	return NULL;
-}
-
-void drm_gem_object_release(struct drm_gem_object *obj)
-{
-	TRACE_AND_STOP;
 }
 
 int drm_gem_prime_fd_to_handle(struct drm_device *dev, struct drm_file *file_priv, int prime_fd, uint32_t *handle)
@@ -646,12 +626,6 @@ void intel_tv_init(struct drm_device *dev)
 	TRACE_AND_STOP;
 }
 
-unsigned long invalidate_mapping_pages(struct address_space *mapping, pgoff_t start, pgoff_t end)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
 void io_mapping_free(struct io_mapping *mapping)
 {
 	TRACE_AND_STOP;
@@ -717,11 +691,6 @@ int logical_ring_flush_all_caches(struct drm_i915_gem_request *req)
 {
 	TRACE_AND_STOP;
 	return -1;
-}
-
-void mark_page_accessed(struct page *p)
-{
-	TRACE_AND_STOP;
 }
 
 void *memchr_inv(const void *s, int c, size_t n)
@@ -865,11 +834,6 @@ int PTR_ERR_OR_ZERO(__force const void *ptr)
 	return -1;
 }
 
-void put_page(struct page *page)
-{
-	TRACE_AND_STOP;
-}
-
 void put_pid(struct pid *pid)
 {
 	TRACE_AND_STOP;
@@ -949,21 +913,10 @@ int set_pages_wb(struct page *page, int numpages)
 	return -1;
 }
 
-void sg_free_table(struct sg_table *t)
-{
-	TRACE_AND_STOP;
-}
-
 int    sg_nents(struct scatterlist *sg)
 {
 	TRACE_AND_STOP;
 	return -1;
-}
-
-struct page *sg_page_iter_page(struct sg_page_iter *piter)
-{
-	TRACE_AND_STOP;
-	return NULL;
 }
 
 struct page *shmem_read_mapping_page( struct address_space *mapping, pgoff_t index)
