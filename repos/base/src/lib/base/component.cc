@@ -70,6 +70,7 @@ struct Genode::Startup
 
 void Genode::bootstrap_component()
 {
+PDBG("bootstrap_component()");
 	static Startup startup;
 
 	/* never reached */

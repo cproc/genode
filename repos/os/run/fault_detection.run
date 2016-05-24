@@ -24,7 +24,7 @@ if {[have_spec fiasco]} {
 # Build
 #
 
-build { core init server/loader test/fault_detection test/segfault }
+build { core init server/loader test/fault_detection test/segfault drivers/timer }
 
 create_boot_directory
 
@@ -45,9 +45,13 @@ install_config {
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
-		<start name="loader">
+		<!--<start name="loader">
 			<resource name="RAM" quantum="10M"/>
 			<provides> <service name="Loader"/> </provides>
+		</start>-->
+		<start name="timer">
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="Timer"/> </provides>
 		</start>
 		<start name="test-fault_detection">
 			<resource name="RAM" quantum="10M"/>
@@ -60,7 +64,7 @@ install_config {
 #
 
 # generic modules
-set boot_modules { core init loader test-fault_detection test-segfault }
+set boot_modules { core init loader test-fault_detection test-segfault timer }
 
 build_boot_image $boot_modules
 
@@ -69,5 +73,7 @@ build_boot_image $boot_modules
 #
 
 append qemu_args "-nographic -m 64"
+
+run_genode_until forever
 
 run_genode_until "--- finished fault_detection test ---.*\n" 30

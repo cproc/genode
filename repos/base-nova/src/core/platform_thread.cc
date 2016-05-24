@@ -161,6 +161,8 @@ int Platform_thread::start(void *ip, void *sp)
 	_pager->initial_esp((addr_t)sp);
 	_pager->assign_pd(pd_sel);
 
+PDBG("start(%p): calling create_sc()", ip);
+
 	do {
 		/* let the thread run */
 		res = create_sc(_sel_sc(), pd_sel, _sel_ec(),
@@ -181,6 +183,8 @@ int Platform_thread::start(void *ip, void *sp)
 		PERR("create_sc returned %d", res);
 		goto cleanup_ec;
 	}
+
+PDBG("start(%p): create_sc() returned", ip);
 
 	return 0;
 

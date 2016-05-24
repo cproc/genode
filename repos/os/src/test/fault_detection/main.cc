@@ -23,6 +23,8 @@
 #include <loader_session/connection.h>
 #include <region_map/client.h>
 
+#include <timer_session/connection.h>
+
 
 /***************
  ** Utilities **
@@ -158,15 +160,17 @@ void faulting_child_test()
 	/*
 	 * Iteratively start a faulting program and detect the faults
 	 */
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; /*i++*/) {
 
 		PLOG("create child %d", i);
 
 		/* create and start child process */
 		Test_child child(ep, "test-segfault", sig_rec.manage(&sig_ctx));
 
-		PLOG("wait_for_signal");
+		//PLOG("wait_for_signal");
 
+		static Timer::Connection timer;
+		//timer.msleep(100);
 
 		wait_for_signal_for_context(sig_rec, sig_ctx);
 
