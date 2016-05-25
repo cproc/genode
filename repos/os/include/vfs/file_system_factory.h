@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2014 Genode Labs GmbH
+ * Copyright (C) 2014-2016 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
@@ -39,8 +39,18 @@ struct Vfs::Ticker
 
 struct Vfs::File_system_factory
 {
-	virtual File_system *create(Xml_node node) = 0;
 	virtual void register_ticker(Ticker &) { }
+
+	/**
+	 * Create and return a new file-system
+	 *
+	 * \env     Env for service connections
+	 * \alloc   internal file-system allocator
+	 * \config  file-system configuration
+	 */
+	virtual File_system *create(Genode::Env &env,
+	                            Genode::Allocator &alloc,
+	                            Xml_node config) = 0;
 };
 
 

@@ -33,12 +33,11 @@
 
 /* libc plugin interface */
 #include <libc-plugin/plugin.h>
-#include <libc-plugin/fd_alloc.h>
+#include <vfs_plugin.h>
 
 /* libc-internal includes */
 #include <libc_mem_alloc.h>
 #include "libc_errno.h"
-
 
 static Vfs::Vfs_handle *vfs_handle(Libc::File_descriptor *fd)
 {
@@ -282,7 +281,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 
 	while (handle == 0) {
 
-		switch (_root_dir.open(path, flags, &handle)) {
+		switch (_root_dir.open(path, flags, &handle, _alloc)) {
 
 		case Result::OPEN_OK:
 			break;
@@ -295,7 +294,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 				}
 
 				/* O_CREAT is set, so try to create the file */
-				switch (_root_dir.open(path, flags | O_EXCL, &handle)) {
+				switch (_root_dir.open(path, flags | O_EXCL, &handle, _alloc)) {
 
 				case Result::OPEN_OK:
 					break;
@@ -863,10 +862,4 @@ int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
 	Libc::mem_alloc()->free(addr);
 	return 0;
-}
-
-
-void __attribute__((constructor)) init_libc_vfs(void)
-{
-	static Libc::Vfs_plugin plugin;
 }
