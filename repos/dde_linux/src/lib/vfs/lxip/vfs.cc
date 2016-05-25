@@ -1293,19 +1293,17 @@ char *Vfs::Lxip_file_system::_parse_config(Genode::Xml_node config)
 
 struct Lxip_factory : Vfs::File_system_factory
 {
-	Genode::Allocator &alloc;
-
-	Lxip_factory(Genode::Allocator &alloc) : alloc(alloc) { }
-
-	Vfs::File_system *create(Genode::Xml_node node) override
+	Vfs::File_system *create(Genode::Env &env,
+	                         Genode::Allocator &alloc,
+	                         Genode::Xml_node config) override
 	{
-		return new (&alloc) Vfs::Lxip_file_system(alloc, node);
+		return new (&alloc) Vfs::Lxip_file_system(alloc, config);
 	}
 };
 
 
 extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 {
-	static Lxip_factory factory(*Genode::env()->heap());
+	static Lxip_factory factory;
 	return &factory;
 }
