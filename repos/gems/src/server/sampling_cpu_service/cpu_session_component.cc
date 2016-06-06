@@ -45,6 +45,7 @@ Sampling_cpu_service::Cpu_session_component::create_thread(Pd_session_capability
                                                            Weight weight,
                                                            addr_t utcb)
 {
+PDBG("create_thread()");
 	Cpu_thread_component *cpu_thread = new (_md_alloc) Cpu_thread_component(*this,
 	                                                                        pd,
 	                                                                        name,
@@ -59,7 +60,7 @@ Sampling_cpu_service::Cpu_session_component::create_thread(Pd_session_capability
 	_thread_list_change_handler.thread_list_changed();
 
 	_next_thread_id++;
-
+PDBG("create_thread() finished");
 	return cpu_thread->cap();
 }
 
@@ -122,6 +123,7 @@ Sampling_cpu_service::Cpu_session_component::Cpu_session_component(
 
 Sampling_cpu_service::Cpu_session_component::~Cpu_session_component()
 {
+PDBG("~Cpu_session_component()");
 	_cleanup_native_cpu();
 
 	for (List_element<Cpu_thread_component> *cpu_thread_element = _thread_list.first();
@@ -130,6 +132,7 @@ Sampling_cpu_service::Cpu_session_component::~Cpu_session_component()
 		Cpu_thread_component *cpu_thread = cpu_thread_element->object();
 
 		if (cpu_thread->cpu_session_component() == this) {
+			PDBG("removing thread data: %s", cpu_thread->label());
 			_thread_list.remove(cpu_thread_element);
 			destroy(_md_alloc, cpu_thread_element);
 			destroy(_md_alloc, cpu_thread);

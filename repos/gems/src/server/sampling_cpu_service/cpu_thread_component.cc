@@ -112,6 +112,8 @@ Sampling_cpu_service::Cpu_thread_component::Cpu_thread_component(
 
 	sanitize_path_component(file_name);
 
+	PDBG("creating/opening file: (%s)/(%s)", dir_name, file_name);
+
 	fd = open(file_name, O_CREAT | O_WRONLY, 0666);
 	if (fd == -1)
 		PERR("Could not create/open file: %s/%s", dir_name, file_name);
@@ -128,12 +130,21 @@ Sampling_cpu_service::Cpu_thread_component::~Cpu_thread_component()
 
 void Sampling_cpu_service::Cpu_thread_component::take_sample()
 {
+	//return;
+
+	if (!_started) {
+		PDBG("thread not started yet");
+		return;
+	}
+
 	try {
 
+PDBG("calling pause()");
 		_parent_cpu_thread.pause();
-
+PDBG("pause() returned");
+PDBG("calling state()");
 		Thread_state thread_state = _parent_cpu_thread.state();
-
+PDBG("state() returned, IP: %lx", thread_state.ip);
 		char const *format_string;
 
 		if (sizeof(addr_t) == 8)
@@ -148,8 +159,9 @@ void Sampling_cpu_service::Cpu_thread_component::take_sample()
 			flush();
 		else
 			_sample_buf_index += SAMPLE_SIZE;
-
+PDBG("calling resume()");
 		_parent_cpu_thread.resume();
+PDBG("resume() returned");
 
 	} catch (Cpu_thread::State_access_failed) {
 
@@ -186,6 +198,7 @@ Sampling_cpu_service::Cpu_thread_component::utcb()
 
 void Sampling_cpu_service::Cpu_thread_component::start(addr_t ip, addr_t sp)
 {
+PDBG("start(%lx, %lx)", ip, sp);
 	_parent_cpu_thread.start(ip, sp);
 	_started = true;
 }

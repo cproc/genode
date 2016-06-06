@@ -32,7 +32,7 @@ namespace Sampling_cpu_service
 	struct Main;
 }
 
-static constexpr bool verbose = false;
+static constexpr bool verbose = true;
 
 
 /******************
@@ -109,8 +109,9 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 		max_sample_index = (sample_time / sample_rate) - 1;
 
 		timeout_us = sample_rate * 1000;
-
+PDBG("calling thread_list_changed()");
 		thread_list_changed();
+PDBG("thread_list_changed() returned, setting timeout");
 
 		timer.trigger_periodic(timeout_us);
 	}
@@ -123,6 +124,8 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 	void thread_list_changed() override
 	{
 
+PDBG("clearing selected thread list");
+
 		for (List_element<Cpu_thread_component> *cpu_thread_element =
 		     selected_thread_list.first();
 		     cpu_thread_element;
@@ -134,6 +137,8 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 			selected_thread_list.remove(cpu_thread_element);
 			destroy(alloc, cpu_thread_element);
 		}
+
+PDBG("evaluating thread list");
 
 		for (List_element<Cpu_thread_component> *cpu_thread_element =
 		     thread_list.first();
