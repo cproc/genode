@@ -85,5 +85,30 @@ build_boot_image $boot_modules
 append qemu_args " -m 256 -usb  -usbdevice mouse -usbdevice keyboard"
 append qemu_args " -device usb-ehci,id=ehci"
 
+if ![get_cmd_switch --autopilot] { run_genode_until forever }
 
-run_genode_until forever
+# autopilot test
+
+run_genode_until {.*new full-speed.*\n} 60
+
+# clear output buffer
+unset output
+
+run_genode_until {\[init -\> test-input\] Input event #4.*\n} 60 [output_spawn_id]
+
+unify_output { number [0-9]+} ""
+filter_out_color_escape_sequences
+trim_lines
+
+compare_output_to {
+[init -> usb_drv] dev_info: D L
+[init -> usb_drv] dev_info: input: USB HID v1.11 Keyboard [D L] on usb-dummy-1.2/input0
+[init -> test-input] Input event #1	type=PRESS  	code=45	rx=0	ry=0	ax=0	ay=0	key_cnt=1	KEY_X
+[init -> test-input] Input event #2	type=RELEASE	code=45	rx=0	ry=0	ax=0	ay=0	key_cnt=-1	KEY_X
+[init -> usb_drv] dev_info: USB disconnect, device
+[init -> usb_drv] dev_info: new full-speed USB device using ehci-pci
+[init -> usb_drv] dev_info: D L
+[init -> usb_drv] dev_info: input: USB HID v1.11 Keyboard [D L] on usb-dummy-1.2/input0
+[init -> test-input] Input event #3	type=PRESS  	code=45	rx=0	ry=0	ax=0	ay=0	key_cnt=1	KEY_X
+[init -> test-input] Input event #4	type=RELEASE	code=45	rx=0	ry=0	ax=0	ay=0	key_cnt=-1	KEY_X
+}
