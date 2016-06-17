@@ -30,7 +30,7 @@ SEL4_ARCH_INCLUDES := simple_types.h types.h constants.h objecttype.h \
 ARCH_INCLUDES := objecttype.h types.h constants.h functions.h deprecated.h \
                  pfIPC.h syscalls.h exIPC.h invocation.h simple_types.h
 
-INCLUDES := objecttype.h types.h bootinfo.h errors.h constants.h \
+INCLUDES := objecttype.h types.h bootinfo.h bootinfo_types.h errors.h constants.h \
             messages.h sel4.h macros.h simple_types.h types_gen.h syscall.h \
             invocation.h shared_types_gen.h debug_assert.h shared_types.h \
             sel4.h deprecated.h
@@ -60,13 +60,13 @@ $(BUILD_BASE_DIR)/include/sel4/%.h: $(LIBSEL4_DIR)/include/sel4/%.h
 #
 # Generated headers
 #
-$(BUILD_BASE_DIR)/include/sel4/types_gen.h: $(LIBSEL4_DIR)/include/sel4/types.bf
+$(BUILD_BASE_DIR)/include/sel4/types_gen.h: $(LIBSEL4_DIR)/include/sel4/types_32.bf
 	$(MSG_CONVERT)$(notdir $@)
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)python $(LIBSEL4_DIR)/tools/bitfield_gen.py \
 	                 --environment libsel4 "$<" $@
 
-$(BUILD_BASE_DIR)/include/sel4/shared_types_gen.h: $(LIBSEL4_DIR)/include/sel4/shared_types.bf
+$(BUILD_BASE_DIR)/include/sel4/shared_types_gen.h: $(LIBSEL4_DIR)/include/sel4/shared_types_32.bf
 	$(MSG_CONVERT)$(notdir $@)
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)python $(LIBSEL4_DIR)/tools/bitfield_gen.py \
@@ -105,6 +105,6 @@ $(BUILD_BASE_DIR)/include/interfaces/sel4_client.h: $(SEL4_CLIENT_H_SRC)
 	$(MSG_CONVERT)$(notdir $@)
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)python $(LIBSEL4_DIR)/tools/syscall_stub_gen.py \
-	                 --buffer -a ia32 -o $@ $(SEL4_CLIENT_H_SRC)
+	                 --buffer -a ia32 --word-size 32 -o $@ $(SEL4_CLIENT_H_SRC)
 
 endif

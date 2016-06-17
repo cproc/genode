@@ -57,14 +57,14 @@ namespace Genode {
 
 	struct Page_table_kobj
 	{
-		enum { SEL4_TYPE = seL4_IA32_PageTableObject, SIZE_LOG2 = 12 };
+		enum { SEL4_TYPE = seL4_X86_PageTableObject, SIZE_LOG2 = 12 };
 		static char const *name() { return "page table"; }
 	};
 
 
 	struct Page_directory_kobj
 	{
-		enum { SEL4_TYPE = seL4_IA32_PageDirectoryObject, SIZE_LOG2 = 12 };
+		enum { SEL4_TYPE = seL4_X86_PageDirectoryObject, SIZE_LOG2 = 12 };
 		static char const *name() { return "page directory"; }
 	};
 

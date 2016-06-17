@@ -108,11 +108,11 @@ addr_t Platform_pd::_init_page_directory()
 		                            platform_specific()->core_cnode().sel(),
 		                            _page_directory_sel);
 
-	int const ret = seL4_IA32_ASIDPool_Assign(platform_specific()->asid_pool().value(),
+	int const ret = seL4_X86_ASIDPool_Assign(platform_specific()->asid_pool().value(),
 	                                          _page_directory_sel.value());
 
-	if (ret != 0)
-		PERR("seL4_IA32_ASIDPool_Assign returned %d", ret);
+	if (ret != seL4_NoError)
+		error("seL4_X86_ASIDPool_Assign returned ", ret);
 
 	return phys;
 }
