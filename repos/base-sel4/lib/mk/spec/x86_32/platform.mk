@@ -10,6 +10,7 @@
 # port, if missing, is added to the missing-ports list of this stage.
 #
 LIBSEL4_DIR := $(call select_from_ports,sel4)/src/kernel/sel4/libsel4
+LIBSEL4_AUTO:= $(call select_from_ports,sel4)/src/kernel/sel4/include/plat/pc99
 
 #
 # Execute the rules in this file only at the second build stage when we know
@@ -33,7 +34,7 @@ ARCH_INCLUDES := objecttype.h types.h constants.h functions.h deprecated.h \
 INCLUDES := objecttype.h types.h bootinfo.h bootinfo_types.h errors.h constants.h \
             messages.h sel4.h macros.h simple_types.h types_gen.h syscall.h \
             invocation.h shared_types_gen.h debug_assert.h shared_types.h \
-            sel4.h deprecated.h
+            sel4.h deprecated.h autoconf.h
 
 INCLUDE_SYMLINKS += $(addprefix $(BUILD_BASE_DIR)/include/sel4/,          $(INCLUDES))
 INCLUDE_SYMLINKS += $(addprefix $(BUILD_BASE_DIR)/include/sel4/arch/,     $(ARCH_INCLUDES))
@@ -50,6 +51,10 @@ $(BUILD_BASE_DIR)/include/sel4/sel4_arch/%.h: $(LIBSEL4_DIR)/sel4_arch_include/i
 	$(VERBOSE)ln -sf $< $@
 
 $(BUILD_BASE_DIR)/include/sel4/arch/%.h: $(LIBSEL4_DIR)/arch_include/x86/sel4/arch/%.h
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)ln -sf $< $@
+
+$(BUILD_BASE_DIR)/include/sel4/autoconf.h: $(LIBSEL4_AUTO)/autoconf.h
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)ln -sf $< $@
 

@@ -7,4 +7,7 @@ INC_DIR += $(BUILD_BASE_DIR)/include
 #
 # Access to other sel4-specific headers such as 'autoconf.h'.
 #
-REP_INC_DIR += include/sel4
+INC_DIR += $(BUILD_BASE_DIR)/include/sel4
+
+# required for seL4_DebugPutChar
+CC_OPT += -DSEL4_DEBUG_KERNEL -DDEBUG
