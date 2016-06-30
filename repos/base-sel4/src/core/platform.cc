@@ -137,10 +137,26 @@ void Platform::_init_allocators()
 	 * '_initial_untyped_pool' because the pool is empty.
 	 */
 
-	/* I/O memory ranges */
-//	init_allocator(_io_mem_alloc, _unused_phys_alloc,
-//	               bi, bi.deviceUntyped.start,
-//	               bi.deviceUntyped.end - bi.deviceUntyped.start);
+	/* move device memory regions to phys cnode */
+	seL4_BootInfo const &bi = sel4_boot_info();
+	Cnode_base const initial_cspace(Cap_sel(seL4_CapInitThreadCNode), 32);
+
+	for (unsigned region = 0; region < bi.numDeviceRegions; region++) {
+		size_t const frame_size = 1UL << bi.deviceRegions[region].frameSizeBits;
+
+		for (uint64_t sel = bi.deviceRegions[region].frames.start,
+		     phys_addr = bi.deviceRegions[region].basePaddr;
+		     sel < bi.deviceRegions[region].frames.end;
+		     sel++, phys_addr += frame_size) {
+
+			_io_mem_alloc.add_range(phys_addr, frame_size);
+			_unused_phys_alloc.remove_range(phys_addr, frame_size);
+
+			addr_t const dst_frame = phys_addr >> get_page_size_log2();
+			_phys_cnode.move(initial_cspace, Cnode_index(sel),
+			                 Cnode_index(dst_frame));
+		}
+	}
 
 	/* core's virtual memory */
 	_core_mem_alloc.virt_alloc()->add_range(_vm_base, _vm_size);
@@ -207,8 +223,12 @@ void Platform::_switch_to_core_cspace()
 	for (unsigned sel = bi.untyped.start; sel < bi.untyped.end; sel++)
 		_core_cnode.move(initial_cspace, Cnode_index(sel));
 
-//	for (unsigned sel = bi.deviceUntyped.start; sel < bi.deviceUntyped.end; sel++)
-//		_core_cnode.copy(initial_cspace, sel);
+	/* move the device memory selectors to core's CNode */
+	for (unsigned region = 0; region < bi.numDeviceRegions; region++) {
+		for (unsigned sel = bi.deviceRegions[region].frames.start;
+		     sel < bi.deviceRegions[region].frames.end; sel++)
+			_core_cnode.move(initial_cspace, Cnode_index(sel));
+	}
 
 	for (unsigned sel = bi.userImageFrames.start; sel < bi.userImageFrames.end; sel++)
 		_core_cnode.copy(initial_cspace, Cnode_index(sel));
