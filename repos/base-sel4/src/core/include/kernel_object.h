@@ -134,9 +134,6 @@ namespace Genode {
 			throw Retype_untyped_failed();
 		}
 
-		PLOG("created kernel object '%s' at 0x%lx -> root=%lu index=%lu",
-		     KOBJ::name(), phys_addr, dst_cnode_sel.value(), dst_idx.value());
-
 		return phys_addr;
 	}
 

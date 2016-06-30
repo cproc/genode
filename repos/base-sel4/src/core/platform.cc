@@ -124,8 +124,6 @@ void Platform::_init_allocators()
 		addr_t const base = range.phys + page_aligned_offset;
 		size_t const size = range.size - page_aligned_offset;
 
-		PDBG("register phys mem range 0x%lx size=0x%zx", base, size);
-
 		_core_mem_alloc.phys_alloc()->add_range(base, size);
 		_unused_phys_alloc.remove_range(base, size);
 	};
