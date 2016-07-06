@@ -113,6 +113,22 @@ struct Trace_subject_registry
 			_sort_by_recent_execution_time();
 		}
 
+		void dump_log(unsigned limit)
+		{
+			PINF("--- top %u (recent, total, label, thread_name) ---", limit);
+
+			unsigned i = 0;
+			for (Entry const *e = _entries.first(); e; e = e->next()) {
+				PINF("%10llu %12llu '%s' '%s'",
+				     e->recent_execution_time,
+				     e->info.execution_time().value,
+				     e->info.session_label().string(),
+				     e->info.thread_name().string());
+
+				if (i++ > limit) { break; }
+			}
+		}
+
 		void report(Genode::Xml_generator &xml,
 		            bool report_affinity, bool report_activity)
 		{
@@ -155,8 +171,15 @@ struct Server::Main
 
 	unsigned long period_ms = default_period_ms();
 
+	static unsigned long default_log_ms() { return 10000; }
+
+	unsigned long log_ms = default_log_ms();
+
+	unsigned trigger_count = 0;
+
 	bool report_affinity = false;
 	bool report_activity = false;
+	bool report_log      = false;
 
 	bool config_report_attribute_enabled(char const *attr) const
 	{
@@ -201,8 +224,16 @@ void Server::Main::handle_config(unsigned)
 		Genode::config()->xml_node().attribute("period_ms").value(&period_ms);
 	} catch (...) { }
 
+	try {
+		log_ms = default_log_ms();
+		Genode::config()->xml_node().attribute("log_ms").value(&log_ms);
+	} catch (...) { }
+
+	trigger_count = log_ms / period_ms; /* XXX */
+
 	report_affinity = config_report_attribute_enabled("affinity");
 	report_activity = config_report_attribute_enabled("activity");
+	report_log = config_report_attribute_enabled("log");
 
 	log("period_ms=",       period_ms,       ", "
 	    "report_activity=", report_activity, ", "
@@ -223,6 +254,13 @@ void Server::Main::handle_period(unsigned)
 	{
 		trace_subject_registry.report(xml, report_affinity, report_activity);
 	});
+
+	if (report_log) {
+		static unsigned counter = 0;
+		if (++counter > trigger_count) {
+			trace_subject_registry.dump_log(10);
+		}
+	}
 }
 
 
