@@ -102,6 +102,13 @@ for {set i 0} {$i < $vcpus_to_be_used} {incr i 1} {
 		<vcpu/> <halifax/> <vbios/> <lapic/>}
 }
 
+	if {$use_model_ahci} {
+		puts $vm_cfg_fd {
+		<ahci mem="0xe0800000" irq="14" bdf="0x30"/>
+		<drive sigma0drive="0" controller="0" port="0"/>
+		}
+	}
+
 if {!$use_multiboot} {
 
 	if {$use_model_ahci} {
@@ -257,6 +264,8 @@ append_if [expr $use_nic_session && !$use_nic_bridge] config {
 			<service name="Nic"> <child name="nic_drv"/> </service>}
 append_if $use_framebuffer config {
 			<service name="Framebuffer"><child name="fb_drv"/></service>}
+append_if $use_block_sata config {
+			<service name="Block"> <child name="ahci_drv"/></service>}
 append_if $use_genode_iso config {
 			<service name="ROM" label="vm_seoul.cfg">
 				<parent/> </service>
