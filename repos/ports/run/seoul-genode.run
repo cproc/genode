@@ -14,7 +14,7 @@ set use_model_ahci    1
 set use_model_ide     0
 
 set use_block_ram     0
-set use_block_sata    0
+set use_block_sata    1
 
 set use_nic_session   1
 set use_nic_bridge    0
@@ -24,7 +24,7 @@ set use_usb           0
 set use_framebuffer   1
 set use_fancy_stuff   0
 
-set memory_vmm_vm     "128M"
+set memory_vmm_vm     "256M"
 
 set vcpus_to_be_used  1
 
@@ -33,8 +33,8 @@ set use_multiboot_modaddr 0x2800000
 
 # Use a Genode run script of a 32bit platform and turn it into a bootable
 # setup for Seoul - adjust build_dir and run_script variable accordingly
-set run_script      "printf"
-set build_dir       "."
+set run_script      "libc_block_replay"
+set build_dir       "../nova_x86_32"
 set run_script_path "$build_dir/var/run/$run_script"
 set genode_iso      "$build_dir/var/run/$run_script.iso"
 
