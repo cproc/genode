@@ -296,6 +296,9 @@ void Platform::_init_core_page_table_registry()
 {
 	seL4_BootInfo const &bi = sel4_boot_info();
 
+	addr_t const modules_start = reinterpret_cast<addr_t>(&_boot_modules_binaries_begin);
+	addr_t const modules_end   = reinterpret_cast<addr_t>(&_boot_modules_binaries_end);
+
 	/*
 	 * Register initial page tables
 	 */
@@ -313,6 +316,10 @@ void Platform::_init_core_page_table_registry()
 	 */
 	virt_addr = (addr_t)(&_prog_img_beg);
 	for (unsigned sel = bi.userImageFrames.start; sel < bi.userImageFrames.end; sel++) {
+
+		/* skip boot modules */
+		if (modules_start <= virt_addr && virt_addr <= modules_end)
+			continue;
 
 		_core_page_table_registry.insert_page_table_entry(virt_addr, sel);
 
