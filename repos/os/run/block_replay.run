@@ -86,7 +86,7 @@ append_if $use_ram_blk config {
 
 append config {
 	<start name="test-block_replay">
-		<resource name="RAM" quantum="8M"/>
+		<resource name="RAM" quantum="16M"/>
 		<config verbose="no" bulk="no">
 			<request_list>
 				<request type="read" block_nr="0" block_count="1"/>
@@ -22269,7 +22269,17 @@ append qemu_args " -drive id=disk,file=bin/block.raw,format=raw,if=none -device 
 append qemu_args " -drive id=cd,file=[run_dir]/../block_replay.iso,if=none,media=cdrom -device ide-cd,drive=cd,bus=ahci.1"
 }
 
-run_genode_until {.*child "test-block_replay" exited.*\n} 360
+run_genode_until {start replaying} 60
+
+set time_start [clock milliseconds]
+
+run_genode_until {KiB in} 60 [output_spawn_id]
+
+set time_end [clock milliseconds]
+
+puts "\ntime: [expr $time_end - $time_start] ms"
+
+run_genode_until forever 0 [output_spawn_id]
 
 if {[expr !$use_ram_blk]} {
 	exec rm -f bin/block.raw
