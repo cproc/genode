@@ -69,6 +69,7 @@ struct Test::Replay
 	};
 
 	unsigned              request_num { 0 };
+	unsigned              total_request_num { 0 };
 	Genode::Fifo<Request> requests;
 
 	uint64_t amount { 0 };
@@ -122,7 +123,8 @@ struct Test::Replay
 
 				block->tx()->submit_packet(p);
 
-				Genode::destroy(&alloc, req);
+				//Genode::destroy(&alloc, req);
+				requests.enqueue(req);
 				more = bulk;
 			}
 		} catch (...) { Genode::warning("could not submit request"); }
@@ -146,12 +148,16 @@ struct Test::Replay
 
 				if (--request_num == 0) {
 					print_result(amount, start_time);
-					env.parent().exit(0);
+					//env.parent().exit(0);
+					request_num = total_request_num;
+					amount = 0;
+					start_time = timer.elapsed_ms();
 				} else {
 					if (verbose) {
 						Genode::log("remaining requests: ", request_num);
 					}
 				}
+
 			}
 
 			block->tx()->release_packet(p);
@@ -193,6 +199,8 @@ struct Test::Replay
 			return;
 		}
 
+		total_request_num = request_num;
+
 		size_t const tx_size = 2*1<<20;
 		try {
 			block = new (&alloc) Block::Connection(env, &block_alloc, tx_size);
@@ -207,10 +215,10 @@ struct Test::Replay
 			return;
 		}
 
-		start_time = timer.elapsed_ms();
-
 		Genode::log("start replaying ", request_num, " requests bulk=",
 		            bulk ? "yes" : "no", " tx_size=", tx_size);
+
+		start_time = timer.elapsed_ms();
 
 		/* initial submit */
 		submit();
