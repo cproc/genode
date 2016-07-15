@@ -35,7 +35,7 @@ proc run_log { wait_for_re timeout_value } {
 	}
 
 	# Check that SOL is correctly configured if wsman is available
-	if {[have_installed wsman]} {
+	if {![have_installed wsman]} {
 		set redir_state [exec wsman get http://intel.com/wbem/wscim/1/amt-schema/1/AMT_RedirectionService -h [power_on_amt_host] -P 16992 -u admin -p [power_on_amt_password]]
 		set redir_state [regexp -inline {ListenerEnabled.*ListenerEnabled} $redir_state]
 
