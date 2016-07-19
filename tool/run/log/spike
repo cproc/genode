@@ -12,7 +12,7 @@ proc run_log { wait_for_re timeout_value } {
 	set output_spawn_id $spike_spawn_id
 
 	expect {
-		-i $output_spawn_id $kernel_msg { }
+		-i $output_spawn_id -re $kernel_msg { }
 		eof         {
 			puts stderr "Aborting, received EOF"
 			return false
