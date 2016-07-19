@@ -168,6 +168,8 @@ void Vancouver_disk::_signal_dispatch_entry(unsigned disknr)
 				destroy(disk_heap(), msg->dma);
 				msg->dma = 0;
 			}
+			
+			//PDBG("sending DISK_OK to drive %u", disknr);
 
 			MessageDiskCommit mdc (disknr, msg->usertag, MessageDisk::DISK_OK);
 			_motherboard()->bus_diskcommit.send(mdc);
@@ -226,7 +228,7 @@ bool Vancouver_disk::receive(MessageDisk &msg)
 	}
 
 	msg.error = MessageDisk::DISK_OK;
-
+//PDBG("called");
 	switch (msg.type) {
 	case MessageDisk::DISK_GET_PARAMS:
 		{
@@ -246,6 +248,7 @@ bool Vancouver_disk::receive(MessageDisk &msg)
 			if (write && !_diskcon[msg.disknr].ops.supported(Block::Packet_descriptor::WRITE)) {
 				MessageDiskCommit ro(msg.disknr, msg.usertag,
 				                     MessageDisk::DISK_STATUS_DEVICE);
+				//PDBG("DISK_READ or DISK_WRITE");
 				_motherboard()->bus_diskcommit.send(ro);
 				return true;
 			}
