@@ -16,7 +16,7 @@ VIRTUALBOX_SDK_DIR = $(call select_from_ports,virtualbox)/src/app/virtualbox_sdk
 VBOX_DIR       = $(VIRTUALBOX_DIR)/src/VBox
 
 VBOX_CC_OPT += -DIN_RING3 -DVBOX -DVBOX_OSE \
-               -D_FILE_OFFSET_BITS=64 -DLOG_ENABLED
+               -D_FILE_OFFSET_BITS=64
 
 VBOX_CC_OPT += $(VBOX_MACH_CC_OPT_$(VBOX_MACH))
 
