@@ -33,7 +33,7 @@ set use_multiboot_modaddr 0x2800000
 
 # Use a Genode run script of a 32bit platform and turn it into a bootable
 # setup for Seoul - adjust build_dir and run_script variable accordingly
-set run_script      "libc_block_replay"
+set run_script      "block_replay"
 set build_dir       "../nova_x86_32"
 set run_script_path "$build_dir/var/run/$run_script"
 set genode_iso      "$build_dir/var/run/$run_script.iso"

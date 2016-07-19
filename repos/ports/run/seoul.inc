@@ -109,6 +109,13 @@ for {set i 0} {$i < $vcpus_to_be_used} {incr i 1} {
 		}
 	}
 
+if {$use_model_ahci} {
+	puts $vm_cfg_fd {
+	<ahci mem="0xe0800000" irq="14" bdf="0x30"/>
+	<drive sigma0drive="0" controller="0" port="0"/>
+	}
+}
+
 if {!$use_multiboot} {
 
 	if {$use_model_ahci} {
