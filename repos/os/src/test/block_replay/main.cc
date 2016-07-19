@@ -147,7 +147,7 @@ struct Test::Replay
 				amount += p.size();
 
 				if (--request_num == 0) {
-					print_result(amount, start_time);
+					//print_result(amount, start_time);
 					//env.parent().exit(0);
 					request_num = total_request_num;
 					amount = 0;

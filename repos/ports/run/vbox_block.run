@@ -175,7 +175,7 @@ append config {
 		<provides>
 			<service name="CPU"/>
 		</provides>
-		<config sample_interval_ms="10" sample_duration_ms="120000">
+		<config sample_interval_ms="10" sample_duration_ms="300000">
 			<libc> <vfs> <fs/> </vfs> </libc>
 			<policy label="vbox_init -> virtualbox -> vCPU dispatcher" />
 		</config>
@@ -289,6 +289,8 @@ if {[have_include "power_on/qemu"]} {
 		append qemu_args " -usbdevice mouse -usbdevice keyboard"
 	}
 }
+
+run_genode_until forever
 
 run_genode_until {start replaying} 60
 
