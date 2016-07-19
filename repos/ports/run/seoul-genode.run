@@ -33,7 +33,7 @@ set use_multiboot_modaddr 0x2800000
 
 # Use a Genode run script of a 32bit platform and turn it into a bootable
 # setup for Seoul - adjust build_dir and run_script variable accordingly
-set run_script      "libc_block_replay"
+set run_script      "block_replay"
 set build_dir       "../nova_x86_32"
 set run_script_path "$build_dir/var/run/$run_script"
 set genode_iso      "$build_dir/var/run/$run_script.iso"
@@ -82,4 +82,19 @@ source ${genode_dir}/repos/ports/run/seoul.inc
 append qemu_args " -m 1024 "
 append qemu_args " -cpu phenom "
 
-run_genode_until forever
+#run_genode_until forever
+
+run_genode_until {start replaying} 120
+
+set time_start [clock milliseconds]
+
+run_genode_until {KiB in} 120 [output_spawn_id]
+
+set time_end [clock milliseconds]
+
+set kb [lindex [regexp -all -inline {([0-9]+) KiB} $output] 1]
+set ms [expr $time_end - $time_start]
+
+puts "\nrun: $kb KiB in $ms ms ([expr $kb / $ms] MiB/s)"
+
+run_genode_until forever 0 [output_spawn_id]
