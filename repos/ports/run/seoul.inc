@@ -26,6 +26,9 @@ set build_components {
 	drivers/rtc
 	drivers/input
 	app/seoul
+	server/sampling_cpu_service
+	server/report_rom
+	app/trace_subject_reporter
 }
 
 if {$use_fancy_stuff} { set use_framebuffer 1 }
@@ -52,7 +55,7 @@ build $build_components
 
 # write Seoul config file
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
-puts $vm_cfg_fd {<config colocate="1" >
+puts $vm_cfg_fd {<config colocate="0" >
 	<machine>
 		<mem start="0x0" end="0x9a000"/>
 		<mem start="0x100000" end="0xfffff000"/>
@@ -161,6 +164,7 @@ append config {
 		<service name="RM"/>
 		<service name="CPU"/>
 		<service name="LOG"/>
+		<service name="TRACE"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
@@ -188,7 +192,7 @@ append_if $use_block_sata config {
 		<resource name="RAM" quantum="1M" />
 		<provides><service name="Block"/></provides>
 		<config>
-			<policy label="seoul -> VirtualDisk 0" device="0" />
+			<policy label="seoul_init -> seoul -> VirtualDisk 0" device="0" />
 		</config>
 	</start>}
 
@@ -251,12 +255,93 @@ append_if $use_framebuffer config {
 
 if {!$use_fancy_stuff} {
 append config {
-	<start name="seoul" priority="-3">
-		<binary name="seoul"/>}
-append config "
-		<resource name=\"RAM\" quantum=\"$memory_vmm_vm\"/>"
-append config {
+
+	<start name="subject_report_rom" priority="-1">
+		<binary name="report_rom"/>
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config verbose="no">
+			<policy label="foobar" report="trace_subject_reporter -> trace_subjects"/>
+		</config>
 		<route>
+			<any-service> <any-child/> <parent/> </any-service>
+		</route>
+	</start>
+
+	<!--<start name="trace_subject_reporter" priority="0">
+		<resource name="RAM" quantum="6M"/>
+		<config period_ms="10000" log_ms="10000">
+			<report activity="yes" affinity="yes" log="yes"/>
+		</config>
+		<route>
+			<service name="Report"> <child name="subject_report_rom"/> </service>
+			<any-service> <any-child/> <parent/> </any-service>
+		</route>
+	</start>-->
+
+	<!--<start name="sample_fs" priority="-1">
+		<binary name="ram_fs"/>
+		<resource name="RAM" quantum="64M"/>
+		<provides>
+			<service name="File_system"/>
+		</provides>
+		<config>
+			<policy label="sampling_cpu_service" root="/" writeable="yes" />
+		</config>
+	</start>-->
+
+	<start name="sampling_cpu_service" priority="0">
+		<resource name="RAM" quantum="32M"/>
+		<provides>
+			<service name="CPU"/>
+		</provides>
+		<config sample_interval_ms="100000" sample_duration_ms="300000">
+			<libc> <vfs> <fs/> </vfs> </libc>
+			<policy label="seoul_init -> seoul -> vCPU dispatcher" />
+		</config>
+		<!--<route>
+			<service name="File_system"> <child name="sample_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>-->
+	</start>
+
+	<start name="seoul_init" priority="-3">
+		<binary name="init"/>
+		<resource name="RAM" quantum="384M"/>
+
+		<config prio_levels="1">
+
+			<parent-provides>
+				<service name="Block"/>
+				<service name="CPU"/>
+				<service name="Framebuffer"/>
+				<service name="Input"/>
+				<service name="LOG"/>
+				<service name="Nic"/>
+				<service name="PD"/>
+				<service name="RM"/>
+				<service name="ROM"/>
+				<service name="Rtc"/>
+				<service name="Timer"/>
+			</parent-provides>
+
+			<default-route>
+				<any-service> <parent/> <any-child/> </any-service>
+			</default-route>
+
+			<start name="seoul">
+				<binary name="seoul"/>}
+append config "
+				<resource name=\"RAM\" quantum=\"$memory_vmm_vm\"/>"
+append config {
+				<configfile name="vm_seoul.cfg"/>
+			</start>
+
+		</config>
+
+		<route>
+			<service name="CPU"> <child name="sampling_cpu_service"/> </service>
+
 			<service name="Timer"><child name="timer"/></service>}
 append_if [expr $use_nic_session && $use_nic_bridge] config {
 			<service name="Nic"> <child name="nic_bridge"/> </service>}
@@ -275,12 +360,14 @@ append_if $use_genode_iso config {
 				<if-arg key="filename" value="hypervisor_info_page"/>
 				<parent/>
 			</service>
+			<service name="ROM" label="seoul"><parent/></service>
 			<service name="ROM"><child name="iso9660"/></service>}
 append config {
 			<service name="Rtc"><child name="rtc_drv"/></service>
-			<any-service><parent/><any-child/></any-service>
+
+			<any-service> <parent/> <any-child /> </any-service>
 		</route>
-		<configfile name="vm_seoul.cfg"/>
+
 	</start> }
 }
 
@@ -417,6 +504,9 @@ set boot_modules {
 	rtc_drv
 	seoul
 	vm_seoul.cfg
+	sampling_cpu_service
+	report_rom
+	trace_subject_reporter
 }
 
 lappend_if [expr !$use_usb]   boot_modules ps2_drv
