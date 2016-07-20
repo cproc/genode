@@ -34,6 +34,7 @@ namespace Genode {
 	{
 		Cap_sel tcb_sel { 0 };
 		Cap_sel ep_sel  { 0 };
+		Cap_sel lock_sel { 0 };
 
 		addr_t ipc_buffer_phys = 0;
 
@@ -68,6 +69,10 @@ void Genode::Thread_info::init(addr_t const utcb_virt_addr)
 	/* allocate synchronous endpoint within core's CNode */
 	ep_sel = platform.core_sel_alloc().alloc();
 	create<Endpoint_kobj>(phys_alloc, platform.core_cnode().sel(), ep_sel);
+
+	/* allocate asynchronous object within core's CSpace */
+	lock_sel = platform.core_sel_alloc().alloc();
+	create<Notification_kobj>(phys_alloc, platform.core_cnode().sel(), lock_sel);
 
 	/* assign IPC buffer to thread */
 	{
