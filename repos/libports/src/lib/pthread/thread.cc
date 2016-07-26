@@ -127,6 +127,8 @@ extern "C" {
 
 	pthread_t pthread_self(void)
 	{
+		return static_cast<pthread_t>(Thread::myself());
+
 		Thread *myself = Thread::myself();
 
 		pthread_t pthread = dynamic_cast<pthread_t>(myself);
