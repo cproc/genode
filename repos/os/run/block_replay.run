@@ -1,7 +1,7 @@
 #
 # Configuration
 #
-set use_ram_blk 1
+set use_ram_blk 0
 
 # always use ram_blk on linux
 if {[have_include power_on/linux]} {
