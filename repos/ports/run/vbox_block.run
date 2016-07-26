@@ -128,7 +128,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="trace_subject_reporter" priority="0">
+	<!--<start name="trace_subject_reporter" priority="0">
 		<resource name="RAM" quantum="6M"/>
 		<config period_ms="10000" log_ms="10000">
 			<report activity="yes" affinity="yes" log="yes"/>
@@ -137,7 +137,7 @@ append config {
 			<service name="Report"> <child name="subject_report_rom"/> </service>
 			<any-service> <any-child/> <parent/> </any-service>
 		</route>
-	</start>
+	</start>-->
 
 	<start name="ahci_drv" priority="-1">
 		<resource name="RAM" quantum="8M"/>
@@ -177,7 +177,7 @@ append config {
 		</provides>
 		<config sample_interval_ms="10" sample_duration_ms="300000">
 			<libc> <vfs> <fs/> </vfs> </libc>
-			<policy label="vbox_init -> virtualbox -> vCPU dispatcher" />
+			<!--<policy label="vbox_init -> virtualbox -> vCPU dispatcher" />-->
 		</config>
 		<route>
 			<service name="File_system"> <child name="sample_fs"/> </service>
