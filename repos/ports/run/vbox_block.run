@@ -10,6 +10,8 @@ set build_components {
 	drivers/ahci
 	server/report_rom
 	app/trace_subject_reporter
+	server/sampling_cpu_service
+	server/ram_fs
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -105,7 +107,7 @@ append_if [expr $use_net] config {
 }
 
 append_if [expr $use_serial] config {
-	<start name="log_terminal">
+	<start name="log_terminal" priority="-1">
 		<resource name="RAM" quantum="2M"/>
 		<provides>
 			<service name="Terminal"/>
@@ -126,7 +128,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="trace_subject_reporter" priority="-1">
+	<start name="trace_subject_reporter" priority="0">
 		<resource name="RAM" quantum="6M"/>
 		<config period_ms="10000" log_ms="10000">
 			<report activity="yes" affinity="yes" log="yes"/>
@@ -141,7 +143,7 @@ append config {
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Block"/></provides>
 		<config>
-			<policy label="virtualbox -> sda" device="0"/>
+			<policy label="vbox_init -> virtualbox -> sda" device="0"/>
 		</config>
 	</start>
 	<start name="report_rom" priority="-1">
@@ -152,39 +154,100 @@ append config {
 		</provides>
 		<config>
 			<rom>
-				<policy label="virtualbox -> usb_devices" report="foobar"/>
+				<policy label="vbox_init -> virtualbox -> usb_devices" report="foobar"/>
 			</rom>
 		</config>
 	</start>
 
-	<start name="virtualbox" priority="-2">
-		<resource name="RAM" quantum="448M"/>
-		<config vbox_file="vbox_block.vbox" vm_name="TestVM" force_ioapic="yes">
-			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
-				<vfs>
-					<dir name="dev">
-						<log/> <rtc/>
-						<block name="sda" label="sda" block_buffer_count="128"/>
-					</dir>}
+	<start name="sample_fs" priority="-1">
+		<binary name="ram_fs"/>
+		<resource name="RAM" quantum="64M"/>
+		<provides>
+			<service name="File_system"/>
+		</provides>
+		<config>
+			<policy label="sampling_cpu_service" root="/" writeable="yes" />
+		</config>
+	</start>
 
-append_if [expr $use_serial] config {
-					<dir name="dev"> <terminal/> </dir>}
-
-append config {
-					<rom name="vbox_block.vbox" />
-					<rom name="sda.vmdk" />
-					<rom name="test.iso" />
-				</vfs>
-			</libc>
+	<start name="sampling_cpu_service" priority="0">
+		<resource name="RAM" quantum="32M"/>
+		<provides>
+			<service name="CPU"/>
+		</provides>
+		<config sample_interval_ms="10" sample_duration_ms="300000">
+			<libc> <vfs> <fs/> </vfs> </libc>
+			<policy label="vbox_init -> virtualbox -> vCPU dispatcher" />
 		</config>
 		<route>
-			<service name="Report"><child name="report_rom" /></service>
+			<service name="File_system"> <child name="sample_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="vbox_init" priority="-2">
+		<binary name="init"/>
+		<resource name="RAM" quantum="512M"/>
+
+		<!-- 'prio_levels' must be at least 1 for VirtualBox-internal priorities to work -->
+		<config prio_levels="1">
+
+			<parent-provides>
+				<service name="ROM"/>
+				<service name="RAM"/>
+				<service name="IRQ"/>
+				<service name="IO_MEM"/>
+				<service name="IO_PORT"/>
+				<service name="PD"/>
+				<service name="RM"/>
+				<service name="CPU"/>
+				<service name="LOG"/>
+				<service name="TRACE"/>
+				<service name="Report"/>
+				<service name="Timer"/>
+				<service name="Rtc"/>
+				<service name="Block"/>
+				<service name="Terminal"/>
+				<service name="Input"/>
+				<service name="Framebuffer"/>
+			</parent-provides>
+
+			<default-route>
+				<any-service> <parent/> <any-child/> </any-service>
+			</default-route>
+
+			<start name="virtualbox">
+				<resource name="RAM" quantum="448M"/>
+				<config vbox_file="vbox_block.vbox" vm_name="TestVM" force_ioapic="yes" ld_verbose="yes">
+					<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
+						<vfs>
+							<dir name="dev">
+								<log/> <rtc/>
+								<block name="sda" label="sda" block_buffer_count="128"/>
+							</dir>}
+append_if [expr $use_serial] config {
+							<dir name="dev"> <terminal/> </dir>}
+append config {
+							<rom name="vbox_block.vbox" />
+							<rom name="sda.vmdk" />
+							<rom name="test.iso" />
+						</vfs>
+					</libc>
+				</config>
+			</start>
+
+		</config>
+
+		<route>
+			<service name="CPU"> <child name="sampling_cpu_service"/> </service>
+			<service name="Report"> <child name="report_rom" /> </service>
 			<service name="ROM">
-				<if-arg key="label" value="usb_devices"/> <child name="report_rom"/>
+				<if-arg key="label" value="virtualbox -> usb_devices"/> <child name="report_rom"/>
 			</service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
+
 </config>
 }
 
@@ -196,6 +259,7 @@ set boot_modules {
 	core init timer virtualbox test.iso vbox_block.vbox report_rom
 	trace_subject_reporter
 	ahci_drv sda.vmdk
+	sampling_cpu_service ram_fs
 }
 
 # platform-specific modules
@@ -226,4 +290,19 @@ if {[have_include "power_on/qemu"]} {
 	}
 }
 
-run_genode_until forever
+#run_genode_until forever
+
+run_genode_until {start replaying} 120
+
+set time_start [clock milliseconds]
+
+run_genode_until {KiB in} 120 [output_spawn_id]
+
+set time_end [clock milliseconds]
+
+set kb [lindex [regexp -all -inline {([0-9]+) KiB} $output] 1]
+set ms [expr $time_end - $time_start]
+
+puts "\nrun: $kb KiB in $ms ms ([expr $kb / $ms] MiB/s)"
+
+run_genode_until forever 0 [output_spawn_id]
