@@ -18,6 +18,31 @@
 
 #include <pthread.h>
 
+/*
+ * Used by 'pthread_self()' to find out if the current thread is an alien
+ * thread.
+ */
+class Pthread_registry
+{
+	private:
+
+		enum { MAX_NUM_PTHREADS = 128 };
+
+		pthread_t _array[MAX_NUM_PTHREADS] = { 0 };
+
+	public:
+
+		void insert(pthread_t thread);
+
+		void remove(pthread_t thread);
+
+		bool contains(pthread_t thread);
+};
+
+
+Pthread_registry &pthread_registry();
+
+
 extern "C" {
 
 	struct pthread_attr
@@ -50,6 +75,8 @@ extern "C" {
 		{
 			if (_attr)
 				_attr->pthread = this;
+
+			pthread_registry().insert(this);
 		}
 
 		/**
@@ -62,6 +89,13 @@ extern "C" {
 		{
 			if (_attr)
 				_attr->pthread = this;
+
+			pthread_registry().insert(this);
+		}
+
+		virtual ~pthread()
+		{
+			pthread_registry().remove(this);
 		}
 
 		void entry()
@@ -72,6 +106,7 @@ extern "C" {
 	};
 
 	void pthread_cleanup();
+
 }
 
 #endif /* _INCLUDE__SRC_LIB_PTHREAD_THREAD_H_ */
