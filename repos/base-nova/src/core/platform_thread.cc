@@ -49,7 +49,7 @@ Affinity::Location Platform_thread::affinity() const { return _location; }
 int Platform_thread::start(void *ip, void *sp)
 {
 	using namespace Nova;
-
+PDBG("start(%lx, %lx)", ip, sp);
 	if (!_pager) {
 		PERR("pager undefined");
 		return -1;
