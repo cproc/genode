@@ -65,12 +65,12 @@ class Sampling_cpu_service::Cpu_root : public Root_component<Cpu_session_compone
 		 * \param thread_ep    entry point for managing threads
 		 * \param md_alloc     meta data allocator to be used by root component
 		 */
-		Cpu_root(Server::Entrypoint &session_ep,
+		Cpu_root(Rpc_entrypoint &session_ep,
 		         Rpc_entrypoint &thread_ep,
 				 Allocator *md_alloc,
 				 List<List_element<Cpu_thread_component>> &thread_list,
 				 Thread_list_change_handler &thread_list_change_handler)
-		: Root_component<Cpu_session_component>(&session_ep.rpc_ep(), md_alloc),
+		: Root_component<Cpu_session_component>(&session_ep, md_alloc),
 		  _thread_ep(thread_ep),
 		  _md_alloc(md_alloc),
 		  _thread_list(thread_list),

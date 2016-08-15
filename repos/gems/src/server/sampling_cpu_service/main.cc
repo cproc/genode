@@ -12,9 +12,9 @@
  */
 
 /* Genode includes */
+#include <base/attached_rom_dataspace.h>
 #include <cpu_session/cpu_session.h>
 #include <os/attached_dataspace.h>
-#include <os/config.h>
 #include <os/server.h>
 #include <os/session_policy.h>
 #include <os/static_root.h>
@@ -42,9 +42,10 @@ static constexpr bool verbose_missed_timeouts = true;
 
 struct Sampling_cpu_service::Main : Thread_list_change_handler
 {
-	Server::Entrypoint &ep;
+	Genode::Env &env;
 	Allocator *alloc;
 	Cpu_root cpu_root;
+	Attached_rom_dataspace config;
 	Timer::Connection timer;
 	List<List_element<Cpu_thread_component>> thread_list;
 	List<List_element<Cpu_thread_component>> selected_thread_list;
@@ -91,7 +92,7 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 
 
 	Signal_rpc_member<Main> timeout_dispatcher =
-		{ ep, *this, &Main::handle_timeout };
+		{ env.ep(), *this, &Main::handle_timeout };
 
 
 	void handle_config_update(unsigned)
@@ -99,7 +100,7 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 		if (verbose)
 			PDBG("handle_config_update()");
 
-		Genode::config()->reload();
+		config.update();
 
 		sample_index = 0;
 
@@ -107,13 +108,15 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 		unsigned int sample_time = 10000;
 
     	try {
-        	Genode::config()->xml_node().attribute("sample_interval_ms").value(&sample_rate);
+        	//Genode::config()->xml_node().attribute("sample_interval_ms").value(&sample_rate);
+        	sample_rate = config.xml().attribute_value("sample_interval_ms", 1000);
     	} catch (...) {
     		PDBG("no sample interval configured, sampling every 1000ms");
     	}
 
     	try {
-        	Genode::config()->xml_node().attribute("sample_duration_ms").value(&sample_time);
+        	//Genode::config()->xml_node().attribute("sample_duration_ms").value(&sample_time);
+			sample_time = config.xml().attribute_value("sample_duration_ms", 10000);
     	} catch (...) {
     		PDBG("no sample duration configured, sampling for 10ms");
     	}
@@ -129,7 +132,7 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 
 
 	Signal_rpc_member<Main> config_update_dispatcher =
-		{ ep, *this, &Main::handle_config_update};
+		{ env.ep(), *this, &Main::handle_config_update};
 
 
 	void thread_list_changed() override
@@ -179,15 +182,16 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 	/**
 	 * Constructor
 	 */
-	Main(Server::Entrypoint &ep)
-	: ep(ep),
-	  alloc(env()->heap()),
-	  cpu_root(ep, ep.rpc_ep(), alloc, thread_list, *this)
+	Main(Genode::Env &env)
+	: env(env),
+	  alloc(env.heap()),
+	  cpu_root(env.ep(), alloc, thread_list, *this),
+	  config(env, "config")
 	{
 		/*
 		 * Register signal handlers
 		 */
-		Genode::config()->sigh(config_update_dispatcher);
+		config.sigh(config_update_dispatcher);
 		timer.sigh(timeout_dispatcher);
 
 		/*
@@ -198,21 +202,15 @@ struct Sampling_cpu_service::Main : Thread_list_change_handler
 		/*
 		 * Announce service
 		 */
-		Genode::env()->parent()->announce(ep.manage(cpu_root));
+		env.parent()->announce(env.ep().manage(cpu_root));
 	}
 
 };
 
 
-/************
- ** Server **
- ************/
+/***************
+ ** Component **
+ ***************/
 
-namespace Server {
-
-	char const *name() { return "sampling_cpu_service_ep"; }
-
-	size_t stack_size() { return 4*1024*sizeof(addr_t); }
-
-	void construct(Entrypoint &ep) { static Sampling_cpu_service::Main inst(ep); }
-}
+Genode::size_t Component::stack_size() { return 4*1024*sizeof(addr_t); }
+void Component::construct(Genode::Env &env) { static Sampling_cpu_service::Main inst(env); }
