@@ -1,0 +1,94 @@
+build {
+	core
+	init
+	drivers/timer
+	server/ram_fs
+	server/sampling_cpu_service
+	test/sampling_cpu_service
+}
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="CAP"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="RAM"/>
+			<service name="ROM"/>
+			<service name="RM"/>
+			<service name="SIGNAL"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides>
+				<service name="Timer"/>
+			</provides>
+		</start>
+		<start name="ram_fs">
+			<resource name="RAM" quantum="12M"/>
+			<provides>
+				<service name="File_system"/>
+			</provides>
+			<config>
+				<policy label="sampling_cpu_service" root="/" writeable="yes" />
+			</config>
+		</start>
+		<start name="sampling_cpu_service">
+			<resource name="RAM" quantum="10M"/>
+			<provides>
+				<service name="CPU"/>
+			</provides>
+			<config sample_interval_ms="100" sample_duration_ms="1000">
+				<libc> <vfs> <fs/> </vfs> </libc>
+				<policy label="init -> test-sampling_cpu_service -> ep" />
+			</config>
+		</start>
+		<start name="init">
+			<resource name="RAM" quantum="16M"/>
+			<config>
+				<parent-provides>
+					<service name="CAP"/>
+					<service name="LOG"/>
+					<service name="RM"/>
+					<service name="SIGNAL"/>
+				</parent-provides>
+				<default-route>
+					<any-service> <parent/> </any-service>
+				</default-route>
+				<start name="test-sampling_cpu_service">
+					<resource name="RAM" quantum="4M"/>
+				</start>
+			</config>
+			<route>
+				<service name="CPU"> <child name="sampling_cpu_service"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image {
+	core
+	init
+	timer
+	ram_fs
+	sampling_cpu_service
+	test-sampling_cpu_service
+}
+
+append qemu_args "-nographic -m 128"
+
+set match_string "Test started. func: 0x(\[0-9a-f\]+)"
+
+run_genode_until "$match_string" 10
+
+regexp $match_string $output all func
+
+run_genode_until "\\\[init -> sampling_cpu_service -> samples -> init -> test-sampling_cpu_service -> ep\\\.1] \[0\]+$func" 2 [output_spawn_id]
+
