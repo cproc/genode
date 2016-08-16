@@ -76,8 +76,13 @@ class Fs_log::Log_file : public List<Log_file>::Element
 			File_system::Packet_descriptor raw_packet;
 			if (!source.ready_to_submit())
 				raw_packet = source.get_acked_packet();
-			else
-				raw_packet = source.alloc_packet(Log_session::String::MAX_SIZE);
+			else {
+				try {
+					raw_packet = source.alloc_packet(Log_session::String::MAX_SIZE);
+				} catch (File_system::Session::Tx::Source::Packet_alloc_failed) {
+					raw_packet = source.get_acked_packet();
+				}
+			}
 
 			File_system::Packet_descriptor
 				packet(raw_packet,
@@ -90,6 +95,8 @@ class Fs_log::Log_file : public List<Log_file>::Element
 			memcpy(buf, msg, msg_len);
 
 			source.submit_packet(packet);
+			source.get_acked_packet();
+			source.release_packet(packet);
 			return msg_len;
 		}
 };

@@ -235,7 +235,7 @@ namespace Server {
 
 	char const* name() { return "fs_log_ep"; }
 
-	size_t stack_size() { return 3*512*sizeof(long); }
+	size_t stack_size() { return 4*512*sizeof(long); }
 
 	void construct(Entrypoint &ep) { static Fs_log::Main inst(ep); }
 
