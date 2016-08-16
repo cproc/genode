@@ -90,6 +90,8 @@ class Fs_log::Log_file : public List<Log_file>::Element
 			memcpy(buf, msg, msg_len);
 
 			source.submit_packet(packet);
+			source.get_acked_packet();
+			source.release_packet(packet);
 			return msg_len;
 		}
 };
