@@ -73,6 +73,8 @@ class Fs_log::Log_file : public List<Log_file>::Element
 		{
 			File_system::Session::Tx::Source &source = *_fs.tx();
 
+			File_system::collect_acknowledgements(source);
+
 			File_system::Packet_descriptor raw_packet;
 			if (!source.ready_to_submit())
 				raw_packet = source.get_acked_packet();
