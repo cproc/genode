@@ -1,0 +1,27 @@
+This component implements a CPU service which samples the instruction pointer
+of the configured threads on a regular basis for the purpose of statistical
+profiling.
+
+The collected samples are written to the LOG session with an individual label
+for each thread. By using the 'fs_log' component, the sample data can be
+written into separate files if desired.
+
+Configuration options
+---------------------
+
+<config sample_interval_ms="100" sample_duration_s="1">
+	<policy label="init -> test-cpu_sampler -> ep" />
+</config>
+
+The 'sample_interval_ms' attribute configures the time between two samples in
+milliseconds.
+
+The 'sample_duration_s' attribute configures the overall duration of the
+sampling activity in seconds.
+
+The policy configures the threads to be sampled.
+
+The clients of the CPU sampler component must be at least grand children of the
+initial init process to have their CPU session routed accordingly. An example
+configuration using a sub-init process can be found in the 'cpu_sampler.run'
+script.
