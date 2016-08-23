@@ -4,7 +4,7 @@ set use_usb 0
 set use_serial 1
 
 set build_components {
-	core init virtualbox
+	core init virtualbox5
 	drivers/framebuffer
 	drivers/timer
 	drivers/ahci
@@ -171,7 +171,7 @@ append config {
 	</start>
 
 	<start name="cpu_sampler" priority="0">
-		<resource name="RAM" quantum="32M"/>
+		<resource name="RAM" quantum="4M"/>
 		<provides>
 			<service name="CPU"/>
 		</provides>
@@ -216,6 +216,7 @@ append config {
 			</default-route>
 
 			<start name="virtualbox">
+				<binary name="virtualbox5"/>
 				<resource name="RAM" quantum="448M"/>
 				<config vbox_file="vbox_block.vbox" vm_name="TestVM" force_ioapic="yes" ld_verbose="yes">
 					<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc">
@@ -255,7 +256,7 @@ install_config $config
 exec cp ${genode_dir}/repos/ports/run/vbox_block.vbox bin/.
 
 set boot_modules {
-	core init timer virtualbox test.iso vbox_block.vbox report_rom
+	core init timer virtualbox5 test.iso vbox_block.vbox report_rom
 	trace_subject_reporter
 	ahci_drv sda.vmdk
 	cpu_sampler ram_fs
