@@ -115,6 +115,7 @@ struct Trace_subject_registry
 
 		void dump_log(unsigned limit)
 		{
+#if 0
 			PINF("--- top %u (recent, total, label, thread_name) ---", limit);
 
 			unsigned i = 0;
@@ -127,6 +128,7 @@ struct Trace_subject_registry
 
 				if (i++ > limit) { break; }
 			}
+#endif
 		}
 
 		void report(Genode::Xml_generator &xml,
