@@ -42,17 +42,17 @@ static constexpr bool verbose_sample_duration = true;
 
 struct Cpu_sampler::Main : Thread_list_change_handler
 {
-	Genode::Env                              &env;
-	Genode::Heap                              alloc;
-	Cpu_root                                  cpu_root;
-	Attached_rom_dataspace                    config;
-	Timer::Connection                         timer;
-	List<List_element<Cpu_thread_component>>  thread_list;
-	List<List_element<Cpu_thread_component>>  selected_thread_list;
+	Genode::Env            &env;
+	Genode::Heap            alloc;
+	Cpu_root                cpu_root;
+	Attached_rom_dataspace  config;
+	Timer::Connection       timer;
+	Thread_list             thread_list;
+	Thread_list             selected_thread_list;
 
-	unsigned int                              sample_index;
-	unsigned int                              max_sample_index;
-	unsigned int                              timeout_us;
+	unsigned int            sample_index;
+	unsigned int            max_sample_index;
+	unsigned int            timeout_us;
 
 
 	void handle_timeout(unsigned int num)
@@ -172,7 +172,7 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 	Main(Genode::Env &env)
 	: env(env),
 	  alloc(env.ram(), env.rm()),
-	  cpu_root(env.ep().rpc_ep(), env.ep().rpc_ep(), &alloc, thread_list, *this),
+	  cpu_root(env.ep().rpc_ep(), env.ep().rpc_ep(), alloc, thread_list, *this),
 	  config(env, "config")
 	{
 		/*
