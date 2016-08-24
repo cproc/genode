@@ -36,7 +36,7 @@ class Cpu_sampler::Cpu_thread_component : public Rpc_object<Cpu_thread>
 
 		Cpu_session_component &_cpu_session_component;
 
-		Allocator             *_md_alloc;
+		Allocator             &_md_alloc;
 
 		Cpu_thread_client      _parent_cpu_thread;
 
@@ -52,15 +52,15 @@ class Cpu_sampler::Cpu_thread_component : public Rpc_object<Cpu_thread>
 
 	public:
 
-		Cpu_thread_component(Cpu_session_component &cpu_session_component,
-		                     Allocator *md_alloc,
-		                     Pd_session_capability pd,
+		Cpu_thread_component(Cpu_session_component   &cpu_session_component,
+		                     Allocator               &md_alloc,
+		                     Pd_session_capability    pd,
 		                     Cpu_session::Name const &name,
-		                     Affinity::Location affinity,
-		                     Cpu_session::Weight weight,
-		                     addr_t utcb,
-	    	                 const char *thread_name,
-	    	                 unsigned int thread_id);
+		                     Affinity::Location       affinity,
+		                     Cpu_session::Weight      weight,
+		                     addr_t                   utcb,
+		                     char              const *thread_name,
+		                     unsigned int             thread_id);
 	   	~Cpu_thread_component();
 
 		Cpu_session_component const *cpu_session_component() const

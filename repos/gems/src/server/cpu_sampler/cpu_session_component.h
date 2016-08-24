@@ -27,24 +27,25 @@
 namespace Cpu_sampler {
 	using namespace Genode;
 	class Cpu_session_component;
+	typedef List<List_element<Cpu_thread_component>> Thread_list;
 }
 
 class Cpu_sampler::Cpu_session_component : public Rpc_object<Cpu_session>
 {
 	private:
 
-		Rpc_entrypoint                           &_thread_ep;
+		Rpc_entrypoint                      &_thread_ep;
 
-		Cpu_session_client                        _parent_cpu_session;
-		Allocator                                *_md_alloc;
-		List<List_element<Cpu_thread_component>> &_thread_list;
-		Thread_list_change_handler               &_thread_list_change_handler;
-		Session_label                             _session_label;
-		unsigned int                              _next_thread_id = 0;
+		Cpu_session_client                   _parent_cpu_session;
+		Allocator                           &_md_alloc;
+		Thread_list                         &_thread_list;
+		Thread_list_change_handler          &_thread_list_change_handler;
+		Session_label                        _session_label;
+		unsigned int                         _next_thread_id = 0;
 
-		Capability<Cpu_session::Native_cpu>       _native_cpu_cap;
+		Capability<Cpu_session::Native_cpu>  _native_cpu_cap;
 
-		Capability<Cpu_session::Native_cpu>       _setup_native_cpu();
+		Capability<Cpu_session::Native_cpu>  _setup_native_cpu();
 		void _cleanup_native_cpu();
 
 	public:
@@ -58,11 +59,11 @@ class Cpu_sampler::Cpu_session_component : public Rpc_object<Cpu_session>
 		/**
 		 * Constructor
 		 */
-		Cpu_session_component(Rpc_entrypoint &thread_ep,
-		                      Allocator *md_alloc,
-		                      List<List_element<Cpu_thread_component>> &thread_list,
+		Cpu_session_component(Rpc_entrypoint             &thread_ep,
+		                      Allocator                  &md_alloc,
+		                      Thread_list                &thread_list,
 		                      Thread_list_change_handler &thread_list_change_handler,
-		                      const char *args);
+		                      char                 const *args);
 
 		/**
 		 * Destructor

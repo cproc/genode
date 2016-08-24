@@ -22,15 +22,15 @@ static constexpr bool verbose_take_sample = false;
 using namespace Genode;
 
 Cpu_sampler::Cpu_thread_component::Cpu_thread_component(
-                                  Cpu_session_component &cpu_session_component,
-                                  Allocator *md_alloc,
-                                  Pd_session_capability pd,
-                                  Cpu_session::Name const &name,
-                                  Affinity::Location affinity,
-                                  Cpu_session::Weight weight,
-                                  addr_t utcb,
-                                  char const *thread_name,
-                                  unsigned int thread_id)
+                                Cpu_session_component   &cpu_session_component,
+                                Allocator               &md_alloc,
+                                Pd_session_capability    pd,
+                                Cpu_session::Name const &name,
+                                Affinity::Location       affinity,
+                                Cpu_session::Weight      weight,
+                                addr_t                   utcb,
+                                char              const *thread_name,
+                                unsigned int             thread_id)
 : _cpu_session_component(cpu_session_component),
   _md_alloc(md_alloc),
   _parent_cpu_thread(
@@ -174,8 +174,7 @@ void Cpu_sampler::Cpu_thread_component::cancel_blocking()
 }
 
 
-Thread_state
-Cpu_sampler::Cpu_thread_component::state()
+Thread_state Cpu_sampler::Cpu_thread_component::state()
 {
 	return _parent_cpu_thread.state();
 }

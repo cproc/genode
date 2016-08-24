@@ -39,11 +39,11 @@ Cpu_sampler::Cpu_session_component::lookup_cpu_thread(Thread_capability thread_c
 
 
 Thread_capability
-Cpu_sampler::Cpu_session_component::create_thread(Pd_session_capability pd,
-                                                  Name const &name,
-                                                  Affinity::Location affinity,
-                                                  Weight weight,
-                                                  addr_t utcb)
+Cpu_sampler::Cpu_session_component::create_thread(Pd_session_capability  pd,
+                                                  Name            const &name,
+                                                  Affinity::Location     affinity,
+                                                  Weight                 weight,
+                                                  addr_t                 utcb)
 {
 	Cpu_thread_component *cpu_thread = new (_md_alloc)
 		Cpu_thread_component(*this,
@@ -110,11 +110,11 @@ Cpu_sampler::Cpu_session_component::trace_control()
 
 
 Cpu_sampler::Cpu_session_component::Cpu_session_component(
-                        Rpc_entrypoint &thread_ep,
-                        Allocator *md_alloc,
-                        List<List_element<Cpu_thread_component>> &thread_list,
+                        Rpc_entrypoint             &thread_ep,
+                        Allocator                  &md_alloc,
+                        Thread_list                &thread_list,
                         Thread_list_change_handler &thread_list_change_handler,
-                        const char *args)
+                        char                 const *args)
 : _thread_ep(thread_ep),
   _parent_cpu_session(env()->parent()->session<Cpu_session>(args)),
   _md_alloc(md_alloc),
