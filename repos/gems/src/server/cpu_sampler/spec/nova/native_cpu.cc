@@ -52,8 +52,11 @@ class Cpu_sampler::Native_cpu_component : public Rpc_object<Nova_native_cpu,
 
 		Native_capability pager_cap(Thread_capability thread_cap) override
 		{
-			Cpu_thread_component *cpu_thread = _cpu_session_component.lookup_cpu_thread(thread_cap);
-			return _nova_native_cpu.pager_cap(cpu_thread->parent_thread());
+			auto lambda = [&] (Cpu_sampler::Cpu_thread_component *cpu_thread) {
+				return _nova_native_cpu.pager_cap(cpu_thread->parent_thread());
+			};
+
+			return _cpu_session_component.thread_ep().apply(thread_cap, lambda);
 		}
 };
 
@@ -71,7 +74,8 @@ Cpu_sampler::Cpu_session_component::_setup_native_cpu()
 void Cpu_sampler::Cpu_session_component::_cleanup_native_cpu()
 {
 	Native_cpu_component *native_cpu_component = nullptr;
-	_thread_ep.apply(_native_cpu_cap, [&] (Native_cpu_component *c) { native_cpu_component = c; });
+	_thread_ep.apply(_native_cpu_cap,
+	                 [&] (Native_cpu_component *c) { native_cpu_component = c; });
 
 	if (!native_cpu_component) return;
 

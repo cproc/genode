@@ -20,23 +20,6 @@
 using namespace Genode;
 using namespace Cpu_sampler;
 
-Cpu_thread_component *
-Cpu_sampler::Cpu_session_component::lookup_cpu_thread(Thread_capability thread_cap)
-{
-	for (List_element<Cpu_thread_component> *cpu_thread_element =
-	     _thread_list.first();
-	     cpu_thread_element;
-	     cpu_thread_element = cpu_thread_element->next()) {
-
-		Cpu_thread_component *cpu_thread = cpu_thread_element->object();
-
-		if (cpu_thread->cap() == thread_cap)
-			return cpu_thread;
-	}
-
-	return 0;
-}
-
 
 Thread_capability
 Cpu_sampler::Cpu_session_component::create_thread(Pd_session_capability  pd,
@@ -56,8 +39,7 @@ Cpu_sampler::Cpu_session_component::create_thread(Pd_session_capability  pd,
 	                          name.string(),
 	                          _next_thread_id);
 
-	_thread_list.insert(new (_md_alloc)
-		List_element<Cpu_thread_component>(cpu_thread));
+	_thread_list.insert(new (_md_alloc) Thread_element(cpu_thread));
 
 	_thread_list_change_handler.thread_list_changed();
 
@@ -69,11 +51,8 @@ Cpu_sampler::Cpu_session_component::create_thread(Pd_session_capability  pd,
 
 void Cpu_sampler::Cpu_session_component::kill_thread(Thread_capability thread_cap)
 {
-	for (List_element<Cpu_thread_component> *cpu_thread_element =
-	     _thread_list.first();
-	     cpu_thread_element;
-	     cpu_thread_element = cpu_thread_element->next()) {
-
+	auto lambda = [&] (Thread_element *cpu_thread_element) {
+	
 		Cpu_thread_component *cpu_thread = cpu_thread_element->object();
 
 		if (cpu_thread->cap() == thread_cap) {
@@ -81,9 +60,10 @@ void Cpu_sampler::Cpu_session_component::kill_thread(Thread_capability thread_ca
 			destroy(_md_alloc, cpu_thread_element);
 			destroy(_md_alloc, cpu_thread);
 			_thread_list_change_handler.thread_list_changed();
-			break;
 		}
-	}
+	};
+
+	for_each_thread(_thread_list, lambda);
 
 	_parent_cpu_session.kill_thread(thread_cap);
 }
@@ -129,8 +109,7 @@ Cpu_sampler::Cpu_session_component::~Cpu_session_component()
 {
 	_cleanup_native_cpu();
 
-	for (List_element<Cpu_thread_component> *cpu_thread_element =
-	     _thread_list.first(); cpu_thread_element; ) {
+	auto lambda = [&] (Thread_element *cpu_thread_element) {
 
 		Cpu_thread_component *cpu_thread = cpu_thread_element->object();
 
@@ -138,10 +117,10 @@ Cpu_sampler::Cpu_session_component::~Cpu_session_component()
 			_thread_list.remove(cpu_thread_element);
 			destroy(_md_alloc, cpu_thread_element);
 			destroy(_md_alloc, cpu_thread);
-			cpu_thread_element = _thread_list.first();
-		} else
-			cpu_thread_element = cpu_thread_element->next();
-	}
+		}
+	};
+
+	for_each_thread(_thread_list, lambda);
 
 	_thread_list_change_handler.thread_list_changed();
 }

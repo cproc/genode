@@ -31,10 +31,10 @@ class Cpu_sampler::Cpu_root : public Root_component<Cpu_session_component>
 {
 	private:
 
-		Rpc_entrypoint                           &_thread_ep;
-		Allocator                                &_md_alloc;
-		List<List_element<Cpu_thread_component>> &_thread_list;
-		Thread_list_change_handler               &_thread_list_change_handler;
+		Rpc_entrypoint             &_thread_ep;
+		Allocator                  &_md_alloc;
+		Thread_list                &_thread_list;
+		Thread_list_change_handler &_thread_list_change_handler;
 
 	protected:
 
@@ -56,10 +56,10 @@ class Cpu_sampler::Cpu_root : public Root_component<Cpu_session_component>
 
 	public:
 
-		Cpu_root(Rpc_entrypoint &session_ep,
-		         Rpc_entrypoint &thread_ep,
-		         Allocator &md_alloc,
-		         List<List_element<Cpu_thread_component>> &thread_list,
+		Cpu_root(Rpc_entrypoint             &session_ep,
+		         Rpc_entrypoint             &thread_ep,
+		         Allocator                  &md_alloc,
+		         Thread_list                &thread_list,
 		         Thread_list_change_handler &thread_list_change_handler)
 		: Root_component<Cpu_session_component>(&session_ep, &md_alloc),
 		  _thread_ep(thread_ep),

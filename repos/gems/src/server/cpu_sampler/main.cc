@@ -60,10 +60,7 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 		if (verbose_missed_timeouts && (num > 1))
 			Genode::log("missed ", num - 1, " timeouts");
 
-		for (List_element<Cpu_thread_component> *cpu_thread_element =
-		     selected_thread_list.first();
-		     cpu_thread_element;
-		     cpu_thread_element = cpu_thread_element->next()) {
+		auto lambda = [&] (Thread_element *cpu_thread_element) {
 
 			Cpu_thread_component *cpu_thread = cpu_thread_element->object();
 
@@ -71,7 +68,9 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 
 			if (sample_index == max_sample_index)
 				cpu_thread->flush();
-		}
+		};
+
+		for_each_thread(selected_thread_list, lambda);
 
 		if (verbose_sample_duration && (sample_index == max_sample_index))
 			Genode::log("sample period finished");
@@ -118,11 +117,9 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 
 	void thread_list_changed() override
 	{
+		/* clear selected_thread_list */
 
-		for (List_element<Cpu_thread_component> *cpu_thread_element =
-		     selected_thread_list.first();
-		     cpu_thread_element;
-		     cpu_thread_element = selected_thread_list.first()) {
+		auto remove_lambda = [&] (Thread_element *cpu_thread_element) {
 
 			if (verbose)
 				Genode::log("removing thread ",
@@ -131,12 +128,14 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 
 			selected_thread_list.remove(cpu_thread_element);
 			destroy(&alloc, cpu_thread_element);
-		}
+		};
 
-		for (List_element<Cpu_thread_component> *cpu_thread_element =
-		     thread_list.first();
-		     cpu_thread_element;
-		     cpu_thread_element = cpu_thread_element->next()) {
+		for_each_thread(selected_thread_list, remove_lambda);
+
+
+		/* generate new selected_thread_list */
+
+		auto insert_lambda = [&] (Thread_element *cpu_thread_element) {
 
 			Cpu_thread_component *cpu_thread = cpu_thread_element->object();
 
@@ -145,11 +144,10 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 
 			try {
 
-				Session_policy policy(String<128>(cpu_thread->label().string()),
-				                      config.xml());
+				Session_policy policy(cpu_thread->label(), config.xml());
 				cpu_thread->reset();
 				selected_thread_list.insert(new (&alloc)
-				                            List_element<Cpu_thread_component>(cpu_thread));
+				                            Thread_element(cpu_thread));
 
 				if (verbose)
 					Genode::log("added thread ",
@@ -162,7 +160,9 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 					Genode::log("no session policy defined for thread ",
 					            cpu_thread->label().string());
 			}
-		}
+		};
+
+		for_each_thread(thread_list, insert_lambda);
 	}
 
 

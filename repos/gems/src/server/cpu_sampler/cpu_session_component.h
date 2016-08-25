@@ -28,7 +28,28 @@ namespace Cpu_sampler {
 	using namespace Genode;
 	class Cpu_session_component;
 	typedef List<List_element<Cpu_thread_component>> Thread_list;
+	typedef List_element<Cpu_thread_component>       Thread_element;
+
+	template <typename FN>
+	void for_each_thread(Thread_list &thread_list, FN const &fn);
 }
+
+
+template <typename FN>
+void Cpu_sampler::for_each_thread(Thread_list &thread_list, FN const &fn)
+{
+	Thread_element *next_cpu_thread_element = 0;
+	
+	for (Thread_element *cpu_thread_element = thread_list.first();
+		 cpu_thread_element;
+		 cpu_thread_element = next_cpu_thread_element) {
+		 
+		 next_cpu_thread_element = cpu_thread_element->next();
+
+		 fn(cpu_thread_element);
+	}
+}
+
 
 class Cpu_sampler::Cpu_session_component : public Rpc_object<Cpu_session>
 {
@@ -53,8 +74,6 @@ class Cpu_sampler::Cpu_session_component : public Rpc_object<Cpu_session>
 		Session_label &session_label() { return _session_label; }
 		Cpu_session_client &parent_cpu_session() { return _parent_cpu_session; }
 		Rpc_entrypoint &thread_ep() { return _thread_ep; }
-
-		Cpu_thread_component *lookup_cpu_thread(Thread_capability thread_cap);
 
 		/**
 		 * Constructor
