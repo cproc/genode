@@ -134,6 +134,8 @@ struct Test::Replay
 
 	void ack_avail()
 	{
+		static bool first_iteration = true;
+
 		while (block->tx()->ack_avail()) {
 
 			Block::Packet_descriptor p = block->tx()->get_acked_packet();
@@ -151,6 +153,10 @@ struct Test::Replay
 					//env.parent().exit(0);
 					request_num = total_request_num;
 					amount = 0;
+					if (first_iteration) {
+						Genode::log("start replaying");
+						first_iteration = false;
+					}
 					start_time = timer.elapsed_ms();
 				} else {
 					if (verbose) {
@@ -215,9 +221,10 @@ struct Test::Replay
 			return;
 		}
 
+#if 0
 		Genode::log("start replaying ", request_num, " requests bulk=",
 		            bulk ? "yes" : "no", " tx_size=", tx_size);
-
+#endif
 		start_time = timer.elapsed_ms();
 
 		/* initial submit */
