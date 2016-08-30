@@ -257,6 +257,8 @@ if { ![get_cmd_switch --autopilot] } { run_genode_until forever }
 
 # autopilot test
 
+append qemu_args " -nographic "
+
 set match_string "Test started. func: 0x(\[0-9a-f\]+).*\n"
 
 run_genode_until "$match_string" 120
