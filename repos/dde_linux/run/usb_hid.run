@@ -38,6 +38,11 @@
 # input events on the host PC.
 #
 
+if { [have_spec linux] } {
+	puts "run script is not supported on Linux"
+	exit 0
+}
+
 if { [get_cmd_switch --autopilot] && [have_include "power_on/qemu"] } {
 	puts "autopilot test is not supported on Qemu"
 	exit 0
