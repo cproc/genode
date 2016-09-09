@@ -39,7 +39,7 @@
 #
 
 if { [have_spec linux] } {
-	puts "run script is not supported on Linux"
+	puts "Run script does not support Linux."
 	exit 0
 }
 
