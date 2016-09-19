@@ -137,6 +137,13 @@ namespace Libc {
 		static Config_attr socket("socket", "");
 		return socket.string();
 	}
+
+	char const *config_pipe() __attribute__((weak));
+	char const *config_pipe()
+	{
+		static Config_attr pipe("pipe", "");
+		return pipe.string();
+	}
 }
 
 
@@ -1103,4 +1110,62 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	return nready;
+}
+
+int Libc::Vfs_plugin::pipe(Libc::File_descriptor *fildes[2])
+{
+	using namespace Vfs;
+
+	Absolute_path const meta_path("new_pipe", Libc::config_pipe());
+
+	Vfs::Vfs_handle *meta_handle = nullptr;
+	switch (_root_dir.open(meta_path.base(), Directory_service::OPEN_MODE_RDONLY,
+	                       &meta_handle, _alloc)) {
+	case Directory_service::OPEN_OK: break;
+	default:
+		Genode::error("failed to open '", meta_path, "', pipe VFS plugin not loaded?");
+		return Errno(EINVAL);
+	}
+	Vfs::Vfs_handle::Guard meta_guard(meta_handle);
+
+	char pipe_name[16];
+	::ssize_t n =  _read(*meta_handle, pipe_name, sizeof(pipe_name), false);
+	if (n == -1)
+		return -1; /* read set errno */
+
+	pipe_name[min(sizeof(pipe_name)-1, size_t(n))] = '\0';
+	Absolute_path const pipe_path(pipe_name, Libc::config_pipe());
+
+	Vfs::Vfs_handle *pipe_in  = nullptr;
+	Vfs::Vfs_handle *pipe_out = nullptr;
+
+	switch (_root_dir.open(pipe_path.base(), Directory_service::OPEN_MODE_RDONLY, &pipe_in, _alloc)) {
+	case Directory_service::OPEN_OK:           break;
+	case Directory_service::OPEN_ERR_NO_SPACE: return Errno(ENOMEM);
+	default: return Errno(EINVAL);
+	}
+
+	switch (_root_dir.open(pipe_path.base(), Directory_service::OPEN_MODE_WRONLY, &pipe_out, _alloc)) {
+	case Directory_service::OPEN_OK: break;
+	case Directory_service::OPEN_ERR_NO_SPACE:
+		pipe_in->ds().close(pipe_in);
+		return Errno(ENOMEM);
+	default:
+		pipe_in->ds().close(pipe_in);
+		return Errno(EINVAL);
+	}
+
+	Context *context_in, *context_out;
+	try { context_in = new (_alloc) Context(*pipe_in); }
+	catch (Genode::Allocator::Out_of_memory) { return Errno(ENOMEM); }
+	try { context_out = new (_alloc) Context(*pipe_out); }
+	catch (Genode::Allocator::Out_of_memory) {
+		destroy(_alloc, context_in);
+		return Errno(ENOMEM);
+	}
+
+	fildes[0] = Libc::file_descriptor_allocator()->alloc(this, vfs_context(context_in));
+	fildes[1] = Libc::file_descriptor_allocator()->alloc(this, vfs_context(context_out));
+
+	return 0;
 }

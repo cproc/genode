@@ -24,7 +24,10 @@ install_config {
 		<config>
 			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe">
 				<vfs>
-					<dir name="dev"> <log/> <pipe/> </dir>
+					<dir name="dev">
+						<dir name="pipe"> <pipe/> </dir>
+						<log/>
+					</dir>
 				</vfs>
 			</libc>
 		</config>
