@@ -31,7 +31,7 @@ LIBS += ncurses
 
 include $(REP_DIR)/mk/noux.mk
 
-noux_env.sh: mirror_vim_src.tag flush_config_cache.tag
+env.sh: mirror_vim_src.tag flush_config_cache.tag
 
 mirror_vim_src.tag:
 	$(VERBOSE)cp -af $(PKG_DIR)/src $(PWD)
