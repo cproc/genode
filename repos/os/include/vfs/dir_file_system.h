@@ -16,6 +16,8 @@
 
 #include <vfs/file_system_factory.h>
 #include <vfs/vfs_handle.h>
+#include <log_session/connection.h>
+#include <base/log.h>
 
 
 namespace Vfs { class Dir_file_system; }
@@ -53,6 +55,46 @@ class Vfs::Dir_file_system : public File_system
 		char _name[MAX_NAME_LEN];
 
 		bool _root() const { return _name[0] == 0; }
+
+		class Audit_log : public Genode::Output
+		{
+			private:
+
+				enum { BUF_SIZE = Genode::Log_session::MAX_STRING_LEN };
+
+				Genode::Log_connection _log;
+
+				char _buf[BUF_SIZE];
+				unsigned _num_chars = 0;
+
+				void _flush()
+				{
+					_buf[_num_chars] = '\0';
+					_log.write(Genode::Log_session::String(_buf, _num_chars+1));
+					_num_chars = 0;
+				}
+
+			public:
+
+				Audit_log(char const *label) : _log(label) { }
+
+				void out_char(char c) override
+				{
+					_buf[_num_chars++] = c;
+					if (_num_chars >= sizeof(_buf)-1)
+						_flush();
+				}
+
+				void log(char const *func, char const *path)
+				{
+					out_string(func);
+					out_char('\t');
+					out_string(path);
+					_flush();
+				}
+		};
+
+		Audit_log * const _audit;
 
 		/**
 		 * Perform operation on a file system
@@ -208,7 +250,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Dir_file_system(Xml_node node, File_system_factory &fs_factory)
 		:
-			_first_file_system(0)
+			_first_file_system(0),
+			_audit(node.attribute_value("audit", false) ?
+				new (Genode::env()->heap()) Audit_log("vfs") : nullptr)
 		{
 			using namespace Genode;
 
@@ -248,6 +292,12 @@ class Vfs::Dir_file_system : public File_system
 			}
 		}
 
+		~Dir_file_system()
+		{
+			if (_audit)
+				destroy(Genode::env()->heap(), _audit);
+		}
+
 
 		/*********************************
 		 ** Directory-service interface **
@@ -255,6 +305,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Dataspace_capability dataspace(char const *path) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			path = _sub_path(path);
 			if (!path)
 				return Dataspace_capability();
@@ -275,6 +328,9 @@ class Vfs::Dir_file_system : public File_system
 
 		void release(char const *path, Dataspace_capability ds_cap) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			path = _sub_path(path);
 			if (!path)
 				return;
@@ -285,6 +341,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Stat_result stat(char const *path, Stat &out) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			path = _sub_path(path);
 
 			/* path does not match directory name */
@@ -422,6 +481,9 @@ class Vfs::Dir_file_system : public File_system
 	                     Vfs_handle **out_handle,
 	                     Allocator   &alloc = *Genode::env()->heap()) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			/*
 			 * If 'path' is a directory, we create a 'Vfs_handle'
 			 * for the root directory so that subsequent 'dirent' calls
@@ -474,6 +536,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Unlink_result unlink(char const *path) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			auto unlink_fn = [] (File_system &fs, char const *path)
 			{
 				return fs.unlink(path);
@@ -486,6 +551,9 @@ class Vfs::Dir_file_system : public File_system
 		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
 		                         file_size &out_len) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			auto readlink_fn = [&] (File_system &fs, char const *path)
 			{
 				return fs.readlink(path, buf, buf_size, out_len);
@@ -497,6 +565,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Rename_result rename(char const *from_path, char const *to_path) override
 		{
+			if (_audit)
+				_audit->log(__func__, from_path);
+
 			from_path = _sub_path(from_path);
 			to_path = _sub_path(to_path);
 
@@ -531,6 +602,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Symlink_result symlink(char const *from, char const *to) override
 		{
+			if (_audit)
+				_audit->log(__func__, to);
+
 			auto symlink_fn = [&] (File_system &fs, char const *to)
 			{
 				return fs.symlink(from, to);
@@ -542,6 +616,9 @@ class Vfs::Dir_file_system : public File_system
 
 		Mkdir_result mkdir(char const *path, unsigned mode) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			auto mkdir_fn = [&] (File_system &fs, char const *path)
 			{
 				return fs.mkdir(path, mode);
@@ -563,6 +640,9 @@ class Vfs::Dir_file_system : public File_system
 		 */
 		void sync(char const *path) override
 		{
+			if (_audit)
+				_audit->log(__func__, path);
+
 			if (strcmp("/", path, 2) == 0) {
 				for (File_system *fs = _first_file_system; fs; fs = fs->next)
 					fs->sync("/");
