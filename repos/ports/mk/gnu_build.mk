@@ -180,7 +180,7 @@ $(TARGET): installed.tag
 # directory. The check should prevent serious damage if this condition
 # is violated (e.g., while working on the build system).
 #
-ifeq ($(notdir $(PWD)),$(notdir $(PKG_PORT_DIR)))
+ifeq ($(notdir $(PWD)),$(notdir $(PKG_DIR)))
 clean_dir:
 	$(VERBOSE)rm -rf $(PWD)
 
