@@ -216,12 +216,24 @@ bool Heap::alloc(size_t size, void **out_addr)
 }
 
 
-void Heap::free(void *addr, size_t size)
+void Heap::free(void *addr, size_t)
 {
 	/* serialize access of heap functions */
 	Lock::Guard lock_guard(_lock);
 
-	if (size >= BIG_ALLOCATION_THRESHOLD) {
+	/* try to find the size in our local allocator */
+	size_t size = _alloc->size_at(addr);
+
+	if (size != 0) {
+
+		/* forward request to our local allocator */
+		_alloc->free(addr, size);
+
+		_quota_used -= size;
+
+	} else {
+
+		/* not found in local allocator -> big allocation or invalid address */
 
 		Heap::Dataspace *ds;
 
@@ -230,22 +242,21 @@ void Heap::free(void *addr, size_t size)
 			    ((addr_t)addr <= (addr_t)ds->local_addr + ds->size - 1))
 				break;
 
-		_ds_pool.remove(ds);
-		_ds_pool.region_map->detach(ds->local_addr);
-		_ds_pool.ram_session->free(ds->cap);
+		if (ds) {
 
-		_quota_used -= ds->size;
+			_ds_pool.remove(ds);
+			_ds_pool.region_map->detach(ds->local_addr);
+			_ds_pool.ram_session->free(ds->cap);
 
-		destroy(*_alloc, ds);
+			_quota_used -= ds->size;
 
-	} else {
+			destroy(*_alloc, ds);
 
-		/*
-		 * forward request to our local allocator
-		 */
-		_alloc->free(addr, size);
+		} else {
 
-		_quota_used -= size;
+			warning("could not free memory");
+
+		}
 	}
 }
 
