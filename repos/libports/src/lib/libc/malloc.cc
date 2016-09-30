@@ -80,6 +80,8 @@ class Malloc : public Genode::Allocator
 		Genode::Slab_alloc *_allocator[NUM_SLABS]; /* slab allocators */
 		Genode::Lock        _lock;
 
+		size_t used = 0;
+
 		unsigned long _slab_log2(unsigned long size) const
 		{
 			unsigned msb = Genode::log2(size);
@@ -127,15 +129,19 @@ class Malloc : public Genode::Allocator
 			unsigned long msb = _slab_log2(real_size);
 			void *addr = 0;
 
+//Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", used: ", used, ", ret: ", __builtin_return_address(0));
+
 			/* use backing store if requested memory is larger than largest slab */
 			if (msb > SLAB_STOP) {
-Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
+//Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
 				if (!(_backing_store->alloc(real_size, &addr)))
 					return false;
 			}
 			else
 				if (!(addr = _allocator[msb - SLAB_START]->alloc()))
 					return false;
+
+used += real_size;
 
 			*(Block_header *)addr = real_size;
 			*out_addr = (Block_header *)addr + 1;
@@ -150,12 +156,15 @@ Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builti
 			unsigned long  real_size = *addr;
 
 			if (real_size > (1U << SLAB_STOP)) {
-Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
+//Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
 				_backing_store->free(addr, real_size);
 			} else {
 				unsigned long msb = _slab_log2(real_size);
 				_allocator[msb - SLAB_START]->free(addr);
 			}
+
+			used -= real_size;
+//Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", used: ", used, ", ret: ", __builtin_return_address(0));
 		}
 
 		size_t overhead(size_t size) const override
@@ -184,11 +193,11 @@ static Genode::Allocator *allocator()
 	return reinterpret_cast<Malloc *>(placeholder);
 }
 
-
+extern "C" void *strdup_return = 0;
 extern "C" void *malloc(size_t size)
 {
-if (size > 16000)
-	Genode::log(__PRETTY_FUNCTION__, ": size: ", size, ", ret: ", __builtin_return_address(0));
+	//Genode::log(__PRETTY_FUNCTION__, ": strdup_return: ", strdup_return);
+	//Genode::log(__PRETTY_FUNCTION__, ": size: ", size, ", ret: ", __builtin_return_address(0));
 	void *addr;
 	return allocator()->alloc(size, &addr) ? addr : 0;
 }
@@ -206,7 +215,7 @@ extern "C" void *calloc(size_t nmemb, size_t size)
 extern "C" void free(void *ptr)
 {
 	if (!ptr) return;
-
+//Genode::log(__PRETTY_FUNCTION__, ": ", __builtin_return_address(0));
 	allocator()->free(ptr, 0);
 }
 

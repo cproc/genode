@@ -207,7 +207,8 @@ bool Heap::_unsynchronized_alloc(size_t size, void **out_addr)
 
 bool Heap::alloc(size_t size, void **out_addr)
 {
-	Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
+	if (size == 4096)
+		Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
 
 	/* serialize access of heap functions */
 	Lock::Guard lock_guard(_lock);
@@ -263,7 +264,7 @@ void Heap::free(void *addr, size_t)
 		}
 	}
 
-	Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
+	//Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
 }
 
 
