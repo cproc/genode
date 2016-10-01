@@ -44,5 +44,7 @@ build_boot_image { core init timer test-timer }
 # Configure Qemu
 append qemu_args " -m 64 -nographic"
 
+run_genode_until forever
+
 # Execute test in Qemu
 run_genode_until "--- timer test finished ---" 60

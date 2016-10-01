@@ -1,0 +1,187 @@
+nova_quota_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/quota.hpp |   31 +++++++++++++++++++++++++++++--
+ src/pd.cpp        |    1 +
+ src/slab.cpp      |   12 ++++++++++--
+ 3 files changed, 40 insertions(+), 4 deletions(-)
+
+diff --git a/include/quota.hpp b/include/quota.hpp
+index 9c933e1..36e1e82 100644
+--- a/include/quota.hpp
++++ b/include/quota.hpp
+@@ -44,15 +44,20 @@ class Quota
+         void alloc(mword p)
+         {
+             Lock_guard <Spinlock> guard (lock);
++Console::print("alloc(): (%lu, 0, 0) from: %p (%lu, %lu, %lu)", p, this, used, upli, over);
+             used += p;
++Console::print("alloc(): result:         %p (%lu, %lu, %lu)", this, used, upli, over);
+         }
+ 
+         void free(mword p)
+         {
+             Lock_guard <Spinlock> guard (lock);
+ 
++Console::print("free(): (%lu, 0, 0) to: %p (%lu, %lu, %lu)", p, this, used, upli, over);
++
+             if (p <= used) {
+                 used -= p;
++Console::print("free(): result:       %p (%lu, %lu, %lu)", this, used, upli, over);
+                 return;
+             }
+             
+@@ -60,6 +65,8 @@ class Quota
+             upli += p - used;
+             used = 0;
+ 
++Console::print("free(): result:       %p (%lu, %lu, %lu)", this, used, upli, over);
++
+ 			Console::print("*** %s: %p: got more quota back than allocated (accumulated extra quota: %lu)",
+ 			               __PRETTY_FUNCTION__, this, over);
+         }
+@@ -77,9 +84,15 @@ class Quota
+             mword l, u, o;
+             {
+                 Lock_guard <Spinlock> guard (lock);
++
+                 l = upli;
+                 u = used;
+                 o = over;
++#if 1
++if ((u > 0) || (l > 0) || (o > 0))
++Console::print("free_up(): from: %p (%lu, %lu, %lu) to: %p (%lu, %lu, %lu)",
++               this, used, upli, over, &to, to.used, to.upli, to.over);
++#endif
+                 upli = over = used = 0;
+             }
+ 
+@@ -94,6 +107,11 @@ class Quota
+                 to.over -= s;
+                 to.upli -= s;
+             }
++#if 1
++if ((u > 0) || (l > 0) || (o > 0))
++Console::print("free_up(): result:                                %p (%lu, %lu, %lu)",
++               &to, to.used, to.upli, to.over);
++#endif
+         }
+ 
+         bool hit_limit(mword free_space = 0)
+@@ -101,13 +119,19 @@ class Quota
+              if (free_space > upli)
+                  return true;
+ 
+-             return usage() > upli - free_space;
++			bool hit = usage() > (upli - free_space);
++
++			return hit;
+         }
+ 
+         bool transfer_to(Quota &to, mword transfer, bool check_notr = true)
+         {
+              mword o = 0;
+ 
++#if 1
++Console::print("transfer_to(): (0, %lu, 0)  from: %p (%lu, %lu, %lu) to: %p (%lu, %lu, %lu)",
++               transfer, this, used, upli, over, &to, to.used, to.upli, to.over);
++#endif
+              {
+                  Lock_guard <Spinlock> guard (lock);
+ 
+@@ -133,7 +157,10 @@ class Quota
+                 to.upli -= u;
+                 to.over += o - u;
+              }
+-
++#if 1
++Console::print("transfer_to(): result:    from: %p (%lu, %lu, %lu) to: %p (%lu, %lu, %lu)",
++               this, used, upli, over, &to, to.used, to.upli, to.over);
++#endif
+              return true;
+         }
+ 
+diff --git a/src/pd.cpp b/src/pd.cpp
+index e081c2b..bd5a8ba 100644
+--- a/src/pd.cpp
++++ b/src/pd.cpp
+@@ -87,6 +87,7 @@ bool Pd::delegate (Pd *snd, mword const snd_base, mword const rcv_base, mword co
+             break;
+ 
+         if (quota.hit_limit(1)) {
++        Console::print("oom: %lu, %lu", quota.usage(), quota.limit());
+             Cpu::hazard |= HZD_OOM;
+             return s;
+         }
+diff --git a/src/slab.cpp b/src/slab.cpp
+index 5522295..31a1320 100644
+--- a/src/slab.cpp
++++ b/src/slab.cpp
+@@ -72,8 +72,9 @@ Slab_cache::Slab_cache (unsigned long elem_size, unsigned elem_align)
+ 
+ void Slab_cache::grow(Quota &quota)
+ {
++Console::print("grow()");
+     Slab *slab = new (quota) Slab (this);
+-
++Console::print("grow(): slab = %p", slab);
+     if (head)
+         head->prev = slab;
+ 
+@@ -94,6 +95,8 @@ void *Slab_cache::alloc(Quota &quota)
+     // Allocate from slab
+     void *ret = curr->alloc();
+ 
++//Console::print("sca: %p, %p", ret, __builtin_return_address(0));
++
+     if (EXPECT_FALSE (curr->full()))
+         curr = curr->prev;
+ 
+@@ -104,6 +107,8 @@ void Slab_cache::free (void *ptr, Quota &quota)
+ {
+     Lock_guard <Spinlock> guard (lock);
+ 
++//Console::print("scf: %p", ptr);
++
+     Slab *slab = reinterpret_cast<Slab *>(reinterpret_cast<mword>(ptr) & ~PAGE_MASK);
+ 
+     bool was_full = slab->full();
+@@ -122,6 +127,7 @@ void Slab_cache::free (void *ptr, Quota &quota)
+ 
+             // Enqueue after curr
+             if (curr) {
++//Console::print("slab was full: enqueuing after curr: %p", slab);
+                 slab->prev = curr;
+                 slab->next = curr->next;
+                 curr->next = curr->next->prev = slab;
+@@ -129,6 +135,7 @@ void Slab_cache::free (void *ptr, Quota &quota)
+ 
+             // Enqueue as head
+             else {
++//Console::print("slab was full: enqueuing as head: %p", slab);
+                 slab->prev = nullptr;
+                 slab->next = head;
+                 head = head->prev = slab;
+@@ -138,7 +145,6 @@ void Slab_cache::free (void *ptr, Quota &quota)
+         curr = slab;
+ 
+     } else if (EXPECT_FALSE (slab->empty())) {
+-
+         // There are slabs in front of us and we're empty; requeue
+         if (slab->prev) {
+ 
+@@ -153,9 +159,11 @@ void Slab_cache::free (void *ptr, Quota &quota)
+ 
+             if (slab->prev->empty() || (head && head->empty())) {
+                 // There are already empty slabs - delete current slab
++Console::print("slab empty: destroying: %p", slab);
+                 assert(head != slab);
+                 Slab::destroy (slab, quota);
+             } else {
++//Console::print("slab empty: enqueuing as head: %p", slab);
+                 // There are partial slabs in front of us - requeue empty one
+                 // Enqueue as head
+                 slab->prev = nullptr;
