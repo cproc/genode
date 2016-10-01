@@ -272,17 +272,15 @@ void Lx::event_init(Genode::Signal_receiver &sig_rec)
 }
 
 
-struct Timeout : Genode::Signal_dispatcher<Timeout>
+struct Timeout_dispatcher : Genode::Signal_dispatcher<Timeout_dispatcher>
 {
 	void handle(unsigned) { update_jiffies(); }
 
-	Timeout(Timer::Session_client &timer, signed long msec)
-	: Signal_dispatcher<Timeout>(*_sig_rec, *this, &Timeout::handle)
+	Timeout_dispatcher(Timer::Session_client &timer)
+	: Signal_dispatcher<Timeout_dispatcher>(*_sig_rec, *this,
+	                                        &Timeout_dispatcher::handle)
 	{
-		if (msec > 0) {
-			timer.sigh(*this);
-			timer.trigger_once(msec*1000);
-		}
+		timer.sigh(*this);
 	}
 };
 
@@ -290,7 +288,10 @@ struct Timeout : Genode::Signal_dispatcher<Timeout>
 static void wait_for_timeout(signed long timeout)
 {
 	static Timer::Connection timer;
-	Timeout to(timer, timeout);
+	static Timeout_dispatcher timeout_dispatcher(timer);
+
+	if (timeout > 0)
+		timer.trigger_once(timeout*1000);
 
 	/* dispatch signal */
 	Genode::Signal s = _sig_rec->wait_for_signal();
