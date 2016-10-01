@@ -129,7 +129,7 @@ class Malloc : public Genode::Allocator
 
 			/* use backing store if requested memory is larger than largest slab */
 			if (msb > SLAB_STOP) {
-
+Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
 				if (!(_backing_store->alloc(real_size, &addr)))
 					return false;
 			}
@@ -149,9 +149,10 @@ class Malloc : public Genode::Allocator
 			unsigned long *addr = ((unsigned long *)ptr) - 1;
 			unsigned long  real_size = *addr;
 
-			if (real_size > (1U << SLAB_STOP))
+			if (real_size > (1U << SLAB_STOP)) {
+Genode::log(__PRETTY_FUNCTION__, ": real_size: ", real_size, ", ret: ", __builtin_return_address(0));
 				_backing_store->free(addr, real_size);
-			else {
+			} else {
 				unsigned long msb = _slab_log2(real_size);
 				_allocator[msb - SLAB_START]->free(addr);
 			}
@@ -186,6 +187,8 @@ static Genode::Allocator *allocator()
 
 extern "C" void *malloc(size_t size)
 {
+if (size > 16000)
+	Genode::log(__PRETTY_FUNCTION__, ": size: ", size, ", ret: ", __builtin_return_address(0));
 	void *addr;
 	return allocator()->alloc(size, &addr) ? addr : 0;
 }

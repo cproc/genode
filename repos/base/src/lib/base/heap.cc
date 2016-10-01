@@ -83,6 +83,8 @@ Heap::Dataspace *Heap::_allocate_dataspace(size_t size, bool enforce_separate_me
 
 	/* make new ram dataspace available at our local address space */
 	try {
+		Genode::log(__PRETTY_FUNCTION__, ": ", size);
+		Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used);
 		new_ds_cap = _ds_pool.ram_session->alloc(size);
 		ds_addr = _ds_pool.region_map->attach(new_ds_cap);
 	} catch (Ram_session::Alloc_failed) {
@@ -205,6 +207,8 @@ bool Heap::_unsynchronized_alloc(size_t size, void **out_addr)
 
 bool Heap::alloc(size_t size, void **out_addr)
 {
+	Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
+
 	/* serialize access of heap functions */
 	Lock::Guard lock_guard(_lock);
 
@@ -258,6 +262,8 @@ void Heap::free(void *addr, size_t)
 
 		}
 	}
+
+	Genode::log(__PRETTY_FUNCTION__, ": quota used: ", _quota_used, ", size: ", size, ", ret: ", __builtin_return_address(0));
 }
 
 

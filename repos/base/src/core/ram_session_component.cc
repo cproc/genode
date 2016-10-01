@@ -202,7 +202,7 @@ Ram_dataspace_capability Ram_session_component::alloc(size_t ds_size, Cache_attr
 	Lock::Guard lock_guard(_ref_members_lock);
 	/* keep track of the used quota for actual payload */
 	_payload += ds_size;
-
+Genode::log(__PRETTY_FUNCTION__, ": ", Cstring(_label), ", ", ds_size);
 	return static_cap_cast<Ram_dataspace>(result);
 }
 
