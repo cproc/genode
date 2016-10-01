@@ -136,6 +136,7 @@ int Platform_thread::start(void *ip, void *sp)
 
 	enum { KEEP_FREE_PAGES_NOT_AVAILABLE_FOR_UPGRADE = 2, UPPER_LIMIT_PAGES = 32 };
 	Obj_crd initial_pts(_sel_exc_base, pts, rights);
+	Genode::log("creating PD ", pd_name());
 	uint8_t res = create_pd(pd_sel, pd_core_sel, initial_pts,
 	                        KEEP_FREE_PAGES_NOT_AVAILABLE_FOR_UPGRADE, UPPER_LIMIT_PAGES);
 	if (res != NOVA_OK) {

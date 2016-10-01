@@ -1,0 +1,42 @@
+nova_report_over_quota.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ include/quota.hpp |    5 ++++-
+ src/syscall.cpp   |    2 ++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/include/quota.hpp b/include/quota.hpp
+index 4938da1..9c933e1 100644
+--- a/include/quota.hpp
++++ b/include/quota.hpp
+@@ -55,10 +55,13 @@ class Quota
+                 used -= p;
+                 return;
+             }
+-
++            
+             over += p - used;
+             upli += p - used;
+             used = 0;
++
++			Console::print("*** %s: %p: got more quota back than allocated (accumulated extra quota: %lu)",
++			               __PRETTY_FUNCTION__, this, over);
+         }
+ 
+         mword usage() { return used; }
+diff --git a/src/syscall.cpp b/src/syscall.cpp
+index 60e66de..8f1f7e7 100644
+--- a/src/syscall.cpp
++++ b/src/syscall.cpp
+@@ -333,6 +333,8 @@ void Ec::sys_create_pd()
+     Crd crd = r->crd();
+     pd->del_crd (Pd::current, Crd (Crd::OBJ), crd);
+ 
++Console::print("*** %s: pd->quota: %p", __PRETTY_FUNCTION__, &pd->quota);
++
+     sys_finish<Sys_regs::SUCCESS>();
+ }
+ 
