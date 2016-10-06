@@ -182,7 +182,7 @@ $(TARGET): installed.tag
 #
 ifeq ($(notdir $(PWD)),$(notdir $(PRG_DIR)))
 clean_dir:
-	$(VERBOSE)rm -rf $(PWD)/*
+	$(VERBOSE)rm -rf $(PWD)/* $(PWD)/.*
 
 clean_prg_objects: clean_dir
 endif
