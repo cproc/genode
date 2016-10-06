@@ -212,8 +212,12 @@ struct Genode::Receive_window
 				if (!cap.is_null() && item->is_del()) {
 					/* should never happen */
 					if (cap.base() < _rcv_pt_base ||
-					    (cap.base() >= _rcv_pt_base + max))
+					    (cap.base() >= _rcv_pt_base + max)) {
+					    Genode::log("cap.base(): ", cap.base(),
+					                ", _rcv_pt_base: ", _rcv_pt_base,
+					                ", _rcv_pt_base + max: ", _rcv_pt_base + max);
 						nova_die();
+					}
 					_rcv_pt_cap_free [cap.base() - _rcv_pt_base] = UNUSED_CAP;
 				}
 
