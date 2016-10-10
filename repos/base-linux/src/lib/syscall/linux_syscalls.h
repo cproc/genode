@@ -34,8 +34,8 @@
 
 /* Genode includes */
 #include <util/string.h>
-#include <base/printf.h>
 #include <base/snprintf.h>
+#include <base/printf.h>
 #include <base/log.h>
 
 /*
