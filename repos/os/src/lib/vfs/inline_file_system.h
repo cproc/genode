@@ -17,7 +17,7 @@
 #ifndef _INCLUDE__VFS__INLINE_FILE_SYSTEM_H_
 #define _INCLUDE__VFS__INLINE_FILE_SYSTEM_H_
 
-#include <vfs/file_system.h>
+#include <vfs/single_file_system.h>
 
 namespace Vfs { class Inline_file_system; }
 
@@ -35,7 +35,8 @@ class Vfs::Inline_file_system : public Single_file_system
 		                   Genode::Allocator&,
 		                   Genode::Xml_node config)
 		:
-			Single_file_system(NODE_TYPE_FILE, name(), config),
+			Single_file_system(NODE_TYPE_FILE, name(),
+			                   config, OPEN_MODE_RDONLY),
 			_base(config.content_base()),
 			_size(config.content_size())
 		{ }
@@ -59,15 +60,7 @@ class Vfs::Inline_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *, char const *, file_size,
-		                   file_size &count_out) override
-		{
-			count_out = 0;
-			return WRITE_ERR_INVALID;
-		}
-
-		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
-		                 file_size &out_count) override
+		Read_result read(Vfs_handle *vfs_handle, file_size count, file_size &out) override
 		{
 			/* file read limit is the size of the dataspace */
 			file_size const max_size = _size;
@@ -83,16 +76,13 @@ class Vfs::Inline_file_system : public Single_file_system
 
 			/* check if end of file is reached */
 			if (read_offset >= end_offset) {
-				out_count = 0;
+				out = 0;
 				return READ_OK;
 			}
 
-			/* copy-out bytes from ROM dataspace */
-			file_size const num_bytes = end_offset - read_offset;
-
-			memcpy(dst, src, num_bytes);
-
-			out_count = num_bytes;
+			/* pass ROM dataspace to callback */
+			count = end_offset - read_offset;
+			out = vfs_handle->read_callback(src, count, Callback::COMPLETE);
 			return READ_OK;
 		}
 };

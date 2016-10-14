@@ -30,9 +30,6 @@
 #include "zero_file_system.h"
 
 
-static Vfs::Ticker *vfs_ticker;
-
-
 class Default_file_system_factory : public Vfs::Global_file_system_factory
 {
 	private:
@@ -148,16 +145,6 @@ class Default_file_system_factory : public Vfs::Global_file_system_factory
 
 				Query_fn query_fn = shared_object->lookup<Query_fn>(_factory_symbol());
 
-				/* XXX hack */
-				try {
-					Vfs::Ticker ***ticker = shared_object->lookup<Vfs::Ticker ***>("vfs_ticker");
-
-					*ticker = &vfs_ticker;
-
-				} catch (Genode::Shared_object::Invalid_symbol) {
-					PWRN("%s: Genode::Shared_object::Invalid_symbol", lib_name.string());
-				}
-
 				return *query_fn();
 
 			} catch (Genode::Shared_object::Invalid_file) {
@@ -209,8 +196,6 @@ class Default_file_system_factory : public Vfs::Global_file_system_factory
 
 			return 0;
 		}
-
-		void register_ticker(Vfs::Ticker &ticker) override { vfs_ticker = &ticker; }
 
 		void extend(char const *name, File_system_factory &factory) override
 		{
