@@ -81,7 +81,7 @@ namespace Ram_fs {
 				}
 
 				packet.length(res_length);
-				packet.succeeded(res_length > 0);
+				packet.succeeded(true);
 			}
 
 			void _process_packet()
@@ -413,9 +413,10 @@ namespace Ram_fs {
 				node->notify_listeners();
 			}
 
-			void sigh(Node_handle node_handle, Genode::Signal_context_capability sigh)
+			bool sigh(Node_handle node_handle, Genode::Signal_context_capability sigh)
 			{
 				_handle_registry.sigh(node_handle, sigh);
+				return true;
 			}
 	};
 

@@ -13,13 +13,13 @@
 
 /* Genode includes */
 #include <file_system_session/rpc_object.h>
-#include <base/heap.h>
 #include <ram_session/connection.h>
 #include <root/component.h>
 #include <vfs/dir_file_system.h>
 #include <os/session_policy.h>
 #include <vfs/file_system_factory.h>
 #include <os/config.h>
+#include <base/heap.h>
 #include <base/sleep.h>
 #include <base/component.h>
 
@@ -44,105 +44,34 @@ namespace Vfs_server {
 			Genode::sleep_forever();
 		}
 	}
-
-	/* XXX what a hack! */
-	struct Ticker;
-	struct Tick_transmitter;
-
-	struct Root_file_system;
-};
-
-
-struct Vfs_server::Tick_transmitter : Genode::Signal_transmitter,
-                                      List<Tick_transmitter>::Element
-{
-	Tick_transmitter(Genode::Signal_context_capability cap)
-	: Genode::Signal_transmitter(cap) { }
-};
-
-
-class Vfs_server::Ticker : public Vfs::Ticker
-{
-	private:
-
-		Lock                    _lock;
-		List<Tick_transmitter>  _transmitter;
-
-	public:
-
-		void register_for_tick(Tick_transmitter *transmitter)
-		{
-			Lock::Guard guard(_lock);
-
-			_transmitter.insert(transmitter);
-		}
-
-		void unregister_from_tick(Tick_transmitter *transmitter)
-		{
-			Lock::Guard guard(_lock);
-
-			_transmitter.remove(transmitter);
-		}
-
-		void tick() override
-		{
-			Lock::Guard guard(_lock);
-
-			for (Tick_transmitter *l = _transmitter.first(); l; l = l->next())
-				l->submit();
-		}
-};
-
-
-struct Vfs_server::Root_file_system : Vfs::Dir_file_system, Vfs_server::Ticker
-{
-	Root_file_system(Genode::Env         &env,
-		             Genode::Allocator   &alloc,
-		             Genode::Xml_node     node,
-		             File_system_factory &fs_factory)
-	: Vfs::Dir_file_system(env, alloc, node, fs_factory)
-	{
-		fs_factory.register_ticker(*this);
-	}
 };
 
 
 class Vfs_server::Session_component :
 	public File_system::Session_rpc_object
 {
+	public:
+
+		enum { ROOT_HANDLE = 0 };
+
 	private:
 
 		/* maximum number of open nodes per session */
 		enum { MAX_NODE_HANDLES = 128U };
 
+		Genode::Env &_env;
+
 		Node *_nodes[MAX_NODE_HANDLES];
 
-		/**
-		 * Each open node handle can act as a listener to be informed about
-		 * node changes.
-		 */
-		Listener _listeners[MAX_NODE_HANDLES];
+		Genode::Session_label   _label;
 
-		Genode::String<160>     _label;
+		Genode::Ram_connection  _ram   { _label.string() };
+		Genode::Heap            _alloc { _ram, _env.rm() };
 
-		Genode::Ram_connection  _ram = { _label.string() };
-		Genode::Heap            _alloc =
-			{ &_ram, Genode::env()->rm_session() };
-
-		Genode::Signal_handler<Session_component>
-		                        _process_packet_dispatcher;
-
-		Root_file_system       &_vfs;
+		Vfs::Dir_file_system   &_vfs;
 		Directory               _root;
 		bool                    _writable;
 
-		/*
-		 * XXX Currently, we have only one packet in backlog, which must finish
-		 *     processing before new packets can be processed.
-		 */
-		Packet_descriptor _backlog_packet;
-
-		Tick_transmitter _tick { _process_packet_dispatcher };
 
 		/****************************
 		 ** Handle to node mapping **
@@ -165,7 +94,7 @@ class Vfs_server::Session_component :
 		 * Lookup node using its handle as key
 		 */
 		Node *_lookup_node(Node_handle handle) {
-			return _in_range(handle.value) ? _nodes[handle.value] : 0; }
+			return _in_range(handle.value) ? _nodes[handle.value] : nullptr; }
 
 		/**
 		 * Lookup typed node using its handle as key
@@ -194,151 +123,77 @@ class Vfs_server::Session_component :
 			return _nodes[h1.value] == _nodes[h2.value];
 		}
 
-
-		/******************************
-		 ** Packet-stream processing **
-		 ******************************/
-
-		/**
-		 * Perform packet operation
-		 */
-		void _process_packet_op(Packet_descriptor &packet)
-		{
-			void     * const content = tx_sink()->packet_content(packet);
-			size_t     const length  = packet.length();
-			seek_off_t const seek    = packet.position();
-
-			/* assume failure by default */
-			packet.succeeded(false);
-
-			if ((!(content && length)) || (packet.length() > packet.size())) {
-				return;
-			}
-
-			/* resulting length */
-			size_t res_length = 0;
-
-			switch (packet.operation()) {
-
-			case Packet_descriptor::READ: {
-				Node *node = _lookup_node(packet.handle());
-				if (!(node && (node->mode&READ_ONLY)))
-					return;
-
-				res_length = node->read(_vfs, (char *)content, length, seek);
-				break;
-			}
-
-			case Packet_descriptor::WRITE: {
-				Node *node = _lookup_node(packet.handle());
-				if (!(node && (node->mode&WRITE_ONLY)))
-					return;
-
-				res_length = node->write(_vfs, (char const *)content, length, seek);
-				break;
-			}
-			}
-
-			packet.length(res_length);
-			packet.succeeded(!!res_length);
-		}
-
-		bool _try_process_packet_op(Packet_descriptor &packet)
-		{
-			try {
-				_process_packet_op(packet);
-				return true;
-			} catch (Node::Operation_would_block) {
-				_backlog_packet = packet;
-			}
-
-			return false;
-		}
-
-		bool _process_backlog()
-		{
-			/* indicate success if there's no backlog */
-			if (!_backlog_packet.size())
-				return true;
-
-			/* only start processing if acknowledgement is possible */
-			if (!tx_sink()->ready_to_ack())
-				return false;
-
-			if (!_try_process_packet_op(_backlog_packet))
-				return false;
-
-			/*
-			 * The 'acknowledge_packet' function cannot block because we
-			 * checked for 'ready_to_ack' in '_process_packets'.
-			 */
-			tx_sink()->acknowledge_packet(_backlog_packet);
-
-			/* invalidate backlog packet */
-			_backlog_packet = Packet_descriptor();
-
-			return true;
-		}
-
-		bool _process_packet()
-		{
-			Packet_descriptor packet = tx_sink()->get_packet();
-
-			if (!_try_process_packet_op(packet))
-				return false;
-
-			/*
-			 * The 'acknowledge_packet' function cannot block because we
-			 * checked for 'ready_to_ack' in '_process_packets'.
-			 */
-			tx_sink()->acknowledge_packet(packet);
-
-			return true;
-		}
-
-		/**
-		 * Called by signal dispatcher, executed in the context of the main
-		 * thread (not serialized with the RPC functions)
-		 */
 		void _process_packets()
 		{
-			/*
-			 * XXX Process client backlog before looking at new requests. This
-			 *     limits the number of simultaneously addressed handles (which
-			 *     was also the case before adding the backlog in case of
-			 *     blocking operations).
-			 */
-			if (!_process_backlog())
-				/* backlog not cleared - block for next condition change */
-				return;
+			while (tx_sink()->packet_avail() && tx_sink()->ready_to_ack()) {
+				Packet_descriptor packet = tx_sink()->get_packet();
 
-			while (tx_sink()->packet_avail()) {
+				/* assume failure by default */
+				packet.succeeded(false);
 
-				/*
-				 * Make sure that the '_process_packet' function does not
-				 * block.
-				 *
-				 * If the acknowledgement queue is full, we defer packet
-				 * processing until the client processed pending
-				 * acknowledgements and thereby emitted a ready-to-ack
-				 * signal. Otherwise, the call of 'acknowledge_packet()'
-				 * in '_process_packet' would infinitely block the context
-				 * of the main thread. The main thread is however needed
-				 * for receiving any subsequent 'ready-to-ack' signals.
-				 */
-				if (!tx_sink()->ready_to_ack())
-					return;
+				Node *node = _lookup_node(packet.handle());
+				void     * const content = tx_sink()->packet_content(packet);
+				size_t     const length  = packet.length();
+				seek_off_t const seek    = packet.position();
 
-				if (!_process_packet())
-					return;
+				if (!(node && content && length && (packet.length() <= packet.size()))) {
+					/* XXX: debugging */
+					if (!node)
+						Genode::error("packet without node");
+					if (!content)
+						Genode::error("packet without content");
+					if (!length)
+						Genode::error("packet without length");
+					tx_sink()->acknowledge_packet(packet);
+					continue;
+				}
+
+				File *file = dynamic_cast<File *>(node);
+				if (file) { /* async op */
+					file->queue(packet);
+					continue;
+				} else {
+
+					/* resulting length */
+					size_t res_length = 0;
+
+					switch (packet.operation()) {
+
+					case Packet_descriptor::READ: {
+						Node *node = _lookup_node(packet.handle());
+						if (!(node->mode&READ_ONLY)) {
+							tx_sink()->acknowledge_packet(packet);
+							continue;
+						}
+						res_length = node->read(_vfs, (char *)content, length, seek);
+						break;
+					}
+
+					case Packet_descriptor::WRITE: {
+						if (!(node->mode&WRITE_ONLY)) {
+							tx_sink()->acknowledge_packet(packet);
+							continue;
+						}
+						res_length = node->write(_vfs, (char const *)content, length, seek);
+						break;
+					}
+					}
+
+					packet.length(res_length);
+					packet.succeeded(!!res_length);
+					tx_sink()->acknowledge_packet(packet);
+				}
 			}
 		}
+
+		Genode::Signal_handler<Session_component> _process_packet_handler
+			{ _env.ep(), *this, &Session_component::_process_packets };
 
 		/**
 		 * Check if string represents a valid path (must start with '/')
 		 */
 		static void _assert_valid_path(char const *path) {
-			if (!path || path[0] != '/') throw Lookup_failed(); }
+			if (path[0] != '/') throw Lookup_failed(); }
 
 		/**
 		 * Check if string represents a valid name (must not contain '/')
@@ -361,18 +216,17 @@ class Vfs_server::Session_component :
 		 * \param root_path    path root of the session
 		 * \param writable     whether the session can modify files
 		 */
-
 		Session_component(Genode::Env         &env,
 		                  char          const *label,
 		                  size_t               ram_quota,
 		                  size_t               tx_buf_size,
-		                  Root_file_system     &vfs,
+		                  Vfs::Dir_file_system &vfs,
 		                  char           const *root_path,
 		                  bool                  writable)
 		:
 			Session_rpc_object(env.ram().alloc(tx_buf_size), env.ep().rpc_ep()),
+			_env(env),
 			_label(label),
-			_process_packet_dispatcher(env.ep(), *this, &Session_component::_process_packets),
 			_vfs(vfs),
 			_root(vfs, root_path, false),
 			_writable(writable)
@@ -381,21 +235,19 @@ class Vfs_server::Session_component :
 			 * Register '_process_packets' dispatch function as signal
 			 * handler for packet-avail and ready-to-ack signals.
 			 */
-			_tx.sigh_packet_avail(_process_packet_dispatcher);
-			_tx.sigh_ready_to_ack(_process_packet_dispatcher);
+			_tx.sigh_packet_avail(_process_packet_handler);
+			_tx.sigh_ready_to_ack(_process_packet_handler);
 
 			/*
 			 * the '/' node is not dynamically allocated, so it is
 			 * permanently bound to Dir_handle(0);
 			 */
-			_nodes[0] = &_root;
+			_nodes[ROOT_HANDLE] = &_root;
 			for (unsigned i = 1; i < MAX_NODE_HANDLES; ++i)
 				_nodes[i] = nullptr;
 
 			_ram.ref_account(Genode::env()->ram_session_cap());
 			Genode::env()->ram_session()->transfer_quota(_ram.cap(), ram_quota);
-
-			_vfs.register_for_tick(&_tick);
 		}
 
 		/**
@@ -404,9 +256,7 @@ class Vfs_server::Session_component :
 		~Session_component()
 		{
 			Dataspace_capability ds = tx_sink()->dataspace();
-			env()->ram_session()->free(static_cap_cast<Genode::Ram_dataspace>(ds));
-
-			_vfs.unregister_from_tick(&_tick);
+			_env.ram().free(static_cap_cast<Genode::Ram_dataspace>(ds));
 		}
 
 		void upgrade(char const *args)
@@ -431,7 +281,7 @@ class Vfs_server::Session_component :
 			/* '/' is bound to '0' */
 			if (!strcmp(path_str, "/")) {
 				if (create) throw Node_already_exists();
-				return Dir_handle(0);
+				return ROOT_HANDLE;
 			}
 
 			_assert_valid_path(path_str);
@@ -467,7 +317,8 @@ class Vfs_server::Session_component :
 			/* make sure a handle is free before allocating */
 			auto slot = _next_slot();
 
-			File *file = dir.file(_vfs, _alloc, name_str, fs_mode, create);
+			File *file = dir.file(_vfs, _alloc, name_str,
+			                      *tx_sink(), fs_mode, create);
 
 			_nodes[slot] = file;
 			return File_handle(slot);
@@ -497,7 +348,7 @@ class Vfs_server::Session_component :
 			char const *path_str = path.string();
 			/* '/' is bound to '0' */
 			if (!strcmp(path_str, "/"))
-				return Node_handle(0);
+				return ROOT_HANDLE;
 
 			_assert_valid_path(path_str);
 
@@ -520,10 +371,8 @@ class Vfs_server::Session_component :
 		void close(Node_handle handle) override
 		{
 			/* handle '0' cannot be freed */
-			if (!handle.value) {
-				_root.notify_listeners();
+			if (handle.value == ROOT_HANDLE)
 				return;
-			}
 
 			if (!_in_range(handle.value))
 				return;
@@ -531,16 +380,9 @@ class Vfs_server::Session_component :
 			Node *node = _nodes[handle.value];
 			if (!node) { return; }
 
-			node->notify_listeners();
-
 			/*
 			 * De-allocate handle
 			 */
-			Listener &listener = _listeners[handle.value];
-
-			if (listener.valid())
-				node->remove_listener(&listener);
-
 			if (File *file = dynamic_cast<File*>(node))
 				destroy(_alloc, file);
 			else if (Directory *dir = dynamic_cast<Directory*>(node))
@@ -550,8 +392,7 @@ class Vfs_server::Session_component :
 			else
 				destroy(_alloc, node);
 
-			_nodes[handle.value] = 0;
-			listener = Listener();
+			_nodes[handle.value] = nullptr;
 		}
 
 		Status status(Node_handle node_handle)
@@ -633,44 +474,28 @@ class Vfs_server::Session_component :
 			to_dir.mark_as_updated();
 		}
 
-		void sigh(Node_handle handle, Signal_context_capability sigh) override
+		bool sigh(Node_handle handle, Signal_context_capability sigh) override
 		{
-			if (!_in_range(handle.value))
-				throw Invalid_handle();
-
-			Node *node = dynamic_cast<Node *>(_nodes[handle.value]);
-			if (!node)
-				throw Invalid_handle();
-
-			Listener &listener = _listeners[handle.value];
-
-			/*
-			 * If there was already a handler registered for the node,
-			 * remove the old handler.
-			 */
-			if (listener.valid())
-				node->remove_listener(&listener);
-
-			/*
-			 * Register new handler
-			 */
-			listener = Listener(sigh);
-			node->add_listener(&listener);
+			try {
+				Node &node = _lookup(handle);
+				if (File *file = dynamic_cast<File*>(&node))
+					return file->sigh(sigh);
+			} catch (Invalid_handle) { }
+			return false;
 		}
 
 		/**
 		 * Sync the VFS and send any pending signals on the node.
 		 */
-		void sync(Node_handle handle) override
+		void sync(Node_handle handle)
 		{
 			try {
 				Node &node = _lookup(handle);
 				_vfs.sync(node.path());
-				node.notify_listeners();
 			} catch (Invalid_handle) { }
 		}
 
-		void control(Node_handle, Control) override { }
+		void control(Node_handle, Control) { }
 };
 
 
@@ -682,7 +507,7 @@ class Vfs_server::Root :
 		Genode::Env  &_env;
 		Genode::Heap  _heap { &_env.ram(), &_env.rm() };
 
-		Root_file_system _vfs
+		Vfs::Dir_file_system _vfs
 			{ _env, _heap, vfs_config(), Vfs::global_file_system_factory() };
 
 	protected:
@@ -718,10 +543,10 @@ class Vfs_server::Root :
 			} catch (Session_policy::No_policy_defined) { }
 
 			Arg_string::find_arg(args, "root").string(tmp, sizeof(tmp), "/");
-			if (Genode::strcmp("/", tmp, sizeof(tmp))) {
-				session_root.append("/");
-				session_root.append(tmp);
-			}
+			if (Genode::strcmp("/", tmp, sizeof(tmp)))
+				session_root.append_element(tmp);
+			if (session_root != "/")
+				session_root.remove_trailing('/');
 
 			/*
 			 * If no policy matches the client gets
@@ -797,6 +622,5 @@ Genode::size_t Component::stack_size() { return 2*1024*sizeof(long); }
 void Component::construct(Genode::Env &env)
 {
 	static Genode::Sliced_heap sliced_heap { &env.ram(), &env.rm() };
-
-	static Vfs_server::Root root { env, sliced_heap };
+	static Vfs_server::Root           root { env, sliced_heap      };
 }

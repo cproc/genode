@@ -45,9 +45,49 @@ class Vfs::Block_file_system : public Single_file_system
 		Block::sector_t             _block_count;
 		Block::Session::Operations  _block_ops;
 		Block::Session::Tx::Source *_tx_source;
-
 		bool                        _readable;
 		bool                        _writeable;
+
+		file_size _block_io(file_size nr, Vfs_handle *vfs_handle, file_size sz,
+		                    bool write, bool bulk = false)
+		{
+			Lock::Guard guard(_lock);
+
+			Block::Packet_descriptor::Opcode op;
+			op = write ? Block::Packet_descriptor::WRITE : Block::Packet_descriptor::READ;
+
+			file_size packet_size  = bulk ? sz : _block_size;
+			file_size packet_count = bulk ? (sz / _block_size) : 1;
+
+			/* sanity check */
+			if (packet_count > _block_buffer_count) {
+				packet_size  = _block_buffer_count * _block_size;
+				packet_count = _block_buffer_count;
+			}
+
+			Block::Packet_descriptor p(_tx_source->alloc_packet(packet_size), op,
+			                           nr, packet_count);
+
+			if (write)
+				vfs_handle->write_callback(
+					_tx_source->packet_content(p), packet_size, Callback::PARTIAL);
+
+			_tx_source->submit_packet(p);
+			p = _tx_source->get_acked_packet();
+
+			if (!p.succeeded()) {
+				Genode::error("Could not read block(s)");
+				_tx_source->release_packet(p);
+				return 0;
+			}
+
+			if (!write)
+				vfs_handle->read_callback(
+					_tx_source->packet_content(p), packet_size, Callback::PARTIAL);
+
+			_tx_source->release_packet(p);
+			return packet_size;
+		}
 
 		file_size _block_io(file_size nr, void *buf, file_size sz,
 		                    bool write, bool bulk = false)
@@ -94,7 +134,8 @@ class Vfs::Block_file_system : public Single_file_system
 		                  Genode::Allocator &alloc,
 		                  Genode::Xml_node config)
 		:
-			Single_file_system(NODE_TYPE_BLOCK_DEVICE, name(), config),
+			Single_file_system(NODE_TYPE_BLOCK_DEVICE, name(),
+			                  config, OPEN_MODE_RDWR),
 			_alloc(alloc),
 			_label(config.attribute_value("label", Label())),
 			_block_buffer(0),
@@ -139,9 +180,9 @@ class Vfs::Block_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle, char const *buf,
-		                   file_size count, file_size &out_count) override
+		Write_result write(Vfs_handle *vfs_handle, file_size count, file_size &out_count) override
 		{
+			out_count = 0;
 			if (!_writeable) {
 				Genode::error("block device is not writeable");
 				return WRITE_ERR_INVALID;
@@ -175,12 +216,16 @@ class Vfs::Block_file_system : public Single_file_system
 				if (displ == 0 && (count % _block_size) >= 0 && !(count < _block_size)) {
 					file_size bytes_left = count - (count % _block_size);
 
-					nbytes = _block_io(blk_nr, (void*)(buf + written),
+					nbytes = _block_io(blk_nr, vfs_handle,
 					                   bytes_left, true, true);
 					if (nbytes == 0) {
 						Genode::error("error while write block:", blk_nr, " from block device");
 						return WRITE_ERR_INVALID;
 					}
+
+					Callback::Status s = length == count ?
+						Callback::COMPLETE : Callback::PARTIAL;
+					vfs_handle->write_callback(_block_buffer + displ, length, s);
 
 					written += nbytes;
 					count   -= nbytes;
@@ -203,7 +248,9 @@ class Vfs::Block_file_system : public Single_file_system
 					seek_offset -= _block_size;
 				}
 
-				Genode::memcpy(_block_buffer + displ, buf + written, length);
+				Callback::Status s = length == count ?
+					Callback::COMPLETE : Callback::PARTIAL;
+				vfs_handle->write_callback(_block_buffer + displ, length, s);
 
 				nbytes = _block_io(blk_nr, _block_buffer, _block_size, true);
 				if ((unsigned)nbytes != _block_size) {
@@ -221,7 +268,7 @@ class Vfs::Block_file_system : public Single_file_system
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
+		Read_result read(Vfs_handle *vfs_handle, file_size count,
 		                 file_size &out_count) override
 		{
 			if (!_readable) {
@@ -257,7 +304,7 @@ class Vfs::Block_file_system : public Single_file_system
 				if (displ == 0 && (count % _block_size) >= 0 && !(count < _block_size)) {
 					file_size bytes_left = count - (count % _block_size);
 
-					nbytes = _block_io(blk_nr, dst + read, bytes_left, false, true);
+					nbytes = _block_io(blk_nr, vfs_handle, bytes_left, false, true);
 					if (nbytes == 0) {
 						Genode::error("error while reading block:", blk_nr, " from block device");
 						return READ_ERR_INVALID;
@@ -276,7 +323,9 @@ class Vfs::Block_file_system : public Single_file_system
 					return READ_ERR_INVALID;
 				}
 
-				Genode::memcpy(dst + read, _block_buffer + displ, length);
+				Callback::Status s = length == count ?
+					Callback::COMPLETE : Callback::PARTIAL;
+				vfs_handle->read_callback(_block_buffer + displ, length, s);
 
 				read  += length;
 				count -= length;

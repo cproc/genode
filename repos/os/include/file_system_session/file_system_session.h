@@ -352,7 +352,7 @@ struct File_system::Session : public Genode::Session
 	/**
 	 * Register handler that should be notified on node changes
 	 */
-	virtual void sigh(Node_handle, Genode::Signal_context_capability sigh) = 0;
+	virtual bool sigh(Node_handle, Genode::Signal_context_capability sigh) = 0;
 
 	/**
 	 * Synchronize file system
@@ -404,7 +404,7 @@ struct File_system::Session : public Genode::Session
 	                 GENODE_TYPE_LIST(Invalid_handle, Invalid_name,
 	                                  Lookup_failed, Permission_denied),
 	                 Dir_handle, Name const &, Dir_handle, Name const &);
-	GENODE_RPC_THROW(Rpc_sigh, void, sigh,
+	GENODE_RPC_THROW(Rpc_sigh, bool, sigh,
 	                 GENODE_TYPE_LIST(Invalid_handle),
 	                 Node_handle, Genode::Signal_context_capability);
 	GENODE_RPC(Rpc_sync, void, sync, Node_handle);
