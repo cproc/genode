@@ -1,0 +1,16 @@
+Configuration:
+
+libccid loads the '/ifd-ccid.bundle/Contents/Info.plist" file, which can be
+made available from a ROM module in the VFS of the application:
+
+<config>
+	<libc>
+		<vfs>
+			<dir name="ifd-ccid.bundle">
+				<dir name="Contents">
+					<rom name="Info.plist"/>
+				</dir>
+			</dir>
+		</vfs>
+	</libc>
+</config>
