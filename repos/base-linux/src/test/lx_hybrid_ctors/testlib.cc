@@ -18,7 +18,7 @@
 
 Testlib_testclass::Testlib_testclass()
 {
-	log("[init -> test-lx_hybrid_ctors] Global static constructor of host library called.");
+	printf("[init -> test-lx_hybrid_ctors] Global static constructor of host library called.");
 }
 
 
