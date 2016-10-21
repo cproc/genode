@@ -116,6 +116,13 @@ namespace Platform {
 					 * of lowest-significant bits corresponding to the resource size.
 					 * Finally, we write back the original value as assigned by the BIOS.
 					 */
+
+for (unsigned int i = 0; ; i++) {
+	Genode::log(i);
+	pci_config->write(/* bus */0, /* device */ 0x2, /* function */ 0, /* bar_idx */ 0x18, ~0, Device::ACCESS_32BIT);
+	//pci_config->write(/* bus */0, /* device */ 0x1d, /* function */ 0, /* bar_idx */ 0x10, ~0, Device::ACCESS_32BIT);
+}
+
 					pci_config->write(bus, device, function, bar_idx, ~0, Device::ACCESS_32BIT);
 					unsigned bar = pci_config->read(bus, device, function, bar_idx, Device::ACCESS_32BIT);
 					pci_config->write(bus, device, function, bar_idx, orig_bar, Device::ACCESS_32BIT);
