@@ -462,6 +462,11 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		return Errno(EBADF);
 	}
 
+	/*
+	 * TODO: if the read of the 'from' file is QUEUED then immediately
+	 * read the data file and block until both callbacks complete
+	 */
+
 	if (src_addr) {
 		using namespace Vfs;
 
@@ -526,6 +531,11 @@ ssize_t Libc::Vfs_plugin::sendto(Libc::File_descriptor *fd, const void *buf, ::s
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context))) {
 		return Errno(EBADF);
 	}
+
+	/*
+	 * TODO: if the write to the 'to' file is QUEUED then immediately
+	 * write the data file and block until both callbacks complete
+	 */
 
 	if (dest_addr) {
 		using namespace Vfs;
@@ -640,7 +650,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::socket(int domain, int type, int protoc
 		/* just check the type for now */
 		switch (type) {
 			case SOCK_STREAM: file.append_element("tcp"); break;
-			case SOCK_DGRAM: file.append_element("udp"); break;
+			case SOCK_DGRAM:  file.append_element("udp"); break;
 			default:
 				Errno(EAFNOSUPPORT);
 				return 0;

@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2015 Genode Labs GmbH
+ * Copyright (C) 2015-2016 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
@@ -257,15 +257,15 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 
 		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
 		{
+			sockaddr_in *addr = (sockaddr_in*)&_parent.to_addr();
 			file_size remain = len;
 			while (remain) {
 				file_size n = min(remain, sizeof(_content_buffer));
 				n = handle.write_callback(_content_buffer, n, Callback::PARTIAL);
 
 				Lxip::ssize_t res = _sc.send(_handle, _content_buffer, n,
-				                             0 /* flags */,
-				                             0 /* familiy */,
-				                             nullptr /* addr */);
+				                             0 /* flags */, 0 /* family */,
+				                             addr->sin_addr.s_addr ? addr : nullptr);
 
 				if ((res == Lxip::ssize_t(Lxip::Io_result::LINUX_EAGAIN))
 				 || (file_size(res) < n)) {
@@ -356,6 +356,7 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 			long tmp = -1;
 			len = handle.write_callback(
 				_content_buffer, len, Callback::COMPLETE);
+
 			Genode::ascii_to_unsigned(get_port(_content_buffer), tmp, len);
 			if (tmp == -1)
 				return Write_result::WRITE_ERR_INVALID;
@@ -626,11 +627,12 @@ class Vfs::Lxip_from_file : public Vfs::Lxip_file
 				return Read_result::READ_OK;
 			}
 
-			in_addr const   i_addr = ((struct sockaddr_in*)&addr)->sin_addr;
+			in_addr const i_addr = ((struct sockaddr_in*)&addr)->sin_addr;
 			if (i_addr.s_addr == 0) {
 				out = 0;
 				return Read_result::READ_OK;
 			}
+
 			unsigned char const *a = (unsigned char*)&i_addr.s_addr;
 			unsigned char const *p = (unsigned char*)&((struct sockaddr_in*)&addr)->sin_port;
 
@@ -658,11 +660,11 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 
 		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
 		{
+			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
+
 			len = min(len, sizeof(_content_buffer)-1);
 			out = handle.write_callback(_content_buffer, len, Callback::COMPLETE);
 			_content_buffer[len] = '\0';
-
-			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
 
 			to_addr->sin_port = htons(remove_port(_content_buffer));
 			inet_pton(AF_INET, _content_buffer, &(to_addr->sin_addr));
@@ -837,7 +839,7 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				return Read_result::READ_ERR_INVALID;
 			}
 
-			Lxip::Handle h = _sc.socket(Lxip::TYPE_STREAM);
+			Lxip::Handle h = _sc.socket(_parent.type());
 			if (!h.socket)
 				return Read_result::READ_ERR_INVALID;
 
