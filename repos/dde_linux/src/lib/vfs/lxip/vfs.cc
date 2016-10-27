@@ -90,6 +90,7 @@ struct Lxip::Protocol_dir
 
 struct Lxip::Socket_dir
 {
+	virtual Protocol_dir &parent() = 0;
 	virtual char const *top_dir() = 0;
 	virtual unsigned accept(Lxip::Handle &) = 0;
 	virtual void     bind(bool) = 0; /* bind to port */
@@ -196,8 +197,9 @@ static Vfs::Lxip_vfs_handles _polling_handles;
 static void poll_all()
 {
 	for (Vfs::Lxip_vfs_handle *h = _polling_handles.first(); h; h = h->next())
-		if (h->file.poll())
+		if (h->file.poll()) {
 			h->notify_callback();
+		}
 }
 
 
@@ -257,7 +259,6 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 
 		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
 		{
-			sockaddr_in *addr = (sockaddr_in*)&_parent.to_addr();
 			file_size remain = len;
 			while (remain) {
 				file_size n = min(remain, sizeof(_content_buffer));
@@ -265,7 +266,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 
 				Lxip::ssize_t res = _sc.send(_handle, _content_buffer, n,
 				                             0 /* flags */, 0 /* family */,
-				                             addr->sin_addr.s_addr ? addr : nullptr);
+				                             &_parent.to_addr());
 
 				if ((res == Lxip::ssize_t(Lxip::Io_result::LINUX_EAGAIN))
 				 || (file_size(res) < n)) {
@@ -273,7 +274,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 					handle.write_callback(_content_buffer, 0, Callback::ERROR);
 					return Write_result::WRITE_ERR_IO;
 				} else if (res < 0) {
-					Genode::error("send error ", res);
+					Genode::error("LxIP  send error ", res);
 					handle.write_callback(_content_buffer, 0, Callback::ERROR);
 					return Write_result::WRITE_ERR_IO;
 				}
@@ -302,7 +303,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 						out = 0;
 						return Read_result::READ_OK;
 					} else {
-						Genode::error("recv error ", res);
+						Genode::error("LxIP recv error ", res);
 						return Read_result::READ_ERR_IO;
 					}
 				} else if (res < n) {
@@ -316,7 +317,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 
 				/* notify the callback if the operation is complete */
 				Callback::Status s = remain ?
-					Callback::COMPLETE : Callback::PARTIAL;
+					Callback::PARTIAL : Callback::COMPLETE;
 				handle.read_callback(_content_buffer, res, s);
 			}
 			return Read_result::READ_OK;
@@ -465,7 +466,8 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			if (len > (sizeof(_content_buffer) - 2))
 				return Write_result::WRITE_ERR_INVALID;
 
-			handle.write_callback(_content_buffer, len, Callback::COMPLETE);
+			handle.write_callback(_content_buffer, len, Callback::PARTIAL);
+			_content_buffer[len] = '\0';
 
 			int res = _sc.dial(_handle, _content_buffer);
 
@@ -489,9 +491,17 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 				_is_connected = true;
 				break;
 			default:
-				if (res != 0) return Write_result::WRITE_ERR_IO;
+				if (res != 0) {
+					Genode::error("LxIP failed to connect, error ", res);
+					return Write_result::WRITE_ERR_IO;
+				}
 				break;
 			}
+
+			/* TODO: move string parsing to the LxIP library */
+			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
+			to_addr->sin_port = htons(remove_port(_content_buffer));
+			inet_pton(AF_INET, _content_buffer, &(to_addr->sin_addr));
 
 			handle.write_callback(_content_buffer, len, Callback::COMPLETE);
 			_content_buffer[len+0] = '\n';
@@ -595,7 +605,7 @@ class Vfs::Lxip_accept_file : public Vfs::Lxip_file
 				out = n;
 				handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 				return Read_result::READ_OK;
-			} catch (...) { Genode::error("Could not adopt new client socket"); }
+			} catch (...) { Genode::error("LxIP could not adopt new client socket"); }
 
 			return Read_result::READ_ERR_IO;
 		}
@@ -666,6 +676,7 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 			out = handle.write_callback(_content_buffer, len, Callback::COMPLETE);
 			_content_buffer[len] = '\0';
 
+			/* TODO: move string parsing to the LxIP library */
 			to_addr->sin_port = htons(remove_port(_content_buffer));
 			inet_pton(AF_INET, _content_buffer, &(to_addr->sin_addr));
 
@@ -673,8 +684,8 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 		}
 };
 
-class Vfs::Lxip_socket_dir : public Vfs::Directory,
-                             public Lxip::Socket_dir
+class Vfs::Lxip_socket_dir final : public Vfs::Directory,
+                                   public Lxip::Socket_dir
 {
 	public:
 
@@ -737,11 +748,10 @@ class Vfs::Lxip_socket_dir : public Vfs::Directory,
 			_nodes[DATA_NODE]    = &_data_file;
 			_nodes[FROM_NODE]    = &_from_file;
 			_nodes[TO_NODE]      = &_to_file;
+			_nodes[LOCAL_NODE]   = &_local_file;
 
-			if (from_accept) {
-				_nodes[LOCAL_NODE]  = &_local_file;
+			if (from_accept)
 				_nodes[REMOTE_NODE] = &_remote_file;
-			}
 		}
 
 		~Lxip_socket_dir() { _sc.close(_handle); }
@@ -750,6 +760,8 @@ class Vfs::Lxip_socket_dir : public Vfs::Directory,
 		/**************************
 		 ** Socket_dir interface **
 		 **************************/
+
+		Lxip::Protocol_dir &parent() override { return _parent; }
 
 		sockaddr_storage &to_addr() override { return _to_addr; }
 
@@ -835,7 +847,7 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				return Read_result::READ_ERR_INVALID;
 
 			if (len < Lxip::MAX_FD_STR_LEN) {
-				Genode::error("Could not read new_socket file, buffer too small");
+				Genode::error("LxIP could not read new_socket file, buffer too small");
 				return Read_result::READ_ERR_INVALID;
 			}
 
@@ -854,7 +866,7 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				handle.read_callback(tmp, n, Callback::COMPLETE);
 				return Read_result::READ_OK;
 			} catch (...) {
-				Genode::error("Could not adopt socket");
+				Genode::error("LxIP could not adopt socket");
 			}
 
 			_sc.close(h);
