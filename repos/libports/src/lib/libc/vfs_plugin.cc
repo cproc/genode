@@ -32,6 +32,7 @@
 /* libc-internal includes */
 #include <libc_mem_alloc.h>
 #include "libc_errno.h"
+#include "timeout.h"
 
 /**
  * Utility to convert VFS stat struct to the libc stat struct
@@ -223,16 +224,6 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 int Libc::Vfs_plugin::close(Libc::File_descriptor *fd)
 {
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);
-	/*
-	if (Libc::Vfs_plugin::Socket_context *sc =
-		dynamic_cast<Libc::Vfs_plugin::Socket_context *>(context))
-	{
-		Vfs::Vfs_handle *accept = sc->accept_handle();
-		if (accept)
-			accept->ds().close(accept);
-	}
-	*/
-
 	Vfs::Vfs_handle &handle = context->handle();
 
 	destroy(_alloc, context);
@@ -331,8 +322,9 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 		{
 			status = st;
 			if (!len) {
-				if (tasked)
+				if (tasked) {
 					Libc::task_resume();
+				}
 				return 0;
 			}
 
@@ -342,8 +334,9 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 				Genode::memcpy(dst, p, out);
 			}
 			accumulator += out;
-			if (tasked && (status != PARTIAL))
+			if (tasked && (status != PARTIAL)) {
 				Libc::task_resume();
+			}
 			return out;
 		}
 	} cb { (char const *)buf, count };
@@ -392,6 +385,117 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 }
 
 
+ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
+                                Vfs::file_size count, bool blocking)
+{
+	if (blocking && !context.subscribed())
+		if (!context.subscribe()) {
+			Genode::warning("refusing blocking read, notifications not supported");
+			return Errno(EIO);
+		}
+
+	using namespace Vfs;
+
+	typedef File_io_service::Read_result Result;
+
+	struct Local_callback : Vfs::Read_callback
+	{
+		char *    const buffer;
+		file_size const buffer_len;
+
+		file_size   accumulator = 0;
+		Callback::Status status = PARTIAL;
+		bool             tasked = false;
+
+		Local_callback(char *buf, file_size len)
+		: buffer(buf), buffer_len(len) { }
+
+		file_size read(char const *src, file_size len, Callback::Status st) override
+		{
+			status = st;
+			if (!len) {
+				if (tasked) {
+					Libc::task_resume();
+				}
+				return 0;
+			}
+			file_size out = min(len, buffer_len-accumulator);
+			char *p = buffer+accumulator;
+			if (src)
+				Genode::memcpy(p, src, len);
+			else
+				Genode::memset(p, 0x00, len);
+			accumulator += out;
+			if (tasked && (status != PARTIAL)) {
+				Libc::task_resume();
+			}
+			return out;
+		}
+	};
+
+	file_size out_count = 0;
+	Vfs::Vfs_handle &handle = context.handle();
+	Local_callback cb((char*)buf, count);
+
+	/* this is a stack callback, so it must be removed later */
+	handle.read_callback(cb);
+
+	Result result = handle.fs().read(&handle, count, out_count);
+	for (;;) {
+		if (result == Result::READ_QUEUED) {
+			cb.tasked = true;
+			Libc::task_suspend();
+
+			/* the libc task will run until the callback completes or errors */
+
+			/* XXX: short read? */
+			out_count = cb.accumulator;
+			result = (cb.status == Callback::ERROR) ?
+				Result::READ_ERR_IO : Result::READ_OK;
+		}
+
+		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
+			context.reset();
+
+			Task_resume_callback resume_cb;
+			resume_cb.add_context(context);
+			/* when the context is notified then resume_cb will resume the task */
+
+			timeval const &timeout = context.timeout();
+			if (timeout.tv_sec || timeout.tv_usec) {
+				Libc::Timeout task_timeout(timeout.tv_sec*1000+timeout.tv_usec/1000);
+				Libc::task_suspend();
+				if (task_timeout.triggered()) {
+					return Errno(EWOULDBLOCK);
+				}
+			} else {
+				Libc::task_suspend();
+			}
+			/* try it again */
+			result = handle.fs().read(&handle, count, out_count);
+		} else
+			break;
+	}
+
+	/* unset the read callback */
+	handle.drop_read();
+
+	switch (result) {
+	case Result::READ_OK: break;
+	case Result::READ_ERR_AGAIN:
+	case Result::READ_ERR_WOULD_BLOCK: return Errno(EWOULDBLOCK);
+	case Result::READ_ERR_INVALID:     return Errno(EINVAL);
+	case Result::READ_ERR_IO:          return Errno(EIO);
+	case Result::READ_ERR_INTERRUPT:   return Errno(EINTR);
+	case Result::READ_QUEUED: break;
+	}
+
+	handle.advance_seek(out_count);
+
+	return out_count;
+}
+
+
 ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
                                 Vfs::file_size count, bool blocking)
 {
@@ -417,8 +521,9 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 		{
 			status = st;
 			if (!len) {
-				if (tasked)
+				if (tasked) {
 					Libc::task_resume();
+				}
 				return 0;
 			}
 			file_size out = min(len, buffer_len-accumulator);
@@ -428,8 +533,9 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 			else
 				Genode::memset(p, 0x00, len);
 			accumulator += out;
-			if (tasked && (status != PARTIAL))
+			if (tasked && (status != PARTIAL)) {
 				Libc::task_resume();
+			}
 			return out;
 		}
 	} cb { (char*)buf, count };
@@ -452,23 +558,8 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 		}
 
 		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
-			if (!handle.ds().subscribe(&handle)) {
-				/* cannot make a blocking read */
-				return Errno(EIO);
-			}
-
-			struct Callback : Vfs::Notify_callback
-			{
-				void notify() override {
-					Libc::task_resume();
-				}
-			} cb;
-
-			handle.notify_callback(cb);
 			Libc::task_suspend();
-
 			/* try it again */
-			handle.drop_notify();
 			result = handle.fs().read(&handle, count, out_count);
 		} else
 			break;
@@ -496,9 +587,8 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-	Libc::Vfs_plugin::Context *context = vfs_context(fd);
-	return context ?
-		_read(context->handle(), buf, count, !(fd->status&O_NONBLOCK)) : Errno(EBADF);
+	Libc::Vfs_plugin::Context *context = vfs_context(fd);	
+	return _read(*context, buf, count, !(fd->status&O_NONBLOCK));
 }
 
 
@@ -913,4 +1003,104 @@ int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
 	Libc::mem_alloc()->free(addr);
 	return 0;
+}
+
+int Libc::Vfs_plugin::_select(int nfds,
+                             fd_set *read_out,  fd_set const &read_in,
+                             fd_set *write_out, fd_set const &write_in)
+{
+	int nready = 0;
+	for (int libc_fd = 0; libc_fd < nfds; ++libc_fd) {
+		Libc::File_descriptor *fdo =
+			Libc::file_descriptor_allocator()->find_by_libc_fd(libc_fd);
+
+		/* handle only libc_fds that belong to this plugin */
+		if (!fdo || (fdo->plugin != this))
+			continue;
+		/* XXX: eventually they all come from this plugin */
+
+		Context *context = vfs_context(fdo);
+
+		if (read_out && FD_ISSET(libc_fd, &read_in) && context->notifications()) {
+			//context->reset();
+			FD_SET(libc_fd, read_out);
+			++nready;
+		}
+
+		if (write_out && FD_ISSET(libc_fd, &write_in) && context->notifications()) {
+			//context->reset();
+			FD_SET(libc_fd, write_out);
+			++nready;
+		}
+	}
+
+	return nready;
+}
+
+
+int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
+                             fd_set *exceptfds, struct timeval *timeout)
+{
+	fd_set read_in;
+	fd_set write_in;
+	FD_ZERO(&read_in);
+	FD_ZERO(&write_in);
+
+	if (readfds) {
+		read_in = *readfds;
+		FD_ZERO(readfds);
+	}
+
+	if (writefds) {
+		write_in = *writefds;
+		FD_ZERO(writefds);
+	}
+
+	if (exceptfds)
+		FD_ZERO(exceptfds);
+
+	/* this resumes the task when a context is notified */
+	Task_resume_callback resume_cb;
+
+	/* set callbacks on descriptors and remove those that do not notify */
+	for (int libc_fd = 0; libc_fd < nfds; ++libc_fd) {
+		Libc::File_descriptor *fdo =
+			Libc::file_descriptor_allocator()->find_by_libc_fd(libc_fd);
+
+		/* handle only libc_fds that belong to this plugin */
+		if (!fdo || (fdo->plugin != this))
+			continue;
+		/* XXX: eventually they all come from this plugin */
+
+		Context *ctx = vfs_context(fdo);
+		if ((FD_ISSET(libc_fd, &read_in)) || (FD_ISSET(libc_fd, &write_in))) {
+			if (!ctx->subscribed()) {
+				if (!ctx->subscribe()) {
+					/* drop it, no notificatigions */
+					FD_CLR(libc_fd, &read_in);
+					FD_CLR(libc_fd, &write_in);
+					continue;
+				}
+			}
+			resume_cb.add_context(*ctx);
+		}
+	}
+
+	int nready = _select(nfds, readfds, read_in, writefds, write_in);
+	if (nready == 0) {
+		if (timeout == NULL) {
+			do {
+				Libc::task_suspend();
+				nready = _select(nfds, readfds, read_in, writefds, write_in);
+			} while (!nready);
+		} else {
+			Libc::Timeout task_timeout(timeout->tv_sec*1000+timeout->tv_usec/1000);
+			do {
+				Libc::task_suspend();
+				nready = _select(nfds, readfds, read_in, writefds, write_in);
+			} while (!nready && !task_timeout.triggered());
+		}
+	}
+
+	return nready;
 }
