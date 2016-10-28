@@ -16,7 +16,6 @@
 
 /* Genode includes */
 #include <base/env.h>
-#include <base/printf.h>
 #include <vfs/dir_file_system.h>
 #include <os/config.h>
 
@@ -50,13 +49,94 @@ class Libc::Vfs_plugin : public Libc::Plugin
 {
 	public:
 
-		struct Context : Libc::Plugin_context
+		class Context :
+			public Libc::Plugin_context,
+			public Vfs::Notify_callback,
+			public Genode::List<Context>::Element
 		{
-			Vfs::Vfs_handle &_handle;
+			protected:
 
-			Context(Vfs::Vfs_handle &h) : _handle(h) { }
+				Vfs::Vfs_handle *_handle;
 
-			Vfs::Vfs_handle &handle() { return _handle; }
+			private:
+
+				struct timeval _timeout { 0, 0 };
+
+				Notify_callback *_inner_callback = nullptr;
+
+				int  _notifications = 0;
+				bool _subscribed = false;
+
+			public:
+
+				Context(Vfs::Vfs_handle &h) : _handle(&h) { }
+
+				Vfs::Vfs_handle &handle() { return *_handle; }
+
+				void notify_callback(Vfs::Notify_callback &inner) {
+					_inner_callback = &inner; }
+
+				void drop_notify() {
+					_inner_callback = nullptr; }
+
+				bool subscribe()
+				{
+					if (!_subscribed) {
+						_subscribed = _handle->ds().subscribe(_handle);
+						if (_subscribed)
+							_handle->notify_callback(*this);
+					}
+					return _subscribed;
+				}
+
+				void unsubscribe()
+				{
+					_subscribed = false;
+					_handle->drop_notify();
+				}
+
+				bool   subscribed() const { return _subscribed; }
+				int notifications() const { return _notifications; }
+
+				void ack() { if (_notifications > 0) --_notifications; }
+
+				void reset() { _notifications = 0; }
+
+				void timeout(timeval &to) { _timeout = to; }
+				timeval const &timeout() { return _timeout; }
+
+				/*******************************
+				 ** Notify callback interface **
+				 *******************************/
+
+				void notify() override
+				{
+					++_notifications;
+					if (_inner_callback)
+						_inner_callback->notify();
+				}
+		};
+
+		struct Task_resume_callback : Vfs::Notify_callback
+		{
+			Genode::List<Context> contexts;
+
+			~Task_resume_callback()
+			{
+				for (Context *c = contexts.first(); c; c = contexts.first()) {
+					contexts.remove(c);
+					c->drop_notify();
+				}
+			}
+
+			void add_context(Context &c)
+			{
+				contexts.insert(&c);
+				c.notify_callback(*this);
+			};
+
+			void notify() override {
+				Libc::task_resume(); }
 		};
 
 		struct Meta_path : Libc::Absolute_path
@@ -74,19 +154,19 @@ class Libc::Vfs_plugin : public Libc::Plugin
 		{
 			Meta_path const path;
 
-			Vfs::Vfs_handle *_accept_handle = nullptr;
+			Vfs::Vfs_handle *_accept_context = nullptr;
 
 			Socket_context(Absolute_path const &path, Vfs::Vfs_handle &data_handle)
 			: Context(data_handle), path(path.base()) { }
 
 			virtual ~Socket_context() { }
 
-			Vfs::Vfs_handle *accept_handle() { return _accept_handle; }
-
-			void accept_handle(Vfs::Vfs_handle *handle)
+			void accept_handle(Vfs::Vfs_handle *accept_handle)
 			{
-				if (!_accept_handle)
-					_accept_handle = handle;
+				if (_handle != accept_handle) {
+					_handle->ds().close(_handle);
+					_handle = accept_handle;
+				}
 			}
 		};
 
@@ -111,7 +191,7 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			try {
 				return vfs_config();
 			} catch (...) {
-				PINF("no VFS configured");
+				Genode::warning("no VFS configured");
 				return Genode::Xml_node("<vfs/>");
 			}
 		}
@@ -124,8 +204,8 @@ class Libc::Vfs_plugin : public Libc::Plugin
 
 			Libc::File_descriptor *fd = open(path, flags, libc_fd);
 			if (fd->libc_fd != libc_fd) {
-				PERR("could not allocate fd %d for %s, got fd %d",
-				     libc_fd, path, fd->libc_fd);
+				Genode::error("could not allocate fd ",libc_fd," for ",path,
+				              ", got fd ",fd->libc_fd);
 				close(fd);
 				return;
 			}
@@ -144,8 +224,14 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			fd->fd_path = strdup(path);
 		}
 
-		ssize_t _read(Vfs::Vfs_handle&, void*, Vfs::file_size, bool blocking);
-		ssize_t _write(Vfs::Vfs_handle&, void const *, Vfs::file_size);
+		static ssize_t _read(Context&, void*, Vfs::file_size, bool blocking);
+		static ssize_t _read(Vfs::Vfs_handle&, void*, Vfs::file_size, bool blocking);
+		static ssize_t _write(Vfs::Vfs_handle&, void const *, Vfs::file_size);
+
+		int read_sockaddr_in(char const *file_name,
+		                     Libc::File_descriptor *fd,
+		                     struct sockaddr_in *addr,
+		                     socklen_t *addrlen);
 
 	public:
 
@@ -181,6 +267,12 @@ class Libc::Vfs_plugin : public Libc::Plugin
 		bool supports_mmap()                                 override { return true; }
 
 		bool supports_socket(int domain, int type, int protocol) override { return true; }
+
+		bool supports_select(int nfds,
+		                     fd_set *readfds,
+		                     fd_set *writefds,
+		                     fd_set *exceptfds,
+		                     struct timeval *timeout) override { return true; }
 
 		Libc::File_descriptor *open(const char *, int, int libc_fd);
 
@@ -226,6 +318,13 @@ class Libc::Vfs_plugin : public Libc::Plugin
 		int setsockopt(Libc::File_descriptor*, int, int, const void*, socklen_t) override;
 		int shutdown(Libc::File_descriptor*, int) override;
 		Libc::File_descriptor* socket(int, int, int) override;
+
+		int _select(int nfds,
+		            fd_set *read_out,  fd_set const &read_in,
+		            fd_set *write_out, fd_set const &write_in);
+
+		int select(int nfds, fd_set *readfds, fd_set *writefds,
+		           fd_set *exceptfds, struct timeval *timeout) override;
 };
 
 #endif

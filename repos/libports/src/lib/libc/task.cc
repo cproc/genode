@@ -13,7 +13,6 @@
 
 /* Genode includes */
 #include <base/component.h>
-#include <base/printf.h>
 #include <base/log.h>
 #include <base/thread.h>
 #include <base/rpc_server.h>

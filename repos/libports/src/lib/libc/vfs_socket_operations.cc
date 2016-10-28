@@ -177,10 +177,12 @@ static sockaddr_in sockaddr_in_struct(Host_string const &host, Port_string const
 }
 
 
-static int read_sockaddr_in(char const *file_name, Libc::File_descriptor *fd,
-                            struct sockaddr_in *addr, socklen_t *addrlen)
+int Libc::Vfs_plugin::read_sockaddr_in(char const *file_name, Libc::File_descriptor *fd,
+                                   struct sockaddr_in *addr, socklen_t *addrlen)
 {
-	Libc::Vfs_plugin::Socket_context *context;
+	using namespace Vfs;
+
+	Socket_context *context;
 	if (!fd || !(context = dynamic_cast<Libc::Vfs_plugin::Socket_context *>(fd->context)))
 		return Errno(EBADF);
 
@@ -188,14 +190,17 @@ static int read_sockaddr_in(char const *file_name, Libc::File_descriptor *fd,
 	if (!addrlen || *addrlen <= 0) return Errno(EINVAL);
 
 	Absolute_path file(file_name, context->path.base());
-	int const read_fd = open(file.base(), O_RDONLY);
-	if (read_fd == -1) {
-		Genode::error(__func__, ": ", file_name, " not accessible");
-		return Errno(ENOTCONN);
+	Vfs_handle *handle = nullptr;
+	switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY, &handle, _alloc)) {
+		case Directory_service::OPEN_OK: break;
+		default:
+			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
+			return Errno(EINVAL);
 	}
+	Vfs_handle::Guard guard(handle);
+
 	Sockaddr_string addr_string;
-	int const n = read(read_fd, addr_string.base(), addr_string.capacity() - 1);
-	close(read_fd);
+	auto const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, false);
 	if (n == -1 || !n || n >= (int)addr_string.capacity() - 1)
 		return Errno(EINVAL);
 
@@ -215,17 +220,17 @@ static int read_sockaddr_in(char const *file_name, Libc::File_descriptor *fd,
  ** Address functions **
  ***********************/
 
-int Libc::Vfs_plugin::getpeername(Libc::File_descriptor *libc_fd,
-		                        struct sockaddr *addr,
-			                        socklen_t *addrlen)
+int Libc::Vfs_plugin::getpeername(File_descriptor *libc_fd,
+                                  struct sockaddr *addr,
+                                  socklen_t *addrlen)
 {
 	return read_sockaddr_in("remote", libc_fd, (sockaddr_in *)addr, addrlen);
 }
 
 
 int Libc::Vfs_plugin::getsockname(File_descriptor *libc_fd,
-		                        struct sockaddr *addr,
-			                        socklen_t *addrlen)
+                                  struct sockaddr *addr,
+                                  socklen_t *addrlen)
 {
 	return read_sockaddr_in("local", libc_fd, (sockaddr_in *)addr, addrlen);
 }
@@ -246,20 +251,14 @@ Libc::File_descriptor *Libc::Vfs_plugin::accept(File_descriptor *libc_fd, struct
 	}
 
 	char accept_socket[24];
-	Vfs_handle *accept_handle = context->accept_handle();
-	if (!accept_handle) {
-		Errno(EINVAL);
-		return 0;
-	}
 
 	int n = 0;
-	/* XXX currently reading accept may return without new connection */
 	do {
-		n = _read(*accept_handle, accept_socket, sizeof(accept_socket), true);
-		if (n == -1 || n >= (int)sizeof(accept_socket) - 1) {
-			return nullptr;
-		}
+		n = _read(*context, accept_socket, sizeof(accept_socket), true);
 	} while (n == 0);
+	if (n == -1 || n >= (int)sizeof(accept_socket) - 1) {
+		return nullptr;
+	}
 
 	accept_socket[n] = 0;
 
@@ -439,11 +438,7 @@ int Libc::Vfs_plugin::listen(Libc::File_descriptor *fd, int backlog)
 			return Errno(EINVAL);
 		}
 
-		if (Vfs_handle *old_handle = context->accept_handle())
-			old_handle->ds().close(old_handle);
-
 		context->accept_handle(accept_handle);
-		Genode::log("opened an accept file and associated it with a socket context");
 	}
 
 	return 0;
@@ -482,6 +477,10 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		}
 		Vfs_handle::Guard guard(handle);
 
+		/* set a resume callback so this will be a blocking call */
+		Task_resume_callback resume_cb;
+		handle->notify_callback(resume_cb);
+
 		int const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, true);
 		if (n == -1)
 			return -1;
@@ -499,7 +498,7 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		*addrlen = sizeof(from_sa);
 	}
 
-	return _read(context->handle(), buf, len, true);
+	return _read(*context, buf, len, true);
 }
 
 
@@ -574,7 +573,7 @@ int Libc::Vfs_plugin::getsockopt(File_descriptor *libc_fd, int level,
 		                       int optname, void *optval,
 		                       socklen_t *optlen)
 {
-	PDBG("##########  TODO  ##########");
+	Genode::warning("##########  TODO ",__func__," ##########");
 	return 0;
 }
 
@@ -588,6 +587,12 @@ int Libc::Vfs_plugin::setsockopt(Libc::File_descriptor *fd, int level, int optna
 
 	if (level == SOL_SOCKET) {	
 		switch (optname) {
+		case SO_RCVTIMEO:
+			if (optval && optlen >= sizeof(timeval))
+				context->timeout(*((struct timeval*)optval));
+			warning(__func__," SO_RCVTIMEO");
+			break;
+
 		case SO_DEBUG: warning(__func__," SO_DEBUG"); break;
 		case SO_REUSEADDR: warning(__func__," SO_REUSEADDR"); break;
 		case SO_REUSEPORT: warning(__func__," SO_REUSEPORT"); break;
@@ -601,7 +606,6 @@ int Libc::Vfs_plugin::setsockopt(Libc::File_descriptor *fd, int level, int optna
 		case SO_SNDLOWAT: warning(__func__," SO_SNDLOWAT"); break;
 		case SO_RCVLOWAT: warning(__func__," SO_RCVLOWAT"); break;
 		case SO_SNDTIMEO: warning(__func__," SO_SNDTIMEO"); break;
-		case SO_RCVTIMEO: warning(__func__," SO_RCVTIMEO"); break;
 		case SO_ACCEPTFILTER: warning(__func__," SO_ACCEPTFILTER"); break;
 		case SO_NOSIGPIPE: warning(__func__," SO_NOSIGPIPE"); break;
 		case SO_TIMESTAMP: warning(__func__," SO_TIMESTAMP"); break;
@@ -671,7 +675,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::socket(int domain, int type, int protoc
 		char buf[24];
 		ssize_t const n = _read(*handle, buf, sizeof(buf), false);
 		if (n == -1 || !n || n >= (int)sizeof(buf) - 1) {
-			Genode::error(__func__,": failed to read '", file, "'");
+			Genode::error(__func__,": failed to read '", file, "', read returned ",n);
 			return 0;
 		}
 		buf[n] = 0;
