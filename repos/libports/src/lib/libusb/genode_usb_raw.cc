@@ -17,6 +17,7 @@
 #include <usb/usb.h>
 #include <usb_session/connection.h>
 
+#include <fcntl.h>
 #include <time.h>
 
 #include "libusbi.h"
@@ -96,6 +97,16 @@ struct Usb_device
 		               config_descriptor.total_length);
 
 		usb_connection.tx_channel()->sigh_ack_avail(ack_avail_signal_dispatcher);
+
+		int fd = open("/usb/state", O_RDONLY);
+		Genode::log("fd: ", fd);
+
+		char state[10];
+		ssize_t state_bytes_read = read(fd, state, sizeof(state));
+
+		Genode::log("state_bytes_read: ", state_bytes_read);
+
+		Genode::log("state: ", Genode::Cstring(state));
 	}
 
 	~Usb_device()
