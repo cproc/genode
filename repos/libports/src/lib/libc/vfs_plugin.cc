@@ -340,7 +340,6 @@ struct Vfs::Libc_write_callback : Write_callback
 		status = st;
 		if (!len) {
 			if (tasked) {
-				PDBG("resume from write");
 				Libc::task_resume();
 			}
 			return 0;
@@ -353,7 +352,6 @@ struct Vfs::Libc_write_callback : Write_callback
 		}
 		accumulator += out;
 		if (tasked && (status != PARTIAL)) {
-			PDBG("resume from write");
 			Libc::task_resume();
 		}
 		return out;
@@ -372,7 +370,6 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 
 	if (result == Result::WRITE_QUEUED) {
 		cb.tasked = true;
-		PDBG("suspend for write");
 		_suspend_vfs();
 		/* the libc task will run until the callback completes or errors */
 
