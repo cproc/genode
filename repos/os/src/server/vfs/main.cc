@@ -19,6 +19,7 @@
 
 /* Local includes */
 #include "fs_component.h"
+#include "rom_component.h"
 
 namespace Vfs_server { struct Main; }
 
@@ -51,11 +52,40 @@ struct Vfs_server::Main
 	Vfs::Dir_file_system vfs_root
 		{ env, heap, vfs_config(), Vfs::global_file_system_factory() };
 
-	Fs_root fs_root { env, sliced_heap, vfs_root, config_rom };
+	Fs_root         *fs_root;
+	Rom_root       *rom_root;
 
 	Main(Genode::Env &env) : env(env)
 	{
-		env.parent().announce(env.ep().manage(fs_root));
+		Genode::Xml_node config_node = config_rom.xml();
+
+		bool     fs_enabled = config_node.has_sub_node("file_system");
+		bool    rom_enabled = config_node.has_sub_node("rom");
+
+		if (!fs_enabled)
+			Genode::warning("no 'file_system' node found in config, "
+			                "enabling service anyway, this behaviour "
+			                "will not peristent indefinitly");
+		{
+			fs_root = new (heap)
+				Fs_root(env, sliced_heap, vfs_root, config_rom);
+			env.parent().announce(env.ep().manage(*fs_root));
+		}
+
+		if (rom_enabled) {
+			rom_root = new (heap)
+				Rom_root(env, sliced_heap, vfs_root, config_rom);
+			env.parent().announce(env.ep().manage(*rom_root));
+		} else
+			Genode::warning("ROM service not enabled");
+
+		/*
+		 * XXX: when the FS service is not enabled by default
+		 * if (!(fs_enabled || rom_enabled || report_enabled)) {
+		 * 	Genode::error("no services enabled, exiting");
+		 * 	env.parent().exit(~0);
+		 * }
+		 */
 	}
 };
 

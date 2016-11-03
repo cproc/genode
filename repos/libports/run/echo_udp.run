@@ -4,7 +4,7 @@ set build_components {
 	core init
 	drivers/nic
 	drivers/timer
-	lib/vfs/lxip
+	lib/vfs/lwip
 	server/vfs
 	test/echo_udp
 }
@@ -47,7 +47,7 @@ set config {
 		<provides> <service name="File_system"/> </provides>
 		<config ld_verbose="yes">
 			<vfs audit="no">
-				<lxip ip_addr="10.0.2.55" netmask="255.255.255.0" gateway="10.0.2.1"/>
+				<lwip ip_addr="10.0.2.55" netmask="255.255.255.0" gateway="10.0.2.1"/>
 			</vfs>
 			<default-policy writeable="yes" />
 		</config>
@@ -79,13 +79,12 @@ set boot_modules {
 	core init ld.lib.so
 	libc.lib.so
 	libm.lib.so
-	lxip.lib.so
 	nic_drv
 	stdcxx.lib.so
 	test-echo_udp
 	timer
 	vfs
-	vfs_lxip.lib.so
+	vfs_lwip.lib.so
 }
 
 append_platform_drv_boot_modules

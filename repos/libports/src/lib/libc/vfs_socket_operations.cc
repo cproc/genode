@@ -19,6 +19,7 @@
 #include <base/log.h>
 #include <vfs/types.h>
 #include <util/string.h>
+#include <base/debug.h>
 
 /* libc includes */
 #include <sys/types.h>
@@ -270,7 +271,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::accept(File_descriptor *libc_fd, struct
 		using namespace Vfs;
 
 		Absolute_path file("data", accept_path.base());
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY,
+		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDWR,
 		                       &data_handle, _alloc)) {
 		case Directory_service::OPEN_OK: break;
 		default:
@@ -481,6 +482,7 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		Task_resume_callback resume_cb;
 		handle->notify_callback(resume_cb);
 
+		PDBG("read from");
 		int const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, true);
 		if (n == -1)
 			return -1;
@@ -687,7 +689,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::socket(int domain, int type, int protoc
 	Vfs::Vfs_handle *data_handle;
 	{
 		Absolute_path file("data", path.base());
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY,
+		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDWR,
 		                       &data_handle, _alloc)) {
 		case Directory_service::OPEN_OK: break;
 		default:

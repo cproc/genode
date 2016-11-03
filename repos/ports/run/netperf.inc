@@ -68,7 +68,6 @@ set build_components {
 	core init
 	drivers/timer
 	app/netperf
-	server/vfs
 }
 
 lappend build_components $netperf_target
@@ -225,19 +224,6 @@ append_if $use_wifi_driver config {
 append_platform_drv_config
 
 append config {
-	<start name="socket_fs">
-		<binary name="vfs"/>
-		<resource name="RAM" quantum="32M"/>
-		<provides> <service name="File_system"/> </provides>
-		<config ld_verbose="yes">
-			<vfs audit="yes">
-				<lxip }
-append_if [have_spec linux] config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
-append config {/> </vfs>
-			<default-policy writeable="yes" />
-		</config>
-	</start>
-
 	<start name="netserver">
 		<resource name="RAM" quantum="32M"/>
 		<config>
@@ -252,7 +238,9 @@ append config {/> </vfs>
 			      stdout="/dev/log" stderr="/dev/log" socket="/socket">
 				<vfs>
 					<dir name="dev"> <log/> </dir>
- 					<dir name="socket"> <fs/>  </dir>
+ 					<dir name="socket"> <lwip }
+append_if [have_spec linux] config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
+append config {/>   </dir>
 				</vfs>
 			</libc>
 		</config>}
@@ -277,7 +265,6 @@ set boot_modules {
 	core init timer
 	ld.lib.so libc.lib.so libm.lib.so
 	netserver
-	vfs
 }
 
 append                     boot_modules " $netperf_stack "
