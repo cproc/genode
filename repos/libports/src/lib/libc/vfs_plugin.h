@@ -96,7 +96,7 @@ class Libc::Vfs_plugin : public Libc::Plugin
 				}
 
 				bool   subscribed() const { return _subscribed; }
-				int notifications() const { return _notifications; }
+				int notifications() const { Genode::log("Vfs_plugin::notifications(): ", this); return _notifications; }
 
 				void ack() { if (_notifications > 0) --_notifications; }
 
@@ -111,6 +111,7 @@ class Libc::Vfs_plugin : public Libc::Plugin
 
 				void notify() override
 				{
+Genode::log("Vfs_plugin::notify(): ", this);
 					++_notifications;
 					if (_inner_callback)
 						_inner_callback->notify();
