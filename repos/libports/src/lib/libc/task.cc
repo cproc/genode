@@ -18,6 +18,7 @@
 #include <base/rpc_server.h>
 #include <base/rpc_client.h>
 #include <base/heap.h>
+#include <base/debug.h>
 
 /* libc-internal includes */
 #include <internal/call_func.h>
@@ -72,6 +73,8 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		bool    _app_runnable = true;
 		jmp_buf _app_task;
 
+		Genode::Semaphore _psem;
+
 		Genode::Thread &_myself = *Genode::Thread::myself();
 
 		void *_app_stack = {
@@ -83,6 +86,8 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		 */
 		jmp_buf _libc_task;
 
+		bool _libc_task_active = false;
+
 		/**
 		 * Trampoline to application code
 		 */
@@ -90,6 +95,7 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 
 		/* executed in the context of the main thread */
 		static void _resumed_callback();
+
 
 	public:
 
@@ -114,8 +120,14 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 
 		void suspend()
 		{
-			if (!_setjmp(_app_task)) {
-				_longjmp(_libc_task, 1);
+			/* jump if this is the main entrypoint, otherwise queue and block */
+			if (Genode::Thread::myself() == (&_myself)) {
+				if ((!_libc_task_active) && (!_setjmp(_app_task))) {
+					_libc_task_active = true;
+					_longjmp(_libc_task, 1);
+				}
+			} else {
+				_psem.down();
 			}
 		}
 
@@ -124,8 +136,21 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		 */
 		void resume()
 		{
-			if (!_setjmp(_libc_task)) {
-				_longjmp(_app_task, 1);
+			if (Genode::Thread::myself() == (&_myself)) {
+				/* unblock threads that have queued until now */
+				for (int n = _psem.cnt(); n < 0; ++n)
+					_psem.up();
+
+				if (_libc_task_active && (!_setjmp(_libc_task))) {
+					_libc_task_active = false;
+					_longjmp(_app_task, 1);
+				}
+			} else {
+				/*
+				 * resume was not called from the kernel entrypoint,
+				 * if the kernel entrypoint is waiting for a signal
+				 * it should be resume the app task
+				 */
 			}
 		}
 

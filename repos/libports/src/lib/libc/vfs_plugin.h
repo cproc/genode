@@ -18,6 +18,7 @@
 #include <base/env.h>
 #include <vfs/dir_file_system.h>
 #include <os/config.h>
+#include <base/debug.h>
 
 /* libc includes */
 #include <fcntl.h>
@@ -135,8 +136,10 @@ class Libc::Vfs_plugin : public Libc::Plugin
 				c.notify_callback(*this);
 			};
 
-			void notify() override {
-				Libc::task_resume(); }
+			void notify() override
+			{
+				Libc::task_resume();
+			}
 		};
 
 		struct Meta_path : Libc::Absolute_path
@@ -186,6 +189,18 @@ class Libc::Vfs_plugin : public Libc::Plugin
 
 		Vfs::Dir_file_system _root_dir;
 
+		Genode::Lock _lock;
+
+		/**
+		 * Unblock the VFS plugin, suspend, block on resume
+		 */
+		inline void _suspend_vfs()
+		{
+			_lock.unlock();
+			Libc::task_suspend();
+			_lock.lock();
+		}
+
 		Genode::Xml_node _vfs_config()
 		{
 			try {
@@ -224,9 +239,9 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			fd->fd_path = strdup(path);
 		}
 
-		static ssize_t _read(Context&, void*, Vfs::file_size, bool blocking);
-		static ssize_t _read(Vfs::Vfs_handle&, void*, Vfs::file_size, bool blocking);
-		static ssize_t _write(Vfs::Vfs_handle&, void const *, Vfs::file_size);
+		ssize_t _read(Context&, void*, Vfs::file_size, bool blocking);
+		ssize_t _read(Vfs::Vfs_handle&, void*, Vfs::file_size, bool blocking);
+		ssize_t _write(Vfs::Vfs_handle&, void const *, Vfs::file_size);
 
 		int read_sockaddr_in(char const *file_name,
 		                     Libc::File_descriptor *fd,

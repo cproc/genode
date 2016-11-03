@@ -160,6 +160,8 @@ int Libc::Vfs_plugin::access(const char *path, int amode)
 Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
                                               int libc_fd)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Open_result Result;
 
 	Vfs::Vfs_handle *handle = nullptr;
@@ -230,6 +232,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 
 int Libc::Vfs_plugin::close(Libc::File_descriptor *fd)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);
 	Vfs::Vfs_handle &handle = context->handle();
 
@@ -269,6 +273,8 @@ int Libc::Vfs_plugin::fstatfs(Libc::File_descriptor *fd, struct statfs *buf)
 
 int Libc::Vfs_plugin::mkdir(const char *path, mode_t mode)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Mkdir_result Result;
 
 	switch (_root_dir.mkdir(path, mode)) {
@@ -285,6 +291,8 @@ int Libc::Vfs_plugin::mkdir(const char *path, mode_t mode)
 
 int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	if (!path or !buf) {
 		errno = EFAULT;
 		return -1;
@@ -305,65 +313,73 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 }
 
 
+namespace Vfs { struct Libc_write_callback; }
+
+/**
+ * VFS write callback with lifetime management
+ */
+struct Vfs::Libc_write_callback : Write_callback
+{
+	Vfs_handle &handle;
+
+	char const * const buffer;
+	file_size const buffer_len;
+	file_size accumulator = 0;
+	Callback::Status status = PARTIAL;
+	bool tasked = false;
+
+	Libc_write_callback(Vfs_handle &handle, char const *buf, file_size len)
+	: handle(handle), buffer(buf), buffer_len(len) {
+		handle.write_callback(*this); }
+
+	~Libc_write_callback() {
+		handle.drop_write(); }
+
+	file_size write(char *dst, file_size len, Callback::Status st) override
+	{
+		status = st;
+		if (!len) {
+			if (tasked) {
+				PDBG("resume from write");
+				Libc::task_resume();
+			}
+			return 0;
+		}
+
+		file_size out = min(len, buffer_len-accumulator);
+		if (dst) {
+			char const *p = buffer+accumulator;
+			Genode::memcpy(dst, p, out);
+		}
+		accumulator += out;
+		if (tasked && (status != PARTIAL)) {
+			PDBG("resume from write");
+			Libc::task_resume();
+		}
+		return out;
+	}
+};
+
 ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
                                  Vfs::file_size count)
 {
 	using namespace Vfs;
 	typedef File_io_service::Write_result Result;
 
-	struct Local_callback : Vfs::Write_callback
-	{
-		char const * const buffer;
-		file_size    const buffer_len;
-
-		file_size    accumulator = 0;
-		Callback::Status  status = PARTIAL;
-		bool              tasked = false;
-
-		Local_callback(char const *buf, file_size len)
-		: buffer(buf), buffer_len(len) { }
-
-		file_size write(char *dst, file_size len, Callback::Status st) override
-		{
-			status = st;
-			if (!len) {
-				if (tasked) {
-					Libc::task_resume();
-				}
-				return 0;
-			}
-
-			file_size out = min(len, buffer_len-accumulator);
-			if (dst) {
-				char const *p = buffer+accumulator;
-				Genode::memcpy(dst, p, out);
-			}
-			accumulator += out;
-			if (tasked && (status != PARTIAL)) {
-				Libc::task_resume();
-			}
-			return out;
-		}
-	} cb { (char const *)buf, count };
-
-	/* this is a stack callback, so it must be removed later */
-	handle.write_callback(cb);
+	Libc_write_callback cb(handle, (char const *)buf, count);
 
 	Result result = handle.fs().write(&handle, count);
 
 	if (result == Result::WRITE_QUEUED) {
 		cb.tasked = true;
-		Libc::task_suspend();
-
+		PDBG("suspend for write");
+		_suspend_vfs();
 		/* the libc task will run until the callback completes or errors */
 
 		/* XXX: short write? */
 		result = (cb.status == Callback::ERROR) ?
 			Result::WRITE_ERR_IO : Result::WRITE_OK;
 	}
-
-	/* unset the callback */
-	handle.drop_write();
 
 	switch (result) {
 	case Result::WRITE_OK: break;
@@ -383,10 +399,84 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
                                 ::size_t count)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);
 	return context ? _write(context->handle(), buf, count) : Errno(EBADF);
 }
 
+
+namespace Vfs {
+	struct Libc_read_callback;
+	struct Libc_notify_read_callback;
+}
+
+/**
+ * VFS write callback with lifetime management
+ */
+struct Vfs::Libc_read_callback : Read_callback
+{
+	Vfs_handle &handle;
+
+	char * const buffer;
+	file_size const buffer_len;
+	file_size accumulator = 0;
+	Callback::Status status = PARTIAL;
+	bool tasked = false;
+
+	Libc_read_callback(Vfs_handle &handle, char *buf, file_size len)
+	: handle(handle), buffer(buf), buffer_len(len) {
+		handle.read_callback(*this); }
+
+	~Libc_read_callback() {
+		handle.drop_read(); }
+
+	file_size read(char const *src, file_size len, Callback::Status st) override
+	{
+		status = st;
+		if (!len) {
+			if (tasked)
+				Libc::task_resume();
+			return 0;
+		}
+		file_size out = min(len, buffer_len-accumulator);
+		char *p = buffer+accumulator;
+		if (src)
+			Genode::memcpy(p, src, len);
+		else
+			Genode::memset(p, 0x00, len);
+		accumulator += out;
+		if (tasked && (status != PARTIAL)) {
+			Libc::task_resume();
+		}
+		return out;
+	}
+};
+
+/**
+ * VFS notify callback with lifetime management
+ */
+struct Vfs::Libc_notify_read_callback : Notify_callback
+{
+	Vfs_handle &handle;
+	file_size  &count;
+	File_io_service::Read_result &result;
+
+	Libc_notify_read_callback(Vfs_handle &handle,
+	                          file_size  &count,
+	                          File_io_service::Read_result &result)
+	: handle(handle), count(count), result(result) {
+		handle.notify_callback(*this); }
+
+	~Libc_notify_read_callback() {
+		handle.drop_notify(); }
+
+	void notify() override
+	{
+		result = handle.fs().read(&handle, count);
+		Libc::task_resume();
+	}
+};
 
 ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
                                 Vfs::file_size count, bool blocking)
@@ -401,52 +491,14 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 
 	typedef File_io_service::Read_result Result;
 
-	struct Local_callback : Vfs::Read_callback
-	{
-		char *    const buffer;
-		file_size const buffer_len;
-
-		file_size   accumulator = 0;
-		Callback::Status status = PARTIAL;
-		bool             tasked = false;
-
-		Local_callback(char *buf, file_size len)
-		: buffer(buf), buffer_len(len) { }
-
-		file_size read(char const *src, file_size len, Callback::Status st) override
-		{
-			status = st;
-			if (!len) {
-				if (tasked) {
-					Libc::task_resume();
-				}
-				return 0;
-			}
-			file_size out = min(len, buffer_len-accumulator);
-			char *p = buffer+accumulator;
-			if (src)
-				Genode::memcpy(p, src, len);
-			else
-				Genode::memset(p, 0x00, len);
-			accumulator += out;
-			if (tasked && (status != PARTIAL)) {
-				Libc::task_resume();
-			}
-			return out;
-		}
-	};
-
 	Vfs::Vfs_handle &handle = context.handle();
-	Local_callback cb((char*)buf, count);
-
-	/* this is a stack callback, so it must be removed later */
-	handle.read_callback(cb);
+	Libc_read_callback cb(handle, (char*)buf, count);
 
 	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
-			Libc::task_suspend();
+			_suspend_vfs();
 
 			/* the libc task will run until the callback completes or errors */
 
@@ -458,28 +510,22 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
 			context.reset();
 
-			Task_resume_callback resume_cb;
-			resume_cb.add_context(context);
-			/* when the context is notified then resume_cb will resume the task */
+			Libc_notify_read_callback notify_cb(handle, count, result);
+			cb.tasked = true;
 
 			timeval const &timeout = context.timeout();
 			if (timeout.tv_sec || timeout.tv_usec) {
 				Libc::Timeout task_timeout(timeout.tv_sec*1000+timeout.tv_usec/1000);
-				Libc::task_suspend();
+				_suspend_vfs();
 				if (task_timeout.triggered()) {
 					return Errno(EWOULDBLOCK);
 				}
 			} else {
-				Libc::task_suspend();
+				_suspend_vfs();
 			}
-			/* try it again */
-			result = handle.fs().read(&handle, count);
 		} else
 			break;
 	}
-
-	/* unset the read callback */
-	handle.drop_read();
 
 	switch (result) {
 	case Result::READ_OK: break;
@@ -503,51 +549,13 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 
 	typedef File_io_service::Read_result Result;
 
-	struct Local_callback : Vfs::Read_callback
-	{
-		char *    const buffer;
-		file_size const buffer_len;
-
-		file_size   accumulator = 0;
-		Callback::Status status = PARTIAL;
-		bool             tasked = false;
-
-		Local_callback(char *buf, file_size len)
-		: buffer(buf), buffer_len(len) { }
-
-		file_size read(char const *src, file_size len, Callback::Status st) override
-		{
-			status = st;
-			if (!len) {
-				if (tasked) {
-					Libc::task_resume();
-				}
-				return 0;
-			}
-			file_size out = min(len, buffer_len-accumulator);
-			char *p = buffer+accumulator;
-			if (src)
-				Genode::memcpy(p, src, len);
-			else
-				Genode::memset(p, 0x00, len);
-			accumulator += out;
-			if (tasked && (status != PARTIAL)) {
-				Libc::task_resume();
-			}
-			return out;
-		}
-	} cb { (char*)buf, count };
-
-	/* this is a stack callback, so it must be removed later */
-	handle.read_callback(cb);
+	Libc_read_callback cb(handle, (char*)buf, count);
 
 	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
-			Libc::task_suspend();
-
-			/* the libc task will run until the callback completes or errors */
+			_suspend_vfs();
 
 			/* XXX: short read? */
 			result = (cb.status == Callback::ERROR) ?
@@ -555,15 +563,12 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 		}
 
 		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
-			Libc::task_suspend();
-			/* try it again */
-			result = handle.fs().read(&handle, count);
+			Libc_notify_read_callback notify_cb(handle, count, result);
+			cb.tasked = true;
+			_suspend_vfs();
 		} else
 			break;
 	}
-
-	/* unset the read callback */
-	handle.drop_read();
 
 	switch (result) {
 	case Result::READ_OK: break;
@@ -584,14 +589,18 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-	Libc::Vfs_plugin::Context *context = vfs_context(fd);	
-	return _read(*context, buf, count, !(fd->status&O_NONBLOCK));
+	Genode::Lock::Guard guard(_lock);
+
+	Libc::Vfs_plugin::Context *context = vfs_context(fd);
+	return context ? _read(*context, buf, count, !(fd->status&O_NONBLOCK)) : Errno(EBADF);
 }
 
 
 ssize_t Libc::Vfs_plugin::getdirentries(Libc::File_descriptor *fd, char *buf,
                                         ::size_t nbytes, ::off_t *basep)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	if (nbytes < sizeof(struct dirent)) {
 		Genode::error("getdirentries: buffer too small");
 		return -1;
@@ -650,6 +659,8 @@ ssize_t Libc::Vfs_plugin::getdirentries(Libc::File_descriptor *fd, char *buf,
 
 int Libc::Vfs_plugin::ioctl(Libc::File_descriptor *fd, int request, char *argp)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	using ::off_t;
 
 	/*
@@ -870,6 +881,8 @@ int Libc::Vfs_plugin::fcntl(Libc::File_descriptor *fd, int cmd, long arg)
 
 int Libc::Vfs_plugin::fsync(Libc::File_descriptor *fd)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	_root_dir.sync(fd->fd_path);
 	return 0;
 }
@@ -877,6 +890,8 @@ int Libc::Vfs_plugin::fsync(Libc::File_descriptor *fd)
 
 int Libc::Vfs_plugin::symlink(const char *oldpath, const char *newpath)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Symlink_result Result;
 
 	switch (_root_dir.symlink(oldpath, newpath)) {
@@ -893,6 +908,8 @@ int Libc::Vfs_plugin::symlink(const char *oldpath, const char *newpath)
 
 ssize_t Libc::Vfs_plugin::readlink(const char *path, char *buf, ::size_t buf_size)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Readlink_result Result;
 
 	Vfs::file_size out_len = 0;
@@ -915,6 +932,8 @@ int Libc::Vfs_plugin::rmdir(char const *path)
 
 int Libc::Vfs_plugin::unlink(char const *path)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Unlink_result Result;
 
 	switch (_root_dir.unlink(path)) {
@@ -929,6 +948,8 @@ int Libc::Vfs_plugin::unlink(char const *path)
 
 int Libc::Vfs_plugin::rename(char const *from_path, char const *to_path)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	typedef Vfs::Directory_service::Rename_result Result;
 
 	if (_root_dir.leaf_path(to_path)) {
@@ -1038,6 +1059,8 @@ int Libc::Vfs_plugin::_select(int nfds,
 int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
                              fd_set *exceptfds, struct timeval *timeout)
 {
+	Genode::Lock::Guard guard(_lock);
+
 	fd_set read_in;
 	fd_set write_in;
 	FD_ZERO(&read_in);
@@ -1087,13 +1110,13 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	if (nready == 0) {
 		if (timeout == NULL) {
 			do {
-				Libc::task_suspend();
+				_suspend_vfs();
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready);
 		} else {
 			Libc::Timeout task_timeout(timeout->tv_sec*1000+timeout->tv_usec/1000);
 			do {
-				Libc::task_suspend();
+				_suspend_vfs();
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready && !task_timeout.triggered());
 		}
@@ -1104,6 +1127,8 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 
 int Libc::Vfs_plugin::pipe(Libc::File_descriptor *fildes[2])
 {
+	Genode::Lock::Guard guard(_lock);
+
 	using namespace Vfs;
 
 	Absolute_path const meta_path("new_pipe", Libc::config_pipe());
@@ -1121,9 +1146,11 @@ int Libc::Vfs_plugin::pipe(Libc::File_descriptor *fildes[2])
 	char pipe_name[16];
 	::ssize_t n =  _read(*meta_handle, pipe_name, sizeof(pipe_name), false);
 	if (n == -1)
-		return -1; /* read set errno */
+		return -1; /* read has set errno */
 
-	pipe_name[min(sizeof(pipe_name)-1, size_t(n))] = '\0';
+	if (pipe_name[n-1] == '\n')
+		--n;
+	pipe_name[n] = '\0';
 	Absolute_path const pipe_path(pipe_name, Libc::config_pipe());
 
 	Vfs::Vfs_handle *pipe_in  = nullptr;

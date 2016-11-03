@@ -43,6 +43,8 @@ void *read_pipe(void *arg)
 			exit(1);
 		}
 
+		fprintf(stderr, "successfully read %ld bytes from pipe", res);
+
 		num_bytes_read += res;
 	}
 
@@ -79,6 +81,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Error writing to pipe");
 		exit(1);
 	}
+
+	fprintf(stderr, "successfully wrote %d bytes to pipe", BUF_SIZE);
 
 	/* pthread_join() is not implemented at this time */
 	while (!reader_finished) { }
