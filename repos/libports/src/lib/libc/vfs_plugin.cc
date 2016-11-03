@@ -453,8 +453,9 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 			result = (cb.status == Callback::ERROR) ?
 				Result::READ_ERR_IO : Result::READ_OK;
 		}
-
+Genode::log("blocking: ", blocking, ", result: ", (result == Result::READ_OK), ", out_count: ", out_count);
 		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
+Genode::log("calling context.reset()");
 			context.reset();
 
 			Task_resume_callback resume_cb;
@@ -476,7 +477,7 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 		} else
 			break;
 	}
-
+Genode::log("check");
 	/* unset the read callback */
 	handle.drop_read();
 
@@ -1020,7 +1021,7 @@ int Libc::Vfs_plugin::_select(int nfds,
 		/* XXX: eventually they all come from this plugin */
 
 		Context *context = vfs_context(fdo);
-
+Genode::log("context->notifications(): ", context->notifications());
 		if (read_out && FD_ISSET(libc_fd, &read_in) && context->notifications()) {
 			//context->reset();
 			FD_SET(libc_fd, read_out);
@@ -1087,6 +1088,7 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	int nready = _select(nfds, readfds, read_in, writefds, write_in);
+Genode::log("nready: ", nready);
 	if (nready == 0) {
 		if (timeout == NULL) {
 			do {
