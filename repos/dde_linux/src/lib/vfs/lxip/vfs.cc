@@ -157,7 +157,7 @@ struct Vfs::File : Vfs::Node
 	/**
 	 * Pass len data to handle read callback
 	 */
-	virtual Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out)
+	virtual Read_result read(Lxip_vfs_handle &handle, file_size len)
 	{
 		return Read_result::READ_ERR_INVALID;
 	}
@@ -165,7 +165,7 @@ struct Vfs::File : Vfs::Node
 	/**
 	 * Pass len data to handle write callback
 	 */
-	virtual Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out)
+	virtual Write_result write(Lxip_vfs_handle &handle, file_size len)
 	{
 		return Write_result::WRITE_ERR_INVALID;
 	}
@@ -257,7 +257,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
 			file_size remain = len;
 			while (remain) {
@@ -279,7 +279,6 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 					return Write_result::WRITE_ERR_IO;
 				}
 
-				out += res;
 				remain -= res;
 			}
 
@@ -288,7 +287,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 		}
 
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			file_size remain = len;
 			while (remain) {
@@ -300,7 +299,6 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 				                                   nullptr /* len */);
 				if (res < 0) {
 					if (res == Lxip::Io_result::LINUX_EAGAIN) {
-						out = 0;
 						return Read_result::READ_OK;
 					} else {
 						Genode::error("LxIP recv error ", res);
@@ -309,11 +307,9 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 				} else if (res < n) {
 					/* short read means success */
 					handle.read_callback(_content_buffer, res, Callback::COMPLETE);
-					out += res;
 					return Read_result::READ_OK;
 				}
 				remain -= res;
-				out += res;
 
 				/* notify the callback if the operation is complete */
 				Callback::Status s = remain ?
@@ -343,7 +339,7 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)
 				return Write_result::WRITE_ERR_INVALID;
@@ -372,19 +368,17 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 
 			_content_buffer[len+0] = '\n';
 			_content_buffer[len+1] = '\0';
-			out = len;
 
 			_parent.bind(true);
 			return Write_result::WRITE_OK;
 		}
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
 
 			Genode::size_t const n = Genode::strlen(_content_buffer);
-			out = n;
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 			return Read_result::READ_OK;
 		}
@@ -402,7 +396,7 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)
 				return Write_result::WRITE_ERR_INVALID;
@@ -422,20 +416,18 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 
 			_content_buffer[len+0] = '\n';
 			_content_buffer[len+1] = '\0';
-			out = len;
 
 			_parent.listen(true);
 
 			return Write_result::WRITE_OK;
 		}
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
 
 			Genode::size_t const n = Genode::strlen(_content_buffer);
-			out = n;
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 
 			return Read_result::READ_OK;
@@ -459,7 +451,7 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)
 				return Write_result::WRITE_ERR_INVALID;
@@ -506,7 +498,6 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			handle.write_callback(_content_buffer, len, Callback::COMPLETE);
 			_content_buffer[len+0] = '\n';
 			_content_buffer[len+1] = '\0';
-			out = len;
 
 			_parent.connect(true);
 
@@ -526,7 +517,7 @@ class Vfs::Lxip_local_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
@@ -535,7 +526,6 @@ class Vfs::Lxip_local_file : public Vfs::Lxip_file
 			if (res < 0) return Read_result::READ_ERR_IO;
 			Genode::size_t n = Genode::strlen(_content_buffer);
 			_content_buffer[n++] = '\n';
-			out = n;
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 
 			return Read_result::READ_OK;
@@ -554,7 +544,7 @@ class Vfs::Lxip_remote_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
@@ -563,7 +553,6 @@ class Vfs::Lxip_remote_file : public Vfs::Lxip_file
 			if (res < 0) return Read_result::READ_ERR_IO;
 			Genode::size_t n = strlen(_content_buffer);
 			_content_buffer[n++] = '\n';
-			out = n;
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 
 			return Read_result::READ_OK;
@@ -582,7 +571,7 @@ class Vfs::Lxip_accept_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (len < Lxip::MAX_FD_STR_LEN)
 				return Read_result::READ_ERR_IO;
@@ -593,16 +582,13 @@ class Vfs::Lxip_accept_file : public Vfs::Lxip_file
 				return Read_result::READ_ERR_IO;
 
 			/* check for EAGAIN */
-			if (h.socket == (void*)0x1) {
-				out = 0;
+			if (h.socket == (void*)0x1)
 				return Read_result::READ_OK;
-			}
 
 			try {
 				unsigned const id = _parent.accept(h);
 				Genode::size_t n = Genode::snprintf(
 					_content_buffer, sizeof(_content_buffer), "%s/%u", _parent.top_dir(), id);
-				out = n;
 				handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 				return Read_result::READ_OK;
 			} catch (...) { Genode::error("LxIP could not adopt new client socket"); }
@@ -623,7 +609,7 @@ class Vfs::Lxip_from_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			/* TODO: IPv6 */
 			struct sockaddr_storage addr;
@@ -632,16 +618,12 @@ class Vfs::Lxip_from_file : public Vfs::Lxip_file
 			/* peek to get the address of the currently queued data */
 			Lxip::ssize_t res = _sc.recv(_handle, _content_buffer, 0, MSG_PEEK,
 			                             0 /* familiy */, &addr, &addr_len);
-			if (res == Lxip::Io_result::LINUX_EAGAIN) {
-				out = 0;
+			if (res == Lxip::Io_result::LINUX_EAGAIN)
 				return Read_result::READ_OK;
-			}
 
 			in_addr const i_addr = ((struct sockaddr_in*)&addr)->sin_addr;
-			if (i_addr.s_addr == 0) {
-				out = 0;
+			if (i_addr.s_addr == 0)
 				return Read_result::READ_OK;
-			}
 
 			unsigned char const *a = (unsigned char*)&i_addr.s_addr;
 			unsigned char const *p = (unsigned char*)&((struct sockaddr_in*)&addr)->sin_port;
@@ -651,7 +633,7 @@ class Vfs::Lxip_from_file : public Vfs::Lxip_file
 			                       "%d.%d.%d.%d:%u\n",
 			                       a[0], a[1], a[2], a[3],
 			                       (p[0]<<8)|(p[1]<<0));
-			out = handle.read_callback(_content_buffer, len, Callback::COMPLETE);
+			handle.read_callback(_content_buffer, len, Callback::COMPLETE);
 			return Read_result::READ_OK;
 		}
 };
@@ -668,12 +650,12 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		Write_result write(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
 			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
 
 			len = min(len, sizeof(_content_buffer)-1);
-			out = handle.write_callback(_content_buffer, len, Callback::COMPLETE);
+			handle.write_callback(_content_buffer, len, Callback::COMPLETE);
 			_content_buffer[len] = '\0';
 
 			/* TODO: move string parsing to the LxIP library */
@@ -841,7 +823,7 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 		Lxip_new_socket_file(Lxip::Protocol_dir &parent, Lxip::Socketcall &sc)
 		: Vfs::File("new_socket"), _parent(parent), _sc(sc) { }
 
-		Read_result read(Lxip_vfs_handle &handle, file_size len, file_size &out) override
+		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
 			if (handle.seek() != 0)
 				return Read_result::READ_ERR_INVALID;
@@ -861,7 +843,6 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				char tmp[Lxip::MAX_FD_STR_LEN];
 				unsigned const id = _parent.adopt_socket(h, false);
 				file_size n = Genode::snprintf(tmp, len, "%s/%u", _parent.top_dir(), id);
-				out = n;
 
 				handle.read_callback(tmp, n, Callback::COMPLETE);
 				return Read_result::READ_OK;
@@ -1312,20 +1293,20 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 		 ** Lxip_file I/O service interface **
 		 *************************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Write_result write(Vfs_handle *vfs_handle, file_size len) override
 		{
 			Lxip_vfs_handle *handle =
 				static_cast<Vfs::Lxip_vfs_handle*>(vfs_handle);
 
-			return handle->file.write(*handle, len, out);
+			return handle->file.write(*handle, len);
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size len) override
 		{
 			Lxip_vfs_handle *handle =
 				static_cast<Lxip_vfs_handle*>(vfs_handle);
 
-			return handle->file.read(*handle, len, out);
+			return handle->file.read(*handle, len);
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size) override

@@ -311,8 +311,6 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 	using namespace Vfs;
 	typedef File_io_service::Write_result Result;
 
-	file_size out_count = 0;
-
 	struct Local_callback : Vfs::Write_callback
 	{
 		char const * const buffer;
@@ -351,7 +349,7 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 	/* this is a stack callback, so it must be removed later */
 	handle.write_callback(cb);
 
-	Result result = handle.fs().write(&handle, count, out_count);
+	Result result = handle.fs().write(&handle, count);
 
 	if (result == Result::WRITE_QUEUED) {
 		cb.tasked = true;
@@ -360,7 +358,6 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 		/* the libc task will run until the callback completes or errors */
 
 		/* XXX: short write? */
-		out_count = cb.accumulator;
 		result = (cb.status == Callback::ERROR) ?
 			Result::WRITE_ERR_IO : Result::WRITE_OK;
 	}
@@ -378,9 +375,8 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 	case Result::WRITE_QUEUED: break;
 	}
 
-	handle.advance_seek(out_count);
-
-	return out_count;
+	handle.advance_seek(cb.accumulator);
+	return cb.accumulator;
 }
 
 
@@ -440,14 +436,13 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 		}
 	};
 
-	file_size out_count = 0;
 	Vfs::Vfs_handle &handle = context.handle();
 	Local_callback cb((char*)buf, count);
 
 	/* this is a stack callback, so it must be removed later */
 	handle.read_callback(cb);
 
-	Result result = handle.fs().read(&handle, count, out_count);
+	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
@@ -456,12 +451,11 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 			/* the libc task will run until the callback completes or errors */
 
 			/* XXX: short read? */
-			out_count = cb.accumulator;
 			result = (cb.status == Callback::ERROR) ?
 				Result::READ_ERR_IO : Result::READ_OK;
 		}
 
-		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
+		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
 			context.reset();
 
 			Task_resume_callback resume_cb;
@@ -479,7 +473,7 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 				Libc::task_suspend();
 			}
 			/* try it again */
-			result = handle.fs().read(&handle, count, out_count);
+			result = handle.fs().read(&handle, count);
 		} else
 			break;
 	}
@@ -497,9 +491,8 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 	case Result::READ_QUEUED: break;
 	}
 
-	handle.advance_seek(out_count);
-
-	return out_count;
+	handle.advance_seek(cb.accumulator);
+	return cb.accumulator;
 }
 
 
@@ -509,8 +502,6 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 	using namespace Vfs;
 
 	typedef File_io_service::Read_result Result;
-
-	file_size out_count = 0;
 
 	struct Local_callback : Vfs::Read_callback
 	{
@@ -550,7 +541,7 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 	/* this is a stack callback, so it must be removed later */
 	handle.read_callback(cb);
 
-	Result result = handle.fs().read(&handle, count, out_count);
+	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
@@ -559,15 +550,14 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 			/* the libc task will run until the callback completes or errors */
 
 			/* XXX: short read? */
-			out_count = cb.accumulator;
 			result = (cb.status == Callback::ERROR) ?
 				Result::READ_ERR_IO : Result::READ_OK;
 		}
 
-		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
+		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
 			Libc::task_suspend();
 			/* try it again */
-			result = handle.fs().read(&handle, count, out_count);
+			result = handle.fs().read(&handle, count);
 		} else
 			break;
 	}
@@ -585,9 +575,9 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 	case Result::READ_QUEUED: break;
 	}
 
-	handle.advance_seek(out_count);
+	handle.advance_seek(cb.accumulator);
 
-	return out_count;
+	return cb.accumulator;
 }
 
 

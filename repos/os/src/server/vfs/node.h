@@ -206,13 +206,12 @@ class Vfs_server::File : public Node,
 			_packet_offset = 0;
 			_handle->seek(_packet.position());
 
-			file_size out = 0;
 			switch (_packet.operation()) {
 
 			case Packet_descriptor::READ: {
 				typedef Vfs::File_io_service::Read_result Result;
 
-				Result r = _handle->fs().read(_handle, _packet.length(), out);
+				Result r = _handle->fs().read(_handle, _packet.length());
 				if (r == Result::READ_OK) {
 					if (_packet.offset() == packet.offset()) {
 						/* no callback was issued */
@@ -230,7 +229,7 @@ class Vfs_server::File : public Node,
 
 			case Packet_descriptor::WRITE: {
 				typedef Vfs::File_io_service::Write_result Result;
-				Result r = _handle->fs().write(_handle, _packet.length(), out);
+				Result r = _handle->fs().write(_handle, _packet.length());
 				if (r == Result::WRITE_OK) {
 					if (_packet.offset() == packet.offset()) {
 						/* no callback was issued */
@@ -248,7 +247,7 @@ class Vfs_server::File : public Node,
 			}
 
 			/* I/O failure */
-			_packet.length(out);
+			_packet.length(0);
 			_packet.succeeded(false);
 			_sink.acknowledge_packet(_packet);
 			_packet = Packet_descriptor();

@@ -665,10 +665,10 @@ class Vfs::Dir_file_system : public File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *, file_size, file_size &) override {
+		Write_result write(Vfs_handle *, file_size) override {
 			return WRITE_ERR_INVALID; }
 
-		Read_result read(Vfs_handle *, file_size, file_size &) override {
+		Read_result read(Vfs_handle *, file_size) override {
 			return READ_ERR_INVALID; }
 
 		Ftruncate_result ftruncate(Vfs_handle *, file_size) override {

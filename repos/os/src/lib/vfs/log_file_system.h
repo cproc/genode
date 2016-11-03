@@ -43,10 +43,8 @@ class Vfs::Log_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *handle, file_size count, file_size &out) override
+		Write_result write(Vfs_handle *handle, file_size count) override
 		{
-			out = 0;
-
 			/* count does not include the trailing '\0' */
 			while (count > 0) {
 				char tmp[Genode::Log_session::MAX_STRING_LEN];
@@ -57,7 +55,6 @@ class Vfs::Log_file_system : public Single_file_system
 				tmp[cb_out > 0 ? cb_out : 0] = 0;
 				_log.write(tmp);
 				count -= cb_out;
-				out += cb_out;
 			}
 			return WRITE_OK;
 		}

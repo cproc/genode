@@ -37,15 +37,15 @@ struct Vfs::Zero_file_system : Single_file_system
 	 ** File I/O service interface **
 	 ********************************/
 
-	Write_result write(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+	Write_result write(Vfs_handle *vfs_handle, file_size len) override
 	{
-		out = len;
+		vfs_handle->write_callback(nullptr, len, Callback::COMPLETE);
 		return WRITE_OK;
 	}
 
-	Read_result read(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+	Read_result read(Vfs_handle *vfs_handle, file_size len) override
 	{
-		out = vfs_handle->read_callback(nullptr, len, Callback::COMPLETE);
+		vfs_handle->read_callback(nullptr, len, Callback::COMPLETE);
 		return READ_OK;
 	}
 };

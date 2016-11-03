@@ -180,9 +180,8 @@ class Vfs::Block_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size count, file_size &out_count) override
+		Write_result write(Vfs_handle *vfs_handle, file_size count) override
 		{
-			out_count = 0;
 			if (!_writeable) {
 				Genode::error("block device is not writeable");
 				return WRITE_ERR_INVALID;
@@ -263,13 +262,10 @@ class Vfs::Block_file_system : public Single_file_system
 				seek_offset += length;
 			}
 
-			out_count = written;
-
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count,
-		                 file_size &out_count) override
+		Read_result read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			if (!_readable) {
 				Genode::error("block device is not readable");
@@ -331,8 +327,6 @@ class Vfs::Block_file_system : public Single_file_system
 				count -= length;
 				seek_offset += length;
 			}
-
-			out_count = read;
 
 			return READ_OK;
 		}

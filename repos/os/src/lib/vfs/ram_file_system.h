@@ -796,11 +796,10 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		 ** File I/O interface **
 		 ************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Write_result write(Vfs_handle *vfs_handle, file_size len) override
 		{
 			using namespace Vfs_ram;
 
-			out = 0;
 			Ram_handle const *handle =
 				static_cast<Ram_handle *>(vfs_handle);
 			if (!handle)
@@ -820,15 +819,13 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			};
 
 			handle->file.write(write_fn, len, handle->seek());
-			out = len - remain;
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size len) override
 		{
 			using namespace Vfs_ram;
 
-			out = 0;
 			Ram_handle const *handle =
 				static_cast<Ram_handle *>(vfs_handle);
 			if (!handle)
@@ -855,7 +852,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			};
 
 			handle->file.read(read_fn, len, handle->seek());
-			out = len - remain;
 			return READ_OK;
 		}
 

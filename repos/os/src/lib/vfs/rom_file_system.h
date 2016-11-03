@@ -105,7 +105,7 @@ class Vfs::Rom_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			/* file read limit is the size of the dataspace */
 			file_size const max_size = _rom.size();
@@ -120,14 +120,12 @@ class Vfs::Rom_file_system : public Single_file_system
 			char const *src = _rom.local_addr<char>() + read_offset;
 
 			/* check if end of file is reached */
-			if (read_offset >= end_offset) {
-				out = 0;
+			if (read_offset >= end_offset)
 				return READ_OK;
-			}
 
 			/* pass ROM dataspace to callback */
 			count = end_offset - read_offset;
-			out = vfs_handle->read_callback(src, count, Callback::COMPLETE);
+			vfs_handle->read_callback(src, count, Callback::COMPLETE);
 			return READ_OK;
 		}
 };

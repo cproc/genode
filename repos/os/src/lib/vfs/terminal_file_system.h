@@ -119,13 +119,11 @@ class Vfs::Terminal_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *handle, file_size len, file_size &out) override
+		Write_result write(Vfs_handle *handle, file_size len) override
 		{
-			out = 0;
 			auto func = [&] (char *buf, Genode::size_t buf_len)
 			{
 				handle->write_callback(buf, buf_len, Callback::PARTIAL);
-				out += buf_len;
 			};
 
 			_terminal.write(func, len);
@@ -133,15 +131,13 @@ class Vfs::Terminal_file_system : public Single_file_system
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *handle, file_size len, file_size &out) override
+		Read_result read(Vfs_handle *handle, file_size len) override
 		{
-			out = 0;
 			len = Genode::min(_terminal.avail(), len);
 			if (len) {
 				auto func = [&] (char const *buf, Genode::size_t buf_len)
 				{
 					handle->read_callback(buf, len, Callback::PARTIAL);
-					out += buf_len;
 				};
 
 				_terminal.read(func, len);

@@ -585,12 +585,11 @@ class Vfs::Tar_file_system : public File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *, file_size, file_size &) override {
+		Write_result write(Vfs_handle *, file_size) override {
 			return WRITE_ERR_INVALID; }
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size count) override
 		{
-			out = 0;
 			Tar_vfs_handle const *handle = static_cast<Tar_vfs_handle *>(vfs_handle);
 			if (!vfs_handle)
 				return READ_ERR_INVALID;
@@ -604,7 +603,7 @@ class Vfs::Tar_file_system : public File_system
 
 			char const *data = (char *)handle->record()->data() + handle->seek();
 
-			out = handle->read_callback(data, count, Callback::COMPLETE);
+			handle->read_callback(data, count, Callback::COMPLETE);
 			return READ_OK;
 		}
 

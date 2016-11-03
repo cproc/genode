@@ -42,7 +42,7 @@ struct Vfs::File_io_service
 	 * \param len  number of bytes to write or queue
 	 * \param out  number of bytes written or queued
 	 */
-	virtual Write_result write(Vfs_handle *handle, file_size len, file_size &out) = 0;
+	virtual Write_result write(Vfs_handle *handle, file_size len) = 0;
 
 	/**
 	 * Synchronous write
@@ -66,7 +66,7 @@ struct Vfs::File_io_service
 	 * \param len  number of bytes to read or queue
 	 * \param out  number of bytes read or queued
 	 */
-	virtual Read_result read(Vfs_handle *handle, file_size len, file_size &out) = 0;
+	virtual Read_result read(Vfs_handle *handle, file_size len) = 0;
 
 	/**
 	 * Synchronous read

@@ -740,10 +740,8 @@ class Vfs::Fs_file_system : public File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle,
-		                   file_size len, file_size &out) override
+		Write_result write(Vfs_handle *vfs_handle, file_size len) override
 		{
-			out = 0;
 			if (len == 0) {
 				Genode::warning("zero length write encountered ", __FILE__,":",__LINE__);
 				return WRITE_OK;
@@ -753,14 +751,12 @@ class Vfs::Fs_file_system : public File_system
 			if (!handle)
 				return WRITE_ERR_INVALID;
 
-			out = _queue_io_packet(*handle, len, Opcode::WRITE);
-			return out ? WRITE_QUEUED : WRITE_ERR_WOULD_BLOCK;
+			return _queue_io_packet(*handle, len, Opcode::WRITE)
+				? WRITE_QUEUED : WRITE_ERR_WOULD_BLOCK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle,
-		                 file_size len, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size len) override
 		{
-			out = 0;
 			if (len == 0) {
 				Genode::warning("zero length read encountered ", __FILE__,":",__LINE__);
 				return READ_OK;
@@ -770,8 +766,8 @@ class Vfs::Fs_file_system : public File_system
 			if (!handle)
 				return READ_ERR_INVALID;
 
-			out = _queue_io_packet(*handle, len, Opcode::READ);
-			return out ? READ_QUEUED : READ_ERR_WOULD_BLOCK;
+			return _queue_io_packet(*handle, len, Opcode::READ)
+				? READ_QUEUED : READ_ERR_WOULD_BLOCK;
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
