@@ -440,6 +440,13 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 	/* this is a stack callback, so it must be removed later */
 	handle.read_callback(cb);
 
+	/* XXX
+	 *
+	 * Temporary workaround to consume pending notifications.
+	 * If the USB VFS plugin has still data left after the read, it sends a new notification.
+	 */
+	context.reset();
+
 	Result result = handle.fs().read(&handle, count, out_count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
@@ -453,8 +460,9 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 			result = (cb.status == Callback::ERROR) ?
 				Result::READ_ERR_IO : Result::READ_OK;
 		}
-
+Genode::log("blocking: ", blocking, ", result: ", (result == Result::READ_OK), ", out_count: ", out_count);
 		if (blocking && (result == Result::READ_OK) && (out_count == 0)) {
+Genode::log("calling context.reset()");
 			context.reset();
 
 			Task_resume_callback resume_cb;
@@ -464,13 +472,23 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 			timeval const &timeout = context.timeout();
 			if (timeout.tv_sec || timeout.tv_usec) {
 				Libc::Timeout task_timeout(timeout.tv_sec*1000+timeout.tv_usec/1000);
+				Genode::log("calling Libc::task_suspend() with timeout");
 				Libc::task_suspend();
 				if (task_timeout.triggered()) {
 					return Errno(EWOULDBLOCK);
 				}
 			} else {
+				Genode::log("calling Libc::task_suspend() without timeout");
 				Libc::task_suspend();
 			}
+
+			/* XXX
+			 *
+			 * Temporary workaround to consume pending notifications.
+			 * If the USB VFS plugin has still data left after the read, it sends a new notification.
+			 */
+			context.reset();
+
 			/* try it again */
 			result = handle.fs().read(&handle, count, out_count);
 		} else
@@ -491,6 +509,8 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 	}
 
 	handle.advance_seek(out_count);
+
+Genode::log("Vfs_plugin::_read() finished, returning ", out_count);
 
 	return out_count;
 }
@@ -587,6 +607,7 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+Genode::log("*** fd->status: ", fd->status, ", O_NONBLOCK: ", (fd->status & O_NONBLOCK));
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);	
 	return _read(*context, buf, count, !(fd->status&O_NONBLOCK));
 }
@@ -1009,6 +1030,7 @@ int Libc::Vfs_plugin::_select(int nfds,
                              fd_set *read_out,  fd_set const &read_in,
                              fd_set *write_out, fd_set const &write_in)
 {
+Genode::log("Vfs_plugin::_select()");
 	int nready = 0;
 	for (int libc_fd = 0; libc_fd < nfds; ++libc_fd) {
 		Libc::File_descriptor *fdo =
@@ -1020,7 +1042,7 @@ int Libc::Vfs_plugin::_select(int nfds,
 		/* XXX: eventually they all come from this plugin */
 
 		Context *context = vfs_context(fdo);
-
+Genode::log("context->notifications(): ", context->notifications());
 		if (read_out && FD_ISSET(libc_fd, &read_in) && context->notifications()) {
 			//context->reset();
 			FD_SET(libc_fd, read_out);
@@ -1033,7 +1055,7 @@ int Libc::Vfs_plugin::_select(int nfds,
 			++nready;
 		}
 	}
-
+Genode::log("Vfs_plugin::_select() finished, returning ", nready);
 	return nready;
 }
 
@@ -1041,6 +1063,7 @@ int Libc::Vfs_plugin::_select(int nfds,
 int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
                              fd_set *exceptfds, struct timeval *timeout)
 {
+Genode::log("Vfs_plugin::select(): ", __builtin_return_address(0));
 	fd_set read_in;
 	fd_set write_in;
 	FD_ZERO(&read_in);
@@ -1087,20 +1110,30 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 	int nready = _select(nfds, readfds, read_in, writefds, write_in);
+
 	if (nready == 0) {
-		if (timeout == NULL) {
+		/* XXX
+		 *
+		 * Temporary workaround for libusb, which calls select() without timeout, but when
+		 * called from selscan(), the timeout argument is (0, 0).
+		 */
+		if (/*timeout == NULL*/true) {
 			do {
+				Genode::log("Vfs_plugin::select(): calling Libc::task_suspend()");
 				Libc::task_suspend();
+				Genode::log("Vfs_plugin::select(): Libc::task_suspend() returned");
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready);
 		} else {
 			Libc::Timeout task_timeout(timeout->tv_sec*1000+timeout->tv_usec/1000);
 			do {
+				Genode::log("Vfs_plugin::select(): calling Libc::task_suspend() [2]");
 				Libc::task_suspend();
+				Genode::log("Vfs_plugin::select(): Libc::task_suspend() returned [2]");
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready && !task_timeout.triggered());
 		}
 	}
-
+Genode::log("Vfs_plugin::select() finished, returning ", nready);
 	return nready;
 }
