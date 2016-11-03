@@ -17,7 +17,7 @@
 #include <vfs/file_system.h>
 #include <vfs/vfs_handle.h>
 #include <util/avl_string.h>
-#include <base/log.h>
+#include <base/debug.h>
 
 
 namespace Vfs { class Pipe_file_system; };
@@ -26,8 +26,6 @@ namespace Vfs { class Pipe_file_system; };
 class Vfs::Pipe_file_system final : public Vfs::File_system
 {
 	private:
-
-		Genode::Lock _lock;
 
 		enum {
 			DEFAULT_BUFFER_SIZE = 4096,
@@ -42,12 +40,97 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 		typedef Genode::Avl_string<MAX_NAME_LEN> Pipe_base;
 		struct Pipe : Pipe_base
 		{
+			Genode::Allocator &alloc; /* allocator of this Pipe */
+
+			Genode::size_t const buf_size;
+
+			Genode::size_t wpos = 0;
+			Genode::size_t rpos = 0;
+
+			file_size pending_write = 0;
+
+			char * const buf;
+
 			Pipe_handles write_handles;
 			Pipe_handles  read_handles;
-			file_size queued_write;
-			file_size queued_read;
 
-			Pipe(Pipe_name const &name) : Pipe_base(name.string()) { }
+			Pipe(Pipe_name const &name, Genode::Allocator &alloc, Genode::size_t buf_size)
+			:
+				Pipe_base(name.string()),
+				alloc(alloc), buf_size(buf_size), buf((char*)alloc.alloc(buf_size))
+			{ }
+
+			~Pipe() { alloc.free(buf, buf_size); }
+
+			Genode::size_t read_avail() const
+			{
+				if (wpos > rpos) return wpos - rpos;
+				else             return (wpos - rpos + buf_size) % buf_size;
+			}
+
+			Genode::size_t write_avail() const
+			{
+				if      (wpos > rpos) return ((rpos - wpos + buf_size) % buf_size) - 2;
+				else if (wpos < rpos) return rpos - wpos;
+				else                  return buf_size - 2;
+			}
+
+			Genode::size_t  write(Vfs_handle &handle, Genode::size_t len)
+			{
+				Genode::size_t const avail = write_avail();
+				if (avail == 0) return 0;
+
+				Genode::size_t const limit_len = min(len, avail);
+				PDBG("write ",limit_len," of ",len," bytes");
+				Genode::size_t const total = wpos + len;
+				Genode::size_t first, rest;
+
+				if (total > buf_size) {
+					first = buf_size - wpos;
+					rest  = total % buf_size;
+				} else {
+					first = limit_len;
+					rest  = 0;
+				}
+
+				handle.write_callback(&buf[wpos], first, Callback::PARTIAL);
+				wpos = (wpos + first) % buf_size;
+
+				if (rest) {
+					handle.read_callback(&buf[wpos], rest, Callback::PARTIAL);
+					wpos = (wpos + rest) % buf_size;
+				}
+				return limit_len;
+			}
+
+			Genode::size_t read(Vfs_handle &handle, Genode::size_t len)
+			{
+				Genode::size_t const avail = read_avail();
+				if (avail == 0) return 0;
+
+				Genode::size_t const limit_len = min(len, avail);
+				PDBG("read ",limit_len," of ",len," bytes");
+				Genode::size_t const total = rpos + len;
+				Genode::size_t first, rest;
+		
+				if (total > buf_size) {
+					first = buf_size - rpos;
+					rest  = total % buf_size;
+				} else {
+					first = limit_len;
+					rest  = 0;
+				}
+		
+				handle.read_callback(&buf[rpos], first, Callback::PARTIAL);
+				rpos = (rpos + first) % buf_size;
+		
+				if (rest) {
+					handle.read_callback(&buf[rpos], rest, Callback::PARTIAL);
+					rpos = (rpos + rest) % buf_size;
+				}
+
+				return limit_len;
+			}
 		};
 
 		struct Pipe_handle final : Vfs_handle, Pipe_handles::Element
@@ -58,13 +141,10 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			            Genode::Allocator &alloc, int flags)
 			: Vfs_handle(fs, fs, alloc, flags), pipe(pipe)
 			{
-				if (flags & OPEN_MODE_WRONLY) {
+				if (flags & OPEN_MODE_WRONLY)
 					pipe.write_handles.insert(this);
-					pipe.queued_write = 0;
-				} else {
+				else
 					pipe.read_handles.insert(this);
-					pipe.queued_read = 0;
-				}
 			}
 
 			~Pipe_handle() { }
@@ -85,17 +165,13 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		file_size _pipe_count = 0;
 
+		Genode::size_t const _buf_size;
+
 		Pipe *_lookup(char const *name) const
 		{
 			return static_cast<Pipe *>(_pipes.first() ? 
 				_pipes.first()->find_by_name(name) : nullptr);
 		}
-
-		Genode::Allocator &_alloc;
-
-		Genode::size_t const _buf_size;
-
-		char * const _buf;
 
 		Pipe_name _alloc_name()
 		{
@@ -108,7 +184,7 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 			Genode::size_t const n =
 				Genode::snprintf(buf, sizeof(buf), "%x", ++_pipe_counter);
-			return Pipe_name(buf, n);
+			return Pipe_name(Genode::Cstring(buf, n));
 		};
 
 	public:
@@ -116,13 +192,8 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 		Pipe_file_system(Genode::Allocator &alloc,
 		                 Genode::Xml_node node)
 		:
-			_alloc(alloc),
-			_buf_size(node.attribute_value("buffer", Genode::size_t(DEFAULT_BUFFER_SIZE))),
-			_buf((char*)_alloc.alloc(_buf_size))
+			_buf_size(node.attribute_value("buffer", Genode::size_t(DEFAULT_BUFFER_SIZE)))
 		{ }
-
-		~Pipe_file_system() {
-			_alloc.free(_buf, _buf_size); }
 
 
 		/***********************
@@ -132,8 +203,6 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 		Open_result open(char const *path, unsigned mode,
 		                 Vfs_handle **handle, Allocator &alloc) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			if (*path == '/')
 				++path;
 			/* enforce a flat file system */
@@ -155,11 +224,12 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 					return OPEN_ERR_NO_SPACE;
 					/* namespace exhausted */
 
-				Pipe *pipe;
 				New_pipe_handle *meta_handle = new (alloc)
 					New_pipe_handle(pipe_number, *this, alloc, mode);
 
-				try { pipe = new (_alloc) Pipe(pipe_number); }
+				/* the pipe and buffer is allocated from the caller alloc */
+				Pipe *pipe;
+				try { pipe = new (alloc) Pipe(pipe_number, alloc, _buf_size); }
 				catch (Allocator::Out_of_memory) {
 					destroy(alloc, meta_handle);
 					return OPEN_ERR_NO_SPACE;
@@ -195,11 +265,12 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		void close(Vfs_handle *vfs_handle) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			if (Pipe_handle *pipe_handle =
 			    dynamic_cast<Pipe_handle *>(vfs_handle)) {
 				Pipe &pipe = pipe_handle->pipe;
+
+				if (pipe_handle == pipe.write_handles.first())
+					pipe.pending_write = 0;
 
 				pipe.write_handles.remove(pipe_handle);
 				pipe.read_handles.remove(pipe_handle);
@@ -214,8 +285,6 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		Unlink_result unlink(char const *path) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			Pipe *pipe = _lookup(path);
 			if (!pipe)
 				return UNLINK_ERR_NO_ENTRY;
@@ -224,7 +293,7 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			if (pipe->write_handles.first() || pipe->read_handles.first())
 				return UNLINK_ERR_NO_PERM;
 
-			destroy(_alloc, pipe);
+			destroy(pipe->alloc, pipe);
 			--_pipe_count;
 			return UNLINK_OK;
 		}
@@ -236,10 +305,9 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		Stat_result stat(char const *path, Stat &out) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			out = Stat();
 			if (Pipe const *pipe = _lookup(path)) {
+				out.size   = pipe->buf_size;
 				out.inode  = Genode::addr_t(pipe);
 				out.device = Genode::addr_t(this);
 				return STAT_OK;
@@ -265,8 +333,6 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		file_size num_dirent(const char*) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			return 0;
 			//return _pipe_count + 1; /* plus 'new_pipe' */
 		}
@@ -276,12 +342,13 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		char const *leaf_path(char const *path) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			if (strcmp(path, "new_pipe") == 0)
 				return path;
 			return _lookup(path) ? path : nullptr;
 		}
+
+		bool subscribe(Vfs_handle *vfs_handle) override {
+			return (dynamic_cast<Pipe_handle *>(vfs_handle)); }
 
 		/**********************
 		 ** File I/0 service **
@@ -289,8 +356,6 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 		Write_result write(Vfs_handle *vfs_handle, file_size len, file_size &out) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			Pipe_handle *write_handle =
 				dynamic_cast<Pipe_handle *>(vfs_handle);
 			if (!write_handle) {
@@ -298,57 +363,71 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			}
 
 			Pipe &pipe = write_handle->pipe;
+			file_size n = pipe.write(*vfs_handle, len);
 
-			pipe.queued_write = len;
+			file_size remain = len - n;
+			if (remain == 0) {
+				/* simple, we are done */
+				out = n;
+				write_handle->write_callback(nullptr, 0, Callback::COMPLETE);
+				PDBG("wrote everything in one pass, notifying readers");
+				if (Pipe_handle *p = pipe.read_handles.first())
+					p->notify_callback();
+				return WRITE_OK;
 
-			while (pipe.read_handles.first()) {
+			} else {
+				/* not so simple, potentially trigger a callback cascade */
+				pipe.pending_write = remain;
+				PDBG(remain, " bytes not written, notify reader");
+				if (Pipe_handle *p = pipe.read_handles.first())
+					p->notify_callback();
 
-				file_size n = min(min(pipe.queued_write, pipe.queued_read),
-				                  _buf_size);
-				if (n == 0)
-					break;
-
-				n = write_handle->write_callback(
-					_buf, n, (n == pipe.queued_write) ?
-						Callback::COMPLETE : Callback::PARTIAL);
-				pipe.queued_write -= n;
-
-				pipe.read_handles.first()->read_callback(
-					_buf, n, Callback::COMPLETE);
-				/* short read */
-				pipe.queued_read = 0;
+				if (pipe.pending_write) {
+					PDBG(remain, " bytes not written after notify reader");
+					/* pending bytes, so return queued */
+					out = n + (remain - pipe.pending_write);
+					return WRITE_QUEUED;
+				} else {
+					PDBG("everything written after notify reader");
+					/* the write was completed by read callbacks triggered by notify */
+					out = len;
+					return WRITE_OK;
+				}
 			}
-
-			out = len - pipe.queued_write;	
-			return pipe.queued_write ? WRITE_QUEUED : WRITE_OK;
 		}
 
 		Read_result read(Vfs_handle *vfs_handle, file_size len, file_size &out) override
 		{
-			Genode::Lock::Guard guard(_lock);
-
 			if (Pipe_handle *read_handle =
-				dynamic_cast<Pipe_handle *>(vfs_handle)) {
+				dynamic_cast<Pipe_handle *>(vfs_handle))
+			{
 				Pipe &pipe = read_handle->pipe;
 
-				if (pipe.write_handles.first() && pipe.queued_write) {
+				file_size remain = len;
+				while(remain) {
+					file_size n = pipe.read(*read_handle, len);
+					remain -= n;
 
-					file_size n = min(min(len, pipe.queued_write), _buf_size);
-
-					n = pipe.write_handles.first()->write_callback(
-						_buf, n, (n == pipe.queued_write) ?
-							Callback::COMPLETE : Callback::PARTIAL);
-					pipe.queued_write -= n;
-
-					out = read_handle->read_callback(_buf, n, Callback::COMPLETE);
-					return READ_OK;
-				} else {
-					pipe.queued_read = len;
-					out = 0;
-					return READ_QUEUED;
+					if (pipe.pending_write) {
+						Pipe_handle &write_handle = *pipe.write_handles.first();
+						pipe.pending_write -= pipe.write(write_handle, pipe.pending_write);
+						if (pipe.pending_write == 0)
+							write_handle.write_callback(nullptr, 0, Callback::COMPLETE);
+					} else
+						break;
 				}
+
+				out = len - remain;
+				read_handle->read_callback(nullptr, 0, Callback::COMPLETE);
+				if (out)
+					if (Pipe_handle *p = pipe.write_handles.first())
+						p->notify_callback();
+
+				return READ_OK;
+
 			} else if (New_pipe_handle *meta_handle =
-			           dynamic_cast<New_pipe_handle *>(vfs_handle)) {
+			           dynamic_cast<New_pipe_handle *>(vfs_handle))
+			{
 				out = meta_handle->name.length()-1;
 				meta_handle->read_callback(
 					meta_handle->name.string(), out, Callback::COMPLETE);
