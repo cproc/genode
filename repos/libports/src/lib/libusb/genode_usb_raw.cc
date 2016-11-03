@@ -17,6 +17,7 @@
 #include <usb/usb.h>
 #include <usb_session/connection.h>
 
+#include <fcntl.h>
 #include <time.h>
 
 #include "libusbi.h"
@@ -42,30 +43,76 @@ struct Completion : Usb::Completion
 struct Usb_device
 {
 	Genode::Allocator_avl   alloc { Genode::env()->heap() };
+
+#if 0
 	Genode::Signal_context  state_changed_signal_context;
 	Genode::Signal_receiver state_changed_signal_receiver;
 	Usb::Connection         usb_connection { &alloc,
 	                                         "usb_device",
-	                                         512*1024,
+	                                         512*1024/*,
 	                                         state_changed_signal_receiver.manage(
-	                                         	&state_changed_signal_context) };
+	                                         	&state_changed_signal_context)*/ };
 
 	Genode::Signal_dispatcher<Usb_device> ack_avail_signal_dispatcher
 	                                      { signal_receiver(), *this,
 	                                        &Usb_device::ack_avail };
-
+#endif
 	Usb::Device_descriptor  device_descriptor;
 	Usb::Config_descriptor  config_descriptor;
 	char                   *raw_config_descriptor = nullptr;
 
 	Usb_device()
 	{
-		while (!usb_connection.plugged()) {
+		int state_fd = open("/usb/state", O_RDONLY);
+		//Genode::log("state_fd: ", state_fd);
+
+		char state[10];
+		ssize_t state_bytes_read = read(state_fd, state, sizeof(state));
+
+		//Genode::log("state_bytes_read: ", state_bytes_read);
+		//Genode::log("state: ", Genode::Cstring(state));
+
+		while (Genode::strcmp(state, "plugged") != 0) {
+
 			Genode::log("libusb: waiting until device is plugged...");
-			state_changed_signal_receiver.wait_for_signal();
-			Genode::log("libusb: device is plugged");
+
+			fd_set readfds;
+			FD_ZERO(&readfds);
+			FD_SET(state_fd, &readfds);
+
+			//Genode::log("calling select()");
+
+			select(state_fd + 1, &readfds, nullptr, nullptr, nullptr);
+
+			//Genode::log("select() returned");
+
+			state_bytes_read = read(state_fd, state, sizeof(state));
+
+			//Genode::log("state_bytes_read: ", state_bytes_read);
+			//Genode::log("state: ", Genode::Cstring(state));
 		}
 
+		Genode::log("libusb: device is plugged");
+
+		/* read device descriptor */
+
+		int ep0_fd = open("/usb/ep0", O_RDONLY);
+
+		struct libusb_device_descriptor device_descriptor;
+
+		struct libusb_control_setup setup;
+		libusb_fill_control_setup((unsigned char*)&setup,
+		                          LIBUSB_ENDPOINT_IN,
+		                          LIBUSB_REQUEST_GET_DESCRIPTOR,
+		                          (LIBUSB_DT_DEVICE << 8) | 0,
+		                          0,
+		                          sizeof(device_descriptor));
+
+		write(ep0_fd, &setup, sizeof(setup));
+
+		read(ep0_fd, &device_descriptor, sizeof(device_descriptor));
+
+#if 0
 		usb_connection.config_descriptor(&device_descriptor, &config_descriptor);
 
 		raw_config_descriptor = (char*)malloc(config_descriptor.total_length);
@@ -96,6 +143,7 @@ struct Usb_device
 		               config_descriptor.total_length);
 
 		usb_connection.tx_channel()->sigh_ack_avail(ack_avail_signal_dispatcher);
+#endif
 	}
 
 	~Usb_device()
@@ -103,6 +151,7 @@ struct Usb_device
 		free(raw_config_descriptor);
 	}
 
+#if 0
 	void ack_avail(unsigned)
 	{
 		while (usb_connection.source()->ack_avail()) {
@@ -170,9 +219,10 @@ struct Usb_device
 			usbi_signal_transfer_completion(itransfer);
 		}
 	}
+#endif
 };
 
-
+#if 0
 static void *signal_handler_thread_entry(void *)
 {
 	for (;;) {
@@ -185,17 +235,18 @@ static void *signal_handler_thread_entry(void *)
 		dispatcher->dispatch(signal.num());
 	}
 }
-
+#endif
 
 static int genode_init(struct libusb_context* ctx)
 {
+#if 0
 	pthread_t signal_handler_thread;
 	if (pthread_create(&signal_handler_thread, nullptr,
 	                   signal_handler_thread_entry, nullptr) < 0) {
 	    Genode::error("Could not create signal handler thread");
 		return LIBUSB_ERROR_OTHER;
 	}
-
+#endif
 	return LIBUSB_SUCCESS;
 }
 
@@ -234,24 +285,6 @@ int genode_get_device_list(struct libusb_context *ctx,
 		Usb_device *usb_device = new (Genode::env()->heap()) Usb_device;
 		*(Usb_device**)dev->os_priv = usb_device;
 
-		switch (usb_device->device_descriptor.speed) {
-			case Usb::Device::SPEED_LOW:
-				dev->speed = LIBUSB_SPEED_LOW;
-				break;
-			case Usb::Device::SPEED_FULL:
-				dev->speed = LIBUSB_SPEED_FULL;
-				break;
-			case Usb::Device::SPEED_HIGH:
-				dev->speed = LIBUSB_SPEED_HIGH;
-				break;
-			case Usb::Device::SPEED_SUPER:
-				dev->speed = LIBUSB_SPEED_SUPER;
-				break;
-			default:
-				Genode::warning(__PRETTY_FUNCTION__, ": unknown device speed");
-				dev->speed = LIBUSB_SPEED_UNKNOWN;
-		}
-
 		int result = usbi_sanitize_device(dev);
 		if (result < 0) {
 			libusb_unref_device(dev);
@@ -288,6 +321,7 @@ static int genode_get_device_descriptor(struct libusb_device *device,
                                         unsigned char* buffer,
                                         int *host_endian)
 {
+Genode::log(__PRETTY_FUNCTION__);
 	Usb_device *usb_device = *(Usb_device**)device->os_priv;
 
 	Genode::memcpy(buffer, &usb_device->device_descriptor,
@@ -305,6 +339,8 @@ static int genode_get_config_descriptor(struct libusb_device *device,
                                         size_t len,
                                         int *host_endian)
 {
+Genode::log(__PRETTY_FUNCTION__);
+
 	if (config_index != 0) {
 		Genode::error(__PRETTY_FUNCTION__,
 		              ": only the first configuration is supported");
@@ -345,6 +381,8 @@ static int genode_set_configuration(struct libusb_device_handle *dev_handle,
 static int genode_claim_interface(struct libusb_device_handle *dev_handle,
                                   int interface_number)
 {
+Genode::log(__PRETTY_FUNCTION__);
+#if 0
 	Usb_device *usb_device = *(Usb_device**)dev_handle->dev->os_priv;
 
 	try {
@@ -359,7 +397,7 @@ static int genode_claim_interface(struct libusb_device_handle *dev_handle,
 		Genode::error(__PRETTY_FUNCTION__, ": unknown exception");
 		return LIBUSB_ERROR_OTHER;
 	}
-
+#endif
 	return LIBUSB_SUCCESS;
 }
 
@@ -367,6 +405,8 @@ static int genode_claim_interface(struct libusb_device_handle *dev_handle,
 static int genode_release_interface(struct libusb_device_handle *dev_handle,
                                     int interface_number)
 {
+Genode::log(__PRETTY_FUNCTION__);
+#if 0
 	Usb_device *usb_device = *(Usb_device**)dev_handle->dev->os_priv;
 
 	try {
@@ -378,7 +418,7 @@ static int genode_release_interface(struct libusb_device_handle *dev_handle,
 		Genode::error(__PRETTY_FUNCTION__, ": unknown exception");
 		return LIBUSB_ERROR_OTHER;
 	}
-
+#endif
 	return LIBUSB_SUCCESS;
 }
 
@@ -397,6 +437,8 @@ static int genode_set_interface_altsetting(struct libusb_device_handle* dev_hand
 
 static int genode_submit_transfer(struct usbi_transfer * itransfer)
 {
+Genode::log(__PRETTY_FUNCTION__);
+#if 0
 	struct libusb_transfer *transfer =
 		USBI_TRANSFER_TO_LIBUSB_TRANSFER(itransfer);
 
@@ -506,6 +548,7 @@ static int genode_submit_transfer(struct usbi_transfer * itransfer)
 				"unknown endpoint type %d", transfer->type);
 			return LIBUSB_ERROR_INVALID_PARAM;
 	}
+#endif
 }
 
 
