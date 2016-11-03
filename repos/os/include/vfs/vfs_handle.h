@@ -194,8 +194,11 @@ class Vfs::Vfs_handle
 		 */
 		void notify_callback()
 		{
-			if (_n_cb)
+			Genode::log("Vfs_handle::notify_callback()");
+			if (_n_cb) {
+				Genode::log("Vfs_handle::notify_callback(): calling _n_cb->notify()");
 				_n_cb->notify();
+			}
 		}
 };
 
