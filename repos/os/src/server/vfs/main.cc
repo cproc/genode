@@ -264,6 +264,7 @@ class Vfs_server::Session_component :
 			size_t new_quota =
 				Genode::Arg_string::find_arg(args, "ram_quota").ulong_value(0);
 			Genode::env()->ram_session()->transfer_quota(_ram.cap(), new_quota);
+			PWRN("ram quota upgraded to %zd for %s", _ram.quota(), _label.string());
 		}
 
 
@@ -569,14 +570,15 @@ class Vfs_server::Root :
 				tx_buf_size;
 
 			if (session_size > ram_quota) {
-				Genode::error("insufficient 'ram_quota' from '",label,"', got ",ram_quota,", need ",session_size);
+				PERR("insufficient 'ram_quota' from %s, got %zd, need %zd",
+				     label.string(), ram_quota, session_size);
 				throw Root::Quota_exceeded();
 			}
 			ram_quota -= session_size;
 
 			/* check if the session root exists */
 			if (!((session_root == "/") || _vfs.directory(session_root.base()))) {
-				Genode::error("session root '",session_root,"' not found for '",label,"'");
+				PERR("session root '%s' not found for '%s'", session_root.base(), label.string());
 				throw Root::Unavailable();
 			}
 
@@ -589,7 +591,7 @@ class Vfs_server::Root :
 				                  session_root.base(),
 				                  writeable);
 
-			Genode::log("session opened for '",label,"' at '",session_root,"'");
+			PLOG("session opened for '%s' at '%s'", label.string(), session_root.base());
 			return session;
 		}
 

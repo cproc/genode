@@ -166,8 +166,8 @@ class Lwip::Nic_netif
 
 			} else { /* get addressing from config */
 				typedef Genode::String<IPADDR_STRLEN_MAX> Str;
-
 				Str ip_str = config.attribute_value("ip_addr", Str());
+				Genode::log("got IP address ",ip_str);
 				ip_addr_t ipaddr;
 				if (!ipaddr_aton(ip_str.string(), &ipaddr)) {
 					Genode::error("LwIP configured with invalid IP address '",ip_str,"'");
