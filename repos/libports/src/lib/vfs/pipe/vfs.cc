@@ -11,13 +11,19 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+/*
+ * XXX: In this plugin the assumption is made that reads return
+ * zero rather than block, but writes will block by returning
+ * WRITE_QUEUED and complete when reads pull data by issueing
+ * write callbacks. The assumption being that this doesn't cause
+ * things to crash and burn.
+ */
 
 /* Genode includes */
 #include <vfs/file_system_factory.h>
 #include <vfs/file_system.h>
 #include <vfs/vfs_handle.h>
 #include <util/avl_string.h>
-#include <base/debug.h>
 
 
 namespace Vfs { class Pipe_file_system; };
@@ -62,12 +68,6 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 			~Pipe() { alloc.free(buf, buf_size); }
 
-			Genode::size_t read_avail() const
-			{
-				if (wpos > rpos) return wpos - rpos;
-				else             return (wpos - rpos + buf_size) % buf_size;
-			}
-
 			Genode::size_t write_avail() const
 			{
 				if      (wpos > rpos) return ((rpos - wpos + buf_size) % buf_size) - 2;
@@ -75,61 +75,42 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 				else                  return buf_size - 2;
 			}
 
-			Genode::size_t  write(Vfs_handle &handle, Genode::size_t len)
+			Genode::size_t read_avail() const
 			{
-				Genode::size_t const avail = write_avail();
-				if (avail == 0) return 0;
-
-				Genode::size_t const limit_len = min(len, avail);
-				PDBG("write ",limit_len," of ",len," bytes");
-				Genode::size_t const total = wpos + len;
-				Genode::size_t first, rest;
-
-				if (total > buf_size) {
-					first = buf_size - wpos;
-					rest  = total % buf_size;
-				} else {
-					first = limit_len;
-					rest  = 0;
-				}
-
-				handle.write_callback(&buf[wpos], first, Callback::PARTIAL);
-				wpos = (wpos + first) % buf_size;
-
-				if (rest) {
-					handle.read_callback(&buf[wpos], rest, Callback::PARTIAL);
-					wpos = (wpos + rest) % buf_size;
-				}
-				return limit_len;
+				if (wpos > rpos) return wpos - rpos;
+				else             return (wpos - rpos + buf_size) % buf_size;
 			}
 
-			Genode::size_t read(Vfs_handle &handle, Genode::size_t len)
+			Genode::size_t  write(Vfs_handle &handle, file_size len)
 			{
-				Genode::size_t const avail = read_avail();
-				if (avail == 0) return 0;
+				len = min(write_avail(), len);
+				if (len == 0)
+					return 0;
 
-				Genode::size_t const limit_len = min(len, avail);
-				PDBG("read ",limit_len," of ",len," bytes");
-				Genode::size_t const total = rpos + len;
-				Genode::size_t first, rest;
-		
-				if (total > buf_size) {
-					first = buf_size - rpos;
-					rest  = total % buf_size;
-				} else {
-					first = limit_len;
-					rest  = 0;
-				}
-		
-				handle.read_callback(&buf[rpos], first, Callback::PARTIAL);
-				rpos = (rpos + first) % buf_size;
-		
-				if (rest) {
-					handle.read_callback(&buf[rpos], rest, Callback::PARTIAL);
-					rpos = (rpos + rest) % buf_size;
-				}
+				if ((wpos + len) > buf_size)
+					len = buf_size - wpos;
 
-				return limit_len;
+				char *p = &buf[wpos];
+				wpos = (wpos + len) % buf_size;
+				/* modify wpos first in case callback triggers read */
+				handle.write_callback(p, len, Callback::PARTIAL);
+				return len;
+			}
+
+			Genode::size_t read(Vfs_handle &handle, file_size len)
+			{
+				len = min(read_avail(), len);
+				if (len == 0)
+					return 0;
+
+				if ((rpos + len) > buf_size)
+					len = buf_size - rpos;
+
+				char *p = &buf[rpos];
+				rpos = (rpos + len) % buf_size;
+				/* modify rpos first in case callback triggers write */
+				handle.read_callback(p, len, Callback::PARTIAL);
+				return len;
 			}
 		};
 
@@ -354,7 +335,7 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 		 ** File I/0 service **
 		 **********************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Write_result write(Vfs_handle *vfs_handle, file_size len) override
 		{
 			Pipe_handle *write_handle =
 				dynamic_cast<Pipe_handle *>(vfs_handle);
@@ -368,9 +349,7 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			file_size remain = len - n;
 			if (remain == 0) {
 				/* simple, we are done */
-				out = n;
 				write_handle->write_callback(nullptr, 0, Callback::COMPLETE);
-				PDBG("wrote everything in one pass, notifying readers");
 				if (Pipe_handle *p = pipe.read_handles.first())
 					p->notify_callback();
 				return WRITE_OK;
@@ -378,25 +357,20 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			} else {
 				/* not so simple, potentially trigger a callback cascade */
 				pipe.pending_write = remain;
-				PDBG(remain, " bytes not written, notify reader");
 				if (Pipe_handle *p = pipe.read_handles.first())
 					p->notify_callback();
 
 				if (pipe.pending_write) {
-					PDBG(remain, " bytes not written after notify reader");
 					/* pending bytes, so return queued */
-					out = n + (remain - pipe.pending_write);
 					return WRITE_QUEUED;
 				} else {
-					PDBG("everything written after notify reader");
 					/* the write was completed by read callbacks triggered by notify */
-					out = len;
 					return WRITE_OK;
 				}
 			}
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size len, file_size &out) override
+		Read_result read(Vfs_handle *vfs_handle, file_size len) override
 		{
 			if (Pipe_handle *read_handle =
 				dynamic_cast<Pipe_handle *>(vfs_handle))
@@ -406,20 +380,25 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 				file_size remain = len;
 				while(remain) {
 					file_size n = pipe.read(*read_handle, len);
+					if (n == 0) {
+						break;
+					}
 					remain -= n;
 
 					if (pipe.pending_write) {
 						Pipe_handle &write_handle = *pipe.write_handles.first();
-						pipe.pending_write -= pipe.write(write_handle, pipe.pending_write);
-						if (pipe.pending_write == 0)
+						n = pipe.write(write_handle, pipe.pending_write);
+						pipe.pending_write -= n;
+						if (pipe.pending_write == 0) {
 							write_handle.write_callback(nullptr, 0, Callback::COMPLETE);
-					} else
+						}
+					} else {
 						break;
+					}
 				}
 
-				out = len - remain;
 				read_handle->read_callback(nullptr, 0, Callback::COMPLETE);
-				if (out)
+				if (len - remain) /* was anything read? */
 					if (Pipe_handle *p = pipe.write_handles.first())
 						p->notify_callback();
 
@@ -428,10 +407,10 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 			} else if (New_pipe_handle *meta_handle =
 			           dynamic_cast<New_pipe_handle *>(vfs_handle))
 			{
-				out = meta_handle->name.length()-1;
-				meta_handle->read_callback(
-					meta_handle->name.string(), out, Callback::COMPLETE);
-				/* XXX: a trailing newline would be nice */
+				meta_handle->read_callback(meta_handle->name.string(),
+				                           meta_handle->name.length()-1,
+				                           Callback::PARTIAL);
+				meta_handle->read_callback("\n", 1, Callback::COMPLETE);
 				return READ_OK;
 			}
 			return READ_ERR_INVALID;
