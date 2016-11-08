@@ -96,6 +96,12 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		/* executed in the context of the main thread */
 		static void _resumed_callback();
 
+		/**
+		 * Signal handler to switch the signal handling libc task to
+		 * the application task, from another thread
+		 */
+		Genode::Signal_handler<Task> _resume_handler {
+			_env.ep(), *this, &Task::resume };
 
 	public:
 
@@ -146,11 +152,8 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 					_longjmp(_app_task, 1);
 				}
 			} else {
-				/*
-				 * resume was not called from the kernel entrypoint,
-				 * if the kernel entrypoint is waiting for a signal
-				 * it should be resume the app task
-				 */
+				/* a pthread is unblocking something, resume the initial app task */
+				_resume_handler.submit(1);
 			}
 		}
 
