@@ -19,21 +19,18 @@
 #include <dataspace/client.h>
 #include <util/avl_tree.h>
 
-
-namespace Vfs { class Ram_file_system; }
-
 namespace Vfs_ram {
 
 	using namespace Genode;
 	using namespace Vfs;
 
-	struct Ram_handle;
-	typedef Genode::List<Ram_handle> Ram_handles;
-
 	class Node;
 	class File;
 	class Symlink;
 	class Directory;
+
+	struct Ram_handle;
+	typedef Genode::List<Ram_handle> Ram_handles;
 
 	enum { MAX_NAME_LEN = 128 };
 
@@ -55,14 +52,18 @@ namespace Vfs_ram {
 
 }
 
-struct Vfs_ram::Ram_handle : Vfs_handle, Ram_handles::Element
+namespace Vfs { class Ram_file_system; }
+
+struct Vfs_ram::Ram_handle final : Vfs_handle, Ram_handles::Element
 {
 	Vfs_ram::File &file;
 
 	Ram_handle(Vfs::File_system &fs,
 	           Allocator       &alloc,
 	           int              status_flags,
-	           Vfs_ram::File   &node);
+	           Vfs_ram::File   &node)
+	: Vfs_handle(fs, fs, alloc, status_flags), file(node)
+	{ }
 };
 
 
@@ -77,7 +78,8 @@ class Vfs_ram::Node : public Genode::Avl_node<Node>, public Genode::Lock
 		 */
 		static unsigned _unique_inode()
 		{
-			static unsigned long inode_count;
+			/* XXX: a leak of of how many files have been created */
+			static unsigned long inode_count = 0;
 			return ++inode_count;
 		}
 
@@ -148,7 +150,7 @@ class Vfs_ram::Node : public Genode::Avl_node<Node>, public Genode::Lock
 };
 
 
-class Vfs_ram::File : public Vfs_ram::Node
+class Vfs_ram::File final : public Vfs_ram::Node
 {
 	private:
 
@@ -160,43 +162,42 @@ class Vfs_ram::File : public Vfs_ram::Node
 		Chunk_level_0 _chunk;
 		file_size     _length = 0;
 		Ram_handles   _handles;
-		bool          _dirty    = false;
-
+		bool          _dirty;
 
 	public:
 
 		File(char const *name, Allocator &alloc)
 		: Node(name), _chunk(alloc, 0) { }
 
+		bool opened() const { return _handles.first() != nullptr; }
+
 		void insert_handle(Ram_handle *handle)
 		{
-			if (_dirty && !_handles.first())
-				_dirty = false;
+			if (!_handles.first()) _dirty = false;
 			_handles.insert(handle);
 		}
 
 		void remove_handle(Ram_handle *handle)
 		{
 			_handles.remove(handle);
-			if (_dirty && _handles.first())
-				callback();
 		}
 
-		void callback()
+		void sync()
 		{
-			_dirty = false;
-			for (Ram_handle *h = _handles.first(); h; h = h->next())
-				h->notify_callback();
+			if (_dirty) {
+				_dirty = false; /* callbacks may dirty the file */
+				for (Ram_handle *h = _handles.first(); h; h = h->next())
+					h->notify_callback();
+			}
 		}
-
-		void sync() override { if (_dirty) callback(); }
-
-		bool is_open() const { return _handles.first(); }
 
 		template <typename FUNC>
 		void read(FUNC const &func, file_size len, file_size seek_offset)
 		{
 			file_size const chunk_used_size = _chunk.used_size();
+
+			if (seek_offset >= _length)
+				return;
 
 			/*
 			 * Constrain read transaction to available chunk data
@@ -245,13 +246,6 @@ class Vfs_ram::File : public Vfs_ram::Node
 
 			} catch (Out_of_memory) { }
 
-			/*
-			 * Keep track of file length. We cannot use 'chunk.used_size()'
-			 * as file length because trailing zeros may by represented
-			 * by zero chunks, which do not contribute to 'used_size()'.
-			 *
-			 * XXX: is this broken now?
-			 */
 			_dirty = true;
 		}
 
@@ -268,7 +262,7 @@ class Vfs_ram::File : public Vfs_ram::Node
 };
 
 
-class Vfs_ram::Symlink : public Vfs_ram::Node
+class Vfs_ram::Symlink final : public Vfs_ram::Node
 {
 	private:
 
@@ -296,7 +290,7 @@ class Vfs_ram::Symlink : public Vfs_ram::Node
 };
 
 
-class Vfs_ram::Directory : public Vfs_ram::Node
+class Vfs_ram::Directory final : public Vfs_ram::Node
 {
 	private:
 
@@ -313,8 +307,10 @@ class Vfs_ram::Directory : public Vfs_ram::Node
 			while (Node *node = _entries.first()) {
 				_entries.remove(node);
 				if (File *file = dynamic_cast<File*>(node)) {
-					if (file->is_open())
+					if (file->opened()) {
+						file->inode = 0;
 						continue;
+					}
 				} else if (Directory *dir = dynamic_cast<Directory*>(node)) {
 					dir->empty(alloc);
 				}
@@ -341,17 +337,6 @@ class Vfs_ram::Directory : public Vfs_ram::Node
 		}
 
 		file_size length() override { return _count; }
-
-		void sync() override
-		{
-			Node *root_node = _entries.first();
-
-			for (file_offset i = _count; i > 0; --i) {
-				file_offset j = i; /* index overwrites j */
-				if (Node *node = root_node->index(j))
-					node->sync();
-			}
-		}
 
 		void dirent(file_offset index, Directory_service::Dirent &dirent)
 		{
@@ -383,10 +368,21 @@ class Vfs_ram::Directory : public Vfs_ram::Node
 				return;
 			}
 		}
+
+		void sync() override
+		{
+			Node *root_node = _entries.first();
+
+			for (file_offset i = _count; i > 0; --i) {
+				file_offset j = i; /* the index op overwrites j */
+				if (Node *node = root_node->index(j))
+					node->sync();
+			}
+		}
 };
 
 
-class Vfs::Ram_file_system : public Vfs::File_system
+class Vfs::Ram_file_system final : public Vfs::File_system
 {
 	private:
 
@@ -443,8 +439,10 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			using namespace Vfs_ram;
 
 			if (File *file = dynamic_cast<File*>(node)) {
-				if (file->is_open())
+				if (file->opened()) {
+					file->inode = 0;
 					return;
+				}
 			} else if (Directory *dir = dynamic_cast<Directory*>(node)) {
 				dir->empty(_alloc);
 			}
@@ -465,18 +463,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		/*********************************
 		 ** Directory service interface **
 		 *********************************/
-
-		bool notify(Vfs_handle*) { return true; }
-
-		void sync(char const *path) override
-		{
-			using namespace Vfs_ram;
-
-			if (Node *node = lookup(path)) {
-				Node::Guard guard(node);
-				node->sync();
-			}
-		}
 
 		file_size num_dirent(char const *path) override
 		{
@@ -524,7 +510,7 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		}
 
 		Open_result open(char const  *path, unsigned mode,
-		                 Vfs_handle **handle,
+		                 Vfs_handle **out_handle,
 		                 Allocator   &alloc) override
 		{
 			using namespace Vfs_ram;
@@ -553,10 +539,10 @@ class Vfs::Ram_file_system : public Vfs::File_system
 				if (!file) return OPEN_ERR_UNACCESSIBLE;
 			}
 
-			Ram_handle *ram_handle = new (alloc)
+			Ram_handle *handle = new (alloc)
 				Ram_handle(*this, alloc, mode, *file);
-			file->insert_handle(ram_handle);
-			*handle = ram_handle;
+			file->insert_handle(handle);
+			*out_handle = handle;
 			return OPEN_OK;
 		}
 
@@ -569,14 +555,15 @@ class Vfs::Ram_file_system : public Vfs::File_system
 
 			if (ram_handle) {
 				File &file = ram_handle->file;
-
 				file.remove_handle(ram_handle);
 				destroy(vfs_handle->alloc(), ram_handle);
 
-				if (file.is_open())
-					file.callback();
-				else
+				if (!file.opened() && (file.inode == 0))
+					/* the file was unlinked and is now no longer referenced */
 					destroy(_alloc, &file);
+				else
+					/* notify if the file had been modified */
+					file.sync();
 			}
 		}
 
@@ -791,6 +778,18 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			_env.ram().free(
 				static_cap_cast<Genode::Ram_dataspace>(ds_cap)); }
 
+		void sync(char const *path) override
+		{
+			using namespace Vfs_ram;
+
+			if (Node *node = lookup(path)) {
+				Node::Guard guard(node);
+				node->sync();
+			}
+		}
+
+		bool subscribe(Vfs_handle*) override { return true; }
+
 
 		/************************
 		 ** File I/O interface **
@@ -798,72 +797,60 @@ class Vfs::Ram_file_system : public Vfs::File_system
 
 		Write_result write(Vfs_handle *vfs_handle, file_size len) override
 		{
-			using namespace Vfs_ram;
-
-			Ram_handle const *handle =
-				static_cast<Ram_handle *>(vfs_handle);
-			if (!handle)
-				return WRITE_ERR_INVALID;
-
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) ==  OPEN_MODE_RDONLY)
 				return WRITE_ERR_INVALID;
 
-			Vfs_ram::Node::Guard guard(&handle->file);
+			Vfs_ram::Ram_handle const *handle =
+				static_cast<Vfs_ram::Ram_handle *>(vfs_handle);
+			if (handle) {
+				Vfs_ram::Node::Guard guard(&handle->file);
 
-			/* write_fn will be called for each chunk that the read spans */
-			file_size remain = len;
-			auto write_fn = [&] (char *dst, Genode::size_t dst_len) {
-				remain -= vfs_handle->write_callback(
-					dst, dst_len, dst_len == remain ? Callback::COMPLETE
-					                                : Callback::PARTIAL);
+				/* write_fn will be called for each chunk that the read spans */
+				file_size remain = len;
+				auto write_fn = [&] (char *dst, Genode::size_t dst_len) {
+					remain -= vfs_handle->write_callback(
+						dst, dst_len, dst_len == remain ? Callback::COMPLETE
+						                                : Callback::PARTIAL);
+				};
+
+				handle->file.write(write_fn, len, handle->seek());
+				/* XXX: out of space condition? */
+				return WRITE_OK;
 			};
 
-			handle->file.write(write_fn, len, handle->seek());
-			return WRITE_OK;
+			return WRITE_ERR_INVALID;
 		}
 
 		Read_result read(Vfs_handle *vfs_handle, file_size len) override
 		{
-			using namespace Vfs_ram;
-
-			Ram_handle const *handle =
-				static_cast<Ram_handle *>(vfs_handle);
-			if (!handle)
-				return READ_ERR_INVALID;
-
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_WRONLY)
 				return READ_ERR_INVALID;
 
-			Vfs_ram::Node::Guard guard(&handle->file);
+			Vfs_ram::Ram_handle const *handle =
+				static_cast<Vfs_ram::Ram_handle *>(vfs_handle);
+			if (handle) {
+				Vfs_ram::Node::Guard guard(&handle->file);
 
-			len = min(len, handle->file.length() - handle->seek());
-			if (len == 0) {
-				vfs_handle->read_callback(nullptr, 0, Callback::COMPLETE);
+				file_size remain = len;
+				auto read_fn = [&] (char const *src, Genode::size_t src_len) {
+					remain -= vfs_handle->read_callback(
+						src, src_len, src_len == remain ? Callback::COMPLETE
+						                                : Callback::PARTIAL);
+				};
+				
+				handle->file.read(read_fn, len, handle->seek());
 				return READ_OK;
 			}
-
-			file_size remain = len;
-
-			/* read_fn will be called for each chunk that the read spans */
-			auto read_fn = [&] (char const *src, Genode::size_t src_len) {
-				remain -= vfs_handle->read_callback(
-					src, src_len, src_len == remain ? Callback::COMPLETE
-					                                : Callback::PARTIAL);
-			};
-
-			handle->file.read(read_fn, len, handle->seek());
-			return READ_OK;
+			return READ_ERR_INVALID;
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
 		{
-			using namespace Vfs_ram;
-
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) ==  OPEN_MODE_RDONLY)
 				return FTRUNCATE_ERR_NO_PERM;
 
-			Ram_handle const *handle =
-				static_cast<Ram_handle *>(vfs_handle);
+			Vfs_ram::Ram_handle const *handle =
+				static_cast<Vfs_ram::Ram_handle *>(vfs_handle);
 
 			Vfs_ram::Node::Guard guard(&handle->file);
 
@@ -872,20 +859,12 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			return FTRUNCATE_OK;
 		}
 
+
 		/***************************
 		 ** File_system interface **
 		 ***************************/
 
 		static char const *name() { return "ram"; }
 };
-
-Vfs_ram::Ram_handle::Ram_handle(Vfs::File_system &fs,
-                                Allocator       &alloc,
-                                int              status_flags,
-                                Vfs_ram::File   &node)
-:
-	Vfs_handle(fs, fs, alloc, status_flags), file(node)
-{ }
-
 
 #endif /* _INCLUDE__VFS__RAM_FILE_SYSTEM_H_ */

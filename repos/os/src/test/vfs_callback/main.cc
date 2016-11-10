@@ -68,7 +68,7 @@ struct Callback_test : Vfs::Notify_callback
 
 		/* set callback */
 		next_handle->notify_callback(*this);
-		if (next_handle->ds().notify(next_handle))
+		if (next_handle->ds().subscribe(next_handle))
 			log("callback -> ", path);
 		else {
 			error("callback not supported at ", path);
