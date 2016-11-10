@@ -29,7 +29,8 @@
 
 namespace Libc {
 
-	class Task;
+	class Kernel;
+	struct Pthread_tasks;
 
 	void (*original_call_component_construct)(Genode::Env &);
 	void call_component_construct(Genode::Env &env);
@@ -46,17 +47,38 @@ struct Task_resume
 Genode::size_t Component::stack_size() { return 32*1024*sizeof(long); }
 
 
+struct Libc::Pthread_tasks : Libc::Task
+{
+	Genode::Semaphore sem;
+
+
+	/********************
+	 ** Task interface **
+	 ********************/
+
+	void block() override
+	{
+		sem.down();
+	}
+
+	void unblock() override
+	{
+		sem.up();
+	}
+};
+
+
 /**
- * Libc task
+ * Libc "Kernel"
  *
- * The libc task represents the "kernel" of the libc-based application.
+ * The libc task represents the"kernel" of the libc-based application.
  * Blocking and deblocking happens here on libc functions like read() or
  * select(). This combines blocking of the VFS backend and other signal sources
  * (e.g., timers). The libc task runs on the component thread and allocates a
  * secondary stack for the application task. Context switching uses
  * setjmp/longjmp.
  */
-class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
+class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ public Task
 {
 	private:
 
@@ -73,7 +95,7 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		bool    _app_runnable = true;
 		jmp_buf _app_task;
 
-		Genode::Semaphore _psem;
+		Pthread_tasks _pthread_tasks;
 
 		Genode::Thread &_myself = *Genode::Thread::myself();
 
@@ -91,7 +113,7 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		/**
 		 * Trampoline to application code
 		 */
-		static void _app_entry(Task *);
+		static void _app_entry(Kernel *);
 
 		/* executed in the context of the main thread */
 		static void _resumed_callback();
@@ -100,16 +122,24 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		 * Signal handler to switch the signal handling libc task to
 		 * the application task, from another thread
 		 */
-		Genode::Signal_handler<Task> _resume_handler {
-			_env.ep(), *this, &Task::resume };
+		Genode::Signal_handler<Kernel> _resume_handler {
+			_env.ep(), *this, &Kernel::unblock };
 
 	public:
 
-		Task(Genode::Env &env) : _env(env) { }
+		Kernel(Genode::Env &env) : _env(env) { }
 
-		~Task() { Genode::error(__PRETTY_FUNCTION__, " should not be executed!"); }
+		~Kernel() { Genode::error(__PRETTY_FUNCTION__, " should not be executed!"); }
 
 		Genode::Env & env() { return _env; }
+
+		Task &this_task()
+		{
+			if (Genode::Thread::myself() == (&_myself))
+				return *this;
+			else
+				return _pthread_tasks;
+		}
 
 		void run()
 		{
@@ -122,39 +152,6 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 			}
 
 			/* _setjmp() returned after _longjmp() -> we're done */
-		}
-
-		void suspend()
-		{
-			/* jump if this is the main entrypoint, otherwise queue and block */
-			if (Genode::Thread::myself() == (&_myself)) {
-				if ((!_libc_task_active) && (!_setjmp(_app_task))) {
-					_libc_task_active = true;
-					_longjmp(_libc_task, 1);
-				}
-			} else {
-				_psem.down();
-			}
-		}
-
-		/**
-		 * Called in the context of the entrypoint (e.g., via RPC)
-		 */
-		void resume()
-		{
-			if (Genode::Thread::myself() == (&_myself)) {
-				/* unblock threads that have queued until now */
-				for (int n = _psem.cnt(); n < 0; ++n)
-					_psem.up();
-
-				if (_libc_task_active && (!_setjmp(_libc_task))) {
-					_libc_task_active = false;
-					_longjmp(_app_task, 1);
-				}
-			} else {
-				/* a pthread is unblocking something, resume the initial app task */
-				_resume_handler.submit(1);
-			}
 		}
 
 		/**
@@ -176,9 +173,28 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
 		 */
 		void resumed()
 		{
+			/*
 			Genode::Capability<Task_resume> cap = _env.ep().manage(*this);
 			cap.call<Task_resume::Rpc_resume>();
 			_env.ep().dissolve(*this);
+			*/
+		}
+
+
+		/********************
+		 ** Task interface **
+		 ********************/
+
+		void block() override
+		{
+			if (!_setjmp(_app_task))
+				_longjmp(_libc_task, 1);
+		}
+
+		void unblock() override
+		{
+			if (!_setjmp(_libc_task))
+				_longjmp(_app_task, 1);
 		}
 };
 
@@ -187,40 +203,41 @@ class Libc::Task : public Genode::Rpc_object<Task_resume, Libc::Task>
  ** Libc task implementation **
  ******************************/
 
-void Libc::Task::_app_entry(Task *task)
+void Libc::Kernel::_app_entry(Kernel *kernel)
 {
-	original_call_component_construct(task->_env);
+	original_call_component_construct(kernel->_env);
 
 	/* returned from task - switch stack to libc and return to dispatch loop */
-	_longjmp(task->_libc_task, 1);
+	_longjmp(kernel->_libc_task, 1);
 }
 
 
 /**
- * Libc task singleton
+ * Libc kernel singleton
  *
  * The singleton is implemented with the unmanaged-singleton utility to ensure
  * it is never destructed like normal static global objects. Otherwise, the
  * task object may be destructed in a RPC to Rpc_resume, which would result in
  * a deadlock.
  */
-static Libc::Task *task;
+static Libc::Kernel *kernel;
 
 
-void Libc::Task::_resumed_callback() { task->resumed(); }
+void Libc::Kernel::_resumed_callback() { kernel->resumed(); }
+
+
+Libc::Task &Libc::this_task() { return kernel->this_task(); }
 
 
 namespace Libc {
 
 	void schedule_suspend(void (*suspended) ())
 	{
-		task->schedule_suspend(suspended);
+		kernel->schedule_suspend(suspended);
 	}
 
-	Genode::Entrypoint & task_ep() { return task->env().ep(); }
+	Genode::Env & kernel_env() { return kernel->env(); }
 
-	void task_suspend() { task->suspend(); }
-	void task_resume()  { task->resume(); }
 }
 
 
@@ -233,8 +250,8 @@ namespace Genode { extern void (*call_component_construct)(Genode::Env &); }
 
 void Libc::call_component_construct(Genode::Env &env)
 {
-	task = unmanaged_singleton<Libc::Task>(env);
-	task->run();
+	kernel = unmanaged_singleton<Libc::Kernel>(env);
+	kernel->run();
 }
 
 

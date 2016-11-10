@@ -24,12 +24,11 @@ int _nanosleep(const struct timespec *req, struct timespec *rem)
 {
 	Genode::Alarm::Time duration_ms = (req->tv_sec * 1000) + (req->tv_nsec / 1000000);
 
-	Libc::Timeout to_(duration_ms/2); /* XXX DEBUG */
-	Libc::Timeout to(duration_ms);
+	Libc::Task &task = Libc::this_task();
+	Libc::Timeout to(task, duration_ms);
 
-	while (!to.triggered()) {
-		Libc::task_suspend();
-	}
+	while (!to.triggered())
+		task.block();
 
 	if (rem) {
 		rem->tv_sec = 0;

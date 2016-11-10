@@ -320,6 +320,7 @@ namespace Vfs { struct Libc_write_callback; }
  */
 struct Vfs::Libc_write_callback : Write_callback
 {
+	Libc::Task &task;
 	Vfs_handle &handle;
 
 	char const * const buffer;
@@ -328,8 +329,8 @@ struct Vfs::Libc_write_callback : Write_callback
 	Callback::Status status = PARTIAL;
 	bool tasked = false;
 
-	Libc_write_callback(Vfs_handle &handle, char const *buf, file_size len)
-	: handle(handle), buffer(buf), buffer_len(len) {
+	Libc_write_callback(Libc::Task &t, Vfs_handle &h, char const *buf, file_size len)
+	: task(t), handle(h), buffer(buf), buffer_len(len) {
 		handle.write_callback(*this); }
 
 	~Libc_write_callback() {
@@ -340,7 +341,7 @@ struct Vfs::Libc_write_callback : Write_callback
 		status = st;
 		if (!len) {
 			if (tasked) {
-				Libc::task_resume();
+				task.unblock();
 			}
 			return 0;
 		}
@@ -352,7 +353,7 @@ struct Vfs::Libc_write_callback : Write_callback
 		}
 		accumulator += out;
 		if (tasked && (status != PARTIAL)) {
-			Libc::task_resume();
+			task.unblock();
 		}
 		return out;
 	}
@@ -364,13 +365,14 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 	using namespace Vfs;
 	typedef File_io_service::Write_result Result;
 
-	Libc_write_callback cb(handle, (char const *)buf, count);
+	Task &task = Libc::this_task();
+	Libc_write_callback cb(task, handle, (char const *)buf, count);
 
 	Result result = handle.fs().write(&handle, count);
 
 	if (result == Result::WRITE_QUEUED) {
 		cb.tasked = true;
-		_suspend_vfs();
+		_yield_vfs(task);
 		/* the libc task will run until the callback completes or errors */
 
 		/* XXX: short write? */
@@ -413,6 +415,7 @@ namespace Vfs {
  */
 struct Vfs::Libc_read_callback : Read_callback
 {
+	Libc::Task &task;
 	Vfs_handle &handle;
 
 	char * const buffer;
@@ -421,8 +424,8 @@ struct Vfs::Libc_read_callback : Read_callback
 	Callback::Status status = PARTIAL;
 	bool tasked = false;
 
-	Libc_read_callback(Vfs_handle &handle, char *buf, file_size len)
-	: handle(handle), buffer(buf), buffer_len(len) {
+	Libc_read_callback(Libc::Task &t, Vfs_handle &h, char *buf, file_size len)
+	: task(t), handle(h), buffer(buf), buffer_len(len) {
 		handle.read_callback(*this); }
 
 	~Libc_read_callback() {
@@ -433,7 +436,7 @@ struct Vfs::Libc_read_callback : Read_callback
 		status = st;
 		if (!len) {
 			if (tasked)
-				Libc::task_resume();
+				task.unblock();
 			return 0;
 		}
 		file_size out = min(len, buffer_len-accumulator);
@@ -444,7 +447,7 @@ struct Vfs::Libc_read_callback : Read_callback
 			Genode::memset(p, 0x00, len);
 		accumulator += out;
 		if (tasked && (status != PARTIAL)) {
-			Libc::task_resume();
+			task.unblock();
 		}
 		return out;
 	}
@@ -455,14 +458,15 @@ struct Vfs::Libc_read_callback : Read_callback
  */
 struct Vfs::Libc_notify_read_callback : Notify_callback
 {
+	Libc::Task &task;
 	Vfs_handle &handle;
 	file_size  &count;
 	File_io_service::Read_result &result;
 
-	Libc_notify_read_callback(Vfs_handle &handle,
+	Libc_notify_read_callback(Libc::Task &t, Vfs_handle &h,
 	                          file_size  &count,
 	                          File_io_service::Read_result &result)
-	: handle(handle), count(count), result(result) {
+	: task(t), handle(h), count(count), result(result) {
 		handle.notify_callback(*this); }
 
 	~Libc_notify_read_callback() {
@@ -471,7 +475,7 @@ struct Vfs::Libc_notify_read_callback : Notify_callback
 	void notify() override
 	{
 		result = handle.fs().read(&handle, count);
-		Libc::task_resume();
+		task.unblock();
 	}
 };
 
@@ -488,14 +492,15 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 
 	typedef File_io_service::Read_result Result;
 
+	Task &task = Libc::this_task();
 	Vfs::Vfs_handle &handle = context.handle();
-	Libc_read_callback cb(handle, (char*)buf, count);
+	Libc_read_callback cb(task, handle, (char*)buf, count);
 
 	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
-			_suspend_vfs();
+			_yield_vfs(task);
 
 			/* the libc task will run until the callback completes or errors */
 
@@ -507,18 +512,18 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
 			context.reset();
 
-			Libc_notify_read_callback notify_cb(handle, count, result);
+			Libc_notify_read_callback notify_cb(task, handle, count, result);
 			cb.tasked = true;
 
 			timeval const &timeout = context.timeout();
 			if (timeout.tv_sec || timeout.tv_usec) {
-				Libc::Timeout task_timeout(timeout.tv_sec*1000+timeout.tv_usec/1000);
-				_suspend_vfs();
+				Libc::Timeout task_timeout(task, timeout.tv_sec*1000+timeout.tv_usec/1000);
+				_yield_vfs(task);
 				if (task_timeout.triggered()) {
 					return Errno(EWOULDBLOCK);
 				}
 			} else {
-				_suspend_vfs();
+				_yield_vfs(task);
 			}
 		} else
 			break;
@@ -546,13 +551,14 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 
 	typedef File_io_service::Read_result Result;
 
-	Libc_read_callback cb(handle, (char*)buf, count);
+	Task &task = Libc::this_task();
+	Libc_read_callback cb(task, handle, (char*)buf, count);
 
 	Result result = handle.fs().read(&handle, count);
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
 			cb.tasked = true;
-			_suspend_vfs();
+			_yield_vfs(task);
 
 			/* XXX: short read? */
 			result = (cb.status == Callback::ERROR) ?
@@ -560,9 +566,9 @@ ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
 		}
 
 		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
-			Libc_notify_read_callback notify_cb(handle, count, result);
+			Libc_notify_read_callback notify_cb(task, handle, count, result);
 			cb.tasked = true;
-			_suspend_vfs();
+			_yield_vfs(task);
 		} else
 			break;
 	}
@@ -1077,7 +1083,8 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 		FD_ZERO(exceptfds);
 
 	/* this resumes the task when a context is notified */
-	Task_resume_callback resume_cb;
+	Task &task = Libc::this_task();
+	Task_resume_callback resume_cb(task);
 
 	/* set callbacks on descriptors and remove those that do not notify */
 	for (int libc_fd = 0; libc_fd < nfds; ++libc_fd) {
@@ -1107,13 +1114,13 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	if (nready == 0) {
 		if (timeout == NULL) {
 			do {
-				_suspend_vfs();
+				_yield_vfs(task);
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready);
 		} else {
-			Libc::Timeout task_timeout(timeout->tv_sec*1000+timeout->tv_usec/1000);
+			Libc::Timeout task_timeout(task, timeout->tv_sec*1000+timeout->tv_usec/1000);
 			do {
-				_suspend_vfs();
+				_yield_vfs(task);
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
 			} while (!nready && !task_timeout.triggered());
 		}

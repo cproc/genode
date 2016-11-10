@@ -24,7 +24,7 @@
 
 namespace Libc {
 
-	Genode::Entrypoint & task_ep();
+	Genode::Env & kernel_env();
 
 	struct Timer;
 	struct Timeout;
@@ -36,9 +36,10 @@ class Libc::Timer : public Genode::Alarm_scheduler
 {
 	private:
 
-		::Timer::Connection _timer;
+		::Timer::Connection _timer { Libc::kernel_env() };
 
-		Genode::Signal_handler<Timer> _handler { task_ep(), *this, &Timer::_handle_timer };
+		Genode::Signal_handler<Timer> _handler {
+			kernel_env().ep(), *this, &Timer::_handle_timer };
 
 		Genode::Alarm::Time _next_deadline = 0;
 
@@ -55,9 +56,6 @@ class Libc::Timer : public Genode::Alarm_scheduler
 		void _handle_timer()
 		{
 			Genode::Alarm_scheduler::handle(_timer.elapsed_ms());
-
-			task_resume();
-
 			_trigger_next();
 		}
 
@@ -82,11 +80,13 @@ class Libc::Timer : public Genode::Alarm_scheduler
 
 struct Libc::Timeout : Genode::Alarm
 {
-	bool _triggered = false;
+	Task &_task;
+	bool  _triggered = false;
 
 	Genode::Alarm::Time duration;
 
-	Timeout(Genode::Alarm::Time duration)
+	Timeout(Task &task, Genode::Alarm::Time duration)
+	: _task(task)
 	{
 		Timer::instance().schedule_timeout(this, duration);
 	}
@@ -94,6 +94,7 @@ struct Libc::Timeout : Genode::Alarm
 	bool on_alarm(unsigned) override
 	{
 		_triggered = true;
+		_task.unblock();
 
 		return false;
 	}

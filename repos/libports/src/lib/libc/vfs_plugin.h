@@ -120,7 +120,10 @@ class Libc::Vfs_plugin : public Libc::Plugin
 
 		struct Task_resume_callback : Vfs::Notify_callback
 		{
+			Task &task;
 			Genode::List<Context> contexts;
+
+			Task_resume_callback(Task &t) : task(t) { }
 
 			~Task_resume_callback()
 			{
@@ -136,10 +139,8 @@ class Libc::Vfs_plugin : public Libc::Plugin
 				c.notify_callback(*this);
 			};
 
-			void notify() override
-			{
-				Libc::task_resume();
-			}
+			void notify() override {
+				task.unblock(); }
 		};
 
 		struct Meta_path : Libc::Absolute_path
@@ -192,12 +193,12 @@ class Libc::Vfs_plugin : public Libc::Plugin
 		Genode::Lock _lock;
 
 		/**
-		 * Unblock the VFS plugin, suspend, block on resume
+		 * Unlock the VFS plugin, suspend task, lock on resume
 		 */
-		inline void _suspend_vfs()
+		inline void _yield_vfs(Task &task)
 		{
 			_lock.unlock();
-			Libc::task_suspend();
+			task.block();
 			_lock.lock();
 		}
 

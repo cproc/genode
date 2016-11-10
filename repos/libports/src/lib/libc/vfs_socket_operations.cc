@@ -479,8 +479,10 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		Vfs_handle::Guard guard(handle);
 
 		/* set a resume callback so this will be a blocking call */
-		Task_resume_callback resume_cb;
+	/*
+		Task_resume_callback resume_cb(task);
 		handle->notify_callback(resume_cb);
+	 */
 
 		PDBG("read from");
 		int const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, true);
