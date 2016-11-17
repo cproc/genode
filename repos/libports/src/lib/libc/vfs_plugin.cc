@@ -11,6 +11,9 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+/* Genode includes */
+#include <os/config.h>
+
 /* libc includes */
 #include <errno.h>
 #include <dirent.h>
@@ -162,57 +165,9 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 {
 	Genode::Lock::Guard guard(_lock);
 
-	typedef Vfs::Directory_service::Open_result Result;
-
-	Vfs::Vfs_handle *handle = nullptr;
-
-	while (handle == nullptr) {
-
-		switch (_root_dir.open(path, flags, &handle, _alloc)) {
-
-		case Result::OPEN_OK:
-			break;
-
-		case Result::OPEN_ERR_UNACCESSIBLE:
-			{
-				if (!(flags & O_CREAT)) {
-					Errno(ENOENT);
-					return nullptr;
-				}
-
-				/* O_CREAT is set, so try to create the file */
-				switch (_root_dir.open(path, flags | O_EXCL, &handle, _alloc)) {
-
-				case Result::OPEN_OK:
-					break;
-
-				case Result::OPEN_ERR_NO_PERM:       Errno(EPERM);        return nullptr;
-				case Result::OPEN_ERR_EXISTS:
-					if ((flags & O_CREAT) && (!(flags&O_EXCL))) {
-						flags ^= O_CREAT;
-						break;
-					} else {
-						Errno(EEXIST);
-						return nullptr;
-					}
-				case Result::OPEN_ERR_UNACCESSIBLE:  Errno(ENOENT);       return nullptr;
-				case Result::OPEN_ERR_NAME_TOO_LONG: Errno(ENAMETOOLONG); return nullptr;
-				case Result::OPEN_ERR_NO_SPACE:      Errno(ENOSPC);       return nullptr;
-				}
-			}
-			break;
-
-		case Result::OPEN_ERR_NO_PERM:       Errno(EPERM);        return nullptr;
-		case Result::OPEN_ERR_EXISTS:        Errno(EEXIST);       return nullptr;
-		case Result::OPEN_ERR_NAME_TOO_LONG: Errno(ENAMETOOLONG); return nullptr;
-		case Result::OPEN_ERR_NO_SPACE:      Errno(ENOSPC);       return nullptr;
-		}
-	}
-
-	/* the file was successfully opened */
-	Context *context;
-	try { context = new (_alloc) Context(*handle); }
-	catch (Genode::Allocator::Out_of_memory) { Errno(ENOMEM); return nullptr; }
+	Context *context = _open(path, flags);
+	if (context == nullptr)
+		return nullptr;
 
 	Libc::File_descriptor *fd =
 		Libc::file_descriptor_allocator()->alloc(this, context, libc_fd);
@@ -235,11 +190,9 @@ int Libc::Vfs_plugin::close(Libc::File_descriptor *fd)
 	Genode::Lock::Guard guard(_lock);
 
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);
-	Vfs::Vfs_handle &handle = context->handle();
 
 	destroy(_alloc, context);
 	Libc::file_descriptor_allocator()->free(fd);
-	handle.ds().close(&handle);
 
 	return 0;
 }
@@ -310,6 +263,60 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 
 	vfs_stat_to_libc_stat_struct(stat, buf);
 	return 0;
+}
+
+
+Libc::Vfs_plugin::Context *Libc::Vfs_plugin::_open(const char *path, unsigned flags)
+{
+	typedef Vfs::Directory_service::Open_result Result;
+
+	Vfs::Vfs_handle *handle = nullptr;
+
+	while (handle == nullptr) {
+		switch (_root_dir.open(path, flags, &handle, _alloc)) {
+
+		case Result::OPEN_OK:
+			break;
+
+		case Result::OPEN_ERR_UNACCESSIBLE:
+			{
+				if (!(flags & O_CREAT)) {
+					Errno(ENOENT);
+					return nullptr;
+				}
+
+				/* O_CREAT is set, so try to create the file */
+				switch (_root_dir.open(path, flags | O_EXCL, &handle, _alloc)) {
+
+				case Result::OPEN_OK:
+					break;
+
+				case Result::OPEN_ERR_NO_PERM:       Errno(EPERM);        return nullptr;
+				case Result::OPEN_ERR_EXISTS:
+					if ((flags & O_CREAT) && (!(flags&O_EXCL))) {
+						flags ^= O_CREAT;
+						break;
+					} else {
+						Errno(EEXIST);
+						return nullptr;
+					}
+				case Result::OPEN_ERR_UNACCESSIBLE:  Errno(ENOENT);       return nullptr;
+				case Result::OPEN_ERR_NAME_TOO_LONG: Errno(ENAMETOOLONG); return nullptr;
+				case Result::OPEN_ERR_NO_SPACE:      Errno(ENOSPC);       return nullptr;
+				}
+			}
+			break;
+
+		case Result::OPEN_ERR_NO_PERM:       Errno(EPERM);        return nullptr;
+		case Result::OPEN_ERR_EXISTS:        Errno(EEXIST);       return nullptr;
+		case Result::OPEN_ERR_NAME_TOO_LONG: Errno(ENAMETOOLONG); return nullptr;
+		case Result::OPEN_ERR_NO_SPACE:      Errno(ENOSPC);       return nullptr;
+		}
+	}
+
+	/* the file was successfully opened */
+	try { return new (_alloc) Context(*handle); }
+	catch (Genode::Allocator::Out_of_memory) { Errno(ENOMEM); return nullptr; }
 }
 
 
@@ -405,10 +412,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 }
 
 
-namespace Vfs {
-	struct Libc_read_callback;
-	struct Libc_notify_read_callback;
-}
+namespace Vfs { struct Libc_read_callback; }
 
 /**
  * VFS write callback with lifetime management
@@ -453,32 +457,6 @@ struct Vfs::Libc_read_callback : Read_callback
 	}
 };
 
-/**
- * VFS notify callback with lifetime management
- */
-struct Vfs::Libc_notify_read_callback : Notify_callback
-{
-	Libc::Task &task;
-	Vfs_handle &handle;
-	file_size  &count;
-	File_io_service::Read_result &result;
-
-	Libc_notify_read_callback(Libc::Task &t, Vfs_handle &h,
-	                          file_size  &count,
-	                          File_io_service::Read_result &result)
-	: task(t), handle(h), count(count), result(result) {
-		handle.notify_callback(*this); }
-
-	~Libc_notify_read_callback() {
-		handle.drop_notify(); }
-
-	void notify() override
-	{
-		result = handle.fs().read(&handle, count);
-		task.unblock();
-	}
-};
-
 ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
                                 Vfs::file_size count, bool blocking)
 {
@@ -512,7 +490,8 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
 			context.reset();
 
-			Libc_notify_read_callback notify_cb(task, handle, count, result);
+			Task_resume_callback notify_cb(task);
+			notify_cb.add_context(context);
 			cb.tasked = true;
 
 			timeval const &timeout = context.timeout();
@@ -525,6 +504,7 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 			} else {
 				_yield_vfs(task);
 			}
+			result = handle.fs().read(&handle, count);
 		} else
 			break;
 	}
@@ -540,51 +520,6 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 	}
 
 	handle.advance_seek(cb.accumulator);
-	return cb.accumulator;
-}
-
-
-ssize_t Libc::Vfs_plugin::_read(Vfs::Vfs_handle &handle, void *buf,
-                                Vfs::file_size count, bool blocking)
-{
-	using namespace Vfs;
-
-	typedef File_io_service::Read_result Result;
-
-	Task &task = Libc::this_task();
-	Libc_read_callback cb(task, handle, (char*)buf, count);
-
-	Result result = handle.fs().read(&handle, count);
-	for (;;) {
-		if (result == Result::READ_QUEUED) {
-			cb.tasked = true;
-			_yield_vfs(task);
-
-			/* XXX: short read? */
-			result = (cb.status == Callback::ERROR) ?
-				Result::READ_ERR_IO : Result::READ_OK;
-		}
-
-		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
-			Libc_notify_read_callback notify_cb(task, handle, count, result);
-			cb.tasked = true;
-			_yield_vfs(task);
-		} else
-			break;
-	}
-
-	switch (result) {
-	case Result::READ_OK: break;
-	case Result::READ_ERR_AGAIN:
-	case Result::READ_ERR_WOULD_BLOCK: return Errno(EWOULDBLOCK);
-	case Result::READ_ERR_INVALID:     return Errno(EINVAL);
-	case Result::READ_ERR_IO:          return Errno(EIO);
-	case Result::READ_ERR_INTERRUPT:   return Errno(EINTR);
-	case Result::READ_QUEUED: break;
-	}
-
-	handle.advance_seek(cb.accumulator);
-
 	return cb.accumulator;
 }
 
@@ -1043,13 +978,13 @@ int Libc::Vfs_plugin::_select(int nfds,
 		Context *context = vfs_context(fdo);
 
 		if (read_out && FD_ISSET(libc_fd, &read_in) && context->notifications()) {
-			//context->reset();
+			context->reset();
 			FD_SET(libc_fd, read_out);
 			++nready;
 		}
 
 		if (write_out && FD_ISSET(libc_fd, &write_in) && context->notifications()) {
-			//context->reset();
+			context->reset();
 			FD_SET(libc_fd, write_out);
 			++nready;
 		}
@@ -1062,8 +997,6 @@ int Libc::Vfs_plugin::_select(int nfds,
 int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
                              fd_set *exceptfds, struct timeval *timeout)
 {
-	Genode::Lock::Guard guard(_lock);
-
 	fd_set read_in;
 	fd_set write_in;
 	FD_ZERO(&read_in);
@@ -1085,6 +1018,8 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	/* this resumes the task when a context is notified */
 	Task &task = Libc::this_task();
 	Task_resume_callback resume_cb(task);
+
+	Genode::Lock::Guard guard(_lock);
 
 	/* set callbacks on descriptors and remove those that do not notify */
 	for (int libc_fd = 0; libc_fd < nfds; ++libc_fd) {
@@ -1129,6 +1064,7 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 	return nready;
 }
 
+
 int Libc::Vfs_plugin::pipe(Libc::File_descriptor *fildes[2])
 {
 	Genode::Lock::Guard guard(_lock);
@@ -1137,18 +1073,15 @@ int Libc::Vfs_plugin::pipe(Libc::File_descriptor *fildes[2])
 
 	Absolute_path const meta_path("new_pipe", Libc::config_pipe());
 
-	Vfs::Vfs_handle *meta_handle = nullptr;
-	switch (_root_dir.open(meta_path.base(), Directory_service::OPEN_MODE_RDONLY,
-	                       &meta_handle, _alloc)) {
-	case Directory_service::OPEN_OK: break;
-	default:
+	Context *meta_ctx = _open(meta_path.base(), Directory_service::OPEN_MODE_RDONLY);
+	if (meta_ctx == nullptr) {
 		Genode::error("failed to open '", meta_path, "', pipe VFS plugin not loaded?");
-		return Errno(EINVAL);
+		return -1;
 	}
-	Vfs::Vfs_handle::Guard meta_guard(meta_handle);
+	Context::Guard meta_guard(_alloc, meta_ctx);
 
 	char pipe_name[16];
-	::ssize_t n =  _read(*meta_handle, pipe_name, sizeof(pipe_name), false);
+	::ssize_t n =  _read(*meta_ctx, pipe_name, sizeof(pipe_name), false);
 	if (n == -1)
 		return -1; /* read has set errno */
 

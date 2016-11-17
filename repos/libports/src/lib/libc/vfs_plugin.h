@@ -17,8 +17,6 @@
 /* Genode includes */
 #include <base/env.h>
 #include <vfs/dir_file_system.h>
-#include <os/config.h>
-#include <base/debug.h>
 
 /* libc includes */
 #include <fcntl.h>
@@ -72,6 +70,8 @@ class Libc::Vfs_plugin : public Libc::Plugin
 
 				Context(Vfs::Vfs_handle &h) : _handle(&h) { }
 
+				~Context() { _handle->ds().close(_handle); }
+
 				Vfs::Vfs_handle &handle() { return *_handle; }
 
 				void notify_callback(Vfs::Notify_callback &inner) {
@@ -116,6 +116,17 @@ class Libc::Vfs_plugin : public Libc::Plugin
 					if (_inner_callback)
 						_inner_callback->notify();
 				}
+
+				struct Guard
+				{
+					Genode::Allocator &alloc;
+					Context           &context;
+
+					Guard(Genode::Allocator &a, Context *c)
+					: alloc(a), context(*c) { }
+
+					~Guard() { destroy(alloc, &context); }
+				};
 		};
 
 		struct Task_resume_callback : Vfs::Notify_callback
@@ -128,8 +139,8 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			~Task_resume_callback()
 			{
 				for (Context *c = contexts.first(); c; c = contexts.first()) {
-					contexts.remove(c);
 					c->drop_notify();
+					contexts.remove(c);
 				}
 			}
 
@@ -240,8 +251,9 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			fd->fd_path = strdup(path);
 		}
 
+		Context *_open(const char *path, unsigned flags);
+
 		ssize_t _read(Context&, void*, Vfs::file_size, bool blocking);
-		ssize_t _read(Vfs::Vfs_handle&, void*, Vfs::file_size, bool blocking);
 		ssize_t _write(Vfs::Vfs_handle&, void const *, Vfs::file_size);
 
 		int read_sockaddr_in(char const *file_name,

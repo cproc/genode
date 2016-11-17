@@ -18,7 +18,6 @@
 #include <base/rpc_server.h>
 #include <base/rpc_client.h>
 #include <base/heap.h>
-#include <base/debug.h>
 
 /* libc-internal includes */
 #include <internal/call_func.h>
@@ -56,15 +55,11 @@ struct Libc::Pthread_tasks : Libc::Task
 	 ** Task interface **
 	 ********************/
 
-	void block() override
-	{
-		sem.down();
-	}
+	void block() override {
+		sem.down(); }
 
-	void unblock() override
-	{
-		sem.up();
-	}
+	void unblock() override {
+		sem.up(); }
 };
 
 
@@ -108,8 +103,6 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 		 */
 		jmp_buf _libc_task;
 
-		bool _libc_task_active = false;
-
 		/**
 		 * Trampoline to application code
 		 */
@@ -124,6 +117,10 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 		 */
 		Genode::Signal_handler<Kernel> _resume_handler {
 			_env.ep(), *this, &Kernel::unblock };
+
+		enum State { KERNEL, USER };
+
+		State _state = USER;
 
 	public:
 
@@ -187,14 +184,18 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 
 		void block() override
 		{
-			if (!_setjmp(_app_task))
+			if (_state == USER && !_setjmp(_app_task)) {
+				_state = KERNEL;
 				_longjmp(_libc_task, 1);
+			}
 		}
 
 		void unblock() override
 		{
-			if (!_setjmp(_libc_task))
+			if (_state == KERNEL && !_setjmp(_libc_task)) {
+				_state = USER;
 				_longjmp(_app_task, 1);
+			}
 		}
 };
 

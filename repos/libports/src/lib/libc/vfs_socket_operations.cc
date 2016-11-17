@@ -19,7 +19,6 @@
 #include <base/log.h>
 #include <vfs/types.h>
 #include <util/string.h>
-#include <base/debug.h>
 
 /* libc includes */
 #include <sys/types.h>
@@ -190,19 +189,21 @@ int Libc::Vfs_plugin::read_sockaddr_in(char const *file_name, Libc::File_descrip
 	if (!addr)                     return Errno(EFAULT);
 	if (!addrlen || *addrlen <= 0) return Errno(EINVAL);
 
+	Genode::Lock::Guard vfs_guard(_lock);
+
 	Absolute_path file(file_name, context->path.base());
-	Vfs_handle *handle = nullptr;
-	switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY, &handle, _alloc)) {
-		case Directory_service::OPEN_OK: break;
-		default:
-			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
-			return Errno(EINVAL);
+	Context *tmp_ctx = _open(file.base(), Directory_service::OPEN_MODE_RDONLY);
+	if (tmp_ctx == nullptr) {
+		Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
+		return -1;
 	}
-	Vfs_handle::Guard guard(handle);
+	Context::Guard guard(_alloc, tmp_ctx);
 
 	Sockaddr_string addr_string;
-	auto const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, false);
-	if (n == -1 || !n || n >= (int)addr_string.capacity() - 1)
+	auto const n = _read(*tmp_ctx, addr_string.base(), addr_string.capacity() - 1, false);
+	if (n == -1)
+		return -1;
+	if (!n || n >= (int)addr_string.capacity() - 1)
 		return Errno(EINVAL);
 
 	addr_string.terminate(n);
@@ -253,6 +254,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::accept(File_descriptor *libc_fd, struct
 
 	char accept_socket[24];
 
+	Genode::Lock::Guard vfs_guard(_lock);
+
 	int n = 0;
 	do {
 		n = _read(*context, accept_socket, sizeof(accept_socket), true);
@@ -296,19 +299,15 @@ Libc::File_descriptor *Libc::Vfs_plugin::accept(File_descriptor *libc_fd, struct
 
 	if (addr && addrlen) {
 		Absolute_path file("remote", accept_path.base());
-		Vfs_handle *remote_handle = nullptr;
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY,
-		                       &remote_handle, _alloc)) {
-		case Directory_service::OPEN_OK: break;
-		default:
+		Context *remote_ctx = _open(file.base(), Directory_service::OPEN_MODE_RDONLY);
+		if (remote_ctx == nullptr) {
 			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
-			Errno(EINVAL);
 			return nullptr;
 		}
-		Vfs_handle::Guard guard(remote_handle);
+		Context::Guard guard(_alloc, remote_ctx);
 
 		Sockaddr_string remote;
-		int const n = _read(*remote_handle, remote.base(), remote.capacity() - 1, false);
+		int const n = _read(*remote_ctx, remote.base(), remote.capacity() - 1, false);
 		if (n == -1 || !n || n >= (int)remote.capacity() - 1) {
 			return nullptr;
 		}
@@ -337,6 +336,8 @@ int Libc::Vfs_plugin::bind(Libc::File_descriptor *fd, const struct sockaddr *add
 	Socket_context *context;
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context)))
 		return Errno(EBADF);
+
+	Genode::Lock::Guard vfs_guard(_lock);
 
 	{
 		Sockaddr_string addr_string(host_string(*(sockaddr_in *)addr),
@@ -376,25 +377,34 @@ int Libc::Vfs_plugin::connect(Libc::File_descriptor *fd, sockaddr const *addr, s
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context)))
 		return Errno(EBADF);
 
+	Genode::Lock::Guard vfs_guard(_lock);
+
 	{
 		Sockaddr_string addr_string(host_string(*(sockaddr_in const *)addr),
 		                            port_string(*(sockaddr_in const *)addr));
 
 		Absolute_path file("connect", context->path.base());
-		Vfs::Vfs_handle *connect_handle = nullptr;
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_WRONLY,
-		                       &connect_handle, _alloc)) {
-		case Directory_service::OPEN_OK: break;
-		default:
+		Context *tmp_ctx = _open(file.base(), Directory_service::OPEN_MODE_RDONLY);
+		if (tmp_ctx == nullptr) {
 			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
-			return Errno(EINVAL);
+			return -1;
 		}
-		Vfs::Vfs_handle::Guard guard(connect_handle);
+		Context::Guard guard(_alloc, tmp_ctx);
+
+		/* can we block for notification? */
+		if (!tmp_ctx->subscribe())
+			return Errno(EIO);
 
 		int const len = Genode::strlen(addr_string.base());
-		int const n   = _write(*connect_handle, addr_string.base(), len);
+		int const n   = _write(tmp_ctx->handle(), addr_string.base(), len);
 		if (n == -1)  return -1;
 		if (n != len) return Errno(EIO);
+
+		Task &task = Libc::this_task();
+		Task_resume_callback notify_cb(task);
+		notify_cb.add_context(*tmp_ctx);
+		/* wait for notification on connect file to block for completion */
+		_yield_vfs(task);
 	}
 
 	return 0;
@@ -408,6 +418,8 @@ int Libc::Vfs_plugin::listen(Libc::File_descriptor *fd, int backlog)
 	Socket_context *context;
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context)))
 		return Errno(EBADF);
+
+	Genode::Lock::Guard vfs_guard(_lock);
 
 	{
 		Absolute_path file("listen", context->path.base());
@@ -458,6 +470,8 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		return Errno(EBADF);
 	}
 
+	Genode::Lock::Guard vfs_guard(_lock);
+
 	/*
 	 * TODO: if the read of the 'from' file is QUEUED then immediately
 	 * read the data file and block until both callbacks complete
@@ -468,24 +482,14 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 
 		Sockaddr_string addr_string;
 		Absolute_path file("from", context->path.base());
-		Vfs_handle *handle = nullptr;
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY,
-		                       &handle, _alloc)) {
-		case Directory_service::OPEN_OK: break;
-		default:
+		Context *from_ctx = _open(file.base(), Directory_service::OPEN_MODE_RDONLY);
+		if (from_ctx == nullptr) {
 			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
-			return Errno(EINVAL);
+			return -1;
 		}
-		Vfs_handle::Guard guard(handle);
+		Context::Guard guard(_alloc, from_ctx);
 
-		/* set a resume callback so this will be a blocking call */
-	/*
-		Task_resume_callback resume_cb(task);
-		handle->notify_callback(resume_cb);
-	 */
-
-		PDBG("read from");
-		int const n = _read(*handle, addr_string.base(), addr_string.capacity() - 1, true);
+		int const n = _read(*from_ctx, addr_string.base(), addr_string.capacity() - 1, true);
 		if (n == -1)
 			return -1;
 		if (!n || n >= (int)addr_string.capacity() - 1) {
@@ -512,14 +516,6 @@ ssize_t Libc::Vfs_plugin::recv(Libc::File_descriptor *libc_fd, void *buf, ::size
 	return recvfrom(libc_fd, buf, len, flags, nullptr, nullptr);
 }
 
-/*
-ssize_t Libc::Vfs_plugin::recvmsg(Libc::File_descriptor *libc_fd, struct msghdr *msg, int flags)
-{
-	PDBG("##########  TODO  ##########");
-	return 0;
-}
-*/
-
 
 ssize_t Libc::Vfs_plugin::sendto(Libc::File_descriptor *fd, const void *buf, ::size_t len, int flags,
                             const struct sockaddr *dest_addr, socklen_t addrlen)
@@ -534,6 +530,8 @@ ssize_t Libc::Vfs_plugin::sendto(Libc::File_descriptor *fd, const void *buf, ::s
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context))) {
 		return Errno(EBADF);
 	}
+
+	Genode::Lock::Guard vfs_guard(_lock);
 
 	/*
 	 * TODO: if the write to the 'to' file is QUEUED then immediately
@@ -588,6 +586,8 @@ int Libc::Vfs_plugin::setsockopt(Libc::File_descriptor *fd, int level, int optna
 	Socket_context *context;
 	if (!fd || !(context = dynamic_cast<Socket_context *>(fd->context)))
 		return  Errno(EBADF);
+
+	Genode::Lock::Guard vfs_guard(_lock);
 
 	if (level == SOL_SOCKET) {	
 		switch (optname) {
@@ -653,6 +653,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::socket(int domain, int type, int protoc
 		return 0;
 	}
 
+	Genode::Lock::Guard vfs_guard(_lock);
+
 	{
 		Libc::Absolute_path file(Libc::config_socket());
 		/* just check the type for now */
@@ -665,19 +667,15 @@ Libc::File_descriptor *Libc::Vfs_plugin::socket(int domain, int type, int protoc
 		}
 		file.append_element("new_socket");
 
-		Vfs_handle *handle;
-		switch (_root_dir.open(file.base(), Directory_service::OPEN_MODE_RDONLY,
-		                       &handle, _alloc)) {
-		case Directory_service::OPEN_OK: break;
-		default:
-			Genode::error(__func__,": failed to open '", file, "'");
-			Errno(EINVAL);
-			return 0;
+		Context *meta_ctx = _open(file.base(), Directory_service::OPEN_MODE_RDONLY);
+		if (meta_ctx == nullptr) {
+			Genode::error(__func__,": failed to open '", file, "', socket VFS plugin not loaded?");
+			return nullptr;
 		}
-		Vfs_handle::Guard guard(handle);
+		Context::Guard guard(_alloc, meta_ctx);
 
 		char buf[24];
-		ssize_t const n = _read(*handle, buf, sizeof(buf), false);
+		ssize_t const n = _read(*meta_ctx, buf, sizeof(buf), false);
 		if (n == -1 || !n || n >= (int)sizeof(buf) - 1) {
 			Genode::error(__func__,": failed to read '", file, "', read returned ",n);
 			return 0;
