@@ -167,6 +167,7 @@ class Vfs::Fs_file_system : public File_system
 			case ::File_system::Packet_descriptor::WRITE:
 				handle->write_callback(nullptr, 0, s);
 				break;
+			case ::File_system::Packet_descriptor::INVALID: break;
 			}
 		}
 

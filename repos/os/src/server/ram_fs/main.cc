@@ -78,6 +78,8 @@ namespace Ram_fs {
 				case Packet_descriptor::WRITE:
 					res_length = node.write((char const *)content, length, offset);
 					break;
+
+				case Packet_descriptor::INVALID: break;
 				}
 
 				packet.length(res_length);

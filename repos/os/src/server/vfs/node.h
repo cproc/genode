@@ -19,6 +19,7 @@
 #include <file_system/node.h>
 #include <file_system_session/file_system_session.h>
 #include <os/path.h>
+#include <base/debug.h>
 
 /* Local includes */
 #include "assert.h"
@@ -179,7 +180,7 @@ class Vfs_server::File : public Node,
 		~File()
 		{
 			_handle->ds().close(_handle);
-			if (_packet.size()) {
+			if (_packet.operation() != Packet_descriptor::INVALID) {
 				_packet.length(0);
 				_packet.succeeded(false);
 				_sink.acknowledge_packet(_packet);
@@ -191,12 +192,10 @@ class Vfs_server::File : public Node,
 			assert_truncate(_handle->fs().ftruncate(_handle, size));
 		}
 
-		void queue(::File_system::Packet_descriptor &packet)
+		void queue(::File_system::Packet_descriptor const &packet)
 		{
-			if (_packet.size()) {
-				Genode::warning("VFS server acking partial packet to make room for new client op");
-				if (!_packet.length())
-					Genode::warning("VFS server packet has no data");
+			if (_packet.operation() != Packet_descriptor::INVALID) {
+				Genode::warning("VFS server acking partial packet");
 				/* push the old op */
 				_packet.succeeded(_packet.length());
 				_sink.acknowledge_packet(_packet);
@@ -207,50 +206,27 @@ class Vfs_server::File : public Node,
 			_handle->seek(_packet.position());
 
 			switch (_packet.operation()) {
+			case Packet_descriptor::READ:
+				if (_handle->fs().read(_handle, packet.length()) ==
+					Vfs::File_io_service::Read_result::READ_QUEUED) return;
+				break;
 
-			case Packet_descriptor::READ: {
-				typedef Vfs::File_io_service::Read_result Result;
+			case Packet_descriptor::WRITE:
+				if (_handle->fs().write(_handle, packet.length()) ==
+					Vfs::File_io_service::Write_result::WRITE_QUEUED) return;
+				break;
 
-				Result r = _handle->fs().read(_handle, _packet.length());
-				if (r == Result::READ_OK) {
-					if (_packet.offset() == packet.offset()) {
-						/* no callback was issued */
-						packet.length(0);
-						packet.succeeded(true);
-						_sink.acknowledge_packet(packet);
-						_packet = Packet_descriptor();
-					}
-					return;
-				} else if (r == Result::READ_QUEUED) {
-					_packet.length(0); /* reset length, callback will look at size */
-					return;
-				}
+			case Packet_descriptor::INVALID:
+				_sink.acknowledge_packet(_packet);
+				return;
 			}
 
-			case Packet_descriptor::WRITE: {
-				typedef Vfs::File_io_service::Write_result Result;
-				Result r = _handle->fs().write(_handle, _packet.length());
-				if (r == Result::WRITE_OK) {
-					if (_packet.offset() == packet.offset()) {
-						/* no callback was issued */
-						packet.length(0);
-						packet.succeeded(true);
-						_sink.acknowledge_packet(packet);
-						_packet = Packet_descriptor();
-					}
-					return;
-				} else if (r == Result::WRITE_QUEUED) {
-					_packet.length(0); /* reset length, callback will look at size */
-					return;
-				}
+			if (_packet.operation() != Packet_descriptor::INVALID) {
+				_packet.length(_packet_offset);
+				_packet.succeeded(true);
+				_sink.acknowledge_packet(_packet);
+				_packet = Packet_descriptor();
 			}
-			}
-
-			/* I/O failure */
-			_packet.length(0);
-			_packet.succeeded(false);
-			_sink.acknowledge_packet(_packet);
-			_packet = Packet_descriptor();
 		}
 
 		bool sigh(Genode::Signal_context_capability sig_cap)

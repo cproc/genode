@@ -177,6 +177,8 @@ class Vfs_server::Session_component :
 						res_length = node->write(_vfs, (char const *)content, length, seek);
 						break;
 					}
+
+					case Packet_descriptor::INVALID: break;
 					}
 
 					packet.length(res_length);
