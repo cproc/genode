@@ -70,7 +70,7 @@ set build_components {
 	app/netperf
 }
 
-lappend build_components $netperf_target
+lappend build_components lib/vfs/$stack_name
 
 lappend_if $use_nic_driver      build_components drivers/nic
 lappend_if $use_usb_driver      build_components drivers/usb
@@ -236,9 +236,10 @@ append config {
 			<arg value="16"/>
 			<libc tx_buf_size="2M" rx_buf_size="2M"
 			      stdout="/dev/log" stderr="/dev/log" socket="/socket">
-				<vfs>
+				<vfs audit="yes">
 					<dir name="dev"> <log/> </dir>
- 					<dir name="socket"> <lwip }
+ 					<dir name="socket"> <}
+append config $stack_name
 append_if [have_spec linux] config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
 append config {/>   </dir>
 				</vfs>

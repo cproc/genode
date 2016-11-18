@@ -28,6 +28,14 @@ namespace Vfs {
 
 struct Vfs::Callback
 {
+	/**
+	 * Operation status passed to I/O callbacks
+	 *
+	 * When an operation returns a QUEUED result, expect
+	 * callbacks until a COMPLETE or ERROR status is
+	 * passed to a callback. Otherwise callbacks must
+	 * expect to only receive PARTIAL.
+	 */
 	enum Status {
 		PARTIAL,   /* request partially completed */
 		COMPLETE,  /* request completed           */
