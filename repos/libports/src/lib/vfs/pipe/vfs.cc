@@ -24,7 +24,7 @@
 #include <vfs/file_system.h>
 #include <vfs/vfs_handle.h>
 #include <util/avl_string.h>
-
+// TODO: use Id_space
 
 namespace Vfs { class Pipe_file_system; };
 
@@ -379,7 +379,7 @@ class Vfs::Pipe_file_system final : public Vfs::File_system
 
 				file_size remain = len;
 				while(remain) {
-					file_size n = pipe.read(*read_handle, len);
+					file_size n = pipe.read(*read_handle, remain);
 					if (n == 0) {
 						break;
 					}

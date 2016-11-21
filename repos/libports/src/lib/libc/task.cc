@@ -58,8 +58,11 @@ struct Libc::Pthread_tasks : Libc::Task
 	void block() override {
 		sem.down(); }
 
-	void unblock() override {
-		sem.up(); }
+	void unblock() override
+	{
+		if (sem.cnt() < 0)
+			sem.up();
+	}
 };
 
 
@@ -115,8 +118,10 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 		 * Signal handler to switch the signal handling libc task to
 		 * the application task, from another thread
 		 */
-		Genode::Signal_handler<Kernel> _resume_handler {
+		Genode::Signal_handler<Kernel> _unblock_handler {
 			_env.ep(), *this, &Kernel::unblock };
+
+		Genode::Signal_transmitter _unblock_transmitter { _unblock_handler };
 
 		enum State { KERNEL, USER };
 
@@ -192,9 +197,14 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 
 		void unblock() override
 		{
-			if (_state == KERNEL && !_setjmp(_libc_task)) {
+			if (_state != KERNEL)
+				return;
+
+			if (Genode::Thread::myself() == (&_myself) && !_setjmp(_libc_task)) {
 				_state = USER;
 				_longjmp(_app_task, 1);
+			} else {
+				_unblock_transmitter.submit();
 			}
 		}
 };
