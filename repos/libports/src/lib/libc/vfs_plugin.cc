@@ -334,7 +334,6 @@ struct Vfs::Libc_write_callback : Write_callback
 	file_size const buffer_len;
 	file_size accumulator = 0;
 	Callback::Status status = PARTIAL;
-	bool tasked = false;
 
 	Libc_write_callback(Libc::Task &t, Vfs_handle &h, char const *buf, file_size len)
 	: task(t), handle(h), buffer(buf), buffer_len(len) {
@@ -346,22 +345,19 @@ struct Vfs::Libc_write_callback : Write_callback
 	file_size write(char *dst, file_size len, Callback::Status st) override
 	{
 		status = st;
-		if (!len) {
-			if (tasked) {
-				task.unblock();
-			}
-			return 0;
-		}
 
 		file_size out = min(len, buffer_len-accumulator);
-		if (dst) {
-			char const *p = buffer+accumulator;
-			Genode::memcpy(dst, p, out);
+		if (out) {
+			if (dst) {
+				char const *p = buffer+accumulator;
+				Genode::memcpy(dst, p, out);
+			}
+			accumulator += out;
 		}
-		accumulator += out;
-		if (tasked && (status != PARTIAL)) {
+
+		if (status != PARTIAL)
 			task.unblock();
-		}
+
 		return out;
 	}
 };
@@ -378,9 +374,9 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
 	Result result = handle.fs().write(&handle, count);
 
 	if (result == Result::WRITE_QUEUED) {
-		cb.tasked = true;
-		_yield_vfs(task);
-		/* the libc task will run until the callback completes or errors */
+		do {
+			_yield_vfs(task);
+		} while (cb.status == Callback::PARTIAL);
 
 		/* XXX: short write? */
 		result = (cb.status == Callback::ERROR) ?
@@ -426,7 +422,6 @@ struct Vfs::Libc_read_callback : Read_callback
 	file_size const buffer_len;
 	file_size accumulator = 0;
 	Callback::Status status = PARTIAL;
-	bool tasked = false;
 
 	Libc_read_callback(Libc::Task &t, Vfs_handle &h, char *buf, file_size len)
 	: task(t), handle(h), buffer(buf), buffer_len(len) {
@@ -438,21 +433,19 @@ struct Vfs::Libc_read_callback : Read_callback
 	file_size read(char const *src, file_size len, Callback::Status st) override
 	{
 		status = st;
-		if (!len) {
-			if (tasked)
-				task.unblock();
-			return 0;
-		}
 		file_size out = min(len, buffer_len-accumulator);
-		char *p = buffer+accumulator;
-		if (src)
-			Genode::memcpy(p, src, len);
-		else
-			Genode::memset(p, 0x00, len);
-		accumulator += out;
-		if (tasked && (status != PARTIAL)) {
-			task.unblock();
+
+		if (out) {
+			char *p = buffer+accumulator;
+			if (src)
+				Genode::memcpy(p, src, out);
+			else
+				Genode::memset(p, 0x00, out);
+			accumulator += out;
 		}
+		if (status != PARTIAL)
+			task.unblock();
+
 		return out;
 	}
 };
@@ -475,12 +468,13 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 	Libc_read_callback cb(task, handle, (char*)buf, count);
 
 	Result result = handle.fs().read(&handle, count);
+
 	for (;;) {
 		if (result == Result::READ_QUEUED) {
-			cb.tasked = true;
-			_yield_vfs(task);
+			do {
+				_yield_vfs(task);
+			} while (cb.status == Callback::PARTIAL);
 
-			/* the libc task will run until the callback completes or errors */
 
 			/* XXX: short read? */
 			result = (cb.status == Callback::ERROR) ?
@@ -492,7 +486,6 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 
 			Task_resume_callback notify_cb(task);
 			notify_cb.add_context(context);
-			cb.tasked = true;
 
 			timeval const &timeout = context.timeout();
 			if (timeout.tv_sec || timeout.tv_usec) {
