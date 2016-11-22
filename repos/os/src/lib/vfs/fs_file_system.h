@@ -184,7 +184,7 @@ class Vfs::Fs_file_system : public File_system
 		/**
 		 * Queue a packet to the server
 		 */
-		file_size _queue_io_packet(Fs_vfs_handle &handle, file_size count, Opcode op)
+		bool _queue_io_packet(Fs_vfs_handle &handle, file_size count, Opcode op)
 		{
 			typedef ::File_system::Session::Tx::Source Source;
 			Source &source = *_fs.tx();
@@ -218,14 +218,14 @@ class Vfs::Fs_file_system : public File_system
 				                               op_len, Callback::PARTIAL);
 				if (!op_len) {
 					source.release_packet(packet);
-					return 0;
+					return false;
 				}
 				packet.length(op_len);
 			}
 
 			source.submit_packet(packet);
 
-			return op_len;
+			return true;
 		}
 
 		/**
