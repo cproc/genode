@@ -11,6 +11,7 @@ append build_components [qt5_build_components feature]
 append build_components {
 	app/avplay
 	app/qt5/qt_avplay
+	server/cube_fb
 }
 
 build $build_components
@@ -60,6 +61,7 @@ append config {
 				</vfs>
 			</libc>
 			<mediafile name="mediafile"/>
+			<framebuffer_filter name="cube_fb" ram_quota="4M"/>
 		</config>
 	</start>
 </config>
@@ -75,6 +77,7 @@ append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
 	qt_avplay
+	cube_fb
 	freetype.lib.so
 	gallium.lib.so
 	icu.lib.so
