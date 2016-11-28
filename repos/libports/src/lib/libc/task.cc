@@ -189,20 +189,21 @@ class Libc::Kernel : /*public Genode::Rpc_object<Task_resume, Libc::Task>,*/ pub
 
 		void block() override
 		{
-			if (_state == USER && !_setjmp(_app_task)) {
-				_state = KERNEL;
+			if (_state == KERNEL) return;
+
+			_state = KERNEL;
+			if (!_setjmp(_app_task))
 				_longjmp(_libc_task, 1);
-			}
 		}
 
 		void unblock() override
 		{
-			if (_state != KERNEL)
-				return;
+			if (_state == USER) return;
 
-			if (Genode::Thread::myself() == (&_myself) && !_setjmp(_libc_task)) {
+			if (Genode::Thread::myself() == (&_myself)) {
 				_state = USER;
-				_longjmp(_app_task, 1);
+				if (!_setjmp(_libc_task))
+					_longjmp(_app_task, 1);
 			} else {
 				_unblock_transmitter.submit();
 			}
