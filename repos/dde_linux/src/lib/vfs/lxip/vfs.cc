@@ -23,47 +23,106 @@
 #include <vfs/file_io_service.h>
 #include <vfs/file_system_factory.h>
 #include <vfs/vfs_handle.h>
+#include <base/debug.h>
 
 /* Lxip includes */
 #include <lxip/lxip.h>
+#include <lx.h>
 
 /* Libc includes */
+/*
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+ */
 
+extern "C" void wait_for_continue(void);
+
+namespace Linux {
+		#include <lx_emul.h>
+
+		#include <lx_emul/extern_c_begin.h>
+		#include <linux/socket.h>
+		#include <uapi/linux/in.h>
+		#include <uapi/linux/if.h>
+		extern int sock_setsockopt(struct socket *sock, int level,
+		                           int op, char __user *optval,
+		                           unsigned int optlen);
+		extern int sock_getsockopt(struct socket *sock, int level,
+		                           int op, char __user *optval,
+		                           int __user *optlen);
+		struct socket *sock_alloc(void);
+		#include <lx_emul/extern_c_end.h>
+}
+
+
+/****
+
+/home/emery/repo/genode/contrib/dde_linux-a94822e34f6074f3bb84c5300925c72502066eb0/src/lib/lxip/include/linux/net.h
+
+ ****/
 
 namespace {
 
-	char const *get_port(char const *s)
-	{
-		char const *p = s;
-		while (*++p) {
-			if (*p == ':')
-				return ++p;
+long ascii_to_long(char const *cp)
+{
+	unsigned long result = 0;
+	Genode::ascii_to_unsigned(cp, result, 10);
+	return result;
+}
+
+
+char const *get_port(char const *s)
+{
+	char const *p = s;
+	while (*++p) {
+		if (*p == ':')
+			return ++p;
+	}
+	return nullptr;
+}
+
+
+int remove_port(char *p)
+{
+	long tmp = -1;
+
+	while (*++p)
+		if (*p == ':') {
+			*p++ = '\0';
+			Genode::ascii_to_unsigned(p, tmp, 10);
+			break;
 		}
-		return nullptr;
-	}
 
-	int remove_port(char *p)
-	{
-		long tmp = -1;
+	return tmp;
+}
 
-		while (*++p)
-			if (*p == ':') {
-				*p++ = '\0';
-				Genode::ascii_to_unsigned(p, tmp, 10);
-				break;
-			}
 
-		return tmp;
-	}
+unsigned get_addr(char const *s)
+{
+	unsigned char to[4];
+
+	char const *p = s;
+	for (int i = 0; *p && i < 4; i++) {
+		unsigned long result;
+
+		p += Genode::ascii_to_unsigned(p, result, 10);
+
+		if (*p == '.') p++;
+
+		to[i] = result;
+	};
+
+	return (to[0]<<0)|(to[1]<<8)|(to[2]<<16)|(to[3]<<24);
+}
 
 }
 
 
 namespace Lxip {
+
+	using namespace Linux;
 
 	struct Protocol_dir;
 	struct Socket_dir;
@@ -81,9 +140,11 @@ namespace Lxip {
 
 struct Lxip::Protocol_dir
 {
+	enum Type { TYPE_STREAM, TYPE_DGRAM };
+
 	virtual char const *top_dir() = 0;
-	virtual Lxip::Type type() = 0;
-	virtual unsigned adopt_socket(Lxip::Handle &, bool) = 0;
+	virtual Type type() = 0;
+	virtual unsigned adopt_socket(struct Linux::socket&, bool) = 0;
 	virtual bool     lookup_port(long) = 0;
 };
 
@@ -92,7 +153,7 @@ struct Lxip::Socket_dir
 {
 	virtual Protocol_dir &parent() = 0;
 	virtual char const *top_dir() = 0;
-	virtual unsigned accept(Lxip::Handle &) = 0;
+	virtual unsigned accept(struct Linux::socket&) = 0;
 	virtual void     bind(bool) = 0; /* bind to port */
 	virtual long     bind() = 0; /* return bound port */
 	virtual bool     lookup_port(long) = 0;
@@ -199,9 +260,8 @@ static Vfs::Lxip_vfs_handles _polling_handles;
 static void poll_all()
 {
 	for (Vfs::Lxip_vfs_handle *h = _polling_handles.first(); h; h = h->next())
-		if (h->file.poll()) {
+		if (h->file.poll())
 			h->notify_callback();
-		}
 }
 
 
@@ -226,16 +286,14 @@ class Vfs::Lxip_file : public Vfs::File
 	protected:
 
 		Lxip::Socket_dir &_parent;
-		Lxip::Socketcall &_sc;
-		Lxip::Handle     &_handle;
+		Linux::socket    &_sock;
 
 		char _content_buffer[Lxip::MAX_DATA_LEN];
 
 	public:
 
-		Lxip_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h,
-			 char const *name)
-		: Vfs::File(name), _parent(p), _sc(s), _handle(h) { }
+		Lxip_file(Lxip::Socket_dir &p, struct Linux::socket &s, char const *name)
+		: Vfs::File(name), _parent(p), _sock(s) { }
 
 		virtual ~Lxip_file() { }
 
@@ -243,8 +301,39 @@ class Vfs::Lxip_file : public Vfs::File
 		 ** File interface **
 		 ********************/
 
-		bool poll() override {
-			return _sc.poll(_handle, false); }
+		bool poll() override
+		{
+			using namespace Linux;
+
+			enum {
+				POLLIN_SET  = (POLLRDNORM | POLLRDBAND | POLLIN | POLLHUP | POLLERR),
+				POLLOUT_SET = (POLLWRBAND | POLLWRNORM | POLLOUT | POLLERR),
+				POLLEX_SET  = (POLLPRI)
+			};
+
+			/*
+			 * Needed by udp_poll because it may check file->f_flags
+			 */
+			struct file f;
+			f.f_flags = 0;
+
+			/*
+			 * Set socket wait queue to one so we can block poll in 'tcp_poll -> poll_wait'
+			 */
+			//set_sock_wait(&_sock, 0);
+			int mask = _sock.ops->poll(&f, &_sock, 0);
+			//set_sock_wait(&_sock, 0);
+
+			int result = 0;
+			if (mask & POLLIN_SET)
+				result |= Lxip::POLLIN;
+			if (mask & POLLOUT_SET)
+				result |= Lxip::POLLOUT;
+			if (mask & POLLEX_SET)
+				result |= Lxip::POLLEX;
+
+			return result;
+		}
 };
 
 
@@ -252,55 +341,87 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_data_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "data") { }
+		Lxip_data_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "data") { }
 
 		/********************
 		 ** File interface **
 		 ********************/
 
-		bool poll() override {
-			return _sc.poll(_handle, false) & Lxip::POLLIN; }
-
 		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
+			if (Lxip::ssize_t r = socket_check_state(&_sock) < 0)
+				return Write_result::WRITE_ERR_IO;
+
+			struct msghdr   msg;
+			struct iovec    iov;
+
+			msg.msg_name    = &_parent.to_addr();
+			msg.msg_namelen = sizeof(sockaddr_in);
+			//msg.msg_iter.type = 0;
+			msg.msg_iter.iov_offset = 0;
+			//msg.msg_iter.count = sizeof(_content_buffer);
+			msg.msg_iter.iov = &iov;
+			msg.msg_iter.nr_segs = 1;
+			msg.msg_control    = nullptr;
+			msg.msg_controllen = 0;
+			msg.msg_iocb       = nullptr;
+			msg.msg_flags      = MSG_DONTWAIT;
+
+			iov.iov_base = (void*)_content_buffer;
+			iov.iov_len  = sizeof(_content_buffer);
+
 			file_size remain = len;
 			while (remain) {
-				file_size n = min(remain, sizeof(_content_buffer));
-				n = handle.write_callback(_content_buffer, n, Callback::PARTIAL);
+				file_size n = min(remain, sizeof(_content_buffer)-1);
+				msg.msg_iter.count = n =
+					handle.write_callback(_content_buffer, n, Callback::PARTIAL);
+				if (!n) break;
 
-				Lxip::ssize_t res = _sc.send(_handle, _content_buffer, n,
-				                             0 /* flags */, 0 /* family */,
-				                             &_parent.to_addr());
+				int res = _sock.ops->sendmsg(&_sock, &msg, n);
 
 				if ((res == Lxip::ssize_t(Lxip::Io_result::LINUX_EAGAIN))
 				 || (file_size(res) < n)) {
 					Genode::error("short write to lxIP socket, returning error");
-					handle.write_callback(_content_buffer, 0, Callback::ERROR);
 					return Write_result::WRITE_ERR_IO;
 				} else if (res < 0) {
 					Genode::error("LxIP send error ", res);
-					handle.write_callback(_content_buffer, 0, Callback::ERROR);
 					return Write_result::WRITE_ERR_IO;
 				}
 
 				remain -= res;
 			}
 
-			handle.write_callback(_content_buffer, 0, Callback::COMPLETE);
 			return Write_result::WRITE_OK;
 		}
 
 		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
+			struct msghdr   msg;
+			struct iovec    iov;
+
+			msg.msg_name       = nullptr;
+			msg.msg_namelen    = 0;
+			msg.msg_iter.type = 0;
+			msg.msg_iter.iov_offset = 0;
+			msg.msg_iter.iov = &iov;
+			msg.msg_iter.nr_segs = 1;
+			msg.msg_control    = nullptr;
+			msg.msg_controllen = 0;
+			msg.msg_iocb       = nullptr;
+
+			iov.iov_base = (void*)_content_buffer;
+			iov.iov_len  = sizeof(_content_buffer);
+
 			file_size remain = len;
 			while (remain) {
-				Lxip::ssize_t const n = min(remain, sizeof(_content_buffer));
-				Lxip::ssize_t const res = _sc.recv(_handle, _content_buffer, n,
-				                                   0 /* flags */,
-				                                   0 /* familiy */,
-				                                   nullptr /* addr */,
-				                                   nullptr /* len */);
+				int const n = msg.msg_iter.count =
+					min(remain, sizeof(_content_buffer));
+				int const res = _sock.ops->recvmsg(&_sock, &msg, n, MSG_DONTWAIT);
 				if (res < 0) {
 					if (res == Lxip::Io_result::LINUX_EAGAIN) {
 						return Read_result::READ_OK;
@@ -333,8 +454,8 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 
 	public:
 
-		Lxip_bind_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "bind") { }
+		Lxip_bind_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "bind") { }
 
 		long port() { return _port; }
 
@@ -345,6 +466,8 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 
 		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			if (handle.seek() != 0)
 				return Write_result::WRITE_ERR_INVALID;
 			if (len > (sizeof(_content_buffer) - 2))
@@ -353,19 +476,16 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 			/* already bound to port */
 			if (_port >= 0) return Write_result::WRITE_ERR_INVALID;
 
-			/* check if port is already used by other socket */
-			long tmp = -1;
 			len = handle.write_callback(
 				_content_buffer, len, Callback::PARTIAL);
 
-			Genode::ascii_to_unsigned(get_port(_content_buffer), tmp, len);
-			if (tmp == -1)
-				return Write_result::WRITE_ERR_INVALID;
-			if (_parent.lookup_port(tmp))
-				return Write_result::WRITE_ERR_INVALID;
+			struct sockaddr_storage addr_storage;
+			sockaddr_in *addr = (sockaddr_in*)&addr_storage;
+			long tmp = remove_port(_content_buffer);
+			addr->sin_port = htons(tmp);
+			addr->sin_addr.s_addr = get_addr(_content_buffer);
 
-			/* port is free, try to bind it */
-			Lxip::ssize_t res = _sc.bind_port(_handle, _content_buffer);
+			Lxip::ssize_t res = _sock.ops->bind(&_sock, (sockaddr*)addr, sizeof(addr_storage));
 			if (res != 0) return Write_result::WRITE_ERR_IO;
 
 			_port = tmp;
@@ -374,7 +494,6 @@ class Vfs::Lxip_bind_file : public Vfs::Lxip_file
 			_content_buffer[len+1] = '\0';
 
 			_parent.bind(true);
-			handle.write_callback(nullptr, 0, Callback::COMPLETE);
 			return Write_result::WRITE_OK;
 		}
 
@@ -394,8 +513,8 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_listen_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "listen") { }
+		Lxip_listen_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "listen") { }
 
 		/********************
 		 ** File interface **
@@ -411,12 +530,12 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 			Lxip::ssize_t res;
 
 			enum { DEFAULT_BACKLOG = 5 };
-			unsigned long result = DEFAULT_BACKLOG;
+			unsigned long backlog = DEFAULT_BACKLOG;
 			len = handle.write_callback(
 				_content_buffer, len, Callback::PARTIAL);
-			Genode::ascii_to_unsigned(_content_buffer, result, len);
+			Genode::ascii_to_unsigned(_content_buffer, backlog, len);
 
-			res = _sc.listen(_handle, result);
+			res = _sock.ops->listen(&_sock, backlog);
 			if (res != 0) return Write_result::WRITE_ERR_IO;
 
 			_content_buffer[len+0] = '\n';
@@ -424,7 +543,6 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 
 			_parent.listen(true);
 
-			handle.write_callback(nullptr, 0, Callback::COMPLETE);
 			return Write_result::WRITE_OK;
 		}
 
@@ -450,15 +568,31 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 
 	public:
 
-		Lxip_connect_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "connect") { }
+		Lxip_connect_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "connect") { }
 
 		/********************
 		 ** File interface **
 		 ********************/
 
+	/***
+		bool poll() override
+		{
+			if (_sc.poll(_handle, false)) {
+				int r = _sc.remote(_handle, _content_buffer, sizeof(_content_buffer)); 
+				if (r > 0) {
+					return true;
+				}
+				PDBG("remote returned ",r);
+			}
+			return false;
+		}
+	 ***/
+
 		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			if (handle.seek() != 0)
 				return Write_result::WRITE_ERR_INVALID;
 			if (len > (sizeof(_content_buffer) - 2))
@@ -467,7 +601,13 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			handle.write_callback(_content_buffer, len, Callback::PARTIAL);
 			_content_buffer[len] = '\0';
 
-			int res = _sc.dial(_handle, _content_buffer);
+			struct sockaddr_storage addr_storage;
+			sockaddr_in *addr = (sockaddr_in*)&addr_storage;
+			long tmp = remove_port(_content_buffer);
+			addr->sin_port = htons(tmp);
+			addr->sin_addr.s_addr = get_addr(_content_buffer);
+
+			Lxip::ssize_t res = _sock.ops->connect(&_sock, (sockaddr*)addr, sizeof(addr_storage), 0);
 
 			switch (res) {
 			case Lxip::Io_result::LINUX_EINPROGRESS:
@@ -500,15 +640,9 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			/* TODO: move string parsing to the LxIP library */
 			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
 			to_addr->sin_port = htons(remove_port(_content_buffer));
-			inet_pton(AF_INET, _content_buffer, &(to_addr->sin_addr));
-
-			handle.write_callback(_content_buffer, len, Callback::PARTIAL);
-			_content_buffer[len+0] = '\n';
-			_content_buffer[len+1] = '\0';
-
+			to_addr->sin_addr.s_addr = get_addr(_content_buffer);
 			_parent.connect(true);
 
-			handle.write_callback(nullptr, 0, Callback::COMPLETE);
 			return Write_result::WRITE_OK;
 		}
 }
@@ -518,8 +652,8 @@ class Vfs::Lxip_local_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_local_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "local") { }
+		Lxip_local_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "local") { }
 
 		/********************
 		 ** File interface **
@@ -530,9 +664,23 @@ class Vfs::Lxip_local_file : public Vfs::Lxip_file
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
 
-			int res = _sc.local(_handle, _content_buffer, sizeof(_content_buffer)-1);
-			if (res < 0) return Read_result::READ_ERR_IO;
-			Genode::size_t n = Genode::strlen(_content_buffer);
+			using namespace Linux;
+
+			sockaddr_storage storage;
+			sockaddr_in *addr = (sockaddr_in *)&storage;
+
+			int tmp_len = sizeof(storage);
+			int err = _sock.ops->getname(&_sock, (sockaddr *)addr, &tmp_len, 0);
+			if (err)
+				return Read_result::READ_ERR_IO;
+
+			in_addr const   i_addr = addr->sin_addr;
+			unsigned char const *a = (unsigned char*)&i_addr.s_addr;
+			unsigned char const *p = (unsigned char*)&addr->sin_port;
+			file_size n = Genode::snprintf(
+				_content_buffer, len, "%d.%d.%d.%d:%u",
+				 a[0], a[1], a[2], a[3], (p[0]<<8)|(p[1]<<0));
+
 			_content_buffer[n++] = '\n';
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
 
@@ -545,8 +693,8 @@ class Vfs::Lxip_remote_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_remote_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "remote") { }
+		Lxip_remote_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "remote") { }
 
 		/********************
 		 ** File interface **
@@ -557,12 +705,25 @@ class Vfs::Lxip_remote_file : public Vfs::Lxip_file
 			if (handle.seek() != 0)            return Read_result::READ_ERR_IO;
 			if (len < sizeof(_content_buffer)) return Read_result::READ_ERR_IO;
 
-			int res = _sc.remote(_handle, _content_buffer, sizeof(_content_buffer)-1);
-			if (res < 0) return Read_result::READ_ERR_IO;
-			Genode::size_t n = strlen(_content_buffer);
-			_content_buffer[n++] = '\n';
+			using namespace Linux;
 
+			sockaddr_storage storage;
+
+			int tmp_len = sizeof(storage);
+			if (_sock.ops->getname(&_sock, (sockaddr *)&storage, &tmp_len, 1))
+				return Read_result::READ_ERR_IO;
+
+			sockaddr_in *addr = (sockaddr_in *)&storage;
+			in_addr const   i_addr = addr->sin_addr;
+			unsigned char const *a = (unsigned char*)&i_addr.s_addr;
+			unsigned char const *p = (unsigned char*)&addr->sin_port;
+			file_size n = Genode::snprintf(
+				_content_buffer, len, "%d.%d.%d.%d:%u",
+				 a[0], a[1], a[2], a[3], (p[0]<<8)|(p[1]<<0));
+
+			_content_buffer[n++] = '\n';
 			handle.read_callback(_content_buffer, n, Callback::COMPLETE);
+
 			return Read_result::READ_OK;
 		}
 };
@@ -572,31 +733,49 @@ class Vfs::Lxip_accept_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_accept_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "accept") { }
+		Lxip_accept_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "accept") { }
 
 		/********************
 		 ** File interface **
 		 ********************/
 
+/***
+		bool poll() override
+		{
+			if (_sc.poll(_handle, false)) {
+				int r = _sc.remote(_handle, _content_buffer, sizeof(_content_buffer)); 
+				if (r > 0) {
+					PDBG("return true");
+					return true;
+				}
+				PDBG("remote returned ",r);
+			}
+			PDBG("nothing");
+			return false;
+		}
+ ***/
+
 		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			if (len < Lxip::MAX_FD_STR_LEN)
 				return Read_result::READ_ERR_IO;
 
-			Lxip::Handle h = _sc.accept(_handle, nullptr /* addr */, nullptr /* len */);
+			struct socket *new_sock = sock_alloc();
 
-			if (!h.socket) {
-				return Read_result::READ_ERR_IO;
+			if (int err = _sock.ops->accept(&_sock, new_sock, O_NONBLOCK)) {
+				kfree(new_sock);
+				return (err == -EAGAIN) ?
+					Read_result::READ_OK : Read_result::READ_ERR_IO;
 			}
 
-			/* check for EAGAIN */
-			if (h.socket == (void*)0x1) {
-				return Read_result::READ_OK;
-			}
+			new_sock->type = _sock.type;
+			new_sock->ops  = _sock.ops;
 
 			try {
-				unsigned const id = _parent.accept(h);
+				unsigned const id = _parent.accept(*new_sock);
 				Genode::size_t n = Genode::snprintf(
 					_content_buffer, sizeof(_content_buffer), "%s/%u", _parent.top_dir(), id);
 				handle.read_callback(_content_buffer, n, Callback::COMPLETE);
@@ -612,25 +791,40 @@ class Vfs::Lxip_from_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_from_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "from") { }
+		Lxip_from_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "from") { }
 
 		/********************
 		 ** File interface **
 		 ********************/
 
-		bool poll() override {
-			return _sc.poll(_handle, false) & Lxip::POLLIN; }
-
 		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			/* TODO: IPv6 */
 			struct sockaddr_storage addr;
-			Lxip::uint32_t addr_len = sizeof(addr);
+
+			struct msghdr   msg;
+			struct iovec    iov;
+
+			msg.msg_name      = &addr;
+			msg.msg_namelen   = sizeof(addr);
+			msg.msg_iter.type = 0;
+			msg.msg_iter.count = 0;
+			msg.msg_iter.iov_offset = 0;
+			msg.msg_iter.iov = &iov;
+			msg.msg_iter.nr_segs = 1;
+			msg.msg_control    = nullptr;
+			msg.msg_controllen = 0;
+			msg.msg_iocb       = nullptr;
+
+			iov.iov_base = (void*)_content_buffer;
+			iov.iov_len  = sizeof(_content_buffer);
 
 			/* peek to get the address of the currently queued data */
-			Lxip::ssize_t res = _sc.recv(_handle, _content_buffer, 0, MSG_PEEK,
-			                             0 /* familiy */, &addr, &addr_len);
+			Lxip::ssize_t const res =
+				_sock.ops->recvmsg(&_sock, &msg, 0, MSG_PEEK|MSG_DONTWAIT);
 			if (res == Lxip::Io_result::LINUX_EAGAIN) {
 				return Read_result::READ_OK;
 			}
@@ -658,8 +852,8 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 {
 	public:
 
-		Lxip_to_file(Lxip::Socket_dir &p, Lxip::Socketcall &s, Lxip::Handle &h)
-		: Lxip_file(p, s, h, "to") { }
+		Lxip_to_file(Lxip::Socket_dir &p, struct Linux::socket &s)
+		: Lxip_file(p, s, "to") { }
 
 		/********************
 		 ** File interface **
@@ -667,17 +861,17 @@ class Vfs::Lxip_to_file : public Vfs::Lxip_file
 
 		Write_result write(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			sockaddr_in *to_addr = (sockaddr_in*)&_parent.to_addr();
 
 			len = min(len, sizeof(_content_buffer)-1);
 			handle.write_callback(_content_buffer, len, Callback::PARTIAL);
 			_content_buffer[len] = '\0';
 
-			/* TODO: move string parsing to the LxIP library */
 			to_addr->sin_port = htons(remove_port(_content_buffer));
-			inet_pton(AF_INET, _content_buffer, &(to_addr->sin_addr));
+			to_addr->sin_addr.s_addr = get_addr(_content_buffer);
 
-			handle.write_callback(nullptr, 0, Callback::COMPLETE);
 			return Write_result::WRITE_OK;
 		}
 };
@@ -698,13 +892,12 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		Genode::Allocator  &_alloc;
 
-		Lxip::Protocol_dir &_parent;
-		Lxip::Socketcall   &_sc;
-		Lxip::Handle        _handle;
+		Lxip::Protocol_dir   &_parent;
+		struct Linux::socket &_sock;
 
 		Vfs::Node *_nodes[MAX_NODES];
 
-		struct sockaddr_storage _to_addr;
+		struct Linux::sockaddr_storage _to_addr;
 
 		unsigned _num_nodes()
 		{
@@ -714,15 +907,15 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 			return n;
 		}
 
-		Lxip_accept_file  _accept_file  { *this, _sc, _handle };
-		Lxip_bind_file    _bind_file    { *this, _sc, _handle };
-		Lxip_connect_file _connect_file { *this, _sc, _handle };
-		Lxip_data_file    _data_file    { *this, _sc, _handle };
-		Lxip_listen_file  _listen_file  { *this, _sc, _handle };
-		Lxip_local_file   _local_file   { *this, _sc, _handle };
-		Lxip_remote_file  _remote_file  { *this, _sc, _handle };
-		Lxip_from_file    _from_file    { *this, _sc, _handle };
-		Lxip_to_file      _to_file      { *this, _sc, _handle };
+		Lxip_accept_file  _accept_file  { *this, _sock };
+		Lxip_bind_file    _bind_file    { *this, _sock };
+		Lxip_connect_file _connect_file { *this, _sock };
+		Lxip_data_file    _data_file    { *this, _sock };
+		Lxip_listen_file  _listen_file  { *this, _sock };
+		Lxip_local_file   _local_file   { *this, _sock };
+		Lxip_remote_file  _remote_file  { *this, _sock };
+		Lxip_from_file    _from_file    { *this, _sock };
+		Lxip_to_file      _to_file      { *this, _sock };
 
 		char _name[Lxip::MAX_SOCKET_NAME_LEN];
 
@@ -730,11 +923,11 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		Lxip_socket_dir(Genode::Allocator &alloc, unsigned id,
 		                Lxip::Protocol_dir &parent,
-		                Lxip::Socketcall &sc, Lxip::Handle handle,
+		                struct Linux::socket &sock,
 		                bool from_accept)
 		:
 			Directory(_name), _alloc(alloc),
-			_parent(parent), _sc(sc), _handle(handle)
+			_parent(parent), _sock(sock)
 		{
 			Genode::snprintf(_name, sizeof(_name), "%u", id);
 
@@ -748,11 +941,20 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 			_nodes[TO_NODE]      = &_to_file;
 			_nodes[LOCAL_NODE]   = &_local_file;
 
-			if (from_accept)
+			//if (from_accept)
 				_nodes[REMOTE_NODE] = &_remote_file;
 		}
 
-		~Lxip_socket_dir() { _sc.close(_handle); }
+		~Lxip_socket_dir()
+		{
+			struct Linux::socket *sock = &_sock;
+
+			if (sock->ops)
+				sock->ops->release(sock);
+
+			kfree(sock->wq);
+			kfree(sock);
+		}
 
 
 		/**************************
@@ -761,12 +963,12 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		Lxip::Protocol_dir &parent() override { return _parent; }
 
-		sockaddr_storage &to_addr() override { return _to_addr; }
+		Linux::sockaddr_storage &to_addr() override { return _to_addr; }
 
 		char const *top_dir() override { return _parent.top_dir(); }
 
-		unsigned accept(Lxip::Handle &h) {
-			return _parent.adopt_socket(h, true); }
+		unsigned accept(struct Linux::socket &sock) {
+			return _parent.adopt_socket(sock, true); }
 
 		void bind(bool v)
 		{
@@ -779,7 +981,7 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		void connect(bool v)
 		{
-			_nodes[REMOTE_NODE] = v ? &_remote_file : nullptr;
+			_nodes[REMOTE_NODE] = /*v ?*/ &_remote_file/* : nullptr*/;
 		}
 
 		void listen(bool v)
@@ -832,15 +1034,16 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 	private:
 
 		Lxip::Protocol_dir &_parent;
-		Lxip::Socketcall   &_sc;
 
 	public:
 
-		Lxip_new_socket_file(Lxip::Protocol_dir &parent, Lxip::Socketcall &sc)
-		: Vfs::File("new_socket"), _parent(parent), _sc(sc) { }
+		Lxip_new_socket_file(Lxip::Protocol_dir &parent)
+		: Vfs::File("new_socket"), _parent(parent) { }
 
 		Read_result read(Lxip_vfs_handle &handle, file_size len) override
 		{
+			using namespace Linux;
+
 			if (handle.seek() != 0)
 				return Read_result::READ_ERR_INVALID;
 
@@ -849,15 +1052,19 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				return Read_result::READ_ERR_INVALID;
 			}
 
-			Lxip::Handle h = _sc.socket(_parent.type());
-			if (!h.socket)
-				return Read_result::READ_ERR_INVALID;
+			struct Linux::socket *sock = sock_alloc();
 
-			h.non_block = true;
+			int type = (_parent.type() == Lxip::Protocol_dir::TYPE_STREAM)
+				 ? SOCK_STREAM : SOCK_DGRAM;
+
+			if (sock_create_kern(nullptr, AF_INET, type, 0, &sock)) {
+				kfree(sock);
+				return Read_result::READ_ERR_IO;
+			}
 
 			try {
 				char tmp[Lxip::MAX_FD_STR_LEN];
-				unsigned const id = _parent.adopt_socket(h, false);
+				unsigned const id = _parent.adopt_socket(*sock, false);
 				file_size n = Genode::snprintf(tmp, len, "%s/%u", _parent.top_dir(), id);
 
 				handle.read_callback(tmp, n, Callback::COMPLETE);
@@ -866,7 +1073,6 @@ class Vfs::Lxip_new_socket_file : public Vfs::File
 				Genode::error("LxIP could not adopt socket");
 			}
 
-			_sc.close(h);
 			return Read_result::READ_ERR_IO;
 		}
 };
@@ -880,13 +1086,12 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 		Genode::Allocator &_alloc;
 
 		/**
-		 * Interface to LXIP stack
+		 * Interface to LXIP stack ?
 		 */
-		struct Lxip::Socketcall &_socketcall;
 
 		Vfs::File_system &_parent;
 
-		Lxip::Type const _type;
+		Type const _type;
 
 
 		/**************************
@@ -925,16 +1130,15 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 			return (Genode::strcmp(path, "") == 0) || (Genode::strcmp(path, "/") == 0);
 		}
 
-		Vfs::Lxip_new_socket_file _new_socket_file { *this, _socketcall };
+		Vfs::Lxip_new_socket_file _new_socket_file { *this };
 
 	public:
 
-		Protocol_dir_impl(Genode::Allocator &alloc,
-		                  Lxip::Socketcall  &socketcall,
-		                  Vfs::File_system  &parent,
-		                  char        const *name,
-		                  Lxip::Type         type)
-		: Directory(name), _alloc(alloc), _socketcall(socketcall), _parent(parent), _type(type)
+		Protocol_dir_impl(Genode::Allocator       &alloc,
+		                  Vfs::File_system         &parent,
+		                  char               const *name,
+		                  Lxip::Protocol_dir::Type  type)
+		: Directory(name), _alloc(alloc), _parent(parent), _type(type)
 		{
 			for (Genode::size_t i = 0; i < MAX_NODES; i++) {
 				_nodes[i] = nullptr;
@@ -975,9 +1179,9 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 
 		char const *top_dir() override { return name(); }
 
-		Lxip::Type type() { return _type; }
+		Type type() { return _type; }
 
-		unsigned adopt_socket(Lxip::Handle &h, bool from_accept)
+		unsigned adopt_socket(struct Linux::socket &sock, bool from_accept)
 		{
 			Vfs::Node **node = _unused_node();
 			if (!node) throw -1;
@@ -985,7 +1189,7 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 			unsigned const id = ((unsigned char*)node - (unsigned char*)_nodes)/sizeof(*_nodes);
 
 			Vfs::Lxip_socket_dir *dir = new (&_alloc)
-				Vfs::Lxip_socket_dir(_alloc, id, *this, _socketcall, h, from_accept);
+				Vfs::Lxip_socket_dir(_alloc, id, *this, sock, from_accept);
 
 			*node = dir;
 			return id;
@@ -1091,18 +1295,10 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 		Genode::Entrypoint &_ep;
 		Genode::Allocator  &_alloc;
 
-		Genode::Xml_node _config;
-		char             _config_buf[128];
-
-		char *_parse_config(Genode::Xml_node);
-
-		/**
-		 * Interface to LXIP stack
-		 */
-		struct Lxip::Socketcall &_socketcall;
-
-		Lxip::Protocol_dir_impl _tcp_dir { _alloc, _socketcall, *this, "tcp", Lxip::TYPE_STREAM };
-		Lxip::Protocol_dir_impl _udp_dir { _alloc, _socketcall, *this, "udp", Lxip::TYPE_DGRAM  };
+		Lxip::Protocol_dir_impl _tcp_dir {
+			_alloc, *this, "tcp", Lxip::Protocol_dir::TYPE_STREAM };
+		Lxip::Protocol_dir_impl _udp_dir {
+			_alloc, *this, "udp", Lxip::Protocol_dir::TYPE_DGRAM  };
 
 		Vfs::Node *_lookup(char const *path)
 		{
@@ -1123,10 +1319,8 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 
 	public:
 
-		Lxip_file_system(Genode::Env &env, Genode::Allocator &alloc, Genode::Xml_node config)
-		:
-			Directory("tcp"), _ep(env.ep()), _alloc(alloc), _config(config),
-			_socketcall(Lxip::init(env, alloc, &poll_all, _parse_config(_config)))
+		Lxip_file_system(Genode::Env &env, Genode::Allocator &alloc)
+		: Directory(""), _ep(env.ep()), _alloc(alloc)
 		{ }
 
 		~Lxip_file_system() { }
@@ -1313,6 +1507,7 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 
 		void poll_io() override
 		{
+			PDBG("considered harmful");
 			/* XXX: a hack to block for progress */
 			Genode::warning(__func__, " called, blocking entrypoint at lxip plugin");
 			_ep.wait_and_dispatch_one_signal();
@@ -1322,7 +1517,37 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 };
 
 
-char *Vfs::Lxip_file_system::_parse_config(Genode::Xml_node config)
+struct Lxip_factory : Vfs::File_system_factory
+{
+	struct Init
+	{
+		char _config_buf[128];
+
+		char *_parse_config(Genode::Xml_node);
+
+		Init(Genode::Env       &env,
+		     Genode::Allocator &alloc,
+		     Genode::Xml_node  config)
+		{
+			Lx::timer_init(env, alloc, &poll_all);
+			Lx::event_init(env, &poll_all);
+			Lx::nic_client_init(env, alloc, &poll_all);
+
+			lxip_init(_parse_config(config));
+		}
+	};
+
+	Vfs::File_system *create(Genode::Env       &env,
+	                         Genode::Allocator &alloc,
+	                         Genode::Xml_node  config) override
+	{
+		static Init inst(env, alloc, config);
+		return new (alloc) Vfs::Lxip_file_system(env, alloc);
+	}
+};
+
+
+char *Lxip_factory::Init::_parse_config(Genode::Xml_node config)
 {
 	using namespace Genode;
 
@@ -1359,17 +1584,6 @@ char *Vfs::Lxip_file_system::_parse_config(Genode::Xml_node config)
 
 	return _config_buf;
 }
-
-
-struct Lxip_factory : Vfs::File_system_factory
-{
-	Vfs::File_system *create(Genode::Env       &env,
-	                         Genode::Allocator &alloc,
-	                         Genode::Xml_node  config) override
-	{
-		return new (alloc) Vfs::Lxip_file_system(env, alloc, config);
-	}
-};
 
 
 extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
