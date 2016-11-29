@@ -102,7 +102,7 @@ static void GENODEAUD_CloseAudio(_THIS);
 /* Audio driver bootstrap functions */
 static int GENODEAUD_Available(void)
 {
-	return 1;
+	return 0;
 }
 
 
