@@ -160,6 +160,8 @@ struct Lxip::Socket_dir
 	virtual void     connect(bool) = 0;
 	virtual void     listen(bool) = 0;
 	virtual sockaddr_storage &to_addr() = 0;
+	virtual void     close() = 0;
+	virtual bool     closed() = 0;
 };
 
 
@@ -352,7 +354,7 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 		{
 			using namespace Linux;
 
-			if (Lxip::ssize_t r = socket_check_state(&_sock) < 0)
+			if (socket_check_state(&_sock) < 0)
 				return Write_result::WRITE_ERR_IO;
 
 			struct msghdr   msg;
@@ -424,15 +426,29 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 				int const res = _sock.ops->recvmsg(&_sock, &msg, n, MSG_DONTWAIT);
 				if (res < 0) {
 					if (res == Lxip::Io_result::LINUX_EAGAIN) {
+						/* no problem, just nothing to read right now */
 						return Read_result::READ_OK;
 					} else {
 						Genode::error("LxIP recv error ", res);
 						return Read_result::READ_ERR_IO;
 					}
-				} else if (res < n) {
+				} else if (res > 0) {
 					/* short read means success */
 					handle.read_callback(_content_buffer, res, Callback::COMPLETE);
 					return Read_result::READ_OK;
+				} else {
+					/* a zero read from Linux means the socket is disconnected */
+					_parent.close();
+					if (remain != len) {
+						/* recvmsg returned zero but we have some good data */
+						PDBG("recvmsg returned zero but we have some good data");
+						handle.read_callback(_content_buffer, res, Callback::COMPLETE);
+						return Read_result::READ_OK;
+					} else {
+						PDBG("returning READ_ERR_INTERRUPT");
+						/* recvmsg returned zero but we have nothing */
+						return Read_result::READ_ERR_INTERRUPT;
+					}
 				}
 				remain -= res;
 
@@ -1026,6 +1042,18 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 		}
 
 		file_size num_dirent() { return _num_nodes(); }
+
+		bool _closed = false;
+
+		void close() override
+		{
+			_closed = true;
+		}
+
+		bool closed() override
+		{
+			return _closed;
+		}
 };
 
 
@@ -1163,6 +1191,11 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 				if (Genode::strcmp(_nodes[i]->name(), path, (p - path)) == 0) {
 					Vfs::Directory *dir = dynamic_cast<Directory *>(_nodes[i]);
 					if (!dir) return _nodes[i];
+
+					/* TODO: clean up this hack */
+					Socket_dir *socket = dynamic_cast<Socket_dir *>(_nodes[i]);
+					if (socket && socket->closed())
+						return nullptr;
 
 					if (*p == '/') return dir->child(p+1);
 					else           return dir;

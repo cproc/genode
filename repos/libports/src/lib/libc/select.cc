@@ -22,6 +22,7 @@
 
 #include <sys/select.h>
 #include <signal.h>
+#include <base/debug.h>
 
 using namespace Libc;
 
@@ -62,6 +63,7 @@ static int selscan(int nfds, fd_set *in_readfds, fd_set *in_writefds,
                    fd_set *in_exceptfds, fd_set *out_readfds,
                    fd_set *out_writefds, fd_set *out_exceptfds)
 {
+	PDBG("");
 	int nready = 0;
 
 	 /* zero timeout for polling of the plugins' select() functions */
@@ -115,6 +117,7 @@ static int selscan(int nfds, fd_set *in_readfds, fd_set *in_writefds,
 /* this function gets called by plugin backends when file descripors become ready */
 static void select_notify()
 {
+	PDBG("");
 	struct libc_select_cb *scb;
 	int nready;
 	fd_set tmp_readfds, tmp_writefds, tmp_exceptfds;
@@ -157,120 +160,16 @@ __attribute__((weak))
 _select(int nfds, fd_set *readfds, fd_set *writefds,
         fd_set *exceptfds, struct timeval *timeout)
 {
-	int nready;
-	fd_set in_readfds, in_writefds, in_exceptfds;
-	Genode::Alarm::Time msectimeout;
-	struct libc_select_cb select_cb;
-	struct libc_select_cb *p_selcb;
-	bool timed_out = false;
+	if (timeout) {
+		PDBG("enter with ", nfds,", timeout is ",timeout->tv_sec,":",timeout->tv_usec);
+	} else {
+		PDBG("enter with ", nfds,", timeout is NULL");
+	}
 
-	/* initialize the select notification function pointer */
-	if (!libc_select_notify)
-		libc_select_notify = select_notify;
-
-	/* Protect ourselves searching through the list */
-	select_cb_list_lock().lock();
-
-	if (readfds)
-		in_readfds = *readfds;
-	else
-		FD_ZERO(&in_readfds);
-	if (writefds)
-		in_writefds = *writefds;
-	else
-		FD_ZERO(&in_writefds);
-	if (exceptfds)
-		in_exceptfds = *exceptfds;
-	else
-		FD_ZERO(&in_exceptfds);
-
-	/* Go through each socket in each list to count number of sockets which
-	   currently match */
-	nready = selscan(nfds, &in_readfds, &in_writefds, &in_exceptfds, readfds, writefds, exceptfds);
-
-	/* If we don't have any current events, then suspend if we are supposed to */
-	if (!nready) {
-
-		if (timeout && (timeout->tv_sec) == 0 && (timeout->tv_usec == 0)) {
-			select_cb_list_lock().unlock();
-			if (readfds)
-				FD_ZERO(readfds);
-			if (writefds)
-				FD_ZERO(writefds);
-			if (exceptfds)
-				FD_ZERO(exceptfds);
-			return 0;
-		}
-
-		/* add our semaphore to list */
-		/* We don't actually need any dynamic memory. Our entry on the
-		 * list is only valid while we are in this function, so it's ok
-		 * to use local variables */
-		select_cb.nfds = nfds;
-		select_cb.readset = in_readfds;
-		select_cb.writeset = in_writefds;
-		select_cb.exceptset = in_exceptfds;
-		select_cb.sem_signalled = 0;
-		select_cb.sem = new (env()->heap()) Timed_semaphore(0);
-		/* Note that we are still protected */
-		/* Put this select_cb on top of list */
-		select_cb.next = select_cb_list;
-		select_cb_list = &select_cb;
-
-		/* Now we can safely unprotect */
-		select_cb_list_lock().unlock();
-
-		/* Now just wait to be woken */
-		if (!timeout) {
-			/* Wait forever */
-			select_cb.sem->down();
-		} else {
-			msectimeout =  ((timeout->tv_sec * 1000) + ((timeout->tv_usec + 500)/1000));
-			try {
-				select_cb.sem->down(msectimeout);
-			} catch (Timeout_exception) {
-				timed_out = true;
-			}
-		}
-
-		/* Take us off the list */
-		select_cb_list_lock().lock();
-
-		if (select_cb_list == &select_cb)
-			select_cb_list = select_cb.next;
-		else
-			for (p_selcb = select_cb_list; p_selcb; p_selcb = p_selcb->next) {
-				if (p_selcb->next == &select_cb) {
-					p_selcb->next = select_cb.next;
-					break;
-				}
-			}
-
-		select_cb_list_lock().unlock();
-
-		destroy(env()->heap(), select_cb.sem);
-
-		if (timed_out)  {
-			if (readfds)
-				FD_ZERO(readfds);
-			if (writefds)
-				FD_ZERO(writefds);
-			if (exceptfds)
-				FD_ZERO(exceptfds);
-			return 0;
-		}
-
-		/* not timed out -> results have been stored in select_cb by select_notify() */
-		nready = select_cb.nready;
-		if (readfds)
-			*readfds = select_cb.readset;
-		if (writefds)
-			*writefds = select_cb.writeset;
-		if (exceptfds)
-			*exceptfds = select_cb.exceptset;
-	} else
-		select_cb_list_lock().unlock();
-
+	int nready = 0;
+	for (Plugin *plugin = plugin_registry()->first(); plugin; plugin = plugin->next())
+		if (plugin->supports_select(nfds, readfds, writefds, exceptfds, timeout))
+			nready += plugin->select(nfds, readfds, writefds, exceptfds, timeout);
 	return nready;
 }
 
@@ -280,6 +179,7 @@ __attribute__((weak))
 select(int nfds, fd_set *readfds, fd_set *writefds,
        fd_set *exceptfds, struct timeval *timeout)
 {
+	PDBG("");
 	return _select(nfds, readfds, writefds, exceptfds, timeout);
 }
 
@@ -290,6 +190,7 @@ _pselect(int nfds, fd_set *readfds, fd_set *writefds,
          fd_set *exceptfds, const struct timespec *timeout,
          const sigset_t *sigmask)
 {
+	PDBG("");
 	struct timeval tv;
 	sigset_t origmask;
 	int nready;
@@ -315,5 +216,6 @@ pselect(int nfds, fd_set *readfds, fd_set *writefds,
         fd_set *exceptfds, const struct timespec *timeout,
         const sigset_t *sigmask)
 {
+	PDBG("");
 	return _pselect(nfds, readfds, writefds, exceptfds, timeout, sigmask);
 }

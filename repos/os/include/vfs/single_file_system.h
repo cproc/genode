@@ -165,9 +165,6 @@ class Vfs::Single_file_system : public File_system
 			if (!_single_file(path))
 				return OPEN_ERR_UNACCESSIBLE;
 
-			if (mode ^ _mode)
-				return OPEN_ERR_NO_PERM;
-
 			if (mode & Vfs::Directory_service::OPEN_MODE_CREATE)
 				return OPEN_ERR_EXISTS;
 

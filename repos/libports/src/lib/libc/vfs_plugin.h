@@ -28,6 +28,8 @@
 
 #include "task.h"
 
+#include <base/debug.h>
+
 namespace Libc {
 
 	Genode::Xml_node config();
@@ -40,6 +42,16 @@ namespace Libc {
 
 }
 
+struct Pdbg_guard
+{
+	char const *func;
+
+	Pdbg_guard(char const *name) : func(name) {
+		Genode::log("enter function ",func); }
+
+	~Pdbg_guard() {
+		Genode::log("exit function ",func); }
+};
 
 namespace Libc { class Vfs_plugin; }
 
@@ -230,6 +242,11 @@ class Libc::Vfs_plugin : public Libc::Plugin
 				return;
 
 			Libc::File_descriptor *fd = open(path, flags, libc_fd);
+			if (!fd) {
+				Genode::error("could not open '", path, "' for stdio");
+				return;
+			}
+
 			if (fd->libc_fd != libc_fd) {
 				Genode::error("could not allocate fd ",libc_fd," for ",path,
 				              ", got fd ",fd->libc_fd);

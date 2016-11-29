@@ -19,7 +19,6 @@
 #include <file_system/node.h>
 #include <file_system_session/file_system_session.h>
 #include <os/path.h>
-#include <base/debug.h>
 
 /* Local includes */
 #include "assert.h"
@@ -206,15 +205,21 @@ class Vfs_server::File : public Node,
 			_handle->seek(_packet.position());
 
 			switch (_packet.operation()) {
-			case Packet_descriptor::READ:
-				if (_handle->fs().read(_handle, packet.length()) ==
-					Vfs::File_io_service::Read_result::READ_QUEUED) return;
+			case Packet_descriptor::READ: {
+				typedef Vfs::File_io_service::Read_result Result;
+				Result r = _handle->fs().read(_handle, packet.length());
+				if (r == Result::READ_QUEUED) return;
+				_packet.succeeded(r == Result::READ_OK);
 				break;
+			}
 
-			case Packet_descriptor::WRITE:
-				if (_handle->fs().write(_handle, packet.length()) ==
-					Vfs::File_io_service::Write_result::WRITE_QUEUED) return;
+			case Packet_descriptor::WRITE: {
+				typedef Vfs::File_io_service::Write_result Result;
+				Result r = _handle->fs().write(_handle, packet.length());
+				if (r == Result::WRITE_QUEUED) return;
+				_packet.succeeded(r == Result::WRITE_OK);
 				break;
+			}
 
 			case Packet_descriptor::INVALID:
 				_sink.acknowledge_packet(_packet);
@@ -223,7 +228,6 @@ class Vfs_server::File : public Node,
 
 			if (_packet.operation() != Packet_descriptor::INVALID) {
 				_packet.length(_packet_offset);
-				_packet.succeeded(true);
 				_sink.acknowledge_packet(_packet);
 				_packet = Packet_descriptor();
 			}
@@ -251,6 +255,9 @@ class Vfs_server::File : public Node,
 		file_size read(char const *src, file_size src_len,
 		               Callback::Status status) override
 		{
+			if (status == Callback::ERROR)
+				Genode::error("got an error in a read callback at the packet queue");
+
 			if (!(_packet.size() && _packet.operation() == Packet_descriptor::READ)) {
 				Genode::error("read callback received for invalid packet");
 				return 0;
@@ -296,6 +303,7 @@ class Vfs_server::File : public Node,
 
 				if (dst)
 					Genode::memcpy(dst, src, out);
+
 				_packet_offset += out;
 			}
 

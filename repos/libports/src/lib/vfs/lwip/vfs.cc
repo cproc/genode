@@ -94,6 +94,7 @@ extern "C" {
 		static err_t tcp_recv_callback(void *arg, struct tcp_pcb *tpcb,
 		                               struct pbuf *p, err_t err);
 		static err_t tcp_sent_callback(void *arg, struct tcp_pcb *tpcb, u16_t len);
+		static void tcp_err_callback(void *arg, err_t err);
 	}
 
 	typedef Genode::Path<24> Path;
@@ -174,6 +175,31 @@ struct Lwip::Socket_dir
 		unsigned const _num;
 		Name     const _name { name_from_num(_num) };
 
+		void _notify_and_drop(Lwip_handle_list &list)
+		{
+			typedef Lwip_handle::Type Type;
+
+			while (list.first()) {
+				Lwip_handle *h = list.first();
+				char const *t;
+			switch (h->type) {
+			case Type::ACCEPT:   t = "ACCEPT"; break;
+			case Type::BIND:       t = "BIND"; break;
+			case Type::CONNECT:   t = "CONNECT"; break;
+			case Type::DATA:      t = "DATA"; break;
+			case Type::LISTEN:    t = "LISTEN"; break;
+			case Type::FROM:     t = "FROM"; break;
+			case Type::LOCAL:   t = "LOCAL"; break;
+			case Type::REMOTE:   t = "REMOTE"; break;
+			case Type::TO:   t = "TO"; break;
+			case Type::INVALID:   t = "INVALID"; break;
+			}
+				PDBG("notify ",t," handle");
+				list.remove(h);
+				h->notify_callback();
+			}
+		}
+
 	public:
 
 		/* lists of handles opened at this socket */
@@ -183,6 +209,20 @@ struct Lwip::Socket_dir
 		Lwip_handle_list    data_handles;
 		Lwip_handle_list  listen_handles;
 		Lwip_handle_list    from_handles;
+
+	protected:
+
+		void _drop_all_handles()
+		{
+			_notify_and_drop(accept_handles);
+			_notify_and_drop(bind_handles);
+			_notify_and_drop(connect_handles);
+			_notify_and_drop(data_handles);
+			_notify_and_drop(listen_handles);
+			_notify_and_drop(from_handles);
+		}
+
+	public:
 
 		enum State {
 			NEW,
@@ -675,6 +715,8 @@ class Lwip::Tcp_socket_dir final :
 		{
 			/* 'this' will be the argument to LwIP callbacks */
 			tcp_arg(_pcb, this);
+
+			tcp_err(_pcb, tcp_err_callback);
 		}
 
 		Tcp_socket_dir(unsigned num, Tcp_proto_dir &proto_dir, Genode::Allocator &alloc, tcp_pcb *pcb)
@@ -682,6 +724,8 @@ class Lwip::Tcp_socket_dir final :
 		{
 			/* 'this' will be the argument to LwIP callbacks */
 			tcp_arg(_pcb, this);
+
+			tcp_err(_pcb, tcp_err_callback);
 
 			/* the PCB comes connected and ready to use */
 			state = READY;
@@ -726,8 +770,9 @@ class Lwip::Tcp_socket_dir final :
 			}
 
 			/* only the most recently opened handle is notified */
-			if (Lwip_handle *handle = accept_handles.first())
+			if (Lwip_handle *handle = accept_handles.first()) {
 				handle->notify_callback();
+			}
 
 			return ERR_OK;
 		}
@@ -749,6 +794,19 @@ class Lwip::Tcp_socket_dir final :
 				h.notify_callback(); });
 		}
 
+		/**
+		 * Close the connection
+		 *
+		 * Can be triggered by remote shutdown via callback
+		 */
+		void shutdown()
+		{
+			/* XXX: what about writes waiting for ACK? */
+			PDBG("");
+			tcp_close(_pcb);
+			_pcb = NULL;
+			_drop_all_handles();
+		}
 
 		/**************************
 		 ** Socket_dir interface **
@@ -756,6 +814,11 @@ class Lwip::Tcp_socket_dir final :
 
 		Read_result read(Lwip_handle &handle, file_size len) override
 		{
+			if (_pcb == NULL) {
+				PDBG("returning READ_ERR_INTERRUPT");
+				return Read_result::READ_ERR_INTERRUPT;
+			}
+
 			typedef Lwip_handle::Type Type;
 
 			switch(handle.type) {
@@ -801,7 +864,6 @@ class Lwip::Tcp_socket_dir final :
 					 * we deferred completion for ACK and clean up,
 					 * now let the higher level do things like task switch
 					 */
-					handle.read_callback(nullptr, 0, Callback::COMPLETE);
 					return Read_result::READ_OK;
 				}
 				break;
@@ -865,9 +927,43 @@ class Lwip::Tcp_socket_dir final :
 
 		Write_result write(Lwip_handle &handle, file_size len) override
 		{
+			if (_pcb == NULL) {
+				PDBG("returning WRITE_ERR_INTERRUPT");
+				return Write_result::WRITE_ERR_INTERRUPT;
+			}
+
 			typedef Lwip_handle::Type Type;
 
 			switch(handle.type) {
+			case Type::DATA:
+				if (state == READY) {
+					file_size remain = len;
+					while (remain) {
+						char *buf = write_buffer();
+						file_size n1 = min(remain, WRITE_BUFFER_SIZE);
+						u16_t n2 = handle.write_callback(buf, n1, Callback::PARTIAL);
+						/* write to outgoing TCP buffer */
+						if (tcp_write(_pcb, buf, n2, 0) != ERR_OK) {
+							return Write_result::WRITE_ERR_IO;
+						}
+						remain -= n1;
+					}
+
+					/* flush the buffer */
+					if (tcp_output(_pcb) != ERR_OK) {
+						return Write_result::WRITE_ERR_IO;
+					}
+
+					/* callback is complete when the remote ACKs */
+					if (data_handles.first() != &handle) {
+						data_handles.remove(&handle);
+						data_handles.insert(&handle);
+					}
+
+					return Write_result::WRITE_QUEUED;
+				}
+				break;
+
 			case Type::ACCEPT: break;
 			case Type::BIND:
 				if ((state == NEW) && (len < ENDPOINT_STRLEN_MAX)) {
@@ -914,37 +1010,6 @@ class Lwip::Tcp_socket_dir final :
 					/* no need for a Callback::ERROR on an immediate op */
 					return err == ERR_OK ?
 						Write_result::WRITE_QUEUED : Write_result::WRITE_ERR_IO;
-				}
-				break;
-
-			case Type::DATA:
-				if (state == READY) {
-					file_size remain = len;
-					while (remain) {
-						char *buf = write_buffer();
-						file_size n1 = min(remain, WRITE_BUFFER_SIZE);
-						u16_t n2 = handle.write_callback(buf, n1, Callback::PARTIAL);
-						/* write to outgoing TCP buffer */
-						if (tcp_write(_pcb, buf, n2, 0) != ERR_OK) {
-							handle.write_callback(nullptr, 0, Callback::ERROR);
-							return Write_result::WRITE_ERR_IO;
-						}
-						remain -= n1;
-					}
-
-					/* flush the buffer */
-					if (tcp_output(_pcb) != ERR_OK) {
-						handle.write_callback(nullptr, 0, Callback::ERROR);
-						return Write_result::WRITE_ERR_IO;
-					}
-
-					/* callback is complete when the remote ACKs */
-					if (data_handles.first() != &handle) {
-						data_handles.remove(&handle);
-						data_handles.insert(&handle);
-					}
-
-					return Write_result::WRITE_QUEUED;
 				}
 				break;
 
@@ -996,8 +1061,9 @@ static
 err_t tcp_connect_callback(void *arg, struct tcp_pcb *pcb, err_t err)
 {
 	Lwip::Tcp_socket_dir *socket_dir = static_cast<Lwip::Tcp_socket_dir *>(arg);
-	if (Lwip::Lwip_handle *handle = socket_dir->connect_handles.first())
+	if (Lwip::Lwip_handle *handle = socket_dir->connect_handles.first()) {
 		handle->write_callback(nullptr, 0, Callback::COMPLETE);
+	}
 	socket_dir->ready_callbacks();
 	socket_dir->state = Lwip::Tcp_socket_dir::READY;
 	return ERR_OK;
@@ -1016,7 +1082,10 @@ static
 err_t tcp_recv_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
 {
 	Lwip::Tcp_socket_dir *socket_dir = static_cast<Lwip::Tcp_socket_dir *>(arg);
-	socket_dir->recv(p);
+	if (p == NULL)
+		socket_dir->shutdown();
+	else
+		socket_dir->recv(p);
 	return ERR_OK;
 }
 
@@ -1028,6 +1097,12 @@ err_t tcp_sent_callback(void *arg, struct tcp_pcb *tpcb, u16_t len)
 	if (Lwip::Lwip_handle *handle = socket_dir->data_handles.first())
 		handle->write_callback(nullptr, 0, Callback::COMPLETE);
 	return ERR_OK;
+}
+
+static
+void tcp_err_callback(void *arg, err_t err)
+{
+	PDBG((int)err);
 }
 
 	}

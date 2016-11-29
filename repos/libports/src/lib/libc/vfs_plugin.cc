@@ -272,7 +272,7 @@ Libc::Vfs_plugin::Context *Libc::Vfs_plugin::_open(const char *path, unsigned fl
 
 	Vfs::Vfs_handle *handle = nullptr;
 
-	while (handle == nullptr) {
+	do {
 		switch (_root_dir.open(path, flags, &handle, _alloc)) {
 
 		case Result::OPEN_OK:
@@ -312,7 +312,7 @@ Libc::Vfs_plugin::Context *Libc::Vfs_plugin::_open(const char *path, unsigned fl
 		case Result::OPEN_ERR_NAME_TOO_LONG: Errno(ENAMETOOLONG); return nullptr;
 		case Result::OPEN_ERR_NO_SPACE:      Errno(ENOSPC);       return nullptr;
 		}
-	}
+	} while (handle == nullptr);
 
 	/* the file was successfully opened */
 	try { return new (_alloc) Context(*handle); }
@@ -475,7 +475,6 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 				_yield_vfs(task);
 			} while (cb.status == Callback::PARTIAL);
 
-
 			/* XXX: short read? */
 			result = (cb.status == Callback::ERROR) ?
 				Result::READ_ERR_IO : Result::READ_OK;
@@ -523,7 +522,19 @@ ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
 	Genode::Lock::Guard guard(_lock);
 
 	Libc::Vfs_plugin::Context *context = vfs_context(fd);
-	return context ? _read(*context, buf, count, !(fd->status&O_NONBLOCK)) : Errno(EBADF);
+	if (!context)
+		return Errno(EBADF);
+
+	ssize_t const r = _read(*context, buf, count, !(fd->status&O_NONBLOCK));
+
+	/*
+	 * sockets don't error when closed
+	 *
+	 * POSIX doesn't need to make sense, it just needs to work
+	 */
+	if (r < 0 && dynamic_cast<Socket_context *>(context))
+		PDBG("making it look like a socket was closed");
+	return (r < 0 && dynamic_cast<Socket_context *>(context)) ? 0 : r;
 }
 
 
@@ -1044,7 +1055,7 @@ int Libc::Vfs_plugin::select(int nfds, fd_set *readfds, fd_set *writefds,
 			do {
 				_yield_vfs(task);
 				nready = _select(nfds, readfds, read_in, writefds, write_in);
-			} while (!nready);
+			} while (nready == 0);
 		} else {
 			Libc::Timeout task_timeout(task, timeout->tv_sec*1000+timeout->tv_usec/1000);
 			do {

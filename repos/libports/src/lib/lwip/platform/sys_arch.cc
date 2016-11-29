@@ -98,35 +98,6 @@ extern "C" {
 #error "You cannot use the Genode LwIP backend with NO_SYS!"
 #endif //NO_SYS
 
-#define netifapi_netif_set_link_up(n) netifapi_netif_common(n, netif_set_link_up, NULL)
-#define netifapi_netif_set_link_down(n) netifapi_netif_common(n, netif_set_link_down, NULL)
-
-	static struct netif netif;
-
-	/*
-	 * Callback function used when changing the interface state.
-	 */
-	static void status_callback(struct netif *netif)
-	{
-		char buf[IPADDR_STRLEN_MAX];
-		ipaddr_ntoa_r(&netif->ip_addr, buf, sizeof(buf));
-		Genode::log("got IP address ", (char const*)buf);
-	}
-
-
-	/*
-	 * Callback function used when doing a link-state change.
-	 */
-	static void link_callback(struct netif *netif)
-	{
-		/*
-		 * We call the status callback at this point to print
-		 * the IP address because we may have got a new one,
-		 * e.h., we joined another wireless network.
-		 */
-		status_callback(netif);
-	}
-
 
 	/********************
 	 ** Initialization **
@@ -136,83 +107,6 @@ extern "C" {
 	 * Function needed by LwIP.
 	 */
 	void sys_init(void) {}
-
-
-	void lwip_tcpip_init()
-	{
-		/* call the tcpip initialization code and block, until it's initialized */
-		tcpip_init(startup_done, 0);
-		startup_lock()->lock();
-	}
-
-
-	/* in lwip/genode.h */
-	int lwip_nic_init(Genode::uint32_t ip_addr,
-	                  Genode::uint32_t netmask,
-	                  Genode::uint32_t gateway,
-	                  Genode::size_t  tx_buf_size,
-	                  Genode::size_t  rx_buf_size)
-	{
-		ip4_addr_t ip, nm, gw;
-		static struct netif_buf_sizes nbs;
-		nbs.tx_buf_size = tx_buf_size;
-		nbs.rx_buf_size = rx_buf_size;
-		ip.addr = ip_addr;
-		nm.addr = netmask;
-		gw.addr = gateway;
-
-		class Nic_not_availble { };
-
-		try {
-			/**
-			 * Add Genode's nic, which uses the nic-session interface.
-			 *
-			 * LwIP recommends to use ethernet_input as packet pushing function
-			 * for ethernet cards and ip_input for everything else.
-			 * Nevertheless, when we use the tcpip synchronization subsystem,
-			 * we should use tcpip_input anyway
-			 *
-			 * See: http://lwip.wikia.com/wiki/Writing_a_device_driver
-			 */
-			err_t ret = netifapi_netif_add(&netif, &ip, &nm, &gw, &nbs,
-			                               genode_netif_init, tcpip_input);
-			if (ret != ERR_OK)
-				throw Nic_not_availble();
-
-			/* Register callback functions. */
-			netif.status_callback = status_callback;
-			netif.link_callback = link_callback;
-
-			/* Set Genode's nic as the default nic */
-			netifapi_netif_set_default(&netif);
-
-			/* If no static ip was set, we do dhcp */
-			if (!ip_addr) {
-#if LWIP_DHCP
-				netifapi_netif_set_up(&netif);
-				netifapi_dhcp_start(&netif);
-#else
-				/* no IP address - no networking */
-				return 1;
-#endif /* LWIP_DHCP */
-			} else {
-				netifapi_netif_set_up(&netif);
-			}
-		} catch (Nic_not_availble) {
-			Genode::warning("NIC not available, loopback is used as default");
-			return 2;
-		}
-		return 0;
-	}
-
-
-	void lwip_nic_link_state_changed(int state)
-	{
-		if (state)
-			netifapi_netif_set_link_up(&netif);
-		else
-			netifapi_netif_set_link_down(&netif);
-	}
 
 
 	/***************

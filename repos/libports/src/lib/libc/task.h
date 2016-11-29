@@ -15,6 +15,10 @@
 #ifndef _LIBC__TASK_H_
 #define _LIBC__TASK_H_
 
+#include <base/debug.h>
+
+extern "C" void wait_for_continue(void);
+
 namespace Libc {
 
 	/**

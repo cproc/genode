@@ -181,7 +181,7 @@ proc qt5_boot_modules { feature_arg } {
 
 proc create_qt5_fs_tar_archive { app_name qt_modules } {
 
-	exec rm -rf bin/qt5_fs/${app_name}/qt
+	file delete -force bin/qt5_fs/${app_name}/qt
 
 	if { [lsearch ${qt_modules} "gui"] != -1 } {
 		# add fonts
@@ -195,5 +195,6 @@ proc create_qt5_fs_tar_archive { app_name qt_modules } {
 		exec ln -sf [pwd]/bin/qt5_fs/qt/qml bin/qt5_fs/${app_name}/qt/qml
 	}
 
+	sync
 	exec tar chf bin/qt5_fs_${app_name}.tar -C bin/qt5_fs/${app_name} .
 }

@@ -256,15 +256,11 @@ Libc::File_descriptor *Libc::Vfs_plugin::accept(File_descriptor *libc_fd, struct
 
 	Genode::Lock::Guard vfs_guard(_lock);
 
-	int n = 0;
-	do {
-		n = _read(*context, accept_socket, sizeof(accept_socket), true);
-	} while (n == 0);
-	if (n == -1 || n >= (int)sizeof(accept_socket) - 1) {
+	int n = _read(*context, accept_socket, sizeof(accept_socket), true);
+	if (n == -1 || n >= (int)sizeof(accept_socket) - 1)
 		return nullptr;
-	}
 
-	accept_socket[n] = 0;
+	accept_socket[n] = '\0';
 
 	Vfs::Vfs_handle *data_handle;
 	Meta_path accept_path(Libc::config_socket());
@@ -490,8 +486,10 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		Context::Guard guard(_alloc, from_ctx);
 
 		int const n = _read(*from_ctx, addr_string.base(), addr_string.capacity() - 1, true);
-		if (n == -1)
-			return -1;
+		if (n < 0) {
+			PDBG("making it look like a socket was closed");
+			return 0;
+		}
 		if (!n || n >= (int)addr_string.capacity() - 1) {
 			Genode::error("failed to read '", file, "'");
 			Errno(EIO);
@@ -506,7 +504,11 @@ ssize_t Libc::Vfs_plugin::recvfrom(Libc::File_descriptor *fd, void *buf, ::size_
 		*addrlen = sizeof(from_sa);
 	}
 
-	return _read(*context, buf, len, true);
+	/* disconnected sockets don't error */
+	ssize_t const n = _read(*context, buf, len, true);
+	if (n < 0)
+		PDBG("making it look like a socket was closed");
+	return (n < 0) ? 0 : n;
 }
 
 
