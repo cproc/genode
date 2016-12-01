@@ -120,7 +120,7 @@ class Lwip::Nic_netif
 #endif
 
 					if (_netif.input(p, &_netif) != ERR_OK) {
-						Genode::error("error forwarding physical Nic packet to LwIP");
+						Genode::error("error forwarding physical Nic packet to lwIP");
 						pbuf_free(p);
 					}
 				}
@@ -143,7 +143,6 @@ class Lwip::Nic_netif
 			    config.attribute_value("label", Genode::String<160>()).string()),
 			_link_state_handler(env.ep(), *this, &Nic_netif::handle_link_state),
 			_rx_packet_handler( env.ep(), *this, &Nic_netif::handle_rx_packets)
-
 		{
 			memset(&_netif, 0x00, sizeof(_netif));
 
@@ -154,14 +153,14 @@ class Lwip::Nic_netif
 				netif* r = netif_add(&_netif, &v4dummy, &v4dummy, &v4dummy,
 				                     this, nic_netif_init, ethernet_input);
 				if (r == NULL) {
-					Genode::error("failed to initialize Nic to LwIP interface");
+					Genode::error("failed to initialize Nic to lwIP interface");
 					throw r;
 				}
 			}
 			netif_set_up(&_netif);
 			
 			if (!config.has_attribute("ip_addr")) {
-				Genode::log("configuring LwIP interface with DHCP");
+				Genode::log("configuring lwIP interface with DHCP");
 				dhcp_start(&_netif);
 
 			} else { /* get addressing from config */
@@ -170,7 +169,7 @@ class Lwip::Nic_netif
 				Genode::log("got IP address ",ip_str);
 				ip_addr_t ipaddr;
 				if (!ipaddr_aton(ip_str.string(), &ipaddr)) {
-					Genode::error("LwIP configured with invalid IP address '",ip_str,"'");
+					Genode::error("lwIP configured with invalid IP address '",ip_str,"'");
 					throw ip_str;
 				}
 
@@ -178,7 +177,7 @@ class Lwip::Nic_netif
 					netif_create_ip6_linklocal_address(&_netif, 1);
 					err_t err = netif_add_ip6_address(&_netif, ip_2_ip6(&ipaddr), NULL);
 					if (err != ERR_OK) {
-						Genode::error("failed to set LwIP IPv6 address to '",ip_str,"'");
+						Genode::error("failed to set lwIP IPv6 address to '",ip_str,"'");
 						throw err;
 					}
 				} else {
@@ -217,7 +216,7 @@ class Lwip::Nic_netif
 			netif_set_link_callback(&_netif, link_callback); }
 
 		/**
-		 * Callback issued by LwIP to initialize netif struct
+		 * Callback issued by lwIP to initialize netif struct
 		 *
 		 * \noapi
 		 */
@@ -258,7 +257,7 @@ class Lwip::Nic_netif
 		}
 
 		/**
-		 * Callback issued by LwIP to write a Nic packet
+		 * Callback issued by lwIP to write a Nic packet
 		 *
 		 * \noapi
 		 */
@@ -270,12 +269,17 @@ class Lwip::Nic_netif
 			while (tx.ack_avail())
 				tx.release_packet(tx.get_acked_packet());
 		
-			if (!tx.ready_to_submit())
+			if (!tx.ready_to_submit()) {
+				Genode::error("lwIP: Nic packet queue congested, cannot send packet");
 				return ERR_WOULDBLOCK;
+			}
 		
 			Nic::Packet_descriptor packet;
 			try { packet = tx.alloc_packet(p->tot_len); }
-			catch (...) { return ERR_WOULDBLOCK; }
+			catch (...) {
+				Genode::error("lwIP: Nic packet allocation failed, cannot send packet");
+				return ERR_WOULDBLOCK;
+			}
 
 #if ETH_PAD_SIZE
 			pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */

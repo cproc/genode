@@ -104,9 +104,6 @@ extern "C" {
 		ENDPOINT_STRLEN_MAX = IPADDR_STRLEN_MAX+PORT_STRLEN_MAX
 	}; 
 
-	/*
-	 * TODO: amend LwIP with a TCP write function that takes a pbuf
-	 */
 	enum { WRITE_BUFFER_SIZE = 4096 };
 	static char *write_buffer()
 	{

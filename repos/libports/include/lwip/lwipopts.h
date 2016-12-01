@@ -23,6 +23,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Use lwIP without OS-awareness
+ */
+#define NO_SYS 1
+#define SYS_LIGHTWEIGHT_PROT 0
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
@@ -44,6 +50,9 @@ void genode_memcpy(void * dst, const void *src, unsigned long size);
 /* MEM_ALIGNMENT > 4 e.g. for x86_64 are not supported, see Genode issue #817 */
 #define MEM_ALIGNMENT               4
 
+/* Pools are reported to be faster */
+#define MEM_USE_POOLS                   0
+#define MEMP_USE_CUSTOM_POOLS           0
 
 /*
    ------------------------------------------------
@@ -52,12 +61,6 @@ void genode_memcpy(void * dst, const void *src, unsigned long size);
 */
 
 #define MEMP_NUM_TCP_PCB           128
-
-/*
-#define MEMP_NUM_SYS_TIMEOUT        16
-#define MEMP_NUM_NETCONN (MEMP_NUM_TCP_PCB + MEMP_NUM_UDP_PCB + MEMP_NUM_RAW_PCB + MEMP_NUM_TCP_PCB_LISTEN - 1)
-
-*/
 
 #define PBUF_POOL_SIZE                  96
 
@@ -120,7 +123,7 @@ void genode_memcpy(void * dst, const void *src, unsigned long size);
    ------------------------------------------------
 */
 
-#define LWIP_NETIF_API                  1
+#define LWIP_NETIF_API                  0
 #define LWIP_NETIF_STATUS_CALLBACK      1
 #define LWIP_NETIF_LINK_CALLBACK        1
 #define LWIP_NETIF_LOOPBACK             1
@@ -134,6 +137,14 @@ void genode_memcpy(void * dst, const void *src, unsigned long size);
 
 #define TCPIP_MBOX_SIZE                 128
 #define DEFAULT_ACCEPTMBOX_SIZE         128
+
+/*
+   ----------------------------------------------
+   ---------- Sequential layer options ----------
+   ----------------------------------------------
+*/
+/* no Netconn API */
+#define LWIP_NETCONN                    0
 
 
 /*
@@ -178,9 +189,6 @@ void genode_memcpy(void * dst, const void *src, unsigned long size);
 /**********************************
  ** Options not defined in opt.h **
  **********************************/
-
-#define LWIP_COMPAT_MUTEX 1  /* use binary semaphore instead of mutex */
-#define LWIP_COMPAT_MUTEX_ALLOWED 1
 
 #ifndef LWIP_RAND
 genode_uint32_t genode_rand();
