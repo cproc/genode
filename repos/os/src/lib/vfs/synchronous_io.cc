@@ -49,18 +49,14 @@ namespace Vfs {
 
 		handle->write_callback(cb);
 
-		Write_result result = write(handle, count);
-		if (result == WRITE_QUEUED) {
-			do { poll_io(); }
-			while(cb.status == Callback::PARTIAL);
-
-			result = (cb.status == Callback::ERROR) ?
-				File_io_service::WRITE_ERR_IO : File_io_service::WRITE_OK;
-		}
+		write(handle, count);
+		while(cb.status == Callback::PARTIAL);
+			poll_io();
 
 		handle->drop_write();
 		out_count = cb.accumulator;
-		return result;
+		return (cb.status == Callback::COMPLETE) ?
+			 File_io_service::WRITE_OK : File_io_service::WRITE_ERR_IO;
 	}
 
 	File_io_service::Read_result
@@ -96,19 +92,14 @@ namespace Vfs {
 
 		handle->read_callback(cb);
 
-		File_io_service::Read_result result = read(handle, count);
-
-		if (result == File_io_service::READ_QUEUED) {
-			do { poll_io(); }
-			while (cb.status == Callback::PARTIAL);
-
-			result = (cb.status == Callback::ERROR) ?
-				File_io_service::READ_ERR_IO : File_io_service::READ_OK;
-		}
+		read(handle, count);
+		while(cb.status == Callback::PARTIAL);
+			poll_io();
 
 		handle->drop_read();
 		out_count = cb.accumulator;
-		return result;
+		return (cb.status == Callback::COMPLETE) ?
+			 File_io_service::READ_OK : File_io_service::READ_ERR_IO;
 	}
 
 }

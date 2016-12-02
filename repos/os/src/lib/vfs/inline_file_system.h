@@ -60,7 +60,7 @@ class Vfs::Inline_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count) override
+		void read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			/* file read limit is the size of the dataspace */
 			file_size const max_size = _size;
@@ -76,12 +76,11 @@ class Vfs::Inline_file_system : public Single_file_system
 
 			/* check if end of file is reached */
 			if (read_offset >= end_offset)
-				return READ_OK;
+				return vfs_handle->read_status(Callback::COMPLETE);
 
 			/* pass ROM dataspace to callback */
 			count = end_offset - read_offset;
 			vfs_handle->read_callback(src, count, Callback::COMPLETE);
-			return READ_OK;
 		}
 };
 

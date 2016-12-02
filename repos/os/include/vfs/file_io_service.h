@@ -37,12 +37,12 @@ struct Vfs::File_io_service
 	                    WRITE_QUEUED, WRITE_OK };
 
 	/**
-	 * Queue a write by callback or execute an immediate callback
+	 * Submit a write request
 	 *
-	 * \param len  number of bytes to write or queue
-	 * \param out  number of bytes written or queued
+	 * \param handle  handle to execute callbacks from
+	 * \param len     number of bytes to write or queue
 	 */
-	virtual Write_result write(Vfs_handle *handle, file_size len) = 0;
+	virtual void write(Vfs_handle *handle, file_size len) = 0;
 
 	/**
 	 * Synchronous write
@@ -61,12 +61,12 @@ struct Vfs::File_io_service
 	                   READ_QUEUED, READ_OK };
 
 	/**
-	 * Queue a read by callback or execute an immediate callback
+	 * Submit a read request
 	 *
-	 * \param len  number of bytes to read or queue
-	 * \param out  number of bytes read or queued
+	 * \param handle  handle to execute callbacks from
+	 * \param len     number of bytes to read or queue
 	 */
-	virtual Read_result read(Vfs_handle *handle, file_size len) = 0;
+	virtual void read(Vfs_handle *handle, file_size len) = 0;
 
 	/**
 	 * Synchronous read

@@ -180,11 +180,11 @@ class Vfs::Block_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size count) override
+		void write(Vfs_handle *vfs_handle, file_size count) override
 		{
 			if (!_writeable) {
 				Genode::error("block device is not writeable");
-				return WRITE_ERR_INVALID;
+				return vfs_handle->write_status(Callback::ERR_INVALID);
 			}
 
 			file_size seek_offset = vfs_handle->seek();
@@ -219,7 +219,7 @@ class Vfs::Block_file_system : public Single_file_system
 					                   bytes_left, true, true);
 					if (nbytes == 0) {
 						Genode::error("error while write block:", blk_nr, " from block device");
-						return WRITE_ERR_INVALID;
+						return vfs_handle->write_status(Callback::ERR_INVALID);
 					}
 
 					Callback::Status s = length == count ?
@@ -254,22 +254,20 @@ class Vfs::Block_file_system : public Single_file_system
 				nbytes = _block_io(blk_nr, _block_buffer, _block_size, true);
 				if ((unsigned)nbytes != _block_size) {
 					Genode::error("error while writing block:", blk_nr, " to Block_device");
-					return WRITE_ERR_INVALID;
+					return vfs_handle->write_status(Callback::ERR_INVALID);
 				}
 
 				written += length;
 				count -= length;
 				seek_offset += length;
 			}
-
-			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count) override
+		void read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			if (!_readable) {
 				Genode::error("block device is not readable");
-				return READ_ERR_INVALID;
+				return vfs_handle->read_status(Callback::ERR_INVALID);
 			}
 
 			file_size seek_offset = vfs_handle->seek();
@@ -303,7 +301,7 @@ class Vfs::Block_file_system : public Single_file_system
 					nbytes = _block_io(blk_nr, vfs_handle, bytes_left, false, true);
 					if (nbytes == 0) {
 						Genode::error("error while reading block:", blk_nr, " from block device");
-						return READ_ERR_INVALID;
+						return vfs_handle->read_status(Callback::ERR_INVALID);
 					}
 
 					read  += nbytes;
@@ -316,7 +314,7 @@ class Vfs::Block_file_system : public Single_file_system
 				nbytes = _block_io(blk_nr, _block_buffer, _block_size, false);
 				if ((unsigned)nbytes != _block_size) {
 					Genode::error("error while reading block:", blk_nr, " from block device");
-					return READ_ERR_INVALID;
+					return vfs_handle->read_status(Callback::ERR_INVALID);
 				}
 
 				Callback::Status s = length == count ?
@@ -327,8 +325,6 @@ class Vfs::Block_file_system : public Single_file_system
 				count -= length;
 				seek_offset += length;
 			}
-
-			return READ_OK;
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size) override

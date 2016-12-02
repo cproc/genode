@@ -37,9 +37,11 @@ struct Vfs::Callback
 	 * expect to only receive PARTIAL.
 	 */
 	enum Status {
-		PARTIAL,   /* request partially completed */
-		COMPLETE,  /* request completed           */
-		ERROR      /* request terminated by error */
+		ERR_IO,         /* internal error                 */
+		ERR_INVALID,    /* handle or operation is invalid */
+		ERR_TERMINATED, /* connection terminated          */
+		PARTIAL,        /* request partially completed    */
+		COMPLETE,       /* request completed              */
 	};
 };
 
@@ -165,6 +167,12 @@ class Vfs::Vfs_handle
 		}
 
 		/**
+		 * Idiom for a status only callback
+		 */
+		inline void write_status(Callback::Status status) {
+			write_callback(nullptr, 0, status); }
+
+		/**
 		 * Add or replace read callback
 		 */
 		void read_callback(Read_callback &cb) { _r_cb = &cb; }
@@ -183,6 +191,12 @@ class Vfs::Vfs_handle
 			return _r_cb ?
 				_r_cb->read(src, src_len, status) : 0;
 		}
+
+		/**
+		 * Idiom for a status only callback
+		 */
+		inline void read_status(Callback::Status status) {
+			read_callback(nullptr, 0, status); }
 
 		/**
 		 * Add or replace notify callback

@@ -150,8 +150,14 @@ class Vfs::Fs_file_system : public File_system
 
 			Genode::size_t length = packet.length();
 
-			Callback::Status const s = packet.succeeded() ?
-				Callback::COMPLETE : Callback::ERROR;
+			Callback::Status s = Callback::ERR_INVALID;
+			typedef ::File_system::Packet_descriptor::Result Result;
+			switch(packet.result()) {
+			case Result::SUCCESS:        s = Callback::COMPLETE;       break;
+			case Result::ERR_IO:         s = Callback::ERR_IO;         break;
+			case Result::ERR_INVALID:    s = Callback::ERR_INVALID;    break;
+			case Result::ERR_TERMINATED: s = Callback::ERR_TERMINATED; break;
+			}
 
 			handle->seek(packet.position());
 
@@ -160,13 +166,10 @@ class Vfs::Fs_file_system : public File_system
 			/* release packet now in case the callback jumps the stack */
 
 			switch (packet.operation()) {
-			case ::File_system::Packet_descriptor::READ: {
-				handle->read_callback(content, length, s);
-				break;
-			}
+			case ::File_system::Packet_descriptor::READ:
+				handle->read_callback(content, length, s);  break;
 			case ::File_system::Packet_descriptor::WRITE:
-				handle->write_callback(nullptr, 0, s);
-				break;
+				handle->write_status(s);      break;
 			case ::File_system::Packet_descriptor::INVALID: break;
 			}
 		}
@@ -741,34 +744,16 @@ class Vfs::Fs_file_system : public File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size len) override
+		void write(Vfs_handle *vfs_handle, file_size len) override
 		{
-			if (len == 0) {
-				Genode::warning("zero length write encountered ", __FILE__,":",__LINE__);
-				return WRITE_OK;
-			}
-
 			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
-			if (!handle)
-				return WRITE_ERR_INVALID;
-
-			return _queue_io_packet(*handle, len, Opcode::WRITE)
-				? WRITE_QUEUED : WRITE_ERR_WOULD_BLOCK;
+			_queue_io_packet(*handle, len, Opcode::WRITE);
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size len) override
+		void read(Vfs_handle *vfs_handle, file_size len) override
 		{
-			if (len == 0) {
-				Genode::warning("zero length read encountered ", __FILE__,":",__LINE__);
-				return READ_OK;
-			}
-
 			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
-			if (!handle)
-				return READ_ERR_INVALID;
-
-			return _queue_io_packet(*handle, len, Opcode::READ)
-				? READ_QUEUED : READ_ERR_WOULD_BLOCK;
+			_queue_io_packet(*handle, len, Opcode::READ);
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override

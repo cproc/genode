@@ -119,7 +119,7 @@ class Vfs::Terminal_file_system : public Single_file_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *handle, file_size len) override
+		void write(Vfs_handle *handle, file_size len) override
 		{
 			auto func = [&] (char *buf, Genode::size_t buf_len)
 			{
@@ -127,11 +127,10 @@ class Vfs::Terminal_file_system : public Single_file_system
 			};
 
 			_terminal.write(func, len);
-			handle->write_callback(nullptr, 0, Callback::COMPLETE);
-			return WRITE_OK;
+			handle->write_status(Callback::COMPLETE);
 		}
 
-		Read_result read(Vfs_handle *handle, file_size len) override
+		void read(Vfs_handle *handle, file_size len) override
 		{
 			len = Genode::min(_terminal.avail(), len);
 			if (len) {
@@ -143,7 +142,6 @@ class Vfs::Terminal_file_system : public Single_file_system
 				_terminal.read(func, len);
 				handle->read_callback(nullptr, 0, Callback::COMPLETE);
 			}
-			return READ_OK;
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size) override

@@ -37,16 +37,11 @@ struct Vfs::Null_file_system : Single_file_system
 	 ** File I/O service interface **
 	 ********************************/
 
-	Write_result write(Vfs_handle *vfs_handle, file_size len) override
-	{
-		vfs_handle->write_callback(nullptr, len, Callback::COMPLETE);
-		return WRITE_OK;
-	}
+	void write(Vfs_handle *vfs_handle, file_size len) override {
+		vfs_handle->write_callback(nullptr, len, Callback::COMPLETE); }
 
-	Read_result read(Vfs_handle *vfs_handle, file_size len) override
-	{
-		return READ_OK;
-	}
+	void read(Vfs_handle *vfs_handle, file_size len) override {
+		vfs_handle->read_status(Callback::COMPLETE); }
 
 	Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size) override
 	{

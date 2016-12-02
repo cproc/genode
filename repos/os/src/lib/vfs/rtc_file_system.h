@@ -64,14 +64,16 @@ class Vfs::Rtc_file_system : public Single_file_system
 		 * On each read the current time is queried and afterwards formated
 		 * as '%Y-%m-%d %H:%M\n'.
 		 */
-		Read_result read(Vfs_handle *vfs_handle, file_size count) override
+		void read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			enum { TIMESTAMP_LEN = 17 };
 
 			file_size seek = vfs_handle->seek();
 
-			if (seek >= TIMESTAMP_LEN)
-				return READ_OK;
+			if (seek >= TIMESTAMP_LEN) {
+				vfs_handle->read_status(Callback::COMPLETE);
+				return;
+			}
 
 			Rtc::Timestamp ts = _rtc.current_time();
 
@@ -84,7 +86,6 @@ class Vfs::Rtc_file_system : public Single_file_system
 
 			count = min(count, n);
 			vfs_handle->read_callback(b, count, Callback::COMPLETE);
-			return READ_OK;
 		}
 };
 

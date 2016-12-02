@@ -795,53 +795,41 @@ class Vfs::Ram_file_system final : public Vfs::File_system
 		 ** File I/O interface **
 		 ************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size len) override
+		void write(Vfs_handle *vfs_handle, file_size len) override
 		{
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) ==  OPEN_MODE_RDONLY)
-				return WRITE_ERR_INVALID;
+				return vfs_handle->write_status(Callback::ERR_INVALID);
 
 			Vfs_ram::Ram_handle const *handle =
 				static_cast<Vfs_ram::Ram_handle *>(vfs_handle);
-			if (handle) {
-				Vfs_ram::Node::Guard guard(&handle->file);
+			Vfs_ram::Node::Guard guard(&handle->file);
 
-				/* write_fn will be called for each chunk that the read spans */
-				file_size remain = len;
-				auto write_fn = [&] (char *dst, Genode::size_t dst_len) {
-					remain -= vfs_handle->write_callback(
-						dst, dst_len, dst_len == remain ? Callback::COMPLETE
-						                                : Callback::PARTIAL);
-				};
-
-				handle->file.write(write_fn, len, handle->seek());
-				/* XXX: out of space condition? */
-				return WRITE_OK;
+			/* write_fn will be called for each chunk that the write spans */
+			auto write_fn = [&] (char *dst, Genode::size_t dst_len) {
+				vfs_handle->write_callback(dst, dst_len, Callback::PARTIAL);
 			};
+			handle->file.write(write_fn, len, handle->seek());
 
-			return WRITE_ERR_INVALID;
+			/* XXX: out of space condition? */
+			vfs_handle->write_status(Callback::COMPLETE);
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size len) override
+		void read(Vfs_handle *vfs_handle, file_size len) override
 		{
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_WRONLY)
-				return READ_ERR_INVALID;
+				return vfs_handle->read_status(Callback::ERR_INVALID);
 
 			Vfs_ram::Ram_handle const *handle =
 				static_cast<Vfs_ram::Ram_handle *>(vfs_handle);
-			if (handle) {
-				Vfs_ram::Node::Guard guard(&handle->file);
+			Vfs_ram::Node::Guard guard(&handle->file);
 
-				file_size remain = len;
-				auto read_fn = [&] (char const *src, Genode::size_t src_len) {
-					remain -= vfs_handle->read_callback(
-						src, src_len, src_len == remain ? Callback::COMPLETE
-						                                : Callback::PARTIAL);
-				};
-				
-				handle->file.read(read_fn, len, handle->seek());
-				return READ_OK;
-			}
-			return READ_ERR_INVALID;
+			/* read_fn will be called for each chunk that the read spans */
+			auto read_fn = [&] (char const *src, Genode::size_t src_len) {
+				vfs_handle->read_callback(src, src_len, Callback::PARTIAL);
+			};
+			handle->file.read(read_fn, len, handle->seek());
+
+			vfs_handle->read_status(Callback::COMPLETE);
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
