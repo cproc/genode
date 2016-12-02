@@ -18,7 +18,6 @@
 #include <vfs/vfs_handle.h>
 #include <util/fifo.h>
 #include <base/log.h>
-#include <base/debug.h>
 
 /* LwIP includes */
 #include <lwip/nic_netif.h>
@@ -33,6 +32,7 @@ namespace Lwip {
 extern "C" {
 #include <lwip/udp.h>
 #include <lwip/tcp.h>
+#include <lwip/timeouts.h>
 }
 
 	using namespace Vfs;
@@ -84,8 +84,7 @@ extern "C" {
 	class File_system;
 
 	typedef Vfs::Directory_service::Open_result Open_result;
-	typedef Vfs::File_io_service::Write_result Write_result;
-	typedef Vfs::File_io_service::Read_result   Read_result;
+	typedef Vfs::Directory_service::Unlink_result Unlink_result;
 
 	extern "C" {
 		static void udp_recv_callback(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
@@ -94,7 +93,7 @@ extern "C" {
 		static err_t tcp_recv_callback(void *arg, struct tcp_pcb *tpcb,
 		                               struct pbuf *p, err_t err);
 		static err_t tcp_sent_callback(void *arg, struct tcp_pcb *tpcb, u16_t len);
-		static void tcp_err_callback(void *arg, err_t err);
+		static void  tcp_err_callback(void *arg, err_t err);
 	}
 
 	typedef Genode::Path<24> Path;
@@ -145,13 +144,15 @@ struct Lwip::Lwip_handle final : Vfs::Vfs_handle, Lwip_handle_list::Element
 		return INVALID;
 	}
 
-	Socket_dir &socket;
+	Socket_dir *socket;
 
 	Type const type;
 
 	Lwip_handle(Vfs::File_system &fs, Allocator &alloc, int status_flags,
 	            Socket_dir &s, Type t)
-	: Vfs_handle(fs, fs, alloc, status_flags), socket(s), type(t) { }
+	: Vfs_handle(fs, fs, alloc, status_flags), socket(&s), type(t) { }
+
+	file_size queued_write = 0;
 };
 
 
@@ -167,6 +168,8 @@ struct Lwip::Socket_dir
 			return Name(Genode::Cstring(buf, Genode::snprintf(buf, Name::capacity(), "%x", num)));
 		}
 
+		Genode::Allocator &alloc;
+
 	private:
 
 		unsigned const _num;
@@ -174,26 +177,13 @@ struct Lwip::Socket_dir
 
 		void _notify_and_drop(Lwip_handle_list &list)
 		{
-			typedef Lwip_handle::Type Type;
-
 			while (list.first()) {
 				Lwip_handle *h = list.first();
-				char const *t;
-			switch (h->type) {
-			case Type::ACCEPT:   t = "ACCEPT"; break;
-			case Type::BIND:       t = "BIND"; break;
-			case Type::CONNECT:   t = "CONNECT"; break;
-			case Type::DATA:      t = "DATA"; break;
-			case Type::LISTEN:    t = "LISTEN"; break;
-			case Type::FROM:     t = "FROM"; break;
-			case Type::LOCAL:   t = "LOCAL"; break;
-			case Type::REMOTE:   t = "REMOTE"; break;
-			case Type::TO:   t = "TO"; break;
-			case Type::INVALID:   t = "INVALID"; break;
-			}
-				PDBG("notify ",t," handle");
 				list.remove(h);
+				h->write_status(Callback::ERR_TERMINATED);
+				h->read_status(Callback::ERR_TERMINATED);
 				h->notify_callback();
+				h->socket = nullptr;
 			}
 		}
 
@@ -232,7 +222,8 @@ struct Lwip::Socket_dir
 
 		State state = NEW;
 
-		Socket_dir(unsigned num) : _num(num) { };
+		Socket_dir(Genode::Allocator &alloc, unsigned num)
+		: alloc(alloc), _num(num) { };
 
 		Name const &name() const { return _name; }
 
@@ -294,8 +285,8 @@ struct Lwip::Socket_dir
 			return Open_result::OPEN_OK;
 		}
 
-		virtual Read_result   read(Lwip_handle &h, file_size len) = 0;
-		virtual Write_result write(Lwip_handle &h, file_size len) = 0;
+		virtual void   read(Lwip_handle &h, file_size len) = 0;
+		virtual void write(Lwip_handle &h, file_size len) = 0;
 };
 
 
@@ -308,6 +299,7 @@ struct Lwip::Protocol_dir
 	                         unsigned     mode,
 	                         Vfs_handle **out_handle,
 	                         Allocator   &alloc) = 0;
+	virtual Unlink_result unlink(char const *path) = 0;
 };
 
 
@@ -317,6 +309,7 @@ class Lwip::Protocol_dir_impl final : public Protocol_dir
 	private:
 
 		Genode::Allocator &_alloc;
+
 		Genode::List<SOCKET_DIR> _socket_dirs;
 
 	public:
@@ -437,6 +430,28 @@ class Lwip::Protocol_dir_impl final : public Protocol_dir
 
 			return Open_result::OPEN_ERR_UNACCESSIBLE;
 		}
+
+		Unlink_result unlink(char const *path) override
+		{
+			Path subpath(path);
+
+			if (!subpath.has_single_element()) {
+				subpath.strip_last_element();
+				return (lookup(subpath.base()+1) != nullptr)
+					? Unlink_result::UNLINK_ERR_NO_PERM
+					: Unlink_result::UNLINK_ERR_NO_ENTRY;
+			}
+
+			if (subpath == "/new_socket")
+				return Unlink_result::UNLINK_ERR_NO_PERM;
+
+			if (SOCKET_DIR *dir = lookup(subpath.base()+1)) {
+				destroy(dir->alloc, dir);
+				return Unlink_result::UNLINK_OK;
+			}
+
+			return Unlink_result::UNLINK_ERR_NO_ENTRY;
+		}
 };
 
 namespace Lwip {
@@ -483,14 +498,19 @@ class Lwip::Udp_socket_dir final :
 	public:
 
 		Udp_socket_dir(unsigned num, Udp_proto_dir &proto_dir, Genode::Allocator &alloc)
-		: Socket_dir(num), _alloc(alloc) { ip_addr_set_zero(&_to_addr); }
-
-		~Udp_socket_dir() { udp_remove(_pcb); }
-
-		void ready_callbacks()
+		: Socket_dir(alloc, num), _alloc(alloc)
 		{
+			ip_addr_set_zero(&_to_addr);
+
 			/* 'this' will be the argument to the LwIP recv callback */
 			udp_recv(_pcb, udp_recv_callback, this);
+		}
+
+		~Udp_socket_dir()
+		{
+			udp_remove(_pcb);
+			_pcb = NULL;
+			_drop_all_handles();
 		}
 
 		/**
@@ -517,7 +537,7 @@ class Lwip::Udp_socket_dir final :
 		 ** Socket_dir interface **
 		 **************************/
 
-		Read_result read(Lwip_handle &handle, file_size len) override
+		void read(Lwip_handle &handle, file_size len) override
 		{
 			typedef Lwip_handle::Type Type;
 
@@ -525,6 +545,7 @@ class Lwip::Udp_socket_dir final :
 
 			case Type::DATA:
 				if (state == READY) {
+
 					if (Packet *pkt = _packet_queue.head()) {
 						file_size const n = min(len, pkt->buf->len);
 						handle.read_callback((char*)pkt->buf->payload, n, Callback::PARTIAL);
@@ -537,7 +558,7 @@ class Lwip::Udp_socket_dir final :
 							destroy(_alloc, _packet_queue.dequeue());
 						}
 					}
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
@@ -551,7 +572,7 @@ class Lwip::Udp_socket_dir final :
 					                                   ip_str, pkt->port);
 						handle.read_callback(buf, n, Callback::COMPLETE);
 					}
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
@@ -564,7 +585,7 @@ class Lwip::Udp_socket_dir final :
 					file_size n = Genode::snprintf(buf, sizeof(buf), "%s:%d\n",
 					                               ip_str, _pcb->local_port);
 					handle.read_callback(buf, n, Callback::COMPLETE);
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
@@ -577,7 +598,7 @@ class Lwip::Udp_socket_dir final :
 					file_size n = Genode::snprintf(buf, sizeof(buf), "%s:%d\n",
 					                               ip_str, _pcb->remote_port);
 					handle.read_callback(buf, n, Callback::COMPLETE);
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
@@ -589,16 +610,17 @@ class Lwip::Udp_socket_dir final :
 					file_size n = Genode::snprintf(buf, sizeof(buf), "%s:%d\n",
 					                               ip_str, _to_port);
 					handle.read_callback(buf, n, Callback::COMPLETE);
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
 			default: break;
 			}
-			return Read_result::READ_ERR_INVALID;
+
+			handle.read_status(Callback::ERR_INVALID);
 		}
 
-		Write_result write(Lwip_handle &handle, file_size len) override
+		void write(Lwip_handle &handle, file_size len) override
 		{
 			typedef Lwip_handle::Type Type;
 
@@ -613,11 +635,12 @@ class Lwip::Udp_socket_dir final :
 							handle.write_callback((char*)p->payload, p->len, Callback::PARTIAL);
 
 						if (udp_sendto(_pcb, head, &_to_addr, _to_port) != ERR_OK) {
-							return Write_result::WRITE_ERR_IO;
+							Genode::error("ERR_IO ",__FILE__,__LINE__);
+							return handle.write_status(Callback::ERR_IO);
 						}
 						remain -= head->tot_len;
 					}
-					return Write_result::WRITE_OK;
+					return handle.write_status(Callback::COMPLETE);
 				}
 				break;
 
@@ -628,10 +651,9 @@ class Lwip::Udp_socket_dir final :
 					file_size n = handle.write_callback(buf, sizeof(buf)-1, Callback::PARTIAL);
 					buf[n] = '\0';
 					_to_port = remove_port(buf);
-					if (!ipaddr_aton(buf, &_to_addr)) {
-						return Write_result::WRITE_ERR_INVALID;
+					if (ipaddr_aton(buf, &_to_addr)) {
+						return handle.write_status(Callback::COMPLETE);
 					}
-					return Write_result::WRITE_OK;
 				}
 				break;
 
@@ -644,17 +666,16 @@ class Lwip::Udp_socket_dir final :
 					file_size n  = handle.write_callback(buf, sizeof(buf)-1, Callback::PARTIAL);
 					buf[n] = '\0';
 					port = remove_port(buf);
-					if (!ipaddr_aton(buf, &addr)) {
-						return Write_result::WRITE_ERR_INVALID;
-					}
+					if (!ipaddr_aton(buf, &addr))
+						break;
 
 					err_t err = udp_bind(_pcb, &addr, port);
 					if (err == ERR_OK) {
-						ready_callbacks();
 						state = READY;
-						return Write_result::WRITE_OK;
+						return handle.write_status(Callback::COMPLETE);
 					}
-					return Write_result::WRITE_ERR_IO;
+							Genode::error("ERR_IO ",__FILE__,__LINE__);
+					return handle.write_status(Callback::ERR_IO);
 				}
 				break;
 
@@ -666,21 +687,23 @@ class Lwip::Udp_socket_dir final :
 					buf[n] = '\0';
 					_to_port = remove_port(buf);
 					if (!ipaddr_aton(buf, &_to_addr))
-						return Write_result::WRITE_ERR_INVALID;
+						break;
 
 					err_t err = udp_connect(_pcb, &_to_addr, _to_port);
-					if (err != ERR_OK)
-						return Write_result::WRITE_ERR_IO;
+					if (err != ERR_OK) {
+							Genode::error("ERR_IO ",__FILE__,__LINE__);
+						return handle.write_status(Callback::ERR_IO);
+					}
 
 					state = READY;
-					ready_callbacks();
-					return Write_result::WRITE_OK;
+					return handle.write_status(Callback::COMPLETE);
 				}
 				break;
 
 			default: break;
 			}
-			return Write_result::WRITE_ERR_INVALID;
+
+			handle.write_status(Callback::ERR_INVALID);
 		}
 
 };
@@ -708,38 +731,39 @@ class Lwip::Tcp_socket_dir final :
 	public:
 
 		Tcp_socket_dir(unsigned num, Tcp_proto_dir &proto_dir, Genode::Allocator &alloc)
-		: Socket_dir(num), _proto_dir(proto_dir), _alloc(alloc), _pcb(tcp_new())
+		: Socket_dir(alloc, num), _proto_dir(proto_dir), _alloc(alloc), _pcb(tcp_new())
 		{
 			/* 'this' will be the argument to LwIP callbacks */
 			tcp_arg(_pcb, this);
 
+			tcp_recv(_pcb, tcp_recv_callback);
+			tcp_sent(_pcb, tcp_sent_callback);
 			tcp_err(_pcb, tcp_err_callback);
 		}
 
 		Tcp_socket_dir(unsigned num, Tcp_proto_dir &proto_dir, Genode::Allocator &alloc, tcp_pcb *pcb)
-		: Socket_dir(num), _proto_dir(proto_dir), _alloc(alloc), _pcb(pcb)
+		: Socket_dir(alloc, num), _proto_dir(proto_dir), _alloc(alloc), _pcb(pcb)
 		{
 			/* 'this' will be the argument to LwIP callbacks */
 			tcp_arg(_pcb, this);
 
+			tcp_recv(_pcb, tcp_recv_callback);
+			tcp_sent(_pcb, tcp_sent_callback);
 			tcp_err(_pcb, tcp_err_callback);
 
 			/* the PCB comes connected and ready to use */
 			state = READY;
-			ready_callbacks();
 		}
 
 		~Tcp_socket_dir()
 		{
 			for (Tcp_socket_dir *p = _pending.first(); p; p->next())
 				destroy(_alloc, p);
-			tcp_close(_pcb);
-		}
 
-		void ready_callbacks()
-		{
-			tcp_recv(_pcb, tcp_recv_callback);
-			tcp_sent(_pcb, tcp_sent_callback);
+			if (_pcb != NULL)
+				tcp_close(_pcb);
+			_pcb = NULL;
+			_drop_all_handles();
 		}
 
 		/**
@@ -798,8 +822,6 @@ class Lwip::Tcp_socket_dir final :
 		 */
 		void shutdown()
 		{
-			/* XXX: what about writes waiting for ACK? */
-			PDBG("");
 			tcp_close(_pcb);
 			_pcb = NULL;
 			_drop_all_handles();
@@ -809,21 +831,24 @@ class Lwip::Tcp_socket_dir final :
 		 ** Socket_dir interface **
 		 **************************/
 
-		Read_result read(Lwip_handle &handle, file_size len) override
+		void read(Lwip_handle &handle, file_size len) override
 		{
-			if (_pcb == NULL) {
-				PDBG("returning READ_ERR_INTERRUPT");
-				return Read_result::READ_ERR_INTERRUPT;
-			}
+			if (_pcb == NULL)
+				return handle.read_status(Callback::ERR_TERMINATED);
 
 			typedef Lwip_handle::Type Type;
 
 			switch(handle.type) {
 
 			case Type::DATA:
+				if (_pcb->state == Lwip::LISTEN) {
+					Genode::error("cannot read data from a listening socket");
+					break;
+				}
+
 				if (state == READY) {
 					if (!_recv_pbuf)
-						return Read_result::READ_OK;
+						return handle.read_status(Callback::COMPLETE);
 
 					pbuf *p = _recv_pbuf;
 					file_size remain = len;
@@ -848,6 +873,8 @@ class Lwip::Tcp_socket_dir final :
 					}
 
 					/* ACK the remote */
+					if (_pcb->state == Lwip::LISTEN)
+						Genode::error("cannot read data from a listening socket");
 					tcp_recved(_pcb, len - remain);
 
 					if (p != _recv_pbuf) {
@@ -861,15 +888,16 @@ class Lwip::Tcp_socket_dir final :
 					 * we deferred completion for ACK and clean up,
 					 * now let the higher level do things like task switch
 					 */
-					return Read_result::READ_OK;
+					return handle.read_status(Callback::COMPLETE);
 				}
 				break;
 
 			case Type::ACCEPT:
 				if (state == LISTEN) {
 					Tcp_socket_dir *new_sock = _pending.first();
-					if (!new_sock)
-						return Read_result::READ_OK;
+					if (!new_sock) {
+						return handle.read_status(Callback::COMPLETE);
+					}
 
 					while (new_sock->next())
 						new_sock = new_sock->next();
@@ -882,7 +910,7 @@ class Lwip::Tcp_socket_dir final :
 						handle.read_callback("/tcp/", 5, Callback::PARTIAL);
 						handle.read_callback(new_id.string(), new_id.length()-1, Callback::PARTIAL);
 						handle.read_callback("\n", 1, Callback::COMPLETE);
-						return Read_result::READ_OK;
+						return;
 					}
 				}
 				break;
@@ -896,7 +924,7 @@ class Lwip::Tcp_socket_dir final :
 					file_size n = Genode::snprintf(buf, sizeof(buf), "%s:%d\n",
 					                               ip_str, _pcb->local_port);
 					handle.read_callback(buf, n, Callback::COMPLETE);
-					return Read_result::READ_OK;
+					return;
 				} else
 
 				break;
@@ -909,7 +937,7 @@ class Lwip::Tcp_socket_dir final :
 					file_size n = Genode::snprintf(buf, sizeof(buf), "%s:%d\n",
 					                               ip_str, _pcb->remote_port);
 					handle.read_callback(buf, n, Callback::COMPLETE);
-					return Read_result::READ_OK;
+					return;
 				}
 				break;
 
@@ -919,45 +947,59 @@ class Lwip::Tcp_socket_dir final :
 			case Type::TO:
 			case Type::INVALID: break;
 			}
-			return Read_result::READ_ERR_INVALID;
+
+			return handle.read_status(Callback::ERR_INVALID);;
 		}
 
-		Write_result write(Lwip_handle &handle, file_size len) override
+		void write(Lwip_handle &handle, file_size len) override
 		{
-			if (_pcb == NULL) {
-				PDBG("returning WRITE_ERR_INTERRUPT");
-				return Write_result::WRITE_ERR_INTERRUPT;
-			}
+			if (_pcb == NULL)
+				return handle.write_status(Callback::ERR_TERMINATED);
 
 			typedef Lwip_handle::Type Type;
 
 			switch(handle.type) {
 			case Type::DATA:
 				if (state == READY) {
+					/*
+					 * XXX: look over the data handles and if there
+					 * are any pending writes, simply queue this one
+					 * so that it possible to order writes and keep
+					 * track of what has been acknowledged
+					 */
 					file_size remain = len;
 					while (remain) {
+						if (!tcp_sndbuf(_pcb)) {
+							/* XXX: this happens, and it can't be good for perf */
+							handle.queued_write = remain;
+							return;
+						}
+
 						char *buf = write_buffer();
-						file_size n1 = min(remain, WRITE_BUFFER_SIZE);
+						file_size n1 = min(remain, min(tcp_sndbuf(_pcb), WRITE_BUFFER_SIZE));
 						u16_t n2 = handle.write_callback(buf, n1, Callback::PARTIAL);
+
 						/* write to outgoing TCP buffer */
-						if (tcp_write(_pcb, buf, n2, 0) != ERR_OK) {
-							return Write_result::WRITE_ERR_IO;
+						if (tcp_write(_pcb, buf, n2, TCP_WRITE_FLAG_COPY) != ERR_OK) {
+							Genode::error("lwIP: tcp_write failed");
+							return handle.write_status(Callback::ERR_IO);
 						}
 						remain -= n1;
 					}
 
 					/* flush the buffer */
 					if (tcp_output(_pcb) != ERR_OK) {
-						return Write_result::WRITE_ERR_IO;
+						Genode::error("lwIP: tcp_output failed");
+						return handle.write_status(Callback::ERR_IO);
 					}
 
-					/* callback is complete when the remote ACKs */
 					if (data_handles.first() != &handle) {
 						data_handles.remove(&handle);
 						data_handles.insert(&handle);
 					}
 
-					return Write_result::WRITE_QUEUED;
+					/* callback is complete when the remote ACKs */
+					return;
 				}
 				break;
 
@@ -968,7 +1010,7 @@ class Lwip::Tcp_socket_dir final :
 					ip_addr_t addr;
 					u16_t port = 0;
 
-					file_size n = handle.write_callback(buf, sizeof(buf)-1, Callback::COMPLETE);
+					file_size n = handle.write_callback(buf, sizeof(buf)-1, Callback::PARTIAL);
 					buf[n] = '\0';
 					for (Genode::size_t i = n-2; i >= 0; --i) {
 						if (buf[i] == ':') {
@@ -979,14 +1021,16 @@ class Lwip::Tcp_socket_dir final :
 					}
 
 					if (!ipaddr_aton(buf, &addr))
-						return Write_result::WRITE_ERR_INVALID;
+						break;
 
 					err_t err = tcp_bind(_pcb, &addr, port);
 					if (err == ERR_OK) {
 						state = BOUND;
-						return Write_result::WRITE_OK;
+						handle.write_callback(buf, sizeof(buf)-1, Callback::COMPLETE);
+						return;
 					}
-					return Write_result::WRITE_ERR_IO;
+							Genode::error("ERR_IO ",__FILE__,__LINE__);
+					return handle.write_status(Callback::ERR_IO);
 				}
 				break;
 
@@ -1000,13 +1044,16 @@ class Lwip::Tcp_socket_dir final :
 						handle.write_callback(buf, sizeof(buf)-1, Callback::PARTIAL);
 					buf[n] = '\0';
 					if (!ipaddr_aton(buf, &addr))
-						return Write_result::WRITE_ERR_INVALID;
+						break;
 					Genode::ascii_to_unsigned(get_port(buf), port, 10);
 
 					err_t err = tcp_connect(_pcb, &addr, port, tcp_connect_callback);
 					/* no need for a Callback::ERROR on an immediate op */
-					return err == ERR_OK ?
-						Write_result::WRITE_QUEUED : Write_result::WRITE_ERR_IO;
+					if (err != ERR_OK) {
+						Genode::error("ERR_IO ",__FILE__,__LINE__);
+						handle.write_status(Callback::ERR_IO);
+					}
+					return;
 				}
 				break;
 
@@ -1015,7 +1062,7 @@ class Lwip::Tcp_socket_dir final :
 					unsigned long backlog = TCP_DEFAULT_LISTEN_BACKLOG;
 					char buf[8];
 
-					file_size n = handle.write_callback(buf, len, Callback::COMPLETE);
+					file_size n = handle.write_callback(buf, len, Callback::PARTIAL);
 					buf[n] = '\0';
 					Genode::ascii_to_unsigned(buf, backlog, 10);
 
@@ -1024,7 +1071,7 @@ class Lwip::Tcp_socket_dir final :
 					tcp_arg(_pcb, this);
 					tcp_accept(_pcb, tcp_accept_callback);
 					state = LISTEN;
-					return Write_result::WRITE_OK;
+					return handle.write_status(Callback::COMPLETE);
 				}
 				break;
 
@@ -1034,7 +1081,8 @@ class Lwip::Tcp_socket_dir final :
 			case Type::TO:
 			case Type::INVALID: break;
 			}
-			return Write_result::WRITE_ERR_INVALID;
+
+			handle.write_status(Callback::ERR_INVALID);
 		}
 };
 
@@ -1058,11 +1106,11 @@ static
 err_t tcp_connect_callback(void *arg, struct tcp_pcb *pcb, err_t err)
 {
 	Lwip::Tcp_socket_dir *socket_dir = static_cast<Lwip::Tcp_socket_dir *>(arg);
+	socket_dir->state = Lwip::Tcp_socket_dir::READY;
+
 	if (Lwip::Lwip_handle *handle = socket_dir->connect_handles.first()) {
 		handle->write_callback(nullptr, 0, Callback::COMPLETE);
 	}
-	socket_dir->ready_callbacks();
-	socket_dir->state = Lwip::Tcp_socket_dir::READY;
 	return ERR_OK;
 }
 
@@ -1079,9 +1127,9 @@ static
 err_t tcp_recv_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
 {
 	Lwip::Tcp_socket_dir *socket_dir = static_cast<Lwip::Tcp_socket_dir *>(arg);
-	if (p == NULL)
+	if (p == NULL) {
 		socket_dir->shutdown();
-	else
+	} else
 		socket_dir->recv(p);
 	return ERR_OK;
 }
@@ -1090,16 +1138,48 @@ err_t tcp_recv_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t e
 static
 err_t tcp_sent_callback(void *arg, struct tcp_pcb *tpcb, u16_t len)
 {
+	/* XXX: how much of the data that has been sent is being acknowledged? */
+
+	err_t err = ERR_OK;
+
 	Lwip::Tcp_socket_dir *socket_dir = static_cast<Lwip::Tcp_socket_dir *>(arg);
-	if (Lwip::Lwip_handle *handle = socket_dir->data_handles.first())
-		handle->write_callback(nullptr, 0, Callback::COMPLETE);
-	return ERR_OK;
+	socket_dir->data_handles.for_each([&] (Lwip::Lwip_handle &handle) {
+		if (handle.queued_write == 0) {
+			handle.write_status(Callback::COMPLETE);
+
+		} else if (err == ERR_OK) {
+			file_size remain = handle.queued_write;
+			while (remain) {
+				if (!tcp_sndbuf(tpcb))
+					break;
+
+				char *buf = write_buffer();
+				file_size n1 = min(remain, min(tcp_sndbuf(tpcb), WRITE_BUFFER_SIZE));
+				file_size n2 = handle.write_callback(buf, n1, Callback::PARTIAL);
+
+				/* write to outgoing TCP buffer */
+				err = tcp_write(tpcb, buf, n2, TCP_WRITE_FLAG_COPY);
+				if (err != ERR_OK) {
+					Genode::error("lwIP: tcp_write in ACK callback failed, error ",(int)err);
+					break;
+				}
+
+				/* flush the buffer */
+				err = tcp_output(tpcb);
+				remain -= n1;
+			}
+			handle.queued_write = remain;
+			/* still have to wait for ACK to complete */
+		}
+	});
+
+	return err;
 }
 
 static
 void tcp_err_callback(void *arg, err_t err)
 {
-	PDBG((int)err);
+	Genode::error("lwIP: errror ",(int)err);
 }
 
 	}
@@ -1119,17 +1199,12 @@ class Lwip::File_system final : public Vfs::File_system
 		Tcp_proto_dir _tcp_dir;
 		Udp_proto_dir _udp_dir;
 
-		Genode::Entrypoint &_ep;
-
 	public:
 
-		File_system(Genode::Env &env,
-		                        Genode::Allocator &alloc,
-		                        Genode::Xml_node config)
-		: _netif(env, alloc, config), _tcp_dir(alloc), _udp_dir(alloc), _ep(env.ep())
-		{
-			/* XXX: set _netif as the default interface */
-		}
+		File_system(Genode::Env       &env,
+		            Genode::Allocator &alloc,
+		            Genode::Xml_node   config)
+		: _netif(env, alloc, config), _tcp_dir(alloc), _udp_dir(alloc) { }
 
 		~File_system() { }
 
@@ -1192,19 +1267,22 @@ class Lwip::File_system final : public Vfs::File_system
 
 		void close(Vfs_handle *vfs_handle) override
 		{
-			if (Lwip_new_handle *handle = dynamic_cast<Lwip_new_handle*>(vfs_handle))
+			if (Lwip_new_handle *handle = dynamic_cast<Lwip_new_handle*>(vfs_handle)) {
 				destroy(vfs_handle->alloc(), handle);
-			if (Lwip_handle *handle = dynamic_cast<Lwip_handle*>(vfs_handle)) {
-				handle->socket.close(handle);
+			} else if (Lwip_handle *handle = dynamic_cast<Lwip_handle*>(vfs_handle)) {
+				if (handle->socket)
+					handle->socket->close(handle);
 				destroy(vfs_handle->alloc(), handle);
 			}
-				
 		}
 
 		Unlink_result unlink(char const *path) override
 		{
-			PDBG("not implemented");
-			return UNLINK_ERR_NO_PERM;
+			if (strncmp(path, "/tcp", 4) == 0)
+				return _tcp_dir.unlink(path+4);
+			if (strncmp(path, "/udp", 4) == 0)
+				return _udp_dir.unlink(path+4);
+			return UNLINK_ERR_NO_ENTRY;
 		}
 
 
@@ -1212,36 +1290,41 @@ class Lwip::File_system final : public Vfs::File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		File_io_service::Write_result
-		write(Vfs_handle *vfs_handle, file_size len) override
+		void write(Vfs_handle *vfs_handle, file_size len) override
 		{
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_RDONLY)
 				Genode::warning("(vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_RDONLY");
 
 			/*
 			if ((!vfs_handle) ||
-			    ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_RDONLY))
-				return WRITE_ERR_INVALID;
+			    ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_RDONLY)) {
+				vfs_handle->write_status(Callback::ERR_INVALID);
+				return;
+			}
 			 */
 
-			if (Lwip_handle *handle = dynamic_cast<Lwip_handle*>(vfs_handle))
-				return handle->socket.write(*handle, len);
-
-			return WRITE_ERR_INVALID;
+			Lwip_handle *handle = dynamic_cast<Lwip_handle*>(vfs_handle);
+			if (handle && handle->socket)
+				handle->socket->write(*handle, len);
+			else
+				vfs_handle->read_status(Callback::ERR_INVALID);
 		}
 
-		File_io_service::Read_result
-		read(Vfs_handle *vfs_handle, file_size len) override
+		void read(Vfs_handle *vfs_handle, file_size len) override
 		{
 			if ((!vfs_handle) ||
-			    ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_WRONLY))
-				return READ_ERR_INVALID;
+			    ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_WRONLY)) {
+				return vfs_handle->read_status(Callback::ERR_INVALID);
+			}
 
 			if (Lwip_handle *handle = dynamic_cast<Lwip_handle*>(vfs_handle)) {
-				return handle->socket.read(*handle, len);
+				if (!handle->socket)
+					return handle->read_status(Callback::ERR_INVALID);
+				handle->socket->read(*handle, len);
 			} else if (Lwip_new_handle *handle = dynamic_cast<Lwip_new_handle*>(vfs_handle)) {
-				if (len < (Socket_dir::Name::capacity()+1))
-					return READ_ERR_INVALID;
+				if (len < (Socket_dir::Name::capacity()+1)) {
+					return handle->read_status(Callback::ERR_INVALID);
+				}
 				try {
 					/*
 					 * pass the allocator on the 'new_socket' handle to
@@ -1254,14 +1337,14 @@ class Lwip::File_system final : public Vfs::File_system
 						handle->read_callback("/udp/", 5, Callback::PARTIAL);
 					handle->read_callback(id.string(), id.length()-1, Callback::PARTIAL);
 					handle->read_callback("\n", 1, Callback::COMPLETE);
-					return READ_OK;
 				} catch (...) {
 					Genode::error("failed to allocate new LwIP socket");
-					return READ_ERR_IO;
+							Genode::error("ERR_IO ",__FILE__,__LINE__);
+					handle->read_status(Callback::ERR_IO);
 				}
+			} else {
+				handle->read_status(Callback::ERR_INVALID);
 			}
-
-			return READ_ERR_INVALID;
 		}
 
 
@@ -1298,10 +1381,10 @@ class Lwip::File_system final : public Vfs::File_system
 		}
 
 		bool subscribe(Vfs_handle*) override { return true; }
-
-		void poll_io() override { _ep.wait_and_dispatch_one_signal(); }
 };
 
+
+extern void lwip_init(Genode::Env &env);
 
 extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 {
@@ -1311,6 +1394,7 @@ extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 		                         Genode::Allocator &alloc,
 		                         Genode::Xml_node config) override
 		{
+			lwip_init(env);
 			return new (alloc) Lwip::File_system(env, alloc, config);
 		}
 	};
