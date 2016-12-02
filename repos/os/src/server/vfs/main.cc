@@ -128,9 +128,6 @@ class Vfs_server::Session_component :
 			while (tx_sink()->packet_avail() && tx_sink()->ready_to_ack()) {
 				Packet_descriptor packet = tx_sink()->get_packet();
 
-				/* assume failure by default */
-				packet.succeeded(false);
-
 				Node *node = _lookup_node(packet.handle());
 				void     * const content = tx_sink()->packet_content(packet);
 				size_t     const length  = packet.length();
@@ -182,7 +179,9 @@ class Vfs_server::Session_component :
 					}
 
 					packet.length(res_length);
-					packet.succeeded(!!res_length);
+					packet.result(res_length
+						? Packet_descriptor::SUCCESS
+						: Packet_descriptor::ERR_IO);
 					tx_sink()->acknowledge_packet(packet);
 				}
 			}

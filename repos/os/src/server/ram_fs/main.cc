@@ -61,10 +61,8 @@ namespace Ram_fs {
 				size_t     const length  = packet.length();
 				seek_off_t const offset  = packet.position();
 
-				if (!content || (packet.length() > packet.size())) {
-					packet.succeeded(false);
+				if (!content || (packet.length() > packet.size()))
 					return;
-				}
 
 				/* resulting length */
 				size_t res_length = 0;
@@ -83,7 +81,7 @@ namespace Ram_fs {
 				}
 
 				packet.length(res_length);
-				packet.succeeded(true);
+				packet.result(Packet_descriptor::SUCCESS);
 			}
 
 			void _process_packet()
@@ -91,7 +89,7 @@ namespace Ram_fs {
 				Packet_descriptor packet = tx_sink()->get_packet();
 
 				/* assume failure by default */
-				packet.succeeded(false);
+				packet.result(Packet_descriptor::ERR_INVALID);
 
 				try {
 					Node *node = _handle_registry.lookup_and_lock(packet.handle());

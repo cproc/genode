@@ -119,13 +119,20 @@ class File_system::Packet_descriptor : public Genode::Packet_descriptor
 
 		enum Opcode { READ, WRITE, INVALID };
 
+		enum Result {
+			ERR_IO,
+			ERR_INVALID,
+			ERR_TERMINATED,
+			SUCCESS,
+		};
+
 	private:
 
 		Node_handle _handle;   /* node handle */
 		Opcode      _op;       /* requested operation */
 		seek_off_t  _position; /* file seek offset in bytes */
 		size_t      _length;   /* transaction length in bytes */
-		bool        _success;  /* indicates success of operation */
+		Result      _result;   /* indicates the result of operation */
 
 	public:
 
@@ -136,7 +143,7 @@ class File_system::Packet_descriptor : public Genode::Packet_descriptor
 		                  Genode::size_t buf_size   = 0)
 		:
 			Genode::Packet_descriptor(buf_offset, buf_size), _handle(-1),
-			_op(INVALID), _position(0), _length(0), _success(false) { }
+			_op(INVALID), _position(0), _length(0), _result(ERR_INVALID) { }
 
 		/**
 		 * Constructor
@@ -153,19 +160,19 @@ class File_system::Packet_descriptor : public Genode::Packet_descriptor
 		:
 			Genode::Packet_descriptor(p.offset(), p.size()),
 			_handle(handle), _op(op),
-			_position(position), _length(length), _success(false)
+			_position(position), _length(length), _result(ERR_INVALID)
 		{ }
 
 		Node_handle handle()    const { return _handle;   }
 		Opcode      operation() const { return _op;       }
 		seek_off_t  position()  const { return _position; }
 		size_t      length()    const { return _length;   }
-		bool        succeeded() const { return _success;  }
+		Result      result()    const { return _result;   }
 
 		/*
 		 * Accessors called at the server side
 		 */
-		void succeeded(bool b) { _success = b ? 1 : 0; }
+		void result(Result result) { _result = result; }
 		void length(size_t length) { _length = length; }
 };
 

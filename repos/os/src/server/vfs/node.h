@@ -181,7 +181,7 @@ class Vfs_server::File : public Node,
 			_handle->ds().close(_handle);
 			if (_packet.operation() != Packet_descriptor::INVALID) {
 				_packet.length(0);
-				_packet.succeeded(false);
+				_packet.result(Packet_descriptor::ERR_INVALID);
 				_sink.acknowledge_packet(_packet);
 			}
 		}
@@ -196,7 +196,7 @@ class Vfs_server::File : public Node,
 			if (_packet.operation() != Packet_descriptor::INVALID) {
 				Genode::warning("VFS server acking partial packet");
 				/* push the old op */
-				_packet.succeeded(_packet.length());
+				_packet.result(Packet_descriptor::ERR_INVALID);
 				_sink.acknowledge_packet(_packet);
 			}
 
@@ -205,31 +205,14 @@ class Vfs_server::File : public Node,
 			_handle->seek(_packet.position());
 
 			switch (_packet.operation()) {
-			case Packet_descriptor::READ: {
-				typedef Vfs::File_io_service::Read_result Result;
-				Result r = _handle->fs().read(_handle, packet.length());
-				if (r == Result::READ_QUEUED) return;
-				_packet.succeeded(r == Result::READ_OK);
-				break;
-			}
+			case Packet_descriptor::READ:
+				_handle->fs().read(_handle, packet.length()); break;
 
-			case Packet_descriptor::WRITE: {
-				typedef Vfs::File_io_service::Write_result Result;
-				Result r = _handle->fs().write(_handle, packet.length());
-				if (r == Result::WRITE_QUEUED) return;
-				_packet.succeeded(r == Result::WRITE_OK);
-				break;
-			}
+			case Packet_descriptor::WRITE:
+				_handle->fs().write(_handle, packet.length()); break;
 
 			case Packet_descriptor::INVALID:
-				_sink.acknowledge_packet(_packet);
-				return;
-			}
-
-			if (_packet.operation() != Packet_descriptor::INVALID) {
-				_packet.length(_packet_offset);
-				_sink.acknowledge_packet(_packet);
-				_packet = Packet_descriptor();
+				_sink.acknowledge_packet(_packet); return;
 			}
 		}
 
@@ -255,9 +238,6 @@ class Vfs_server::File : public Node,
 		file_size read(char const *src, file_size src_len,
 		               Callback::Status status) override
 		{
-			if (status == Callback::ERROR)
-				Genode::error("got an error in a read callback at the packet queue");
-
 			if (!(_packet.size() && _packet.operation() == Packet_descriptor::READ)) {
 				Genode::error("read callback received for invalid packet");
 				return 0;
@@ -266,22 +246,28 @@ class Vfs_server::File : public Node,
 			char        *dst = _sink.packet_content(_packet)+_packet_offset;
 			size_t const out = min(src_len, _packet.size()-_packet_offset);
 
-			if (src)
-				Genode::memcpy(dst, src, out);
-			else
-				Genode::memset(dst, 0x00, out);
-			_packet_offset += out;
-
-			dst[out] = 0;
-
-			if (status != Callback::PARTIAL ||
-			    _packet_offset == _packet.length())
-			{
-				_packet.length(_packet_offset);
-				_packet.succeeded(status != Callback::ERROR);
-				_sink.acknowledge_packet(_packet);
-				_packet = Packet_descriptor();
+			if (out) {
+				if (src)
+					Genode::memcpy(dst, src, out);
+				else
+					Genode::memset(dst, 0x00, out);
+				_packet_offset += out;
 			}
+
+			typedef ::File_system::Packet_descriptor::Result Result;
+			switch(status) {
+			case Callback::COMPLETE:       _packet.result(Result::SUCCESS); break;
+			case Callback::PARTIAL:        return out;
+
+			case Callback::ERR_IO:         _packet.result(Result::ERR_IO);         break;
+			case Callback::ERR_INVALID:    _packet.result(Result::ERR_INVALID);    break;
+			case Callback::ERR_TERMINATED: _packet.result(Result::ERR_TERMINATED); break;
+			default: break; /* Callback::PARTIAL is excluded */
+			}
+
+			_packet.length(_packet_offset);
+			_sink.acknowledge_packet(_packet);
+			_packet = Packet_descriptor();
 			return out;
 		}
 
@@ -307,13 +293,20 @@ class Vfs_server::File : public Node,
 				_packet_offset += out;
 			}
 
-			if (status != Callback::PARTIAL)
-			{
-				_packet.length(_packet_offset);
-				_packet.succeeded(status != Callback::ERROR);
-				_sink.acknowledge_packet(_packet);
-				_packet = Packet_descriptor();
+			typedef ::File_system::Packet_descriptor::Result Result;
+			switch(status) {
+			case Callback::COMPLETE:       _packet.result(Result::SUCCESS); break;
+			case Callback::PARTIAL:        return out;
+
+			case Callback::ERR_IO:         _packet.result(Result::ERR_IO);         break;
+			case Callback::ERR_INVALID:    _packet.result(Result::ERR_INVALID);    break;
+			case Callback::ERR_TERMINATED: _packet.result(Result::ERR_TERMINATED); break;
+			default: break; /* Callback::PARTIAL is excluded */
 			}
+
+			_packet.length(_packet_offset);
+			_sink.acknowledge_packet(_packet);
+			_packet = Packet_descriptor();
 			return out;
 		}
 
