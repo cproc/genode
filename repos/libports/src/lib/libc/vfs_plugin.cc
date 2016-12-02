@@ -366,31 +366,20 @@ ssize_t Libc::Vfs_plugin::_write(Vfs::Vfs_handle &handle, const void *buf,
                                  Vfs::file_size count)
 {
 	using namespace Vfs;
-	typedef File_io_service::Write_result Result;
 
 	Task &task = Libc::this_task();
 	Libc_write_callback cb(task, handle, (char const *)buf, count);
 
-	Result result = handle.fs().write(&handle, count);
+	handle.fs().write(&handle, count);
+	while (cb.status == Callback::PARTIAL)
+		_yield_vfs(task);
 
-	if (result == Result::WRITE_QUEUED) {
-		do {
-			_yield_vfs(task);
-		} while (cb.status == Callback::PARTIAL);
-
-		/* XXX: short write? */
-		result = (cb.status == Callback::ERROR) ?
-			Result::WRITE_ERR_IO : Result::WRITE_OK;
-	}
-
-	switch (result) {
-	case Result::WRITE_OK: break;
-	case Result::WRITE_ERR_AGAIN:
-	case Result::WRITE_ERR_WOULD_BLOCK: return Errno(EWOULDBLOCK);
-	case Result::WRITE_ERR_INVALID:     return Errno(EINVAL);
-	case Result::WRITE_ERR_IO:          return Errno(EIO);
-	case Result::WRITE_ERR_INTERRUPT:   return Errno(EINTR);
-	case Result::WRITE_QUEUED: break;
+	switch (cb.status) {
+	case Callback::COMPLETE:       break;
+	case Callback::ERR_INVALID:    return Errno(EINVAL);
+	case Callback::ERR_IO:         return Errno(EIO);
+	case Callback::ERR_TERMINATED: break; /* not defined as an error in POSIX */
+	case Callback::PARTIAL:        break;
 	}
 
 	handle.advance_seek(cb.accumulator);
@@ -461,54 +450,42 @@ ssize_t Libc::Vfs_plugin::_read(Context &context, void *buf,
 
 	using namespace Vfs;
 
-	typedef File_io_service::Read_result Result;
-
 	Task &task = Libc::this_task();
 	Vfs::Vfs_handle &handle = context.handle();
 	Libc_read_callback cb(task, handle, (char*)buf, count);
 
-	Result result = handle.fs().read(&handle, count);
+	handle.fs().read(&handle, count);
 
-	for (;;) {
-		if (result == Result::READ_QUEUED) {
-			do {
-				_yield_vfs(task);
-			} while (cb.status == Callback::PARTIAL);
+	while (cb.status == Callback::PARTIAL)
+		_yield_vfs(task);
 
-			/* XXX: short read? */
-			result = (cb.status == Callback::ERROR) ?
-				Result::READ_ERR_IO : Result::READ_OK;
-		}
+	while (blocking && (cb.status == Callback::COMPLETE) && (cb.accumulator == 0)) {
+		context.reset();
 
-		if (blocking && (result == Result::READ_OK) && (cb.accumulator == 0)) {
-			context.reset();
+		Task_resume_callback notify_cb(task);
+		notify_cb.add_context(context);
 
-			Task_resume_callback notify_cb(task);
-			notify_cb.add_context(context);
-
-			timeval const &timeout = context.timeout();
-			if (timeout.tv_sec || timeout.tv_usec) {
-				Libc::Timeout task_timeout(task, timeout.tv_sec*1000+timeout.tv_usec/1000);
-				_yield_vfs(task);
-				if (task_timeout.triggered()) {
-					return Errno(EWOULDBLOCK);
-				}
-			} else {
-				_yield_vfs(task);
+		timeval const &timeout = context.timeout();
+		if (timeout.tv_sec || timeout.tv_usec) {
+			Libc::Timeout task_timeout(task, timeout.tv_sec*1000+timeout.tv_usec/1000);
+			_yield_vfs(task);
+			if (task_timeout.triggered()) {
+				return Errno(EWOULDBLOCK);
 			}
-			result = handle.fs().read(&handle, count);
-		} else
-			break;
+		} else {
+			_yield_vfs(task);
+		}
+		handle.fs().read(&handle, count);
+		while (cb.status == Callback::PARTIAL)
+			_yield_vfs(task);
 	}
 
-	switch (result) {
-	case Result::READ_OK: break;
-	case Result::READ_ERR_AGAIN:
-	case Result::READ_ERR_WOULD_BLOCK: return Errno(EWOULDBLOCK);
-	case Result::READ_ERR_INVALID:     return Errno(EINVAL);
-	case Result::READ_ERR_IO:          return Errno(EIO);
-	case Result::READ_ERR_INTERRUPT:   return Errno(EINTR);
-	case Result::READ_QUEUED: break;
+	switch (cb.status) {
+	case Callback::COMPLETE:       break;
+	case Callback::ERR_INVALID:    return Errno(EINVAL);
+	case Callback::ERR_IO:         return Errno(EIO);
+	case Callback::ERR_TERMINATED: break; /* not defined as an error in POSIX */
+	case Callback::PARTIAL:        break;
 	}
 
 	handle.advance_seek(cb.accumulator);
