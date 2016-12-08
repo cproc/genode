@@ -28,6 +28,7 @@ namespace Usb {
 namespace Usb {
 
 	enum Endpoint_type {
+		ENDPOINT_CONTROL   = 0x0,
 		ENDPOINT_BULK      = 0x2,
 		ENDPOINT_INTERRUPT = 0x3,
 	};

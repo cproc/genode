@@ -23,6 +23,7 @@ set build_components {
 	core init
 	drivers/timer
 	drivers/usb
+	lib/vfs/usb
 	test/smartcard
 }
 
@@ -81,10 +82,11 @@ append config {
 	</start>
 	<start name="test-smartcard">
 		<resource name="RAM" quantum="4M"/>
-		<config>
+		<config ld_verbose="yes">
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>
 					<dir name="dev"> <log/> </dir>
+					<dir name="usb"> <usb/> </dir>
 					<dir name="ifd-ccid.bundle">
 						<dir name="Contents">
 							<rom name="Info.plist"/>
@@ -108,7 +110,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer usb_drv test-smartcard
-	ld.lib.so pcsc-lite.lib.so ccid.lib.so libusb.lib.so
+	ld.lib.so pcsc-lite.lib.so ccid.lib.so libusb.lib.so vfs_usb.lib.so
 	libc.lib.so libc_pipe.lib.so pthread.lib.so
 	Info.plist
 }
@@ -119,6 +121,7 @@ append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
+run_genode_until forever
 run_genode_until { Response: 62 0A 82 01 38 83 02 3F 00 8A 01 05 90 00} 30
 
 exec rm bin/Info.plist

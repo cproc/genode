@@ -49,6 +49,7 @@ extern "C" int
 __attribute__((weak))
 poll(struct pollfd fds[], nfds_t nfds, int timeout)
 {
+Genode::log("poll(): ", __builtin_return_address(0));
 	nfds_t i;
 	int ret, fd, maxfd = 0;
 	fd_set readfds, writefds, exceptfds;
