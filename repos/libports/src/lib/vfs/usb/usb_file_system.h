@@ -47,8 +47,8 @@ class Vfs::Usb_file_system : public File_system
 				virtual void unsubscribe() = 0;
 				virtual void notify() = 0;
 
-				virtual Read_result read(file_size count, file_size &out_count) = 0;
-				virtual Write_result write(file_size count, file_size &out_count) = 0;
+				virtual void read(file_size count) = 0;
+				virtual void write(file_size count) = 0;
 		};
 
 
@@ -86,19 +86,18 @@ class Vfs::Usb_file_system : public File_system
 
 				void notify() { notify_callback(); }
 
-				Read_result read(file_size count, file_size &out_count)
+				void read(file_size count)
 				{
 					/* XXX: take seek pointer into account */
 
-					out_count = read_callback(_state_string[_state], count, Callback::COMPLETE);
+					read_callback(_state_string[_state], count, Callback::COMPLETE);
 
-					return READ_OK;
+					read_status(Callback::COMPLETE);
 				}
 
-				Write_result write(file_size count, file_size &out_count)
+				void write(file_size count)
 				{
-					out_count = 0;
-					return WRITE_ERR_INVALID;
+					write_status(Callback::ERR_INVALID);
 				}
 		};
 
@@ -166,22 +165,22 @@ class Vfs::Usb_file_system : public File_system
 
 				void notify() { notify_callback(); }
 
-				Read_result read(file_size count, file_size &out_count)
+				void read(file_size count)
 				{
 					/* XXX: take seek pointer into account */
 
-					out_count = 0;
-
 					if (!_transfer_complete) {
-						/* XXX should be different return value? */
-						return READ_OK;
+						/* XXX: different status? */
+						read_status(Callback::PARTIAL);
+						return;
 					}
 
 					Genode::log("*** read(): transfer complete");
 
 					if (!_acked_packet.succeded) {
 						_usb_connection.source()->release_packet(_acked_packet);
-						return READ_ERR_IO;
+						read_status(Callback::ERR_IO);
+						return;
 					}
 
 					switch (_acked_packet.type) {
@@ -196,17 +195,19 @@ class Vfs::Usb_file_system : public File_system
 								if (count < (file_size)_acked_packet.control.actual_size) {
 									Genode::error("read buffer too small, partial read not supported");
 									_usb_connection.source()->release_packet(_acked_packet);
-									return READ_ERR_INVALID;
+									read_status(Callback::ERR_INVALID);
+									return;
 								}
 
 								char *packet_content = _usb_connection.source()->packet_content(_acked_packet);
 
-								out_count = read_callback(packet_content,
-								                          _acked_packet.control.actual_size,
-								                          Callback::COMPLETE);
+								read_callback(packet_content,
+								              _acked_packet.control.actual_size,
+								              Callback::COMPLETE);
 							} else {
 
-								return READ_ERR_INVALID;
+								read_status(Callback::ERR_INVALID);
+								return;
 
 							}
 
@@ -221,17 +222,19 @@ class Vfs::Usb_file_system : public File_system
 								if (count < (file_size)_acked_packet.transfer.actual_size) {
 									Genode::error("read buffer too small, partial read not supported");
 									_usb_connection.source()->release_packet(_acked_packet);
-									return READ_ERR_INVALID;
+									read_status(Callback::ERR_INVALID);
+									return;
 								}
 
 								char *packet_content = _usb_connection.source()->packet_content(_acked_packet);
 
-								out_count = read_callback(packet_content,
-								                          _acked_packet.transfer.actual_size,
-								                          Callback::COMPLETE);
+								read_callback(packet_content,
+								              _acked_packet.transfer.actual_size,
+								              Callback::COMPLETE);
 							} else {
 
-								return READ_ERR_INVALID;
+								read_status(Callback::ERR_INVALID);
+								return;
 
 							}
 
@@ -243,14 +246,12 @@ class Vfs::Usb_file_system : public File_system
 
 					_usb_connection.source()->release_packet(_acked_packet);
 
-					return READ_OK;
+					read_status(Callback::COMPLETE);
 				}
 
-				Write_result write(file_size count, file_size &out_count)
+				void write(file_size count)
 				{
 					Genode::log(__PRETTY_FUNCTION__);
-
-					out_count = 0;
 
 					switch (_ep_type) {
 
@@ -260,17 +261,19 @@ class Vfs::Usb_file_system : public File_system
 
 							struct libusb_control_setup setup;
 
-							if (count < sizeof(setup))
-								return WRITE_ERR_INVALID;
+							if (count < sizeof(setup)) {
+								write_status(Callback::ERR_INVALID);
+								return;
+							}
 
 
-							out_count = write_callback((char*)&setup,
-							                           sizeof(setup),
-							                           count == sizeof(setup) ?
-							                             Callback::COMPLETE :
-							                             Callback::PARTIAL);
+							write_callback((char*)&setup,
+							               sizeof(setup),
+							               count == sizeof(setup) ?
+							                 Callback::COMPLETE :
+							                 Callback::PARTIAL);
 
-							Genode::log("count: ", count, ", out_count: ", out_count);
+							Genode::log("count: ", count);
 
 							Genode::log("setup.wLength: ", setup.wLength);
 
@@ -280,7 +283,9 @@ class Vfs::Usb_file_system : public File_system
 								p = _usb_connection.source()->alloc_packet(setup.wLength);
 							} catch (Usb::Session::Tx::Source::Packet_alloc_failed) {
 								Genode::error(__PRETTY_FUNCTION__, ": packet allocation failed");
-								return WRITE_ERR_AGAIN;
+								//XXX ERR_AGAIN;
+								write_status(Callback::ERR_IO);
+								return;
 							}
 
 							p.completion           = this;
@@ -298,8 +303,8 @@ class Vfs::Usb_file_system : public File_system
 								char *packet_content =
 									_usb_connection.source()->packet_content(p);
 
-								out_count += write_callback(packet_content, setup.wLength,
-								                            Callback::COMPLETE);
+								write_callback(packet_content, setup.wLength,
+								               Callback::COMPLETE);
 							}
 
 							_transfer_complete = false;
@@ -311,9 +316,9 @@ class Vfs::Usb_file_system : public File_system
 				      	  	  	  	  	  	  ": could not submit packet");
 							}
 
-							return WRITE_OK;
+							write_status(Callback::COMPLETE);
 
-							break;
+							return;
 						}
 
 						case Usb::ENDPOINT_BULK:
@@ -327,7 +332,8 @@ class Vfs::Usb_file_system : public File_system
 								p = _usb_connection.source()->alloc_packet(count);
 							} catch (Usb::Session::Tx::Source::Packet_alloc_failed) {
 								Genode::error(__PRETTY_FUNCTION__, ": packet allocation failed");
-								return WRITE_ERR_AGAIN;
+								/* XXX ERR_AGAIN */
+								write_status(Callback::ERR_IO);
 							}
 
 							if (_ep_type == Usb::ENDPOINT_INTERRUPT) {
@@ -343,10 +349,10 @@ class Vfs::Usb_file_system : public File_system
 							if (_ep_direction == Usb::ENDPOINT_OUT) {
 								char *packet_content =
 									_usb_connection.source()->packet_content(p);
-								out_count = write_callback(packet_content,
-								                           count,
-								                           Callback::COMPLETE);
-								Genode::log("count: ", count, ", out_count: ", out_count);
+								write_callback(packet_content,
+								               count,
+								               Callback::COMPLETE);
+								Genode::log("count: ", count);
 							}
 
 							try {
@@ -356,17 +362,18 @@ class Vfs::Usb_file_system : public File_system
 				      	  	  	  	  	  	  ": could not submit packet");
 							}
 
-							return WRITE_OK;
+							write_status(Callback::COMPLETE);
 
-							break;
+							return;
 						}
 
 						default:
 							Genode::error("transfer type of endpoint ", _ep, " not supported");
-							return WRITE_ERR_INVALID;
+							write_status(Callback::ERR_INVALID);
+							return;
 					}
 
-					return WRITE_ERR_INVALID;
+					write_status(Callback::ERR_INVALID);
 				}
 
 				void complete(Usb::Packet_descriptor &p) override
@@ -646,30 +653,22 @@ Genode::log("stat(): ", path);
 		 ** File I/O service interface **
 		 ********************************/
 
-		Write_result write(Vfs_handle *vfs_handle, file_size count,
-	                   	   file_size &out_count) override
+		void write(Vfs_handle *vfs_handle, file_size count) override
 		{
 			/* XXX: take seek pointer into account */
 
-			if (!vfs_handle)
-				return WRITE_ERR_INVALID;
-
 			Usb_file_handle *handle = static_cast<Usb_file_handle *>(vfs_handle);
 
-			return handle->write(count, out_count);
+			handle->write(count);
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, file_size count,
-	                 	 file_size &out_count) override
+		void read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			/* XXX: take seek pointer into account */
 
-			if (!vfs_handle)
-				return READ_ERR_INVALID;
-
 			Usb_file_handle *handle = static_cast<Usb_file_handle *>(vfs_handle);
 
-			return handle->read(count, out_count);
+			handle->read(count);
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size) override
