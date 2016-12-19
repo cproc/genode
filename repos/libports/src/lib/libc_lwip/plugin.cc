@@ -320,6 +320,7 @@ int Plugin::connect(Libc::File_descriptor *sockfdo,
 
 int Plugin::fcntl(Libc::File_descriptor *sockfdo, int cmd, long val)
 {
+Genode::log("*** fcntl()");
 	int s = get_lwip_fd(sockfdo);
 	int result = -1;
 

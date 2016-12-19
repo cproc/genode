@@ -119,7 +119,7 @@ namespace {
 			/**
 			 * Constructor
 			 */
-			Plugin() { }
+			Plugin() { Genode::log("*** libc_lwip_nic_dhcp plugin constructor"); }
 
 			bool supports_stat(const char *path)
 			{
@@ -148,6 +148,7 @@ namespace {
 
 			int stat(const char *path, struct stat *buf)
 			{
+				Genode::log("*** libc_lwip_nic_dhcp stat(): ", path);
 				if (buf) {
 					Genode::memset(buf, 0, sizeof(struct stat));
 					if (Genode::strcmp(path, "/etc") == 0)

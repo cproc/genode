@@ -128,6 +128,7 @@ static void resolve_symlinks(char const *path, Absolute_path &resolved_path)
 				int res;
 				FNAME_FUNC_WRAPPER_GENERIC(res = , stat, next_iteration_working_path.base(), &stat_buf);
 				if (res == -1) {
+					Genode::log("*** stat returned -1");
 					throw Symlink_resolve_error();
 				}
 				if (S_ISLNK(stat_buf.st_mode)) {
@@ -462,6 +463,7 @@ extern "C" int munmap(void *start, ::size_t length)
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+Genode::log("*** open(): ", pathname);
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
@@ -470,6 +472,7 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 	try {
 		resolve_symlinks_except_last_element(pathname, resolved_path);
 	} catch (Symlink_resolve_error) {
+Genode::error("*** open(): Symlink_resolve_error 1");
 		return -1;
 	}
 
@@ -478,6 +481,7 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 		try {
 			resolve_symlinks(resolved_path.base(), resolved_path);
 		} catch (Symlink_resolve_error) {
+Genode::error("*** open(): Symlink_resolve_error 2");
 			if (errno == ENOENT) {
 				if (!(flags & O_CREAT))
 					return -1;
@@ -499,6 +503,8 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 		return -1;
 	}
 	new_fdo->path(resolved_path.base());
+
+Genode::log("*** open() result: ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 }

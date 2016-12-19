@@ -86,6 +86,7 @@ extern "C" int getaddrinfo(const char *node, const char *service,
                            const struct addrinfo *hints,
                            struct addrinfo **res)
 {
+Genode::log("*** getaddrinfo(): ", node, ", ", service);
 	Plugin *plugin;
 
 	plugin = plugin_registry()->get_plugin_for_getaddrinfo(node, service, hints, res);
@@ -95,7 +96,11 @@ extern "C" int getaddrinfo(const char *node, const char *service,
 		return -1;
 	}
 
-	return plugin->getaddrinfo(node, service, hints, res);
+	int result = plugin->getaddrinfo(node, service, hints, res);
+
+Genode::log("*** getaddrinfo() result: ", result);
+
+	return result;
 }
 
 

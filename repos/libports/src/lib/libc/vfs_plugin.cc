@@ -276,6 +276,7 @@ int Libc::Vfs_plugin::mkdir(const char *path, mode_t mode)
 
 int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 {
+Genode::log("*** Vfs_plugin::stat(): ", path);
 	if (!path or !buf) {
 		errno = EFAULT;
 		return -1;

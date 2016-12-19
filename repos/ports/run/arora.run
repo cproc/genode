@@ -68,7 +68,7 @@ append config {
 
 	<start name="arora">
 		<resource name="RAM" quantum="2G"/>
-		<config clipboard="yes">
+		<config clipboard="yes" ld_verbose="yes">
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>
 					<dir name="dev"> <log/> </dir>
