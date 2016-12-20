@@ -73,6 +73,9 @@ append config {
 				<vfs>
 					<dir name="dev"> <log/> </dir>
 					<tar name="qt5_fs_arora.tar"/>
+					<dir name="etc">
+						<inline name="resolv.conf">nameserver 10.0.2.3</inline>
+					</dir>
 				</vfs>
 			</libc>
 		</config>
