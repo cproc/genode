@@ -20,6 +20,7 @@ SRC_CC = frontend/main.cc frontend/console.cc \
          hm.cc thread.cc dynlib.cc unimpl.cc
 
 LIBS  += base
+LIBS  += posix
 LIBS  += stdcxx
 
 LIBS  += virtualbox-bios virtualbox-recompiler virtualbox-runtime \
