@@ -15,7 +15,6 @@
 #include <base/component.h>
 #include <base/heap.h>
 #include <root/component.h>
-#include <rtc_session/rtc_session.h>
 
 #include "rtc.h"
 

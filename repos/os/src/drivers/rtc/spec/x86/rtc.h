@@ -14,7 +14,7 @@
 #ifndef _DRIVERS__RTC__SPEC__X86__RTC_H_
 #define _DRIVERS__RTC__SPEC__X86__RTC_H_
 
-//#include <base/stdint.h>
+
 #include <base/env.h>
 #include <rtc_session/rtc_session.h>
 

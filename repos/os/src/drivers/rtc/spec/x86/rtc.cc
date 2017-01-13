@@ -14,11 +14,6 @@
  */
 
 /* Genode */
-#include <base/env.h>
-#include <base/sleep.h>
-#include <base/rpc_server.h>
-#include <root/component.h>
-#include <rtc_session/rtc_session.h>
 #include <io_port_session/connection.h>
 
 #include "rtc.h"
