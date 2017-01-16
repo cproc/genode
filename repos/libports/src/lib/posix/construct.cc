@@ -15,7 +15,8 @@
 #include <libc/component.h>
 
 /* libc includes */
-#include <stdlib.h> /* for 'exit' */
+#include <stdlib.h> /* 'malloc' */
+#include <stdlib.h> /* 'exit'   */
 
 extern char **genode_argv;
 extern int    genode_argc;
@@ -45,7 +46,7 @@ void Libc::Component::construct(Libc::Env &env)
 		if (argc == 0)
 			return;
 
-		argv = (char**)env.heap().alloc((argc + 1) * sizeof(char*));
+		argv = (char**)malloc((argc + 1) * sizeof(char*));
 
 		/* read the arguments */
 		int i = 0;
@@ -53,7 +54,7 @@ void Libc::Component::construct(Libc::Env &env)
 			try {
 				Xml_attribute attr = arg_node.attribute("value");
 				Genode::size_t const arg_len = attr.value_size()+1;
-				argv[i] = (char*)env.heap().alloc(arg_len);
+				argv[i] = (char*)malloc(arg_len);
 				attr.value(argv[i], arg_len);
 				++i;
 			} catch (Xml_node::Nonexistent_sub_node) { }
@@ -66,6 +67,7 @@ void Libc::Component::construct(Libc::Env &env)
 		genode_argv = argv;
 	});
 
+	/* TODO: environment variables, see #2236 */
 
 	exit(main(genode_argc, genode_argv, genode_envp));
 }
