@@ -84,6 +84,11 @@ struct Cap_info
 	unsigned long badge = 0;
 };
 
+void gdb_hook() __attribute__((noinline));
+void gdb_hook()
+{
+	while(1);
+}
 
 /**
  * Copy message registers from UTCB to destination message buffer
@@ -147,10 +152,17 @@ static unsigned long extract_msg_from_utcb(l4_msgtag_t     tag,
 	}
 	num_msg_words -= num_caps;
 
+	Genode::raw("num_msg_words: ", num_msg_words, "(", num_msg_words * sizeof(l4_mword_t), ")");
+	Genode::raw("capacity: ", rcv_msg.capacity());
+
 	/* the remainder of the message contains the regular data payload */
 	if ((num_msg_words)*sizeof(l4_mword_t) > rcv_msg.capacity()) {
-		if (DEBUG_MSG)
+		if (DEBUG_MSG) {
 			outstring("receive message buffer too small\n");
+			//Genode::raw("num_msg_words: ", num_msg_words, "(", num_msg_words * sizeof(l4_mword_t), ")");
+			//Genode::raw("capacity: ", rcv_msg.capacity());
+			gdb_hook();
+		}
 		num_msg_words = rcv_msg.capacity()/sizeof(l4_mword_t);
 	}
 
