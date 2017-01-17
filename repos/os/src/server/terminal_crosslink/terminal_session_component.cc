@@ -101,9 +101,7 @@ size_t Terminal_crosslink::Session_component::_write(size_t num_bytes)
 			_buffer.add(src[num_bytes_written]);
 			++num_bytes_written;
 		} catch(Local_buffer::Overflow) {
-			_cross_num_bytes_avail += num_bytes_written;
-			_partner.cross_write();
-			return num_bytes_written;
+			break;
 		}
 
 	_cross_num_bytes_avail += num_bytes_written;
