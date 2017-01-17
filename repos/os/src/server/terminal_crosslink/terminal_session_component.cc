@@ -95,17 +95,13 @@ size_t Terminal_crosslink::Session_component::_write(size_t num_bytes)
 {
 	unsigned char *src = _io_buffer.local_addr<unsigned char>();
 
-	size_t num_bytes_total = num_bytes;
-
 	size_t num_bytes_written = 0;
 	while (num_bytes_written < num_bytes)
 		try {
 			_buffer.add(src[num_bytes_written]);
 			++num_bytes_written;
 		} catch(Local_buffer::Overflow) {
-			_cross_num_bytes_avail += num_bytes_written;
-			_partner.cross_write();
-			return num_bytes_written;
+			break;
 		}
 
 	_cross_num_bytes_avail += num_bytes_written;
