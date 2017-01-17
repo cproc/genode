@@ -92,7 +92,7 @@ Genode::size_t Session_component::_read(Genode::size_t dst_len)
 }
 
 
-void Session_component::_write(Genode::size_t num_bytes)
+Genode::size_t Session_component::_write(Genode::size_t num_bytes)
 {
 	unsigned char *src = _io_buffer.local_addr<unsigned char>();
 
@@ -129,6 +129,8 @@ void Session_component::_write(Genode::size_t num_bytes)
 
 	_cross_num_bytes_avail += num_bytes_written;
 	_partner.cross_write();
+
+	return num_bytes;
 }
 
 
