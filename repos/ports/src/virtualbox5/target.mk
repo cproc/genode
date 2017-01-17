@@ -23,7 +23,6 @@ vpath rt.cc      $(REP_DIR)/src/virtualbox
 vpath thread.cc  $(REP_DIR)/src/virtualbox
 
 LIBS  += base
-LIBS  += posix
 LIBS  += stdcxx
 
 LIBS  += virtualbox5-bios virtualbox5-recompiler virtualbox5-runtime \
