@@ -96,6 +96,8 @@ Genode::size_t Session_component::_write(Genode::size_t num_bytes)
 {
 	unsigned char *src = _io_buffer.local_addr<unsigned char>();
 
+	size_t num_bytes_total = num_bytes;
+
 	size_t num_bytes_written = 0;
 	size_t src_index = 0;
 	while (num_bytes_written < num_bytes)
@@ -130,7 +132,7 @@ Genode::size_t Session_component::_write(Genode::size_t num_bytes)
 	_cross_num_bytes_avail += num_bytes_written;
 	_partner.cross_write();
 
-	return num_bytes;
+	return num_bytes_total;
 }
 
 
