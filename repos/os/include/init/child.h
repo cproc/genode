@@ -135,25 +135,18 @@ namespace Init {
 		 * following condition should be always satisfied. See the
 		 * comment in 'service_node_args_condition_satisfied'.
 		 */
-		if (strcmp(child_name, label, child_name_len) == 0)
-			label += child_name_len;
+		if (strcmp(child_name, label, child_name_len) != 0)
+			return nullptr;
 
-		/*
-		 * If the original label was empty, the 'Child_policy_enforce_labeling'
-		 * does not append a label separator after the child-name prefix. In
-		 * this case, we resulting label is empty.
-		 */
-		if (*label == 0)
-			return label;
+		label += child_name_len;
 
 		/*
 		 * Skip label separator. This condition should be always satisfied.
 		 */
-		if (strcmp(" -> ", label, 4) == 0)
-			return label + 4;
+		if (strcmp(" -> ", label, 4) != 0)
+			return nullptr;
 
-		warning("cannot skip label prefix while processing <if-arg>");
-		return label;
+		return label + 4;
 	}
 
 
@@ -176,8 +169,21 @@ namespace Init {
 		if (!service_matches)
 			return false;
 
-		Session_label const session_label(skip_label_prefix(
-			child_name.string(), label_from_args(args).string()));
+		bool const route_depends_on_child_provided_label =
+			service_node.has_attribute("label") ||
+			service_node.has_attribute("label_prefix") ||
+			service_node.has_attribute("label_suffix");
+
+		if (!route_depends_on_child_provided_label)
+			return true;
+
+		char const * const scoped_label = skip_label_prefix(
+			child_name.string(), label_from_args(args).string());
+
+		if (!scoped_label)
+			return false;
+
+		Session_label const session_label(scoped_label);
 
 		return !Xml_node_label_score(service_node, session_label).conflict();
 	}
@@ -566,7 +572,10 @@ class Init::Child : Child_policy, Child_service::Wakeup
 						               name, _child.ram_session_cap(), *this);
 
 				}
-			} catch (Xml_node::Nonexistent_sub_node) { }
+			}
+			catch (Xml_node::Nonexistent_sub_node) { }
+			catch (Genode::Child::Inactive) {
+				error(this->name(), ": incomplete environment at construction time"); }
 		}
 
 		virtual ~Child()
@@ -622,20 +631,7 @@ class Init::Child : Child_policy, Child_service::Wakeup
 		Service &resolve_session_request(Service::Name const &service_name,
 		                                 Session_state::Args const &args) override
 		{
-			/* route environment session requests to the parent */
 			Session_label const label(label_from_args(args.string()));
-			if (label == name()) {
-				if (service_name == Ram_session::service_name()) return _env_ram_service;
-				if (service_name == Cpu_session::service_name()) return _env_cpu_service;
-				if (service_name == Pd_session::service_name())  return _env_pd_service;
-				if (service_name == Log_session::service_name()) return _env_log_service;
-			}
-
-			/* route initial ROM requests (binary and linker) to the parent */
-			if (service_name == Rom_session::service_name()) {
-				if (label.last_element() == binary_name()) return _env_rom_service;
-				if (label.last_element() == linker_name()) return _env_rom_service;
-			}
 
 			Service *service = nullptr;
 
@@ -646,7 +642,7 @@ class Init::Child : Child_policy, Child_service::Wakeup
 			/* check for "session_requests" ROM request */
 			if (service_name == Rom_session::service_name()
 			 && label.last_element() == Session_requester::rom_name())
-			 	return _session_requester.service();
+				return _session_requester.service();
 
 			try {
 				Xml_node route_node = _default_route_node;
