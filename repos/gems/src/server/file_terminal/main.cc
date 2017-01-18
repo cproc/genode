@@ -183,7 +183,7 @@ namespace Terminal {
 				return num_bytes;
 			}
 
-			size_t _write(Genode::size_t num_bytes)
+			Genode::size_t _write(Genode::size_t num_bytes)
 			{
 				/* sanitize argument */
 				num_bytes = Genode::min(num_bytes, _io_buffer.size());
