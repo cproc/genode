@@ -43,7 +43,7 @@ class File_system::Session_component : public Session_rpc_object
 
 		Genode::Entrypoint   &_ep;
 		Genode::Ram_session  &_ram;
-		Genode::Allocator    &_md_alloc;
+		Genode::Allocator    &_alloc;
 		Directory            &_root;
 		Node_handle_registry  _handle_registry;
 		bool                  _writable;
@@ -152,13 +152,13 @@ class File_system::Session_component : public Session_rpc_object
 		 */
 		Session_component(size_t tx_buf_size, Genode::Entrypoint &ep,
 		                  Genode::Ram_session &ram, Genode::Region_map &rm,
-		                  Genode::Allocator &md_alloc,
+		                  Genode::Allocator &alloc,
 		                  Directory &root, bool writable)
 		:
 			Session_rpc_object(ram.alloc(tx_buf_size), rm, ep.rpc_ep()),
 			_ep(ep),
 			_ram(ram),
-			_md_alloc(md_alloc),
+			_alloc(alloc),
 			_root(root),
 			_writable(writable),
 			_process_packet_handler(_ep, *this, &Session_component::_process_packets)
@@ -207,8 +207,8 @@ class File_system::Session_component : public Session_rpc_object
 					throw Node_already_exists();
 
 				try {
-					File * const file = new (_md_alloc)
-					                    File(_md_alloc, name.string());
+					File * const file = new (_alloc)
+					                    File(_alloc, name.string());
 
 					dir->adopt_unsynchronized(file);
 				}
@@ -237,7 +237,7 @@ class File_system::Session_component : public Session_rpc_object
 					throw Node_already_exists();
 
 				try {
-					Symlink * const symlink = new (_md_alloc)
+					Symlink * const symlink = new (_alloc)
 					                    Symlink(name.string());
 
 					dir->adopt_unsynchronized(symlink);
@@ -277,7 +277,7 @@ class File_system::Session_component : public Session_rpc_object
 					throw Node_already_exists();
 
 				try {
-					parent->adopt_unsynchronized(new (_md_alloc) Directory(name));
+					parent->adopt_unsynchronized(new (_alloc) Directory(name));
 				} catch (Allocator::Out_of_memory) {
 					throw No_space();
 				}
@@ -355,7 +355,7 @@ class File_system::Session_component : public Session_rpc_object
 			//     is still referenced by a node handle
 
 			node->unlock();
-			destroy(_md_alloc, node);
+			destroy(_alloc, node);
 		}
 
 		void truncate(File_handle file_handle, file_size_t size)
@@ -423,7 +423,7 @@ class File_system::Root : public Root_component<Session_component>
 	private:
 
 		Genode::Entrypoint    &_ep;
-		Genode::Allocator     &_md_alloc;
+		Genode::Allocator     &_alloc;
 		Genode::Ram_session   &_ram;
 		Genode::Region_map    &_rm;
 		Genode::Xml_node const _config;
@@ -510,7 +510,7 @@ class File_system::Root : public Root_component<Session_component>
 				throw Root::Quota_exceeded();
 			}
 			return new (md_alloc())
-				Session_component(tx_buf_size, _ep, _ram, _rm, _md_alloc,
+				Session_component(tx_buf_size, _ep, _ram, _rm, _alloc,
 				                  *session_root_dir, writeable);
 		}
 
@@ -521,14 +521,15 @@ class File_system::Root : public Root_component<Session_component>
 		 *
 		 * \param ep        entrypoint
 		 * \param md_alloc  meta-data allocator
+		 * \param alloc     general-purpose allocator
 		 * \param root_dir  root-directory handle (anchor for fs)
 		 */
 		Root(Genode::Entrypoint &ep, Genode::Ram_session &ram,
 		     Genode::Region_map &rm, Genode::Xml_node config,
-		     Allocator &md_alloc, Directory &root_dir)
+		     Allocator &md_alloc, Allocator &alloc, Directory &root_dir)
 		:
 			Root_component<Session_component>(&ep.rpc_ep(), &md_alloc),
-			_ep(ep), _md_alloc(md_alloc), _ram(ram), _rm(rm), _config(config),
+			_ep(ep), _alloc(alloc), _ram(ram), _rm(rm), _config(config),
 			_root_dir(root_dir)
 		{ }
 };
@@ -650,10 +651,10 @@ struct File_system::Main
 	 */
 	Genode::Sliced_heap _sliced_heap { _env.ram(), _env.rm() };
 
-	Root _fs_root { _env.ep(), _env.ram(), _env.rm(), _config.xml(),
-	                _sliced_heap, _root_dir };
-
 	Genode::Heap _heap { _env.ram(), _env.rm() };
+
+	Root _fs_root { _env.ep(), _env.ram(), _env.rm(), _config.xml(),
+	                _sliced_heap, _heap, _root_dir };
 
 	Main(Genode::Env &env) : _env(env)
 	{
