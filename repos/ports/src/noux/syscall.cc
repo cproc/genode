@@ -17,6 +17,8 @@
 #include <vfs_io_channel.h>
 #include <pipe_io_channel.h>
 
+extern unsigned cap_index_count();
+
 namespace Noux {
 
 	/**
@@ -479,6 +481,11 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				Child * child = nullptr;
 
 				try {
+
+					Genode::log("before new child");
+
+					Genode::log(cap_index_count());
+
 					/*
 					 * XXX To ease debugging, it would be useful to generate a
 					 *     unique name that includes the PID instead of just
@@ -502,6 +509,9 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					                          _parent_services,
 					                          true,
 					                          _destruct_queue);
+
+					Genode::log("after new child");
+
 				} catch (Child::Insufficient_memory) {
 					_sysio.error.fork = Sysio::FORK_NOMEM;
 					break;
@@ -513,8 +523,12 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				/* copy our address space into the new child */
 				try {
+				Genode::log("before replay");
+
 					_pd.replay(child->ram(), child->pd(), _env.rm(), _heap,
 					           child->ds_registry(), _ep);
+
+				Genode::log("after replay");
 
 					/* start executing the main thread of the new process */
 					child->start_forked_main_thread(ip, sp, parent_cap_addr);

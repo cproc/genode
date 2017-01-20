@@ -626,3 +626,4 @@ memset W
 stdout_reconnect T
 stdout_write T
 wait_for_continue T
+_Z15cap_index_countv T

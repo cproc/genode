@@ -105,13 +105,16 @@ class Noux::Rom_session_component : public Rpc_object<Rom_session>
 
 		Dataspace_capability _init_ds_cap(Env &env, Name const &name)
 		{
+Genode::raw("_init_ds_cap(): ", name);
 			if (name.string()[0] == '/') {
 				_rom_from_vfs.construct(_root_dir, name);
 				return _rom_from_vfs->ds;
 			}
 
-			if (name == forked_magic_binary_name())
+			if (name == forked_magic_binary_name()) {
+				Genode::log("magic binary name");
 				return Dataspace_capability();
+			}
 
 			_rom_from_parent.construct(env, name.string());
 			Dataspace_capability ds = _rom_from_parent->dataspace();

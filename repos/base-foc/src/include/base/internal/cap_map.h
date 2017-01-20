@@ -58,6 +58,9 @@ namespace Genode {
 
 			virtual ~Cap_index_allocator() {}
 
+			virtual unsigned count() = 0;
+			virtual bool llog() = 0;
+
 			/**
 			 * Allocate a range of Cap_index objects
 			 *
