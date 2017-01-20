@@ -23,6 +23,8 @@
 #include <base/internal/cap_map.h>
 #include <base/internal/foc_assert.h>
 
+#include <os/backtrace.h>
+
 namespace Genode {
 
 	/**
@@ -53,11 +55,39 @@ namespace Genode {
 
 			unsigned char _data[SZ*sizeof(T)];
 			T*            _indices;
+			unsigned      _count = 0;
+			bool          _log = false;
+
+			enum { REGISTRY_SIZE = 1024 };
+
+			Cap_index *registry[REGISTRY_SIZE];
+
+			void *_traced_cap = 0;
 
 		public:
 
-			Cap_index_allocator_tpl() : _indices(reinterpret_cast<T*>(&_data)) {
-				memset(&_data, 0, sizeof(_data)); }
+			unsigned count() { _log = true; dump(); return _count; }
+			bool llog() { return _log; }
+			void *traced_cap() { return _traced_cap; }
+
+			void dump()
+			{
+				Lock_guard<Spin_lock> guard(_lock);
+
+Genode::raw("dump start");
+				for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+					if (registry[ri])
+						Genode::raw("used: ", registry[ri]);
+				}
+Genode::raw("dump end");
+			}
+
+			Cap_index_allocator_tpl() : _indices(reinterpret_cast<T*>(&_data))
+			{
+				memset(&_data, 0, sizeof(_data));
+				for (int i = 0; i < REGISTRY_SIZE; i++)
+					registry[i] = 0;
+			}
 
 
 			/***********************************
@@ -67,6 +97,9 @@ namespace Genode {
 			Cap_index* alloc_range(size_t cnt)
 			{
 				Lock_guard<Spin_lock> guard(_lock);
+
+//if (_log && (cnt == 1))
+	//Genode::raw("alloc_range(): ", cnt);
 
 				/*
 				 * iterate through array and find unused, consecutive entries
@@ -78,11 +111,41 @@ namespace Genode {
 
 					/* if we found a fitting hole, initialize the objects */
 					if (j == cnt) {
-						for (j = 0; j < cnt; j++)
+						for (j = 0; j < cnt; j++) {
 							new (&_indices[i+j]) T();
+							_count++;
+							if (_log && (cnt == 1) && (_traced_cap == 0)) {
+
+								Genode::raw("alloc_range: ", &_indices[i+j]);
+
+								Genode::backtrace();
+
+								if (_traced_cap == 0)
+									_traced_cap = &_indices[i+j];
+
+								bool done = false;
+
+								for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+									if (registry[ri] == &_indices[i+j]) {
+										done = true;
+										break;
+									}
+								}
+
+								if (!done) {
+									for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+										if (!registry[ri]) {
+											registry[ri] = &_indices[i+j];
+											break;
+										}
+									}
+								}
+							}
+						}
 						return &_indices[i];
 					}
 				}
+				Genode::raw("SZ: ", SZ);
 				ASSERT(0, "cap index allocation failed");
 				return 0;
 			}
@@ -101,7 +164,28 @@ namespace Genode {
 					ASSERT(0, "cap index out of bounds");
 					throw Index_out_of_bounds();
 				}
+				_count++;
+				if (_log) {
 
+					bool done = false;
+
+					for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+						if (registry[ri] == obj) {
+							done = true;
+							break;
+						}
+					}
+
+					if (!done) {
+						for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+							if (!registry[ri]) {
+								registry[ri] = obj;
+								break;
+							}
+						}
+					}
+					//Genode::raw("alloc: ", obj);
+				}
 				return new (obj) T();
 			}
 
@@ -116,7 +200,18 @@ namespace Genode {
 						ASSERT(0, "cap index out of bounds");
 						throw Index_out_of_bounds();
 					}
+					_count--;
 					delete obj;
+					if (_log) {
+						for (int ri = 0; ri < REGISTRY_SIZE; ri++) {
+							if (registry[ri] == idx + i) {
+								registry[ri] = 0;
+								break;
+							}
+						}
+
+						//Genode::raw("free: ", idx+i);
+					}
 				}
 			}
 

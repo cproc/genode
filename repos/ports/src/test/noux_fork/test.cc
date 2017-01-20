@@ -7,12 +7,15 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
 
 enum { MAX_COUNT = 1000 };
 
 int main(int, char **)
 {
 	printf("--- test-noux_fork started ---\n");
+
+for (;;) {
 
 	pid_t fork_ret = fork();
 	if (fork_ret < 0) {
@@ -23,13 +26,21 @@ int main(int, char **)
 	printf("pid %d: fork returned %d\n", getpid(), fork_ret);
 
 	if (fork_ret == 0) {
+#if 0
 		printf("pid %d: child says hello\n", getpid());
 		for (int j = 0; j < MAX_COUNT; j++) {
 			printf("pid %d: child  j = %d\n", getpid(), j);
 		}
+#endif
 		return 0;
 	}
 
+	int status;
+	wait(&status);
+
+	sleep(5);
+}
+#if 0
 	printf("pid %d: parent received child pid %d, starts counting...\n",
 	       getpid(), fork_ret);
 
@@ -38,5 +49,6 @@ int main(int, char **)
 	}
 
 	pause();
+#endif
 	return 0;
 }

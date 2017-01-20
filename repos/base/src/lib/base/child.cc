@@ -641,9 +641,10 @@ Child::Child(Region_map      &local_rm,
 	 * accept this request to fail. In this case, the child creation may still
 	 * succeed if the binary is statically linked.
 	 */
+Genode::raw("calling _linker.construct()");
 	try { _linker.construct(*this, Parent::Env::linker(), _policy.linker_name()); }
 	catch (Parent::Service_denied) { }
-
+Genode::raw("_linker.construct() returned");
 	_try_construct_env_dependent_members();
 }
 

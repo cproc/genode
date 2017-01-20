@@ -21,7 +21,7 @@
 /* kernel includes */
 #include <foc/capability_space.h>
 
-
+#include <os/backtrace.h>
 /***********************
  **  Cap_index class  **
  ***********************/
@@ -49,6 +49,10 @@ Genode::addr_t Genode::Cap_index::kcap() const {
 
 Genode::uint8_t Genode::Cap_index::inc()
 {
+if (this == cap_idx_alloc()->traced_cap()) {
+	Genode::raw("inc ", this);
+	Genode::backtrace();
+}
 	/* con't ref-count index that are controlled by core */
 	if (cap_idx_alloc()->static_idx(this))
 		return 1;
@@ -62,6 +66,11 @@ Genode::uint8_t Genode::Cap_index::inc()
 
 Genode::uint8_t Genode::Cap_index::dec()
 {
+if (this == cap_idx_alloc()->traced_cap()) {
+	Genode::raw("dec ", this);
+	Genode::backtrace();
+}
+
 	/* con't ref-count index that are controlled by core */
 	if (cap_idx_alloc()->static_idx(this))
 		return 1;
