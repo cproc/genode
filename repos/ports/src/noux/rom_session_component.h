@@ -80,6 +80,7 @@ class Noux::Rom_session_component : public Rpc_object<Rom_session>
 
 	private:
 
+		Allocator            &_alloc;
 		Rpc_entrypoint       &_ep;
 		Vfs::Dir_file_system &_root_dir;
 		Dataspace_registry   &_ds_registry;
@@ -135,7 +136,7 @@ Genode::raw("_init_ds_cap(): ", name);
 		                      Vfs::Dir_file_system &root_dir,
 		                      Dataspace_registry &ds_registry, Name const &name)
 		:
-			_ep(ep), _root_dir(root_dir), _ds_registry(ds_registry),
+			_alloc(alloc), _ep(ep), _root_dir(root_dir), _ds_registry(ds_registry),
 			_ds_cap(_init_ds_cap(env, name))
 		{
 			_ep.manage(this);
@@ -144,11 +145,13 @@ Genode::raw("_init_ds_cap(): ", name);
 
 		~Rom_session_component()
 		{
+			Rom_dataspace_info *ds_info = nullptr;
+
 			/*
 			 * Lookup and lock ds info instead of directly accessing
 			 * the '_ds_info' member.
 			 */
-			_ds_registry.apply(_ds_cap, [this] (Dataspace_info *info) {
+			_ds_registry.apply(_ds_cap, [&] (Rom_dataspace_info *info) {
 
 				if (!info) {
 					error("~Rom_session_component: unexpected !info");
@@ -158,7 +161,10 @@ Genode::raw("_init_ds_cap(): ", name);
 				_ds_registry.remove(info);
 
 				info->dissolve_users();
+
+				ds_info = info;
 			});
+			destroy(_alloc, ds_info);
 			_ep.dissolve(this);
 		}
 
