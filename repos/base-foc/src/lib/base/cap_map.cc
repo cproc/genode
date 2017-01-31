@@ -49,6 +49,8 @@ Genode::addr_t Genode::Cap_index::kcap() const {
 
 Genode::uint8_t Genode::Cap_index::inc()
 {
+//if (cap_idx_alloc()->llog())
+//Genode::raw("inc ", this);
 	/* con't ref-count index that are controlled by core */
 	if (cap_idx_alloc()->static_idx(this))
 		return 1;
@@ -62,6 +64,9 @@ Genode::uint8_t Genode::Cap_index::inc()
 
 Genode::uint8_t Genode::Cap_index::dec()
 {
+//if (cap_idx_alloc()->llog())
+//Genode::raw("dec ", this);
+
 	/* con't ref-count index that are controlled by core */
 	if (cap_idx_alloc()->static_idx(this))
 		return 1;

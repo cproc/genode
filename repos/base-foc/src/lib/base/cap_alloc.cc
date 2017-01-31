@@ -18,3 +18,9 @@ Genode::Cap_index_allocator* Genode::cap_idx_alloc()
 	static Genode::Cap_index_allocator_tpl<Cap_index,4096> alloc;
 	return &alloc;
 }
+
+unsigned cap_index_count()
+{
+	return Genode::cap_idx_alloc()->count();
+}
+

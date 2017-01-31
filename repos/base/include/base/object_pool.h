@@ -106,13 +106,13 @@ class Genode::Object_pool
 
 	public:
 
-		void insert(OBJ_TYPE *obj)
+		virtual void insert(OBJ_TYPE *obj)
 		{
 			Lock::Guard lock_guard(_lock);
 			_tree.insert(obj);
 		}
 
-		void remove(OBJ_TYPE *obj)
+		virtual void remove(OBJ_TYPE *obj)
 		{
 			Lock::Guard lock_guard(_lock);
 			_tree.remove(obj);

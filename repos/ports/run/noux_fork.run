@@ -31,7 +31,7 @@ install_config {
 		</start>
 		<start name="noux">
 			<resource name="RAM" quantum="1G"/>
-			<config verbose="yes">
+			<config verbose="yes" ld_verbose="yes">
 				<fstab> <rom name="test-noux_fork" /> </fstab>
 				<start name="test-noux_fork"> </start>
 			</config>
@@ -45,5 +45,5 @@ build_boot_image {
 }
 
 append qemu_args " -nographic "
-
+run_genode_until forever
 run_genode_until "child.*exited with exit value 0.*\n" 20

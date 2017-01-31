@@ -146,6 +146,7 @@ class Noux::Dataspace_registry : public Object_pool<Dataspace_info>
 
 		~Dataspace_registry()
 		{
+			//Genode::log("~Dataspace_registry()");
 			/*
 			 * At the time the destructor is called, most 'Dataspace_info'
 			 * objects are expected to be gone already because
@@ -154,8 +155,25 @@ class Noux::Dataspace_registry : public Object_pool<Dataspace_info>
 			 * created via 'Rm_dataspace_info::fork', are not handled by
 			 * those destructors. So we have to clean them up here.
 			 */
-			remove_all([&] (Dataspace_info *info) { destroy(_alloc, info); });
+			remove_all([&] (Dataspace_info *info)
+			{
+				//Genode::log("~Dataspace_registry(): destroying info: ", info);
+				destroy(_alloc, info);
+			});
 		}
+
+		void insert(Dataspace_info *obj) override
+		{
+			//Genode::log("Dataspace_registry::insert(): ", obj);
+			Object_pool<Dataspace_info>::insert(obj);
+		}
+
+		void remove(Dataspace_info *obj) override
+		{
+			//Genode::log("Dataspace_registry::remove(): ", obj, ", ret: ", __builtin_return_address(0));
+			Object_pool<Dataspace_info>::remove(obj);
+		}
+
 };
 
 
