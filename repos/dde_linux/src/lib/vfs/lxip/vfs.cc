@@ -1248,7 +1248,8 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 
 		char const *leaf_path(char const *path) override
 		{
-			return path;
+			Vfs::Node *node = _lookup(path);
+			return node ? path : nullptr;
 		}
 
 		Open_result open(char const *path, unsigned mode,
