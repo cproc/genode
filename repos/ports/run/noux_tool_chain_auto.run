@@ -45,12 +45,12 @@ if {[have_spec arm]} {
 }
 
 if {[have_spec x86]} {
-	set noux_boot_timeout   100
-	set tool_chain_timeout  450
+	set noux_boot_timeout   1100
+	set tool_chain_timeout  1450
 	set platform            "x86_64"
 
 	if {[have_spec foc]} {
-		set tool_chain_timeout  850
+		set tool_chain_timeout  1850
 	}
 }
 
