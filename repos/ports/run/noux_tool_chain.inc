@@ -236,6 +236,7 @@ append config {			</dir>
 				<env name="TERM" value="linux" />
 				<env name="HOME" value="/home" />
 				<env name="PATH" value="/bin" />
+				<env name="GCC_COLORS" value="" />
 				<arg value="--login" />
 			</start>
 		</config>
