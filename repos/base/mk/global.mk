@@ -135,7 +135,9 @@ CC_RUSTC_OPT += $(foreach lib,$(LIBS),-L$(LIB_CACHE_DIR)/$(lib))
 # Enable C++11 by default
 #
 CC_CXX_OPT_STD ?= -std=gnu++11
+CC_CXX_OPT_STD += $(CC_CXX_OPT_STD_$(subst .,_,$*))
 CC_CXX_OPT     += $(CC_CXX_OPT_STD)
+
 
 #
 # Linker options
