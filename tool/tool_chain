@@ -34,7 +34,7 @@ $(SUPPORTED_PLATFORMS): install
 # Enable parallel build for 2nd-level $(MAKE) by default
 #
 
-MAKE_OPT ?= -j4
+MAKE_OPT ?= -j8
 
 #
 # Determine Genode base directory based on the known location of the
@@ -70,7 +70,7 @@ SHELL       = bash
 BRIGHT_COL  = \033[01;33m
 DEFAULT_COL = \033[0m
 ECHO        = @echo -e
-VERBOSE     = @
+VERBOSE     = 
 
 #
 # Check if 'autoconf' is installed
@@ -206,6 +206,7 @@ GDB_CONFIG += $(COMMON_CONFIG) --disable-werror
 GCC_CONFIG += $(COMMON_CONFIG) \
               --enable-languages=c,c++,go \
               --disable-libgo \
+              --disable-gotools \
               --disable-libssp \
               --disable-libquadmath \
               --disable-libffi \
