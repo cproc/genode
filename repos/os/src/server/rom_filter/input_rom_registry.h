@@ -347,7 +347,7 @@ class Rom_filter::Input_rom_registry
 		 *
 		 * \throw Nonexistent_input_value
 		 */
-		Input_value query_value(Xml_node config, Input_name const &input_name) const
+		Input_value query_value(Xml_node config, Input_name const &input_name) /*const*/
 		{
 			Input_value input_value;
 			bool input_value_defined = false;
