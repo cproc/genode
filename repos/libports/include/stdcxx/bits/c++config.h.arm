@@ -1251,7 +1251,7 @@ namespace std
 /* #undef _GLIBCXX_VERSION */
 
 /* Define if the compiler supports C++11 atomics. */
-#define _GLIBCXX_ATOMIC_BUILTINS 1
+/* #undef _GLIBCXX_ATOMIC_BUILTINS */
 
 /* Define to use concept checking code from the boost libraries. */
 /* #undef _GLIBCXX_CONCEPT_CHECKS */
@@ -1269,13 +1269,13 @@ namespace std
 /* Define if compatibility should be provided for -mlong-double-64. */
 
 /* Define if ptrdiff_t is int. */
-/* #undef _GLIBCXX_PTRDIFF_T_IS_INT */
+#define _GLIBCXX_PTRDIFF_T_IS_INT 1
 
 /* Define if using setrlimit to set resource limits during "make check" */
 /* #undef _GLIBCXX_RES_LIMITS */
 
 /* Define if size_t is unsigned int. */
-/* #undef _GLIBCXX_SIZE_T_IS_UINT */
+#define _GLIBCXX_SIZE_T_IS_UINT 1
 
 /* Define if the compiler is configured for setjmp/longjmp exceptions. */
 /* #undef _GLIBCXX_SJLJ_EXCEPTIONS */
@@ -1367,7 +1367,7 @@ namespace std
 /* #undef _GLIBCXX_USE_FCHMODAT */
 
 /* Define if __float128 is supported on this host. */
-#define _GLIBCXX_USE_FLOAT128 1
+/* #undef _GLIBCXX_USE_FLOAT128 */
 
 /* Defined if gettimeofday is available. */
 /* #undef _GLIBCXX_USE_GETTIMEOFDAY */
@@ -1376,7 +1376,7 @@ namespace std
 /* #undef _GLIBCXX_USE_GET_NPROCS */
 
 /* Define if __int128 is supported on this host. */
-#define _GLIBCXX_USE_INT128 1
+/* #undef _GLIBCXX_USE_INT128 */
 
 /* Define if LFS support is available. */
 /* #undef _GLIBCXX_USE_LFS */
@@ -1435,7 +1435,7 @@ namespace std
 #define _GLIBCXX_VERBOSE 1
 
 /* Defined if as can handle rdrand. */
-#define _GLIBCXX_X86_RDRAND 1
+/* #undef _GLIBCXX_X86_RDRAND */
 
 /* Define to 1 if mutex_timedlock is available. */
 #define _GTHREAD_USE_MUTEX_TIMEDLOCK 0

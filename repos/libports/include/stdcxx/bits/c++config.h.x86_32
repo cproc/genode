@@ -1269,13 +1269,13 @@ namespace std
 /* Define if compatibility should be provided for -mlong-double-64. */
 
 /* Define if ptrdiff_t is int. */
-/* #undef _GLIBCXX_PTRDIFF_T_IS_INT */
+#define _GLIBCXX_PTRDIFF_T_IS_INT 1
 
 /* Define if using setrlimit to set resource limits during "make check" */
 /* #undef _GLIBCXX_RES_LIMITS */
 
 /* Define if size_t is unsigned int. */
-/* #undef _GLIBCXX_SIZE_T_IS_UINT */
+#define _GLIBCXX_SIZE_T_IS_UINT 1
 
 /* Define if the compiler is configured for setjmp/longjmp exceptions. */
 /* #undef _GLIBCXX_SJLJ_EXCEPTIONS */
@@ -1376,7 +1376,7 @@ namespace std
 /* #undef _GLIBCXX_USE_GET_NPROCS */
 
 /* Define if __int128 is supported on this host. */
-#define _GLIBCXX_USE_INT128 1
+/* #undef _GLIBCXX_USE_INT128 */
 
 /* Define if LFS support is available. */
 /* #undef _GLIBCXX_USE_LFS */

@@ -1,16 +1,12 @@
 STDCXX_PORT_DIR := $(call select_from_ports,stdcxx)
 
+include $(REP_DIR)/lib/import/import-stdcxx.mk
+
 # determine location of libstdc++ source tree
 STDCXX_DIR := $(STDCXX_PORT_DIR)/src/lib/stdcxx
 
-# public headers from port
-INC_DIR += $(STDCXX_PORT_DIR)/include/stdcxx
-
 # enable 'atomic.cc' to find 'gstdint.h'
 INC_DIR += $(REP_DIR)/include/stdcxx/bits
-
-## enable 'allocator-inst.cc' to find 'memory'
-#INC_DIR += $(REP_DIR)/include/stdcxx/std
 
 # exclude code that is no single compilation unit
 FILTER_OUT = hash-long-double-tr1-aux.cc
@@ -41,8 +37,6 @@ SRC_CC  += bad_array_length.cc bad_array_new.cc bad_cast.cc bad_alloc.cc bad_typ
 SRC_CC  += eh_aux_runtime.cc hash_bytes.cc
 SRC_CC  += tinfo.cc
 INC_DIR += $(STDCXX_DIR)/libsupc++
-
-include $(REP_DIR)/lib/import/import-stdcxx.mk
 
 vpath %.cc $(STDCXX_DIR)/src/c++11
 vpath %.cc $(STDCXX_DIR)/src/c++98
