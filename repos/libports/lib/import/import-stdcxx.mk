@@ -2,13 +2,11 @@ STDCXX_INCLUDE_DIR := $(call select_from_repositories,include/stdcxx)
 
 INC_DIR += $(STDCXX_INCLUDE_DIR) \
            $(STDCXX_INCLUDE_DIR)/std \
-           $(STDCXX_INCLUDE_DIR)/c_std \
            $(STDCXX_INCLUDE_DIR)/c_global
 
 STDCXX_PORT_INCLUDE_DIR := $(call select_from_ports,stdcxx)/include/stdcxx
 INC_DIR += $(STDCXX_PORT_INCLUDE_DIR) \
            $(STDCXX_PORT_INCLUDE_DIR)/std \
-           $(STDCXX_PORT_INCLUDE_DIR)/c_std \
            $(STDCXX_PORT_INCLUDE_DIR)/c_global
 
 LIBS += libc libm

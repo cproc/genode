@@ -7,6 +7,6 @@ file origins
   - run 'make noux-pkg/gcc_x86' for a 32-bit x86 platform
   - run 'make noux-pkg/gcc_x86' for a 64-bit x86 platform
   - run 'make noux-pkg/gcc_arm' for a 32-bit ARM platform
-  - compare the generated 'c++config.h' files
+  - compare the generated 'c++config.h' files (from the 32/64 sub-directories)
   - create a combined 'c++config.h' file by making the differing macros
     depend on the '__x86_64__' and '__ARM_EABI__' macros
