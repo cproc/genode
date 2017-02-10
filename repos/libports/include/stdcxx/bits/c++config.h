@@ -1,6 +1,6 @@
 // Predefined symbols and macros -*- C++ -*-
 
-// Copyright (C) 1997-2014 Free Software Foundation, Inc.
+// Copyright (C) 1997-2015 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -31,7 +31,7 @@
 #define _GLIBCXX_CXX_CONFIG_H 1
 
 // The current version of the C++ library in compressed ISO date format.
-#define __GLIBCXX__ 20141030
+#define __GLIBCXX__ 20160603
 
 // Macros for various attributes.
 //   _GLIBCXX_PURE
@@ -103,6 +103,14 @@
 # endif
 #endif
 
+#ifndef _GLIBCXX14_CONSTEXPR
+# if __cplusplus >= 201402L
+#  define _GLIBCXX14_CONSTEXPR constexpr
+# else
+#  define _GLIBCXX14_CONSTEXPR
+# endif
+#endif
+
 // Macro for noexcept, to support in mixed 03/0x mode.
 #ifndef _GLIBCXX_NOEXCEPT
 # if __cplusplus >= 201103L
@@ -121,7 +129,7 @@
 #endif
 
 #ifndef _GLIBCXX_THROW_OR_ABORT
-# if __EXCEPTIONS
+# if __cpp_exceptions
 #  define _GLIBCXX_THROW_OR_ABORT(_EXC) (throw (_EXC))
 # else
 #  define _GLIBCXX_THROW_OR_ABORT(_EXC) (__builtin_abort())
@@ -193,6 +201,37 @@ namespace std
 #endif
 }
 
+# define _GLIBCXX_USE_DUAL_ABI 1
+
+#if ! _GLIBCXX_USE_DUAL_ABI
+// Ignore any pre-defined value of _GLIBCXX_USE_CXX11_ABI
+# undef _GLIBCXX_USE_CXX11_ABI
+#endif
+
+#ifndef _GLIBCXX_USE_CXX11_ABI
+# define _GLIBCXX_USE_CXX11_ABI 1
+#endif
+
+#if _GLIBCXX_USE_CXX11_ABI
+namespace std
+{
+  inline namespace __cxx11 __attribute__((__abi_tag__ ("cxx11"))) { }
+}
+namespace __gnu_cxx
+{
+  inline namespace __cxx11 __attribute__((__abi_tag__ ("cxx11"))) { }
+}
+# define _GLIBCXX_NAMESPACE_CXX11 __cxx11::
+# define _GLIBCXX_BEGIN_NAMESPACE_CXX11 namespace __cxx11 {
+# define _GLIBCXX_END_NAMESPACE_CXX11 }
+# define _GLIBCXX_DEFAULT_ABI_TAG _GLIBCXX_ABI_TAG_CXX11
+#else
+# define _GLIBCXX_NAMESPACE_CXX11
+# define _GLIBCXX_BEGIN_NAMESPACE_CXX11
+# define _GLIBCXX_END_NAMESPACE_CXX11
+# define _GLIBCXX_DEFAULT_ABI_TAG
+#endif
+
 
 // Defined if inline namespaces are used for versioning.
 # define _GLIBCXX_INLINE_VERSION 0 
@@ -250,9 +289,13 @@ namespace std
   // Non-inline namespace for components replaced by alternates in active mode.
   namespace __cxx1998
   {
-#if _GLIBCXX_INLINE_VERSION
- inline namespace __7 { }
-#endif
+# if _GLIBCXX_INLINE_VERSION
+  inline namespace __7 { }
+# endif
+
+# if _GLIBCXX_USE_CXX11_ABI
+  inline namespace __cxx11 __attribute__((__abi_tag__ ("cxx11"))) { }
+# endif
   }
 
   // Inline namespace for debug mode.
@@ -358,6 +401,15 @@ namespace std
 # define _GLIBCXX_NAMESPACE_LDBL
 # define _GLIBCXX_BEGIN_NAMESPACE_LDBL
 # define _GLIBCXX_END_NAMESPACE_LDBL
+#endif
+#if _GLIBCXX_USE_CXX11_ABI
+# define _GLIBCXX_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_NAMESPACE_CXX11
+# define _GLIBCXX_BEGIN_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_BEGIN_NAMESPACE_CXX11
+# define _GLIBCXX_END_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_END_NAMESPACE_CXX11
+#else
+# define _GLIBCXX_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_NAMESPACE_LDBL
+# define _GLIBCXX_BEGIN_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_BEGIN_NAMESPACE_LDBL
+# define _GLIBCXX_END_NAMESPACE_LDBL_OR_CXX11 _GLIBCXX_END_NAMESPACE_LDBL
 #endif
 
 // Assert.
@@ -524,6 +576,9 @@ namespace std
 /* Define to 1 if you have the `cosl' function. */
 /* #undef _GLIBCXX_HAVE_COSL */
 
+/* Define to 1 if you have the <dirent.h> header file. */
+#define _GLIBCXX_HAVE_DIRENT_H 1
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define _GLIBCXX_HAVE_DLFCN_H 1
 
@@ -601,6 +656,9 @@ namespace std
 
 /* Define to 1 if you have the `fabsl' function. */
 /* #undef _GLIBCXX_HAVE_FABSL */
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#define _GLIBCXX_HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the <fenv.h> header file. */
 #define _GLIBCXX_HAVE_FENV_H 1
@@ -846,6 +904,9 @@ namespace std
 /* Define to 1 if you have the `strtold' function. */
 /* #undef _GLIBCXX_HAVE_STRTOLD */
 
+/* Define to 1 if `d_type' is a member of `struct dirent'. */
+#define _GLIBCXX_HAVE_STRUCT_DIRENT_D_TYPE 1
+
 /* Define if strxfrm_l is available in <string.h>. */
 /* #undef _GLIBCXX_HAVE_STRXFRM_L */
 
@@ -879,6 +940,9 @@ namespace std
 
 /* Define to 1 if you have the <sys/sem.h> header file. */
 #define _GLIBCXX_HAVE_SYS_SEM_H 1
+
+/* Define to 1 if you have the <sys/statvfs.h> header file. */
+#define _GLIBCXX_HAVE_SYS_STATVFS_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define _GLIBCXX_HAVE_SYS_STAT_H 1
@@ -924,6 +988,9 @@ namespace std
 
 /* Defined if usleep exists. */
 #define _GLIBCXX_HAVE_USLEEP 1
+
+/* Define to 1 if you have the <utime.h> header file. */
+#define _GLIBCXX_HAVE_UTIME_H 1
 
 /* Defined if vfwscanf exists. */
 #define _GLIBCXX_HAVE_VFWSCANF 1
@@ -1188,7 +1255,9 @@ namespace std
 /* #undef _GLIBCXX_VERSION */
 
 /* Define if the compiler supports C++11 atomics. */
+#ifndef __ARM_EABI__
 #define _GLIBCXX_ATOMIC_BUILTINS 1
+#endif
 
 /* Define to use concept checking code from the boost libraries. */
 /* #undef _GLIBCXX_CONCEPT_CHECKS */
@@ -1252,7 +1321,7 @@ namespace std
 /* Define if C99 functions in <complex.h> should be used in <complex>. Using
    compiler builtins for these functions requires corresponding C99 library
    functions to be present. */
-#define _GLIBCXX_USE_C99_COMPLEX 1
+/* #undef _GLIBCXX_USE_C99_COMPLEX */
 
 /* Define if C99 functions in <complex.h> should be used in <tr1/complex>.
    Using compiler builtins for these functions requires corresponding C99
@@ -1301,6 +1370,12 @@ namespace std
    this host. */
 /* #undef _GLIBCXX_USE_DECIMAL_FLOAT */
 
+/* Define if fchmod is available in <sys/stat.h>. */
+#define _GLIBCXX_USE_FCHMOD 1
+
+/* Define if fchmodat is available in <sys/stat.h>. */
+#define _GLIBCXX_USE_FCHMODAT 1
+
 /* Define if __float128 is supported on this host. */
 #ifndef __ARM_EABI__
 #define _GLIBCXX_USE_FLOAT128 1
@@ -1332,9 +1407,15 @@ namespace std
 /* Define if pthreads_num_processors_np is available in <pthread.h>. */
 /* #undef _GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP */
 
+/* Define if POSIX read/write locks are available in <gthr.h>. */
+/* #undef _GLIBCXX_USE_PTHREAD_RWLOCK_T */
+
 /* Define if /dev/random and /dev/urandom are available for the random_device
    of TR1 (Chapter 5.1). */
 /* #undef _GLIBCXX_USE_RANDOM_TR1 */
+
+/* Define if usable realpath is available in <stdlib.h>. */
+/* #undef _GLIBCXX_USE_REALPATH */
 
 /* Defined if sched_yield is available. */
 /* #undef _GLIBCXX_USE_SCHED_YIELD */
@@ -1345,11 +1426,21 @@ namespace std
 /* Define if _SC_NPROC_ONLN is available in <unistd.h>. */
 /* #undef _GLIBCXX_USE_SC_NPROC_ONLN */
 
+/* Define if sendfile is available in <sys/stat.h>. */
+/* #undef _GLIBCXX_USE_SENDFILE */
+
+/* Define if struct stat has timespec members. */
+/* #undef _GLIBCXX_USE_ST_MTIM */
+
 /* Define if sysctl(), CTL_HW and HW_NCPU are available in <sys/sysctl.h>. */
 /* #undef _GLIBCXX_USE_SYSCTL_HW_NCPU */
 
 /* Define if obsolescent tmpnam is available in <stdio.h>. */
 #define _GLIBCXX_USE_TMPNAM 1
+
+/* Define if utimensat and UTIME_OMIT are available in <sys/stat.h> and
+   AT_FDCWD in <fcntl.h>. */
+/* #undef _GLIBCXX_USE_UTIMENSAT */
 
 /* Define if code specialized for wchar_t should be used. */
 #define _GLIBCXX_USE_WCHAR_T 1
@@ -1358,10 +1449,17 @@ namespace std
 #define _GLIBCXX_VERBOSE 1
 
 /* Defined if as can handle rdrand. */
+#ifndef __ARM_EABI__
 #define _GLIBCXX_X86_RDRAND 1
+#endif
 
 /* Define to 1 if mutex_timedlock is available. */
 #define _GTHREAD_USE_MUTEX_TIMEDLOCK 1
+
+/* Define if all C++11 overloads are available in <math.h>.  */
+#if __cplusplus >= 201103L
+/* #undef __CORRECT_ISO_CPP11_MATH_H_PROTO */
+#endif
 
 #if defined (_GLIBCXX_HAVE__ACOSF) && ! defined (_GLIBCXX_HAVE_ACOSF)
 # define _GLIBCXX_HAVE_ACOSF 1
