@@ -1,9 +1,9 @@
 LICENSE   := GPLv3
-VERSION   := 4.9.4
+VERSION   := 5.4.0
 DOWNLOADS := gcc.archive
 
 URL(gcc)  := ftp://ftp.fu-berlin.de/gnu/gcc/gcc-$(VERSION)/gcc-$(VERSION).tar.bz2
-SHA(gcc)  := 5bb0b783a57a62b11f1f9bd2aa37145da221d3d0
+SHA(gcc)  := 07524df2b4ab9070bad9c49ab668da72237b8115
 SIG(gcc)  := ${URL(gcc)}.sig
 KEY(gcc)  := GNU
 DIR(gcc)  := src/noux-pkg/gcc
