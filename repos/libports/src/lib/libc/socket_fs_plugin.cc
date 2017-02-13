@@ -625,7 +625,8 @@ extern "C" int socket_fs_shutdown(int libc_fd, int how)
 	if (!(context = dynamic_cast<Socket_context *>(fd->context)))
 		return Errno(ENOTSOCK);
 
-	unlink(context->path.base());
+	/* FIXME */
+	//unlink(context->path.base());
 
 	return 0;
 }

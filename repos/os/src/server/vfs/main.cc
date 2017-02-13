@@ -139,17 +139,36 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
+
 				try {
-					_apply(packet.handle(), [&] (Node &node) {
-						if (!node.read_ready())
+					_apply(static_cast<File_handle>(packet.handle().value), [&] (File &node) {
+						if (!node.read_ready()) {
+							node.notify_read_ready(true);
 							throw Not_read_ready();
+						}
+
 						if (node.mode&READ_ONLY)
 							res_length = node.read(_vfs, (char *)content, length, seek);
 					});
 				}
 				catch (Not_read_ready) { throw; }
 				catch (Operation_incomplete) { throw Not_read_ready(); }
-				catch (...) { }
+				catch (...) {
+
+					try {
+						_apply(packet.handle(), [&] (Node &node) {
+							if (!node.read_ready())
+								throw Not_read_ready();
+							
+							if (node.mode&READ_ONLY)
+								res_length = node.read(_vfs, (char *)content, length, seek);
+						});
+					}
+					catch (Not_read_ready) { throw; }
+					catch (Operation_incomplete) { throw Not_read_ready(); }
+					catch (...) { }
+				}
+
 				break;
 
 			case Packet_descriptor::WRITE:
@@ -164,9 +183,10 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			case Packet_descriptor::READ_READY:
 				try {
 					_apply(static_cast<File_handle>(packet.handle().value), [] (File &node) {
-						node.notify_read_ready(true);
-						if (!node.read_ready())
+						if (!node.read_ready()) {
+							node.notify_read_ready(true);
 							throw Dont_ack();
+						}
 					});
 				}
 				catch (Dont_ack) { throw; }
