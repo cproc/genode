@@ -563,6 +563,28 @@ class Vfs::Lxip_local_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
+		bool poll(bool trigger_io_response,
+		          Vfs::Vfs_handle::Context *context) override
+		{
+			using namespace Linux;
+
+			file f;
+			f.f_flags = 0;
+
+			switch (_parent.parent().type()) {
+			case Lxip::Protocol_dir::TYPE_DGRAM:
+				if (_sock.ops->poll(&f, &_sock, nullptr) & (POLLIN_SET)) {
+					if (trigger_io_response)
+						_parent.trigger_io_response(context);
+					return true;
+				}
+			case Lxip::Protocol_dir::TYPE_STREAM:
+				return true;
+			}
+
+			return false;
+		}
+
 		Lxip::ssize_t read(char *dst, Genode::size_t len,
 		                   file_size /* ignored */) override
 		{
@@ -729,7 +751,8 @@ class Vfs::Lxip_accept_file : public Vfs::Lxip_file
 			using namespace Linux;
 
 			/* FIXME this read does not block */
-			if (!File::poll()) return -1;
+			if (!poll(false, nullptr))
+				return -1;
 
 			socket *new_sock = sock_alloc();
 
@@ -822,6 +845,11 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		~Lxip_socket_dir()
 		{
+			/*
+			 * FIXME: make sure that no file in this directory has a polling
+			 *        handle registered to avoid the use of the freed socket.
+			 */
+
 			Linux::socket *sock = &_sock;
 
 			if (sock->ops)
