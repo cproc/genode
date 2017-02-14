@@ -176,8 +176,9 @@ struct Vfs::Lxip_vfs_handle final : Vfs::Vfs_handle, Lxip_vfs_handles::Element
 	Vfs::File &file;
 
 	Lxip_vfs_handle(Vfs::File_system &fs, Allocator &alloc, int status_flags,
-	                Vfs::File &file)
-	: Vfs_handle(fs, fs, alloc, status_flags), file(file) { }
+	                Vfs::File &file);
+
+	~Lxip_vfs_handle();
 };
 
 
@@ -195,6 +196,7 @@ struct Vfs::Node
 
 struct Vfs::File : Vfs::Node
 {
+	Lxip_vfs_handles handles;
 
 	File(char const *name) : Node(name) { }
 
@@ -229,6 +231,23 @@ struct Vfs::File : Vfs::Node
 	virtual bool poll(bool trigger_io_response = false,
 	                  Vfs::Vfs_handle::Context *context = nullptr) { return false; }
 };
+
+
+Vfs::Lxip_vfs_handle::Lxip_vfs_handle(Vfs::File_system &fs,
+                                      Allocator        &alloc,
+                                      int               status_flags,
+                                      Vfs::File        &file)
+:
+	Vfs_handle(fs, fs, alloc, status_flags), file(file)
+{
+	file.handles.insert(this);
+}
+
+
+Vfs::Lxip_vfs_handle::~Lxip_vfs_handle()
+{
+	file.handles.remove(this);
+}
 
 
 /**
@@ -278,6 +297,12 @@ class Vfs::Lxip_file : public Vfs::File
 		: Vfs::File(name), _parent(p), _sock(s) { }
 
 		virtual ~Lxip_file() { }
+
+		void dissolve_handles()
+		{
+			for (Vfs::Lxip_vfs_handle *h = handles.first(); h; h = h->next()) {
+				_polling_handles.remove(h); }
+		}
 };
 
 
@@ -845,10 +870,13 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 
 		~Lxip_socket_dir()
 		{
-			/*
-			 * FIXME: make sure that no file in this directory has a polling
-			 *        handle registered to avoid the use of the freed socket.
-			 */
+			_accept_file.dissolve_handles();
+			_bind_file.dissolve_handles();
+			_connect_file.dissolve_handles();
+			_data_file.dissolve_handles();
+			_listen_file.dissolve_handles();
+			_local_file.dissolve_handles();
+			_remote_file.dissolve_handles();
 
 			Linux::socket *sock = &_sock;
 
