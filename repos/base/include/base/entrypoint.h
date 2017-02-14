@@ -53,11 +53,16 @@ class Genode::Entrypoint : Genode::Noncopyable
 
 			void signal()
 			{
+				Genode::log("Signal_proxy_component::signal()");
 				/* XXX introduce while-pending loop */
 				try {
 					Signal sig = ep._sig_rec->pending_signal();
+					Genode::log("Signal_proxy_component::signal(): dispatching signal...");
 					ep._dispatch_signal(sig);
-				} catch (Signal_receiver::Signal_not_pending) { }
+					Genode::log("Signal_proxy_component::signal(): signal dispatched");
+				} catch (Signal_receiver::Signal_not_pending) {
+					Genode::log("Signal_proxy_component::signal(): no signal pending");
+				}
 
 				ep._execute_post_signal_hook();
 			}

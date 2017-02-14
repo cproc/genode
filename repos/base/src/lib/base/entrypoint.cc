@@ -63,10 +63,11 @@ void Entrypoint::_process_incoming_signals()
 	for (;;) {
 
 		do {
+Genode::log("_process_incoming_signals(): calling block_for_signal()");
 			_sig_rec->block_for_signal();
 
 			int success = Genode::cmpxchg(&_signal_recipient, NONE, SIGNAL_PROXY);
-
+Genode::log("_process_incoming_signals(): success: ", success);
 			/* common case, entrypoint is not in 'wait_and_dispatch_one_signal' */
 			if (success) {
 				/*
@@ -78,9 +79,11 @@ void Entrypoint::_process_incoming_signals()
 				retry<Genode::Blocking_canceled>(
 					[&] () { _signal_proxy_cap.call<Signal_proxy::Rpc_signal>(); },
 					[]  () { warning("blocking canceled during signal processing"); });
-
+Genode::log("_process_incoming_signals(): signal delivered");
 				Genode::cmpxchg(&_signal_recipient, SIGNAL_PROXY, NONE);
+Genode::log("_process_incoming_signals(): recipient reset");
 			} else {
+Genode::log("_process_incoming_signals(): waking up waiter");
 				/*
 				 * Entrypoint is in 'wait_and_dispatch_one_signal', wakup it up and
 				 * block for next signal
@@ -124,11 +127,21 @@ void Entrypoint::wait_and_dispatch_one_signal()
 {
 	bool blocked = false;
 
+	log("wait_and_dispatch_one_signal()");
+
 	while (true) {
+
+		log("wait_and_dispatch_one_signal(): checking for pending signal");
+
 		try {
 
 			Genode::Signal sig  =_sig_rec->pending_signal();
+
+			log("wait_and_dispatch_one_signal(): signal pending, dispatching...");
+
 			_dispatch_signal(sig);
+
+			log("wait_and_dispatch_one_signal(): signal dispatched, resetting recipient...");
 
 			if (blocked) {
 				Genode::cmpxchg(&_signal_recipient, ENTRYPOINT, NONE);
@@ -137,6 +150,8 @@ void Entrypoint::wait_and_dispatch_one_signal()
 			break;
 
 		} catch (Signal_receiver::Signal_not_pending) {
+
+			log("wait_and_dispatch_one_signal(): no signal pending, blocking...");
 
 			/*
 			 * No signals are pending, try to set entrypoint as recipient of the next
