@@ -52,7 +52,7 @@ append config {
 	<start name="test-libc_component">
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="LOG"/> </provides>
-		<config>
+		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev"> <log/> </dir>
 				<fs/>
@@ -60,7 +60,7 @@ append config {
 			<libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
 		</config>
 	</start>
-	<start name="counter-vfs">
+	<start name="counter-terminal">
 		<binary name="test-libc_counter-source"/>
 		<resource name="RAM" quantum="8M"/>
 		<config>
@@ -102,7 +102,7 @@ set boot_modules {
 
 build_boot_image $boot_modules
 
-append qemu_args "-nographic -m 64"
+append qemu_args "-nographic -m 128"
 
 #
 # Execute test case

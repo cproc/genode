@@ -77,18 +77,27 @@ struct Log::Session_component : Genode::Rpc_object<Log_session>
 	char   _buf[Log_session::MAX_STRING_LEN];
 	int    _fd = -1;
 	fd_set _readfds;
-	fd_set _dummyfds;
-	bool   _select_scheduled = false;
+	fd_set _writefds;
+	fd_set _exceptfds;
 
-	void _schedule_select()
+	void _select()
 	{
-		_select_handler.schedule_select(_fd + 1, _readfds, _dummyfds, _dummyfds);
+		int nready = 0;
+		do {
+			fd_set readfds   = _readfds;
+			fd_set writefds  = _writefds;
+			fd_set exceptfds = _exceptfds;
+
+			nready = _select_handler.select(_fd + 1, readfds, writefds, exceptfds);
+			if (nready)
+				_select_ready(nready, readfds, writefds, exceptfds);
+		} while (nready);
 	}
 
 	Libc::Select_handler<Session_component> _select_handler {
-		*this, &Session_component::_on_select };
+		*this, &Session_component::_select_ready };
 
-	void _on_select(int nready, fd_set const &readfds, fd_set const &, fd_set const &)
+	void _select_ready(int nready, fd_set const &readfds, fd_set const &writefds, fd_set const &exceptfds)
 	{
 		Libc::with_libc([&] () {
 			if (nready <= 0) {
@@ -96,7 +105,15 @@ struct Log::Session_component : Genode::Rpc_object<Log_session>
 				return;
 			}
 			if (!FD_ISSET(_fd, &readfds)) {
-				Genode::warning("select handler reported unexpected fd");
+				Genode::warning("select handler reported unexpected fd, nready=", nready);
+
+				for (unsigned i = 0; i < FD_SETSIZE; ++i)
+					if (FD_ISSET(i, &readfds))   Genode::log("fd ", i, " readable");
+				for (unsigned i = 0; i < FD_SETSIZE; ++i)
+					if (FD_ISSET(i, &writefds))  Genode::log("fd ", i, " writeable");
+				for (unsigned i = 0; i < FD_SETSIZE; ++i)
+					if (FD_ISSET(i, &exceptfds)) Genode::log("fd ", i, " exceptable?");
+
 				return;
 			}
 			int const result = read(_fd, _buf, sizeof(_buf)-1);
@@ -107,8 +124,6 @@ struct Log::Session_component : Genode::Rpc_object<Log_session>
 			_buf[result] = 0;
 			Genode::log("read from file \"", Genode::Cstring(_buf), "\"");
 		});
-
-		_select_scheduled = false;
 	}
 
 	Session_component()
@@ -118,7 +133,8 @@ struct Log::Session_component : Genode::Rpc_object<Log_session>
 			if (_fd == -1) die("open");
 
 			FD_ZERO(&_readfds);
-			FD_ZERO(&_dummyfds);
+			FD_ZERO(&_writefds);
+			FD_ZERO(&_exceptfds);
 			FD_SET(_fd, &_readfds);
 		});
 	}
@@ -134,10 +150,7 @@ struct Log::Session_component : Genode::Rpc_object<Log_session>
 
 		Genode::log("RPC with \"", Genode::Cstring(_buf), "\"");
 
-		if (!_select_scheduled) {
-			_schedule_select();
-			_select_scheduled = true;
-		}
+		_select();
 
 		return len;
 	}
