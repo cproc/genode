@@ -196,8 +196,10 @@ static void select_notify()
 		}
 	});
 
-	if (resume_all)
+	if (resume_all) {
+		Genode::log("select_notify(): calling Libc::resume_all()");
 		Libc::resume_all();
+	}
 }
 
 
@@ -270,7 +272,9 @@ _select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	} timeout { tv };
 
 	do {
+		Genode::log("select(): calling suspend with timeout ", timeout.duration);
 		timeout.duration = Libc::suspend(timeout.duration);
+		Genode::log("select(): suspend() returned");
 	} while (!timeout.expired() && select_cb->nready == 0);
 
 	select_cb_list.remove(&(*select_cb));

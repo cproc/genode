@@ -12,11 +12,14 @@
  */
 
 #include "qsignalhandlerthread.h"
-
+#include <base/log.h>
 void QSignalHandlerThread::run()
 {
 	for (;;) {
+Genode::log("calling wait_for_signal()");
 		Genode::Signal s = _signal_receiver.wait_for_signal();
+Genode::log("wait_for_signal() returned, calling dispatch()");
 		static_cast<Genode::Signal_dispatcher_base*>(s.context())->dispatch(s.num());
+Genode::log("dispatch() returned");
 	}
 }

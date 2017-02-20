@@ -311,10 +311,10 @@ namespace Libc_pipe {
 		ssize_t num_bytes_read = 0;
 
 		do {
-
+Genode::log("libc_pipe: trying to read");
 			((unsigned char*)buf)[num_bytes_read] =
 				context(fdo)->buffer()->get();
-
+Genode::log("libc_pipe: got data");
 			num_bytes_read++;
 
 			context(fdo)->write_avail_sem()->up();
@@ -334,6 +334,7 @@ namespace Libc_pipe {
 	                   fd_set *exceptfds,
 	                   struct timeval *timeout)
 	{
+Genode::log("libc_pipe: select()");
 		int nready = 0;
 		Libc::File_descriptor *fdo;
 		fd_set in_readfds, in_writefds;
@@ -366,6 +367,7 @@ namespace Libc_pipe {
 				nready++;
 			}
 		}
+Genode::log("libc_pipe: select() returns ", nready);
 		return nready;
 	}
 
@@ -373,6 +375,7 @@ namespace Libc_pipe {
 	ssize_t Plugin::write(Libc::File_descriptor *fdo, const void *buf,
 	                      ::size_t count)
 	{
+Genode::log("libc_pipe: write()");
 		if (!write_end(fdo)) {
 			Genode::error("cannot write into read end of pipe");
 			errno = EBADF;
@@ -392,6 +395,7 @@ namespace Libc_pipe {
 
 				if (context(fdo)->nonblock())
 					return num_bytes_written;
+Genode::log("libc_pipe: notifying select() 1");
 
 				if (libc_select_notify)
 					libc_select_notify();
@@ -402,7 +406,7 @@ namespace Libc_pipe {
 			context(fdo)->buffer()->add(((unsigned char*)buf)[num_bytes_written]);
 			num_bytes_written++;
 		}
-
+Genode::log("libc_pipe: notifying select() 2");
 		if (libc_select_notify)
 			libc_select_notify();
 

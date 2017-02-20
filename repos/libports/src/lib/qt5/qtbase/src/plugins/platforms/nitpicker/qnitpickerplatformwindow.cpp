@@ -175,6 +175,7 @@ void QNitpickerPlatformWindow::_process_key_event(Input::Event *ev)
 
 void QNitpickerPlatformWindow::_key_repeat()
 {
+Genode::log("_key_repeat()");
 	_key_repeat_timer->start(KEY_REPEAT_RATE_MS);
 	_keyboard_handler.processKeycode(_last_keycode, true, true);
 }
@@ -182,6 +183,7 @@ void QNitpickerPlatformWindow::_key_repeat()
 
 void QNitpickerPlatformWindow::_handle_input(unsigned int)
 {
+Genode::log("handle_input()");
 	QList<Input::Event> touch_events;
 	for (int i = 0, num_ev = _input_session.flush(); i < num_ev; i++) {
 
@@ -219,6 +221,7 @@ void QNitpickerPlatformWindow::_handle_input(unsigned int)
 
 void QNitpickerPlatformWindow::_handle_mode_changed(unsigned int)
 {
+Genode::log("_handle_mode_changed()");
 	Framebuffer::Mode mode(_nitpicker_session.mode());
 
 	if ((mode.width() == 0) && (mode.height() == 0)) {
