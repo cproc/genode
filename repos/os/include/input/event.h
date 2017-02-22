@@ -13,7 +13,7 @@
 
 #ifndef _INCLUDE__INPUT__EVENT_H_
 #define _INCLUDE__INPUT__EVENT_H_
-
+#include <base/log.h>
 #include <input/keycodes.h>
 
 namespace Input { class Event; }
@@ -71,7 +71,11 @@ class Input::Event
 		 */
 		Event(Type type, int code, int ax, int ay, int rx, int ry):
 			_type(type), _code(code),
-			_ax(ax), _ay(ay), _rx(rx), _ry(ry) { }
+			_ax(ax), _ay(ay), _rx(rx), _ry(ry)
+		{
+			if (_type == CHARACTER)
+				Genode::log("Event(,,): code: ", Genode::Hex(_code));
+		}
 
 		/**
 		 * Constructor creates a symbolic character event
@@ -81,7 +85,7 @@ class Input::Event
 			_type(CHARACTER),
 			_code(((unsigned)utf8.b3 << 24) | ((unsigned)utf8.b2 << 16) |
 			      ((unsigned)utf8.b1 <<  8) | ((unsigned)utf8.b0 <<  0))
-		{ }
+		{ Genode::log("Event(Utf8): code: ", Genode::Hex(_code));}
 
 		/**
 		 * Accessors
