@@ -84,7 +84,8 @@ namespace Libc {
 
 	void libc_config_init(Genode::Xml_node node)
 	{
-		_config_node = &node;
+		static Genode::Xml_node config = node;
+		_config_node = &config;
 	}
 
 	Genode::Xml_node config() __attribute__((weak));
