@@ -1,3 +1,5 @@
+INC_DIR += $(REP_DIR)/src/lib/gdbserver_platform/spec/x86_64
+
 SRC_C   = i386.c \
           i386-avx.c \
           amd64.c \
