@@ -1,15 +1,12 @@
 REQUIRES += foc
 
-SRC_CC = spec/foc_arm/low.cc \
-         spec/foc/native_cpu.cc
-
-SRC_C  = reg-arm.c \
-         linux-arm-low.c
-
-CC_OPT_linux-arm-low += -Wno-unused-function
+SRC_CC = spec/arm/low.cc \
+         native_cpu.cc
 
 LIBS += syscall-foc
 
 SHARED_LIB = yes
 
-include $(REP_DIR)/lib/mk/gdbserver_platform.inc
+vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform-foc
+
+include $(REP_DIR)/lib/mk/spec/arm/gdbserver_platform-arm.inc
