@@ -1381,6 +1381,22 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 				out.fileno  = (Genode::addr_t)&_udp_dir;
 				out.type    = Directory_service::DIRENT_TYPE_DIRECTORY;
 				Genode::strncpy(out.name, "udp", sizeof(out.name));
+			} else if (index == 2) {
+				out.fileno  = (Genode::addr_t)&_address;
+				out.type    = Directory_service::DIRENT_TYPE_FILE;
+				Genode::strncpy(out.name, "address", sizeof(out.name));
+			} else if (index == 3) {
+				out.fileno  = (Genode::addr_t)&_netmask;
+				out.type    = Directory_service::DIRENT_TYPE_FILE;
+				Genode::strncpy(out.name, "netmask", sizeof(out.name));
+			} else if (index == 4) {
+				out.fileno  = (Genode::addr_t)&_gateway;
+				out.type    = Directory_service::DIRENT_TYPE_FILE;
+				Genode::strncpy(out.name, "gateway", sizeof(out.name));
+			} else if (index == 5) {
+				out.fileno  = (Genode::addr_t)&_nameserver;
+				out.type    = Directory_service::DIRENT_TYPE_FILE;
+				Genode::strncpy(out.name, "nameserver", sizeof(out.name));
 			} else {
 				out.fileno  = 0;
 				out.type    = Directory_service::DIRENT_TYPE_END;
@@ -1388,7 +1404,7 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 			}
 		}
 
-		file_size num_dirent() override { return 2; }
+		file_size num_dirent() override { return 6; }
 
 		Vfs::Node *child(char const *name) override { return nullptr; }
 
