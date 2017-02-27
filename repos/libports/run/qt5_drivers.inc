@@ -59,7 +59,9 @@ proc use_timer { feature_arg } {
 
 proc use_usb_input { feature_arg } {
 	upvar $feature_arg feature
-	return [expr {[info exists feature(Input)] && [need_usb_hid]}]
+	return [expr {[info exists feature(Input)] && 
+	              ([need_usb_hid] ||
+	               ([have_spec x86] && ![have_spec linux]))}]
 }
 
 proc use_usb_nic { feature_arg } {
@@ -196,39 +198,32 @@ proc drivers_start_nodes { feature_arg } {
 		append_if [use_fb_sdl feature] start_nodes {
 					<input label="sdl"/>}
 		append start_nodes {
-				<output>
-					<merge>}
+					<output>
+						<chargen>
+							<merge>}
 		append_if [use_ps2_drv feature] start_nodes {
-						<input name="ps2"/>}
+								<input name="ps2"/>}
 		append_if [use_usb_drv feature] start_nodes {
-						<input name="usb"/>}
+								<input name="usb"/>}
 		append_if [use_fb_sdl feature] start_nodes {
-						<input name="sdl"/>}
+								<input name="sdl"/>}
 		append start_nodes {
-					</merge>
-					<chargen>}
-		append_if [use_ps2_drv feature] start_nodes {
-						<input name="ps2"/>}
-		append_if [use_usb_drv feature] start_nodes {
-						<input name="usb"/>}
-		append_if [use_fb_sdl feature] start_nodes {
-						<input name="sdl"/>}
-		append start_nodes {
-						<mod1>
-							<key name="KEY_LEFTSHIFT"/> <key name="KEY_RIGHTSHIFT"/>
-						</mod1>
-						<mod2>
-							<key name="KEY_LEFTCTRL"/> <key name="KEY_RIGHTCTRL"/>
-						</mod2>
-						<mod3>
-							<key name="KEY_RIGHTALT"/> <!-- AltGr -->
-						</mod3>
-						<repeat delay_ms="500" rate_ms="50"/>}
+							</merge>
+							<mod1>
+								<key name="KEY_LEFTSHIFT"/> <key name="KEY_RIGHTSHIFT"/>
+							</mod1>
+							<mod2>
+								<key name="KEY_LEFTCTRL"/> <key name="KEY_RIGHTCTRL"/>
+							</mod2>
+							<mod3>
+								<key name="KEY_RIGHTALT"/> <!-- AltGr -->
+							</mod3>
+							<repeat delay_ms="500" rate_ms="50"/>}
 		append start_nodes "
-						<include rom=\"[language_chargen].chargen\"/>"
+							<include rom=\"[language_chargen].chargen\"/>"
 		append start_nodes {
-					</chargen>
-				</output>
+						</chargen>
+					</output>
 				</config>
 				<route>
 					<service name="LOG"> <parent/> </service>
