@@ -1,0 +1,49 @@
+stdcxx_update.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ Makefile.tpl              |    1 +
+ configure.ac              |    2 ++
+ libstdc++-v3/configure.ac |    2 +-
+ 3 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile.tpl b/Makefile.tpl
+index 83dbcce..e6afad6 100644
+--- a/Makefile.tpl
++++ b/Makefile.tpl
+@@ -505,6 +505,7 @@ COMPILER_AS_FOR_TARGET=@COMPILER_AS_FOR_TARGET@
+ COMPILER_LD_FOR_TARGET=@COMPILER_LD_FOR_TARGET@
+ COMPILER_NM_FOR_TARGET=@COMPILER_NM_FOR_TARGET@
+ 
++CPPFLAGS_FOR_TARGET = @CPPFLAGS_FOR_TARGET@
+ CFLAGS_FOR_TARGET = @CFLAGS_FOR_TARGET@
+ CXXFLAGS_FOR_TARGET = @CXXFLAGS_FOR_TARGET@
+ 
+diff --git a/configure.ac b/configure.ac
+index 63b6a0d..5e785d9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2336,6 +2336,8 @@ AC_ARG_WITH([debug-prefix-map],
+   [DEBUG_PREFIX_CFLAGS_FOR_TARGET=])
+ AC_SUBST(DEBUG_PREFIX_CFLAGS_FOR_TARGET)
+ 
++AC_SUBST(CPPFLAGS_FOR_TARGET)
++
+ # During gcc bootstrap, if we use some random cc for stage1 then CFLAGS
+ # might be empty or "-g".  We don't require a C++ compiler, so CXXFLAGS
+ # might also be empty (or "-g", if a non-GCC C++ compiler is in the path).
+diff --git a/libstdc++-v3/configure.ac b/libstdc++-v3/configure.ac
+index e93eb91..7bc96ad 100644
+--- a/libstdc++-v3/configure.ac
++++ b/libstdc++-v3/configure.ac
+@@ -209,7 +209,7 @@ AC_CHECK_HEADERS(fenv.h complex.h)
+ GLIBCXX_CHECK_C99_TR1
+ 
+ # For the EOF, SEEK_CUR, and SEEK_END integer constants.
+-#GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS
++GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS
+ 
+ # For gettimeofday support.
+ GLIBCXX_CHECK_GETTIMEOFDAY
