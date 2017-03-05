@@ -14,10 +14,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  7 files changed, 17 insertions(+), 9 deletions(-)
 
 diff --git a/Makefile.def b/Makefile.def
-index 5abea3e..86504cc 100644
+index ea8453e..201480f 100644
 --- a/Makefile.def
 +++ b/Makefile.def
-@@ -282,6 +282,7 @@ flags_to_pass = { flag= GOCFLAGS_FOR_TARGET ; };
+@@ -288,6 +288,7 @@ flags_to_pass = { flag= GOCFLAGS_FOR_TARGET ; };
  flags_to_pass = { flag= LD_FOR_TARGET ; };
  flags_to_pass = { flag= LIPO_FOR_TARGET ; };
  flags_to_pass = { flag= LDFLAGS_FOR_TARGET ; };
@@ -26,7 +26,7 @@ index 5abea3e..86504cc 100644
  flags_to_pass = { flag= LIBCXXFLAGS_FOR_TARGET ; };
  flags_to_pass = { flag= NM_FOR_TARGET ; };
 diff --git a/Makefile.tpl b/Makefile.tpl
-index 1ea1954..83dbcce 100644
+index 6b2eb6a..a89f815 100644
 --- a/Makefile.tpl
 +++ b/Makefile.tpl
 @@ -156,6 +156,8 @@ BUILD_EXPORTS = \
@@ -55,7 +55,7 @@ index 1ea1954..83dbcce 100644
  	GCJ="$(GCJ)"; export GCJ; \
  	GFORTRAN="$(GFORTRAN)"; export GFORTRAN; \
  	GOC="$(GOC)"; export GOC; \
-@@ -279,6 +284,7 @@ BASE_TARGET_EXPORTS = \
+@@ -281,6 +286,7 @@ BASE_TARGET_EXPORTS = \
  	CFLAGS="$(CFLAGS_FOR_TARGET)"; export CFLAGS; \
  	CONFIG_SHELL="$(SHELL)"; export CONFIG_SHELL; \
  	CPPFLAGS="$(CPPFLAGS_FOR_TARGET)"; export CPPFLAGS; \
@@ -63,7 +63,7 @@ index 1ea1954..83dbcce 100644
  	CXXFLAGS="$(CXXFLAGS_FOR_TARGET)"; export CXXFLAGS; \
  	GCJ="$(GCJ_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export GCJ; \
  	GFORTRAN="$(GFORTRAN_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export GFORTRAN; \
-@@ -648,6 +654,7 @@ EXTRA_TARGET_FLAGS = \
+@@ -660,6 +666,7 @@ EXTRA_TARGET_FLAGS = \
  	 -B$$r/$$(TARGET_SUBDIR)/libstdc++-v3/libsupc++/.libs \
  	 $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
  	'CXXFLAGS=$$(CXXFLAGS_FOR_TARGET)' \
@@ -98,19 +98,19 @@ index 5dc1b23..57e6afa 100644
  
  $(AF): $(FIXOBJ) $(LIBIBERTY)
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
-index 07c6f0a..620a6b7 100644
+index 13d0d1b..88f3ef5 100644
 --- a/gcc/Makefile.in
 +++ b/gcc/Makefile.in
-@@ -761,7 +761,7 @@ BUILD_LINKERFLAGS = $(BUILD_CXXFLAGS)
- # Native linker and preprocessor flags.  For x-fragment overrides.
- BUILD_LDFLAGS=@BUILD_LDFLAGS@
+@@ -779,7 +779,7 @@ BUILD_LDFLAGS=@BUILD_LDFLAGS@
+ BUILD_NO_PIE_FLAG = @BUILD_NO_PIE_FLAG@
+ BUILD_LDFLAGS += $(BUILD_NO_PIE_FLAG)
  BUILD_CPPFLAGS= -I. -I$(@D) -I$(srcdir) -I$(srcdir)/$(@D) \
 -		-I$(srcdir)/../include @INCINTL@ $(CPPINC) $(CPPFLAGS)
 +		-I$(srcdir)/../include @INCINTL@ $(CPPINC) $(INCLUDES) $(CPPFLAGS_FOR_BUILD)
  
  # Actual name to use when installing a native compiler.
  GCC_INSTALL_NAME := $(shell echo gcc|sed '$(program_transform_name)')
-@@ -1011,8 +1011,8 @@ BUILD_LIBDEPS= $(BUILD_LIBIBERTY)
+@@ -1031,8 +1031,8 @@ BUILD_LIBDEPS= $(BUILD_LIBIBERTY)
  
  # How to link with both our special library facilities
  # and the system's installed libraries.
@@ -122,23 +122,23 @@ index 07c6f0a..620a6b7 100644
  	$(ZLIB)
  # Any system libraries needed just for GNAT.
 diff --git a/gcc/config.host b/gcc/config.host
-index b0f5940..d3b1424 100644
+index 44f2f56..961dc0f 100644
 --- a/gcc/config.host
 +++ b/gcc/config.host
-@@ -99,7 +99,7 @@ case ${host} in
- esac
- 
- case ${host} in
+@@ -107,7 +107,7 @@ case ${host} in
+ 	;;
+     esac
+     ;;
 -  arm*-*-freebsd* | arm*-*-linux*)
 +  arm*-*-*)
      case ${target} in
        arm*-*-*)
  	host_extra_gcc_objs="driver-arm.o"
 diff --git a/gcc/configure.ac b/gcc/configure.ac
-index 0009d87..ec17e52 100644
+index 4c65d44..8a9a93c 100644
 --- a/gcc/configure.ac
 +++ b/gcc/configure.ac
-@@ -1630,8 +1630,8 @@ else
+@@ -1688,8 +1688,8 @@ else
  	# system.h from including gmp.h.
  	CC="${CC_FOR_BUILD}" CFLAGS="${CFLAGS_FOR_BUILD}" \
  	CXX="${CXX_FOR_BUILD}" CXXFLAGS="${CXXFLAGS_FOR_BUILD}" \
@@ -150,7 +150,7 @@ index 0009d87..ec17e52 100644
  		--enable-languages=${enable_languages-all} \
  		--target=$target_alias --host=$build_alias --build=$build_alias
 diff --git a/gcc/gengtype-lex.c b/gcc/gengtype-lex.c
-index 2d6efb7..22dc2da 100644
+index dcf6983..7a96f93 100644
 --- a/gcc/gengtype-lex.c
 +++ b/gcc/gengtype-lex.c
 @@ -1,4 +1,3 @@
