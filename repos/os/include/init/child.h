@@ -872,7 +872,7 @@ class Init::Child : Child_policy, Child_service::Wakeup
 			return NO_SIDE_EFFECTS;
 		}
 
-		void report_state(Xml_generator &xml, Report_detail const &detail) const
+		void report_state(Xml_generator &xml, Report_detail const &detail)
 		{
 			xml.node("child", [&] () {
 
