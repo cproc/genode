@@ -11,10 +11,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 46 insertions(+), 3 deletions(-)
 
 diff --git a/gcc/config.gcc b/gcc/config.gcc
-index c835734..30e16c4 100644
+index 1d5b23f..1840148 100644
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -1078,7 +1078,7 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
+@@ -1119,7 +1119,7 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
  	case ${target} in
  	arm*-*-eabi*)
  	  tm_file="$tm_file newlib-stdint.h"
@@ -24,10 +24,10 @@ index c835734..30e16c4 100644
  	  ;;
  	arm*-*-rtems*)
 diff --git a/gcc/config/arm/unknown-elf.h b/gcc/config/arm/unknown-elf.h
-index 17971bb..6b4b727 100644
+index fafe057..8bd23e0 100644
 --- a/gcc/config/arm/unknown-elf.h
 +++ b/gcc/config/arm/unknown-elf.h
-@@ -94,3 +94,19 @@
+@@ -98,3 +98,19 @@
     which will depend on abort, which is defined in libc.  */ 
  #undef LINK_GCC_C_SEQUENCE_SPEC
  #define LINK_GCC_C_SEQUENCE_SPEC "--start-group %G %L --end-group"
@@ -48,7 +48,7 @@ index 17971bb..6b4b727 100644
 +/* https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57699 */
 +#define NO_IMPLICIT_EXTERN_C
 diff --git a/gcc/config/i386/x86-64.h b/gcc/config/i386/x86-64.h
-index a1e145f..b3296c1 100644
+index 204f128..974cd36 100644
 --- a/gcc/config/i386/x86-64.h
 +++ b/gcc/config/i386/x86-64.h
 @@ -106,3 +106,22 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
@@ -75,10 +75,10 @@ index a1e145f..b3296c1 100644
 +/* https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57699 */
 +#define NO_IMPLICIT_EXTERN_C
 diff --git a/libgcc/config.host b/libgcc/config.host
-index b4b0665..48aabaf 100644
+index 124f2ce..7b25b79 100644
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -304,7 +304,7 @@ case ${host} in
+@@ -309,7 +309,7 @@ case ${host} in
    tmake_file=t-vxworks
    ;;
  *-*-elf)
@@ -87,7 +87,7 @@ index b4b0665..48aabaf 100644
    ;;
  esac
  
-@@ -401,8 +401,12 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
+@@ -414,8 +414,12 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
  	tm_file="$tm_file arm/bpabi-lib.h"
  	case ${host} in
  	arm*-*-eabi* | arm*-*-rtems*)
@@ -95,16 +95,16 @@ index b4b0665..48aabaf 100644
 +	  # The 't-eh-dw2-dip' tmake file is needed to let the tool chain use 'unwind-dw2-fde-dip.c',
 +	  # needed for the exception handling on Genode in the presence of shared libraries.
 +	  tmake_file="${tmake_file} t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver"
- 	  tmake_file="${tmake_file} arm/t-bpabi"
+ 	  tmake_file="${tmake_file} arm/t-bpabi t-crtfm"
 -	  extra_parts="crtbegin.o crtend.o crti.o crtn.o"
 +	  extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
  	  ;;
  	arm*-*-symbianelf*)
  	  tmake_file="${tmake_file} arm/t-symbian t-slibgcc-nolc-override"
-@@ -560,6 +564,10 @@ i[34567]86-*-elf*)
+@@ -585,6 +589,10 @@ i[34567]86-*-elf*)
  	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
  	;;
- x86_64-*-elf*)
+ x86_64-*-elf* | x86_64-*-rtems*)
 +	# The 't-slibgcc' tmake file is needed to have libgcc_eh.a built.
 +	# The 't-eh-dw2-dip' tmake file is needed to let the tool chain use 'unwind-dw2-fde-dip.c',
 +	# needed for the exception handling on Genode in the presence of shared libraries.
