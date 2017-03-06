@@ -1,9 +1,9 @@
 LICENSE   := LGPL
-VERSION   := 5.4.0
+VERSION   := 6.3.0
 DOWNLOADS := gcc.archive
 
 URL(gcc) := ftp://ftp.fu-berlin.de/gnu/gcc/gcc-$(VERSION)/gcc-$(VERSION).tar.bz2
-SHA(gcc) := 07524df2b4ab9070bad9c49ab668da72237b8115
+SHA(gcc) := 928ab552666ee08eed645ff20ceb49d139205dea
 DIR(gcc) := src/lib/stdcxx
 SIG(gcc) := ${URL(gcc)}
 KEY(gcc) := GNU
@@ -12,7 +12,7 @@ TAR_OPT(gcc) := gcc-$(VERSION)/libstdc++-v3 \
                 gcc-$(VERSION)/libgcc/gthr-single.h \
                 --strip-components=2
 
-PATCHES   := src/lib/stdcxx/type_traits.patch
+PATCHES   := src/lib/stdcxx/*.patch
 PATCH_OPT := -p1 -d src/lib/stdcxx
 
 DIRS := include/stdcxx
