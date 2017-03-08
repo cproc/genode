@@ -1,3 +1,5 @@
+REQUIRES = compile_fix
+
 TARGET = test-libext2fs
 LIBS   = libc libext2fs
 SRC_CC = main.cc
