@@ -1,3 +1,5 @@
+REQUIRES += compile_fix
+
 TARGET = openssh
 
 #

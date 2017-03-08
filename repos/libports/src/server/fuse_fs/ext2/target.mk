@@ -1,3 +1,5 @@
+REQUIRES = compile_fix
+
 FUSE_EXT2_DIR = $(call select_from_ports,fuse-ext2)/src/lib/fuse-ext2/fuse-ext2
 
 TARGET   = ext2_fuse_fs
