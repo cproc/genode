@@ -1,3 +1,5 @@
+REQUIRES = compile_fix
+
 PROGRAM_PREFIX = genode-arm-
 GDB_TARGET     = arm-none-eabi
 

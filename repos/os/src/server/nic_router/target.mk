@@ -1,5 +1,7 @@
 TARGET = nic_router
 
+REQUIRES = compile_fix
+
 LIBS += base net config timeout
 
 SRC_CC += arp_waiter.cc ip_rule.cc
