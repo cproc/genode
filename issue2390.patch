@@ -1,0 +1,56 @@
+diff --git a/kernel/fiasco/src/lib/minilibc/ia32/include/memcpy.h b/kernel/fiasco/src/lib/minilibc/ia32/include/memcpy.h
+index 1529372..ed1c4e4 100644
+--- a/kernel/fiasco/src/lib/minilibc/ia32/include/memcpy.h
++++ b/kernel/fiasco/src/lib/minilibc/ia32/include/memcpy.h
+@@ -6,7 +6,7 @@
+ 
+ __BEGIN_DECLS
+ 
+-extern inline void *memcpy(void *dest, const void *src, size_t n)
++static inline void *memcpy(void *dest, const void *src, size_t n)
+ {
+   unsigned dummy1, dummy2, dummy3;
+ 
+diff --git a/l4/pkg/bootstrap/server/src/Make.rules b/l4/pkg/bootstrap/server/src/Make.rules
+index aaa6570..892e3e2 100644
+--- a/l4/pkg/bootstrap/server/src/Make.rules
++++ b/l4/pkg/bootstrap/server/src/Make.rules
+@@ -197,9 +197,14 @@ $(od)bootstrap_$(ENTRY_FN).uimage: $(od)bootstrap.uimage
+    BID_POST_PROG_LINK_MSG_$(BOOTSTRAP_ELF_NAME) = echo -e "  ==> Post-processing $@"
+    BID_POST_PROG_LINK_$(BOOTSTRAP_ELF_NAME)     = \
+       $(VERBOSE)LANG=C $(NM) -C $@ | \
+-        LANG=C $(GREP) -q "V vtable for Platform_base" || \
+-           { echo -e "\nERROR: Missing at least one platform instantiation.\n"; \
+-             exit 1; } ; $(if $(BOOTSTRAP_NO_STRIP),,$(STRIP) $@)
++        LANG=C $(GREP) -E ' D __PLATFORMS_(BEGIN|END)$$' | \
++          (read a i; read b i; \
++           if [ "$$a" = "$$b" ]; then \
++             echo -e "\nERROR: Missing at least one platform instantiation.\n"; \
++             $(RM) $@; \
++             exit 1; \
++           fi ) || exit 1; \
++           $(if $(BOOTSTRAP_NO_STRIP),,$(STRIP) $@)
+ 
+    ifneq ($(BOOTSTRAP_DO_RAW_IMAGE)$(BOOTSTRAP_DO_UIMAGE),)
+      BOOTSTRAP_RAW      := $(od)bootstrap.raw
+diff --git a/l4/pkg/cxx/lib/base/src/cxa_pure_delete.cc b/l4/pkg/cxx/lib/base/src/cxa_pure_delete.cc
+index 0c74a38..2f8df9a 100644
+--- a/l4/pkg/cxx/lib/base/src/cxa_pure_delete.cc
++++ b/l4/pkg/cxx/lib/base/src/cxa_pure_delete.cc
+@@ -18,8 +18,16 @@
+ 
+ #include <l4/cxx/iostream>
+ 
++#include <stddef.h>
++
+ void operator delete (void *obj)
+ {
+   L4::cerr << "cxa pure delete operator called for object @" 
+            << L4::hex << obj << L4::dec << "\n";
+ }
++
++void operator delete (void *obj, size_t)
++{
++  L4::cerr << "cxa pure delete operator called for object @" 
++           << L4::hex << obj << L4::dec << "\n";
++}
