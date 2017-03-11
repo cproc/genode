@@ -519,7 +519,7 @@ namespace Nova {
 		union {
 
 			/* message payload */
-			mword_t msg[];
+			mword_t msg[0];
 
 			/* exception state */
 			struct {
