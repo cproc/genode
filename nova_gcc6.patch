@@ -1,0 +1,41 @@
+diff --git a/include/acpi_rsdt.hpp b/include/acpi_rsdt.hpp
+index a5868d9..3701e49 100644
+--- a/include/acpi_rsdt.hpp
++++ b/include/acpi_rsdt.hpp
+@@ -42,8 +42,8 @@ class Acpi_table_rsdt : public Acpi_table
+     public:
+         union
+         {
+-            uint32  rsdt[];
+-            uint64  xsdt[];
++            uint32  rsdt[0];
++            uint64  xsdt[0];
+         };
+ 
+         INIT
+diff --git a/include/regs.hpp b/include/regs.hpp
+index 570800d..e41f2e7 100644
+--- a/include/regs.hpp
++++ b/include/regs.hpp
+@@ -54,7 +54,7 @@ class Sys_regs
+                 mword   REG(cx);
+                 mword   REG(ax);
+             };
+-            mword gpr[];
++            mword gpr[0];
+         };
+ 
+         enum Status
+diff --git a/include/utcb.hpp b/include/utcb.hpp
+index 312cb1d..57ab840 100644
+--- a/include/utcb.hpp
++++ b/include/utcb.hpp
+@@ -90,7 +90,7 @@ class Utcb_data
+                 uint64          tsc_val, tsc_off;
+             };
+ 
+-            mword mr[];
++            mword mr[0];
+         };
+ };
+ 
