@@ -1,5 +1,7 @@
 #!/bin/bash
 
+LANG=C
+
 function extract_defines()
 {
   sed -e '/DEFINES       =/!d' \
