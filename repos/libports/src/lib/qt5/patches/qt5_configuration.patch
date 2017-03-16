@@ -9,13 +9,13 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtbase/configure                                   |    8 
  qtbase/mkspecs/genode-g++/qmake.conf               |   12 
  qtbase/mkspecs/genode-g++/qplatformdefs.h          |  112 ++++
- qtbase/src/corelib/global/qconfig-genode.h         |  546 ++++++++++++++++++++
+ qtbase/src/corelib/global/qconfig-genode.h         |  537 ++++++++++++++++++++
  qtdeclarative/examples/quick/quick.pro             |    6 
  qtdeclarative/src/imports/imports.pro              |    2 
  qtdeclarative/tests/tests.pro                      |    4 
  qtquick1/examples/declarative/declarative.pro      |    1 
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
- 11 files changed, 707 insertions(+), 34 deletions(-)
+ 11 files changed, 698 insertions(+), 34 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
@@ -262,14 +262,11 @@ index 0000000..4d2c580
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
 new file mode 100644
-index 0000000..681af14
+index 0000000..c9b3e6b
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig-genode.h
-@@ -0,0 +1,546 @@
+@@ -0,0 +1,537 @@
 +/* Data structures */
-+#ifndef QT_NO_STL
-+#  define QT_NO_STL
-+#endif
 +//#ifndef QT_NO_TEXTDATE
 +//#  define QT_NO_TEXTDATE
 +//#endif
@@ -515,12 +512,6 @@ index 0000000..681af14
 +#  define QT_NO_FTP
 +#endif
 +/* found in source files */
-+//#ifndef QT_NO_LOCALSOCKET
-+//#  define QT_NO_LOCALSOCKET
-+//#endif
-+//#ifndef QT_NO_LOCALSERVER
-+//#  define QT_NO_LOCALSERVER
-+//#endif
 +#ifndef QT_NO_NETWORKINTERFACE
 +#  define QT_NO_NETWORKINTERFACE
 +#endif
