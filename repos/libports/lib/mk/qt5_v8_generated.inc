@@ -134,7 +134,7 @@ QT_SOURCES += \
   macro-assembler-x64.cc \
   regexp-macro-assembler-x64.cc \
   stub-cache-x64.cc \
-  platform-genode.cc \
+  platform-linux.cc \
   platform-posix.cc \
   objects-debug.cc \
   prettyprinter.cc \
