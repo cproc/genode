@@ -1,27 +1,24 @@
-QT_DEFINES += -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_V8_LIB -DV8_SHARED -DUSING_V8_SHARED
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/include \
-  qtbase/include/QtCore \
-  qtbase/include/QtCore/5.1.0 \
-  qtbase/include/QtCore/5.1.0/QtCore \
-  qtbase/include/QtGui \
-  qtbase/include/QtGui/5.1.0 \
-  qtbase/include/QtGui/5.1.0/QtGui \
-  qtbase/include/QtNetwork \
   qtbase/mkspecs/genode-g++ \
-  qtdeclarative/include \
-  qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.1.0 \
-  qtdeclarative/include/QtQml/5.1.0/QtQml \
-  qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.1.0 \
-  qtdeclarative/include/QtQuick/5.1.0/QtQuick \
   qtdeclarative/src/quick \
-  qtjsbackend/include \
-  qtjsbackend/include/QtV8 \
-  qtjsbackend/include/QtV8/5.1.0 \
-  qtjsbackend/include/QtV8/5.1.0/QtV8 \
+  qtdeclarative/include \
+  qtdeclarative/include/QtQuick \
+  qtdeclarative/include/QtQuick/5.2.1 \
+  qtdeclarative/include/QtQuick/5.2.1/QtQuick \
+  qtdeclarative/src/quick \
+  qtdeclarative/include/QtQml/5.2.1 \
+  qtdeclarative/include/QtQml/5.2.1/QtQml \
+  qtdeclarative/include/QtQml \
+  qtbase/include/QtGui/5.2.1 \
+  qtbase/include/QtGui/5.2.1/QtGui \
+  qtbase/include \
+  qtbase/include/QtNetwork \
+  qtbase/include/QtGui \
+  qtbase/include/QtCore/5.2.1 \
+  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include/QtCore \
 
 QT_SOURCES += \
   qquickapplication.cpp \
@@ -48,15 +45,19 @@ QT_SOURCES += \
   qquicksvgparser.cpp \
   qquickvaluetypes.cpp \
   qquickglobal.cpp \
-  qsgdefaultrenderer.cpp \
+  qquickanimator.cpp \
+  qquickanimatorjob.cpp \
+  qquickanimatorcontroller.cpp \
+  qsgbatchrenderer.cpp \
   qsggeometry.cpp \
   qsgmaterial.cpp \
   qsgnode.cpp \
   qsgnodeupdater.cpp \
   qsgrenderer.cpp \
   qsgrendernode.cpp \
-  qsgsimplematerial.cpp \
+  qsgshaderrewriter.cpp \
   qsgareaallocator.cpp \
+  qsgatlastexture.cpp \
   qsgdepthstencilbuffer.cpp \
   qsgflatcolormaterial.cpp \
   qsgsimplerectnode.cpp \
@@ -67,6 +68,8 @@ QT_SOURCES += \
   qsgtextureprovider.cpp \
   qsgpainternode.cpp \
   qsgdistancefieldutil.cpp \
+  qsgsimplematerial.cpp \
+  qsgshadersourcebuilder.cpp \
   qsgadaptationlayer.cpp \
   qsgcontext.cpp \
   qsgcontextplugin.cpp \
@@ -77,7 +80,6 @@ QT_SOURCES += \
   qsgdistancefieldglyphnode_p.cpp \
   qsgdefaultimagenode.cpp \
   qsgdefaultrectanglenode.cpp \
-  qsgflashnode.cpp \
   qsgshareddistancefieldglyphcache.cpp \
   qsgrenderloop.cpp \
   qsgthreadedrenderloop.cpp \
@@ -131,6 +133,7 @@ QT_SOURCES += \
   qquickitemviewtransition.cpp \
   qquickwindowmodule.cpp \
   qquickscreen.cpp \
+  qquickframebufferobject.cpp \
   qquickshadereffect.cpp \
   qquickshadereffectmesh.cpp \
   qquickshadereffectnode.cpp \
@@ -144,6 +147,8 @@ QT_SOURCES += \
   designersupport.cpp \
   designerwindowmanager.cpp \
   qtquick2.cpp \
+  qrc_scenegraph.cpp \
+  qrc_items.cpp \
   moc_qquickapplication_p.cpp \
   moc_qquickanimation_p.cpp \
   moc_qquicksystempalette_p.cpp \
@@ -162,8 +167,12 @@ QT_SOURCES += \
   moc_qquickpath_p.cpp \
   moc_qquickpathinterpolator_p.cpp \
   moc_qquickvaluetypes_p.cpp \
-  moc_qsgdefaultrenderer_p.cpp \
+  moc_qquickanimator_p.cpp \
+  moc_qquickanimatorjob_p.cpp \
+  moc_qquickanimatorcontroller_p.cpp \
+  moc_qsgbatchrenderer_p.cpp \
   moc_qsgrenderer_p.cpp \
+  moc_qsgatlastexture_p.cpp \
   moc_qsgtexture.cpp \
   moc_qsgtexture_p.cpp \
   moc_qsgtextureprovider.cpp \
@@ -215,12 +224,14 @@ QT_SOURCES += \
   moc_qquickitemview_p.cpp \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
+  moc_qquickframebufferobject.cpp \
   moc_qquickshadereffect_p.cpp \
   moc_qquickshadereffectmesh_p.cpp \
   moc_qquickshadereffectnode_p.cpp \
   moc_qquickshadereffectsource_p.cpp \
   moc_qquickcanvasitem_p.cpp \
   moc_qquickcanvascontext_p.cpp \
+  moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
   moc_designerwindowmanager_p.cpp
 
@@ -260,8 +271,12 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickpath_p.cpp \
   moc_qquickpathinterpolator_p.cpp \
   moc_qquickvaluetypes_p.cpp \
-  moc_qsgdefaultrenderer_p.cpp \
+  moc_qquickanimator_p.cpp \
+  moc_qquickanimatorjob_p.cpp \
+  moc_qquickanimatorcontroller_p.cpp \
+  moc_qsgbatchrenderer_p.cpp \
   moc_qsgrenderer_p.cpp \
+  moc_qsgatlastexture_p.cpp \
   moc_qsgtexture.cpp \
   moc_qsgtexture_p.cpp \
   moc_qsgtextureprovider.cpp \
@@ -319,12 +334,14 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickitemview_p.cpp \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
+  moc_qquickframebufferobject.cpp \
   moc_qquickshadereffect_p.cpp \
   moc_qquickshadereffectmesh_p.cpp \
   moc_qquickshadereffectnode_p.cpp \
   moc_qquickshadereffectsource_p.cpp \
   moc_qquickcanvasitem_p.cpp \
   moc_qquickcanvascontext_p.cpp \
+  moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
   moc_designerwindowmanager_p.cpp
 
@@ -340,5 +357,6 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qquickimage.moc \
   qquickflipable.moc \
   qquickwindowmodule.moc \
+  qquickframebufferobject.moc \
   qquickshadereffectsource.moc
 
