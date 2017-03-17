@@ -43,12 +43,10 @@ $(QT5_PORT_DIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.t
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/NumberConstructor.cpp -i > $(dir $@)/NumberConstructor.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/NumberPrototype.cpp -i   > $(dir $@)/NumberPrototype.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/ObjectConstructor.cpp -i > $(dir $@)/ObjectConstructor.lut.h
-	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/ObjectPrototype.cpp -i   > $(dir $@)/ObjectPrototype.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/RegExpConstructor.cpp -i > $(dir $@)/RegExpConstructor.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/RegExpObject.cpp -i      > $(dir $@)/RegExpObject.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/RegExpPrototype.cpp -i   > $(dir $@)/RegExpPrototype.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/StringConstructor.cpp -i > $(dir $@)/StringConstructor.lut.h
-	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/runtime/StringPrototype.cpp -i   > $(dir $@)/StringPrototype.lut.h
 	$(VERBOSE)perl $(JAVASCRIPTCORE_DIR)/create_hash_table $(JAVASCRIPTCORE_DIR)/parser/Keywords.table -i         > $(dir $@)/Lexer.lut.h
 
 	@# create_regex_tables 
