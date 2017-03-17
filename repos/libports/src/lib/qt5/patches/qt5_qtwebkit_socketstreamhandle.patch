@@ -21,10 +21,10 @@ index f447cc2..4e79275 100644
      SocketStreamHandle* m_streamHandle;
  };
 diff --git a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
-index 271edd8..818fada 100644
+index 103dc1f..884d23a 100644
 --- a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
 +++ b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
-@@ -57,6 +57,19 @@ SocketStreamHandlePrivate::SocketStreamHandlePrivate(SocketStreamHandle* streamH
+@@ -58,6 +58,19 @@ SocketStreamHandlePrivate::SocketStreamHandlePrivate(SocketStreamHandle* streamH
          return;
  
      initConnections();
@@ -44,7 +44,7 @@ index 271edd8..818fada 100644
  
      unsigned int port = url.hasPort() ? url.port() : (isSecure ? 443 : 80);
  
-@@ -184,6 +197,7 @@ SocketStreamHandle::SocketStreamHandle(const KURL& url, SocketStreamHandleClient
+@@ -188,6 +201,7 @@ SocketStreamHandle::SocketStreamHandle(const KURL& url, SocketStreamHandleClient
  {
      LOG(Network, "SocketStreamHandle %p new client %p", this, m_client);
      m_p = new SocketStreamHandlePrivate(this, url);

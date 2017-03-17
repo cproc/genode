@@ -8,6 +8,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtbase/include/QtCore/QtConfig                     |    1 +
  qtbase/include/QtCore/QtCoreDepends                |    1 +
  qtbase/include/QtCore/qconfig.h                    |    1 +
+ qtbase/include/QtCore/qfeatures.h                  |    1 +
  qtbase/include/QtGui/QtGuiDepends                  |    2 ++
  qtbase/include/QtNetwork/QtNetworkDepends          |    2 ++
  .../include/QtPrintSupport/QtPrintSupportDepends   |    4 ++++
@@ -20,11 +21,12 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtwebkit/include/QtWebKit/QtWebKitDepends          |    4 ++++
  .../include/QtWebKitWidgets/QtWebKitWidgetsDepends |    7 +++++++
  .../include/QtXmlPatterns/QtXmlPatternsDepends     |    3 +++
- 16 files changed, 40 insertions(+)
+ 17 files changed, 41 insertions(+)
  create mode 100644 .stgit-new.txt~
  create mode 100644 qtbase/include/QtCore/QtConfig
  create mode 100644 qtbase/include/QtCore/QtCoreDepends
  create mode 100644 qtbase/include/QtCore/qconfig.h
+ create mode 100644 qtbase/include/QtCore/qfeatures.h
  create mode 100644 qtbase/include/QtGui/QtGuiDepends
  create mode 100644 qtbase/include/QtNetwork/QtNetworkDepends
  create mode 100644 qtbase/include/QtPrintSupport/QtPrintSupportDepends
@@ -62,6 +64,13 @@ index 0000000..aa8a3d6
 +++ b/qtbase/include/QtCore/qconfig.h
 @@ -0,0 +1 @@
 +#include "../../src/corelib/global/qconfig.h"
+diff --git a/qtbase/include/QtCore/qfeatures.h b/qtbase/include/QtCore/qfeatures.h
+new file mode 100644
+index 0000000..2501992
+--- /dev/null
++++ b/qtbase/include/QtCore/qfeatures.h
+@@ -0,0 +1 @@
++#include "../../src/corelib/global/qfeatures.h"
 diff --git a/qtbase/include/QtGui/QtGuiDepends b/qtbase/include/QtGui/QtGuiDepends
 new file mode 100644
 index 0000000..52697ae

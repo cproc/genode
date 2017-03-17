@@ -32,7 +32,6 @@ class QNitpickerIntegration : public QPlatformIntegration
 		QSignalHandlerThread      _signal_handler_thread;
 
 		QNitpickerScreen         *_nitpicker_screen;
-	    QAbstractEventDispatcher *_event_dispatcher;
 
 		/*
 		 * A reference to the signal receiver gets passed to newly created
@@ -50,7 +49,8 @@ class QNitpickerIntegration : public QPlatformIntegration
 
 		QPlatformWindow *createPlatformWindow(QWindow *window) const override;
 		QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
-		QAbstractEventDispatcher *guiThreadEventDispatcher() const override;
+		QAbstractEventDispatcher *createEventDispatcher() const override;
+		void initialize() override;
 
 		QPlatformFontDatabase *fontDatabase() const override;
 
