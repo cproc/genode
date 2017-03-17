@@ -4,98 +4,92 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- configure                                          |    2 
- qt.pro                                             |   42 +-
- qtbase/configure                                   |    8 
- qtbase/mkspecs/genode-g++/qmake.conf               |   12 
- qtbase/mkspecs/genode-g++/qplatformdefs.h          |  112 ++++
- qtbase/src/corelib/global/qconfig-genode.h         |  537 ++++++++++++++++++++
+ qt.pro                                             |   50 +-
+ qtbase/configure                                   |    6 
+ qtbase/mkspecs/genode-g++/qmake.conf               |   12 +
+ qtbase/mkspecs/genode-g++/qplatformdefs.h          |  112 +++++
+ qtbase/src/corelib/global/qconfig-genode.h         |  425 ++++++++++++++++++++
  qtdeclarative/examples/quick/quick.pro             |    6 
- qtdeclarative/src/imports/imports.pro              |    2 
  qtdeclarative/tests/tests.pro                      |    4 
- qtquick1/examples/declarative/declarative.pro      |    1 
- qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
- 11 files changed, 698 insertions(+), 34 deletions(-)
+ qtwebkit/Tools/qmake/mkspecs/features/features.prf |    8 
+ 8 files changed, 588 insertions(+), 35 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
 
-diff --git a/configure b/configure
-index 9ba24b5..d0f1357 100755
---- a/configure
-+++ b/configure
-@@ -60,4 +60,4 @@ echo "+ cd .."
- cd ..
- 
- echo "+ qtbase/bin/qmake $srcpath"
--exec qtbase/bin/qmake "$srcpath"
-+exec qtbase/bin/qmake -r "$srcpath"
 diff --git a/qt.pro b/qt.pro
-index 218701a..bb4c037 100644
+index 48b2918..b7ef46c 100644
 --- a/qt.pro
 +++ b/qt.pro
-@@ -54,33 +54,33 @@ defineTest(addModule) {
+@@ -54,36 +54,36 @@ defineTest(addModule) {
  # it may not build.
  
  addModule(qtbase)
+-addModule(qtandroidextras, qtbase)
+-addModule(qtmacextras, qtbase)
 -addModule(qtx11extras, qtbase)
 -addModule(qlalr, qtbase)
++#addModule(qtandroidextras, qtbase)
++#addModule(qtmacextras, qtbase)
 +#addModule(qtx11extras, qtbase)
 +#addModule(qlalr, qtbase)
  addModule(qtsvg, qtbase)
  addModule(qtxmlpatterns, qtbase)
- addModule(qtjsbackend, qtbase)
- addModule(qtdeclarative, qtjsbackend, qtsvg qtxmlpatterns)
+ addModule(qtdeclarative, qtbase, qtsvg qtxmlpatterns)
 -addModule(qtquickcontrols, qtdeclarative)
 -addModule(qtmultimedia, qtdeclarative)
+-addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 -addModule(qtactiveqt, qtbase)
 -addModule(qt3d, qtdeclarative)
 -addModule(qtjsondb, qtdeclarative)
--addModule(qtsystems, qtbase, qtdeclarative qtjsondb)
--addModule(qtlocation, qtbase, qt3d qtjsondb qtsystems qtmultimedia)
+-addModule(qtsystems, qtbase, qtdeclarative)
+-addModule(qtlocation, qtbase, qt3d qtsystems qtmultimedia)
 -addModule(qtsensors, qtbase, qtdeclarative)
--addModule(qtconnectivity, qtsystems)
+-addModule(qtconnectivity, qtbase, qtdeclarative)
 -addModule(qtfeedback, qtdeclarative, qtmultimedia)
 -addModule(qtpim, qtdeclarative, qtjsondb)
 +#addModule(qtquickcontrols, qtdeclarative)
 +#addModule(qtmultimedia, qtdeclarative)
++#addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 +#addModule(qtactiveqt, qtbase)
 +#addModule(qt3d, qtdeclarative)
 +#addModule(qtjsondb, qtdeclarative)
-+#addModule(qtsystems, qtbase, qtdeclarative qtjsondb)
-+#addModule(qtlocation, qtbase, qt3d qtjsondb qtsystems qtmultimedia)
++#addModule(qtsystems, qtbase, qtdeclarative)
++#addModule(qtlocation, qtbase, qt3d qtsystems qtmultimedia)
 +#addModule(qtsensors, qtbase, qtdeclarative)
-+#addModule(qtconnectivity, qtsystems)
++#addModule(qtconnectivity, qtbase, qtdeclarative)
 +#addModule(qtfeedback, qtdeclarative, qtmultimedia)
 +#addModule(qtpim, qtdeclarative, qtjsondb)
- addModule(qtwebkit, qtdeclarative, qtlocation qtsensors, WebKit.pro)
+ addModule(qtwebkit, qtdeclarative, qtlocation qtmultimedia qtsensors, WebKit.pro)
  addModule(qttools, qtbase, qtdeclarative qtactiveqt qtwebkit)
  addModule(qtwebkit-examples, qtwebkit qttools)
  addModule(qtimageformats, qtbase)
 -addModule(qtgraphicaleffects, qtdeclarative)
 +#addModule(qtgraphicaleffects, qtdeclarative)
- addModule(qtscript, qtbase)
--addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit qttools)
+ addModule(qtscript, qtbase, qttools)
+-addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
 -addModule(qtdocgallery, qtdeclarative, qtjsondb)
 -!win32:!mac:addModule(qtwayland, qtbase, qtdeclarative)
 -addModule(qtserialport, qtbase)
+-addModule(qtenginio, qtdeclarative)
 -addModule(qttranslations, qttools)
 -addModule(qtdoc, qtdeclarative)
 -addModule(qtqa, qtbase)
-+#addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit qttools)
++#addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
 +#addModule(qtdocgallery, qtdeclarative, qtjsondb)
 +#!win32:!mac:addModule(qtwayland, qtbase, qtdeclarative)
 +#addModule(qtserialport, qtbase)
++#addModule(qtenginio, qtdeclarative)
 +#addModule(qttranslations, qttools)
 +#addModule(qtdoc, qtdeclarative)
 +#addModule(qtqa, qtbase)
 diff --git a/qtbase/configure b/qtbase/configure
-index d7c9674..956c3e1 100755
+index aaa59bd..e3ed76e 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
-@@ -857,10 +857,10 @@ CFG_XINERAMA=runtime
- CFG_XFIXES=runtime
+@@ -597,10 +597,10 @@ CFG_XFIXES=runtime
  CFG_ZLIB=auto
+ CFG_MTDEV=auto
  CFG_SQLITE=qt
 -CFG_GIF=auto
 +CFG_GIF=yes
@@ -106,16 +100,7 @@ index d7c9674..956c3e1 100755
  CFG_LIBJPEG=auto
  CFG_XCURSOR=runtime
  CFG_XRANDR=runtime
-@@ -883,7 +883,7 @@ CFG_SKIP_MODULES=""
- CFG_COMPILE_EXAMPLES=auto
- CFG_RELEASE_QMAKE=no
- CFG_AUDIO_BACKEND=auto
--CFG_V8SNAPSHOT=auto
-+CFG_V8SNAPSHOT=no
- CFG_QML_DEBUG=yes
- CFG_JAVASCRIPTCORE_JIT=auto
- CFG_PKGCONFIG=auto
-@@ -949,7 +949,7 @@ CFG_GETADDRINFO=auto
+@@ -691,7 +691,7 @@ CFG_GETADDRINFO=auto
  CFG_IPV6IFNAME=auto
  CFG_GETIFADDRS=auto
  CFG_INOTIFY=auto
@@ -123,7 +108,7 @@ index d7c9674..956c3e1 100755
 +CFG_EVENTFD=no
  CFG_RPATH=yes
  CFG_FRAMEWORK=auto
- CFG_MAC_HARFBUZZ=no
+ DEFINES=
 diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
 new file mode 100644
 index 0000000..f99671f
@@ -262,10 +247,10 @@ index 0000000..4d2c580
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/qconfig-genode.h b/qtbase/src/corelib/global/qconfig-genode.h
 new file mode 100644
-index 0000000..c9b3e6b
+index 0000000..7e3af71
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig-genode.h
-@@ -0,0 +1,537 @@
+@@ -0,0 +1,425 @@
 +/* Data structures */
 +//#ifndef QT_NO_TEXTDATE
 +//#  define QT_NO_TEXTDATE
@@ -302,9 +287,6 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_PROGRESSDIALOG
 +//#  define QT_NO_PROGRESSDIALOG
 +//#endif
-+//#ifndef QT_NO_TABDIALOG
-+//#  define QT_NO_TABDIALOG
-+//#endif
 +//#ifndef QT_NO_WIZARD
 +//#  define QT_NO_WIZARD
 +//#endif
@@ -336,9 +318,6 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_FREETYPE
 +//#  define QT_NO_FREETYPE
 +//#endif
-+#ifndef QT_NO_QWS_QPF2
-+#  define QT_NO_QWS_QPF2
-+#endif
 +
 +/* Images */
 +//#ifndef QT_NO_IMAGEFORMATPLUGIN
@@ -373,9 +352,6 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_BIG_CODECS
 +//#  define QT_NO_BIG_CODECS
 +//#endif
-+//#ifndef QT_NO_QWS_INPUTMETHODS
-+//#  define QT_NO_QWS_INPUTMETHODS
-+//#endif
 +//#ifndef QT_NO_TEXTCODEC
 +//#  define QT_NO_TEXTCODEC
 +//#endif
@@ -384,9 +360,6 @@ index 0000000..c9b3e6b
 +//#endif
 +//#ifndef QT_NO_TRANSLATION
 +//#  define QT_NO_TRANSLATION
-+//#endif
-+//#ifndef QT_NO_TRANSLATION_UTF8
-+//#  define QT_NO_TRANSLATION_UTF8
 +//#endif
 +
 +/* ItemViews */
@@ -455,12 +428,6 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_SHORTCUT
 +//#  define QT_NO_SHORTCUT
 +//#endif
-+#ifndef QT_NO_SOUND
-+#  define QT_NO_SOUND
-+#endif
-+#ifndef QT_NO_SYSTEMLOCALE
-+#  define QT_NO_SYSTEMLOCALE
-+#endif
 +#ifndef QT_NO_SYSTEMSEMAPHORE
 +#  define QT_NO_SYSTEMSEMAPHORE
 +#endif
@@ -487,12 +454,6 @@ index 0000000..c9b3e6b
 +//#endif
 +
 +/* Networking */
-+#ifndef QT_NO_COP
-+#  define QT_NO_COP
-+#endif
-+//#ifndef QT_NO_HOSTINFO
-+//#  define QT_NO_HOSTINFO
-+//#endif
 +//#ifndef QT_NO_HTTP
 +//#  define QT_NO_HTTP
 +//#endif
@@ -505,13 +466,9 @@ index 0000000..c9b3e6b
 +#ifndef QT_NO_UDPSOCKET
 +#  define QT_NO_UDPSOCKET
 +#endif
-+#ifndef QT_NO_URLINFO
-+#  define QT_NO_URLINFO
-+#endif
 +#ifndef QT_NO_FTP
 +#  define QT_NO_FTP
 +#endif
-+/* found in source files */
 +#ifndef QT_NO_NETWORKINTERFACE
 +#  define QT_NO_NETWORKINTERFACE
 +#endif
@@ -520,12 +477,6 @@ index 0000000..c9b3e6b
 +/* Painting */
 +//#ifndef QT_NO_COLORNAMES
 +//#  define QT_NO_COLORNAMES
-+//#endif
-+//#ifndef QT_NO_DIRECTPAINTER
-+//#  define QT_NO_DIRECTPAINTER
-+//#endif
-+//#ifndef QT_NO_PAINTONSCREEN
-+//#  define QT_NO_PAINTONSCREEN
 +//#endif
 +//#ifndef QT_NO_PAINT_DEBUG
 +//#  define QT_NO_PAINT_DEBUG
@@ -539,73 +490,6 @@ index 0000000..c9b3e6b
 +#ifndef QT_NO_CUPS
 +#  define QT_NO_CUPS
 +#endif
-+
-+/* Qt for Embedded Linux */
-+//#ifndef QT_NO_QWSEMBEDWIDGET
-+//#  define QT_NO_QWSEMBEDWIDGET
-+//#endif
-+//#ifndef QT_NO_QWS_ALPHA_CURSOR
-+//#  define QT_NO_QWS_ALPHA_CURSOR
-+//#endif
-+#ifndef QT_NO_QWS_CURSOR
-+#  define QT_NO_QWS_CURSOR
-+#endif
-+//#ifndef QT_NO_QWS_DECORATION_DEFAULT
-+//#  define QT_NO_QWS_DECORATION_DEFAULT
-+//#endif
-+//#ifndef QT_NO_QWS_DECORATION_STYLED
-+//#  define QT_NO_QWS_DECORATION_STYLED
-+//#endif
-+//#ifndef QT_NO_QWS_DECORATION_WINDOWS
-+//#  define QT_NO_QWS_DECORATION_WINDOWS
-+//#endif
-+//#ifndef QT_NO_QWS_MANAGER
-+//#  define QT_NO_QWS_MANAGER
-+//#endif
-+//#ifndef QT_NO_QWS_KEYBOARD
-+//#  define QT_NO_QWS_KEYBOARD
-+//#endif
-+//#ifndef QT_NO_QWS_MOUSE
-+//#  define QT_NO_QWS_MOUSE
-+//#endif
-+//#ifndef QT_NO_QWS_MOUSE_AUTO
-+//#  define QT_NO_QWS_MOUSE_AUTO
-+//#endif
-+//#ifndef QT_NO_QWS_MOUSE_MANUAL
-+//#  define QT_NO_QWS_MOUSE_MANUAL
-+//#endif
-+#ifndef QT_NO_QWS_MULTIPROCESS
-+#  define QT_NO_QWS_MULTIPROCESS
-+#endif
-+#ifndef QT_NO_QWS_SOUNDSERVER
-+#  define QT_NO_QWS_SOUNDSERVER
-+#endif
-+//#ifndef QT_NO_QWS_PROPERTIES
-+//#  define QT_NO_QWS_PROPERTIES
-+//#endif
-+//#ifndef QT_NO_QWS_PROXYSCREEN
-+//#  define QT_NO_QWS_PROXYSCREEN
-+//#endif
-+//#ifndef QT_NO_QWS_DYNAMICSCREENTRANSFORMATION
-+//#  define QT_NO_QWS_DYNAMICSCREENTRANSFORMATION
-+//#endif
-+
-+/* SVG */
-+//#ifndef QT_NO_SVG
-+//#  define QT_NO_SVG
-+//#endif
-+//#ifndef QT_NO_GRAPHICSSVGITEM
-+//#  define QT_NO_GRAPHICSSVGITEM
-+//#endif
-+//#ifndef QT_NO_SVGGENERATOR
-+//#  define QT_NO_SVGGENERATOR
-+//#endif
-+//#ifndef QT_NO_SVGRENDERER
-+//#  define QT_NO_SVGRENDERER
-+//#endif
-+//#ifndef QT_NO_SVGWIDGET
-+//#  define QT_NO_SVGWIDGET
-+//#endif
 +
 +/* Styles */
 +//#ifndef QT_NO_STYLE_FUSION
@@ -636,9 +520,6 @@ index 0000000..c9b3e6b
 +//#endif
 +//#ifndef QT_NO_DESKTOPSERVICES
 +//#  define QT_NO_DESKTOPSERVICES
-+//#endif
-+//#ifndef QT_NO_SCRIPT
-+//#  define QT_NO_SCRIPT
 +//#endif
 +//#ifndef QT_NO_SYSTEMTRAYICON
 +//#  define QT_NO_SYSTEMTRAYICON
@@ -720,9 +601,6 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_SPLITTER
 +//#  define QT_NO_SPLITTER
 +//#endif
-+//#ifndef QT_NO_SIGNALMAPPER
-+//#  define QT_NO_SIGNALMAPPER
-+//#endif
 +//#ifndef QT_NO_SIZEGRIP
 +//#  define QT_NO_SIZEGRIP
 +//#endif
@@ -798,16 +676,11 @@ index 0000000..c9b3e6b
 +//#ifndef QT_NO_VALIDATOR
 +//#  define QT_NO_VALIDATOR
 +//#endif
-+
-+/* Windows */
-+//#ifndef QT_NO_WIN_ACTIVEQT
-+//#  define QT_NO_WIN_ACTIVEQT
-+//#endif
 diff --git a/qtdeclarative/examples/quick/quick.pro b/qtdeclarative/examples/quick/quick.pro
-index 311e264..b356a56 100644
+index c6b7ee1..d703501 100644
 --- a/qtdeclarative/examples/quick/quick.pro
 +++ b/qtdeclarative/examples/quick/quick.pro
-@@ -12,7 +12,6 @@ SUBDIRS = accessibility \
+@@ -13,7 +13,6 @@ SUBDIRS =   quick-accessibility \
              positioners \
              righttoleft \
              scenegraph \
@@ -815,7 +688,7 @@ index 311e264..b356a56 100644
              text \
              threading \
              touchinteraction \
-@@ -29,6 +28,11 @@ qtHaveModule(widgets) {
+@@ -30,6 +29,11 @@ qtHaveModule(widgets) {
      SUBDIRS += embeddedinwidgets
  }
  
@@ -827,16 +700,6 @@ index 311e264..b356a56 100644
  EXAMPLE_FILES = \
      ui-components \
      shared
-diff --git a/qtdeclarative/src/imports/imports.pro b/qtdeclarative/src/imports/imports.pro
-index 733c7c4..fb1a413 100644
---- a/qtdeclarative/src/imports/imports.pro
-+++ b/qtdeclarative/src/imports/imports.pro
-@@ -16,4 +16,4 @@ qtHaveModule(quick) {
- 
- qtHaveModule(xmlpatterns) : SUBDIRS += xmllistmodel
- 
--qtHaveModule(widgets) : SUBDIRS += widgets
-+qtHaveModule(widgets),qtHaveModule(quick): SUBDIRS += widgets
 diff --git a/qtdeclarative/tests/tests.pro b/qtdeclarative/tests/tests.pro
 index 85e4f3a..9aa752b 100644
 --- a/qtdeclarative/tests/tests.pro
@@ -846,23 +709,11 @@ index 85e4f3a..9aa752b 100644
 -SUBDIRS +=  auto
 +#TEMPLATE = subdirs
 +#SUBDIRS +=  auto
-diff --git a/qtquick1/examples/declarative/declarative.pro b/qtquick1/examples/declarative/declarative.pro
-index 91378da..123539f 100644
---- a/qtquick1/examples/declarative/declarative.pro
-+++ b/qtquick1/examples/declarative/declarative.pro
-@@ -16,7 +16,6 @@ SUBDIRS = \
-     righttoleft \
-     rssnews \
-     samegame \
--    shadereffects \
-     snake \
-     sqllocalstorage \
-     text \
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index ddbccf9..e4d3999 100644
+index aa8eaae..ee47725 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-@@ -39,8 +39,8 @@ defineTest(detectFeatures) {
+@@ -42,8 +42,8 @@ defineTest(detectFeatures) {
  
      config_libxml2: WEBKIT_CONFIG += use_libxml2
      config_libxslt: WEBKIT_CONFIG += xslt
@@ -873,7 +724,7 @@ index ddbccf9..e4d3999 100644
  
      # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
      # is using the system libraries, use them to take advantage of the WebCore image decoders as well.
-@@ -81,7 +81,7 @@ defineTest(detectFeatures) {
+@@ -84,7 +84,7 @@ defineTest(detectFeatures) {
  
      # Enable the USE(3D_GRAPHICS) flag when QtOpenGL is enabled.
      # Disable on Windows CE for now, as ANGLE won't compile.
@@ -882,3 +733,12 @@ index ddbccf9..e4d3999 100644
  
      # Temporarily disable FTPDIR on Windows CE (missing functions from time.h)
      wince* {
+@@ -124,7 +124,7 @@ defineTest(detectFeatures) {
+     }
+ 
+     # Gamepad API Support (depends on udev)
+-    linux: WEBKIT_CONFIG += gamepad
++    #linux: WEBKIT_CONFIG += gamepad
+ 
+     # Support for Graphics Surface
+     # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics

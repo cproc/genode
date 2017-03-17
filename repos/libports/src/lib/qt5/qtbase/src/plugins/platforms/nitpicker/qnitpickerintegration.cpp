@@ -73,7 +73,7 @@ QPlatformBackingStore *QNitpickerIntegration::createPlatformBackingStore(QWindow
 }
 
 
-QAbstractEventDispatcher *QNitpickerIntegration::guiThreadEventDispatcher() const
+QAbstractEventDispatcher *QNitpickerIntegration::createEventDispatcher() const
 {
 	if (verbose)
 		qDebug() << "QNitpickerIntegration::guiThreadEventDispatcher()";
