@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 20 insertions(+)
 
 diff --git a/qtbase/src/network/access/qhttpnetworkreply.cpp b/qtbase/src/network/access/qhttpnetworkreply.cpp
-index eb8a886..1150088 100644
+index 1b9e1f5..b4eff57 100644
 --- a/qtbase/src/network/access/qhttpnetworkreply.cpp
 +++ b/qtbase/src/network/access/qhttpnetworkreply.cpp
 @@ -238,8 +238,16 @@ void QHttpNetworkReply::setReadBufferSize(qint64 size)
@@ -31,7 +31,7 @@ index eb8a886..1150088 100644
  
  void QHttpNetworkReply::setUserProvidedDownloadBuffer(char* b)
 diff --git a/qtbase/src/network/ssl/qsslconfiguration_p.h b/qtbase/src/network/ssl/qsslconfiguration_p.h
-index 54b7264..5702e01 100644
+index 71ee8d2..42c372b 100644
 --- a/qtbase/src/network/ssl/qsslconfiguration_p.h
 +++ b/qtbase/src/network/ssl/qsslconfiguration_p.h
 @@ -81,7 +81,16 @@ class QSslConfigurationPrivate: public QSharedData
@@ -52,7 +52,7 @@ index 54b7264..5702e01 100644
            allowRootCertOnDemandLoading(true),
            peerSessionShared(false),
 diff --git a/qtbase/src/network/ssl/qsslsocket_openssl.cpp b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-index 675bd7d..647f3fd 100644
+index 69b9e53..3bd4387 100644
 --- a/qtbase/src/network/ssl/qsslsocket_openssl.cpp
 +++ b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
 @@ -445,7 +445,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
