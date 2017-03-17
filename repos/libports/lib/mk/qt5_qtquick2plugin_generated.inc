@@ -1,19 +1,19 @@
-QT_DEFINES += -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/include \
-  qtbase/include/QtCore \
-  qtbase/include/QtGui \
-  qtbase/include/QtNetwork \
   qtbase/mkspecs/genode-g++ \
-  qtdeclarative/include \
-  qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.1.0 \
-  qtdeclarative/include/QtQml/5.1.0/QtQml \
-  qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.1.0 \
-  qtdeclarative/include/QtQuick/5.1.0/QtQuick \
   qtdeclarative/src/imports/qtquick2 \
+  qtdeclarative/include/QtQuick/5.2.1 \
+  qtdeclarative/include/QtQuick/5.2.1/QtQuick \
+  qtdeclarative/include/QtQml/5.2.1 \
+  qtdeclarative/include/QtQml/5.2.1/QtQml \
+  qtdeclarative/include \
+  qtdeclarative/include/QtQuick \
+  qtdeclarative/include/QtQml \
+  qtbase/include \
+  qtbase/include/QtNetwork \
+  qtbase/include/QtGui \
+  qtbase/include/QtCore \
 
 QT_SOURCES += \
   plugin.cpp 
