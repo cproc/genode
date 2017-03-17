@@ -1,12 +1,13 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.1.0/configure \
+../qt-everywhere-opensource-src-5.2.1/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \
     -xplatform genode-g++ \
     -no-qpa-platform-guard \
     -qpa minimal \
+    -fully-process \
     -no-separate-debug-info \
     -opengl desktop \
     -openssl-linked \
@@ -18,7 +19,6 @@
     -no-nis \
     -no-pkg-config \
     -no-xcb \
-    -no-sse \
     -no-sse2 \
     -no-sse3 \
     -no-ssse3 \
@@ -27,8 +27,7 @@
     -no-avx \
     -no-neon \
     -make tools \
-    -nomake examples \
-    -nomake demos \
+    -nomake examples
 
 #
 # notes

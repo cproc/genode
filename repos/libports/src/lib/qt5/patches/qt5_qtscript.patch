@@ -12,10 +12,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  5 files changed, 44 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/corelib/global/qglobal.h b/qtbase/src/corelib/global/qglobal.h
-index 79e32fe..324c168 100644
+index d8c987d..e3a80b2 100644
 --- a/qtbase/src/corelib/global/qglobal.h
 +++ b/qtbase/src/corelib/global/qglobal.h
-@@ -763,13 +763,17 @@ inline void qSwap(T &value1, T &value2)
+@@ -797,13 +797,17 @@ inline void qSwap(T &value1, T &value2)
      swap(value1, value2);
  }
  
@@ -131,10 +131,10 @@ index 352a74b..20ef8b4 100644
  #define CRASH() do { \
      *(int *)(uintptr_t)0xbbadbeef = 0; \
 diff --git a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
-index d483806..e956b49 100644
+index 94de5ec..0d4c8fb 100644
 --- a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
 +++ b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
-@@ -330,6 +330,11 @@
+@@ -350,6 +350,11 @@
  /* ==== OS() - underlying operating system; only to be used for mandated low-level services like 
     virtual memory, not to choose a GUI toolkit ==== */
  

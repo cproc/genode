@@ -1,19 +1,19 @@
-QT_DEFINES += -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_PRINTSUPPORT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_PRINTSUPPORT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.1.0 \
-  qtbase/include/QtCore/5.1.0/QtCore \
+  qtbase/include/QtCore/5.2.1 \
+  qtbase/include/QtCore/5.2.1/QtCore \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.1.0 \
-  qtbase/include/QtGui/5.1.0/QtGui \
+  qtbase/include/QtGui/5.2.1 \
+  qtbase/include/QtGui/5.2.1/QtGui \
   qtbase/include/QtPrintSupport \
-  qtbase/include/QtPrintSupport/5.1.0 \
-  qtbase/include/QtPrintSupport/5.1.0/QtPrintSupport \
+  qtbase/include/QtPrintSupport/5.2.1 \
+  qtbase/include/QtPrintSupport/5.2.1/QtPrintSupport \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.1.0 \
-  qtbase/include/QtWidgets/5.1.0/QtWidgets \
+  qtbase/include/QtWidgets/5.2.1 \
+  qtbase/include/QtWidgets/5.2.1/QtWidgets \
   qtbase/mkspecs/genode-g++ \
   qtbase/src/plugins/printsupport/cups \
   qtbase/src/printsupport \
