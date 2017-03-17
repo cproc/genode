@@ -5,15 +5,19 @@
 QMAKESPEC = $(QT5_CONTRIB_DIR)/qtbase/mkspecs/linux-g++
 
 bootstrap/libQtBootstrap.a: bootstrap/Makefile
+	$(VERBOSE)mkdir -p bootstrap/.obj
 	$(VERBOSE)QMAKESPEC=$(QMAKESPEC) $(MAKE) -C bootstrap
 
 moc/moc: bootstrap/libQtBootstrap.a moc/Makefile
+	$(VERBOSE)mkdir -p moc/.obj
 	$(VERBOSE)QMAKESPEC=$(QMAKESPEC) $(MAKE) -C moc
 
 rcc/rcc: bootstrap/libQtBootstrap.a rcc/Makefile
+	$(VERBOSE)mkdir -p rcc/.obj
 	$(VERBOSE)QMAKESPEC=$(QMAKESPEC) $(MAKE) -C rcc
 
 uic/uic: bootstrap/libQtBootstrap.a uic/Makefile
+	$(VERBOSE)mkdir -p uic/.obj
 	$(VERBOSE)QMAKESPEC=$(QMAKESPEC) $(MAKE) -C uic
 
 #
@@ -34,8 +38,8 @@ uic/uic: bootstrap/libQtBootstrap.a uic/Makefile
 		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtCore \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.1.0 \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.1.0/QtCore \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.2.1 \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.2.1/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtXml \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml \
 		-after DESTDIR= \

@@ -1,16 +1,16 @@
-QT_DEFINES += -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/include \
-  qtbase/include/QtCore \
-  qtbase/include/QtCore/5.1.0 \
-  qtbase/include/QtCore/5.1.0/QtCore \
-  qtbase/include/QtGui \
-  qtbase/include/QtGui/5.1.0 \
-  qtbase/include/QtGui/5.1.0/QtGui \
   qtbase/mkspecs/genode-g++ \
   qtbase/src/gui \
+  qtbase/include \
+  qtbase/include/QtGui \
+  qtbase/include/QtGui/5.2.1 \
+  qtbase/include/QtGui/5.2.1/QtGui \
   qtbase/src/gui/image \
+  qtbase/include/QtCore/5.2.1 \
+  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include/QtCore \
 
 QT_SOURCES += \
   qclipboard_qpa.cpp \
@@ -63,6 +63,7 @@ QT_SOURCES += \
   qplatformservices.cpp \
   qplatformscreenpageflipper.cpp \
   qplatformsystemtrayicon_qpa.cpp \
+  qplatformsessionmanager.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
   qbitmap.cpp \
@@ -191,6 +192,9 @@ QT_SOURCES += \
   qopenglversionfunctionsfactory.cpp \
   qopenglvertexarrayobject.cpp \
   qopengldebug.cpp \
+  qopengltexture.cpp \
+  qopengltexturehelper.cpp \
+  qopenglpixeltransferoptions.cpp \
   qopenglfunctions_1_0.cpp \
   qopenglfunctions_1_1.cpp \
   qopenglfunctions_1_2.cpp \
@@ -228,6 +232,7 @@ QT_SOURCES += \
   moc_qclipboard.cpp \
   moc_qdrag.cpp \
   moc_qdnd_p.cpp \
+  moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
   moc_qpalette.cpp \
   moc_qsessionmanager.cpp \
@@ -242,7 +247,6 @@ QT_SOURCES += \
   moc_qiconengineplugin.cpp \
   moc_qfont.cpp \
   moc_qfontdatabase.cpp \
-  moc_qfontengine_p.cpp \
   moc_qtextformat.cpp \
   moc_qtextobject.cpp \
   moc_qtextdocument.cpp \
@@ -290,6 +294,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qdrag.cpp \
   moc_qdnd_p.cpp \
   moc_qinputmethod.cpp \
+  moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
   moc_qpalette.cpp \
   moc_qsessionmanager.cpp \
@@ -306,7 +311,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qiconengineplugin.cpp \
   moc_qfont.cpp \
   moc_qfontdatabase.cpp \
-  moc_qfontengine_p.cpp \
   moc_qtextformat.cpp \
   moc_qtextobject.cpp \
   moc_qtextdocument.cpp \

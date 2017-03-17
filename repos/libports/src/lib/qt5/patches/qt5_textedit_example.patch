@@ -47,10 +47,10 @@ index 196dbfc..ff8d024 100644
      return a.exec();
  }
 diff --git a/qtbase/examples/widgets/richtext/textedit/textedit.cpp b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-index ae2bded..be98558 100644
+index 873a29e..014c1dd 100644
 --- a/qtbase/examples/widgets/richtext/textedit/textedit.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-@@ -476,7 +476,7 @@ void TextEdit::fileNew()
+@@ -475,7 +475,7 @@ void TextEdit::fileNew()
  void TextEdit::fileOpen()
  {
      QString fn = QFileDialog::getOpenFileName(this, tr("Open File..."),
@@ -59,7 +59,7 @@ index ae2bded..be98558 100644
      if (!fn.isEmpty())
          load(fn);
  }
-@@ -495,15 +495,14 @@ bool TextEdit::fileSave()
+@@ -496,15 +496,14 @@ bool TextEdit::fileSave()
  
  bool TextEdit::fileSaveAs()
  {
