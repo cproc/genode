@@ -26,6 +26,8 @@ void *addr = 0;
 
 int main(int argc, char **argv)
 {
+	unsigned error_count = 0;
+
 	printf("--- libC test ---\n");
 
 	printf("Does printf work?\n");
@@ -35,6 +37,40 @@ int main(int argc, char **argv)
 	addr = malloc(1234);
 	printf("Malloc returned addr = %p\n", addr);
 
-	printf("--- exit(0) from main ---\n");
-	exit(0);
+	/* check for 16 byte alignment of small sizes */
+	for (unsigned size = 1; size < 67; size++) {
+		for (unsigned j = 0; j < 32; j++) {
+			addr = malloc(size);
+
+			if (!((unsigned long)addr & 0xf))
+				continue;
+
+			printf("%u. malloc(%u) returned addr = %p - ERROR\n", j, size, addr);
+			error_count ++;
+		}
+	}
+
+	/* check for 16 byte alignment of larger sizes */
+	unsigned size = 2048 - 15;
+	for (unsigned j = 0; j < 4; j++) {
+		addr = malloc(size);
+		if (!((unsigned long)addr & 0xf))
+			continue;
+
+		printf("%u. malloc(%u) returned addr = %p - ERROR\n", j, size, addr);
+		error_count ++;
+	}
+
+	for (unsigned size = 1 * 0x1000; size < 32 * 0x1000; size += 0x1000) {
+		for (unsigned j = 0; j < 8; j++) {
+			addr = malloc(size);
+			if (!((unsigned long)addr & 0xf))
+				continue;
+
+			printf("%u. malloc(%u) returned addr = %p - ERROR\n", j, size, addr);
+			error_count ++;
+		}
+	}
+
+	exit(error_count);
 }
