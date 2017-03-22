@@ -26,7 +26,13 @@ extern "C" {
 #include <stdlib.h>
 }
 
-typedef unsigned long Block_header;
+typedef struct {
+	unsigned long size;
+	/* extend struct to 16 byte size */
+	char unused[sizeof(size) == 4 ? 12 : 8];
+} Block_header; /* 16 Byte */
+
+static_assert(sizeof(Block_header) == 16, "Size of Block_header in malloc is not 16!");
 
 namespace Genode {
 
@@ -71,7 +77,8 @@ class Malloc : public Genode::Allocator
 		typedef Genode::size_t size_t;
 
 		enum {
-			SLAB_START = 2,  /* 4 Byte (log2) */
+			/* minimal size is 32 byte, since header is 16 byte + allocation */
+			SLAB_START = 5,  /* 32 Byte (log2) */
 			SLAB_STOP  = 11, /* 2048 Byte (log2) */
 			NUM_SLABS = (SLAB_STOP - SLAB_START) + 1
 		};
@@ -137,8 +144,9 @@ class Malloc : public Genode::Allocator
 				if (!(addr = _allocator[msb - SLAB_START]->alloc()))
 					return false;
 
-			*(Block_header *)addr = real_size;
+			((Block_header *)addr)->size = real_size;
 			*out_addr = (Block_header *)addr + 1;
+
 			return true;
 		}
 
@@ -146,8 +154,8 @@ class Malloc : public Genode::Allocator
 		{
 			Genode::Lock::Guard lock_guard(_lock);
 
-			unsigned long *addr = ((unsigned long *)ptr) - 1;
-			unsigned long  real_size = *addr;
+			Block_header * addr = ((Block_header *)ptr) - 1;
+			unsigned long  real_size = addr->size;
 
 			if (real_size > (1U << SLAB_STOP))
 				_backing_store->free(addr, real_size);
@@ -219,7 +227,7 @@ extern "C" void *realloc(void *ptr, size_t size)
 	}
 
 	/* determine size of old block content (without header) */
-	unsigned long old_size = *((Block_header *)ptr - 1)
+	unsigned long old_size = ((Block_header *)ptr - 1)->size
 	                         - sizeof(Block_header);
 
 	/* do not reallocate if new size is less than the current size */
@@ -231,7 +239,7 @@ extern "C" void *realloc(void *ptr, size_t size)
 
 	/* copy content from old block into new block */
 	if (new_addr)
-		memcpy(new_addr, ptr, Genode::min(old_size, (unsigned long)size));
+		memcpy(new_addr, ptr, Genode::min(old_size, size));
 
 	/* free old block */
 	free(ptr);
