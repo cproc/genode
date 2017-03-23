@@ -11,8 +11,8 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtbase/src/corelib/global/qconfig-genode.h         |  425 ++++++++++++++++++++
  qtdeclarative/examples/quick/quick.pro             |    6 
  qtdeclarative/tests/tests.pro                      |    4 
- qtwebkit/Tools/qmake/mkspecs/features/features.prf |    8 
- 8 files changed, 588 insertions(+), 35 deletions(-)
+ qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
+ 8 files changed, 587 insertions(+), 34 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
@@ -710,7 +710,7 @@ index 85e4f3a..9aa752b 100644
 +#TEMPLATE = subdirs
 +#SUBDIRS +=  auto
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index aa8eaae..ee47725 100644
+index aa8eaae..0dc572e 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -42,8 +42,8 @@ defineTest(detectFeatures) {
@@ -724,15 +724,6 @@ index aa8eaae..ee47725 100644
  
      # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
      # is using the system libraries, use them to take advantage of the WebCore image decoders as well.
-@@ -84,7 +84,7 @@ defineTest(detectFeatures) {
- 
-     # Enable the USE(3D_GRAPHICS) flag when QtOpenGL is enabled.
-     # Disable on Windows CE for now, as ANGLE won't compile.
--    !wince*:contains(QT_CONFIG, opengl): WEBKIT_CONFIG += use_3d_graphics
-+    #!wince*:contains(QT_CONFIG, opengl): WEBKIT_CONFIG += use_3d_graphics
- 
-     # Temporarily disable FTPDIR on Windows CE (missing functions from time.h)
-     wince* {
 @@ -124,7 +124,7 @@ defineTest(detectFeatures) {
      }
  
