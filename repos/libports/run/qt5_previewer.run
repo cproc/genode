@@ -74,10 +74,12 @@ append boot_modules {
 	libcrypto.lib.so
 	libssl.lib.so
 	pthread.lib.so
+	qt5_angle.lib.so
 	qt5_core.lib.so
 	qt5_gui.lib.so
 	qt5_jscore.lib.so
 	qt5_network.lib.so
+	qt5_opengl.lib.so
 	qt5_printsupport.lib.so
 	qt5_sql.lib.so
 	qt5_webcore.lib.so
