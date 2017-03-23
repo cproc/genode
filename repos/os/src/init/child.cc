@@ -605,6 +605,7 @@ void Init::Child::resource_request(Parent::Resource_args const &args)
 	log("child \"", name(), "\" requests resources: ", args);
 
 	_requested_resources.construct(args);
+	_report_update_trigger.trigger_report_update();
 }
 
 
