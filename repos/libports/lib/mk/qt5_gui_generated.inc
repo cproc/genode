@@ -1,15 +1,15 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/mkspecs/genode-g++ \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.2.1 \
-  qtbase/include/QtGui/5.2.1/QtGui \
+  qtbase/include/QtGui/5.3.2 \
+  qtbase/include/QtGui/5.3.2/QtGui \
   qtbase/src/gui/image \
-  qtbase/include/QtCore/5.2.1 \
-  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include/QtCore/5.3.2 \
+  qtbase/include/QtCore/5.3.2/QtCore \
   qtbase/include/QtCore \
 
 QT_SOURCES += \
@@ -64,10 +64,12 @@ QT_SOURCES += \
   qplatformscreenpageflipper.cpp \
   qplatformsystemtrayicon_qpa.cpp \
   qplatformsessionmanager.cpp \
+  qplatformmenu.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
   qbitmap.cpp \
   qimage.cpp \
+  qimage_conversions.cpp \
   qimageiohandler.cpp \
   qimagereader.cpp \
   qimagewriter.cpp \
@@ -93,6 +95,7 @@ QT_SOURCES += \
   qpnghandler.cpp \
   qjpeghandler.cpp \
   qgifhandler.cpp \
+  qimage_sse2.cpp \
   qfont.cpp \
   qfontengine.cpp \
   qfontsubset.cpp \
@@ -145,6 +148,8 @@ QT_SOURCES += \
   qmemrotate.cpp \
   qoutlinemapper.cpp \
   qpagedpaintdevice.cpp \
+  qpagelayout.cpp \
+  qpagesize.cpp \
   qpaintdevice.cpp \
   qpaintengine.cpp \
   qpaintengineex.cpp \
@@ -165,8 +170,12 @@ QT_SOURCES += \
   qplatformbackingstore.cpp \
   qpaintbuffer.cpp \
   qpathsimplifier.cpp \
+  qdrawhelper_sse2.cpp \
   qdesktopservices.cpp \
   qvalidator.cpp \
+  qgridlayoutengine.cpp \
+  qabstractlayoutstyleinfo.cpp \
+  qlayoutpolicy.cpp \
   qgenericmatrix.cpp \
   qmatrix4x4.cpp \
   qquaternion.cpp \
@@ -192,6 +201,7 @@ QT_SOURCES += \
   qopenglversionfunctionsfactory.cpp \
   qopenglvertexarrayobject.cpp \
   qopengldebug.cpp \
+  qopengltextureblitter.cpp \
   qopengltexture.cpp \
   qopengltexturehelper.cpp \
   qopenglpixeltransferoptions.cpp \
@@ -256,6 +266,7 @@ QT_SOURCES += \
   moc_qbrush.cpp \
   moc_qpainter.cpp \
   moc_qpdfwriter.cpp \
+  moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \
@@ -323,6 +334,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qbrush.cpp \
   moc_qpainter.cpp \
   moc_qpdfwriter.cpp \
+  moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \
