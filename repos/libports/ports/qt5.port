@@ -1,13 +1,13 @@
 LICENSE := GPL
-VERSION := 5.2.1
+VERSION := 5.3.2
 
 QT5 := qt-everywhere-opensource-src-${VERSION}
 QTSCRIPTCLASSIC := qtscriptclassic-1.0_1-opensource
 
 DOWNLOADS := ${QT5}.archive ${QTSCRIPTCLASSIC}.archive
 
-URL(${QT5}) := http://download.qt.io/archive/qt/5.2/$(VERSION)/single/$(QT5).tar.xz
-SHA(${QT5}) := cc68265c62321670bd40e29bdd484ea881bd6af3
+URL(${QT5}) := http://download.qt.io/archive/qt/5.3/$(VERSION)/single/$(QT5).tar.xz
+SHA(${QT5}) := fb156a87a193c9a7a2fa51efc89660a3b619ace5
 DIR(${QT5}) := src/lib/qt5/${QT5}
 
 URL(${QTSCRIPTCLASSIC}) := ftp://ftp.informatik.hu-berlin.de/pub/Mirrors/ftp.troll.no/QT/qt/solutions/lgpl/${QTSCRIPTCLASSIC}.tar.gz
