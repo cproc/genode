@@ -12,32 +12,31 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtdeclarative/examples/quick/quick.pro             |    6 
  qtdeclarative/tests/tests.pro                      |    4 
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
- 8 files changed, 587 insertions(+), 34 deletions(-)
+ qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 
+ 9 files changed, 588 insertions(+), 35 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
 
 diff --git a/qt.pro b/qt.pro
-index 48b2918..b7ef46c 100644
+index df217f8..7a4b9db 100644
 --- a/qt.pro
 +++ b/qt.pro
-@@ -54,36 +54,36 @@ defineTest(addModule) {
- # it may not build.
+@@ -58,36 +58,36 @@ ANDROID_EXTRAS =
+ android: ANDROID_EXTRAS = qtandroidextras
  
  addModule(qtbase)
 -addModule(qtandroidextras, qtbase)
 -addModule(qtmacextras, qtbase)
 -addModule(qtx11extras, qtbase)
--addModule(qlalr, qtbase)
 +#addModule(qtandroidextras, qtbase)
 +#addModule(qtmacextras, qtbase)
 +#addModule(qtx11extras, qtbase)
-+#addModule(qlalr, qtbase)
  addModule(qtsvg, qtbase)
  addModule(qtxmlpatterns, qtbase)
  addModule(qtdeclarative, qtbase, qtsvg qtxmlpatterns)
 -addModule(qtquickcontrols, qtdeclarative)
--addModule(qtmultimedia, qtdeclarative)
+-addModule(qtmultimedia, qtbase, qtdeclarative)
 -addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 -addModule(qtactiveqt, qtbase)
 -addModule(qt3d, qtdeclarative)
@@ -45,11 +44,11 @@ index 48b2918..b7ef46c 100644
 -addModule(qtsystems, qtbase, qtdeclarative)
 -addModule(qtlocation, qtbase, qt3d qtsystems qtmultimedia)
 -addModule(qtsensors, qtbase, qtdeclarative)
--addModule(qtconnectivity, qtbase, qtdeclarative)
+-addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 -addModule(qtfeedback, qtdeclarative, qtmultimedia)
 -addModule(qtpim, qtdeclarative, qtjsondb)
 +#addModule(qtquickcontrols, qtdeclarative)
-+#addModule(qtmultimedia, qtdeclarative)
++#addModule(qtmultimedia, qtbase, qtdeclarative)
 +#addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 +#addModule(qtactiveqt, qtbase)
 +#addModule(qt3d, qtdeclarative)
@@ -57,7 +56,7 @@ index 48b2918..b7ef46c 100644
 +#addModule(qtsystems, qtbase, qtdeclarative)
 +#addModule(qtlocation, qtbase, qt3d qtsystems qtmultimedia)
 +#addModule(qtsensors, qtbase, qtdeclarative)
-+#addModule(qtconnectivity, qtbase, qtdeclarative)
++#addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 +#addModule(qtfeedback, qtdeclarative, qtmultimedia)
 +#addModule(qtpim, qtdeclarative, qtjsondb)
  addModule(qtwebkit, qtdeclarative, qtlocation qtmultimedia qtsensors, WebKit.pro)
@@ -72,6 +71,7 @@ index 48b2918..b7ef46c 100644
 -!win32:!mac:addModule(qtwayland, qtbase, qtdeclarative)
 -addModule(qtserialport, qtbase)
 -addModule(qtenginio, qtdeclarative)
+-addModule(qtwebsockets, qtbase, qtdeclarative)
 -addModule(qttranslations, qttools)
 -addModule(qtdoc, qtdeclarative)
 -addModule(qtqa, qtbase)
@@ -80,16 +80,17 @@ index 48b2918..b7ef46c 100644
 +#!win32:!mac:addModule(qtwayland, qtbase, qtdeclarative)
 +#addModule(qtserialport, qtbase)
 +#addModule(qtenginio, qtdeclarative)
++#addModule(qtwebsockets, qtbase, qtdeclarative)
 +#addModule(qttranslations, qttools)
 +#addModule(qtdoc, qtdeclarative)
 +#addModule(qtqa, qtbase)
 diff --git a/qtbase/configure b/qtbase/configure
-index aaa59bd..e3ed76e 100755
+index cb8d78f..e36a536 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
-@@ -597,10 +597,10 @@ CFG_XFIXES=runtime
- CFG_ZLIB=auto
+@@ -598,10 +598,10 @@ CFG_ZLIB=auto
  CFG_MTDEV=auto
+ CFG_JOURNALD=no
  CFG_SQLITE=qt
 -CFG_GIF=auto
 +CFG_GIF=yes
@@ -100,7 +101,7 @@ index aaa59bd..e3ed76e 100755
  CFG_LIBJPEG=auto
  CFG_XCURSOR=runtime
  CFG_XRANDR=runtime
-@@ -691,7 +691,7 @@ CFG_GETADDRINFO=auto
+@@ -694,7 +694,7 @@ CFG_GETADDRINFO=auto
  CFG_IPV6IFNAME=auto
  CFG_GETIFADDRS=auto
  CFG_INOTIFY=auto
@@ -677,7 +678,7 @@ index 0000000..7e3af71
 +//#  define QT_NO_VALIDATOR
 +//#endif
 diff --git a/qtdeclarative/examples/quick/quick.pro b/qtdeclarative/examples/quick/quick.pro
-index c6b7ee1..d703501 100644
+index 421f95a..8bc1e81 100644
 --- a/qtdeclarative/examples/quick/quick.pro
 +++ b/qtdeclarative/examples/quick/quick.pro
 @@ -13,7 +13,6 @@ SUBDIRS =   quick-accessibility \
@@ -688,8 +689,8 @@ index c6b7ee1..d703501 100644
              text \
              threading \
              touchinteraction \
-@@ -30,6 +29,11 @@ qtHaveModule(widgets) {
-     SUBDIRS += embeddedinwidgets
+@@ -30,5 +29,10 @@ qtHaveModule(widgets) {
+     qtHaveModule(quickwidgets): SUBDIRS += quickwidgets
  }
  
 +# OpenGL dependent examples
@@ -698,7 +699,6 @@ index c6b7ee1..d703501 100644
 +}
 +
  EXAMPLE_FILES = \
-     ui-components \
      shared
 diff --git a/qtdeclarative/tests/tests.pro b/qtdeclarative/tests/tests.pro
 index 85e4f3a..9aa752b 100644
@@ -710,7 +710,7 @@ index 85e4f3a..9aa752b 100644
 +#TEMPLATE = subdirs
 +#SUBDIRS +=  auto
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index aa8eaae..0dc572e 100644
+index 52227b2..60ffcb1 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -42,8 +42,8 @@ defineTest(detectFeatures) {
@@ -721,15 +721,28 @@ index aa8eaae..0dc572e 100644
 -    config_libwebp: WEBKIT_CONFIG += use_webp
 +    #config_libzlib: WEBKIT_CONFIG += use_zlib
 +    #config_libwebp: WEBKIT_CONFIG += use_webp
+     config_leveldb: WEBKIT_CONFIG += use_system_leveldb
  
      # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
-     # is using the system libraries, use them to take advantage of the WebCore image decoders as well.
-@@ -124,7 +124,7 @@ defineTest(detectFeatures) {
+@@ -122,7 +122,7 @@ defineTest(detectFeatures) {
      }
  
-     # Gamepad API Support (depends on udev)
--    linux: WEBKIT_CONFIG += gamepad
-+    #linux: WEBKIT_CONFIG += gamepad
+     # Gamepad API Support (depends on udev and linux/joystick.h)
+-    linux:!android: WEBKIT_CONFIG += gamepad
++    #linux:!android: WEBKIT_CONFIG += gamepad
  
      # Support for Graphics Surface
      # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
+diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
+index dc847e9..adc3d70 100644
+--- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
++++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
+@@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \
+     ENABLE_HIGH_DPI_CANVAS=0 \
+     ENABLE_ICONDATABASE=1 \
+     ENABLE_IFRAME_SEAMLESS=1 \
+-    ENABLE_INDEXED_DATABASE=1 \
++    ENABLE_INDEXED_DATABASE=0 \
+     ENABLE_INPUT_SPEECH=0 \
+     ENABLE_INPUT_TYPE_COLOR=1 \
+     ENABLE_INPUT_TYPE_DATE=0 \

@@ -8,12 +8,12 @@ This patch should not be applied when running the Qt 'configure' script.
  qtbase/mkspecs/features/qt_build_config.prf |    2 -
  qtbase/mkspecs/features/qt_functions.prf    |    2 -
  qtbase/mkspecs/features/qt_module.prf       |    4 +
- qtbase/mkspecs/features/qt_tool.prf         |   92 ++++++++++++++-------------
+ qtbase/mkspecs/features/qt_tool.prf         |   94 ++++++++++++++-------------
  qtbase/qmake/Makefile.unix                  |    2 -
- 5 files changed, 51 insertions(+), 51 deletions(-)
+ 5 files changed, 52 insertions(+), 52 deletions(-)
 
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index b611e78..fb1fcdc 100644
+index 5fece28..156acb4 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
 @@ -12,7 +12,7 @@
@@ -26,7 +26,7 @@ index b611e78..fb1fcdc 100644
          debug(1, "Loaded qmodule.pri from ($$QMAKE_QT_MODULE)")
      }
 diff --git a/qtbase/mkspecs/features/qt_functions.prf b/qtbase/mkspecs/features/qt_functions.prf
-index 1dacfed..8d843cb 100644
+index 9a4d80e..36b2f7d 100644
 --- a/qtbase/mkspecs/features/qt_functions.prf
 +++ b/qtbase/mkspecs/features/qt_functions.prf
 @@ -169,7 +169,7 @@ defineTest(qtAddModules) {
@@ -39,7 +39,7 @@ index 1dacfed..8d843cb 100644
  
  defineTest(qtAddRpathLink) {
 diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
-index 11509ee..4dc176a 100644
+index 8bf4c92..1cda088 100644
 --- a/qtbase/mkspecs/features/qt_module.prf
 +++ b/qtbase/mkspecs/features/qt_module.prf
 @@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already
@@ -51,7 +51,7 @@ index 11509ee..4dc176a 100644
  
  # Compile as shared/DLL or static according to the option given to configure
  # unless overridden. Host builds are always static
-@@ -56,7 +56,7 @@ else: \
+@@ -58,7 +58,7 @@ else: \
      MODULE_DEFINE = QT_$${ucmodule}_LIB
  MODULE_DEFINES = $$MODULE_DEFINE $$MODULE_DEFINES
  
@@ -61,10 +61,10 @@ index 11509ee..4dc176a 100644
  INCLUDEPATH *= $$eval(QT.$${MODULE}.includes) $$eval(QT.$${MODULE}_private.includes)
  
 diff --git a/qtbase/mkspecs/features/qt_tool.prf b/qtbase/mkspecs/features/qt_tool.prf
-index f0864f9..5f998d6 100644
+index 1d3e88c..45e6a14 100644
 --- a/qtbase/mkspecs/features/qt_tool.prf
 +++ b/qtbase/mkspecs/features/qt_tool.prf
-@@ -16,49 +16,49 @@ CONFIG += console
+@@ -16,50 +16,50 @@ CONFIG += console
  # If we are doing a prefix build, create a "module" pri which enables
  # qtPrepareTool() to work with the non-installed build.
  # Non-bootstrapped tools always need this because of the environment setup.
@@ -97,8 +97,9 @@ index f0864f9..5f998d6 100644
 -    } else {
 -        module_envvars =
 -    }
+-    bin = $$system_path($$QMAKE_RESOLVED_TARGET)
 -    TOOL_PRI_CONT = \
--        "QT_TOOL.$${MODULE}.binary = $$QMAKE_RESOLVED_TARGET" \
+-        "QT_TOOL.$${MODULE}.binary = $$val_escape(bin)" \
 -        "QT_TOOL.$${MODULE}.depends =$$join(MODULE_DEPENDS, " ", " ")" \
 -        $$module_envvars
 -    write_file($$TOOL_PRI, TOOL_PRI_CONT)|error("Aborting.")
@@ -143,8 +144,9 @@ index f0864f9..5f998d6 100644
 +#    } else {
 +#        module_envvars =
 +#    }
++#    bin = $$system_path($$QMAKE_RESOLVED_TARGET)
 +#    TOOL_PRI_CONT = \
-+#        "QT_TOOL.$${MODULE}.binary = $$QMAKE_RESOLVED_TARGET" \
++#        "QT_TOOL.$${MODULE}.binary = $$val_escape(bin)" \
 +#        "QT_TOOL.$${MODULE}.depends =$$join(MODULE_DEPENDS, " ", " ")" \
 +#        $$module_envvars
 +#    write_file($$TOOL_PRI, TOOL_PRI_CONT)|error("Aborting.")
@@ -161,10 +163,10 @@ index f0864f9..5f998d6 100644
 +#
 +#}
 diff --git a/qtbase/qmake/Makefile.unix b/qtbase/qmake/Makefile.unix
-index ce83960..2f04a88 100644
+index ef1c542..2c41bf5 100644
 --- a/qtbase/qmake/Makefile.unix
 +++ b/qtbase/qmake/Makefile.unix
-@@ -224,7 +224,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
+@@ -225,7 +225,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
  qsystemerror.o: $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  	$(CXX) -c -o $@ $(CXXFLAGS) $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  
