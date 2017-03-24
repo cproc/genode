@@ -1,20 +1,20 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_OPENGL_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_OPENGL_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/mkspecs/genode-g++ \
   qtbase/src/opengl \
   qtbase/include \
   qtbase/include/QtOpenGL \
-  qtbase/include/QtOpenGL/5.2.1 \
-  qtbase/include/QtOpenGL/5.2.1/QtOpenGL \
-  qtbase/include/QtWidgets/5.2.1 \
-  qtbase/include/QtWidgets/5.2.1/QtWidgets \
+  qtbase/include/QtOpenGL/5.3.2 \
+  qtbase/include/QtOpenGL/5.3.2/QtOpenGL \
+  qtbase/include/QtWidgets/5.3.2 \
+  qtbase/include/QtWidgets/5.3.2/QtWidgets \
   qtbase/include/QtWidgets \
-  qtbase/include/QtGui/5.2.1 \
-  qtbase/include/QtGui/5.2.1/QtGui \
+  qtbase/include/QtGui/5.3.2 \
+  qtbase/include/QtGui/5.3.2/QtGui \
   qtbase/include/QtGui \
-  qtbase/include/QtCore/5.2.1 \
-  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include/QtCore/5.3.2 \
+  qtbase/include/QtCore/5.3.2/QtCore \
   qtbase/include/QtCore \
 
 QT_SOURCES += \
