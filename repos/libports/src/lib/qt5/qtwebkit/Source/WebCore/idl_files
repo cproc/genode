@@ -31,13 +31,16 @@ qtwebkit/Source/WebCore/Modules/geolocation/PositionErrorCallback.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/DOMWindowIndexedDatabase.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBAny.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBCursor.idl
+qtwebkit/Source/WebCore/Modules/indexeddb/IDBCursorWithValue.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBDatabase.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBFactory.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBIndex.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBKeyRange.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBObjectStore.idl
+qtwebkit/Source/WebCore/Modules/indexeddb/IDBOpenDBRequest.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBRequest.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/IDBTransaction.idl
+qtwebkit/Source/WebCore/Modules/indexeddb/IDBVersionChangeEvent.idl
 qtwebkit/Source/WebCore/Modules/indexeddb/WorkerGlobalScopeIndexedDatabase.idl
 qtwebkit/Source/WebCore/Modules/notifications/DOMWindowNotifications.idl
 qtwebkit/Source/WebCore/Modules/notifications/Notification.idl

@@ -31,17 +31,14 @@ uic/uic: bootstrap/libQtBootstrap.a uic/Makefile
 	$(VERBOSE)QMAKESPEC=$(QMAKESPEC) qmake/bin/qmake -o $*/Makefile \
 		QT_BUILD_TREE=$(QT5_CONTRIB_DIR)/qtbase \
 		QT_CONFIG+=zlib \
-		INCLUDEPATH+=$(REP_DIR)/include/qt5 \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include \
-		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include \
-		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtCore \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.2.1 \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.2.1/QtCore \
-		INCLUDEPATH+=$(REP_DIR)/include/qt5/qtbase/QtXml \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.3.2 \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.3.2/QtCore \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml/5.3.2/QtXml \
 		-after DESTDIR= \
 		-after "LIBS+=-lQtBootstrap -L../bootstrap" \
 		$^
