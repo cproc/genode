@@ -12,7 +12,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  5 files changed, 31 insertions(+), 5 deletions(-)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index 33f3601..cb0ee5e 100644
+index 26ae0eb..a1838f3 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 @@ -109,7 +109,16 @@ void QBasicFontDatabase::populateFontDatabase()
@@ -33,7 +33,7 @@ index 33f3601..cb0ee5e 100644
  }
  
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
-index 225b3d4..1dedb66 100644
+index 5e919eb..17b22a6 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
 @@ -43,7 +43,9 @@
@@ -55,7 +55,7 @@ index 225b3d4..1dedb66 100644
      // 113 -> 248
      { KEY_MUTE,         0xffff, Qt::Key_VolumeMute,     0x00, 0x00, 0x0000 },
      { KEY_VOLUMEDOWN,   0xffff, Qt::Key_VolumeDown,     0x00, 0x00, 0x0000 },
-@@ -658,6 +660,7 @@ const QEvdevKeyboardMap::Mapping QEvdevKeyboardHandler::s_keymap_default[] = {
+@@ -663,6 +665,7 @@ const QEvdevKeyboardMap::Mapping QEvdevKeyboardHandler::s_keymap_default[] = {
      { KEY_BLUE,         0xffff, Qt::Key_Blue,           0x00, 0x00, 0x0000 },
      { KEY_CHANNELUP,    0xffff, Qt::Key_ChannelUp,      0x00, 0x00, 0x0000 },
      { KEY_CHANNELDOWN,  0xffff, Qt::Key_ChannelDown,    0x00, 0x00, 0x0000 },
@@ -137,10 +137,10 @@ index 1065b05..b395d46 100644
  
  private:
 diff --git a/qtbase/src/widgets/kernel/qwidget_qpa.cpp b/qtbase/src/widgets/kernel/qwidget_qpa.cpp
-index 0fd794c..701f056 100644
+index 5a4bd33..7819505 100644
 --- a/qtbase/src/widgets/kernel/qwidget_qpa.cpp
 +++ b/qtbase/src/widgets/kernel/qwidget_qpa.cpp
-@@ -955,7 +955,7 @@ void QWidgetPrivate::registerDropSite(bool on)
+@@ -997,7 +997,7 @@ void QWidgetPrivate::registerDropSite(bool on)
  void QWidgetPrivate::setMask_sys(const QRegion &region)
  {
      if (!QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::WindowMasks)) {

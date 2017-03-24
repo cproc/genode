@@ -1,18 +1,18 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DQT_NO_USING_NAMESPACE -DQT_BUILD_WIDGETS_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_ANDROID -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_WIDGETS_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_ANDROID -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/mkspecs/genode-g++ \
   qtbase/src/widgets \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.2.1 \
-  qtbase/include/QtWidgets/5.2.1/QtWidgets \
+  qtbase/include/QtWidgets/5.3.2 \
+  qtbase/include/QtWidgets/5.3.2/QtWidgets \
   qtbase/src/widgets/dialogs \
-  qtbase/include/QtGui/5.2.1 \
-  qtbase/include/QtGui/5.2.1/QtGui \
+  qtbase/include/QtGui/5.3.2 \
+  qtbase/include/QtGui/5.3.2/QtGui \
   qtbase/include/QtGui \
-  qtbase/include/QtCore/5.2.1 \
-  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include/QtCore/5.3.2 \
+  qtbase/include/QtCore/5.3.2/QtCore \
   qtbase/include/QtCore \
 
 QT_SOURCES += \
@@ -43,6 +43,7 @@ QT_SOURCES += \
   qwidget_qpa.cpp \
   qwidgetwindow.cpp \
   qwindowcontainer.cpp \
+  qopenglwidget.cpp \
   qdrawutil.cpp \
   qstyle.cpp \
   qstyleanimation.cpp \
@@ -164,7 +165,8 @@ QT_SOURCES += \
   qgraphicsview.cpp \
   qgraphicswidget.cpp \
   qgraphicswidget_p.cpp \
-  qgridlayoutengine.cpp \
+  qgraphicslayoutstyleinfo.cpp \
+  qgraphicsgridlayoutengine.cpp \
   qsimplex_p.cpp \
   qgraphicsanchorlayout_p.cpp \
   qgraphicsanchorlayout.cpp \
@@ -187,6 +189,7 @@ QT_SOURCES += \
   qpixmapfilter.cpp \
   qrc_qstyle.cpp \
   qrc_qmessagebox.cpp \
+  moc_qwidgetbackingstore_p.cpp \
   moc_qboxlayout.cpp \
   moc_qformlayout.cpp \
   moc_qgridlayout.cpp \
@@ -197,6 +200,7 @@ QT_SOURCES += \
   moc_qdesktopwidget_qpa_p.cpp \
   moc_qwidgetwindow_qpa_p.cpp \
   moc_qwindowcontainer_p.cpp \
+  moc_qopenglwidget_p.cpp \
   moc_qstyle.cpp \
   moc_qstyleanimation_p.cpp \
   moc_qstyleplugin.cpp \
@@ -290,6 +294,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qaction.cpp \
   moc_qactiongroup.cpp \
   moc_qapplication.cpp \
+  moc_qwidgetbackingstore_p.cpp \
   moc_qboxlayout.cpp \
   moc_qdesktopwidget.cpp \
   moc_qformlayout.cpp \
@@ -305,6 +310,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qdesktopwidget_qpa_p.cpp \
   moc_qwidgetwindow_qpa_p.cpp \
   moc_qwindowcontainer_p.cpp \
+  moc_qopenglwidget_p.cpp \
   moc_qstyle.cpp \
   moc_qstyleanimation_p.cpp \
   moc_qstyleplugin.cpp \
