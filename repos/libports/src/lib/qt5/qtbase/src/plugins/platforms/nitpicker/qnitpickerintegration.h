@@ -45,19 +45,19 @@ class QNitpickerIntegration : public QPlatformIntegration
 
 		QNitpickerIntegration();
 
-		bool hasCapability(QPlatformIntegration::Capability cap) const override;
+		bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
 
-		QPlatformWindow *createPlatformWindow(QWindow *window) const override;
-		QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
-		QAbstractEventDispatcher *createEventDispatcher() const override;
-		void initialize() override;
+		QPlatformWindow *createPlatformWindow(QWindow *window) const Q_DECL_OVERRIDE;
+		QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const Q_DECL_OVERRIDE;
+		QAbstractEventDispatcher *createEventDispatcher() const Q_DECL_OVERRIDE;
+		void initialize() Q_DECL_OVERRIDE;
 
-		QPlatformFontDatabase *fontDatabase() const override;
+		QPlatformFontDatabase *fontDatabase() const Q_DECL_OVERRIDE;
 
 #ifndef QT_NO_CLIPBOARD
-		QPlatformClipboard *clipboard() const override;
+		QPlatformClipboard *clipboard() const Q_DECL_OVERRIDE;
 #endif
-		QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
+		QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const Q_DECL_OVERRIDE;
 };
 
 QT_END_NAMESPACE

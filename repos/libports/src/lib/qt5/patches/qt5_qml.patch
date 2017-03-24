@@ -4,32 +4,40 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qtdeclarative/src/qml/jsruntime/qv4alloca_p.h      |    4 +++-
+ qtdeclarative/src/qml/jsruntime/qv4alloca_p.h      |    4 ++++
  qtdeclarative/src/qml/jsruntime/qv4engine.cpp      |   10 +++++++++-
- qtdeclarative/src/qml/jsruntime/qv4mm.cpp          |    9 ++++++++-
+ qtdeclarative/src/qml/jsruntime/qv4global_p.h      |    2 +-
+ qtdeclarative/src/qml/jsruntime/qv4mm.cpp          |    4 ++++
  qtdeclarative/src/qml/qml/qqmlaccessors_p.h        |    2 +-
  qtdeclarative/src/qml/qml/qqmlimport.cpp           |    9 +++++++++
  qtdeclarative/src/qml/types/qqmldelegatemodel_p.h  |    2 ++
  .../graphics/transforms/TransformationMatrix.h     |    2 +-
- 7 files changed, 33 insertions(+), 5 deletions(-)
+ 8 files changed, 31 insertions(+), 4 deletions(-)
 
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h b/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
-index f507d17..9ef4a81 100644
+index a76c327..3d7cb28 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
-@@ -50,7 +50,9 @@
- #    define alloca _alloca
+@@ -44,6 +44,7 @@
+ 
+ #include <qglobal.h>
+ 
++#ifndef Q_OS_GENODE
+ #if defined(Q_OS_WIN)
+ #  include <malloc.h>
+ #  ifndef __GNUC__
+@@ -51,6 +52,9 @@
  #  endif
- #else
--#  include <alloca.h>
-+#  if !defined(Q_OS_GENODE)
-+#    include <alloca.h>
-+#  endif
+ #elif !defined(Q_OS_BSD4) || defined(Q_OS_DARWIN)
+ #  include <alloca.h>
++#else
++#  include <alloca.h>
++#endif
  #endif
  
  #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index 539bc5d..127f8df 100644
+index 72be889..1c7778f 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 @@ -38,6 +38,7 @@
@@ -39,9 +47,9 @@ index 539bc5d..127f8df 100644
 +
  #include <qv4engine_p.h>
  #include <qv4context_p.h>
- #include <qv4value_p.h>
-@@ -79,6 +80,10 @@
- #  include <sys/resource.h>
+ #include <qv4value_inl_p.h>
+@@ -86,6 +87,10 @@
+ #endif
  #endif
  
 +#if defined(Q_OS_GENODE)
@@ -51,7 +59,7 @@ index 539bc5d..127f8df 100644
  QT_BEGIN_NAMESPACE
  
  using namespace QV4;
-@@ -93,7 +98,10 @@ static ReturnedValue throwTypeError(CallContext *ctx)
+@@ -100,7 +105,10 @@ static ReturnedValue throwTypeError(CallContext *ctx)
  quintptr getStackLimit()
  {
      quintptr stackLimit;
@@ -63,12 +71,25 @@ index 539bc5d..127f8df 100644
  #  if OS(DARWIN)
      pthread_t thread_self = pthread_self();
      void *stackTop = pthread_get_stackaddr_np(thread_self);
+diff --git a/qtdeclarative/src/qml/jsruntime/qv4global_p.h b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
+index a00231c..d035529 100644
+--- a/qtdeclarative/src/qml/jsruntime/qv4global_p.h
++++ b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
+@@ -89,7 +89,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
+ 
+ // Black list some platforms
+ #if defined(V4_ENABLE_JIT)
+-#if defined(Q_OS_IOS) || defined(Q_OS_WINRT)
++#if defined(Q_OS_IOS) || defined(Q_OS_WINRT) || defined(Q_OS_GENODE)
+ #    undef V4_ENABLE_JIT
+ #endif
+ #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
-index f67efaf..8055cc3 100644
+index ca2ccd3..e41b41f 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
-@@ -67,6 +67,10 @@
- #include <sys/storage.h>   // __tls()
+@@ -71,6 +71,10 @@
+ #include <pthread_np.h>
  #endif
  
 +#if defined(Q_OS_GENODE)
@@ -78,18 +99,6 @@ index f67efaf..8055cc3 100644
  QT_BEGIN_NAMESPACE
  
  using namespace QV4;
-@@ -222,7 +226,10 @@ MemoryManager::MemoryManager()
-     VALGRIND_CREATE_MEMPOOL(this, 0, true);
- #endif
- 
--#if OS(QNX)
-+#if defined(Q_OS_GENODE)
-+	Genode::Thread::Stack_info stack_info = Genode::Thread::mystack();
-+	m_d->stackTop = reinterpret_cast<quintptr *>(stack_info.top);
-+#elif OS(QNX)
-     // TLS is at the top of each thread's stack,
-     // so the stack base for thread is the result of __tls()
-     m_d->stackTop = reinterpret_cast<quintptr *>(
 diff --git a/qtdeclarative/src/qml/qml/qqmlaccessors_p.h b/qtdeclarative/src/qml/qml/qqmlaccessors_p.h
 index 1a4aae0..e564036 100644
 --- a/qtdeclarative/src/qml/qml/qqmlaccessors_p.h
@@ -104,10 +113,10 @@ index 1a4aae0..e564036 100644
  #endif
  
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-index 8645d21..0daf186 100644
+index bde61dc..3e7a691 100644
 --- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
 +++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-@@ -1657,6 +1657,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1664,6 +1664,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
                                                    const QString &qmldirPath, const QString &qmldirPluginPath,
                                                    const QString &baseName)
  {
@@ -122,7 +131,7 @@ index 8645d21..0daf186 100644
  #if defined(Q_OS_WIN)
      return resolvePlugin(typeLoader, qmldirPath, qmldirPluginPath, baseName,
                           QStringList()
-@@ -1706,6 +1714,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1713,6 +1721,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
  # endif
  
  #endif
@@ -131,7 +140,7 @@ index 8645d21..0daf186 100644
  
  /*!
 diff --git a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
-index 51f846e..16b4b4d 100644
+index 53cc94b..b8265cc 100644
 --- a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
 +++ b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
 @@ -52,6 +52,8 @@
