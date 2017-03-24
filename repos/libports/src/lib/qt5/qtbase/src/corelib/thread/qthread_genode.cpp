@@ -84,9 +84,9 @@
 #   define old_qDebug qDebug
 #   undef qDebug
 # endif
-#ifndef Q_OS_IOS
+#ifdef Q_OS_MACX
 # include <CoreServices/CoreServices.h>
-#endif //Q_OS_IOS
+#endif // Q_OS_MACX
 
 # ifdef old_qDebug
 #   undef qDebug
@@ -183,6 +183,12 @@ static void destroy_current_thread_data_key()
 {
     pthread_once(&current_thread_data_once, create_current_thread_data_key);
     pthread_key_delete(current_thread_data_key);
+
+    // Reset current_thread_data_once in case we end up recreating
+    // the thread-data in the rare case of QObject construction
+    // after destroying the QThreadData.
+    pthread_once_t pthread_once_init = PTHREAD_ONCE_INIT;
+    current_thread_data_once = pthread_once_init;
 }
 Q_DESTRUCTOR_FUNCTION(destroy_current_thread_data_key)
 
@@ -241,10 +247,10 @@ void QThreadData::clearCurrentThreadData()
     clear_thread_data();
 }
 
-QThreadData *QThreadData::current()
+QThreadData *QThreadData::current(bool createIfNecessary)
 {
     QThreadData *data = get_thread_data();
-    if (!data) {
+    if (!data && createIfNecessary) {
         data = new QThreadData;
         QT_TRY {
             set_thread_data(data);
@@ -427,6 +433,7 @@ void QThreadPrivate::finish(void *arg)
     d->thread_id = 0;
     d->running = false;
     d->finished = true;
+    d->interruptionRequested = false;
 
 #ifdef Q_OS_GENODE
     QThreadPrivate::tls.remove(QThread::currentThreadId());
@@ -487,6 +494,13 @@ int QThread::idealThreadCount() Q_DECL_NOTHROW
     // IRIX
     cores = (int)sysconf(_SC_NPROC_ONLN);
 #elif defined(Q_OS_INTEGRITY)
+#if (__INTEGRITY_MAJOR_VERSION >= 10)
+    // Integrity V10+ does support multicore CPUs
+    Value processorCount;
+    if (GetProcessorCount(CurrentTask(), &processorCount) == 0)
+        cores = processorCount;
+    else
+#endif
     // as of aug 2008 Integrity only supports one single core CPU
     cores = 1;
 #elif defined(Q_OS_VXWORKS)
@@ -623,6 +637,7 @@ void QThread::start(Priority priority)
     d->finished = false;
     d->returnCode = 0;
     d->exited = false;
+    d->interruptionRequested = false;
 
 #ifndef Q_OS_GENODE
     pthread_attr_t attr;
