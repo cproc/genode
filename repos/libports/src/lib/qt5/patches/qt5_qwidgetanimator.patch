@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
-index 1209ade..003ef24 100644
+index a2d950c..6abe70f 100644
 --- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
 +++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
-@@ -74,7 +74,8 @@ void QWidgetAnimator::abort(QWidget *w)
+@@ -75,7 +75,8 @@ void QWidgetAnimator::abort(QWidget *w)
  void QWidgetAnimator::animationFinished()
  {
      QPropertyAnimation *anim = qobject_cast<QPropertyAnimation*>(sender());

@@ -12,10 +12,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  5 files changed, 44 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/corelib/global/qglobal.h b/qtbase/src/corelib/global/qglobal.h
-index d8c987d..e3a80b2 100644
+index 255eb6c..b3252be 100644
 --- a/qtbase/src/corelib/global/qglobal.h
 +++ b/qtbase/src/corelib/global/qglobal.h
-@@ -797,13 +797,17 @@ inline void qSwap(T &value1, T &value2)
+@@ -816,13 +816,17 @@ inline void qSwap(T &value1, T &value2)
      swap(value1, value2);
  }
  
@@ -35,7 +35,7 @@ index d8c987d..e3a80b2 100644
  Q_CORE_EXPORT void *qReallocAligned(void *ptr, size_t size, size_t oldsize, size_t alignment) Q_ALLOC_SIZE(2);
  Q_CORE_EXPORT void qFreeAligned(void *ptr);
 diff --git a/qtbase/src/corelib/kernel/qvariant_p.h b/qtbase/src/corelib/kernel/qvariant_p.h
-index 4ec049e..e5e8dc4 100644
+index b523d19..2aacc1b 100644
 --- a/qtbase/src/corelib/kernel/qvariant_p.h
 +++ b/qtbase/src/corelib/kernel/qvariant_p.h
 @@ -401,7 +401,10 @@ public:
@@ -131,10 +131,10 @@ index 352a74b..20ef8b4 100644
  #define CRASH() do { \
      *(int *)(uintptr_t)0xbbadbeef = 0; \
 diff --git a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
-index 94de5ec..0d4c8fb 100644
+index 85ed8a7..8f23259 100644
 --- a/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
 +++ b/qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/Platform.h
-@@ -350,6 +350,11 @@
+@@ -363,6 +363,11 @@
  /* ==== OS() - underlying operating system; only to be used for mandated low-level services like 
     virtual memory, not to choose a GUI toolkit ==== */
  
