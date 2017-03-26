@@ -19,10 +19,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  12 files changed, 93 insertions(+), 7 deletions(-)
 
 diff --git a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
-index 29a0b2b..56d5a49 100644
+index 1305c0a..9af93c0 100644
 --- a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
 +++ b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
-@@ -1783,6 +1783,7 @@ namespace JSC {
+@@ -1796,6 +1796,7 @@ namespace JSC {
  
  #if COMPILER(GCC) && CPU(X86_64)
  asm (
@@ -31,11 +31,11 @@ index 29a0b2b..56d5a49 100644
  HIDE_SYMBOL(getHostCallReturnValue) "\n"
  SYMBOL_STRING(getHostCallReturnValue) ":" "\n"
 diff --git a/qtwebkit/Source/JavaScriptCore/jit/ExecutableAllocator.h b/qtwebkit/Source/JavaScriptCore/jit/ExecutableAllocator.h
-index 0ec4668..93fa1af 100644
+index 42e1f95..369f3a8 100644
 --- a/qtwebkit/Source/JavaScriptCore/jit/ExecutableAllocator.h
 +++ b/qtwebkit/Source/JavaScriptCore/jit/ExecutableAllocator.h
 @@ -105,7 +105,15 @@ class DemandExecutableAllocator;
- #if CPU(ARM)
+ #if CPU(ARM) || CPU(MIPS)
  static const size_t fixedExecutableMemoryPoolSize = 16 * 1024 * 1024;
  #elif CPU(X86_64) && !CPU(X32)
 +#if OS(GENODE)
@@ -110,10 +110,10 @@ index 0a2fe78..d1fdd01 100644
  #define HIDE_SYMBOL(name) ".hidden " #name
  #else
 diff --git a/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp b/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
-index a71f391..589f69f 100644
+index f676b03..02f8e17 100644
 --- a/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
 +++ b/qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp
-@@ -121,6 +121,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
+@@ -157,6 +157,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
  #endif
              CRASH();
      }
@@ -121,7 +121,7 @@ index a71f391..589f69f 100644
      if (result && includesGuardPages) {
          // We use mmap to remap the guardpages rather than using mprotect as
          // mprotect results in multiple references to the code region.  This
-@@ -129,6 +130,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
+@@ -165,6 +166,7 @@ void* OSAllocator::reserveAndCommit(size_t bytes, Usage usage, bool writable, bo
          mmap(result, pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
          mmap(static_cast<char*>(result) + bytes - pageSize(), pageSize(), PROT_NONE, MAP_FIXED | MAP_PRIVATE | MAP_ANON, fd, 0);
      }
@@ -129,7 +129,7 @@ index a71f391..589f69f 100644
      return result;
  }
  
-@@ -187,9 +189,20 @@ void OSAllocator::decommit(void* address, size_t bytes)
+@@ -223,9 +225,20 @@ void OSAllocator::decommit(void* address, size_t bytes)
  
  void OSAllocator::releaseDecommitted(void* address, size_t bytes)
  {
@@ -177,10 +177,10 @@ index 2495abf..7f05661 100644
      int fd = open("/dev/urandom", O_RDONLY, 0);
      if (fd < 0)
 diff --git a/qtwebkit/Source/WTF/wtf/Platform.h b/qtwebkit/Source/WTF/wtf/Platform.h
-index 4594ec8..a64c0f8 100644
+index 562840c..9ace16c 100644
 --- a/qtwebkit/Source/WTF/wtf/Platform.h
 +++ b/qtwebkit/Source/WTF/wtf/Platform.h
-@@ -487,6 +487,12 @@
+@@ -498,6 +498,12 @@
  #endif
  
  
@@ -193,7 +193,7 @@ index 4594ec8..a64c0f8 100644
  /* Operating environments */
  
  /* FIXME: these are all mixes of OS, operating environment and policy choices. */
-@@ -635,6 +641,11 @@
+@@ -650,6 +656,11 @@
  #define HAVE_SYS_PARAM_H 1
  #define HAVE_SYS_TIME_H 1 
  #define WTF_USE_PTHREADS 1
@@ -205,7 +205,7 @@ index 4594ec8..a64c0f8 100644
  #endif /* OS(UNIX) */
  
  #if OS(UNIX) && !OS(ANDROID) && !OS(QNX)
-@@ -657,7 +668,7 @@
+@@ -672,7 +683,7 @@
  #endif
  #endif
  
@@ -214,7 +214,7 @@ index 4594ec8..a64c0f8 100644
  #define HAVE_TM_GMTOFF 1
  #define HAVE_TM_ZONE 1
  #define HAVE_TIMEGM 1
-@@ -709,7 +720,7 @@
+@@ -719,7 +730,7 @@
  #if PLATFORM(QT)
  /* We must not customize the global operator new and delete for the Qt port. */
  #define ENABLE_GLOBAL_FASTMALLOC_NEW 0
@@ -223,7 +223,7 @@ index 4594ec8..a64c0f8 100644
  #define USE_SYSTEM_MALLOC 1
  #endif
  #endif
-@@ -899,7 +910,7 @@
+@@ -914,7 +925,7 @@
  #define ENABLE_REGEXP_TRACING 0
  
  /* Yet Another Regex Runtime - turned on by default for JIT enabled ports. */
@@ -314,7 +314,7 @@ index 5b1488b..22df481 100644
  </RCC>
  
 diff --git a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
-index 5d078b0..fd0108f 100644
+index b2c8d48..caeb3ec 100644
 --- a/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
 +++ b/qtwebkit/Source/WebCore/platform/graphics/qt/MediaPlayerPrivateQt.cpp
 @@ -18,6 +18,8 @@
@@ -326,7 +326,7 @@ index 5d078b0..fd0108f 100644
  #include "MediaPlayerPrivateQt.h"
  
  #include "Frame.h"
-@@ -657,3 +659,4 @@ PlatformMedia MediaPlayerPrivateQt::platformMedia() const
+@@ -666,3 +668,4 @@ PlatformMedia MediaPlayerPrivateQt::platformMedia() const
  } // namespace WebCore
  
  #include "moc_MediaPlayerPrivateQt.cpp"

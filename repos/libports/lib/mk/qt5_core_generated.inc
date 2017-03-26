@@ -1,17 +1,17 @@
 QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_CORE_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_USE_ICU -DPCRE_HAVE_CONFIG_H -DQT_CORE_LIB -DQT_NO_DEBUG
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtbase/src/corelib \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
   qtbase/src/3rdparty/pcre \
   qtbase/src/3rdparty/harfbuzz/src \
   qtbase/src/3rdparty/md5 \
   qtbase/src/3rdparty/md4 \
   qtbase/src/3rdparty/sha3 \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   qabstractanimation.cpp \
@@ -28,6 +28,7 @@ QT_SOURCES += \
   qmalloc.cpp \
   qnumeric.cpp \
   qlogging.cpp \
+  qhooks.cpp \
   qatomic.cpp \
   qexception.cpp \
   qresultstore.cpp \
@@ -46,6 +47,7 @@ QT_SOURCES += \
   qarraydata.cpp \
   qbitarray.cpp \
   qbytearray.cpp \
+  qbytearraylist.cpp \
   qbytearraymatcher.cpp \
   qcollator.cpp \
   qcommandlineoption.cpp \
@@ -69,7 +71,6 @@ QT_SOURCES += \
   qcontiguouscache.cpp \
   qrect.cpp \
   qregexp.cpp \
-  qregularexpression.cpp \
   qrefcount.cpp \
   qshareddata.cpp \
   qsharedpointer.cpp \
@@ -85,12 +86,14 @@ QT_SOURCES += \
   qunicodetools.cpp \
   qvector.cpp \
   qvsnprintf.cpp \
+  qversionnumber.cpp \
   qelapsedtimer_unix.cpp \
   qlocale_unix.cpp \
   qtimezoneprivate_tz.cpp \
   qlocale_icu.cpp \
   qcollator_icu.cpp \
   qtimezoneprivate_icu.cpp \
+  qregularexpression.cpp \
   pcre16_byte_order.c \
   pcre16_chartables.c \
   pcre16_compile.c \
@@ -138,6 +141,7 @@ QT_SOURCES += \
   qlockfile.cpp \
   qnoncontiguousbytedevice.cpp \
   qprocess.cpp \
+  qstorageinfo.cpp \
   qtextstream.cpp \
   qtemporarydir.cpp \
   qtemporaryfile.cpp \
@@ -165,6 +169,7 @@ QT_SOURCES += \
   qprocess_unix.cpp \
   qfilesystemiterator_unix.cpp \
   qstandardpaths_unix.cpp \
+  qstorageinfo_unix.cpp \
   qfilesystemwatcher_inotify.cpp \
   qabstractitemmodel.cpp \
   qabstractproxymodel.cpp \

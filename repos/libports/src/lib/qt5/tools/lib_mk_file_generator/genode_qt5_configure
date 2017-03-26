@@ -1,19 +1,19 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.3.2/configure \
+../qt-everywhere-opensource-src-5.4.2/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \
     -xplatform genode-g++ \
     -no-qpa-platform-guard \
     -qpa minimal \
-    -fully-process \
     -no-separate-debug-info \
     -opengl desktop \
     -openssl-linked \
     -no-accessibility \
     -no-cups \
     -no-dbus \
+    -no-harfbuzz \
     -no-iconv \
     -no-largefile \
     -no-nis \
