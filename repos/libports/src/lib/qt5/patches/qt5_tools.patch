@@ -13,7 +13,7 @@ This patch should not be applied when running the Qt 'configure' script.
  5 files changed, 52 insertions(+), 52 deletions(-)
 
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 5fece28..156acb4 100644
+index 42046c2..d144c1d 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
 @@ -12,7 +12,7 @@
@@ -26,10 +26,10 @@ index 5fece28..156acb4 100644
          debug(1, "Loaded qmodule.pri from ($$QMAKE_QT_MODULE)")
      }
 diff --git a/qtbase/mkspecs/features/qt_functions.prf b/qtbase/mkspecs/features/qt_functions.prf
-index 9a4d80e..36b2f7d 100644
+index 79b4eab..09edc25 100644
 --- a/qtbase/mkspecs/features/qt_functions.prf
 +++ b/qtbase/mkspecs/features/qt_functions.prf
-@@ -169,7 +169,7 @@ defineTest(qtAddModules) {
+@@ -174,7 +174,7 @@ defineTest(qtAddModules) {
  
          qtAddModule($$QTLIB, $$2)
      }
@@ -39,7 +39,7 @@ index 9a4d80e..36b2f7d 100644
  
  defineTest(qtAddRpathLink) {
 diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
-index 8bf4c92..1cda088 100644
+index 2437efe..cd9793e 100644
 --- a/qtbase/mkspecs/features/qt_module.prf
 +++ b/qtbase/mkspecs/features/qt_module.prf
 @@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already
@@ -163,10 +163,10 @@ index 1d3e88c..45e6a14 100644
 +#
 +#}
 diff --git a/qtbase/qmake/Makefile.unix b/qtbase/qmake/Makefile.unix
-index ef1c542..2c41bf5 100644
+index 10c72bf..2749ecc 100644
 --- a/qtbase/qmake/Makefile.unix
 +++ b/qtbase/qmake/Makefile.unix
-@@ -225,7 +225,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
+@@ -227,7 +227,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
  qsystemerror.o: $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  	$(CXX) -c -o $@ $(CXXFLAGS) $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  
