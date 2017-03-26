@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-index fc328e7..a3851b8 100644
+index 87baaa1..55fe524 100644
 --- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
 +++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-@@ -261,6 +261,10 @@ bool QWidgetWindow::event(QEvent *event)
+@@ -292,6 +292,10 @@ bool QWidgetWindow::event(QEvent *event)
      case QEvent::WindowBlocked:
          qt_button_down = 0;
          break;

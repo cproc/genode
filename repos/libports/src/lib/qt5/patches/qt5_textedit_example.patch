@@ -10,10 +10,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 21 insertions(+), 11 deletions(-)
 
 diff --git a/qtbase/examples/widgets/richtext/textedit/main.cpp b/qtbase/examples/widgets/richtext/textedit/main.cpp
-index 196dbfc..ff8d024 100644
+index 8851603..c5b8ec8 100644
 --- a/qtbase/examples/widgets/richtext/textedit/main.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/main.cpp
-@@ -39,6 +39,10 @@
+@@ -31,6 +31,10 @@
  **
  ****************************************************************************/
  
@@ -24,7 +24,7 @@ index 196dbfc..ff8d024 100644
  #include "textedit.h"
  #include <QApplication>
  
-@@ -46,9 +50,20 @@ int main(int argc, char *argv[])
+@@ -38,9 +42,20 @@ int main(int argc, char *argv[])
  {
      Q_INIT_RESOURCE(textedit);
  
@@ -47,10 +47,10 @@ index 196dbfc..ff8d024 100644
      return a.exec();
  }
 diff --git a/qtbase/examples/widgets/richtext/textedit/textedit.cpp b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-index 32483bb..b7a6f4e 100644
+index edebabd..523e892 100644
 --- a/qtbase/examples/widgets/richtext/textedit/textedit.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-@@ -478,7 +478,7 @@ void TextEdit::fileNew()
+@@ -474,7 +474,7 @@ void TextEdit::fileNew()
  void TextEdit::fileOpen()
  {
      QString fn = QFileDialog::getOpenFileName(this, tr("Open File..."),
@@ -59,7 +59,7 @@ index 32483bb..b7a6f4e 100644
      if (!fn.isEmpty())
          load(fn);
  }
-@@ -499,15 +499,14 @@ bool TextEdit::fileSave()
+@@ -495,15 +495,14 @@ bool TextEdit::fileSave()
  
  bool TextEdit::fileSaveAs()
  {

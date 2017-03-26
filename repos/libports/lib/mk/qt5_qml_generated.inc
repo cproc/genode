@@ -1,12 +1,11 @@
 QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QML_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DWTF_EXPORT_PRIVATE= -DJS_EXPORT_PRIVATE= -DWTFReportAssertionFailure=qmlWTFReportAssertionFailure -DWTFReportBacktrace=qmlWTFReportBacktrace -DWTFInvokeCrashHook=qmlWTFInvokeCrashHook -DENABLE_LLINT=0 -DENABLE_DFG_JIT=0 -DENABLE_DFG_JIT_UTILITY_METHODS=1 -DENABLE_JIT_CONSTANT_BLINDING=0 -DBUILDING_QT__ -DWTF_USE_UDIS86=0 -DNDEBUG -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtdeclarative/src/qml \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.3.2 \
-  qtdeclarative/include/QtQml/5.3.2/QtQml \
+  qtdeclarative/include/QtQml/5.4.2 \
+  qtdeclarative/include/QtQml/5.4.2/QtQml \
   qtdeclarative/src/qml/compiler \
   qtdeclarative/src/3rdparty/masm/jit \
   qtdeclarative/src/3rdparty/masm/assembler \
@@ -22,11 +21,12 @@ QT_INCPATH += \
   qtdeclarative/src/3rdparty/double-conversion \
   qtdeclarative/src/qml/debugger \
   qtdeclarative/src/qml/animations \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
   qtbase/include/QtCore \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   qqmlchangeset.cpp \
