@@ -37,10 +37,10 @@ index c950e47..a21d942 100644
  #error "The cacheFlush support is missing on this platform."
  #endif
 diff --git a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
-index 0264361..704a467 100644
+index ca0fa21..782aabf 100644
 --- a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
 +++ b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
-@@ -61,7 +61,8 @@ static bool isVFPPresent()
+@@ -65,7 +65,8 @@ static bool isVFPPresent()
      }
  #endif
  
