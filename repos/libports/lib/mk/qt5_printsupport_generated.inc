@@ -1,23 +1,23 @@
 QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_PRINTSUPPORT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtbase/src/printsupport \
   qtbase/include \
   qtbase/include/QtPrintSupport \
-  qtbase/include/QtPrintSupport/5.3.2 \
-  qtbase/include/QtPrintSupport/5.3.2/QtPrintSupport \
+  qtbase/include/QtPrintSupport/5.4.2 \
+  qtbase/include/QtPrintSupport/5.4.2/QtPrintSupport \
   qtbase/src/plugins/printsupport/cups \
   qtbase/src/printsupport/dialogs \
-  qtbase/include/QtWidgets/5.3.2 \
-  qtbase/include/QtWidgets/5.3.2/QtWidgets \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
+  qtbase/include/QtGui/5.4.2 \
+  qtbase/include/QtGui/5.4.2/QtGui \
+  qtbase/include/QtWidgets/5.4.2 \
+  qtbase/include/QtWidgets/5.4.2/QtWidgets \
   qtbase/include/QtWidgets \
-  qtbase/include/QtGui/5.3.2 \
-  qtbase/include/QtGui/5.3.2/QtGui \
   qtbase/include/QtGui \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
   qtbase/include/QtCore \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   qpaintengine_alpha.cpp \

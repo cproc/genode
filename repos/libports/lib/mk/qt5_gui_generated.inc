@@ -1,20 +1,19 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_ENABLE_HARFBUZZ_NG -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.3.2 \
-  qtbase/include/QtGui/5.3.2/QtGui \
+  qtbase/include/QtGui/5.4.2 \
+  qtbase/include/QtGui/5.4.2/QtGui \
   qtbase/src/gui/image \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
+  qtbase/src/3rdparty/harfbuzz-ng/include \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
   qtbase/include/QtCore \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
-  qclipboard_qpa.cpp \
-  qcursor_qpa.cpp \
   qgenericpluginfactory.cpp \
   qgenericplugin.cpp \
   qwindowsysteminterface.cpp \
@@ -51,7 +50,6 @@ QT_SOURCES += \
   qinputmethod.cpp \
   qkeysequence.cpp \
   qkeymapper.cpp \
-  qkeymapper_qpa.cpp \
   qpalette.cpp \
   qguivariant.cpp \
   qscreen.cpp \
@@ -61,12 +59,15 @@ QT_SOURCES += \
   qplatformsharedgraphicscache.cpp \
   qplatformdialoghelper.cpp \
   qplatformservices.cpp \
-  qplatformscreenpageflipper.cpp \
-  qplatformsystemtrayicon_qpa.cpp \
+  qplatformsystemtrayicon.cpp \
   qplatformsessionmanager.cpp \
   qplatformmenu.cpp \
+  qpixelformat.cpp \
+  qpaintdevicewindow.cpp \
+  qrasterwindow.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
+  qopenglwindow.cpp \
   qbitmap.cpp \
   qimage.cpp \
   qimage_conversions.cpp \
@@ -95,7 +96,6 @@ QT_SOURCES += \
   qpnghandler.cpp \
   qjpeghandler.cpp \
   qgifhandler.cpp \
-  qimage_sse2.cpp \
   qfont.cpp \
   qfontengine.cpp \
   qfontsubset.cpp \
@@ -126,10 +126,9 @@ QT_SOURCES += \
   qrawfont.cpp \
   qglyphrun.cpp \
   qdistancefield.cpp \
-  qfont_qpa.cpp \
-  qfontengine_qpa.cpp \
+  qfontengine_qpf2.cpp \
   qplatformfontdatabase.cpp \
-  qrawfont_qpa.cpp \
+  qharfbuzzng.cpp \
   qbackingstore.cpp \
   qbezier.cpp \
   qblendfunctions.cpp \
@@ -170,7 +169,6 @@ QT_SOURCES += \
   qplatformbackingstore.cpp \
   qpaintbuffer.cpp \
   qpathsimplifier.cpp \
-  qdrawhelper_sse2.cpp \
   qdesktopservices.cpp \
   qvalidator.cpp \
   qgridlayoutengine.cpp \
@@ -242,6 +240,7 @@ QT_SOURCES += \
   moc_qclipboard.cpp \
   moc_qdrag.cpp \
   moc_qdnd_p.cpp \
+  moc_qevent.cpp \
   moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
   moc_qpalette.cpp \
@@ -250,8 +249,10 @@ QT_SOURCES += \
   moc_qstylehints.cpp \
   moc_qplatformsharedgraphicscache.cpp \
   moc_qplatformdialoghelper.cpp \
-  moc_qplatformscreenpageflipper.cpp \
+  moc_qpaintdevicewindow.cpp \
+  moc_qrasterwindow.cpp \
   moc_qopenglcontext.cpp \
+  moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
   moc_qiconengineplugin.cpp \
@@ -304,6 +305,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qclipboard.cpp \
   moc_qdrag.cpp \
   moc_qdnd_p.cpp \
+  moc_qevent.cpp \
   moc_qinputmethod.cpp \
   moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
@@ -313,9 +315,11 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qstylehints.cpp \
   moc_qplatformsharedgraphicscache.cpp \
   moc_qplatformdialoghelper.cpp \
-  moc_qplatformscreenpageflipper.cpp \
   moc_qplatformsystemtrayicon.cpp \
+  moc_qpaintdevicewindow.cpp \
+  moc_qrasterwindow.cpp \
   moc_qopenglcontext.cpp \
+  moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
   moc_qmovie.cpp \
   moc_qpictureformatplugin.cpp \
