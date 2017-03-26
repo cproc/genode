@@ -1,7 +1,6 @@
 QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DJSC=QTJSC -Djscyyparse=qtjscyyparse -Djscyylex=qtjscyylex -Djscyyerror=qtjscyyerror -DWTF=QTWTF -DQT_NO_USING_NAMESPACE -DQLALR_NO_QSCRIPTGRAMMAR_DEBUG_INFO -DQT_BUILD_SCRIPT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DBUILDING_QT__=1 -DNDEBUG -DLOG_DISABLED=1 -DBUILDING_QT__ -DBUILDING_JavaScriptCore -DBUILDING_WTF -DWTF_USE_JAVASCRIPTCORE_BINDINGS=1 -DWTF_CHANGES=1 -DNDEBUG -DJS_NO_EXPORT -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtscript/src/script \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore \
   qtscript/src/3rdparty/javascriptcore \
@@ -25,8 +24,8 @@ QT_INCPATH += \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
   qtscript/include \
   qtscript/include/QtScript \
-  qtscript/include/QtScript/5.3.2 \
-  qtscript/include/QtScript/5.3.2/QtScript \
+  qtscript/include/QtScript/5.4.2 \
+  qtscript/include/QtScript/5.4.2/QtScript \
   qtscript/src/3rdparty/javascriptcore/WebKit/qt/Api \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/pcre \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/tmp \
@@ -47,10 +46,11 @@ QT_INCPATH += \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
   qtscript/src/script \
   qtscript/src/script/parser \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
   qtbase/include \
   qtbase/include/QtCore \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   pcre_compile.cpp \

@@ -18,7 +18,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES_FILTER_OUT = \
   moc_qnetworksession_p.cpp \
   moc_qbearerengine_p.cpp \
   moc_qbearerplugin_p.cpp \
-  moc_qudpsocket.cpp \
   moc_qsslsocket_openssl_p.cpp \
   
 
