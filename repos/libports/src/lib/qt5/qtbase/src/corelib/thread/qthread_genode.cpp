@@ -1,11 +1,11 @@
 /****************************************************************************
 **
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the QtCore module of the Qt Toolkit.
 **
-** $QT_BEGIN_LICENSE:LGPL$
+** $QT_BEGIN_LICENSE:LGPL21$
 ** Commercial License Usage
 ** Licensees holding valid commercial Qt licenses may use this file in
 ** accordance with the commercial license agreement provided with the
@@ -16,24 +16,16 @@
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 2.1 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU Lesser General Public License version 2.1 requirements
-** will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
+** General Public License version 2.1 or version 3 as published by the Free
+** Software Foundation and appearing in the file LICENSE.LGPLv21 and
+** LICENSE.LGPLv3 included in the packaging of this file. Please review the
+** following information to ensure the GNU Lesser General Public License
+** requirements will be met: https://www.gnu.org/licenses/lgpl.html and
+** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
 **
 ** In addition, as a special exception, Digia gives you certain additional
 ** rights.  These rights are described in the Digia Qt LGPL Exception
 ** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3.0 as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU General Public License version 3.0 requirements will be
-** met: http://www.gnu.org/copyleft/gpl.html.
-**
 **
 ** $QT_END_LICENSE$
 **
@@ -469,26 +461,24 @@ Qt::HANDLE QThread::currentThreadId() Q_DECL_NOTHROW
 
 int QThread::idealThreadCount() Q_DECL_NOTHROW
 {
-    int cores = -1;
+    int cores = 1;
 
 #if defined(Q_OS_HPUX)
     // HP-UX
     struct pst_dynamic psd;
     if (pstat_getdynamic(&psd, sizeof(psd), 1, 0) == -1) {
         perror("pstat_getdynamic");
-        cores = -1;
     } else {
         cores = (int)psd.psd_proc_cnt;
     }
 #elif defined(Q_OS_BSD4)
-    // FreeBSD, OpenBSD, NetBSD, BSD/OS, Mac OS X
+    // FreeBSD, OpenBSD, NetBSD, BSD/OS, OS X, iOS
     size_t len = sizeof(cores);
     int mib[2];
     mib[0] = CTL_HW;
     mib[1] = HW_NCPU;
     if (sysctl(mib, 2, &cores, &len, NULL, 0) != 0) {
         perror("sysctl");
-        cores = -1;
     }
 #elif defined(Q_OS_IRIX)
     // IRIX
@@ -525,8 +515,9 @@ int QThread::idealThreadCount() Q_DECL_NOTHROW
 #else
     // the rest: Linux, Solaris, AIX, Tru64
     cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores == -1)
+        return 1;
 #endif
-
     return cores;
 }
 

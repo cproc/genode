@@ -45,12 +45,13 @@ class QNitpickerIntegration : public QPlatformIntegration
 
 		QNitpickerIntegration();
 
+		void initialize() Q_DECL_OVERRIDE;
 		bool hasCapability(QPlatformIntegration::Capability cap) const Q_DECL_OVERRIDE;
 
 		QPlatformWindow *createPlatformWindow(QWindow *window) const Q_DECL_OVERRIDE;
 		QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const Q_DECL_OVERRIDE;
+
 		QAbstractEventDispatcher *createEventDispatcher() const Q_DECL_OVERRIDE;
-		void initialize() Q_DECL_OVERRIDE;
 
 		QPlatformFontDatabase *fontDatabase() const Q_DECL_OVERRIDE;
 

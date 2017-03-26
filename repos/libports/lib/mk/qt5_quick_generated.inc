@@ -1,24 +1,24 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/mkspecs/genode-g++ \
   qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.3.2 \
-  qtdeclarative/include/QtQuick/5.3.2/QtQuick \
+  qtdeclarative/include/QtQuick/5.4.2 \
+  qtdeclarative/include/QtQuick/5.4.2/QtQuick \
   qtdeclarative/src/quick \
-  qtdeclarative/include/QtQml/5.3.2 \
-  qtdeclarative/include/QtQml/5.3.2/QtQml \
-  qtdeclarative/include/QtQml \
-  qtbase/include/QtGui/5.3.2 \
-  qtbase/include/QtGui/5.3.2/QtGui \
+  qtbase/include/QtCore/5.4.2 \
+  qtbase/include/QtCore/5.4.2/QtCore \
+  qtbase/include/QtGui/5.4.2 \
+  qtbase/include/QtGui/5.4.2/QtGui \
   qtbase/include \
-  qtbase/include/QtNetwork \
   qtbase/include/QtGui \
-  qtbase/include/QtCore/5.3.2 \
-  qtbase/include/QtCore/5.3.2/QtCore \
+  qtdeclarative/include/QtQml/5.4.2 \
+  qtdeclarative/include/QtQml/5.4.2/QtQml \
+  qtdeclarative/include/QtQml \
+  qtbase/include/QtNetwork \
   qtbase/include/QtCore \
+  qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   qquickapplication.cpp \
@@ -49,6 +49,9 @@ QT_SOURCES += \
   qquickanimatorjob.cpp \
   qquickanimatorcontroller.cpp \
   qquickprofiler.cpp \
+  qquickfontmetrics.cpp \
+  qquicktextmetrics.cpp \
+  qsgabstractrenderer.cpp \
   qsgbatchrenderer.cpp \
   qsggeometry.cpp \
   qsgmaterial.cpp \
@@ -60,6 +63,7 @@ QT_SOURCES += \
   qsgareaallocator.cpp \
   qsgatlastexture.cpp \
   qsgdepthstencilbuffer.cpp \
+  qsgengine.cpp \
   qsgflatcolormaterial.cpp \
   qsgsimplerectnode.cpp \
   qsgsimpletexturenode.cpp \
@@ -67,7 +71,7 @@ QT_SOURCES += \
   qsgvertexcolormaterial.cpp \
   qsgtexture.cpp \
   qsgtextureprovider.cpp \
-  qsgpainternode.cpp \
+  qsgdefaultpainternode.cpp \
   qsgdistancefieldutil.cpp \
   qsgsimplematerial.cpp \
   qsgshadersourcebuilder.cpp \
@@ -85,12 +89,12 @@ QT_SOURCES += \
   qsgrenderloop.cpp \
   qsgthreadedrenderloop.cpp \
   qsgwindowsrenderloop.cpp \
+  qsgdefaultlayer.cpp \
   qquickevents.cpp \
   qquickanchors.cpp \
   qquickitem.cpp \
   qquickrectangle.cpp \
   qquickwindow.cpp \
-  qquickrendercontrol.cpp \
   qquickfocusscope.cpp \
   qquickitemsmodule.cpp \
   qquickpainteditem.cpp \
@@ -135,7 +139,11 @@ QT_SOURCES += \
   qquickitemviewtransition.cpp \
   qquickwindowmodule.cpp \
   qquickscreen.cpp \
+  qquickwindowattached.cpp \
   qquickframebufferobject.cpp \
+  qquickitemgrabresult.cpp \
+  qquickrendercontrol.cpp \
+  qquickopenglinfo.cpp \
   qquickshadereffect.cpp \
   qquickshadereffectmesh.cpp \
   qquickshadereffectnode.cpp \
@@ -173,24 +181,28 @@ QT_SOURCES += \
   moc_qquickanimatorjob_p.cpp \
   moc_qquickanimatorcontroller_p.cpp \
   moc_qquickprofiler_p.cpp \
+  moc_qquickfontmetrics_p.cpp \
+  moc_qquicktextmetrics_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
-  moc_qsgrenderer_p.cpp \
+  moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
+  moc_qsgengine.cpp \
   moc_qsgtexture.cpp \
   moc_qsgtexture_p.cpp \
   moc_qsgtextureprovider.cpp \
+  moc_qsgadaptationlayer_p.cpp \
   moc_qsgcontext_p.cpp \
   moc_qsgcontextplugin_p.cpp \
   moc_qsgshareddistancefieldglyphcache_p.cpp \
   moc_qsgrenderloop_p.cpp \
   moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgwindowsrenderloop_p.cpp \
+  moc_qsgdefaultlayer_p.cpp \
   moc_qquickevents_p_p.cpp \
   moc_qquickaccessibleattached_p.cpp \
   moc_qquickitem_p.cpp \
   moc_qquickrectangle_p.cpp \
   moc_qquickwindow_p.cpp \
-  moc_qquickrendercontrol_p.cpp \
   moc_qquickfocusscope_p.cpp \
   moc_qquickpainteditem.cpp \
   moc_qquicktext_p.cpp \
@@ -228,7 +240,11 @@ QT_SOURCES += \
   moc_qquickitemview_p.cpp \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
+  moc_qquickwindowattached_p.cpp \
   moc_qquickframebufferobject.cpp \
+  moc_qquickitemgrabresult.cpp \
+  moc_qquickrendercontrol.cpp \
+  moc_qquickopenglinfo_p.cpp \
   moc_qquickshadereffect_p.cpp \
   moc_qquickshadereffectmesh_p.cpp \
   moc_qquickshadereffectnode_p.cpp \
@@ -279,18 +295,23 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickanimatorjob_p.cpp \
   moc_qquickanimatorcontroller_p.cpp \
   moc_qquickprofiler_p.cpp \
+  moc_qquickfontmetrics_p.cpp \
+  moc_qquicktextmetrics_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
-  moc_qsgrenderer_p.cpp \
+  moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
+  moc_qsgengine.cpp \
   moc_qsgtexture.cpp \
   moc_qsgtexture_p.cpp \
   moc_qsgtextureprovider.cpp \
+  moc_qsgadaptationlayer_p.cpp \
   moc_qsgcontext_p.cpp \
   moc_qsgcontextplugin_p.cpp \
   moc_qsgshareddistancefieldglyphcache_p.cpp \
   moc_qsgrenderloop_p.cpp \
   moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgwindowsrenderloop_p.cpp \
+  moc_qsgdefaultlayer_p.cpp \
   moc_qquickevents_p_p.cpp \
   moc_qquickanchors_p.cpp \
   moc_qquickaccessibleattached_p.cpp \
@@ -299,7 +320,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickrectangle_p.cpp \
   moc_qquickwindow.cpp \
   moc_qquickwindow_p.cpp \
-  moc_qquickrendercontrol_p.cpp \
   moc_qquickfocusscope_p.cpp \
   moc_qquickpainteditem.cpp \
   moc_qquicktext_p.cpp \
@@ -340,7 +360,11 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickitemview_p.cpp \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
+  moc_qquickwindowattached_p.cpp \
   moc_qquickframebufferobject.cpp \
+  moc_qquickitemgrabresult.cpp \
+  moc_qquickrendercontrol.cpp \
+  moc_qquickopenglinfo_p.cpp \
   moc_qquickshadereffect_p.cpp \
   moc_qquickshadereffectmesh_p.cpp \
   moc_qquickshadereffectnode_p.cpp \
@@ -358,6 +382,7 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qquickpixmapcache.moc \
   qquickfontloader.moc \
   qquickprofiler.moc \
+  qsgcontext.moc \
   qsgrenderloop.moc \
   qsgthreadedrenderloop.moc \
   qquickwindow.moc \
