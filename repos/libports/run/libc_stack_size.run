@@ -1,0 +1,39 @@
+build "core init test/libc_stack_size"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="test-libc_stack_size">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<vfs> <dir name="dev"> <log/> </dir> </vfs>
+			<libc stdout="/dev/log"/>
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init test-libc_stack_size
+	ld.lib.so libc.lib.so libm.lib.so
+}
+
+append qemu_args " -nographic -m 64 "
+
+run_genode_until ".*Libc::Component::stack_size\\(\\) called" 10
