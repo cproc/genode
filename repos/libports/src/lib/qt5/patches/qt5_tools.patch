@@ -13,7 +13,7 @@ This patch should not be applied when running the Qt 'configure' script.
  5 files changed, 52 insertions(+), 52 deletions(-)
 
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 42046c2..d144c1d 100644
+index 7197f84..74bd9c7 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
 @@ -12,7 +12,7 @@
@@ -26,7 +26,7 @@ index 42046c2..d144c1d 100644
          debug(1, "Loaded qmodule.pri from ($$QMAKE_QT_MODULE)")
      }
 diff --git a/qtbase/mkspecs/features/qt_functions.prf b/qtbase/mkspecs/features/qt_functions.prf
-index 79b4eab..09edc25 100644
+index a1c4996..54a66c7 100644
 --- a/qtbase/mkspecs/features/qt_functions.prf
 +++ b/qtbase/mkspecs/features/qt_functions.prf
 @@ -174,7 +174,7 @@ defineTest(qtAddModules) {
@@ -39,7 +39,7 @@ index 79b4eab..09edc25 100644
  
  defineTest(qtAddRpathLink) {
 diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
-index 2437efe..cd9793e 100644
+index c89b6d2..edbf564 100644
 --- a/qtbase/mkspecs/features/qt_module.prf
 +++ b/qtbase/mkspecs/features/qt_module.prf
 @@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already
@@ -51,15 +51,15 @@ index 2437efe..cd9793e 100644
  
  # Compile as shared/DLL or static according to the option given to configure
  # unless overridden. Host builds are always static
-@@ -58,7 +58,7 @@ else: \
-     MODULE_DEFINE = QT_$${ucmodule}_LIB
- MODULE_DEFINES = $$MODULE_DEFINE $$MODULE_DEFINES
+@@ -73,7 +73,7 @@ CONFIG          += qmake_cache target_qt
+ 
+ QMAKE_DOCS_TARGETDIR = qt$${MODULE}
  
 -load(qt_module_pris)
 +#load(qt_module_pris)
+ load(qt_common)
  
- INCLUDEPATH *= $$eval(QT.$${MODULE}.includes) $$eval(QT.$${MODULE}_private.includes)
- 
+ !no_module_headers: load(qt_module_headers)
 diff --git a/qtbase/mkspecs/features/qt_tool.prf b/qtbase/mkspecs/features/qt_tool.prf
 index 1d3e88c..45e6a14 100644
 --- a/qtbase/mkspecs/features/qt_tool.prf
@@ -163,7 +163,7 @@ index 1d3e88c..45e6a14 100644
 +#
 +#}
 diff --git a/qtbase/qmake/Makefile.unix b/qtbase/qmake/Makefile.unix
-index 10c72bf..2749ecc 100644
+index 86f884f..004247e 100644
 --- a/qtbase/qmake/Makefile.unix
 +++ b/qtbase/qmake/Makefile.unix
 @@ -227,7 +227,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp

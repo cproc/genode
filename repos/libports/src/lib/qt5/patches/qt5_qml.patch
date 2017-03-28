@@ -10,12 +10,11 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtdeclarative/src/qml/jsruntime/qv4mm.cpp          |    4 ++++
  qtdeclarative/src/qml/qml/qqmlaccessors_p.h        |    2 +-
  qtdeclarative/src/qml/qml/qqmlimport.cpp           |    9 +++++++++
- qtdeclarative/src/qml/types/qqmldelegatemodel_p.h  |    2 ++
  .../graphics/transforms/TransformationMatrix.h     |    2 +-
- 8 files changed, 31 insertions(+), 4 deletions(-)
+ 7 files changed, 29 insertions(+), 4 deletions(-)
 
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h b/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
-index 31eabf0..d956a2c 100644
+index a453786..fc92e0b 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4alloca_p.h
 @@ -36,6 +36,7 @@
@@ -37,7 +36,7 @@ index 31eabf0..d956a2c 100644
  
  #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index 5bba745..a154141 100644
+index e1282ee..8c524c4 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 @@ -30,6 +30,7 @@
@@ -48,8 +47,8 @@ index 5bba745..a154141 100644
  #include <qv4engine_p.h>
  #include <qv4context_p.h>
  #include <qv4value_inl_p.h>
-@@ -79,6 +80,10 @@
- #endif
+@@ -95,6 +96,10 @@
+ #include <valgrind/memcheck.h>
  #endif
  
 +#if defined(Q_OS_GENODE)
@@ -59,7 +58,7 @@ index 5bba745..a154141 100644
  QT_BEGIN_NAMESPACE
  
  using namespace QV4;
-@@ -95,7 +100,10 @@ const int MinimumStackSize = 256; // in kbytes
+@@ -114,7 +119,10 @@ QT_WARNING_DISABLE_MSVC(4172) // MSVC 2015: warning C4172: returning address of
  quintptr getStackLimit()
  {
      quintptr stackLimit;
@@ -72,10 +71,10 @@ index 5bba745..a154141 100644
      pthread_t thread_self = pthread_self();
      void *stackTop = pthread_get_stackaddr_np(thread_self);
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4global_p.h b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-index 1208f0f..77a1c83 100644
+index 4b08194..4354090 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-@@ -87,7 +87,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
+@@ -92,7 +92,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
  
  // Black list some platforms
  #if defined(V4_ENABLE_JIT)
@@ -85,7 +84,7 @@ index 1208f0f..77a1c83 100644
  #endif
  #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
-index 975a5d5..d8c1904 100644
+index 64491e1..6f05998 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
 @@ -64,6 +64,10 @@
@@ -96,11 +95,11 @@ index 975a5d5..d8c1904 100644
 +#include <base/thread.h>
 +#endif
 +
- QT_BEGIN_NAMESPACE
+ using namespace WTF;
  
- using namespace QV4;
+ QT_BEGIN_NAMESPACE
 diff --git a/qtdeclarative/src/qml/qml/qqmlaccessors_p.h b/qtdeclarative/src/qml/qml/qqmlaccessors_p.h
-index 9eb727b..19d8fd2 100644
+index 24cd0b6..0558983 100644
 --- a/qtdeclarative/src/qml/qml/qqmlaccessors_p.h
 +++ b/qtdeclarative/src/qml/qml/qqmlaccessors_p.h
 @@ -40,7 +40,7 @@
@@ -113,10 +112,10 @@ index 9eb727b..19d8fd2 100644
  #endif
  
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-index 807eb05..672300d 100644
+index ff48a10..d5e892b 100644
 --- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
 +++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-@@ -1685,6 +1685,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1650,6 +1650,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
                                                    const QString &qmldirPath, const QString &qmldirPluginPath,
                                                    const QString &baseName)
  {
@@ -131,7 +130,7 @@ index 807eb05..672300d 100644
  #if defined(Q_OS_WIN)
      return resolvePlugin(typeLoader, qmldirPath, qmldirPluginPath, baseName,
                           QStringList()
-@@ -1734,6 +1742,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1699,6 +1707,7 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
  # endif
  
  #endif
@@ -139,19 +138,6 @@ index 807eb05..672300d 100644
  }
  
  /*!
-diff --git a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
-index a2715bf..c7691c2 100644
---- a/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
-+++ b/qtdeclarative/src/qml/types/qqmldelegatemodel_p.h
-@@ -44,6 +44,8 @@
- #include <private/qv8engine_p.h>
- #include <private/qqmlglobal_p.h>
- 
-+#include <QtQml/QQmlParserStatus>
-+
- Q_DECLARE_METATYPE(QModelIndex)
- 
- QT_BEGIN_NAMESPACE
 diff --git a/qtwebkit/Source/WebCore/platform/graphics/transforms/TransformationMatrix.h b/qtwebkit/Source/WebCore/platform/graphics/transforms/TransformationMatrix.h
 index 0f04b67..89d36b8 100644
 --- a/qtwebkit/Source/WebCore/platform/graphics/transforms/TransformationMatrix.h

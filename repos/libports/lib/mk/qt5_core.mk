@@ -12,15 +12,11 @@ QT_SOURCES += qthread_genode.cpp
 
 # remove unsupported UNIX-specific files
 QT_SOURCES_FILTER_OUT = \
-  qprocess_unix.cpp \
-  qthread_unix.cpp \
-  qfilesystemwatcher_inotify.cpp \
-  moc_qfilesystemwatcher_inotify_p.cpp \
+  qthread_unix.cpp
 
 # remove unneeded files to prevent moc warnings
 COMPILER_MOC_HEADER_MAKE_ALL_FILES_FILTER_OUT = \
-  moc_qsharedmemory.cpp \
-  moc_qfilesystemwatcher_inotify_p.cpp \
+  moc_qsharedmemory.cpp
 
 include $(REP_DIR)/lib/mk/qt5.inc
 

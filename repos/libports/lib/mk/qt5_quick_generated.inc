@@ -1,20 +1,20 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.4.2 \
-  qtdeclarative/include/QtQuick/5.4.2/QtQuick \
+  qtdeclarative/include/QtQuick/5.5.1 \
+  qtdeclarative/include/QtQuick/5.5.1/QtQuick \
   qtdeclarative/src/quick \
-  qtbase/include/QtCore/5.4.2 \
-  qtbase/include/QtCore/5.4.2/QtCore \
-  qtbase/include/QtGui/5.4.2 \
-  qtbase/include/QtGui/5.4.2/QtGui \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
+  qtbase/include/QtGui/5.5.1 \
+  qtbase/include/QtGui/5.5.1/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtdeclarative/include/QtQml/5.4.2 \
-  qtdeclarative/include/QtQml/5.4.2/QtQml \
+  qtdeclarative/include/QtQml/5.5.1 \
+  qtdeclarative/include/QtQml/5.5.1/QtQml \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
@@ -51,6 +51,7 @@ QT_SOURCES += \
   qquickprofiler.cpp \
   qquickfontmetrics.cpp \
   qquicktextmetrics.cpp \
+  qquickshortcut.cpp \
   qsgabstractrenderer.cpp \
   qsgbatchrenderer.cpp \
   qsggeometry.cpp \
@@ -183,6 +184,7 @@ QT_SOURCES += \
   moc_qquickprofiler_p.cpp \
   moc_qquickfontmetrics_p.cpp \
   moc_qquicktextmetrics_p.cpp \
+  moc_qquickshortcut_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
   moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
@@ -241,6 +243,7 @@ QT_SOURCES += \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
   moc_qquickwindowattached_p.cpp \
+  moc_qquickwindowmodule_p.cpp \
   moc_qquickframebufferobject.cpp \
   moc_qquickitemgrabresult.cpp \
   moc_qquickrendercontrol.cpp \
@@ -297,6 +300,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickprofiler_p.cpp \
   moc_qquickfontmetrics_p.cpp \
   moc_qquicktextmetrics_p.cpp \
+  moc_qquickshortcut_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
   moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
@@ -361,6 +365,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquickscreen_p.cpp \
   moc_qquickwindowattached_p.cpp \
+  moc_qquickwindowmodule_p.cpp \
   moc_qquickframebufferobject.cpp \
   moc_qquickitemgrabresult.cpp \
   moc_qquickrendercontrol.cpp \
@@ -388,7 +393,6 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qquickwindow.moc \
   qquickimage.moc \
   qquickflipable.moc \
-  qquickwindowmodule.moc \
   qquickframebufferobject.moc \
   qquickshadereffectsource.moc
 

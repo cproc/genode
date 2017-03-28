@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.4.2/configure \
+../qt-everywhere-opensource-src-5.5.1/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \

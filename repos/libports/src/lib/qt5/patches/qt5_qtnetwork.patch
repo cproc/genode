@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 20 insertions(+)
 
 diff --git a/qtbase/src/network/access/qhttpnetworkreply.cpp b/qtbase/src/network/access/qhttpnetworkreply.cpp
-index 55863a3..5e890d6 100644
+index 80f3670..00a40d7 100644
 --- a/qtbase/src/network/access/qhttpnetworkreply.cpp
 +++ b/qtbase/src/network/access/qhttpnetworkreply.cpp
 @@ -230,8 +230,16 @@ void QHttpNetworkReply::setReadBufferSize(qint64 size)
@@ -31,10 +31,10 @@ index 55863a3..5e890d6 100644
  
  void QHttpNetworkReply::setUserProvidedDownloadBuffer(char* b)
 diff --git a/qtbase/src/network/ssl/qsslconfiguration_p.h b/qtbase/src/network/ssl/qsslconfiguration_p.h
-index 6880f59..cbb03cc 100644
+index 3fd1252..56251ca 100644
 --- a/qtbase/src/network/ssl/qsslconfiguration_p.h
 +++ b/qtbase/src/network/ssl/qsslconfiguration_p.h
-@@ -75,7 +75,16 @@ public:
+@@ -76,7 +76,16 @@ public:
      QSslConfigurationPrivate()
          : sessionProtocol(QSsl::UnknownProtocol),
            protocol(QSsl::SecureProtocols),
@@ -52,10 +52,10 @@ index 6880f59..cbb03cc 100644
            allowRootCertOnDemandLoading(true),
            peerSessionShared(false),
 diff --git a/qtbase/src/network/ssl/qsslsocket_openssl.cpp b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-index ac4336a..7bbf3d7 100644
+index a21317d..4084e26 100644
 --- a/qtbase/src/network/ssl/qsslsocket_openssl.cpp
 +++ b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-@@ -439,7 +439,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
+@@ -479,7 +479,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
          if (q_SSL_library_init() != 1)
              return false;
          q_SSL_load_error_strings();
@@ -64,5 +64,5 @@ index ac4336a..7bbf3d7 100644
          q_OpenSSL_add_all_algorithms();
 +#endif
  
-         // Initialize OpenSSL's random seed.
-         if (!q_RAND_status()) {
+ #if OPENSSL_VERSION_NUMBER >= 0x10001000L
+         if (q_SSLeay() >= 0x10001000L)

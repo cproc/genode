@@ -1,11 +1,11 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QML_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DWTF_EXPORT_PRIVATE= -DJS_EXPORT_PRIVATE= -DWTFReportAssertionFailure=qmlWTFReportAssertionFailure -DWTFReportBacktrace=qmlWTFReportBacktrace -DWTFInvokeCrashHook=qmlWTFInvokeCrashHook -DENABLE_LLINT=0 -DENABLE_DFG_JIT=0 -DENABLE_DFG_JIT_UTILITY_METHODS=1 -DENABLE_JIT_CONSTANT_BLINDING=0 -DBUILDING_QT__ -DWTF_USE_UDIS86=0 -DNDEBUG -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_BUILD_QML_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DWTF_EXPORT_PRIVATE= -DJS_EXPORT_PRIVATE= -DWTFReportAssertionFailure=qmlWTFReportAssertionFailure -DWTFReportBacktrace=qmlWTFReportBacktrace -DWTFInvokeCrashHook=qmlWTFInvokeCrashHook -DENABLE_LLINT=0 -DENABLE_DFG_JIT=0 -DENABLE_DFG_JIT_UTILITY_METHODS=1 -DENABLE_JIT_CONSTANT_BLINDING=0 -DBUILDING_QT__ -DWTF_USE_UDIS86=0 -DNDEBUG -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtdeclarative/src/qml \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.4.2 \
-  qtdeclarative/include/QtQml/5.4.2/QtQml \
+  qtdeclarative/include/QtQml/5.5.1 \
+  qtdeclarative/include/QtQml/5.5.1/QtQml \
   qtdeclarative/src/qml/compiler \
   qtdeclarative/src/3rdparty/masm/jit \
   qtdeclarative/src/3rdparty/masm/assembler \
@@ -21,8 +21,8 @@ QT_INCPATH += \
   qtdeclarative/src/3rdparty/double-conversion \
   qtdeclarative/src/qml/debugger \
   qtdeclarative/src/qml/animations \
-  qtbase/include/QtCore/5.4.2 \
-  qtbase/include/QtCore/5.4.2/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
@@ -116,6 +116,9 @@ QT_SOURCES += \
   qv4qmlextensions.cpp \
   qv4vme_moth.cpp \
   qv4profiling.cpp \
+  qv4arraybuffer.cpp \
+  qv4typedarray.cpp \
+  qv4dataview.cpp \
   qv4runtime.cpp \
   qv4string.cpp \
   qv4value.cpp \
@@ -127,7 +130,6 @@ QT_SOURCES += \
   fast-dtoa.cc \
   fixed-dtoa.cc \
   strtod.cc \
-  qqmldirparser.cpp \
   qqmlopenmetaobject.cpp \
   qqmlvmemetaobject.cpp \
   qqmlengine.cpp \
@@ -170,7 +172,6 @@ QT_SOURCES += \
   qqmlvaluetypeproxybinding.cpp \
   qqmlglobal.cpp \
   qqmlfile.cpp \
-  qqmlbundle.cpp \
   qqmlmemoryprofiler.cpp \
   qqmlplatform.cpp \
   qqmlbinding.cpp \
@@ -182,11 +183,11 @@ QT_SOURCES += \
   qqmltypewrapper.cpp \
   qqmlfileselector.cpp \
   qqmlobjectcreator.cpp \
+  qqmldirparser.cpp \
   qintrusivelist.cpp \
   qhashedstring.cpp \
   qqmlpool.cpp \
   qqmlthread.cpp \
-  qqmltrace.cpp \
   qv8engine.cpp \
   qv4domerrors.cpp \
   qv4sqlerrors.cpp \
@@ -215,6 +216,7 @@ QT_SOURCES += \
   qqmllistmodel.cpp \
   qqmllistmodelworkeragent.cpp \
   qqmlmodelsmodule.cpp \
+  qqmlmodelindexvaluetype.cpp \
   qqmlobjectmodel.cpp \
   qqmltimer.cpp \
   qquickpackage.cpp \
@@ -255,6 +257,7 @@ QT_SOURCES += \
   moc_qqmllistmodel_p.cpp \
   moc_qqmllistmodel_p_p.cpp \
   moc_qqmllistmodelworkeragent_p.cpp \
+  moc_qqmlmodelindexvaluetype_p.cpp \
   moc_qqmlobjectmodel_p.cpp \
   moc_qqmltimer_p.cpp \
   moc_qquickpackage_p.cpp \
@@ -327,6 +330,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qqmllistmodel_p.cpp \
   moc_qqmllistmodel_p_p.cpp \
   moc_qqmllistmodelworkeragent_p.cpp \
+  moc_qqmlmodelindexvaluetype_p.cpp \
   moc_qqmlobjectmodel_p.cpp \
   moc_qqmltimer_p.cpp \
   moc_qquickpackage_p.cpp \
