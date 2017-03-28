@@ -12,7 +12,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  5 files changed, 44 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/corelib/global/qglobal.h b/qtbase/src/corelib/global/qglobal.h
-index 97c5f37..b395543 100644
+index cbba640..6d43040 100644
 --- a/qtbase/src/corelib/global/qglobal.h
 +++ b/qtbase/src/corelib/global/qglobal.h
 @@ -833,13 +833,17 @@ inline void qSwap(T &value1, T &value2)

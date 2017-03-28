@@ -21,7 +21,7 @@ index f447cc2..4e79275 100644
      SocketStreamHandle* m_streamHandle;
  };
 diff --git a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
-index ca7b60c..622e48d 100644
+index 103dc1f..884d23a 100644
 --- a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
 +++ b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
 @@ -58,6 +58,19 @@ SocketStreamHandlePrivate::SocketStreamHandlePrivate(SocketStreamHandle* streamH

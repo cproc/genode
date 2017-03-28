@@ -39,7 +39,7 @@ index a1c4996..54a66c7 100644
  
  defineTest(qtAddRpathLink) {
 diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
-index c89b6d2..edbf564 100644
+index 5412f37..8244264 100644
 --- a/qtbase/mkspecs/features/qt_module.prf
 +++ b/qtbase/mkspecs/features/qt_module.prf
 @@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already

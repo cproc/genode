@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 20 insertions(+)
 
 diff --git a/qtbase/src/network/access/qhttpnetworkreply.cpp b/qtbase/src/network/access/qhttpnetworkreply.cpp
-index 80f3670..00a40d7 100644
+index 2063ca6..57d1046 100644
 --- a/qtbase/src/network/access/qhttpnetworkreply.cpp
 +++ b/qtbase/src/network/access/qhttpnetworkreply.cpp
 @@ -230,8 +230,16 @@ void QHttpNetworkReply::setReadBufferSize(qint64 size)
@@ -52,10 +52,10 @@ index 3fd1252..56251ca 100644
            allowRootCertOnDemandLoading(true),
            peerSessionShared(false),
 diff --git a/qtbase/src/network/ssl/qsslsocket_openssl.cpp b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-index a21317d..4084e26 100644
+index 049666b..4060f5e 100644
 --- a/qtbase/src/network/ssl/qsslsocket_openssl.cpp
 +++ b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-@@ -479,7 +479,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
+@@ -482,7 +482,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
          if (q_SSL_library_init() != 1)
              return false;
          q_SSL_load_error_strings();

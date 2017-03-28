@@ -4,20 +4,28 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../fontdatabases/basic/qbasicfontdatabase.cpp     |    9 +++++++++
+ .../fontdatabases/basic/qbasicfontdatabase.cpp     |   10 ++++++++++
  .../evdevkeyboard/qevdevkeyboard_defaultmap_p.h    |    5 ++++-
  .../input/evdevkeyboard/qevdevkeyboardhandler.cpp  |   21 ++++++++++++++++----
  .../input/evdevkeyboard/qevdevkeyboardhandler_p.h  |    2 ++
- 4 files changed, 32 insertions(+), 5 deletions(-)
+ 4 files changed, 33 insertions(+), 5 deletions(-)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index c41061a..07568e4 100644
+index 65cdabd..6d00939 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-@@ -72,7 +72,16 @@ void QBasicFontDatabase::populateFontDatabase()
+@@ -62,6 +62,7 @@ void QBasicFontDatabase::populateFontDatabase()
+         return;
+     }
  
-     foreach (const QFileInfo &fi, dir.entryInfoList(nameFilters, QDir::Files)) {
-         const QByteArray file = QFile::encodeName(fi.absoluteFilePath());
++<<<<<<< current
+     QDir dir(fontpath);
+     dir.setNameFilters(QStringList() << QLatin1String("*.ttf")
+                        << QLatin1String("*.ttc") << QLatin1String("*.pfa")
+@@ -71,7 +72,16 @@ void QBasicFontDatabase::populateFontDatabase()
+     for (int i = 0; i < int(dir.count()); ++i) {
+         const QByteArray file = QFile::encodeName(dir.absoluteFilePath(dir[i]));
+ //        qDebug() << "looking at" << file;
 +#ifdef Q_OS_GENODE
 +        QByteArray data;
 +        QFile f(file);
@@ -26,7 +34,7 @@ index c41061a..07568e4 100644
 +        data = f.readAll();
 +        addTTFile(data, file);
 +#else
-         QBasicFontDatabase::addTTFile(QByteArray(), file);
+         addTTFile(QByteArray(), file);
 +#endif
      }
  }
@@ -63,7 +71,7 @@ index 34f20f4..c8deee0 100644
  
  const QEvdevKeyboardMap::Composing QEvdevKeyboardHandler::s_keycompose_default[] = {
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-index 06751de..5352cf7 100644
+index 16cb94d..5802e66 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 @@ -42,7 +42,9 @@
@@ -120,7 +128,7 @@ index 06751de..5352cf7 100644
      QWindowSystemInterface::handleExtendedKeyEvent(0, (isPress ? QEvent::KeyPress : QEvent::KeyRelease),
                                                     qtcode, modifiers, nativecode + 8, 0, int(modifiers),
                                                     (unicode != 0xffff ) ? QString(unicode) : QString(), autoRepeat);
-@@ -460,7 +472,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -454,7 +466,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
      memset(m_locks, 0, sizeof(m_locks));
      m_composing = 0;
      m_dead_unicode = 0xffff;
@@ -129,7 +137,7 @@ index 06751de..5352cf7 100644
      //Set locks according to keyboard leds
      quint16 ledbits[1];
      memset(ledbits, 0, sizeof(ledbits));
-@@ -481,6 +493,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -475,6 +487,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
              m_locks[2] = 1;
          qCDebug(qLcEvdevKey, "numlock=%d , capslock=%d, scrolllock=%d", m_locks[1], m_locks[0], m_locks[2]);
      }
