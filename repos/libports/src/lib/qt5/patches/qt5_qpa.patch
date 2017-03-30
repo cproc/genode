@@ -11,10 +11,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 32 insertions(+), 5 deletions(-)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index 52505c5..5de8dde 100644
+index 65cdabd..1eb20e1 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-@@ -102,7 +102,16 @@ void QBasicFontDatabase::populateFontDatabase()
+@@ -71,7 +71,16 @@ void QBasicFontDatabase::populateFontDatabase()
      for (int i = 0; i < int(dir.count()); ++i) {
          const QByteArray file = QFile::encodeName(dir.absoluteFilePath(dir[i]));
  //        qDebug() << "looking at" << file;
@@ -32,7 +32,7 @@ index 52505c5..5de8dde 100644
  }
  
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
-index b596d8d..924eeea 100644
+index 34f20f4..c8deee0 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboard_defaultmap_p.h
 @@ -46,7 +46,9 @@
@@ -63,20 +63,20 @@ index b596d8d..924eeea 100644
  
  const QEvdevKeyboardMap::Composing QEvdevKeyboardHandler::s_keycompose_default[] = {
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-index 27d15df..8f7ae0e 100644
+index 16cb94d..5802e66 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-@@ -41,7 +41,9 @@
- #include <QCoreApplication>
+@@ -42,7 +42,9 @@
+ #include <qpa/qwindowsysteminterface.h>
  #include <private/qcore_unix_p.h>
  
 +#ifndef Q_OS_GENODE
  #include <linux/input.h>
 +#endif /* Q_OS_GENODE */
  
- //#define QT_QPA_KEYMAP_DEBUG
+ QT_BEGIN_NAMESPACE
  
-@@ -70,11 +72,12 @@ QEvdevKeyboardHandler::QEvdevKeyboardHandler(const QString &device, int fd, bool
+@@ -66,11 +68,12 @@ QEvdevKeyboardHandler::QEvdevKeyboardHandler(const QString &device, int fd, bool
  
      if (keymapFile.isEmpty() || !loadKeymap(keymapFile))
          unloadKeymap();
@@ -90,7 +90,7 @@ index 27d15df..8f7ae0e 100644
  }
  
  QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
-@@ -84,7 +87,7 @@ QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
+@@ -80,7 +83,7 @@ QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
      if (m_fd >= 0)
          qt_safe_close(m_fd);
  }
@@ -99,7 +99,7 @@ index 27d15df..8f7ae0e 100644
  QEvdevKeyboardHandler *QEvdevKeyboardHandler::create(const QString &device,
                                                       const QString &specification,
                                                       const QString &defaultKeymapFile)
-@@ -212,10 +215,19 @@ void QEvdevKeyboardHandler::readKeycode()
+@@ -198,10 +201,19 @@ void QEvdevKeyboardHandler::readKeycode()
          }
      }
  }
@@ -120,7 +120,7 @@ index 27d15df..8f7ae0e 100644
      QWindowSystemInterface::handleExtendedKeyEvent(0, (isPress ? QEvent::KeyPress : QEvent::KeyRelease),
                                                     qtcode, modifiers, nativecode + 8, 0, int(modifiers),
                                                     (unicode != 0xffff ) ? QString(unicode) : QString(), autoRepeat);
-@@ -476,7 +488,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -454,7 +466,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
      memset(m_locks, 0, sizeof(m_locks));
      m_composing = 0;
      m_dead_unicode = 0xffff;
@@ -129,16 +129,16 @@ index 27d15df..8f7ae0e 100644
      //Set locks according to keyboard leds
      quint16 ledbits[1];
      memset(ledbits, 0, sizeof(ledbits));
-@@ -499,6 +511,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
-         qWarning("numlock=%d , capslock=%d, scrolllock=%d",m_locks[1],m_locks[0],m_locks[2]);
- #endif
+@@ -475,6 +487,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+             m_locks[2] = 1;
+         qCDebug(qLcEvdevKey, "numlock=%d , capslock=%d, scrolllock=%d", m_locks[1], m_locks[0], m_locks[2]);
      }
 +#endif
  }
  
  bool QEvdevKeyboardHandler::loadKeymap(const QString &file)
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
-index 3e3866c..c583b7a 100644
+index 90142c6..2a39e36 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
 @@ -169,8 +169,10 @@ public:
