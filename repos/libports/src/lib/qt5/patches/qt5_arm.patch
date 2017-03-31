@@ -9,7 +9,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
-index c950e47..a21d942 100644
+index 19db71d..9cbe4e3 100644
 --- a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
 +++ b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
 @@ -29,9 +29,14 @@

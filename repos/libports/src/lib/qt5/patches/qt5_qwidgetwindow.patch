@@ -4,18 +4,17 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qtbase/src/widgets/kernel/qwidgetwindow.cpp |    4 ++++
- 1 file changed, 4 insertions(+)
+ qtbase/src/widgets/kernel/qwidgetwindow.cpp |    3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-index 87baaa1..55fe524 100644
+index ba8c16e..46bf384 100644
 --- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
 +++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-@@ -292,6 +292,10 @@ bool QWidgetWindow::event(QEvent *event)
-     case QEvent::WindowBlocked:
-         qt_button_down = 0;
-         break;
-+
+@@ -299,6 +299,9 @@ bool QWidgetWindow::event(QEvent *event)
+         m_widget->repaint();
+         return true;
+ 
 +    case QEvent::MetaCall:
 +    	return QWindow::event(event);
 +
