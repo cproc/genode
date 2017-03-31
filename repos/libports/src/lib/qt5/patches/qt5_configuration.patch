@@ -4,7 +4,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qt.pro                                             |   52 +-
+ qt.pro                                             |   54 +--
  qtbase/configure                                   |    6 
  qtbase/mkspecs/genode-g++/qmake.conf               |   12 +
  qtbase/mkspecs/genode-g++/qplatformdefs.h          |  112 +++++
@@ -13,16 +13,16 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtdeclarative/tests/tests.pro                      |    4 
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
  qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 
- 9 files changed, 589 insertions(+), 36 deletions(-)
+ 9 files changed, 590 insertions(+), 37 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
 
 diff --git a/qt.pro b/qt.pro
-index 15fd48e..73262af 100644
+index 01547d4..f4110d5 100644
 --- a/qt.pro
 +++ b/qt.pro
-@@ -58,37 +58,37 @@ ANDROID_EXTRAS =
+@@ -58,38 +58,38 @@ ANDROID_EXTRAS =
  android: ANDROID_EXTRAS = qtandroidextras
  
  addModule(qtbase)
@@ -35,26 +35,24 @@ index 15fd48e..73262af 100644
  addModule(qtsvg, qtbase)
  addModule(qtxmlpatterns, qtbase)
  addModule(qtdeclarative, qtbase, qtsvg qtxmlpatterns)
--addModule(qtquickcontrols, qtdeclarative)
+-addModule(qtquickcontrols, qtdeclarative, qtgraphicaleffects)
 -addModule(qtmultimedia, qtbase, qtdeclarative)
 -addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 -addModule(qtactiveqt, qtbase)
--addModule(qt3d, qtdeclarative)
 -addModule(qtsystems, qtbase, qtdeclarative)
--addModule(qtlocation, qtbase, qtsystems qtmultimedia)
+-addModule(qtlocation, qtbase, qtdeclarative qtsystems)
 -addModule(qtsensors, qtbase, qtdeclarative)
 -addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 -addModule(qtfeedback, qtdeclarative, qtmultimedia)
 -addModule(qtpim, qtdeclarative)
 -addModule(qtwebsockets, qtbase, qtdeclarative)
 -addModule(qtwebchannel, qtbase, qtdeclarative qtwebsockets)
-+#addModule(qtquickcontrols, qtdeclarative)
++#addModule(qtquickcontrols, qtdeclarative, qtgraphicaleffects)
 +#addModule(qtmultimedia, qtbase, qtdeclarative)
 +#addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 +#addModule(qtactiveqt, qtbase)
-+#addModule(qt3d, qtdeclarative)
 +#addModule(qtsystems, qtbase, qtdeclarative)
-+#addModule(qtlocation, qtbase, qtsystems qtmultimedia)
++#addModule(qtlocation, qtbase, qtdeclarative qtsystems)
 +#addModule(qtsensors, qtbase, qtdeclarative)
 +#addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 +#addModule(qtfeedback, qtdeclarative, qtmultimedia)
@@ -65,32 +63,36 @@ index 15fd48e..73262af 100644
  addModule(qttools, qtbase, qtdeclarative qtactiveqt qtwebkit)
  addModule(qtwebkit-examples, qtwebkit qttools)
  addModule(qtimageformats, qtbase)
+-addModule(qt3d, qtdeclarative qtimageformats)
+-addModule(qtcanvas3d, qtdeclarative)
 -addModule(qtgraphicaleffects, qtdeclarative)
++#addModule(qt3d, qtdeclarative qtimageformats)
++#addModule(qtcanvas3d, qtdeclarative)
 +#addModule(qtgraphicaleffects, qtdeclarative)
  addModule(qtscript, qtbase, qttools)
 -addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
 -addModule(qtdocgallery, qtdeclarative)
--linux:!android: addModule(qtwayland, qtbase, qtdeclarative)
+-addModule(qtwayland, qtbase, qtdeclarative)
 -addModule(qtserialport, qtbase)
 -addModule(qtenginio, qtdeclarative)
--addModule(qtwebengine, qtquickcontrols, qtwebkit)
+-addModule(qtwebengine, qtquickcontrols qtwebchannel, qtwebkit qtlocation)
 -addModule(qttranslations, qttools)
 -addModule(qtdoc, qtdeclarative)
 -addModule(qtqa, qtbase)
 +#addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
 +#addModule(qtdocgallery, qtdeclarative)
-+#linux:!android: addModule(qtwayland, qtbase, qtdeclarative)
++#addModule(qtwayland, qtbase, qtdeclarative)
 +#addModule(qtserialport, qtbase)
 +#addModule(qtenginio, qtdeclarative)
-+#addModule(qtwebengine, qtquickcontrols, qtwebkit)
++#addModule(qtwebengine, qtquickcontrols qtwebchannel, qtwebkit qtlocation)
 +#addModule(qttranslations, qttools)
 +#addModule(qtdoc, qtdeclarative)
 +#addModule(qtqa, qtbase)
 diff --git a/qtbase/configure b/qtbase/configure
-index 6ce6753..e1872df 100755
+index 8a4c89e..8fb8a1d 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
-@@ -592,10 +592,10 @@ CFG_ZLIB=auto
+@@ -622,10 +622,10 @@ CFG_ZLIB=auto
  CFG_MTDEV=auto
  CFG_JOURNALD=no
  CFG_SQLITE=qt
@@ -103,7 +105,7 @@ index 6ce6753..e1872df 100755
  CFG_LIBJPEG=auto
  CFG_XCURSOR=runtime
  CFG_XRANDR=runtime
-@@ -688,7 +688,7 @@ CFG_GETADDRINFO=auto
+@@ -724,7 +724,7 @@ CFG_GETADDRINFO=auto
  CFG_IPV6IFNAME=auto
  CFG_GETIFADDRS=auto
  CFG_INOTIFY=auto
@@ -712,7 +714,7 @@ index 85e4f3a..9aa752b 100644
 +#TEMPLATE = subdirs
 +#SUBDIRS +=  auto
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index ef1d5d7..002890d 100644
+index 7b0b49d..57adfd2 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -42,8 +42,8 @@ defineTest(detectFeatures) {

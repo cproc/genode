@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.4.2/configure \
+../qt-everywhere-opensource-src-5.5.0/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \
@@ -25,6 +25,7 @@
     -no-sse4.1 \
     -no-sse4.2 \
     -no-avx \
+    -qt-pcre \
     -make tools \
     -nomake examples
 
