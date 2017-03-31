@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.4.2/configure \
+../qt-everywhere-opensource-src-5.5.0/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \
@@ -8,6 +8,7 @@
     -no-qpa-platform-guard \
     -qpa minimal \
     -no-separate-debug-info \
+    --enable-egl \
     -opengl desktop \
     -openssl-linked \
     -no-accessibility \
@@ -19,18 +20,11 @@
     -no-nis \
     -no-pkg-config \
     -no-xcb \
-    -no-sse2 \
     -no-sse3 \
     -no-ssse3 \
     -no-sse4.1 \
     -no-sse4.2 \
     -no-avx \
+    -qt-pcre \
     -make tools \
     -nomake examples
-
-#
-# notes
-#
-# - '-no-opengl' would prevent the generation of qtwebkit Makefiles
-#
-#

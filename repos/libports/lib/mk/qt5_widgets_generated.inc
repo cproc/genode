@@ -1,16 +1,16 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_WIDGETS_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_ANDROID -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DQT_BUILD_WIDGETS_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_STYLE_MAC -DQT_NO_STYLE_WINDOWSVISTA -DQT_NO_STYLE_WINDOWSXP -DQT_NO_STYLE_GTK -DQT_NO_STYLE_WINDOWSCE -DQT_NO_STYLE_WINDOWSMOBILE -DQT_NO_STYLE_ANDROID -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/src/widgets \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.4.2 \
-  qtbase/include/QtWidgets/5.4.2/QtWidgets \
+  qtbase/include/QtWidgets/5.5.0 \
+  qtbase/include/QtWidgets/5.5.0/QtWidgets \
   qtbase/src/widgets/dialogs \
-  qtbase/include/QtCore/5.4.2 \
-  qtbase/include/QtCore/5.4.2/QtCore \
-  qtbase/include/QtGui/5.4.2 \
-  qtbase/include/QtGui/5.4.2/QtGui \
+  qtbase/include/QtCore/5.5.0 \
+  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtGui/5.5.0 \
+  qtbase/include/QtGui/5.5.0/QtGui \
   qtbase/include/QtGui \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
@@ -27,6 +27,7 @@ QT_SOURCES += \
   qlayoutengine.cpp \
   qlayoutitem.cpp \
   qshortcut.cpp \
+  qsizepolicy.cpp \
   qstackedlayout.cpp \
   qtooltip.cpp \
   qwhatsthis.cpp \
@@ -242,7 +243,6 @@ QT_SOURCES += \
   moc_qsidebar_p.cpp \
   moc_qfileinfogatherer_p.cpp \
   moc_qlistview.cpp \
-  moc_qabstractitemdelegate.cpp \
   moc_qlistwidget_p.cpp \
   moc_qtablewidget_p.cpp \
   moc_qtreewidget_p.cpp \
