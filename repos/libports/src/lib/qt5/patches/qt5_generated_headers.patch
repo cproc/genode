@@ -4,7 +4,6 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .stgit-new.txt~                                    |    0 
  qtbase/include/QtCore/QtConfig                     |    1 +
  qtbase/include/QtCore/QtCoreDepends                |    1 +
  qtbase/include/QtCore/qconfig.h                    |    1 +
@@ -22,8 +21,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtwebkit/include/QtWebKit/QtWebKitDepends          |    4 ++++
  .../include/QtWebKitWidgets/QtWebKitWidgetsDepends |    7 +++++++
  .../include/QtXmlPatterns/QtXmlPatternsDepends     |    3 +++
- 18 files changed, 45 insertions(+)
- create mode 100644 .stgit-new.txt~
+ 17 files changed, 45 insertions(+)
  create mode 100644 qtbase/include/QtCore/QtConfig
  create mode 100644 qtbase/include/QtCore/QtCoreDepends
  create mode 100644 qtbase/include/QtCore/qconfig.h
@@ -42,9 +40,6 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  create mode 100644 qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsDepends
  create mode 100644 qtxmlpatterns/include/QtXmlPatterns/QtXmlPatternsDepends
 
-diff --git a/.stgit-new.txt~ b/.stgit-new.txt~
-new file mode 100644
-index 0000000..e69de29
 diff --git a/qtbase/include/QtCore/QtConfig b/qtbase/include/QtCore/QtConfig
 new file mode 100644
 index 0000000..c734263
