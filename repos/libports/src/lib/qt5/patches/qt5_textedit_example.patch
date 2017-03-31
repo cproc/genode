@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 21 insertions(+), 11 deletions(-)
 
 diff --git a/qtbase/examples/widgets/richtext/textedit/main.cpp b/qtbase/examples/widgets/richtext/textedit/main.cpp
-index 8851603..c5b8ec8 100644
+index 4dda7e6..dee5583 100644
 --- a/qtbase/examples/widgets/richtext/textedit/main.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/main.cpp
 @@ -31,6 +31,10 @@
@@ -47,7 +47,7 @@ index 8851603..c5b8ec8 100644
      return a.exec();
  }
 diff --git a/qtbase/examples/widgets/richtext/textedit/textedit.cpp b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-index edebabd..523e892 100644
+index 6af436b..0efe726 100644
 --- a/qtbase/examples/widgets/richtext/textedit/textedit.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
 @@ -474,7 +474,7 @@ void TextEdit::fileNew()
