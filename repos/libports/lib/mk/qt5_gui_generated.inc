@@ -1,14 +1,14 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.4.2 \
-  qtbase/include/QtGui/5.4.2/QtGui \
+  qtbase/include/QtGui/5.5.0 \
+  qtbase/include/QtGui/5.5.0/QtGui \
   qtbase/src/gui/image \
-  qtbase/include/QtCore/5.4.2 \
-  qtbase/include/QtCore/5.4.2/QtCore \
+  qtbase/include/QtCore/5.5.0 \
+  qtbase/include/QtCore/5.5.0/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -64,6 +64,9 @@ QT_SOURCES += \
   qpixelformat.cpp \
   qpaintdevicewindow.cpp \
   qrasterwindow.cpp \
+  qplatformgraphicsbuffer.cpp \
+  qplatformgraphicsbufferhelper.cpp \
+  qinputdevicemanager.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
   qopenglwindow.cpp \
@@ -165,7 +168,6 @@ QT_SOURCES += \
   qtextureglyphcache.cpp \
   qtransform.cpp \
   qplatformbackingstore.cpp \
-  qpaintbuffer.cpp \
   qpathsimplifier.cpp \
   qdesktopservices.cpp \
   qvalidator.cpp \
@@ -217,15 +219,21 @@ QT_SOURCES += \
   qopenglfunctions_4_1_core.cpp \
   qopenglfunctions_4_2_core.cpp \
   qopenglfunctions_4_3_core.cpp \
+  qopenglfunctions_4_4_core.cpp \
+  qopenglfunctions_4_5_core.cpp \
   qopenglfunctions_3_2_compatibility.cpp \
   qopenglfunctions_3_3_compatibility.cpp \
   qopenglfunctions_4_0_compatibility.cpp \
   qopenglfunctions_4_1_compatibility.cpp \
   qopenglfunctions_4_2_compatibility.cpp \
   qopenglfunctions_4_3_compatibility.cpp \
+  qopenglfunctions_4_4_compatibility.cpp \
+  qopenglfunctions_4_5_compatibility.cpp \
   qopengltimerquery.cpp \
   qguivariantanimation.cpp \
   qstandarditemmodel.cpp \
+  qimage_sse2.cpp \
+  qdrawhelper_sse2.cpp \
   moc_qgenericplugin.cpp \
   moc_qplatforminputcontext.cpp \
   moc_qplatforminputcontextplugin_p.cpp \
@@ -245,10 +253,13 @@ QT_SOURCES += \
   moc_qsessionmanager.cpp \
   moc_qscreen.cpp \
   moc_qstylehints.cpp \
+  moc_qtouchdevice.cpp \
   moc_qplatformsharedgraphicscache.cpp \
   moc_qplatformdialoghelper.cpp \
   moc_qpaintdevicewindow.cpp \
   moc_qrasterwindow.cpp \
+  moc_qplatformgraphicsbuffer.cpp \
+  moc_qinputdevicemanager_p.cpp \
   moc_qopenglcontext.cpp \
   moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
@@ -311,11 +322,14 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qsessionmanager.cpp \
   moc_qscreen.cpp \
   moc_qstylehints.cpp \
+  moc_qtouchdevice.cpp \
   moc_qplatformsharedgraphicscache.cpp \
   moc_qplatformdialoghelper.cpp \
   moc_qplatformsystemtrayicon.cpp \
   moc_qpaintdevicewindow.cpp \
   moc_qrasterwindow.cpp \
+  moc_qplatformgraphicsbuffer.cpp \
+  moc_qinputdevicemanager_p.cpp \
   moc_qopenglcontext.cpp \
   moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
