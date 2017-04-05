@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 1 deletion(-)
 
 diff --git a/gcc/config/arm/arm.h b/gcc/config/arm/arm.h
-index c60d9a4..fefa7d4 100644
+index ad123dd..a996d30 100644
 --- a/gcc/config/arm/arm.h
 +++ b/gcc/config/arm/arm.h
-@@ -2381,7 +2381,6 @@ extern const char *arm_rewrite_mcpu (int argc, const char **argv);
+@@ -2250,7 +2250,6 @@ extern const char *arm_rewrite_mcpu (int argc, const char **argv);
  #if defined(__arm__)
  extern const char *host_detect_local_cpu (int argc, const char **argv);
  # define EXTRA_SPEC_FUNCTIONS						\
