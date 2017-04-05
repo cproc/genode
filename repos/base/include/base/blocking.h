@@ -26,6 +26,10 @@ namespace Genode { class Blocking_canceled; }
  * case, the thread unblocks and throws an exception, and therefore, is able to
  * clean up the thread state before exiting.
  */
-class Genode::Blocking_canceled : public Exception { };
+class Genode::Blocking_canceled : public Exception
+{
+	public:
+		virtual ~Blocking_canceled();
+};
 
 #endif /* _INCLUDE__BASE__BLOCKING_H_ */
