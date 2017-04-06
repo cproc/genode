@@ -1,0 +1,38 @@
+revert_reject_r_arm_rel32.patch
+
+When linking stdcxx.lib.so, the error message removed by this patch
+occurred for an R_ARM_REL32 relocation for the symbol
+'typeinfo for __cxxabiv1::__forced_unwind'. This symbol is defined in ld.lib.so
+(originally in libsupc++) and Genode's dynamic linker is able to resolve
+the symbol at runtime.
+
+---
+ bfd/elf32-arm.c |   15 ---------------
+ 1 file changed, 15 deletions(-)
+
+diff --git a/bfd/elf32-arm.c b/bfd/elf32-arm.c
+index 0a78595..294d1bd 100644
+--- a/bfd/elf32-arm.c
++++ b/bfd/elf32-arm.c
+@@ -10094,21 +10094,6 @@ elf32_arm_final_link_relocate (reloc_howto_type *           howto,
+ 	  Elf_Internal_Rela outrel;
+ 	  bfd_boolean skip, relocate;
+ 
+-	  if ((r_type == R_ARM_REL32 || r_type == R_ARM_REL32_NOI)
+-	      && !h->def_regular)
+-	    {
+-	      char *v = _("shared object");
+-
+-	      if (bfd_link_executable (info))
+-		v = _("PIE executable");
+-
+-	      _bfd_error_handler
+-		(_("%B: relocation %s against external or undefined symbol `%s'"
+-		   " can not be used when making a %s; recompile with -fPIC"), input_bfd,
+-		 elf32_arm_howto_table_1[r_type].name, h->root.root.string, v);
+-	      return bfd_reloc_notsupported;
+-	    }
+-
+ 	  *unresolved_reloc_p = FALSE;
+ 
+ 	  if (sreloc == NULL && globals->root.dynamic_sections_created)

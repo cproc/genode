@@ -1,2 +1,1 @@
-riscv_files.patch
-riscv.patch
+revert_reject_r_arm_rel32.patch
