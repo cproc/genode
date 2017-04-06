@@ -1,0 +1,32 @@
+build "core init test/virtual_exception"
+
+create_boot_directory
+
+set config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="CPU"/>
+			<service name="RAM"/>
+			<service name="ROM"/>
+			<service name="PD"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<start name="test-virtual_exception">
+			<resource name="RAM" quantum="1M"/>
+		</start>
+	</config>
+}
+
+install_config $config
+
+build_boot_image "core ld.lib.so init test-virtual_exception
+                  virtual_exception_thrower.lib.so
+                  virtual_exception_catcher.lib.so"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until {.*Virtual_exception::func\(\) called} 10
+
