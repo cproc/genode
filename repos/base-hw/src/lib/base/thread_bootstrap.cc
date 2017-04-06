@@ -62,6 +62,7 @@ void prepare_reinit_main_thread() { prepare_init_main_thread(); }
  ** Thread **
  ************/
 
+__attribute__((optimize("-fno-delete-null-pointer-checks")))
 Native_utcb *Thread::utcb()
 {
 	if (this) { return &_stack->utcb(); }
