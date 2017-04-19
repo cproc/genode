@@ -206,12 +206,13 @@ BINUTILS_CONFIG += $(BINUTILS_CONFIG_$(PLATFORM))
 GDB_CONFIG += $(COMMON_CONFIG) --disable-werror
 
 GCC_CONFIG += $(COMMON_CONFIG) \
-              --enable-languages=c,c++,go \
+              --enable-languages=c,c++,go,ada \
               --disable-libgo \
               --disable-gotools \
               --disable-libssp \
               --disable-libquadmath \
               --disable-libffi \
+              --disable-libada \
               --enable-targets=all \
               --with-gnu-as \
               --with-gnu-ld \
@@ -246,7 +247,16 @@ GCC_INSTALL_RULE = install-strip
 #
 
 MAKE_OPT_x86 := MULTILIB_OPTIONS="m64/m32" MULTILIB_DIRNAMES="64 32"
-MAKE_OPT += $(MAKE_OPT_$(PLATFORM)) -j$(MAKE_JOBS)
+
+MAKE_OPT += $(MAKE_OPT_$(PLATFORM))
+
+#
+# The '-gnatwns' option is needed for building the ADA compiler with GNAT 4.8
+# and it must occur after the original '-gnatpg' option.
+#
+MAKE_OPT += ADAFLAGS="-gnatpg -gnatwns"
+
+MAKE_OPT += -j$(MAKE_JOBS)
 
 #
 # Build rules and dependencies between build steps

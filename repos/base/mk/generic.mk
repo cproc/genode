@@ -69,7 +69,7 @@ endif
 #
 %.o: %.adb
 	$(MSG_COMP)$@
-	$(VERBOSE)gnatmake -q -c $(CC_ADA_OPT) $(INCLUDES) $<
+	$(VERBOSE)$(CC) -c $(CC_ADA_OPT) $(INCLUDES) $<
 
 #
 # Compiling Rust sources
