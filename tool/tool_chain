@@ -152,6 +152,9 @@ endif
 # 'configure' parameters for binutils, gcc and gdb
 #
 
+LOCAL_BOOTSTRAP_INSTALL_LOCATION = $(shell pwd)/build/bootstrap/install
+export PATH := $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin:$(PATH)
+
 LOCAL_INSTALL_LOCATION = $(shell pwd)/build/install
 
 #
@@ -172,6 +175,17 @@ CONFIG_QUIET = --quiet
 MAKEFLAGS   += --quiet
 export MAKEFLAGS
 endif
+
+COMMON_BOOTSTRAP_CONFIG = $(CONFIG_QUIET) \
+                          --prefix=$(LOCAL_BOOTSTRAP_INSTALL_LOCATION)
+
+BINUTILS_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG)
+
+GCC_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG) \
+                        --enable-languages=c,c++,ada \
+                        --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
+                        --with-mpfr=$(LOCAL_LIB_INSTALL_LOCATION) \
+                        --with-mpc=$(LOCAL_LIB_INSTALL_LOCATION)
 
 COMMON_CONFIG = $(CONFIG_QUIET) \
                 --prefix=$(LOCAL_INSTALL_LOCATION) \
@@ -206,12 +220,13 @@ BINUTILS_CONFIG += $(BINUTILS_CONFIG_$(PLATFORM))
 GDB_CONFIG += $(COMMON_CONFIG) --disable-werror
 
 GCC_CONFIG += $(COMMON_CONFIG) \
-              --enable-languages=c,c++,go \
+              --enable-languages=c,c++,go,ada \
               --disable-libgo \
               --disable-gotools \
               --disable-libssp \
               --disable-libquadmath \
               --disable-libffi \
+              --disable-libada \
               --enable-targets=all \
               --with-gnu-as \
               --with-gnu-ld \
@@ -246,7 +261,16 @@ GCC_INSTALL_RULE = install-strip
 #
 
 MAKE_OPT_x86 := MULTILIB_OPTIONS="m64/m32" MULTILIB_DIRNAMES="64 32"
-MAKE_OPT += $(MAKE_OPT_$(PLATFORM)) -j$(MAKE_JOBS)
+
+MAKE_OPT += $(MAKE_OPT_$(PLATFORM))
+
+#
+# The '-gnatwns' option is needed for building the ADA compiler with GNAT 4.8
+# and it must occur after the original '-gnatpg' option.
+#
+#MAKE_OPT += ADAFLAGS="-gnatpg -gnatwns"
+
+MAKE_OPT += -j$(MAKE_JOBS)
 
 #
 # Build rules and dependencies between build steps
@@ -254,6 +278,11 @@ MAKE_OPT += $(MAKE_OPT_$(PLATFORM)) -j$(MAKE_JOBS)
 # We use the binaries 'objdump' and 'g++' as representatives for expressing
 # dependencies. All other programs will be generated as side effect.
 #
+
+BINUTILS_BOOTSTRAP_BINARIES           = build/bootstrap/binutils/binutils/objdump
+BINUTILS_BOOTSTRAP_INSTALLED_BINARIES = $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin/objdump
+GCC_BOOTSTRAP_BINARIES                = build/bootstrap/gcc/gcc/g++
+GCC_BOOTSTRAP_INSTALLED_BINARIES      = $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin/g++
 
 BINUTILS_BINARIES           = build/$(PLATFORM)/binutils/binutils/objdump
 BINUTILS_INSTALLED_BINARIES = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-objdump
@@ -299,7 +328,23 @@ $(BINUTILS_CONTRIB_DIR)/configure:
 	$(ECHO) "$(BRIGHT_COL)preparing binutils...$(DEFAULT_COL)"
 	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port binutils
 
-build/$(PLATFORM)/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure
+build/bootstrap/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure
+	$(ECHO) "$(BRIGHT_COL)configuring bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)cd $(dir $@); $(BINUTILS_CONTRIB_DIR)/configure $(BINUTILS_BOOTSTRAP_CONFIG)
+
+$(BINUTILS_BOOTSTRAP_BINARIES): build/bootstrap/binutils/Makefile
+	$(ECHO) "$(BRIGHT_COL)building bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C $(dir $<) -j$(MAKE_JOBS)
+
+$(BINUTILS_BOOTSTRAP_INSTALLED_BINARIES): $(BINUTILS_BOOTSTRAP_BINARIES)
+	$(ECHO) "$(BRIGHT_COL)installing bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)for i in binutils gas ld intl opcodes; do \
+		$(MAKE) -C build/bootstrap/binutils/$$i install-strip; done
+	$(VERBOSE)$(MAKE) -C build/bootstrap/binutils/libiberty install
+
+build/$(PLATFORM)/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure \
+                                     $(GCC_BOOTSTRAP_INSTALLED_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)configuring binutils...$(DEFAULT_COL)"
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)cd $(dir $@); $(BINUTILS_CONTRIB_DIR)/configure $(BINUTILS_CONFIG)
@@ -329,7 +374,7 @@ $(LOCAL_LIB_INSTALL_LOCATION)/lib/libmpc.a:  build/mpc/Makefile
 # rule to build libgmp, libmpfr, and libmpc
 $(LOCAL_LIB_INSTALL_LOCATION)/lib/lib%.a:
 	$(ECHO) "$(BRIGHT_COL)building lib$*...$(DEFAULT_COL)"
-	$(VERBOSE)make -C build/$* all install
+	$(VERBOSE)make -C build/$* -j$(MAKE_JOBS) all install
 
 build/gmp/Makefile: $(GMP_CONTRIB_DIR)/configure
 
@@ -358,6 +403,25 @@ build/mpc/Makefile:
 	$(VERBOSE)cd $(dir $@); \
 		$(MPC_CONTRIB_DIR)/configure $(MPC_CONFIG)
 
+build/bootstrap/gcc/Makefile: $(GCC_CONTRIB_DIR)/configure \
+                              $(BINUTILS_BOOTSTRAP_INSTALLED_BINARIES) \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libgmp.a \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libmpfr.a \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libmpc.a
+
+build/bootstrap/gcc/Makefile:
+	$(ECHO) "$(BRIGHT_COL)configuring bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)cd $(dir $@); $(GCC_CONTRIB_DIR)/configure $(GCC_BOOTSTRAP_CONFIG)
+
+$(GCC_BOOTSTRAP_BINARIES): build/bootstrap/gcc/Makefile
+	$(ECHO) "$(BRIGHT_COL)building bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C $(dir $<) -j$(MAKE_JOBS)
+
+$(GCC_BOOTSTRAP_INSTALLED_BINARIES): $(GCC_BOOTSTRAP_BINARIES)
+	$(ECHO) "$(BRIGHT_COL)installing bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C build/bootstrap/gcc $(GCC_INSTALL_RULE)
+
 build/$(PLATFORM)/gcc/Makefile: $(GCC_CONTRIB_DIR)/configure \
                                 $(BINUTILS_INSTALLED_BINARIES) \
                                 $(LOCAL_LIB_INSTALL_LOCATION)/lib/libgmp.a \
@@ -372,10 +436,9 @@ build/$(PLATFORM)/gcc/Makefile:
 		target_configargs="$(TARGET_CONFIG_ARGS)" \
 		$(GCC_CONTRIB_DIR)/configure $(GCC_CONFIG)
 
-$(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile \
-                 $(LIBC)
-
 $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile
+
+$(GCC_BINARIES):
 	$(ECHO) "$(BRIGHT_COL)building gcc...$(DEFAULT_COL)"
 	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT) GENODE=yes
 

@@ -121,7 +121,7 @@ CC_OPT     += $(CC_OPT_PIC)
 #
 CC_CXX_OPT += $(CC_OPT)
 CC_C_OPT   += $(CC_OPT)
-CC_ADA_OPT += $(CC_OLEVEL) $(CC_WARN)
+CC_ADA_OPT += $(CC_OPT)
 
 #
 # Rust-specific arguments

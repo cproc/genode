@@ -69,7 +69,8 @@ endif
 #
 %.o: %.adb
 	$(MSG_COMP)$@
-	$(VERBOSE)gnatmake -q -c $(CC_ADA_OPT) $(INCLUDES) $<
+	@#$(VERBOSE)$(CC) -c $(CC_ADA_OPT) $(INCLUDES) $<
+	$(VERBOSE)genode-x86-gnatmake -c -v --RTS=/tmp --GCC=$(CC) $< -cargs $(CC_ADA_OPT) $(INCLUDES)
 
 #
 # Compiling Rust sources
