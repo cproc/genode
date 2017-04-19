@@ -152,6 +152,9 @@ endif
 # 'configure' parameters for binutils, gcc and gdb
 #
 
+LOCAL_BOOTSTRAP_INSTALL_LOCATION = $(shell pwd)/build/bootstrap/install
+export PATH := $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin:$(PATH)
+
 LOCAL_INSTALL_LOCATION = $(shell pwd)/build/install
 
 #
@@ -172,6 +175,26 @@ CONFIG_QUIET = --quiet
 MAKEFLAGS   += --quiet
 export MAKEFLAGS
 endif
+
+COMMON_BOOTSTRAP_CONFIG = $(CONFIG_QUIET) \
+                          --prefix=$(LOCAL_BOOTSTRAP_INSTALL_LOCATION)
+
+BINUTILS_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG)
+
+GCC_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG) \
+                        --enable-languages=c,c++,ada \
+                        --disable-bootstrap \
+                        --disable-libatomic \
+                        --disable-libcilkrts \
+                        --disable-libgomp \
+                        --disable-libitm \
+                        --disable-libmpx \
+                        --disable-libsanitizer \
+                        --disable-libquadmath \
+                        --disable-libssp \
+                        --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
+                        --with-mpfr=$(LOCAL_LIB_INSTALL_LOCATION) \
+                        --with-mpc=$(LOCAL_LIB_INSTALL_LOCATION)
 
 COMMON_CONFIG = $(CONFIG_QUIET) \
                 --prefix=$(LOCAL_INSTALL_LOCATION) \
@@ -206,12 +229,13 @@ BINUTILS_CONFIG += $(BINUTILS_CONFIG_$(PLATFORM))
 GDB_CONFIG += $(COMMON_CONFIG) --disable-werror
 
 GCC_CONFIG += $(COMMON_CONFIG) \
-              --enable-languages=c,c++,go \
+              --enable-languages=c,c++,go,ada \
               --disable-libgo \
               --disable-gotools \
               --disable-libssp \
               --disable-libquadmath \
               --disable-libffi \
+              --disable-libada \
               --enable-targets=all \
               --with-gnu-as \
               --with-gnu-ld \
@@ -257,9 +281,14 @@ GCC_MAKE_OPT += $(MAKE_OPT) $(GCC_MAKE_OPT_$(PLATFORM))
 # dependencies. All other programs will be generated as side effect.
 #
 
+BINUTILS_BOOTSTRAP_BINARIES           = build/bootstrap/binutils/binutils/objdump
+BINUTILS_BOOTSTRAP_INSTALLED_BINARIES = $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin/objdump
+GCC_BOOTSTRAP_BINARIES                = build/bootstrap/gcc/gcc/xg++
+GCC_BOOTSTRAP_INSTALLED_BINARIES      = $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin/g++
+
 BINUTILS_BINARIES           = build/$(PLATFORM)/binutils/binutils/objdump
 BINUTILS_INSTALLED_BINARIES = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-objdump
-GCC_BINARIES                = build/$(PLATFORM)/gcc/gcc/g++
+GCC_BINARIES                = build/$(PLATFORM)/gcc/gcc/g++-cross
 GCC_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-g++
 GDB_BINARIES                = build/$(PLATFORM)/gdb/gdb/gdb
 
@@ -301,7 +330,23 @@ $(BINUTILS_CONTRIB_DIR)/configure:
 	$(ECHO) "$(BRIGHT_COL)preparing binutils...$(DEFAULT_COL)"
 	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port binutils
 
-build/$(PLATFORM)/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure
+build/bootstrap/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure
+	$(ECHO) "$(BRIGHT_COL)configuring bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)cd $(dir $@); $(BINUTILS_CONTRIB_DIR)/configure $(BINUTILS_BOOTSTRAP_CONFIG)
+
+$(BINUTILS_BOOTSTRAP_BINARIES): build/bootstrap/binutils/Makefile
+	$(ECHO) "$(BRIGHT_COL)building bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C $(dir $<) -j$(MAKE_JOBS)
+
+$(BINUTILS_BOOTSTRAP_INSTALLED_BINARIES): $(BINUTILS_BOOTSTRAP_BINARIES)
+	$(ECHO) "$(BRIGHT_COL)installing bootstrap binutils...$(DEFAULT_COL)"
+	$(VERBOSE)for i in binutils gas ld intl opcodes; do \
+		$(MAKE) -C build/bootstrap/binutils/$$i install-strip; done
+	$(VERBOSE)$(MAKE) -C build/bootstrap/binutils/libiberty install
+
+build/$(PLATFORM)/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure \
+                                     $(GCC_BOOTSTRAP_INSTALLED_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)configuring binutils...$(DEFAULT_COL)"
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)cd $(dir $@); $(BINUTILS_CONTRIB_DIR)/configure $(BINUTILS_CONFIG)
@@ -360,6 +405,25 @@ build/mpc/Makefile:
 	$(VERBOSE)cd $(dir $@); \
 		$(MPC_CONTRIB_DIR)/configure $(MPC_CONFIG)
 
+build/bootstrap/gcc/Makefile: $(GCC_CONTRIB_DIR)/configure \
+                              $(BINUTILS_BOOTSTRAP_INSTALLED_BINARIES) \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libgmp.a \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libmpfr.a \
+                              $(LOCAL_LIB_INSTALL_LOCATION)/lib/libmpc.a
+
+build/bootstrap/gcc/Makefile:
+	$(ECHO) "$(BRIGHT_COL)configuring bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)cd $(dir $@); $(GCC_CONTRIB_DIR)/configure $(GCC_BOOTSTRAP_CONFIG)
+
+$(GCC_BOOTSTRAP_BINARIES): build/bootstrap/gcc/Makefile
+	$(ECHO) "$(BRIGHT_COL)building bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C $(dir $<) -j$(MAKE_JOBS)
+
+$(GCC_BOOTSTRAP_INSTALLED_BINARIES): $(GCC_BOOTSTRAP_BINARIES)
+	$(ECHO) "$(BRIGHT_COL)installing bootstrap gcc...$(DEFAULT_COL)"
+	$(VERBOSE)$(MAKE) -C build/bootstrap/gcc $(GCC_INSTALL_RULE)
+
 build/$(PLATFORM)/gcc/Makefile: $(GCC_CONTRIB_DIR)/configure \
                                 $(BINUTILS_INSTALLED_BINARIES) \
                                 $(LOCAL_LIB_INSTALL_LOCATION)/lib/libgmp.a \
@@ -374,10 +438,9 @@ build/$(PLATFORM)/gcc/Makefile:
 		target_configargs="$(TARGET_CONFIG_ARGS)" \
 		$(GCC_CONTRIB_DIR)/configure $(GCC_CONFIG)
 
-$(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile \
-                 $(LIBC)
-
 $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile
+
+$(GCC_BINARIES):
 	$(ECHO) "$(BRIGHT_COL)building gcc...$(DEFAULT_COL)"
 	$(VERBOSE)$(MAKE) -C $(dir $<) $(GCC_MAKE_OPT) -j$(MAKE_JOBS)
 
@@ -421,4 +484,4 @@ cleanall: clean
 install: build_all
 	$(ECHO) "$(BRIGHT_COL)installing tool chain to '$(INSTALL_LOCATION)'...$(DEFAULT_COL)"
 	$(VERBOSE)sudo cp -a --remove-destination --no-target-directory $(LOCAL_INSTALL_LOCATION) $(INSTALL_LOCATION)
-
+	$(VERBOSE)sudo cp $(LOCAL_BOOTSTRAP_INSTALL_LOCATION)/bin/gnatmake $(INSTALL_LOCATION)/bin/genode-$(PLATFORM)-gnatmake
