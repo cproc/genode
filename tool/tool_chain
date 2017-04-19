@@ -206,7 +206,7 @@ BINUTILS_CONFIG += $(BINUTILS_CONFIG_$(PLATFORM))
 GDB_CONFIG += $(COMMON_CONFIG) --disable-werror
 
 GCC_CONFIG += $(COMMON_CONFIG) \
-              --enable-languages=c,c++,go \
+              --enable-languages=c,c++,go,ada \
               --disable-libgo \
               --disable-gotools \
               --disable-libssp \
