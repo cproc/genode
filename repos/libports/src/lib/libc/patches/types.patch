@@ -1,0 +1,28 @@
+types.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/lib/libc/sys/i386/include/_types.h |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git src/lib/libc/sys/i386/include/_types.h src/lib/libc/sys/i386/include/_types.h
+index eea8adf..cc9e015 100644
+--- src/lib/libc/sys/i386/include/_types.h
++++ src/lib/libc/sys/i386/include/_types.h
+@@ -89,11 +89,11 @@ typedef	__int8_t	__int_least8_t;
+ typedef	__int16_t	__int_least16_t;
+ typedef	__int32_t	__int_least32_t;
+ typedef	__int64_t	__int_least64_t;
+-typedef	__int32_t	__ptrdiff_t;		/* ptr1 - ptr2 */
++typedef	long		__ptrdiff_t;		/* ptr1 - ptr2 */
+ typedef	__int32_t	__register_t;
+ typedef	__int32_t	__segsz_t;		/* segment size (in pages) */
+-typedef	__uint32_t	__size_t;		/* sizeof() */
+-typedef	__int32_t	__ssize_t;		/* byte count or error */
++typedef	unsigned long	__size_t;		/* sizeof() */
++typedef	long		__ssize_t;		/* byte count or error */
+ typedef	__int32_t	__time_t;		/* time()... */
+ typedef	__uint32_t	__uintfptr_t;
+ typedef	__uint64_t	__uintmax_t;
