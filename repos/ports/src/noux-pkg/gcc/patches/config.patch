@@ -6,9 +6,9 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 ---
  gcc/config.gcc               |    2 +-
  gcc/config/arm/unknown-elf.h |   16 ++++++++++++++++
- gcc/config/i386/x86-64.h     |   19 +++++++++++++++++++
+ gcc/config/i386/x86-64.h     |   23 +++++++++++++++++++++--
  libgcc/config.host           |   12 ++++++++++--
- 4 files changed, 46 insertions(+), 3 deletions(-)
+ 4 files changed, 48 insertions(+), 5 deletions(-)
 
 diff --git a/gcc/config.gcc b/gcc/config.gcc
 index 1d5b23f..1840148 100644
@@ -48,9 +48,22 @@ index fafe057..8bd23e0 100644
 +/* https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57699 */
 +#define NO_IMPLICIT_EXTERN_C
 diff --git a/gcc/config/i386/x86-64.h b/gcc/config/i386/x86-64.h
-index 204f128..974cd36 100644
+index 204f128..8f590fe 100644
 --- a/gcc/config/i386/x86-64.h
 +++ b/gcc/config/i386/x86-64.h
+@@ -37,10 +37,10 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+ #define MCOUNT_NAME "mcount"
+ 
+ #undef SIZE_TYPE
+-#define SIZE_TYPE (TARGET_LP64 ? "long unsigned int" : "unsigned int")
++#define SIZE_TYPE (TARGET_LP64 ? "long unsigned int" : "long unsigned int")
+ 
+ #undef PTRDIFF_TYPE
+-#define PTRDIFF_TYPE (TARGET_LP64 ? "long int" : "int")
++#define PTRDIFF_TYPE (TARGET_LP64 ? "long int" : "long int")
+ 
+ #undef WCHAR_TYPE
+ #define WCHAR_TYPE "int"
 @@ -106,3 +106,22 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
  
  #undef TARGET_SECTION_TYPE_FLAGS
