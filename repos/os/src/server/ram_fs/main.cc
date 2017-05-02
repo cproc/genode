@@ -409,6 +409,13 @@ class File_system::Session_component : public Session_rpc_object
 			node->mark_as_updated();
 			node->notify_listeners();
 		}
+
+		void sync(Node_handle handle) override
+		{
+			Node *node = _handle_registry.lookup_and_lock(handle);
+			Node_lock_guard guard(node);
+			node->notify_listeners();
+		}
 };
 
 
