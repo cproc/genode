@@ -110,6 +110,8 @@ class Genode::Slab::Block
 struct Genode::Slab::Entry
 {
 		Block &block;
+		/* align data[0] to 16 byte (assuming Slab::Entry is packed !) */
+		char   unused[sizeof(&block) == 4 ? 12 : 8];
 		char   data[0];
 
 		/*
@@ -152,7 +154,7 @@ Slab::Entry *Slab::Block::_slab_entry(int idx)
 	 */
 
 	size_t const entry_size = sizeof(Entry) + _slab._slab_size;
-	return (Entry *)&_data[align_addr(_slab._entries_per_block, log2(sizeof(addr_t)))
+	return (Entry *)&_data[align_addr(_slab._entries_per_block, log2(16))
 	                            + entry_size*idx];
 }
 
@@ -210,10 +212,10 @@ Slab::Slab(size_t slab_size, size_t block_size, void *initial_sb,
 	/*
 	 * Calculate number of entries per slab block.
 	 *
-	 * The 'sizeof(umword_t)' is for the alignment of the first slab entry.
+	 * The '16' is for the alignment of the first slab entry.
 	 * The 1 is for one byte state entry.
 	 */
-	_entries_per_block((_block_size - sizeof(Block) - sizeof(umword_t))
+	_entries_per_block((_block_size - sizeof(Block) - 16)
 	                   / (_slab_size + sizeof(Entry) + 1)),
 
 	_initial_sb((Block *)initial_sb),
