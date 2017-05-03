@@ -19,6 +19,7 @@
 #include <util/string.h>
 
 #include <cxxabi.h>
+#include <exception>
 
 
 extern "C" void __cxa_pure_virtual()

@@ -87,7 +87,7 @@ Init::Server::Service::resolve_session_request(Session_label const &label)
 		if (!match || match->abandoned())
 			throw Parent::Service_denied();
 
-		return Route { *match, target_label };
+		return Route { *match, target_label.string() };
 	}
 	catch (Session_policy::No_policy_defined) {
 		throw Parent::Service_denied(); }

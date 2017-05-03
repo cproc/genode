@@ -450,7 +450,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 					Parent_service *service = nullptr;
 
 					if ((service = find_service(_parent_services, service_name)))
-						return Route { *service, target_label };
+						return Route { *service, target_label.string() };
 
 					if (service && service->abandoned())
 						throw Parent::Service_denied();
@@ -479,7 +479,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 						throw Parent::Service_denied();
 
 					if (service)
-						return Route { *service, target_label };
+						return Route { *service, target_label.string() };
 
 					if (!service_wildcard) {
 						warning(name(), ": lookup to child "
@@ -499,7 +499,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 					Routed_service *service = nullptr;
 
 					if ((service = find_service(_child_services, service_name)))
-						return Route { *service, target_label };
+						return Route { *service, target_label.string() };
 
 					if (!service_wildcard) {
 						warning(name(), ": lookup for service "
