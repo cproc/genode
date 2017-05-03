@@ -1,0 +1,31 @@
+libsupcxx_new_opa.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ libstdc++-v3/libsupc++/new_opa.cc |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libstdc++-v3/libsupc++/new_opa.cc b/libstdc++-v3/libsupc++/new_opa.cc
+index e2a0d2f..8c38fc8 100644
+--- a/libstdc++-v3/libsupc++/new_opa.cc
++++ b/libstdc++-v3/libsupc++/new_opa.cc
+@@ -55,7 +55,7 @@ extern "C" void *memalign(std::size_t boundary, std::size_t size);
+ #endif
+ #define aligned_alloc memalign
+ #else
+-#include <stdint.h>
++extern "C" void *malloc (std::size_t);
+ // The C library doesn't provide any aligned allocation functions, define one.
+ // This is a modified version of code from gcc/config/i386/gmm_malloc.h
+ static inline void*
+@@ -74,7 +74,7 @@ aligned_alloc (std::size_t al, std::size_t sz)
+   if (!malloc_ptr)
+     return nullptr;
+   // Align to the requested value, leaving room for the original malloc value.
+-  void* const aligned_ptr = (void *) (((uintptr_t) malloc_ptr + al) & -al);
++  void* const aligned_ptr = (void *) (((unsigned long) malloc_ptr + al) & -al);
+ 
+   // Store the original malloc value where it can be found by operator delete.
+   ((void **) aligned_ptr)[-1] = malloc_ptr;

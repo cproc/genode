@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/gcc/config/arm/arm.h b/gcc/config/arm/arm.h
-index ad123dd..31ccb95 100644
+index 9a225a8..50c28ae 100644
 --- a/gcc/config/arm/arm.h
 +++ b/gcc/config/arm/arm.h
-@@ -865,7 +865,7 @@ extern int arm_arch_crc;
+@@ -858,7 +858,7 @@ extern int arm_arch_cmse;
  #define EH_RETURN_STACKADJ_RTX	gen_rtx_REG (SImode, ARM_EH_STACKADJ_REGNUM)
  
  #ifndef ARM_TARGET2_DWARF_FORMAT
@@ -21,16 +21,16 @@ index ad123dd..31ccb95 100644
  #endif
  
  /* ttype entries (the only interesting data references used)
-@@ -2250,7 +2250,6 @@ extern const char *arm_rewrite_mcpu (int argc, const char **argv);
+@@ -2243,7 +2243,6 @@ extern const char *arm_target_thumb_only (int argc, const char **argv);
  #if defined(__arm__)
  extern const char *host_detect_local_cpu (int argc, const char **argv);
  # define EXTRA_SPEC_FUNCTIONS						\
 -  { "local_cpu_detect", host_detect_local_cpu },			\
-   BIG_LITTLE_CPU_SPEC_FUNCTIONS
+   BIG_LITTLE_CPU_SPEC_FUNCTIONS						\
+   TARGET_MODE_SPEC_FUNCTIONS
  
- # define MCPU_MTUNE_NATIVE_SPECS					\
 diff --git a/libgcc/config/arm/unwind-arm.h b/libgcc/config/arm/unwind-arm.h
-index d67383f..9812a47 100644
+index 9fb854f..00fd0cf 100644
 --- a/libgcc/config/arm/unwind-arm.h
 +++ b/libgcc/config/arm/unwind-arm.h
 @@ -49,7 +49,7 @@ extern "C" {

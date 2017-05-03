@@ -10,3 +10,4 @@ go_libbacktrace.patch
 target_libbacktrace.patch
 noux_build.patch
 arm.patch
+libsupcxx_new_opa.patch
