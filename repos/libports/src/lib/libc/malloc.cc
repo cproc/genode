@@ -29,8 +29,8 @@ extern "C" {
 typedef struct {
 	unsigned long size;
 	/* extend struct to 16 byte size */
-	char unused[sizeof(size) == 4 ? 12 : 8];
-} Block_header; /* 16 Byte */
+	char unused[16 - sizeof(size)];
+} Block_header;
 
 static_assert(sizeof(Block_header) == 16, "Size of Block_header in malloc is not 16!");
 
