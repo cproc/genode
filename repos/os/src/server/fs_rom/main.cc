@@ -263,7 +263,7 @@ class Fs_rom::Rom_session_component :
 				}
 
 				/* process ack at the global signal handler */
-				_env.ep().wait_and_dispatch_one_signal();
+				_env.ep().wait_and_dispatch_one_io_signal();
 			}
 		}
 
@@ -361,7 +361,7 @@ class Fs_rom::Rom_session_component :
 		}
 };
 
-struct Fs_rom::Packet_handler : Genode::Signal_handler<Packet_handler>
+struct Fs_rom::Packet_handler : Genode::Io_signal_handler<Packet_handler>
 {
 	Tx_source &source;
 
@@ -384,7 +384,7 @@ struct Fs_rom::Packet_handler : Genode::Signal_handler<Packet_handler>
 
 	Packet_handler(Genode::Entrypoint &ep, Tx_source &source)
 	:
-		Genode::Signal_handler<Packet_handler>(
+		Genode::Io_signal_handler<Packet_handler>(
 			ep, *this, &Packet_handler::handle_packets),
 		source(source)
 	{ }
