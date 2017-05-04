@@ -163,8 +163,8 @@ class Lx_kit::Irq : public Lx::Irq
 
 	private:
 
-		using Context_slab = Genode::Tslab<Context, 3 * sizeof(Context)>;
-		using Handler_slab = Genode::Tslab<Handler, 3 * sizeof(Handler)>;
+		using Context_slab = Genode::Tslab<Context, 4 * sizeof(Context)>;
+		using Handler_slab = Genode::Tslab<Handler, 4 * sizeof(Handler)>;
 
 		Genode::Entrypoint    &_ep;
 		Lx_kit::List<Context>  _list;
