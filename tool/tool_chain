@@ -377,11 +377,11 @@ $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile \
 
 $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile
 	$(ECHO) "$(BRIGHT_COL)building gcc...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT)
+	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT) GENODE=yes
 
 $(GCC_INSTALLED_BINARIES): $(GCC_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)installing gcc...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gcc $(GCC_INSTALL_RULE)
+	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gcc $(GCC_INSTALL_RULE) GENODE=yes
 
 GDB_CONTRIB_DIR = $(shell $(GENODE_DIR)/tool/ports/current gdb)/src/noux-pkg/gdb
 
