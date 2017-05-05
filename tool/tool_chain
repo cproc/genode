@@ -241,12 +241,14 @@ TARGET_CONFIG_ARGS = $(CONFIG_QUIET)
 
 GCC_INSTALL_RULE = install-strip
 
+MAKE_OPT += GENODE="yes"
+
 #
 # Platform-specific multilib support
 #
 
-MAKE_OPT_x86 := MULTILIB_OPTIONS="m64/m32" MULTILIB_DIRNAMES="64 32"
-MAKE_OPT += $(MAKE_OPT_$(PLATFORM)) -j$(MAKE_JOBS)
+GCC_MAKE_OPT_x86 := MULTILIB_OPTIONS="m64/m32" MULTILIB_DIRNAMES="64 32"
+GCC_MAKE_OPT += $(MAKE_OPT) $(GCC_MAKE_OPT_$(PLATFORM))
 
 #
 # Build rules and dependencies between build steps
@@ -306,13 +308,13 @@ build/$(PLATFORM)/binutils/Makefile: $(BINUTILS_CONTRIB_DIR)/configure
 
 $(BINUTILS_BINARIES): build/$(PLATFORM)/binutils/Makefile
 	$(ECHO) "$(BRIGHT_COL)building binutils...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT)
+	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT) -j$(MAKE_JOBS)
 
 $(BINUTILS_INSTALLED_BINARIES): $(BINUTILS_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)installing binutils...$(DEFAULT_COL)"
 	$(VERBOSE)for i in binutils gas ld intl opcodes; do \
-		$(MAKE) -C build/$(PLATFORM)/binutils/$$i install-strip; done
-	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/binutils/libiberty install
+		$(MAKE) -C build/$(PLATFORM)/binutils/$$i install-strip $(MAKE_OPT); done
+	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/binutils/libiberty install $(MAKE_OPT)
 
 COMMON_LIB_CONFIG = --prefix=$(LOCAL_LIB_INSTALL_LOCATION) \
                     --disable-shared --enable-static
@@ -377,11 +379,11 @@ $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile \
 
 $(GCC_BINARIES): build/$(PLATFORM)/gcc/Makefile
 	$(ECHO) "$(BRIGHT_COL)building gcc...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT)
+	$(VERBOSE)$(MAKE) -C $(dir $<) $(GCC_MAKE_OPT) -j$(MAKE_JOBS)
 
 $(GCC_INSTALLED_BINARIES): $(GCC_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)installing gcc...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gcc $(GCC_INSTALL_RULE)
+	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gcc $(GCC_INSTALL_RULE) $(GCC_MAKE_OPT)
 
 GDB_CONTRIB_DIR = $(shell $(GENODE_DIR)/tool/ports/current gdb)/src/noux-pkg/gdb
 
@@ -397,11 +399,11 @@ build/$(PLATFORM)/gdb/Makefile: $(GDB_CONTRIB_DIR)/configure
 
 $(GDB_BINARIES): build/$(PLATFORM)/gdb/Makefile
 	$(ECHO) "$(BRIGHT_COL)building gdb...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT)
+	$(VERBOSE)$(MAKE) -C $(dir $<) $(MAKE_OPT) -j$(MAKE_JOBS)
 
 $(GDB_INSTALLED_BINARIES): $(GDB_BINARIES)
 	$(ECHO) "$(BRIGHT_COL)installing gdb...$(DEFAULT_COL)"
-	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gdb install MAKEINFO=true
+	$(VERBOSE)$(MAKE) -C build/$(PLATFORM)/gdb install $(MAKE_OPT) MAKEINFO=true
 
 #
 # Clean rules
