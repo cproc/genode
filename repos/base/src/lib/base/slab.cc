@@ -110,13 +110,9 @@ class Genode::Slab::Block
 struct Genode::Slab::Entry
 {
 		Block &block;
-
-		/**
-		 * We align data[0] to 16 byte assuming Slab::Entry is packed and
-		 * 'block' is stored as a pointer to Block.
-		 */
-		char unused[16 - sizeof(Block *)];
-		char data[0];
+		/* align data[0] to 16 byte (assuming Slab::Entry is packed !) */
+		char   unused[sizeof(&block) == 4 ? 12 : 8];
+		char   data[0];
 
 		/*
 		 * Caution! no member variables allowed below this line!
@@ -124,8 +120,6 @@ struct Genode::Slab::Entry
 
 		explicit Entry(Block &block) : block(block)
 		{
-			static_assert(sizeof(Genode::Slab::Entry) == 16,
-			              "Size of Genode::Slab::Entry not 16!");
 			block.dec_avail();
 		}
 
