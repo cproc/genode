@@ -187,8 +187,14 @@ class Loader::Session_component : public Rpc_object<Session>
 					throw Service_denied();
 				}
 
-				session.construct(_ep, _env, _rm, _ram, _max_size,
-				                  _parent_view, view_ready_sigh, args.string());
+				try {
+					session.construct(_ep, _env, _rm, _ram, _max_size,
+					                  _parent_view, view_ready_sigh, args.string());
+				} catch (Out_of_caps) {
+					warning("out of caps");
+					throw Insufficient_cap_quota();
+				}
+
 				return *session;
 			}
 
