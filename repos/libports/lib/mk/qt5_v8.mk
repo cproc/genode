@@ -24,13 +24,16 @@ CC_OPT += -fpermissive
 
 CC_WARN = -Wno-unused-local-typedefs -Wno-maybe-uninitialized
 
+QT_SOURCES_FILTER_OUT += platform-linux.cc
+QT_SOURCES            += platform-genode.cc
+
 #
 # Qt was configured for x86_64.
 # If the Genode target architecture differs, the x86_64-files need to get removed first.
 #
 ifneq ($(filter-out $(SPECS),x86_64),)
 QT_DEFINES += -UV8_TARGET_ARCH_X64
-QT_SOURCES_FILTER_OUT = \
+QT_SOURCES_FILTER_OUT += \
   assembler-x64.cc \
   builtins-x64.cc \
   code-stubs-x64.cc \
