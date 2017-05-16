@@ -83,9 +83,9 @@ append config {
 		</route>
 	</start>
 
-	<start name="arora" caps="250">
+	<start name="arora" caps="2000">
 		<resource name="RAM" quantum="2G"/>
-		<config clipboard="yes">
+		<config clipboard="no">
 			<libc stdout="/dev/log" stderr="/dev/log">
 				<vfs>
 					<dir name="dev"> <log/> </dir>
