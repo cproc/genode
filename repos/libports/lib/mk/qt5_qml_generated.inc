@@ -4,8 +4,8 @@ QT_INCPATH += \
   qtdeclarative/src/qml \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.5.0 \
-  qtdeclarative/include/QtQml/5.5.0/QtQml \
+  qtdeclarative/include/QtQml/5.5.1 \
+  qtdeclarative/include/QtQml/5.5.1/QtQml \
   qtdeclarative/src/qml/compiler \
   qtdeclarative/src/3rdparty/masm/jit \
   qtdeclarative/src/3rdparty/masm/assembler \
@@ -21,8 +21,8 @@ QT_INCPATH += \
   qtdeclarative/src/3rdparty/double-conversion \
   qtdeclarative/src/qml/debugger \
   qtdeclarative/src/qml/animations \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \

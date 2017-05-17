@@ -5,8 +5,8 @@ QT_INCPATH += \
   qttools/src/designer/src/lib/uilib \
   qttools/include \
   qttools/include/QtUiTools \
-  qttools/include/QtUiTools/5.5.0 \
-  qttools/include/QtUiTools/5.5.0/QtUiTools \
+  qttools/include/QtUiTools/5.5.1 \
+  qttools/include/QtUiTools/5.5.1/QtUiTools \
   qttools/include/QtUiPlugin \
   qtbase/include \
   qtbase/include/QtWidgets \
