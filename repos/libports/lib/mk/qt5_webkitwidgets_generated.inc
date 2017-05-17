@@ -127,8 +127,8 @@ QT_INCPATH += \
   qtwebkit/Source/WTF \
   qtwebkit/include \
   qtwebkit/include/QtWebKitWidgets \
-  qtwebkit/include/QtWebKitWidgets/5.5.0 \
-  qtwebkit/include/QtWebKitWidgets/5.5.0/QtWebKitWidgets \
+  qtwebkit/include/QtWebKitWidgets/5.5.1 \
+  qtwebkit/include/QtWebKitWidgets/5.5.1/QtWebKitWidgets \
   qtwebkit/Source/qt/Api \
   qtwebkit/Source/qt/WebCoreSupport \
   qtwebkit/Source \
@@ -138,15 +138,15 @@ QT_INCPATH += \
   qtbase/include/QtGui \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
-  qtbase/include/QtWidgets/5.5.0 \
-  qtbase/include/QtWidgets/5.5.0/QtWidgets \
+  qtbase/include/QtWidgets/5.5.1 \
+  qtbase/include/QtWidgets/5.5.1/QtWidgets \
   qtbase/include/QtPrintSupport \
   qtbase/include/QtOpenGL \
-  qtbase/include/QtGui/5.5.0 \
-  qtbase/include/QtGui/5.5.0/QtGui \
+  qtbase/include/QtGui/5.5.1 \
+  qtbase/include/QtGui/5.5.1/QtGui \
   qtbase/include/QtSql \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \

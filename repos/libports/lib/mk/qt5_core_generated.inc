@@ -4,8 +4,8 @@ QT_INCPATH += \
   qtbase/src/corelib \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/src/3rdparty/pcre \
   qtbase/src/3rdparty/harfbuzz/src \
   qtbase/src/3rdparty/md5 \

@@ -4,14 +4,14 @@ QT_INCPATH += \
   qtbase/src/opengl \
   qtbase/include \
   qtbase/include/QtOpenGL \
-  qtbase/include/QtOpenGL/5.5.0 \
-  qtbase/include/QtOpenGL/5.5.0/QtOpenGL \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
-  qtbase/include/QtGui/5.5.0 \
-  qtbase/include/QtGui/5.5.0/QtGui \
-  qtbase/include/QtWidgets/5.5.0 \
-  qtbase/include/QtWidgets/5.5.0/QtWidgets \
+  qtbase/include/QtOpenGL/5.5.1 \
+  qtbase/include/QtOpenGL/5.5.1/QtOpenGL \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
+  qtbase/include/QtGui/5.5.1 \
+  qtbase/include/QtGui/5.5.1/QtGui \
+  qtbase/include/QtWidgets/5.5.1 \
+  qtbase/include/QtWidgets/5.5.1/QtWidgets \
   qtbase/include/QtWidgets \
   qtbase/include/QtGui \
   qtbase/include/QtCore \

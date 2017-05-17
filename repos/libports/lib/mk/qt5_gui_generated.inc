@@ -4,11 +4,10 @@ QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.5.0 \
-  qtbase/include/QtGui/5.5.0/QtGui \
-  qtbase/src/gui/image \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtGui/5.5.1 \
+  qtbase/include/QtGui/5.5.1/QtGui \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

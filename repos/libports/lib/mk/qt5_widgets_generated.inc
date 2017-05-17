@@ -4,13 +4,13 @@ QT_INCPATH += \
   qtbase/src/widgets \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.5.0 \
-  qtbase/include/QtWidgets/5.5.0/QtWidgets \
+  qtbase/include/QtWidgets/5.5.1 \
+  qtbase/include/QtWidgets/5.5.1/QtWidgets \
   qtbase/src/widgets/dialogs \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
-  qtbase/include/QtGui/5.5.0 \
-  qtbase/include/QtGui/5.5.0/QtGui \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
+  qtbase/include/QtGui/5.5.1 \
+  qtbase/include/QtGui/5.5.1/QtGui \
   qtbase/include/QtGui \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++

@@ -36,10 +36,10 @@ uic/uic: bootstrap/libQtBootstrap.a uic/Makefile
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore \
 		INCLUDEPATH+=$(REP_DIR)/src/lib/qt5/qtbase/src/corelib/global \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.5.0 \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.5.0/QtCore \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.5.1 \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtCore/5.5.1/QtCore \
 		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml \
-		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml/5.5.0/QtXml \
+		INCLUDEPATH+=$(QT5_CONTRIB_DIR)/qtbase/include/QtXml/5.5.1/QtXml \
 		-after DESTDIR= \
 		-after "LIBS+=-lQtBootstrap -L../bootstrap" \
 		$^
