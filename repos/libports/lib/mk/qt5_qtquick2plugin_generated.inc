@@ -2,14 +2,14 @@ QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_
 
 QT_INCPATH += \
   qtdeclarative/src/imports/qtquick2 \
-  qtdeclarative/include/QtQuick/5.5.0 \
-  qtdeclarative/include/QtQuick/5.5.0/QtQuick \
+  qtdeclarative/include/QtQuick/5.5.1 \
+  qtdeclarative/include/QtQuick/5.5.1/QtQuick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
   qtbase/include \
   qtbase/include/QtGui \
-  qtdeclarative/include/QtQml/5.5.0 \
-  qtdeclarative/include/QtQml/5.5.0/QtQml \
+  qtdeclarative/include/QtQml/5.5.1 \
+  qtdeclarative/include/QtQml/5.5.1/QtQml \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \

@@ -36,7 +36,7 @@ index a453786..fc92e0b 100644
  
  #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index ba6f5a3..f8d0a41 100644
+index e1282ee..ce847c9 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 @@ -95,6 +95,10 @@
@@ -50,7 +50,7 @@ index ba6f5a3..f8d0a41 100644
  QT_BEGIN_NAMESPACE
  
  using namespace QV4;
-@@ -111,7 +115,10 @@ const int MinimumStackSize = 256; // in kbytes
+@@ -114,7 +118,10 @@ QT_WARNING_DISABLE_MSVC(4172) // MSVC 2015: warning C4172: returning address of
  quintptr getStackLimit()
  {
      quintptr stackLimit;
@@ -76,7 +76,7 @@ index 4b08194..4354090 100644
  #endif
  #endif
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
-index d5576b4..090797a 100644
+index 64491e1..6f05998 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4mm.cpp
 @@ -64,6 +64,10 @@
@@ -104,7 +104,7 @@ index 24cd0b6..0558983 100644
  #endif
  
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-index 5a54609..f6352ed 100644
+index ff48a10..d5e892b 100644
 --- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
 +++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
 @@ -1650,6 +1650,14 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,

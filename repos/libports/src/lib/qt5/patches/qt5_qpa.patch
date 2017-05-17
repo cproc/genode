@@ -11,22 +11,22 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 32 insertions(+)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index 65cdabd..1eb20e1 100644
+index c41061a..24650ef 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-@@ -71,7 +71,16 @@ void QBasicFontDatabase::populateFontDatabase()
-     for (int i = 0; i < int(dir.count()); ++i) {
-         const QByteArray file = QFile::encodeName(dir.absoluteFilePath(dir[i]));
- //        qDebug() << "looking at" << file;
+@@ -72,7 +72,16 @@ void QBasicFontDatabase::populateFontDatabase()
+ 
+     foreach (const QFileInfo &fi, dir.entryInfoList(nameFilters, QDir::Files)) {
+         const QByteArray file = QFile::encodeName(fi.absoluteFilePath());
 +#ifdef Q_OS_GENODE
 +        QByteArray data;
 +        QFile f(file);
 +        if (!f.open(QIODevice::ReadOnly))
 +            continue;
 +        data = f.readAll();
-+        addTTFile(data, file);
++        QBasicFontDatabase::addTTFile(data, file);
 +#else
-         addTTFile(QByteArray(), file);
+         QBasicFontDatabase::addTTFile(QByteArray(), file);
 +#endif
      }
  }
@@ -62,7 +62,7 @@ index 34f20f4..6e8bcbd 100644
  
  const QEvdevKeyboardMap::Composing QEvdevKeyboardHandler::s_keycompose_default[] = {
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-index 16cb94d..30e0611 100644
+index 06751de..577a10b 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 @@ -42,7 +42,9 @@
@@ -117,7 +117,7 @@ index 16cb94d..30e0611 100644
      QWindowSystemInterface::handleExtendedKeyEvent(0, (isPress ? QEvent::KeyPress : QEvent::KeyRelease),
                                                     qtcode, modifiers, nativecode + 8, 0, int(modifiers),
                                                     (unicode != 0xffff ) ? QString(unicode) : QString(), autoRepeat);
-@@ -455,6 +470,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -461,6 +476,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
      m_composing = 0;
      m_dead_unicode = 0xffff;
  
@@ -125,7 +125,7 @@ index 16cb94d..30e0611 100644
      //Set locks according to keyboard leds
      quint16 ledbits[1];
      memset(ledbits, 0, sizeof(ledbits));
-@@ -475,6 +491,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -481,6 +497,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
              m_locks[2] = 1;
          qCDebug(qLcEvdevKey, "numlock=%d , capslock=%d, scrolllock=%d", m_locks[1], m_locks[0], m_locks[2]);
      }

@@ -4,11 +4,11 @@ QT_INCPATH += \
   qtbase/src/network \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtNetwork/5.5.0 \
-  qtbase/include/QtNetwork/5.5.0/QtNetwork \
+  qtbase/include/QtNetwork/5.5.1 \
+  qtbase/include/QtNetwork/5.5.1/QtNetwork \
   qtbase/src/network/kernel \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

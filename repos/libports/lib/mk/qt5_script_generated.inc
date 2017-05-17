@@ -24,8 +24,8 @@ QT_INCPATH += \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
   qtscript/include \
   qtscript/include/QtScript \
-  qtscript/include/QtScript/5.5.0 \
-  qtscript/include/QtScript/5.5.0/QtScript \
+  qtscript/include/QtScript/5.5.1 \
+  qtscript/include/QtScript/5.5.1/QtScript \
   qtscript/src/3rdparty/javascriptcore/WebKit/qt/Api \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/pcre \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/tmp \
@@ -46,8 +46,8 @@ QT_INCPATH += \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
   qtscript/src/script \
   qtscript/src/script/parser \
-  qtbase/include/QtCore/5.5.0 \
-  qtbase/include/QtCore/5.5.0/QtCore \
+  qtbase/include/QtCore/5.5.1 \
+  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/include \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++

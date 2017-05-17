@@ -23,7 +23,7 @@ Genode-specific adaptations
  16 files changed, 122 insertions(+), 8 deletions(-)
 
 diff --git a/qtbase/src/corelib/codecs/qtextcodec.cpp b/qtbase/src/corelib/codecs/qtextcodec.cpp
-index 8fef333..a877ace 100644
+index c6d5c73..3e91de2 100644
 --- a/qtbase/src/corelib/codecs/qtextcodec.cpp
 +++ b/qtbase/src/corelib/codecs/qtextcodec.cpp
 @@ -198,7 +198,11 @@ static QTextCodec *setupLocaleMapper()
@@ -39,10 +39,10 @@ index 8fef333..a877ace 100644
          // Get the first nonempty value from $LC_ALL, $LC_CTYPE, and $LANG
          // environment variables.
 diff --git a/qtbase/src/corelib/global/qcompilerdetection.h b/qtbase/src/corelib/global/qcompilerdetection.h
-index 82c3bf8..301121f 100644
+index 9f79b3e..1e2d2a0 100644
 --- a/qtbase/src/corelib/global/qcompilerdetection.h
 +++ b/qtbase/src/corelib/global/qcompilerdetection.h
-@@ -799,7 +799,9 @@
+@@ -818,7 +818,9 @@
  #      define Q_COMPILER_ALIGNAS
  #      define Q_COMPILER_ALIGNOF
  #      define Q_COMPILER_INHERITING_CONSTRUCTORS
@@ -77,7 +77,7 @@ index 562427e..f0f57b7 100644
  #  define Q_OS_BSD4
  #  ifdef __LP64__
 diff --git a/qtbase/src/corelib/io/qresource.cpp b/qtbase/src/corelib/io/qresource.cpp
-index 4b85645..c869ee0 100644
+index 6671333..ec796a8 100644
 --- a/qtbase/src/corelib/io/qresource.cpp
 +++ b/qtbase/src/corelib/io/qresource.cpp
 @@ -922,7 +922,7 @@ public:
@@ -90,7 +90,7 @@ index 4b85645..c869ee0 100644
  #endif
  
 diff --git a/qtbase/src/corelib/kernel/qcoreapplication.cpp b/qtbase/src/corelib/kernel/qcoreapplication.cpp
-index ecafe91..96b9d8b 100644
+index 37a26cf..a168d3f 100644
 --- a/qtbase/src/corelib/kernel/qcoreapplication.cpp
 +++ b/qtbase/src/corelib/kernel/qcoreapplication.cpp
 @@ -587,7 +587,7 @@ void QCoreApplicationPrivate::initLocale()
@@ -142,7 +142,7 @@ index 155f7b7..2e32ddb 100644
  }
  
 diff --git a/qtbase/src/corelib/kernel/qtranslator.cpp b/qtbase/src/corelib/kernel/qtranslator.cpp
-index a405df5..1055388 100644
+index 360c587..3ff1c55 100644
 --- a/qtbase/src/corelib/kernel/qtranslator.cpp
 +++ b/qtbase/src/corelib/kernel/qtranslator.cpp
 @@ -52,7 +52,7 @@
@@ -171,7 +171,7 @@ index dc231a0..458c8d3 100644
      handle = 0;
  #  ifndef Q_OS_WINRT
 diff --git a/qtbase/src/corelib/thread/qthread_p.h b/qtbase/src/corelib/thread/qthread_p.h
-index 2008f76..5404f98 100644
+index 1ecd682..d2bf87b 100644
 --- a/qtbase/src/corelib/thread/qthread_p.h
 +++ b/qtbase/src/corelib/thread/qthread_p.h
 @@ -46,6 +46,10 @@
@@ -250,10 +250,10 @@ index 2008f76..5404f98 100644
  
  #ifdef Q_OS_WIN
 diff --git a/qtbase/src/corelib/tools/qdatetime.cpp b/qtbase/src/corelib/tools/qdatetime.cpp
-index e445055..1051c2c 100644
+index eb4eff3..08d7858 100644
 --- a/qtbase/src/corelib/tools/qdatetime.cpp
 +++ b/qtbase/src/corelib/tools/qdatetime.cpp
-@@ -2133,6 +2133,9 @@ static int qt_timezone()
+@@ -2134,6 +2134,9 @@ static int qt_timezone()
          long offset;
          _get_timezone(&offset);
          return offset;
@@ -350,10 +350,10 @@ index 90a6f76..42fbde5 100644
              results.setHostName(address.toString());
          results.setAddresses(QList<QHostAddress>() << address);
 diff --git a/qtbase/src/widgets/dialogs/qfiledialog.cpp b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-index a9d5574..c4f803c 100644
+index c9e6a19..4fadfd1 100644
 --- a/qtbase/src/widgets/dialogs/qfiledialog.cpp
 +++ b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-@@ -1110,7 +1110,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path, bool *expanded
+@@ -1112,7 +1112,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path, bool *expanded
          userName.remove(0, 1);
  #if defined(Q_OS_VXWORKS)
          const QString homePath = QDir::homePath();

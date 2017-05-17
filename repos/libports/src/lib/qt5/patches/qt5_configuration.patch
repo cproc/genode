@@ -19,7 +19,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
 
 diff --git a/qt.pro b/qt.pro
-index 01547d4..f4110d5 100644
+index bf8a7ba..df30196 100644
 --- a/qt.pro
 +++ b/qt.pro
 @@ -58,38 +58,38 @@ ANDROID_EXTRAS =
@@ -40,7 +40,7 @@ index 01547d4..f4110d5 100644
 -addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 -addModule(qtactiveqt, qtbase)
 -addModule(qtsystems, qtbase, qtdeclarative)
--addModule(qtlocation, qtbase, qtdeclarative qtsystems)
+-addModule(qtlocation, qtbase, qtdeclarative qtquickcontrols qtsystems)
 -addModule(qtsensors, qtbase, qtdeclarative)
 -addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 -addModule(qtfeedback, qtdeclarative, qtmultimedia)
@@ -52,14 +52,14 @@ index 01547d4..f4110d5 100644
 +#addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
 +#addModule(qtactiveqt, qtbase)
 +#addModule(qtsystems, qtbase, qtdeclarative)
-+#addModule(qtlocation, qtbase, qtdeclarative qtsystems)
++#addModule(qtlocation, qtbase, qtdeclarative qtquickcontrols qtsystems)
 +#addModule(qtsensors, qtbase, qtdeclarative)
 +#addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
 +#addModule(qtfeedback, qtdeclarative, qtmultimedia)
 +#addModule(qtpim, qtdeclarative)
 +#addModule(qtwebsockets, qtbase, qtdeclarative)
 +#addModule(qtwebchannel, qtbase, qtdeclarative qtwebsockets)
- addModule(qtwebkit, qtdeclarative, qtlocation qtmultimedia qtsensors qtwebchannel, WebKit.pro)
+ addModule(qtwebkit, qtbase, qtdeclarative qtlocation qtmultimedia qtsensors qtwebchannel qtxmlpatterns, WebKit.pro)
  addModule(qttools, qtbase, qtdeclarative qtactiveqt qtwebkit)
  addModule(qtwebkit-examples, qtwebkit qttools)
  addModule(qtimageformats, qtbase)
@@ -89,7 +89,7 @@ index 01547d4..f4110d5 100644
 +#addModule(qtdoc, qtdeclarative)
 +#addModule(qtqa, qtbase)
 diff --git a/qtbase/configure b/qtbase/configure
-index 8a4c89e..7987008 100755
+index cea62fb..b8a29b5 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
 @@ -622,10 +622,10 @@ CFG_ZLIB=auto
@@ -105,7 +105,7 @@ index 8a4c89e..7987008 100755
  CFG_LIBJPEG=auto
  CFG_XCURSOR=runtime
  CFG_XRANDR=runtime
-@@ -724,7 +724,7 @@ CFG_GETADDRINFO=auto
+@@ -727,7 +727,7 @@ CFG_GETADDRINFO=auto
  CFG_IPV6IFNAME=auto
  CFG_GETIFADDRS=auto
  CFG_INOTIFY=auto
@@ -114,7 +114,7 @@ index 8a4c89e..7987008 100755
  CFG_RPATH=yes
  CFG_FRAMEWORK=auto
  CFG_USE_GOLD_LINKER=auto
-@@ -5179,16 +5179,16 @@ elif [ "$CFG_OPENGL" = "es2" ]; then
+@@ -5192,16 +5192,16 @@ elif [ "$CFG_OPENGL" = "es2" ]; then
          echo " ${XQMAKESPEC}."
          exit 1
      fi
@@ -141,7 +141,7 @@ index 8a4c89e..7987008 100755
  fi
  
  # If OpenGL ES 2.0 is enabled, check for 3.0 and higher. This is used to allow
-@@ -5568,39 +5568,39 @@ else
+@@ -5581,39 +5581,39 @@ else
  fi
  
  # EGL Support
