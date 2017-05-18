@@ -2,19 +2,19 @@ QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_
 
 QT_INCPATH += \
   qtdeclarative/src/quick \
+  qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.5.1 \
-  qtdeclarative/include/QtQuick/5.5.1/QtQuick \
-  qtdeclarative/src/quick \
-  qtbase/include/QtCore/5.5.1 \
-  qtbase/include/QtCore/5.5.1/QtCore \
-  qtbase/include/QtGui/5.5.1 \
-  qtbase/include/QtGui/5.5.1/QtGui \
+  qtdeclarative/include/QtQuick/5.6.2 \
+  qtdeclarative/include/QtQuick/5.6.2/QtQuick \
+  qtbase/include/QtGui/5.6.2 \
+  qtbase/include/QtGui/5.6.2/QtGui \
+  qtdeclarative/include/QtQml/5.6.2 \
+  qtdeclarative/include/QtQml/5.6.2/QtQml \
+  qtbase/include/QtCore/5.6.2 \
+  qtbase/include/QtCore/5.6.2/QtCore \
   qtbase/include \
   qtbase/include/QtGui \
-  qtdeclarative/include/QtQml/5.5.1 \
-  qtdeclarative/include/QtQml/5.5.1/QtQml \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
@@ -52,6 +52,7 @@ QT_SOURCES += \
   qquickfontmetrics.cpp \
   qquicktextmetrics.cpp \
   qquickshortcut.cpp \
+  qquickvalidator.cpp \
   qsgabstractrenderer.cpp \
   qsgbatchrenderer.cpp \
   qsggeometry.cpp \
@@ -86,7 +87,6 @@ QT_SOURCES += \
   qsgdistancefieldglyphnode_p.cpp \
   qsgdefaultimagenode.cpp \
   qsgdefaultrectanglenode.cpp \
-  qsgshareddistancefieldglyphcache.cpp \
   qsgrenderloop.cpp \
   qsgthreadedrenderloop.cpp \
   qsgwindowsrenderloop.cpp \
@@ -155,8 +155,15 @@ QT_SOURCES += \
   qquickcontext2dtile.cpp \
   qquickcontext2dtexture.cpp \
   qquickcontext2dcommandbuffer.cpp \
-  designersupport.cpp \
-  designerwindowmanager.cpp \
+  qquickdesignercustomobjectdata.cpp \
+  qquickdesignersupport.cpp \
+  qquickdesignersupportitems.cpp \
+  qquickdesignersupportmetainfo.cpp \
+  qquickdesignersupportproperties.cpp \
+  qquickdesignersupportpropertychanges.cpp \
+  qquickdesignersupportstates.cpp \
+  qquickdesignerwindowmanager.cpp \
+  qqmldesignermetaobject.cpp \
   qtquick2.cpp \
   qrc_scenegraph.cpp \
   qrc_items.cpp \
@@ -177,6 +184,7 @@ QT_SOURCES += \
   moc_qquickfontloader_p.cpp \
   moc_qquickpath_p.cpp \
   moc_qquickpathinterpolator_p.cpp \
+  moc_qquickimageprovider.cpp \
   moc_qquickvaluetypes_p.cpp \
   moc_qquickanimator_p.cpp \
   moc_qquickanimatorjob_p.cpp \
@@ -185,6 +193,7 @@ QT_SOURCES += \
   moc_qquickfontmetrics_p.cpp \
   moc_qquicktextmetrics_p.cpp \
   moc_qquickshortcut_p.cpp \
+  moc_qquickvalidator_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
   moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
@@ -195,7 +204,6 @@ QT_SOURCES += \
   moc_qsgadaptationlayer_p.cpp \
   moc_qsgcontext_p.cpp \
   moc_qsgcontextplugin_p.cpp \
-  moc_qsgshareddistancefieldglyphcache_p.cpp \
   moc_qsgrenderloop_p.cpp \
   moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgwindowsrenderloop_p.cpp \
@@ -208,9 +216,9 @@ QT_SOURCES += \
   moc_qquickfocusscope_p.cpp \
   moc_qquickpainteditem.cpp \
   moc_qquicktext_p.cpp \
-  moc_qquicktext_p_p.cpp \
   moc_qquicktextinput_p.cpp \
   moc_qquicktextdocument.cpp \
+  moc_qquicktextdocument_p.cpp \
   moc_qquicktextedit_p.cpp \
   moc_qquicktextutil_p.cpp \
   moc_qquickimagebase_p.cpp \
@@ -256,7 +264,7 @@ QT_SOURCES += \
   moc_qquickcanvascontext_p.cpp \
   moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
-  moc_designerwindowmanager_p.cpp
+  moc_qquickdesignerwindowmanager_p.cpp
 
 QT_VPATH += \
   qtdeclarative/src/quick \
@@ -293,6 +301,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickfontloader_p.cpp \
   moc_qquickpath_p.cpp \
   moc_qquickpathinterpolator_p.cpp \
+  moc_qquickimageprovider.cpp \
   moc_qquickvaluetypes_p.cpp \
   moc_qquickanimator_p.cpp \
   moc_qquickanimatorjob_p.cpp \
@@ -301,6 +310,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickfontmetrics_p.cpp \
   moc_qquicktextmetrics_p.cpp \
   moc_qquickshortcut_p.cpp \
+  moc_qquickvalidator_p.cpp \
   moc_qsgbatchrenderer_p.cpp \
   moc_qsgabstractrenderer.cpp \
   moc_qsgatlastexture_p.cpp \
@@ -311,7 +321,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qsgadaptationlayer_p.cpp \
   moc_qsgcontext_p.cpp \
   moc_qsgcontextplugin_p.cpp \
-  moc_qsgshareddistancefieldglyphcache_p.cpp \
   moc_qsgrenderloop_p.cpp \
   moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgwindowsrenderloop_p.cpp \
@@ -327,10 +336,10 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickfocusscope_p.cpp \
   moc_qquickpainteditem.cpp \
   moc_qquicktext_p.cpp \
-  moc_qquicktext_p_p.cpp \
   moc_qquicktextinput_p.cpp \
   moc_qquicktextcontrol_p.cpp \
   moc_qquicktextdocument.cpp \
+  moc_qquicktextdocument_p.cpp \
   moc_qquicktextedit_p.cpp \
   moc_qquicktextutil_p.cpp \
   moc_qquickimagebase_p.cpp \
@@ -378,7 +387,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickcanvascontext_p.cpp \
   moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
-  moc_designerwindowmanager_p.cpp
+  moc_qquickdesignerwindowmanager_p.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule
@@ -394,5 +403,6 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qquickimage.moc \
   qquickflipable.moc \
   qquickframebufferobject.moc \
+  qquickshadereffectnode.moc \
   qquickshadereffectsource.moc
 

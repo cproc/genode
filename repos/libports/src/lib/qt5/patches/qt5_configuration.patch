@@ -4,97 +4,23 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qt.pro                                             |   54 +--
- qtbase/configure                                   |   92 ++--
- qtbase/mkspecs/genode-g++/qmake.conf               |   10 
- qtbase/mkspecs/genode-g++/qplatformdefs.h          |   82 ++++
- qtbase/src/corelib/global/qconfig-genode.h         |  426 ++++++++++++++++++++
- qtdeclarative/tools/tools.pro                      |    3 
- .../Tools/qmake/mkspecs/features/configure.prf     |    1 
- qtwebkit/Tools/qmake/mkspecs/features/features.prf |    6 
- qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 
- 9 files changed, 596 insertions(+), 80 deletions(-)
+ qtbase/configure                           |   98 +++---
+ qtbase/mkspecs/genode-g++/qmake.conf       |   10 +
+ qtbase/mkspecs/genode-g++/qplatformdefs.h  |   82 +++++
+ qtbase/src/corelib/global/qconfig-genode.h |  426 ++++++++++++++++++++++++++++
+ qtdeclarative/tools/tools.pro              |    5 
+ 5 files changed, 568 insertions(+), 53 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
  create mode 100644 qtbase/src/corelib/global/qconfig-genode.h
 
-diff --git a/qt.pro b/qt.pro
-index bf8a7ba..df30196 100644
---- a/qt.pro
-+++ b/qt.pro
-@@ -58,38 +58,38 @@ ANDROID_EXTRAS =
- android: ANDROID_EXTRAS = qtandroidextras
- 
- addModule(qtbase)
--addModule(qtandroidextras, qtbase)
--addModule(qtmacextras, qtbase)
--addModule(qtx11extras, qtbase)
-+#addModule(qtandroidextras, qtbase)
-+#addModule(qtmacextras, qtbase)
-+#addModule(qtx11extras, qtbase)
- addModule(qtsvg, qtbase)
- addModule(qtxmlpatterns, qtbase)
- addModule(qtdeclarative, qtbase, qtsvg qtxmlpatterns)
--addModule(qtquickcontrols, qtdeclarative, qtgraphicaleffects)
--addModule(qtmultimedia, qtbase, qtdeclarative)
--addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
--addModule(qtactiveqt, qtbase)
--addModule(qtsystems, qtbase, qtdeclarative)
--addModule(qtlocation, qtbase, qtdeclarative qtquickcontrols qtsystems)
--addModule(qtsensors, qtbase, qtdeclarative)
--addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
--addModule(qtfeedback, qtdeclarative, qtmultimedia)
--addModule(qtpim, qtdeclarative)
--addModule(qtwebsockets, qtbase, qtdeclarative)
--addModule(qtwebchannel, qtbase, qtdeclarative qtwebsockets)
-+#addModule(qtquickcontrols, qtdeclarative, qtgraphicaleffects)
-+#addModule(qtmultimedia, qtbase, qtdeclarative)
-+#addModule(qtwinextras, qtbase, qtdeclarative qtmultimedia)
-+#addModule(qtactiveqt, qtbase)
-+#addModule(qtsystems, qtbase, qtdeclarative)
-+#addModule(qtlocation, qtbase, qtdeclarative qtquickcontrols qtsystems)
-+#addModule(qtsensors, qtbase, qtdeclarative)
-+#addModule(qtconnectivity, qtbase $$ANDROID_EXTRAS, qtdeclarative)
-+#addModule(qtfeedback, qtdeclarative, qtmultimedia)
-+#addModule(qtpim, qtdeclarative)
-+#addModule(qtwebsockets, qtbase, qtdeclarative)
-+#addModule(qtwebchannel, qtbase, qtdeclarative qtwebsockets)
- addModule(qtwebkit, qtbase, qtdeclarative qtlocation qtmultimedia qtsensors qtwebchannel qtxmlpatterns, WebKit.pro)
- addModule(qttools, qtbase, qtdeclarative qtactiveqt qtwebkit)
- addModule(qtwebkit-examples, qtwebkit qttools)
- addModule(qtimageformats, qtbase)
--addModule(qt3d, qtdeclarative qtimageformats)
--addModule(qtcanvas3d, qtdeclarative)
--addModule(qtgraphicaleffects, qtdeclarative)
-+#addModule(qt3d, qtdeclarative qtimageformats)
-+#addModule(qtcanvas3d, qtdeclarative)
-+#addModule(qtgraphicaleffects, qtdeclarative)
- addModule(qtscript, qtbase, qttools)
--addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
--addModule(qtdocgallery, qtdeclarative)
--addModule(qtwayland, qtbase, qtdeclarative)
--addModule(qtserialport, qtbase)
--addModule(qtenginio, qtdeclarative)
--addModule(qtwebengine, qtquickcontrols qtwebchannel, qtwebkit qtlocation)
--addModule(qttranslations, qttools)
--addModule(qtdoc, qtdeclarative)
--addModule(qtqa, qtbase)
-+#addModule(qtquick1, qtscript, qtsvg qtxmlpatterns qtwebkit)
-+#addModule(qtdocgallery, qtdeclarative)
-+#addModule(qtwayland, qtbase, qtdeclarative)
-+#addModule(qtserialport, qtbase)
-+#addModule(qtenginio, qtdeclarative)
-+#addModule(qtwebengine, qtquickcontrols qtwebchannel, qtwebkit qtlocation)
-+#addModule(qttranslations, qttools)
-+#addModule(qtdoc, qtdeclarative)
-+#addModule(qtqa, qtbase)
 diff --git a/qtbase/configure b/qtbase/configure
-index cea62fb..b8a29b5 100755
+index 0b8b417..1d8bd6b 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
-@@ -622,10 +622,10 @@ CFG_ZLIB=auto
- CFG_MTDEV=auto
+@@ -633,10 +633,10 @@ CFG_MTDEV=auto
  CFG_JOURNALD=no
+ CFG_SYSLOG=no
  CFG_SQLITE=qt
 -CFG_GIF=auto
 +CFG_GIF=yes
@@ -105,16 +31,16 @@ index cea62fb..b8a29b5 100755
  CFG_LIBJPEG=auto
  CFG_XCURSOR=runtime
  CFG_XRANDR=runtime
-@@ -727,7 +727,7 @@ CFG_GETADDRINFO=auto
+@@ -743,7 +743,7 @@ CFG_GETADDRINFO=auto
  CFG_IPV6IFNAME=auto
  CFG_GETIFADDRS=auto
  CFG_INOTIFY=auto
 -CFG_EVENTFD=auto
 +CFG_EVENTFD=no
+ CFG_CLOEXEC=no
  CFG_RPATH=yes
  CFG_FRAMEWORK=auto
- CFG_USE_GOLD_LINKER=auto
-@@ -5192,16 +5192,16 @@ elif [ "$CFG_OPENGL" = "es2" ]; then
+@@ -5337,16 +5337,16 @@ elif [ "$CFG_OPENGL" = "es2" ]; then
          echo " ${XQMAKESPEC}."
          exit 1
      fi
@@ -141,7 +67,7 @@ index cea62fb..b8a29b5 100755
  fi
  
  # If OpenGL ES 2.0 is enabled, check for 3.0 and higher. This is used to allow
-@@ -5581,39 +5581,39 @@ else
+@@ -5760,39 +5760,39 @@ else
  fi
  
  # EGL Support
@@ -169,7 +95,7 @@ index cea62fb..b8a29b5 100755
 -        fi
 -    elif [ "$CFG_EGL" = "yes" ]; then
 -        echo " The EGL functionality test failed; EGL is required by some QPA plugins to manage contexts & surfaces."
--        [ -z "$PKG_CONFIG" ] && echo " Use of pkg-config is not enabled, maybe you want to pass -force-pkg-config?"
+-        [ -z "$PKG_CONFIG" ] && echo " Use of pkg-config is not enabled, maybe you want to pass -pkg-config?"
 -        echo " You might need to modify the include and library search paths by editing"
 -        echo " QMAKE_INCDIR_EGL, QMAKE_LIBDIR_EGL and QMAKE_LIBS_EGL in ${XQMAKESPEC}."
 -        exit 1
@@ -202,7 +128,7 @@ index cea62fb..b8a29b5 100755
 +#        fi
 +#    elif [ "$CFG_EGL" = "yes" ]; then
 +#        echo " The EGL functionality test failed; EGL is required by some QPA plugins to manage contexts & surfaces."
-+#        [ -z "$PKG_CONFIG" ] && echo " Use of pkg-config is not enabled, maybe you want to pass -force-pkg-config?"
++#        [ -z "$PKG_CONFIG" ] && echo " Use of pkg-config is not enabled, maybe you want to pass -pkg-config?"
 +#        echo " You might need to modify the include and library search paths by editing"
 +#        echo " QMAKE_INCDIR_EGL, QMAKE_LIBDIR_EGL and QMAKE_LIBS_EGL in ${XQMAKESPEC}."
 +#        exit 1
@@ -214,6 +140,19 @@ index cea62fb..b8a29b5 100755
  
  if [ "$CFG_EGLFS" != "no" ]; then
      if [ "$XPLATFORM_QNX" = "no" ] && [ "$CFG_OPENGL" != "no" ]; then
+@@ -6064,9 +6064,9 @@ if [ "$CFG_GETIFADDRS" != "no" ]; then
+ fi
+ 
+ # find if the platform provides thread-safe CLOEXEC support
+-if compileTest unix/cloexec "cloexec"; then
+-    CFG_CLOEXEC=yes
+-fi
++#if compileTest unix/cloexec "cloexec"; then
++#    CFG_CLOEXEC=yes
++#fi
+ 
+ if [ "$XPLATFORM_MAC" = "yes" ] && [ "$CFG_SECURETRANSPORT" != "no" ] && ([ "$CFG_OPENSSL" = "no" ] || [ "$CFG_OPENSSL" = "auto" ]); then
+     CFG_SECURETRANSPORT=yes
 diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
 new file mode 100644
 index 0000000..734ae5c
@@ -751,67 +690,22 @@ index 0000000..56a0b73
 +//#  define QT_NO_VALIDATOR
 +//#endif
 diff --git a/qtdeclarative/tools/tools.pro b/qtdeclarative/tools/tools.pro
-index b2e9e27..efeb801 100644
+index 96cf804..24432b3 100644
 --- a/qtdeclarative/tools/tools.pro
 +++ b/qtdeclarative/tools/tools.pro
-@@ -9,10 +9,9 @@ qmlimportscanner.CONFIG = host_build
+@@ -9,14 +9,11 @@ qmlimportscanner.CONFIG = host_build
  !android|android_app {
      SUBDIRS += \
          qml \
 -        qmlprofiler \
          qmllint
      qtHaveModule(quick) {
--        !static: SUBDIRS += qmlscene qmlplugindump
-+        !static: SUBDIRS += qmlscene
+         !static: {
+             SUBDIRS += \
+-                qmlscene \
+-                qmlplugindump \
+-                qmltime
++                qmlscene
+         }
          qtHaveModule(widgets): SUBDIRS += qmleasing
      }
-     qtHaveModule(qmltest): SUBDIRS += qmltestrunner
-diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 0df5ee4..03ed243 100644
---- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-+++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-@@ -49,7 +49,6 @@ defineTest(runConfigure) {
- 
-     WEBKIT_CONFIG += \
-         build_webkit1 \
--        build_webkit2 \
-         build_tests \
-         $$WEBKIT_TOOLS_CONFIG
- 
-diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 7b0b49d..57adfd2 100644
---- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-+++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-@@ -42,8 +42,8 @@ defineTest(detectFeatures) {
- 
-     config_libxml2: WEBKIT_CONFIG += use_libxml2
-     config_libxslt: WEBKIT_CONFIG += xslt
--    config_libzlib: WEBKIT_CONFIG += use_zlib
--    config_libwebp: WEBKIT_CONFIG += use_webp
-+    #config_libzlib: WEBKIT_CONFIG += use_zlib
-+    #config_libwebp: WEBKIT_CONFIG += use_webp
-     config_leveldb: WEBKIT_CONFIG += use_system_leveldb
- 
-     # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
-@@ -125,7 +125,7 @@ defineTest(detectFeatures) {
-     }
- 
-     # Gamepad API Support (depends on udev and linux/joystick.h)
--    linux:!android: WEBKIT_CONFIG += gamepad
-+    #linux:!android: WEBKIT_CONFIG += gamepad
- 
-     # Support for Graphics Surface
-     # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
-diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-index 1978aa0..390ad4d 100644
---- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-+++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-@@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \
-     ENABLE_HIGH_DPI_CANVAS=0 \
-     ENABLE_ICONDATABASE=1 \
-     ENABLE_IFRAME_SEAMLESS=1 \
--    ENABLE_INDEXED_DATABASE=1 \
-+    ENABLE_INDEXED_DATABASE=0 \
-     ENABLE_INPUT_SPEECH=0 \
-     ENABLE_INPUT_TYPE_COLOR=1 \
-     ENABLE_INPUT_TYPE_DATE=0 \

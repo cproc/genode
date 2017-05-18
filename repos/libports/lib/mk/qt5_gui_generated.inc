@@ -1,13 +1,13 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DENABLE_PIXMAN_DRAWHELPERS -DQT_BUILD_GUI_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.5.1 \
-  qtbase/include/QtGui/5.5.1/QtGui \
-  qtbase/include/QtCore/5.5.1 \
-  qtbase/include/QtCore/5.5.1/QtCore \
+  qtbase/include/QtGui/5.6.2 \
+  qtbase/include/QtGui/5.6.2/QtGui \
+  qtbase/include/QtCore/5.6.2 \
+  qtbase/include/QtCore/5.6.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -66,6 +66,7 @@ QT_SOURCES += \
   qplatformgraphicsbuffer.cpp \
   qplatformgraphicsbufferhelper.cpp \
   qinputdevicemanager.cpp \
+  qhighdpiscaling.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
   qopenglwindow.cpp \
@@ -99,6 +100,7 @@ QT_SOURCES += \
   qgifhandler.cpp \
   qfont.cpp \
   qfontengine.cpp \
+  qfontengineglyphcache.cpp \
   qfontsubset.cpp \
   qfontmetrics.cpp \
   qfontdatabase.cpp \
@@ -136,6 +138,7 @@ QT_SOURCES += \
   qbrush.cpp \
   qcolor.cpp \
   qcolor_p.cpp \
+  qcompositionfunctions.cpp \
   qcosmeticstroker.cpp \
   qcssutil.cpp \
   qdrawhelper.cpp \
@@ -259,7 +262,6 @@ QT_SOURCES += \
   moc_qrasterwindow.cpp \
   moc_qplatformgraphicsbuffer.cpp \
   moc_qinputdevicemanager_p.cpp \
-  moc_qopenglcontext.cpp \
   moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QT_VERSION=5.5.1
+QT_VERSION=5.6.2
 
 ./genode_qt5_configure
 
@@ -16,8 +16,6 @@ cd qtbase/src/printsupport                   && ../../../create_generated_inc qt
 cd qtbase/src/sql                            && ../../../create_generated_inc qt5_sql               && cp qt5_sql_generated.inc ../../..               && cd ../../..
 cd qtbase/src/widgets                        && ../../../create_generated_inc qt5_widgets           && cp qt5_widgets_generated.inc ../../..           && cd ../../..
 cd qtbase/src/xml                            && ../../../create_generated_inc qt5_xml               && cp qt5_xml_generated.inc ../../..               && cd ../../..
-
-cd qtscript/src/script                       && ../../../create_generated_inc qt5_script            && cp qt5_script_generated.inc ../../..            && cd ../../..
 
 cd qttools/src/designer/src/uitools          && ../../../../../create_generated_inc qt5_ui_tools    && cp qt5_ui_tools_generated.inc ../../../../..    && cd ../../../../..
 
