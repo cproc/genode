@@ -5,15 +5,28 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 Support out-of-tree build of Qt host tools.
 This patch should not be applied when running the Qt 'configure' script.
 ---
+ qtbase/mkspecs/features/qt.prf              |    2 -
  qtbase/mkspecs/features/qt_build_config.prf |    2 -
- qtbase/mkspecs/features/qt_functions.prf    |    2 -
  qtbase/mkspecs/features/qt_module.prf       |    4 +
  qtbase/mkspecs/features/qt_tool.prf         |   94 ++++++++++++++-------------
  qtbase/qmake/Makefile.unix                  |    2 -
  5 files changed, 52 insertions(+), 52 deletions(-)
 
+diff --git a/qtbase/mkspecs/features/qt.prf b/qtbase/mkspecs/features/qt.prf
+index be08a2a..ea41489 100644
+--- a/qtbase/mkspecs/features/qt.prf
++++ b/qtbase/mkspecs/features/qt.prf
+@@ -151,7 +151,7 @@ for(ever) {
+                 WINRT_MANIFEST.capabilities_device_default += $$MODULE_WINRT_CAPABILITIES_DEVICE
+         }
+     }
+-    !isEmpty(BAD_QT):error("Unknown module(s) in QT$$var_sfx: $$replace(BAD_QT, _private$, -private)")
++    !isEmpty(BAD_QT):debug("Unknown module(s) in QT$$var_sfx: $$replace(BAD_QT, _private$, -private)")
+ 
+     !isEmpty(var_sfx): break()
+     var_sfx = _PRIVATE
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 7197f84..74bd9c7 100644
+index 1e2d5c2..4f7e611 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
 @@ -12,7 +12,7 @@
@@ -25,21 +38,8 @@ index 7197f84..74bd9c7 100644
      } else {
          debug(1, "Loaded qmodule.pri from ($$QMAKE_QT_MODULE)")
      }
-diff --git a/qtbase/mkspecs/features/qt_functions.prf b/qtbase/mkspecs/features/qt_functions.prf
-index a1c4996..54a66c7 100644
---- a/qtbase/mkspecs/features/qt_functions.prf
-+++ b/qtbase/mkspecs/features/qt_functions.prf
-@@ -174,7 +174,7 @@ defineTest(qtAddModules) {
- 
-         qtAddModule($$QTLIB, $$2)
-     }
--    !isEmpty(BAD_QT):error("Unknown module(s) in $$1: $$replace(BAD_QT, _private$, -private)")
-+    !isEmpty(BAD_QT):debug(1, "Unknown module(s) in $$1: $$replace(BAD_QT, _private$, -private)")
- }
- 
- defineTest(qtAddRpathLink) {
 diff --git a/qtbase/mkspecs/features/qt_module.prf b/qtbase/mkspecs/features/qt_module.prf
-index c89b6d2..edbf564 100644
+index 22e2dd5..7141d22 100644
 --- a/qtbase/mkspecs/features/qt_module.prf
 +++ b/qtbase/mkspecs/features/qt_module.prf
 @@ -21,7 +21,7 @@ load(qt_build_config) # loads qmodule.pri if hasn't been loaded already
@@ -51,20 +51,20 @@ index c89b6d2..edbf564 100644
  
  # Compile as shared/DLL or static according to the option given to configure
  # unless overridden. Host builds are always static
-@@ -73,7 +73,7 @@ CONFIG          += qmake_cache target_qt
+@@ -82,7 +82,7 @@ QMAKE_DOCS_TARGETDIR = qt$${MODULE}
  
- QMAKE_DOCS_TARGETDIR = qt$${MODULE}
- 
+ load(qt_common)
+ !no_module_headers: load(qt_module_headers)
 -load(qt_module_pris)
 +#load(qt_module_pris)
- load(qt_common)
  
- !no_module_headers: load(qt_module_headers)
+ INCLUDEPATH *= $$eval(QT.$${MODULE}.includes) $$eval(QT.$${MODULE}_private.includes)
+ 
 diff --git a/qtbase/mkspecs/features/qt_tool.prf b/qtbase/mkspecs/features/qt_tool.prf
-index 1d3e88c..45e6a14 100644
+index 839c3d6..6d88db7 100644
 --- a/qtbase/mkspecs/features/qt_tool.prf
 +++ b/qtbase/mkspecs/features/qt_tool.prf
-@@ -16,50 +16,50 @@ CONFIG += console
+@@ -17,52 +17,52 @@ DEFINES *= QT_USE_QSTRINGBUILDER
  # If we are doing a prefix build, create a "module" pri which enables
  # qtPrepareTool() to work with the non-installed build.
  # Non-bootstrapped tools always need this because of the environment setup.
@@ -162,11 +162,13 @@ index 1d3e88c..45e6a14 100644
 +#        cache(QT_TOOL.$${MODULE}.$$var, transient)
 +#
 +#}
+ # The variable is re-used by qtPrepareTool(), and we really don't want that.
+ unset(QT_TOOL_ENV)
 diff --git a/qtbase/qmake/Makefile.unix b/qtbase/qmake/Makefile.unix
-index 86f884f..004247e 100644
+index 405bbf9..cf5fa02 100644
 --- a/qtbase/qmake/Makefile.unix
 +++ b/qtbase/qmake/Makefile.unix
-@@ -227,7 +227,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
+@@ -229,7 +229,7 @@ qsettings.o: $(SOURCE_PATH)/src/corelib/io/qsettings.cpp
  qsystemerror.o: $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  	$(CXX) -c -o $@ $(CXXFLAGS) $(SOURCE_PATH)/src/corelib/kernel/qsystemerror.cpp
  

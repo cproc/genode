@@ -2,13 +2,13 @@ QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_
 
 QT_INCPATH += \
   qtbase/src/network \
+  qtbase/src/network/kernel \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtNetwork/5.5.1 \
-  qtbase/include/QtNetwork/5.5.1/QtNetwork \
-  qtbase/src/network/kernel \
-  qtbase/include/QtCore/5.5.1 \
-  qtbase/include/QtCore/5.5.1/QtCore \
+  qtbase/include/QtNetwork/5.6.2 \
+  qtbase/include/QtNetwork/5.6.2/QtNetwork \
+  qtbase/include/QtCore/5.6.2 \
+  qtbase/include/QtCore/5.6.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

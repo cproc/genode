@@ -1,17 +1,17 @@
-QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DQT_BUILD_CORE_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_USE_ICU -DQT_CORE_LIB -DQT_NO_DEBUG
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_NO_USING_NAMESPACE -DQT_USE_ICU -DQT_BUILD_CORE_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_DEBUG
 
 QT_INCPATH += \
   qtbase/src/corelib \
-  qtbase/include \
-  qtbase/include/QtCore \
-  qtbase/include/QtCore/5.5.1 \
-  qtbase/include/QtCore/5.5.1/QtCore \
   qtbase/src/3rdparty/pcre \
   qtbase/src/3rdparty/harfbuzz/src \
   qtbase/src/3rdparty/md5 \
   qtbase/src/3rdparty/md4 \
   qtbase/src/3rdparty/sha3 \
   qtbase/src/3rdparty/forkfd \
+  qtbase/include \
+  qtbase/include/QtCore \
+  qtbase/include/QtCore/5.6.2 \
+  qtbase/include/QtCore/5.6.2/QtCore \
   qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
@@ -30,6 +30,7 @@ QT_SOURCES += \
   qnumeric.cpp \
   qlogging.cpp \
   qhooks.cpp \
+  qversiontagging.cpp \
   qatomic.cpp \
   qexception.cpp \
   qresultstore.cpp \
@@ -73,6 +74,7 @@ QT_SOURCES += \
   qrect.cpp \
   qregexp.cpp \
   qrefcount.cpp \
+  qringbuffer.cpp \
   qshareddata.cpp \
   qsharedpointer.cpp \
   qsimd.cpp \
@@ -163,6 +165,7 @@ QT_SOURCES += \
   qjsonvalue.cpp \
   qjsonwriter.cpp \
   qjsonparser.cpp \
+  qfactoryinterface.cpp \
   qpluginloader.cpp \
   qfactoryloader.cpp \
   quuid.cpp \
@@ -266,6 +269,7 @@ QT_SOURCES += \
   moc_qstate.cpp \
   moc_qfinalstate.cpp \
   moc_qhistorystate.cpp \
+  moc_qhistorystate_p.cpp \
   moc_qabstracttransition.cpp \
   moc_qsignaltransition.cpp \
   moc_qeventtransition.cpp
@@ -350,6 +354,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qstate.cpp \
   moc_qfinalstate.cpp \
   moc_qhistorystate.cpp \
+  moc_qhistorystate_p.cpp \
   moc_qabstracttransition.cpp \
   moc_qsignaltransition.cpp \
   moc_qeventtransition.cpp

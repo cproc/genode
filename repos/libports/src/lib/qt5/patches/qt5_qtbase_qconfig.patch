@@ -5,9 +5,9 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 ---
  qtbase/src/corelib/global/qconfig.cpp |   59 +++++++
- qtbase/src/corelib/global/qconfig.h   |  173 ++++++++++++++++++++++
+ qtbase/src/corelib/global/qconfig.h   |  165 +++++++++++++++++++++
  qtbase/src/corelib/global/qfeatures.h |  263 +++++++++++++++++++++++++++++++++
- 3 files changed, 495 insertions(+)
+ 3 files changed, 487 insertions(+)
  create mode 100644 qtbase/src/corelib/global/qconfig.cpp
  create mode 100644 qtbase/src/corelib/global/qconfig.h
  create mode 100644 qtbase/src/corelib/global/qfeatures.h
@@ -79,29 +79,26 @@ index 0000000..5438a45
 +#endif
 diff --git a/qtbase/src/corelib/global/qconfig.h b/qtbase/src/corelib/global/qconfig.h
 new file mode 100644
-index 0000000..bddace9
+index 0000000..27629e5
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig.h
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,165 @@
++#define QT_VERSION_MAJOR    5
++#define QT_VERSION_MINOR    6
++#define QT_VERSION_PATCH    2
++#define QT_VERSION_STR      "5.6.2"
++
 +#ifndef QT_BOOTSTRAPPED
 +#include "qconfig-genode.h"
 +#endif
 +
-+/* Qt Edition */
-+#ifndef QT_EDITION
-+#  define QT_EDITION QT_EDITION_OPENSOURCE
-+#endif
-+
 +/* Compile time features */
-+#ifdef __x86_64__
-+#  define QT_POINTER_SIZE 8
-+#else
-+#  define QT_POINTER_SIZE 4
-+#endif
-+
 +//#define QT_REDUCE_RELOCATIONS
 +
 +// Compiler sub-arch support
++//#define QT_COMPILER_SUPPORTS_SSE2 1
++
++#ifndef QT_BOOTSTRAPPED
 +
 +#if defined(QT_BUILTIN_GIF_READER) && defined(QT_NO_BUILTIN_GIF_READER)
 +# undef QT_BUILTIN_GIF_READER
@@ -169,12 +166,6 @@ index 0000000..bddace9
 +# define QT_NO_LIBPROXY
 +#endif
 +
-+#if defined(QT_NO_NIS) && defined(QT_NIS)
-+# undef QT_NO_NIS
-+#elif !defined(QT_NO_NIS) && !defined(QT_NIS)
-+# define QT_NO_NIS
-+#endif
-+
 +#if defined(QT_NO_OPENVG) && defined(QT_OPENVG)
 +# undef QT_NO_OPENVG
 +#elif !defined(QT_NO_OPENVG) && !defined(QT_OPENVG)
@@ -235,6 +226,7 @@ index 0000000..bddace9
 +# define QT_RUNTIME_XRANDR
 +#endif
 +
++#endif // QT_BOOTSTRAPPED
 +
 +#define QT_VISIBILITY_AVAILABLE
 +

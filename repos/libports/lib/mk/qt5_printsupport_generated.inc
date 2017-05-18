@@ -2,18 +2,18 @@ QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT -DQT_
 
 QT_INCPATH += \
   qtbase/src/printsupport \
-  qtbase/include \
-  qtbase/include/QtPrintSupport \
-  qtbase/include/QtPrintSupport/5.5.1 \
-  qtbase/include/QtPrintSupport/5.5.1/QtPrintSupport \
   qtbase/src/plugins/printsupport/cups \
   qtbase/src/printsupport/dialogs \
-  qtbase/include/QtCore/5.5.1 \
-  qtbase/include/QtCore/5.5.1/QtCore \
-  qtbase/include/QtGui/5.5.1 \
-  qtbase/include/QtGui/5.5.1/QtGui \
-  qtbase/include/QtWidgets/5.5.1 \
-  qtbase/include/QtWidgets/5.5.1/QtWidgets \
+  qtbase/include \
+  qtbase/include/QtPrintSupport \
+  qtbase/include/QtPrintSupport/5.6.2 \
+  qtbase/include/QtPrintSupport/5.6.2/QtPrintSupport \
+  qtbase/include/QtWidgets/5.6.2 \
+  qtbase/include/QtWidgets/5.6.2/QtWidgets \
+  qtbase/include/QtGui/5.6.2 \
+  qtbase/include/QtGui/5.6.2/QtGui \
+  qtbase/include/QtCore/5.6.2 \
+  qtbase/include/QtCore/5.6.2/QtCore \
   qtbase/include/QtWidgets \
   qtbase/include/QtGui \
   qtbase/include/QtCore \

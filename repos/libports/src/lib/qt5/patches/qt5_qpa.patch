@@ -11,7 +11,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 32 insertions(+)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index c41061a..24650ef 100644
+index 728b166..af957f7 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 @@ -72,7 +72,16 @@ void QBasicFontDatabase::populateFontDatabase()
@@ -62,7 +62,7 @@ index 34f20f4..6e8bcbd 100644
  
  const QEvdevKeyboardMap::Composing QEvdevKeyboardHandler::s_keycompose_default[] = {
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-index 06751de..577a10b 100644
+index 089cc13..c8fb47c 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 @@ -42,7 +42,9 @@
@@ -75,20 +75,19 @@ index 06751de..577a10b 100644
  
  QT_BEGIN_NAMESPACE
  
-@@ -67,10 +69,12 @@ QEvdevKeyboardHandler::QEvdevKeyboardHandler(const QString &device, int fd, bool
+@@ -67,9 +69,11 @@ QEvdevKeyboardHandler::QEvdevKeyboardHandler(const QString &device, int fd, bool
      if (keymapFile.isEmpty() || !loadKeymap(keymapFile))
          unloadKeymap();
  
 +#ifndef Q_OS_GENODE
      // socket notifier for events on the keyboard device
-     QSocketNotifier *notifier;
-     notifier = new QSocketNotifier(m_fd, QSocketNotifier::Read, this);
-     connect(notifier, SIGNAL(activated(int)), this, SLOT(readKeycode()));
+     m_notify = new QSocketNotifier(m_fd, QSocketNotifier::Read, this);
+     connect(m_notify, SIGNAL(activated(int)), this, SLOT(readKeycode()));
 +#endif /* Q_OS_GENODE */
  }
  
  QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
-@@ -81,6 +85,7 @@ QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
+@@ -80,6 +84,7 @@ QEvdevKeyboardHandler::~QEvdevKeyboardHandler()
          qt_safe_close(m_fd);
  }
  
@@ -96,7 +95,7 @@ index 06751de..577a10b 100644
  QEvdevKeyboardHandler *QEvdevKeyboardHandler::create(const QString &device,
                                                       const QString &specification,
                                                       const QString &defaultKeymapFile)
-@@ -198,10 +203,20 @@ void QEvdevKeyboardHandler::readKeycode()
+@@ -205,10 +210,20 @@ void QEvdevKeyboardHandler::readKeycode()
          }
      }
  }
@@ -117,7 +116,7 @@ index 06751de..577a10b 100644
      QWindowSystemInterface::handleExtendedKeyEvent(0, (isPress ? QEvent::KeyPress : QEvent::KeyRelease),
                                                     qtcode, modifiers, nativecode + 8, 0, int(modifiers),
                                                     (unicode != 0xffff ) ? QString(unicode) : QString(), autoRepeat);
-@@ -461,6 +476,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -468,6 +483,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
      m_composing = 0;
      m_dead_unicode = 0xffff;
  
@@ -125,7 +124,7 @@ index 06751de..577a10b 100644
      //Set locks according to keyboard leds
      quint16 ledbits[1];
      memset(ledbits, 0, sizeof(ledbits));
-@@ -481,6 +497,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
+@@ -488,6 +504,7 @@ void QEvdevKeyboardHandler::unloadKeymap()
              m_locks[2] = 1;
          qCDebug(qLcEvdevKey, "numlock=%d , capslock=%d, scrolllock=%d", m_locks[1], m_locks[0], m_locks[2]);
      }
@@ -134,10 +133,10 @@ index 06751de..577a10b 100644
  
  bool QEvdevKeyboardHandler::loadKeymap(const QString &file)
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
-index 90142c6..2a39e36 100644
+index 84c251c..54c9cf3 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
-@@ -169,8 +169,10 @@ public:
+@@ -171,8 +171,10 @@ public:
      bool loadKeymap(const QString &file);
      void unloadKeymap();
  
