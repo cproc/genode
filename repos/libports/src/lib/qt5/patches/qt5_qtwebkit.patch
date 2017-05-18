@@ -4,6 +4,8 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
+ .../Source/JavaScriptCore/assembler/ARMAssembler.h |    7 +++++++
+ .../JavaScriptCore/assembler/MacroAssemblerARM.cpp |    3 ++-
  .../Source/JavaScriptCore/dfg/DFGOperations.cpp    |    1 +
  .../JavaScriptCore/jit/ExecutableAllocator.h       |    8 ++++++++
  qtwebkit/Source/WTF/wtf/Assertions.cpp             |    9 +++++++++
@@ -16,8 +18,52 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp          |   20 ++++++++++++++++++++
  .../front-end/InspectorBackendCommands.qrc         |    2 +-
  .../platform/graphics/qt/MediaPlayerPrivateQt.cpp  |    3 +++
- 12 files changed, 93 insertions(+), 7 deletions(-)
+ .../network/qt/SocketStreamHandlePrivate.h         |    1 +
+ .../platform/network/qt/SocketStreamHandleQt.cpp   |   14 ++++++++++++++
+ 16 files changed, 117 insertions(+), 8 deletions(-)
 
+diff --git a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
+index 19db71d..9cbe4e3 100644
+--- a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
++++ b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
+@@ -29,9 +29,14 @@
+ 
+ #if ENABLE(ASSEMBLER) && CPU(ARM_TRADITIONAL)
+ 
++#if OS(GENODE)
++#include <cpu/cache.h>
++#endif
++
+ #include "AssemblerBufferWithConstantPool.h"
+ #include "JITCompilationEffort.h"
+ #include <wtf/Assertions.h>
++
+ namespace JSC {
+ 
+     typedef uint32_t ARMWord;
+@@ -1069,6 +1074,8 @@ namespace JSC {
+             UNUSED_PARAM(size);
+ #elif OS(QNX)
+             msync(code, size, MS_INVALIDATE_ICACHE);
++#elif OS(GENODE)
++            Genode::cache_coherent((Genode::addr_t)code, size);
+ #else
+ #error "The cacheFlush support is missing on this platform."
+ #endif
+diff --git a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
+index ca0fa21..782aabf 100644
+--- a/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
++++ b/qtwebkit/Source/JavaScriptCore/assembler/MacroAssemblerARM.cpp
+@@ -65,7 +65,8 @@ static bool isVFPPresent()
+     }
+ #endif
+ 
+-#if (COMPILER(RVCT) && defined(__TARGET_FPU_VFP)) || (COMPILER(GCC) && defined(__VFP_FP__))
++#if (COMPILER(RVCT) && defined(__TARGET_FPU_VFP)) || \
++    (COMPILER(GCC) && defined(__VFP_FP__) && !defined(__SOFTFP__))
+     return true;
+ #else
+     return false;
 diff --git a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp b/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
 index 1305c0a..9af93c0 100644
 --- a/qtwebkit/Source/JavaScriptCore/dfg/DFGOperations.cpp
@@ -331,3 +377,47 @@ index b2c8d48..caeb3ec 100644
  
  #include "moc_MediaPlayerPrivateQt.cpp"
 +#endif /* ENABLE(VIDEO) */
+diff --git a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandlePrivate.h b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandlePrivate.h
+index 647c4ef..ec4a645 100644
+--- a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandlePrivate.h
++++ b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandlePrivate.h
+@@ -65,6 +65,7 @@ public Q_SLOTS:
+ #endif
+ public:
+     void initConnections();
++    void init(const KURL& url);
+     QTcpSocket* m_socket;
+     SocketStreamHandle* m_streamHandle;
+ };
+diff --git a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
+index cd71190..4f8a7b9 100644
+--- a/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
++++ b/qtwebkit/Source/WebCore/platform/network/qt/SocketStreamHandleQt.cpp
+@@ -58,6 +58,19 @@ SocketStreamHandlePrivate::SocketStreamHandlePrivate(SocketStreamHandle* streamH
+         return;
+ 
+     initConnections();
++ }
++
++/*
++ * This code was factored out from the constructor, because its execution can
++ * end up in 'SocketStreamHandle::platformSend()', which needs the
++ * 'SocketStreamHandle::m_p' member, which gets initialized only after the
++ * constructor returned.
++ *
++ * Genode issue #1677
++ */
++void SocketStreamHandlePrivate::init(const KURL& url)
++{
++    bool isSecure = url.protocolIs("wss");
+ 
+     unsigned int port = url.hasPort() ? url.port() : (isSecure ? 443 : 80);
+ 
+@@ -188,6 +201,7 @@ SocketStreamHandle::SocketStreamHandle(const KURL& url, SocketStreamHandleClient
+ {
+     LOG(Network, "SocketStreamHandle %p new client %p", this, m_client);
+     m_p = new SocketStreamHandlePrivate(this, url);
++    m_p->init(url);
+ }
+ 
+ SocketStreamHandle::SocketStreamHandle(QTcpSocket* socket, SocketStreamHandleClient* client)

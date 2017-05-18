@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../qt-everywhere-opensource-src-5.5.1/configure \
+../qt-everywhere-opensource-src-5.6.2/configure \
     -opensource \
     -confirm-license \
     -qconfig genode \
@@ -17,7 +17,6 @@
     -no-harfbuzz \
     -no-iconv \
     -no-largefile \
-    -no-nis \
     -no-pkg-config \
     -no-xcb \
     -no-sse3 \

@@ -39,7 +39,7 @@ append config {
 append config [qt5_start_nodes feature]
 
 append config {
-	<start name="qt_quicktest" caps="200">
+	<start name="qt_quicktest" caps="250">
 		<resource name="RAM" quantum="80M"/>
 		<config>
 			<vfs>
