@@ -1,40 +1,56 @@
-QT_DEFINES += -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DJSC=QTJSC -Djscyyparse=qtjscyyparse -Djscyylex=qtjscyylex -Djscyyerror=qtjscyyerror -DWTF=QTWTF -DQT_NO_USING_NAMESPACE -DQLALR_NO_QSCRIPTGRAMMAR_DEBUG_INFO -DQT_BUILD_SCRIPT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DBUILDING_QT__=1 -DNDEBUG -DLOG_DISABLED=1 -DBUILDING_QT__ -DBUILDING_JavaScriptCore -DBUILDING_WTF -DWTF_USE_JAVASCRIPTCORE_BINDINGS=1 -DWTF_CHANGES=1 -DNDEBUG -DJS_NO_EXPORT -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_XCB -DQT_NO_XKBCOMMON -DJSC=QTJSC -Djscyyparse=qtjscyyparse -Djscyylex=qtjscyylex -Djscyyerror=qtjscyyerror -DWTF=QTWTF -DQT_NO_USING_NAMESPACE -DQLALR_NO_QSCRIPTGRAMMAR_DEBUG_INFO -DQT_BUILD_SCRIPT_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DBUILDING_QT__=1 -DNDEBUG -DLOG_DISABLED=1 -DBUILDING_QT__ -DBUILDING_JavaScriptCore -DBUILDING_WTF -DWTF_USE_JAVASCRIPTCORE_BINDINGS=1 -DWTF_CHANGES=1 -DNDEBUG -DJS_NO_EXPORT -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_CORE_LIB
 
 QT_INCPATH += \
-  qtbase/include \
-  qtbase/include/QtCore \
-  qtbase/include/QtCore/5.1.0 \
-  qtbase/include/QtCore/5.1.0/QtCore \
   qtbase/mkspecs/genode-g++ \
-  qtscript/include \
-  qtscript/include/QtScript \
-  qtscript/include/QtScript/5.1.0 \
-  qtscript/include/QtScript/5.1.0/QtScript \
-  qtscript/src/3rdparty/javascriptcore \
+  qtscript/src/script \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore \
-  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/API \
+  qtscript/src/3rdparty/javascriptcore \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/assembler \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/bytecode \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/bytecompiler \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/debugger \
-  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/ForwardingHeaders \
-  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/jit \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/parser \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/pcre \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/profiler \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/runtime \
-  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/tmp \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wrec \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/symbian \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf/unicode \
   qtscript/src/3rdparty/javascriptcore/JavaScriptCore/yarr \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/API \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/ForwardingHeaders \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
+  qtscript/include \
+  qtscript/include/QtScript \
+  qtscript/include/QtScript/5.2.1 \
+  qtscript/include/QtScript/5.2.1/QtScript \
   qtscript/src/3rdparty/javascriptcore/WebKit/qt/Api \
-  qtscript/src/script \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/pcre \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/tmp \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/parser \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/bytecompiler \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/debugger \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/runtime \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wtf \
   qtscript/src/script/../3rdparty/javascriptcore/JavaScriptCore/unicode \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/interpreter \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/jit \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/profiler \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/wrec \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/API \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/bytecode \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/assembler \
+  qtscript/src/3rdparty/javascriptcore/JavaScriptCore/generated \
+  qtscript/src/script \
   qtscript/src/script/parser \
+  qtbase/include/QtCore/5.2.1 \
+  qtbase/include/QtCore/5.2.1/QtCore \
+  qtbase/include \
+  qtbase/include/QtCore \
 
 QT_SOURCES += \
   pcre_compile.cpp \

@@ -83,7 +83,6 @@ append boot_modules {
 	qt5_qml.lib.so
 	qt5_gui.lib.so
 	qt5_quick.lib.so
-	qt5_v8.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
 	zlib.lib.so
