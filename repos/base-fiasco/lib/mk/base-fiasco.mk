@@ -1,6 +1,6 @@
 include $(BASE_DIR)/lib/mk/base.inc
 
-LIBS += syscall-fiasco base-fiasco-common cxx
+LIBS += syscall-fiasco base-fiasco-common cxx timeout
 
 SRC_CC += thread_start.cc
 SRC_CC += cache.cc
