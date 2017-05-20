@@ -13,14 +13,14 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtwebkit/Source/WTF/wtf/InlineASM.h                |    4 ++--
  qtwebkit/Source/WTF/wtf/OSAllocatorPosix.cpp       |   13 +++++++++++++
  qtwebkit/Source/WTF/wtf/OSRandomSource.cpp         |    8 ++++++++
- qtwebkit/Source/WTF/wtf/Platform.h                 |   17 ++++++++++++++---
+ qtwebkit/Source/WTF/wtf/Platform.h                 |   19 +++++++++++++++----
  qtwebkit/Source/WTF/wtf/StackBounds.cpp            |   13 +++++++++++++
  qtwebkit/Source/WTF/wtf/TCSystemAlloc.cpp          |   20 ++++++++++++++++++++
  .../front-end/InspectorBackendCommands.qrc         |    2 +-
  .../platform/graphics/qt/MediaPlayerPrivateQt.cpp  |    3 +++
  .../network/qt/SocketStreamHandlePrivate.h         |    1 +
  .../platform/network/qt/SocketStreamHandleQt.cpp   |   14 ++++++++++++++
- 16 files changed, 117 insertions(+), 8 deletions(-)
+ 16 files changed, 118 insertions(+), 9 deletions(-)
 
 diff --git a/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h b/qtwebkit/Source/JavaScriptCore/assembler/ARMAssembler.h
 index 19db71d..9cbe4e3 100644
@@ -223,7 +223,7 @@ index 2495abf..7f05661 100644
      int fd = open("/dev/urandom", O_RDONLY, 0);
      if (fd < 0)
 diff --git a/qtwebkit/Source/WTF/wtf/Platform.h b/qtwebkit/Source/WTF/wtf/Platform.h
-index 562840c..9ace16c 100644
+index 562840c..89a1919 100644
 --- a/qtwebkit/Source/WTF/wtf/Platform.h
 +++ b/qtwebkit/Source/WTF/wtf/Platform.h
 @@ -498,6 +498,12 @@
@@ -267,6 +267,15 @@ index 562840c..9ace16c 100644
 -#if !OS(UNIX)
 +#if !OS(UNIX) || OS(GENODE)
  #define USE_SYSTEM_MALLOC 1
+ #endif
+ #endif
+@@ -838,7 +849,7 @@
+ #define ENABLE_DFG_JIT 1
+ #endif
+ /* Enable the DFG JIT on ARM, MIPS and SH4. */
+-#if CPU(ARM_TRADITIONAL) || CPU(MIPS) || CPU(SH4)
++#if (CPU(ARM_TRADITIONAL) || CPU(MIPS) || CPU(SH4))  && !OS(GENODE)
+ #define ENABLE_DFG_JIT 1
  #endif
  #endif
 @@ -914,7 +925,7 @@
