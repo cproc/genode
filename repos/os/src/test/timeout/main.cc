@@ -15,7 +15,6 @@
 #include <base/component.h>
 #include <base/attached_ram_dataspace.h>
 #include <timer_session/connection.h>
-#include <os/timer.h>
 #include <util/fifo.h>
 #include <util/misc_math.h>
 
@@ -29,7 +28,7 @@ struct Test
 	Signal_transmitter done;
 	unsigned           id;
 	Timer::Connection  timer_connection { env };
-	Genode::Timer      timer            { env.ep(), timer_connection };
+	Timer::Connection  timer            { env };
 
 	Test(Env                       &env,
 	     unsigned                  &error_cnt,

@@ -23,7 +23,6 @@
 #include <vfs/file_system_factory.h>
 #include <vfs/dir_file_system.h>
 #include <timer_session/connection.h>
-#include <os/timer.h>
 
 /* libc includes */
 #include <libc/component.h>
@@ -173,14 +172,9 @@ class Libc::Env_implementation : public Libc::Env
 
 struct Libc::Timer
 {
-	::Timer::Connection _timer_connection;
-	Genode::Timer       _timer;
+	::Timer::Connection _timer;
 
-	Timer(Genode::Env &env)
-	:
-		_timer_connection(env),
-		_timer(env.ep(), _timer_connection)
-	{ }
+	Timer(Genode::Env &env) : _timer(env) { }
 
 	unsigned long curr_time()
 	{

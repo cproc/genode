@@ -24,7 +24,6 @@
 #include <input/event.h>
 #include <util/color.h>
 #include <os/pixel_rgb565.h>
-#include <os/timer.h>
 
 /* terminal includes */
 #include <terminal/decoder.h>
@@ -528,8 +527,7 @@ struct Terminal::Main
 
 	Framebuffer::Connection _framebuffer { _env, Framebuffer::Mode() };
 	Input::Connection       _input { _env };
-	Timer::Connection       _timer_conection { _env };
-	Genode::Timer           _timer { _env.ep(), _timer_conection };
+	Timer::Connection       _timer { _env };
 
 	Heap _heap { _env.ram(), _env.rm() };
 

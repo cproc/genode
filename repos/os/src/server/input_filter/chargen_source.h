@@ -333,8 +333,8 @@ class Input_filter::Chargen_source : public Source, Source::Sink
 		 */
 		struct Char_repeater
 		{
-			Source::Sink  &_destination;
-			Genode::Timer &_timer;
+			Source::Sink      &_destination;
+			Timer::Connection &_timer;
 
 			Microseconds const _delay;
 			Microseconds const _rate;
@@ -354,7 +354,7 @@ class Input_filter::Chargen_source : public Source, Source::Sink
 			One_shot_timeout<Char_repeater> _timeout {
 				_timer, *this, &Char_repeater::_handle_timeout };
 
-			Char_repeater(Source::Sink &destination, Genode::Timer &timer,
+			Char_repeater(Source::Sink &destination, Timer::Connection &timer,
 			              Xml_node node)
 			:
 				_destination(destination), _timer(timer),

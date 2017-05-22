@@ -115,7 +115,7 @@ Link::Link(Interface                           &cln_interface,
            Pointer<Port_allocator_guard> const  srv_port_alloc,
            Interface                           &srv_interface,
            Link_side_id                  const &srv_id,
-           Genode::Timer                       &timer,
+           Timer::Connection                   &timer,
            Configuration                       &config,
            uint8_t                       const  protocol)
 :
@@ -167,7 +167,7 @@ Tcp_link::Tcp_link(Interface                           &cln_interface,
                    Pointer<Port_allocator_guard> const  srv_port_alloc,
                    Interface                           &srv_interface,
                    Link_side_id                  const &srv_id,
-                   Genode::Timer                       &timer,
+                   Timer::Connection                   &timer,
                    Configuration                       &config,
                    uint8_t                       const  protocol)
 :
@@ -228,7 +228,7 @@ Udp_link::Udp_link(Interface                           &cln_interface,
                    Pointer<Port_allocator_guard> const  srv_port_alloc,
                    Interface                           &srv_interface,
                    Link_side_id                  const &srv_id,
-                   Genode::Timer                       &timer,
+                   Timer::Connection                   &timer,
                    Configuration                       &config,
                    uint8_t                       const  protocol)
 :
