@@ -12,10 +12,13 @@
 /* Qoost includes */
 #include <qoost/compound_widget.h>
 
+extern void initialize_qpa_plugin(Genode::Env *);
+
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
 
+		initialize_qpa_plugin(&env);
 		QPluginWidget::set_env(&env);
 
 		int argc = 1;
