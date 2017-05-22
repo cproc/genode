@@ -15,7 +15,7 @@
 #define _LINK_H_
 
 /* Genode includes */
-#include <os/timer.h>
+#include <timer_session/connection.h>
 #include <util/avl_tree.h>
 #include <util/list.h>
 #include <net/ipv4.h>
@@ -146,7 +146,7 @@ class Net::Link : public Link_list::Element
 		     Pointer<Port_allocator_guard> const  srv_port_alloc,
 		     Interface                           &srv_interface,
 		     Link_side_id                  const &srv_id,
-		     Genode::Timer                       &timer,
+		     Timer::Connection                   &timer,
 		     Configuration                       &config,
 		     Genode::uint8_t               const  protocol);
 
@@ -188,7 +188,7 @@ class Net::Tcp_link : public Link
 		         Pointer<Port_allocator_guard> const  srv_port_alloc,
 		         Interface                           &srv_interface,
 		         Link_side_id                  const &srv_id,
-		         Genode::Timer                       &timer,
+		         Timer::Connection                   &timer,
 		         Configuration                       &config,
 		         Genode::uint8_t               const  protocol);
 
@@ -205,7 +205,7 @@ struct Net::Udp_link : Link
 	         Pointer<Port_allocator_guard> const  srv_port_alloc,
 	         Interface                           &srv_interface,
 	         Link_side_id                  const &srv_id,
-	         Genode::Timer                       &timer,
+	         Timer::Connection                   &timer,
 	         Configuration                       &config,
 	         Genode::uint8_t               const  protocol);
 

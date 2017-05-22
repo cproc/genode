@@ -13,7 +13,7 @@
 
 /* Genode includes */
 #include <trace/timestamp.h>
-#include <os/timer.h>
+#include <timer_session/connection.h>
 
 using namespace Genode;
 

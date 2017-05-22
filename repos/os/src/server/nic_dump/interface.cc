@@ -86,12 +86,12 @@ void Interface::_ready_to_ack()
 }
 
 
-Interface::Interface(Entrypoint      &ep,
-                     Interface_label  label,
-                     Genode::Timer   &timer,
-                     unsigned        &curr_time,
-                     bool             log_time,
-                     Allocator       &alloc)
+Interface::Interface(Entrypoint        &ep,
+                     Interface_label    label,
+                     Timer::Connection &timer,
+                     unsigned          &curr_time,
+                     bool               log_time,
+                     Allocator         &alloc)
 :
 	_sink_ack     (ep, *this, &Interface::_ack_avail),
 	_sink_submit  (ep, *this, &Interface::_ready_to_submit),
