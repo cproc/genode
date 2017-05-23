@@ -23,93 +23,28 @@
 #include <os/timeout.h>
 #include <trace/timestamp.h>
 
-namespace Genode { class Timer_time_source; }
-
 namespace Timer { class Connection; }
-
-/**
- * Implementation helper for 'Timer'
- *
- * \noapi
- */
-class Genode::Timer_time_source : public Genode::Time_source
-{
-	private:
-
-		/*
-		 * The higher the factor shift, the more precise is the time
-		 * interpolation but the more likely it becomes that an overflow
-		 * would occur during calculations. In this case, the timer
-		 * down-scales the values live which is avoidable overhead.
-		 */
-		enum { TS_TO_US_RATIO_SHIFT       = 4 };
-		enum { MIN_TIMEOUT_US             = 5000 };
-		enum { REAL_TIME_UPDATE_PERIOD_US = 100000 };
-		enum { MAX_TS                     = ~(Trace::Timestamp)0ULL >> TS_TO_US_RATIO_SHIFT };
-		enum { MAX_INTERPOLATION_QUALITY  = 3 };
-		enum { MAX_REMOTE_TIME_LATENCY_US = 500 };
-		enum { MAX_REMOTE_TIME_TRIALS     = 5 };
-
-		::Timer::Connection                                 &_connection;
-		Io_signal_handler<Timer_time_source>                 _signal_handler;
-		Timeout_handler                                     *_handler = nullptr;
-		Constructible<Periodic_timeout<Timer_time_source> >  _real_time_update;
-
-		Lock             _real_time_lock        { Lock::UNLOCKED };
-		unsigned long    _ms;
-		Trace::Timestamp _ts                    { _timestamp() };
-		Duration         _real_time             { Milliseconds(_ms) };
-		Duration         _interpolated_time     { _real_time };
-		unsigned         _interpolation_quality { 0 };
-		unsigned long    _us_to_ts_factor       { 1UL << TS_TO_US_RATIO_SHIFT };
-
-		Trace::Timestamp _timestamp();
-
-		void _update_interpolation_quality(unsigned long min_factor,
-		                                   unsigned long max_factor);
-
-		unsigned long _ts_to_us_ratio(Trace::Timestamp ts, unsigned long us);
-
-		void _handle_real_time_update(Duration);
-
-		Duration _update_interpolated_time(Duration &interpolated_time);
-
-		void _handle_timeout();
-
-	public:
-
-		Timer_time_source(Entrypoint          &ep,
-		                  ::Timer::Connection &session);
-
-
-		/*****************
-		 ** Time_source **
-		 *****************/
-
-		void schedule_timeout(Microseconds     duration,
-		                      Timeout_handler &handler) override;
-
-		Microseconds max_timeout() const override { return Microseconds::max(); }
-
-		Duration curr_time() override;
-
-		void scheduler(Timeout_scheduler &scheduler) override;
-};
-
 
 /**
  * Connection to timer service and timeout scheduler
  *
  * Multiplexes a timer session amongst different timeouts.
  */
-class Timer::Connection : public Genode::Connection<Session>,
-                          public Session_client,
-                          public Genode::Timer_time_source,
-                          public Genode::Alarm_timeout_scheduler
+class Timer::Connection : public  Genode::Connection<Session>,
+                          public  Session_client,
+                          private Genode::Time_source,
+                          public  Genode::Timeout_scheduler
 {
-	friend class Genode::Timer_time_source;
-
 	private:
+
+		using Timeout         = Genode::Timeout;
+		using Timeout_handler = Genode::Time_source::Timeout_handler;
+		using Timestamp       = Genode::Trace::Timestamp;
+		using Duration        = Genode::Duration;
+		using Lock            = Genode::Lock;
+		using Microseconds    = Genode::Microseconds;
+		using Milliseconds    = Genode::Milliseconds;
+		using Entrypoint      = Genode::Entrypoint;
 
 		Genode::Lock            _lock;
 		Genode::Signal_receiver _sig_rec;
@@ -125,11 +60,78 @@ class Timer::Connection : public Genode::Connection<Session>,
 			Session_client::sigh(sigh);
 		}
 
+
+		/*************************
+		 ** Time_source helpers **
+		 *************************/
+
+		/*
+		 * The higher the factor shift, the more precise is the time
+		 * interpolation but the more likely it becomes that an overflow
+		 * would occur during calculations. In this case, the timer
+		 * down-scales the values live which is avoidable overhead.
+		 */
+		enum { TS_TO_US_RATIO_SHIFT       = 4 };
+		enum { MIN_TIMEOUT_US             = 5000 };
+		enum { REAL_TIME_UPDATE_PERIOD_US = 100000 };
+		enum { MAX_TS                     = ~(Timestamp)0ULL >> TS_TO_US_RATIO_SHIFT };
+		enum { MAX_INTERPOLATION_QUALITY  = 3 };
+		enum { MAX_REMOTE_TIME_LATENCY_US = 500 };
+		enum { MAX_REMOTE_TIME_TRIALS     = 5 };
+
+		Genode::Io_signal_handler<Connection>                         _signal_handler;
+		Timeout_handler                                              *_handler = nullptr;
+		Genode::Constructible<Genode::Periodic_timeout<Connection> >  _real_time_update;
+
+		Lock             _real_time_lock        { Lock::UNLOCKED };
+		unsigned long    _ms                    { elapsed_ms() };
+		Timestamp        _ts                    { _timestamp() };
+		Duration         _real_time             { Milliseconds(_ms) };
+		Duration         _interpolated_time     { _real_time };
+		unsigned         _interpolation_quality { 0 };
+		unsigned long    _us_to_ts_factor       { 1UL << TS_TO_US_RATIO_SHIFT };
+
+		Timestamp _timestamp();
+
+		void _update_interpolation_quality(unsigned long min_factor,
+		                                   unsigned long max_factor);
+
+		unsigned long _ts_to_us_ratio(Timestamp ts, unsigned long us);
+
+		void _handle_real_time_update(Duration);
+
+		Duration _update_interpolated_time(Duration &interpolated_time);
+
+		void _handle_timeout();
+
+
+		/*****************
+		 ** Time_source **
+		 *****************/
+
+		void schedule_timeout(Microseconds duration, Timeout_handler &handler) override;
+		Microseconds max_timeout() const override { return Microseconds::max(); }
+		void scheduler(Timeout_scheduler &scheduler) override;
+
+
+		/*******************************
+		 ** Timeout_scheduler helpers **
+		 *******************************/
+
+		Genode::Alarm_timeout_scheduler _scheduler { *this };
+
+
+		/***********************
+		 ** Timeout_scheduler **
+		 ***********************/
+
+		void _schedule_one_shot(Timeout &timeout, Microseconds duration) override { _scheduler._schedule_one_shot(timeout, duration); };
+		void _schedule_periodic(Timeout &timeout, Microseconds duration) override { _scheduler._schedule_periodic(timeout, duration); };
+		void _discard(Timeout &timeout)                                  override { _scheduler._discard(timeout); }
+
 	public:
 
 		struct Can_not_use_blocking_interface_anymore : Genode::Exception { };
-
-		using Alarm_timeout_scheduler::curr_time;
 
 		/**
 		 * Constructor
@@ -152,7 +154,7 @@ class Timer::Connection : public Genode::Connection<Session>,
 		 */
 		void sigh(Signal_context_capability sigh)
 		{
-			if (Alarm_timeout_scheduler::_is_enabled()) {
+			if (_scheduler._is_enabled()) {
 				throw Can_not_use_blocking_interface_anymore();
 			}
 			_custom_sigh_cap = sigh;
@@ -161,7 +163,7 @@ class Timer::Connection : public Genode::Connection<Session>,
 
 		void usleep(unsigned us)
 		{
-			if (Alarm_timeout_scheduler::_is_enabled()) {
+			if (_scheduler._is_enabled()) {
 				throw Can_not_use_blocking_interface_anymore();
 			}
 			/*
@@ -193,11 +195,18 @@ class Timer::Connection : public Genode::Connection<Session>,
 
 		void msleep(unsigned ms)
 		{
-			if (Alarm_timeout_scheduler::_is_enabled()) {
+			if (_scheduler._is_enabled()) {
 				throw Can_not_use_blocking_interface_anymore();
 			}
 			usleep(1000*ms);
 		}
+
+
+		/***********************
+		 ** Timeout_scheduler **
+		 ***********************/
+
+		Duration curr_time() override;
 };
 
 #endif /* _INCLUDE__TIMER_SESSION__CONNECTION_H_ */
