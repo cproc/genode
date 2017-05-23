@@ -18,7 +18,7 @@
 /* Genode inludes */
 #include <base/env.h>
 #include <base/rpc_client.h>
-#include <os/time_source.h>
+#include <os/timeout.h>
 
 namespace Timer {
 

@@ -19,7 +19,6 @@
 #include <base/connection.h>
 #include <util/reconstructible.h>
 #include <base/entrypoint.h>
-#include <os/time_source.h>
 #include <os/timeout.h>
 #include <trace/timestamp.h>
 
