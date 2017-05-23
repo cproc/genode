@@ -23,7 +23,7 @@ if {[expr [have_spec arm] && ![have_spec hw]]} {
 	exit 0
 }
 
-build "core init drivers/platform drivers/timer test/timeout test/cpufreq test/util_mmio"
+build "core init drivers/platform drivers/timer test/timeout test/cpufreq"
 
 #
 # Boot image
