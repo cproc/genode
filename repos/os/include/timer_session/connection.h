@@ -247,6 +247,9 @@ class Timer::Connection : public  Genode::Connection<Session>,
 
 		/*
 		 * Intercept 'sigh' to keep track of customized signal handlers
+		 *
+		 * \noapi
+		 * \deprecated  Use One_shot_timeout (or Periodic_timeout) instead
 		 */
 		void sigh(Signal_context_capability sigh)
 		{
@@ -257,6 +260,12 @@ class Timer::Connection : public  Genode::Connection<Session>,
 			Session_client::sigh(_custom_sigh_cap);
 		}
 
+		/*
+		 * Block for a time span of 'us' microseconds
+		 *
+		 * \noapi
+		 * \deprecated  Use One_shot_timeout (or Periodic_timeout) instead
+		 */
 		void usleep(unsigned us)
 		{
 			if (_scheduler._is_enabled()) {
@@ -289,6 +298,12 @@ class Timer::Connection : public  Genode::Connection<Session>,
 				Session_client::sigh(_custom_sigh_cap);
 		}
 
+		/*
+		 * Block for a time span of 'ms' milliseconds
+		 *
+		 * \noapi
+		 * \deprecated  Use One_shot_timeout (or Periodic_timeout) instead
+		 */
 		void msleep(unsigned ms)
 		{
 			if (_scheduler._is_enabled()) {

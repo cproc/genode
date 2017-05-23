@@ -2,6 +2,11 @@
  * \brief  Multiplexing one time source amongst different timeouts
  * \author Martin Stein
  * \date   2016-11-04
+ *
+ * These classes are not meant to be used directly. They merely exist to share
+ * the generic parts of timeout-scheduling between the Timer::Connection and the
+ * Timer driver. For user-level timeout-scheduling you should use the interface
+ * in timer_session/connection.h instead.
  */
 
 /*
