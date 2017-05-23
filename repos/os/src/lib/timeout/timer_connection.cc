@@ -1,5 +1,5 @@
 /*
- * \brief  Multiplexes a timer session amongst different timeouts
+ * \brief  Connection to timer service and timeout scheduler
  * \author Martin Stein
  * \date   2016-11-04
  */
