@@ -21,7 +21,7 @@
 #include <util/list.h>
 #include <timer_session/timer_session.h>
 #include <base/rpc_server.h>
-#include <os/timeout.h>
+#include <timer/timeout.h>
 
 namespace Timer {
 

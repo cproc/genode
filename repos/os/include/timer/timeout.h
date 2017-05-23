@@ -11,8 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _OS__TIMEOUT_H_
-#define _OS__TIMEOUT_H_
+#ifndef _TIMER__TIMEOUT_H_
+#define _TIMER__TIMEOUT_H_
 
 /* Genode includes */
 #include <util/noncopyable.h>
@@ -231,4 +231,4 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
 		}
 };
 
-#endif /* _OS__TIMEOUT_H_ */
+#endif /* _TIMER__TIMEOUT_H_ */

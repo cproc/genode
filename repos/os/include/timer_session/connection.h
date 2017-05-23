@@ -19,7 +19,7 @@
 #include <base/connection.h>
 #include <util/reconstructible.h>
 #include <base/entrypoint.h>
-#include <os/timeout.h>
+#include <timer/timeout.h>
 #include <trace/timestamp.h>
 
 namespace Genode {
