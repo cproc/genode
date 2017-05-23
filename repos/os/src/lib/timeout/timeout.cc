@@ -12,7 +12,7 @@
  */
 
 /* Genode includes */
-#include <os/timeout.h>
+#include <timer/timeout.h>
 
 using namespace Genode;
 
