@@ -26,8 +26,6 @@ namespace Genode {
 	class Timeout_scheduler;
 	class Timeout;
 	class Alarm_timeout_scheduler;
-	template <typename> class Periodic_timeout;
-	template <typename> class One_shot_timeout;
 }
 
 namespace Timer { class Connection; }
@@ -177,96 +175,6 @@ class Genode::Timeout : private Noncopyable
 		void discard();
 
 		bool scheduled() { return _alarm.handler != nullptr; }
-};
-
-
-/**
- * Periodic timeout that is linked to a custom handler, scheduled when constructed
- */
-template <typename HANDLER>
-struct Genode::Periodic_timeout : private Noncopyable
-{
-	private:
-
-		typedef void (HANDLER::*Handler_method)(Duration);
-
-		Timeout _timeout;
-
-		struct Handler : Timeout::Handler
-		{
-			HANDLER              &object;
-			Handler_method const  method;
-
-			Handler(HANDLER &object, Handler_method method)
-			: object(object), method(method) { }
-
-
-			/**********************
-			 ** Timeout::Handler **
-			 **********************/
-
-			void handle_timeout(Duration curr_time) override {
-				(object.*method)(curr_time); }
-
-		} _handler;
-
-	public:
-
-		Periodic_timeout(Timeout_scheduler &timeout_scheduler,
-		                 HANDLER           &object,
-		                 Handler_method     method,
-		                 Microseconds       duration)
-		:
-			_timeout(timeout_scheduler), _handler(object, method)
-		{
-			_timeout.schedule_periodic(duration, _handler);
-		}
-};
-
-
-/**
- * One-shot timeout that is linked to a custom handler, scheduled manually
- */
-template <typename HANDLER>
-class Genode::One_shot_timeout : private Noncopyable
-{
-	private:
-
-		typedef void (HANDLER::*Handler_method)(Duration);
-
-		Timeout _timeout;
-
-		struct Handler : Timeout::Handler
-		{
-			HANDLER              &object;
-			Handler_method const  method;
-
-			Handler(HANDLER &object, Handler_method method)
-			: object(object), method(method) { }
-
-
-			/**********************
-			 ** Timeout::Handler **
-			 **********************/
-
-			void handle_timeout(Duration curr_time) override {
-				(object.*method)(curr_time); }
-
-		} _handler;
-
-	public:
-
-		One_shot_timeout(Timeout_scheduler &timeout_scheduler,
-		                 HANDLER           &object,
-		                 Handler_method     method)
-		: _timeout(timeout_scheduler), _handler(object, method) { }
-
-		void schedule(Microseconds duration) {
-			_timeout.schedule_one_shot(duration, _handler); }
-
-		void discard() { _timeout.discard(); }
-
-		bool scheduled() { return _timeout.scheduled(); }
 };
 
 
