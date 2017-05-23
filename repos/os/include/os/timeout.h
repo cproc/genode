@@ -16,12 +16,13 @@
 
 /* Genode includes */
 #include <util/noncopyable.h>
-#include <os/time_source.h>
 #include <os/alarm.h>
 #include <base/log.h>
+#include <os/duration.h>
 
 namespace Genode {
 
+	class Time_source;
 	class Timeout_scheduler;
 	class Timeout;
 	class Alarm_timeout_scheduler;
@@ -30,6 +31,49 @@ namespace Genode {
 }
 
 namespace Timer { class Connection; }
+
+
+/**
+ * Interface of a time source that can handle one timeout at a time
+ */
+struct Genode::Time_source
+{
+	/**
+	 * Interface of a timeout callback
+	 */
+	struct Timeout_handler
+	{
+		virtual void handle_timeout(Duration curr_time) = 0;
+	};
+
+	/**
+	 * Return the current time of the source
+	 */
+	virtual Duration curr_time() = 0;
+
+	/**
+	 * Return the maximum timeout duration that the source can handle
+	 */
+	virtual Microseconds max_timeout() const = 0;
+
+	/**
+	 * Install a timeout, overrides the last timeout if any
+	 *
+	 * \param duration  timeout duration
+	 * \param handler   timeout callback
+	 */
+	virtual void schedule_timeout(Microseconds     duration,
+	                              Timeout_handler &handler) = 0;
+
+	/**
+	 * Tell the time source which scheduler to use for its own timeouts
+	 *
+	 * This method enables a time source for example to synchronize with an
+	 * accurate but expensive timer only on a periodic basis while using a
+	 * cheaper interpolation in general.
+	 */
+	virtual void scheduler(Timeout_scheduler &scheduler) { };
+};
 
 
 /**
