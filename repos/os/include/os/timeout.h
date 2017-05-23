@@ -29,6 +29,8 @@ namespace Genode {
 	template <typename> class One_shot_timeout;
 }
 
+namespace Timer { class Connection; }
+
 
 /**
  * Interface of a time-source multiplexer
@@ -231,6 +233,8 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
                                         public  Timeout_scheduler,
                                         public  Time_source::Timeout_handler
 {
+	friend class Timer::Connection;
+
 	private:
 
 		bool             _enabled { false };
@@ -238,6 +242,8 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
 		Alarm_scheduler  _alarm_scheduler;
 
 		void _enable();
+
+		bool _is_enabled() const { return _enabled; }
 
 
 		/**********************************
@@ -256,10 +262,6 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
 
 		void _discard(Timeout &timeout) override {
 			_alarm_scheduler.discard(&timeout._alarm); }
-
-	protected:
-
-		bool _is_enabled() const { return _enabled; }
 
 	public:
 

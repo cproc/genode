@@ -19,11 +19,7 @@ using namespace Genode;
 using namespace Genode::Trace;
 
 
-/***********************
- ** Timer_time_source **
- ***********************/
-
-void Timer_time_source::_update_interpolation_quality(unsigned long min_factor,
+void Timer::Connection::_update_interpolation_quality(unsigned long min_factor,
                                                       unsigned long max_factor)
 {
 	/*
@@ -41,7 +37,7 @@ void Timer_time_source::_update_interpolation_quality(unsigned long min_factor,
 }
 
 
-unsigned long Timer_time_source::_ts_to_us_ratio(Timestamp     ts,
+unsigned long Timer::Connection::_ts_to_us_ratio(Timestamp     ts,
                                                  unsigned long us)
 {
 	/*
@@ -73,7 +69,7 @@ unsigned long Timer_time_source::_ts_to_us_ratio(Timestamp     ts,
 }
 
 
-void Timer_time_source::_handle_real_time_update(Duration)
+void Timer::Connection::_handle_real_time_update(Duration)
 {
 	Lock_guard<Lock> lock_guard(_real_time_lock);
 
@@ -87,7 +83,7 @@ void Timer_time_source::_handle_real_time_update(Duration)
 	{
 		/* determine time and timestamp difference since the last call */
 		Timestamp     volatile new_ts = _timestamp();
-		unsigned long volatile new_ms = _connection.elapsed_ms();
+		unsigned long volatile new_ms = elapsed_ms();
 
 		if (_interpolation_quality < MAX_INTERPOLATION_QUALITY) {
 			ms = new_ms;
@@ -129,7 +125,7 @@ void Timer_time_source::_handle_real_time_update(Duration)
 }
 
 
-Duration Timer_time_source::_update_interpolated_time(Duration &interpolated_time)
+Duration Timer::Connection::_update_interpolated_time(Duration &interpolated_time)
 {
 	/*
 	 * The new interpolated time value may be smaller than a
@@ -145,23 +141,14 @@ Duration Timer_time_source::_update_interpolated_time(Duration &interpolated_tim
 }
 
 
-void Timer_time_source::_handle_timeout()
+void Timer::Connection::_handle_timeout()
 {
 	if (_handler)
 		_handler->handle_timeout(curr_time());
 }
 
 
-Timer_time_source::Timer_time_source(Entrypoint          &ep,
-                                     ::Timer::Connection &connection)
-:
-	_connection(connection),
-	_signal_handler(ep, *this, &Timer_time_source::_handle_timeout),
-	_ms(_connection.elapsed_ms())
-{ }
-
-
-void Timer_time_source::schedule_timeout(Microseconds     duration,
+void Timer::Connection::schedule_timeout(Microseconds     duration,
                                          Timeout_handler &handler)
 {
 	if (duration.value < MIN_TIMEOUT_US)
@@ -171,11 +158,11 @@ void Timer_time_source::schedule_timeout(Microseconds     duration,
 		duration.value = max_timeout().value;
 
 	_handler = &handler;
-	_connection.trigger_once(duration.value);
+	trigger_once(duration.value);
 }
 
 
-Duration Timer_time_source::curr_time()
+Duration Timer::Connection::curr_time()
 {
 	Reconstructible<Lock_guard<Lock> > lock_guard(_real_time_lock);
 	Duration                           interpolated_time(_real_time);
@@ -210,7 +197,7 @@ Duration Timer_time_source::curr_time()
 		/*
 		 * Use remote timer instead of timestamps
 		 */
-		interpolated_time += Milliseconds(_connection.elapsed_ms() - _ms);
+		interpolated_time += Milliseconds(elapsed_ms() - _ms);
 
 		lock_guard.destruct();
 	}
@@ -218,18 +205,14 @@ Duration Timer_time_source::curr_time()
 }
 
 
-void Timer_time_source::scheduler(Timeout_scheduler &scheduler)
+void Timer::Connection::scheduler(Timeout_scheduler &scheduler)
 {
-	_connection._sigh(_signal_handler);
+	_sigh(_signal_handler);
 	_real_time_update.construct(scheduler, *this,
-	                            &Timer_time_source::_handle_real_time_update,
+	                            &Connection::_handle_real_time_update,
 	                            Microseconds(REAL_TIME_UPDATE_PERIOD_US));
 }
 
-
-/***********************
- ** Timer::Connection **
- ***********************/
 
 Timer::Connection::Connection(Genode::Env &env, char const *label)
 :
@@ -237,8 +220,7 @@ Timer::Connection::Connection(Genode::Env &env, char const *label)
 	                            "ram_quota=10K, cap_quota=%u, label=\"%s\"",
 	                            CAP_QUOTA, label)),
 	Session_client(cap()),
-	Timer_time_source(env.ep(), *this),
-	Alarm_timeout_scheduler(*static_cast<Time_source*>(this))
+	_signal_handler(env.ep(), *this, &Connection::_handle_timeout)
 {
 	/* register default signal handler */
 	Session_client::sigh(_default_sigh_cap);
@@ -249,8 +231,7 @@ Timer::Connection::Connection()
 :
 	Genode::Connection<Session>(session("ram_quota=10K")),
 	Session_client(cap()),
-	Timer_time_source(internal_env().ep(), *this),
-	Alarm_timeout_scheduler(*static_cast<Time_source*>(this))
+	_signal_handler(internal_env().ep(), *this, &Connection::_handle_timeout)
 {
 	/* register default signal handler */
 	Session_client::sigh(_default_sigh_cap);
