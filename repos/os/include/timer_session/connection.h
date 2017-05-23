@@ -42,7 +42,7 @@ class Genode::Timer_time_source : public Genode::Time_source
 		 * would occur during calculations. In this case, the timer
 		 * down-scales the values live which is avoidable overhead.
 		 */
-		enum { TS_TO_US_RATIO_SHIFT       = 8 };
+		enum { TS_TO_US_RATIO_SHIFT       = 4 };
 		enum { MIN_TIMEOUT_US             = 5000 };
 		enum { REAL_TIME_UPDATE_PERIOD_US = 100000 };
 		enum { MAX_TS                     = ~(Trace::Timestamp)0ULL >> TS_TO_US_RATIO_SHIFT };
