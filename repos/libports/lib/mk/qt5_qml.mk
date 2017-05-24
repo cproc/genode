@@ -19,6 +19,8 @@ $(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag: $(HOS
 
 include $(REP_DIR)/lib/mk/qt5_qml_generated.inc
 
+QT_VPATH += qtdeclarative/src/qml/debugger
+
 include $(REP_DIR)/lib/mk/qt5.inc
 
 LIBS += qt5_network qt5_core libc
