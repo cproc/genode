@@ -1,4 +1,4 @@
-qt5_qtwebkit_configuration.patch
+qtwebkit_configuration.patch
 
 From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 9 insertions(+), 10 deletions(-)
 
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index b5fb2ae..40e9aec 100644
+index 9eeac75..8e8259c 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
@@ -22,7 +22,7 @@ index b5fb2ae..40e9aec 100644
          $$WEBKIT_TOOLS_CONFIG
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 21286be..5c04376 100644
+index 328a8be..ce3e723 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -37,13 +37,13 @@ defineTest(detectFeatures) {
@@ -43,7 +43,7 @@ index 21286be..5c04376 100644
      config_leveldb: WEBKIT_CONFIG += use_system_leveldb
  
      # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
-@@ -108,9 +108,9 @@ defineTest(detectFeatures) {
+@@ -109,9 +109,9 @@ defineTest(detectFeatures) {
          use?(gstreamer): WEBKIT_CONFIG += use_native_fullscreen_video
      }
  
@@ -56,7 +56,7 @@ index 21286be..5c04376 100644
  
      !enable?(video) {
          CONFIGURE_WARNINGS += "Missing GStreamer or QtMultimedia, disabling HTML5 media element support"
-@@ -125,7 +125,7 @@ defineTest(detectFeatures) {
+@@ -126,7 +126,7 @@ defineTest(detectFeatures) {
      }
  
      # Gamepad API Support (depends on udev and linux/joystick.h)
