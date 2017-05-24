@@ -1,10 +1,10 @@
 #!/bin/sh
 
-QT_VERSION=5.7.1
+QT_VERSION=5.8.0
 
-./genode_qt5_configure
+#./genode_qt5_configure
 
-qtbase/bin/qmake -r ../qt-everywhere-opensource-src-${QT_VERSION}
+#make -j8
 
 # qtbase
 
@@ -24,13 +24,13 @@ cd qtdeclarative/src/quick                   && ../../../create_generated_inc qt
 cd qtdeclarative/src/imports/qtquick2        && ../../../../create_generated_inc qt5_qtquick2plugin && cp qt5_qtquick2plugin_generated.inc ../../../.. && cd ../../../..
 
 # qtwebkit
+exit 0
+#make -C qtbase/src/tools/bootstrap
+#make -C qtbase/src/tools/moc
 
-make -C qtbase/src/tools/bootstrap
-make -C qtbase/src/tools/moc
-
-make -C qtwebkit/Source/JavaScriptCore -f Makefile.JavaScriptCore sub-DerivedSources-pri > JavaScriptCore.log
+#make -C qtwebkit/Source/JavaScriptCore -f Makefile.JavaScriptCore sub-DerivedSources-pri > JavaScriptCore.log
 cd qtwebkit/Source/JavaScriptCore
-../../../qtbase/bin/qmake ../../../../qt-everywhere-opensource-src-${QT_VERSION}/qtwebkit/Source/JavaScriptCore/Target.pri -o Makefile
+#../../../qtbase/bin/qmake ../../../../qt-everywhere-opensource-src-${QT_VERSION}/qtwebkit/Source/JavaScriptCore/Target.pri -o Makefile
                                                 ../../../create_generated_inc qt5_jscore            && cp qt5_jscore_generated.inc ../../..            && cd ../../..
 cd qtwebkit/Source/WTF
 ln -sf Makefile.WTF Makefile                 && ../../../create_generated_inc qt5_wtf               && cp qt5_wtf_generated.inc ../../..               && cd ../../..

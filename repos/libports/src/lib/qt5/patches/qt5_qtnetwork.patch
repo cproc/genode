@@ -13,7 +13,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  6 files changed, 36 insertions(+)
 
 diff --git a/qtbase/src/network/access/qhttpnetworkreply.cpp b/qtbase/src/network/access/qhttpnetworkreply.cpp
-index 3601c36..00b1632 100644
+index 24ada3a..35364b2 100644
 --- a/qtbase/src/network/access/qhttpnetworkreply.cpp
 +++ b/qtbase/src/network/access/qhttpnetworkreply.cpp
 @@ -251,8 +251,16 @@ void QHttpNetworkReply::setReadBufferSize(qint64 size)
@@ -34,7 +34,7 @@ index 3601c36..00b1632 100644
  
  void QHttpNetworkReply::setUserProvidedDownloadBuffer(char* b)
 diff --git a/qtbase/src/network/socket/qnativesocketengine_p.h b/qtbase/src/network/socket/qnativesocketengine_p.h
-index 19e9e1d..b972ff0 100644
+index 46c7ae5..b6c4378 100644
 --- a/qtbase/src/network/socket/qnativesocketengine_p.h
 +++ b/qtbase/src/network/socket/qnativesocketengine_p.h
 @@ -286,8 +286,10 @@ public:
@@ -59,10 +59,10 @@ index 19e9e1d..b972ff0 100644
              Q_IPV6ADDR tmp = address.toIPv6Address();
              memcpy(&aa->a6.sin6_addr, &tmp, sizeof(tmp));
 diff --git a/qtbase/src/network/socket/qnativesocketengine_unix.cpp b/qtbase/src/network/socket/qnativesocketengine_unix.cpp
-index 7825be5..3270415 100644
+index d15ed9c..ae80a59 100644
 --- a/qtbase/src/network/socket/qnativesocketengine_unix.cpp
 +++ b/qtbase/src/network/socket/qnativesocketengine_unix.cpp
-@@ -116,8 +116,10 @@ static inline void qt_socket_getPortAndAddress(const qt_sockaddr *s, quint16 *po
+@@ -121,8 +121,10 @@ static inline void qt_socket_getPortAndAddress(const qt_sockaddr *s, quint16 *po
              QHostAddress tmpAddress;
              tmpAddress.setAddress(tmp);
              *addr = tmpAddress;
@@ -74,10 +74,10 @@ index 7825be5..3270415 100644
          if (port)
              *port = ntohs(s->a6.sin6_port);
 diff --git a/qtbase/src/network/socket/qnet_unix_p.h b/qtbase/src/network/socket/qnet_unix_p.h
-index 8d2a4ae..c73f2db 100644
+index 46fbc97..c9d8261 100644
 --- a/qtbase/src/network/socket/qnet_unix_p.h
 +++ b/qtbase/src/network/socket/qnet_unix_p.h
-@@ -185,6 +185,10 @@ static inline in_addr_t qt_safe_inet_addr(const char *cp)
+@@ -186,6 +186,10 @@ static inline in_addr_t qt_safe_inet_addr(const char *cp)
  
  static inline int qt_safe_sendmsg(int sockfd, const struct msghdr *msg, int flags)
  {
@@ -88,7 +88,7 @@ index 8d2a4ae..c73f2db 100644
  #ifdef MSG_NOSIGNAL
      flags |= MSG_NOSIGNAL;
  #else
-@@ -194,14 +198,20 @@ static inline int qt_safe_sendmsg(int sockfd, const struct msghdr *msg, int flag
+@@ -195,14 +199,20 @@ static inline int qt_safe_sendmsg(int sockfd, const struct msghdr *msg, int flag
      int ret;
      EINTR_LOOP(ret, ::sendmsg(sockfd, msg, flags));
      return ret;
@@ -110,10 +110,10 @@ index 8d2a4ae..c73f2db 100644
  
  QT_END_NAMESPACE
 diff --git a/qtbase/src/network/ssl/qsslconfiguration_p.h b/qtbase/src/network/ssl/qsslconfiguration_p.h
-index 364bba9..b45a8cc 100644
+index 6adf2c9..e080563 100644
 --- a/qtbase/src/network/ssl/qsslconfiguration_p.h
 +++ b/qtbase/src/network/ssl/qsslconfiguration_p.h
-@@ -82,7 +82,16 @@ public:
+@@ -84,7 +84,16 @@ public:
      QSslConfigurationPrivate()
          : sessionProtocol(QSsl::UnknownProtocol),
            protocol(QSsl::SecureProtocols),
@@ -131,10 +131,10 @@ index 364bba9..b45a8cc 100644
            allowRootCertOnDemandLoading(true),
            peerSessionShared(false),
 diff --git a/qtbase/src/network/ssl/qsslsocket_openssl.cpp b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-index b3820ae..141f57b 100644
+index aca7507..8318a10 100644
 --- a/qtbase/src/network/ssl/qsslsocket_openssl.cpp
 +++ b/qtbase/src/network/ssl/qsslsocket_openssl.cpp
-@@ -491,7 +491,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
+@@ -504,7 +504,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
          if (q_SSL_library_init() != 1)
              return false;
          q_SSL_load_error_strings();

@@ -12,10 +12,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  5 files changed, 44 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/corelib/global/qglobal.h b/qtbase/src/corelib/global/qglobal.h
-index 118203f..79fb45e 100644
+index 3217691..570158a 100644
 --- a/qtbase/src/corelib/global/qglobal.h
 +++ b/qtbase/src/corelib/global/qglobal.h
-@@ -886,13 +886,17 @@ inline void qSwap(T &value1, T &value2)
+@@ -866,13 +866,17 @@ inline void qSwap(T &value1, T &value2)
      swap(value1, value2);
  }
  
@@ -35,7 +35,7 @@ index 118203f..79fb45e 100644
  Q_CORE_EXPORT void *qReallocAligned(void *ptr, size_t size, size_t oldsize, size_t alignment) Q_ALLOC_SIZE(2);
  Q_CORE_EXPORT void qFreeAligned(void *ptr);
 diff --git a/qtbase/src/corelib/kernel/qvariant_p.h b/qtbase/src/corelib/kernel/qvariant_p.h
-index d01f386..2b09fab 100644
+index bf88def..d6c2b0c 100644
 --- a/qtbase/src/corelib/kernel/qvariant_p.h
 +++ b/qtbase/src/corelib/kernel/qvariant_p.h
 @@ -350,7 +350,10 @@ public:

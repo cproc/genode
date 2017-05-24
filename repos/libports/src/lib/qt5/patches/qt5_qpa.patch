@@ -11,12 +11,12 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 32 insertions(+)
 
 diff --git a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-index 4b9d469..ebf447a 100644
+index 60ddc9f..0cc2f0b 100644
 --- a/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
 +++ b/qtbase/src/platformsupport/fontdatabases/basic/qbasicfontdatabase.cpp
-@@ -79,7 +79,16 @@ void QBasicFontDatabase::populateFontDatabase()
- 
-     foreach (const QFileInfo &fi, dir.entryInfoList(nameFilters, QDir::Files)) {
+@@ -80,7 +80,16 @@ void QBasicFontDatabase::populateFontDatabase()
+     const auto fis = dir.entryInfoList(nameFilters, QDir::Files);
+     for (const QFileInfo &fi : fis) {
          const QByteArray file = QFile::encodeName(fi.absoluteFilePath());
 +#ifdef Q_OS_GENODE
 +        QByteArray data;

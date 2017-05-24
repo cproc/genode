@@ -24,7 +24,7 @@ Genode-specific adaptations
  17 files changed, 116 insertions(+), 8 deletions(-)
 
 diff --git a/qtbase/src/corelib/codecs/qtextcodec.cpp b/qtbase/src/corelib/codecs/qtextcodec.cpp
-index edb03af..1008447 100644
+index 0c9036a..0dac7c1 100644
 --- a/qtbase/src/corelib/codecs/qtextcodec.cpp
 +++ b/qtbase/src/corelib/codecs/qtextcodec.cpp
 @@ -204,7 +204,11 @@ static QTextCodec *setupLocaleMapper()
@@ -40,10 +40,10 @@ index edb03af..1008447 100644
          // Get the first nonempty value from $LC_ALL, $LC_CTYPE, and $LANG
          // environment variables.
 diff --git a/qtbase/src/corelib/global/qcompilerdetection.h b/qtbase/src/corelib/global/qcompilerdetection.h
-index d0eb2af..66364fd 100644
+index 4142c17..2526e00 100644
 --- a/qtbase/src/corelib/global/qcompilerdetection.h
 +++ b/qtbase/src/corelib/global/qcompilerdetection.h
-@@ -889,7 +889,9 @@
+@@ -881,7 +881,9 @@
  #      define Q_COMPILER_ALIGNAS
  #      define Q_COMPILER_ALIGNOF
  #      define Q_COMPILER_INHERITING_CONSTRUCTORS
@@ -55,7 +55,7 @@ index d0eb2af..66364fd 100644
  #         define Q_COMPILER_REF_QUALIFIERS
  #      endif
 diff --git a/qtbase/src/corelib/global/qsystemdetection.h b/qtbase/src/corelib/global/qsystemdetection.h
-index 1e852ae..99394de 100644
+index 3b486b8..fdd57df 100644
 --- a/qtbase/src/corelib/global/qsystemdetection.h
 +++ b/qtbase/src/corelib/global/qsystemdetection.h
 @@ -47,6 +47,7 @@
@@ -63,10 +63,10 @@ index 1e852ae..99394de 100644
     The operating system, must be one of: (Q_OS_x)
  
 +     GENODE   - Genode
-      DARWIN   - Any Darwin system (OS X, iOS, watchOS, tvOS)
+      DARWIN   - Any Darwin system (macOS, iOS, watchOS, tvOS)
       MACOS    - macOS
       IOS      - iOS
-@@ -92,7 +93,9 @@
+@@ -91,7 +92,9 @@
                - Q_OS_FREEBSD_KERNEL is always defined on FreeBSD, even if the userland is from GNU
  */
  
@@ -91,10 +91,10 @@ index e3d4037..7e57df5 100644
      Q_CORE_EXPORT extern const char sym ## _ ## m ## _ ## n = 0; \
      asm(".symver " QT_STRINGIFY(sym) "_" QT_STRINGIFY(m) "_" QT_STRINGIFY(n) ", " \
 diff --git a/qtbase/src/corelib/io/qresource.cpp b/qtbase/src/corelib/io/qresource.cpp
-index 96957ac..ff82f21 100644
+index febf226..0903322 100644
 --- a/qtbase/src/corelib/io/qresource.cpp
 +++ b/qtbase/src/corelib/io/qresource.cpp
-@@ -928,7 +928,7 @@ public:
+@@ -943,7 +943,7 @@ public:
      }
  };
  
@@ -104,7 +104,7 @@ index 96957ac..ff82f21 100644
  #endif
  
 diff --git a/qtbase/src/corelib/kernel/qcoreapplication.cpp b/qtbase/src/corelib/kernel/qcoreapplication.cpp
-index 2179a0d..71617cc 100644
+index 3796df5..e0a8ddf 100644
 --- a/qtbase/src/corelib/kernel/qcoreapplication.cpp
 +++ b/qtbase/src/corelib/kernel/qcoreapplication.cpp
 @@ -575,7 +575,7 @@ void QCoreApplicationPrivate::initLocale()
@@ -142,7 +142,7 @@ index 802962d..be1803c 100644
  #  ifndef QT_NO_EVENTFD
          if (fds[1] == -1) {
 diff --git a/qtbase/src/corelib/kernel/qtranslator.cpp b/qtbase/src/corelib/kernel/qtranslator.cpp
-index 2c813b5..3fb323e 100644
+index 04a5e7e..9ec503b 100644
 --- a/qtbase/src/corelib/kernel/qtranslator.cpp
 +++ b/qtbase/src/corelib/kernel/qtranslator.cpp
 @@ -57,7 +57,7 @@
@@ -155,7 +155,7 @@ index 2c813b5..3fb323e 100644
  #include "private/qcore_unix_p.h"
  #endif
 diff --git a/qtbase/src/corelib/thread/qthread.cpp b/qtbase/src/corelib/thread/qthread.cpp
-index 4aac24f..76ba470 100644
+index 7118ad5..316aa27 100644
 --- a/qtbase/src/corelib/thread/qthread.cpp
 +++ b/qtbase/src/corelib/thread/qthread.cpp
 @@ -149,6 +149,10 @@ QThreadPrivate::QThreadPrivate(QThreadData *d)
@@ -248,10 +248,10 @@ index 37eca9c..a55b27d 100644
  
  #ifdef Q_OS_WIN
 diff --git a/qtbase/src/corelib/tools/qdatetime.cpp b/qtbase/src/corelib/tools/qdatetime.cpp
-index bfc7e1c..eac18c9 100644
+index a642358..419d051 100644
 --- a/qtbase/src/corelib/tools/qdatetime.cpp
 +++ b/qtbase/src/corelib/tools/qdatetime.cpp
-@@ -2170,6 +2170,9 @@ static int qt_timezone()
+@@ -2160,6 +2160,9 @@ static int qt_timezone()
          long offset;
          _get_timezone(&offset);
          return offset;
@@ -262,11 +262,11 @@ index bfc7e1c..eac18c9 100644
          time_t clock = time(NULL);
          struct tm t;
 diff --git a/qtbase/src/gui/image/qxpmhandler.cpp b/qtbase/src/gui/image/qxpmhandler.cpp
-index c8c8f99..714016a 100644
+index 1f1f6b3..7e67700 100644
 --- a/qtbase/src/gui/image/qxpmhandler.cpp
 +++ b/qtbase/src/gui/image/qxpmhandler.cpp
 @@ -848,8 +848,16 @@ static bool read_xpm_header(
- #if defined(_MSC_VER) && _MSC_VER >= 1400 && !defined(Q_OS_WINCE)
+ #ifdef Q_CC_MSVC
          if (sscanf_s(buf, "%d %d %d %d", w, h, ncols, cpp) < 4)
  #else
 +#ifdef Q_OS_GENODE
@@ -348,10 +348,10 @@ index 7af8db7..1f40ad1 100644
              results.setHostName(address.toString());
          results.setAddresses(QList<QHostAddress>() << address);
 diff --git a/qtbase/src/widgets/dialogs/qfiledialog.cpp b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-index fc360d8..6b0fd42 100644
+index 74875fa..2f6410e 100644
 --- a/qtbase/src/widgets/dialogs/qfiledialog.cpp
 +++ b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-@@ -1111,7 +1111,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path)
+@@ -1106,7 +1106,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path)
          const QString homePath = QDir::homePath();
  #else
          const QByteArray userName = path.midRef(1, separatorPosition - 1).toLocal8Bit();
@@ -361,10 +361,10 @@ index fc360d8..6b0fd42 100644
          passwd *tmpPw;
          char buf[200];
 diff --git a/qtbase/src/widgets/styles/qstylefactory.cpp b/qtbase/src/widgets/styles/qstylefactory.cpp
-index bebd322..d0e2ebb 100644
+index 09cccff..d24fecb 100644
 --- a/qtbase/src/widgets/styles/qstylefactory.cpp
 +++ b/qtbase/src/widgets/styles/qstylefactory.cpp
-@@ -176,6 +176,13 @@ QStringList QStyleFactory::keys()
+@@ -160,6 +160,13 @@ QStringList QStyleFactory::keys()
      const PluginKeyMap::const_iterator cend = keyMap.constEnd();
      for (PluginKeyMap::const_iterator it = keyMap.constBegin(); it != cend; ++it)
          list.append(it.value());
