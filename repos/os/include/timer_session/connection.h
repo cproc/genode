@@ -184,10 +184,9 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		enum { MAX_REMOTE_TIME_LATENCY_US = 500 };
 		enum { MAX_REMOTE_TIME_TRIALS     = 5 };
 
-		Genode::Io_signal_handler<Connection>                 _signal_handler;
-		Timeout_handler                                      *_handler = nullptr;
-		Genode::Constructible<Periodic_timeout<Connection> >  _real_time_update;
+		Genode::Io_signal_handler<Connection> _signal_handler;
 
+		Timeout_handler *_handler               { nullptr };
 		Lock             _real_time_lock        { Lock::UNLOCKED };
 		unsigned long    _ms                    { elapsed_ms() };
 		Timestamp        _ts                    { _timestamp() };
@@ -203,7 +202,7 @@ class Timer::Connection : public  Genode::Connection<Session>,
 
 		unsigned long _ts_to_us_ratio(Timestamp ts, unsigned long us);
 
-		void _handle_real_time_update(Duration);
+		void _update_real_time();
 
 		Duration _update_interpolated_time(Duration &interpolated_time);
 
@@ -215,7 +214,7 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 *****************/
 
 		void schedule_timeout(Microseconds duration, Timeout_handler &handler) override;
-		Microseconds max_timeout() const override { return Microseconds::max(); }
+		Microseconds max_timeout() const override { return Microseconds(REAL_TIME_UPDATE_PERIOD_US); }
 		void scheduler(Timeout_scheduler &scheduler) override;
 
 
