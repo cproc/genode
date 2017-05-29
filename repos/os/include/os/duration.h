@@ -34,8 +34,6 @@ struct Genode::Microseconds
 	unsigned long value;
 
 	explicit Microseconds(unsigned long value) : value(value) { }
-
-	static Microseconds max() { return Microseconds(~0UL); }
 };
 
 

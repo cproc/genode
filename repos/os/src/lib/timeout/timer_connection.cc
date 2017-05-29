@@ -69,11 +69,11 @@ unsigned long Timer::Connection::_ts_to_us_ratio(Timestamp     ts,
 }
 
 
-void Timer::Connection::_handle_real_time_update(Duration)
+void Timer::Connection::_update_real_time()
 {
 	Lock_guard<Lock> lock_guard(_real_time_lock);
 
-	Timestamp     ts      = 0;
+	Timestamp     ts      = 0UL;
 	unsigned long ms      = 0UL;
 	unsigned long us_diff = ~0UL;
 
@@ -143,8 +143,13 @@ Duration Timer::Connection::_update_interpolated_time(Duration &interpolated_tim
 
 void Timer::Connection::_handle_timeout()
 {
-	if (_handler)
-		_handler->handle_timeout(curr_time());
+	unsigned long const ms = elapsed_ms();
+	if (ms - _ms > REAL_TIME_UPDATE_PERIOD_US / 1000UL) {
+		_update_real_time();
+	}
+	if (_handler) {
+		_handler->handle_timeout(Duration(Milliseconds(ms)));
+	}
 }
 
 
@@ -154,8 +159,8 @@ void Timer::Connection::schedule_timeout(Microseconds     duration,
 	if (duration.value < MIN_TIMEOUT_US)
 		duration.value = MIN_TIMEOUT_US;
 
-	if (duration.value > max_timeout().value)
-		duration.value = max_timeout().value;
+	if (duration.value > REAL_TIME_UPDATE_PERIOD_US)
+		duration.value = REAL_TIME_UPDATE_PERIOD_US;
 
 	_handler = &handler;
 	trigger_once(duration.value);
@@ -208,9 +213,6 @@ Duration Timer::Connection::curr_time()
 void Timer::Connection::scheduler(Timeout_scheduler &scheduler)
 {
 	_sigh(_signal_handler);
-	_real_time_update.construct(scheduler, *this,
-	                            &Connection::_handle_real_time_update,
-	                            Microseconds(REAL_TIME_UPDATE_PERIOD_US));
 }
 
 
