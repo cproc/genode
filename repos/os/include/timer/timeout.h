@@ -199,13 +199,10 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
 
 	private:
 
-		bool             _enabled { false };
 		Time_source     &_time_source;
 		Alarm_scheduler  _alarm_scheduler;
 
 		void _enable();
-
-		bool _is_enabled() const { return _enabled; }
 
 
 		/**********************************
@@ -234,11 +231,7 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
 		 ** Timeout_scheduler **
 		 ***********************/
 
-		Duration curr_time() override
-		{
-			_enable();
-			return _time_source.curr_time();
-		}
+		Duration curr_time() override { return _time_source.curr_time(); }
 };
 
 #endif /* _TIMER__TIMEOUT_H_ */
