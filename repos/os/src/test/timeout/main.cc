@@ -59,7 +59,7 @@ struct Mixed_timeouts : Test
 {
 	static constexpr char const *brief = "schedule multiple timeouts simultaneously";
 
-	enum { NR_OF_EVENTS   = 18 };
+	enum { NR_OF_EVENTS   = 20 };
 	enum { NR_OF_TIMEOUTS = 4 };
 	enum { MAX_ERROR_PC   = 10 };
 
@@ -105,7 +105,9 @@ struct Mixed_timeouts : Test
 		{ nullptr,      Duration(Milliseconds(5000)) },
 		{ &timeouts[3], Duration(Milliseconds(5200)) },
 		{ &timeouts[0], Duration(Milliseconds(5600)) },
-		{ &timeouts[1], Duration(Milliseconds(6000)) }
+		{ &timeouts[1], Duration(Milliseconds(6000)) },
+		{ &timeouts[0], Duration(Milliseconds(6300)) },
+		{ &timeouts[2], Duration(Milliseconds(6500)) }
 	};
 
 	Duration init_time { Microseconds(0) };
@@ -118,7 +120,7 @@ struct Mixed_timeouts : Test
 
 	void handle_pt1(Duration time) { handle(time, timeouts[0]); }
 	void handle_pt2(Duration time) { handle(time, timeouts[1]); }
-	void handle_ot1(Duration time) { handle(time, timeouts[2]); }
+	void handle_ot1(Duration time) { handle(time, timeouts[2]); ot1.schedule(timeouts[2].us); }
 	void handle_ot2(Duration time) { handle(time, timeouts[3]); }
 
 	void handle(Duration time, Timeout const &timeout)
