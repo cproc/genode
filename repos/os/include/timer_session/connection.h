@@ -151,6 +151,21 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		using Milliseconds    = Genode::Milliseconds;
 		using Entrypoint      = Genode::Entrypoint;
 
+		/*
+		 * The mode determines which interface of the timer connection is
+		 * enabled. Initially, a timer connection is in LEGACY mode. When in
+		 * MODERN mode, a call to the LEGACY interface causes an exception.
+		 * When in LEGACY mode, a call to the MODERN interface causes a switch
+		 * to the MODERN mode. The LEGACY interface is deprecated. Please
+		 * prefer using the MODERN interface.
+		 *
+		 * LEGACY = Timer Session interface, blocking calls usleep and msleep
+		 * MODERN = more precise curr_time, non-blocking and multiplexed
+		 *          handling with Periodic_timeout resp. One_shot_timeout
+		 */
+		enum Mode { LEGACY, MODERN };
+
+		Mode                    _mode { LEGACY };
 		Genode::Lock            _lock;
 		Genode::Signal_receiver _sig_rec;
 		Genode::Signal_context  _default_sigh_ctx;
@@ -159,6 +174,8 @@ class Timer::Connection : public  Genode::Connection<Session>,
 			_default_sigh_cap = _sig_rec.manage(&_default_sigh_ctx);
 
 		Genode::Signal_context_capability _custom_sigh_cap;
+
+		void _enable_modern_mode();
 
 		void _sigh(Signal_context_capability sigh)
 		{
@@ -215,7 +232,6 @@ class Timer::Connection : public  Genode::Connection<Session>,
 
 		void schedule_timeout(Microseconds duration, Timeout_handler &handler) override;
 		Microseconds max_timeout() const override { return Microseconds(REAL_TIME_UPDATE_PERIOD_US); }
-		void scheduler(Timeout_scheduler &scheduler) override;
 
 
 		/*******************************
@@ -229,13 +245,13 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 ** Timeout_scheduler **
 		 ***********************/
 
-		void _schedule_one_shot(Timeout &timeout, Microseconds duration) override { _scheduler._schedule_one_shot(timeout, duration); };
-		void _schedule_periodic(Timeout &timeout, Microseconds duration) override { _scheduler._schedule_periodic(timeout, duration); };
-		void _discard(Timeout &timeout)                                  override { _scheduler._discard(timeout); }
+		void _schedule_one_shot(Timeout &timeout, Microseconds duration) override;
+		void _schedule_periodic(Timeout &timeout, Microseconds duration) override;
+		void _discard(Timeout &timeout) override;
 
 	public:
 
-		struct Can_not_use_blocking_interface_anymore : Genode::Exception { };
+		struct Cannot_use_both_legacy_and_modern_interface : Genode::Exception { };
 
 		/**
 		 * Constructor
@@ -259,10 +275,10 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 * \noapi
 		 * \deprecated  Use One_shot_timeout (or Periodic_timeout) instead
 		 */
-		void sigh(Signal_context_capability sigh)
+		void sigh(Signal_context_capability sigh) override
 		{
-			if (_scheduler._is_enabled()) {
-				throw Can_not_use_blocking_interface_anymore();
+			if (_mode == MODERN) {
+				throw Cannot_use_both_legacy_and_modern_interface();
 			}
 			_custom_sigh_cap = sigh;
 			Session_client::sigh(_custom_sigh_cap);
@@ -276,8 +292,8 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 */
 		void usleep(unsigned us)
 		{
-			if (_scheduler._is_enabled()) {
-				throw Can_not_use_blocking_interface_anymore();
+			if (_mode == MODERN) {
+				throw Cannot_use_both_legacy_and_modern_interface();
 			}
 			/*
 			 * Omit the interaction with the timer driver for the corner case
@@ -314,16 +330,16 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 */
 		void msleep(unsigned ms)
 		{
-			if (_scheduler._is_enabled()) {
-				throw Can_not_use_blocking_interface_anymore();
+			if (_mode == MODERN) {
+				throw Cannot_use_both_legacy_and_modern_interface();
 			}
 			usleep(1000*ms);
 		}
 
 
-		/***********************
-		 ** Timeout_scheduler **
-		 ***********************/
+		/***********************************
+		 ** Timeout_scheduler/Time_source **
+		 ***********************************/
 
 		Duration curr_time() override;
 };

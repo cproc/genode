@@ -169,6 +169,8 @@ void Timer::Connection::schedule_timeout(Microseconds     duration,
 
 Duration Timer::Connection::curr_time()
 {
+	_enable_modern_mode();
+
 	Reconstructible<Lock_guard<Lock> > lock_guard(_real_time_lock);
 	Duration                           interpolated_time(_real_time);
 
@@ -210,9 +212,14 @@ Duration Timer::Connection::curr_time()
 }
 
 
-void Timer::Connection::scheduler(Timeout_scheduler &scheduler)
+void Timer::Connection::_enable_modern_mode()
 {
+	if (_mode == MODERN) {
+		return;
+	}
+	_mode = MODERN;
 	_sigh(_signal_handler);
+	_scheduler._enable();
 }
 
 
@@ -237,4 +244,25 @@ Timer::Connection::Connection()
 {
 	/* register default signal handler */
 	Session_client::sigh(_default_sigh_cap);
+}
+
+
+void Timer::Connection::_schedule_one_shot(Timeout &timeout, Microseconds duration)
+{
+	_enable_modern_mode();
+	_scheduler._schedule_one_shot(timeout, duration);
+};
+
+
+void Timer::Connection::_schedule_periodic(Timeout &timeout, Microseconds duration)
+{
+	_enable_modern_mode();
+	_scheduler._schedule_periodic(timeout, duration);
+};
+
+
+void Timer::Connection::_discard(Timeout &timeout)
+{
+	_enable_modern_mode();
+	_scheduler._discard(timeout);
 }
