@@ -169,7 +169,7 @@ append_if $use_usb_driver config {
 	</start>}
 
 append_if $use_nic_driver config {
-	<start name="nic_drv">
+	<start name="nic_drv" caps="120">
 		<binary name="} [nic_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Nic"/></provides>
