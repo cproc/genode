@@ -69,11 +69,11 @@ append config {
 			<service name="Nic"> <child name="nic_bridge"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
-		<config port="80">
+		<config>
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"
 			      ip_addr="10.0.2.55" netmask="255.255.255.0"
-			      gateway="10.0.2.1"/>
+			      gateway="10.0.2.1" port="80"/>
 		</config>
 	</start>
 	<start name="test-http_clnt">
@@ -82,9 +82,10 @@ append config {
 			<service name="Nic"> <child name="nic_bridge"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
-		<config server_ip="10.0.2.55" server_port="80">
+		<config>
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
-			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<libc stdout="/dev/log" stderr="/dev/log"
+			      server_ip="10.0.2.55" server_port="80"/>
 		</config>
 	</start>
 </config>}

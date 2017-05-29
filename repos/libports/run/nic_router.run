@@ -102,10 +102,11 @@ proc client_config { prot index ip_addr gateway netmask nic srv_port srv_ip } {
 				<service name="Nic"> <child name="} $nic {"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
-			<config server_ip="} $srv_ip {" server_port="} $srv_port {">
+			<config>
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
 				<libc stdout="/dev/log" stderr="/dev/log" ip_addr="} $ip_addr {"
-				      gateway="} $gateway {" netmask="} $netmask {"/>
+				      gateway="} $gateway {" netmask="} $netmask {"
+				      server_ip="} $srv_ip {" server_port="} $srv_port {"/>
 			</config>
 		</start>}
 	return $result
@@ -120,10 +121,11 @@ proc server_config { prot index ip_addr gateway netmask nic port } {
 				<service name="Nic"> <child name="} $nic {"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
-			<config port="} $port {">
+			<config>
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
 				<libc stdout="/dev/log" stderr="/dev/log" ip_addr="} $ip_addr {"
-				      gateway="} $gateway {" netmask="} $netmask {"/>
+				      gateway="} $gateway {" netmask="} $netmask {"
+				      port="} $port {"/>
 			</config>
 		</start>}
 	return $result
