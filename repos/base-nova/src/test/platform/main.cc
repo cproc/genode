@@ -600,9 +600,6 @@ class Greedy : public Genode::Thread {
 
 				/* print status information in interval of 32M */
 				if (i % 8192 == 0) {
-					/* transfer some quota to avoid tons of upgrade messages */
-					char const * const buf = "ram_quota=1280K";
-					_env.upgrade(Genode::Parent::Env::pd(), buf);
 					log(Hex(i * 4096));
 					/* trigger some work to see quota in kernel decreasing */
 //					Nova::Rights rwx(true, true, true);

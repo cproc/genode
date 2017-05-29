@@ -20,8 +20,8 @@ set config {
 		<default-route>
 			<any-service> <parent/> </any-service>
 		</default-route>
-		<start name="test-platform" caps="6000">
-			<resource name="RAM" quantum="96M"/>}
+		<start name="test-platform" caps="12000">
+			<resource name="RAM" quantum="128M"/>}
 
 append config "
 			<config check_pat=\"$check_pat\"/\>"
