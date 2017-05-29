@@ -51,9 +51,11 @@ void Timeout::discard()
 bool Timeout::Alarm::on_alarm(unsigned)
 {
 	if (handler) {
-		handler->handle_timeout(timeout_scheduler.curr_time());
+		Handler *current = handler;
 		if (!periodic) {
-			handler = nullptr; }
+			handler = nullptr;
+		}
+		current->handle_timeout(timeout_scheduler.curr_time());
 	}
 	return periodic;
 }
