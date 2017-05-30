@@ -129,7 +129,7 @@ class Net::Link : public Link_list::Element
 		Link_side                            _client;
 		Pointer<Port_allocator_guard> const  _server_port_alloc;
 		Link_side                            _server;
-		Genode::One_shot_timeout<Link>       _close_timeout;
+		Timer::One_shot_timeout<Link>        _close_timeout;
 		Genode::Microseconds          const  _close_timeout_us;
 		Genode::uint8_t               const  _protocol;
 

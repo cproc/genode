@@ -217,9 +217,9 @@ struct Libc::Timeout_handler
  */
 struct Libc::Timeout
 {
-	Libc::Timer_accessor              &_timer_accessor;
-	Timeout_handler                   &_handler;
-	Genode::One_shot_timeout<Timeout>  _timeout;
+	Libc::Timer_accessor               &_timer_accessor;
+	Timeout_handler                    &_handler;
+	::Timer::One_shot_timeout<Timeout>  _timeout;
 
 	bool          _expired             = true;
 	unsigned long _absolute_timeout_ms = 0;

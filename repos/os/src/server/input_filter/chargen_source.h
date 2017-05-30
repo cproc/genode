@@ -351,7 +351,7 @@ class Input_filter::Chargen_source : public Source, Source::Sink
 				}
 			}
 
-			One_shot_timeout<Char_repeater> _timeout {
+			Timer::One_shot_timeout<Char_repeater> _timeout {
 				_timer, *this, &Char_repeater::_handle_timeout };
 
 			Char_repeater(Source::Sink &destination, Timer::Connection &timer,

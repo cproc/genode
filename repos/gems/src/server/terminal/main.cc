@@ -553,7 +553,7 @@ struct Terminal::Main
 
 	void _handle_key_repeat(Duration);
 
-	One_shot_timeout<Main> _key_repeat_timeout {
+	Timer::One_shot_timeout<Main> _key_repeat_timeout {
 		_timer, *this, &Main::_handle_key_repeat };
 
 	void _handle_flush(Duration);
@@ -585,7 +585,7 @@ struct Terminal::Main
 		Trigger_flush(Main &main) : _main(main) { }
 	} _trigger_flush_callback { *this };
 
-	One_shot_timeout<Main> _flush_timeout {
+	Timer::One_shot_timeout<Main> _flush_timeout {
 		_timer, *this, &Main::_handle_flush };
 
 	Main(Genode::Env &env,
