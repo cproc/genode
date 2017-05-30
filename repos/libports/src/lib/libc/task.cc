@@ -188,7 +188,7 @@ struct Libc::Timer
 
 	static unsigned long max_timeout()
 	{
-		return Microseconds::max().value/1000;
+		return ~0UL/1000;
 	}
 };
 
