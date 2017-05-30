@@ -38,6 +38,16 @@ struct Test
 	:
 		env(env), error_cnt(error_cnt), done(done), id(id)
 	{
+		/*
+		 * FIXME Activate interpolation early to give it some time to
+		 *       calibrate. Otherwise, we may get non-representative
+		 *       results in at least the fast-polling test, which starts
+		 *       directly with the heaviest load. This is only necessary
+		 *       because Timer::Connection by now must be backwards compatible
+		 *       and therefore starts interpolation only on demand.
+		 */
+		timer.curr_time();
+
 		log("\nTEST ", id, ": ", brief, "\n");
 	}
 
