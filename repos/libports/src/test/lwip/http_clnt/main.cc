@@ -55,6 +55,9 @@ void Libc::Component::construct(Libc::Env &env)
 		libc_node.attribute("ip_addr").value(&ip_addr);
 		libc_node.attribute("netmask").value(&netmask);
 		libc_node.attribute("gateway").value(&gateway);
+		ip = inet_addr(ip_addr.string());
+		nm = inet_addr(netmask.string());
+		gw = inet_addr(gateway.string());
 	} catch (...) {}
 	config_node.attribute("server_ip").value(&serv_addr);
 
