@@ -120,9 +120,7 @@ void Cap_space::upgrade_slab(Allocator &alloc)
 	if (_slab.avail_entries() > NEEDED_AVAIL_ENTRIES_FOR_SUCCESSFUL_SYSCALL)
 		return;
 
-	void *block = nullptr;
-	if (alloc.alloc(SLAB_SIZE, &block))
-		_slab.insert_sb(block);
+	_slab.insert_sb(alloc.alloc(SLAB_SIZE));
 }
 
 
