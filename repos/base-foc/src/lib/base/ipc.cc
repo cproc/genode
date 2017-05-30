@@ -40,7 +40,6 @@ namespace Fiasco {
 #include <l4/sys/ipc.h>
 #include <l4/sys/types.h>
 #include <l4/sys/utcb.h>
-#include <l4/sys/kdebug.h>
 }
 
 using namespace Genode;
