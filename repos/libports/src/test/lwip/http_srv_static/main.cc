@@ -18,6 +18,7 @@
  */
 
 /* Genode includes */
+#include <base/attached_rom_dataspace.h>
 #include <base/log.h>
 #include <libc/component.h>
 #include <nic/packet_allocator.h>
@@ -95,11 +96,12 @@ void Libc::Component::construct(Libc::Env & env)
 	Address netmask_str;
 	Address gateway_str;
 
+	Attached_rom_dataspace config(env, "config");
 	Xml_node libc_node = env.libc_config();
 	libc_node.attribute("ip_addr").value(&ip_addr_str);
 	libc_node.attribute("netmask").value(&netmask_str);
 	libc_node.attribute("gateway").value(&gateway_str);
-	libc_node.attribute("port").value(&port);
+	config.xml().attribute("port").value(&port);
 
 	log("static network interface: ip=", ip_addr_str, " nm=", netmask_str, " gw=", gateway_str);
 
