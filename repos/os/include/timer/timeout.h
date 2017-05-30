@@ -33,7 +33,11 @@ namespace Genode {
 	class Alarm_timeout_scheduler;
 }
 
-namespace Timer { class Connection; }
+namespace Timer
+{
+	class Connection;
+	class Root_component;
+}
 
 
 /**
@@ -191,6 +195,7 @@ class Genode::Alarm_timeout_scheduler : private Noncopyable,
                                         public  Time_source::Timeout_handler
 {
 	friend class Timer::Connection;
+	friend class Timer::Root_component;
 
 	private:
 
