@@ -8,12 +8,13 @@ MUEN_LOG        = $(MUEN_BUILD_DIR)/build.log
 
 MUEN_SYSTEM     = $(shell sed -n "/^SYSTEM/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
 MUEN_HARDWARE   = $(shell sed -n "/^HARDWARE/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
+MUEN_PLATFORM   = $(shell sed -n "/^PLATFORM/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
 MUEN_COMPONENTS = $(shell sed -n "/^COMPONENTS/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
 GNAT_PATH       = $(shell sed -n "/^GNAT_PATH/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
 SPARK_PATH      = $(shell sed -n "/^SPARK_PATH/s/^.*=\\s*//p" ${MUEN_CONF_FILE})
 
 BUILD_ENV       = PATH=$(GNAT_PATH)/bin:$(SPARK_PATH)/bin:$$PATH
-BUILD_OPTS      = SYSTEM=$(MUEN_SYSTEM) HARDWARE=$(MUEN_HARDWARE) NO_PROOF=true
+BUILD_OPTS      = SYSTEM=$(MUEN_SYSTEM) HARDWARE=$(MUEN_HARDWARE) PLATFORM=$(MUEN_PLATFORM) NO_PROOF=true
 
 ifneq ($(filter muen, $(SPECS)),)
 $(TARGET): $(MUEN_DST_DIR)
