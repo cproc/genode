@@ -18,12 +18,7 @@
 #include <base/log.h>
 
 namespace Fiasco {
-#ifndef __builtin_strlen
-#define __builtin_strlen(s) Genode::strlen(s)
 #include <l4/sys/kdebug.h>
-#else
-#include <l4/sys/kdebug.h>
-#endif
 }
 
 #define ASSERT(e, s) \

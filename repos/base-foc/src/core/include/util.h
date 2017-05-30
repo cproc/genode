@@ -29,7 +29,6 @@
 /* Fiasco includes */
 namespace Fiasco {
 #include <l4/sys/types.h>
-#include <l4/sys/kdebug.h>
 #include <l4/sys/ktrace.h>
 }
 
