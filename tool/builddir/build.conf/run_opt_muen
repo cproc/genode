@@ -14,6 +14,14 @@ RUN_OPT = --include boot_dir/hw --include image/muen
 RUN_OPT += --image-muen-hardware hardware/lenovo-t430s.xml
 
 #
+# Muen platform configuration
+#
+# The specified file must be relative to the Muen policy directory or an
+# absolute path.
+#
+RUN_OPT += --image-muen-platform platform/lenovo-t430s.xml
+
+#
 # Directory, where the GNAT toolchain is installed
 #
 RUN_OPT += --image-muen-gnat-path /opt/gnat
