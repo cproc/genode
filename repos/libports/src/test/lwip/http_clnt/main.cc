@@ -13,6 +13,7 @@
  */
 
 /* Genode includes */
+#include <base/attached_rom_dataspace.h>
 #include <base/log.h>
 #include <libc/component.h>
 #include <nic/packet_allocator.h>
@@ -47,13 +48,15 @@ void Libc::Component::construct(Libc::Env &env)
 	uint32_t ip = 0, nm = 0, gw = 0;
 	Address serv_addr, ip_addr, netmask, gateway;
 
-	Xml_node libc_node = env.libc_config();
+	Attached_rom_dataspace config(env, "config");
+	Xml_node config_node = config.xml();
+	Xml_node libc_node   = env.libc_config();
 	try {
 		libc_node.attribute("ip_addr").value(&ip_addr);
 		libc_node.attribute("netmask").value(&netmask);
 		libc_node.attribute("gateway").value(&gateway);
 	} catch (...) {}
-	libc_node.attribute("server_ip").value(&serv_addr);
+	config_node.attribute("server_ip").value(&serv_addr);
 
 	if (lwip_nic_init(ip, nm, gw, BUF_SIZE, BUF_SIZE)) {
 		error("We got no IP address!");
@@ -73,7 +76,7 @@ void Libc::Component::construct(Libc::Env &env)
 		log("Connect to server ...");
 
 		unsigned port = 0;
-		try { libc_node.attribute("server_port").value(&port); }
+		try { config_node.attribute("server_port").value(&port); }
 		catch (...) {
 			error("Missing \"server_port\" attribute.");
 			throw Xml_node::Nonexistent_attribute();

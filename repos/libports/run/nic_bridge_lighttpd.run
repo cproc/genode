@@ -119,10 +119,9 @@ mimetype.assign      = (
 			<service name="Nic"> <child name="nic_bridge"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
-		<config>
+		<config server_ip="10.0.2.55" server_port="80">
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
-			<libc stdout="/dev/log" stderr="/dev/log"
-			      server_ip="10.0.2.55" server_port="80"/>
+			<libc stdout="/dev/log" stderr="/dev/log"/>
 		</config>
 	</start>
 </config>}
