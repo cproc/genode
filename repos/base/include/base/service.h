@@ -200,9 +200,14 @@ class Genode::Local_service : public Service
 					String<100> const args("ram_quota=", session.ram_upgrade, ", "
 					                       "cap_quota=", session.cap_upgrade);
 
-					_apply_to_rpc_obj(session, [&] (SESSION &rpc_obj) {
-						_factory.upgrade(rpc_obj, args.string()); });
+					try {
+						_apply_to_rpc_obj(session, [&] (SESSION &rpc_obj) {
+							_factory.upgrade(rpc_obj, args.string()); });
+					}
+					catch (Out_of_ram)  { }
+					catch (Out_of_caps) { }
 
+					/* confirm upgrade (also in case of resource shortage) */
 					session.phase = Session_state::CAP_HANDED_OUT;
 					session.confirm_ram_upgrade();
 				}

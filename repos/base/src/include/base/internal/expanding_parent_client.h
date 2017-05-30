@@ -107,7 +107,7 @@ class Genode::Expanding_parent_client : public Parent_client
 				 * Special case for base-hw: inform parent (finally core) about
 				 * kernel RAM shortage during IPC.
 				 */
-				Genode::Arg ram_arg = Genode::Arg_string::find_arg(args.string(), "ram_quota");
+				Genode::Arg const ram_arg = Arg_string::find_arg(args.string(), "ram_quota");
 				if (ram_arg.valid() && ram_arg.ulong_value(0) == 0) {
 					return Parent_client::upgrade(id, Upgrade_args("ram_quota=0"));
 				} else {
