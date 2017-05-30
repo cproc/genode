@@ -51,8 +51,8 @@ class Genode::Pd_session_component : public Session_object<Pd_session>
 		Constructible<Platform_pd> _pd { &_sliced_heap, _label.string() };
 		Capability<Parent>         _parent;
 		Signal_broker              _signal_broker;
-		Rpc_cap_factory            _rpc_cap_factory;
 		Ram_dataspace_factory      _ram_ds_factory;
+		Rpc_cap_factory            _rpc_cap_factory;
 		Native_pd_component        _native_pd;
 
 		Region_map_component _address_space;
@@ -126,8 +126,8 @@ class Genode::Pd_session_component : public Session_object<Pd_session>
 			_constrained_md_ram_alloc(*this, *this, *this),
 			_sliced_heap(_constrained_md_ram_alloc, local_rm),
 			_signal_broker(_sliced_heap, ep, ep),
-			_rpc_cap_factory(_sliced_heap),
 			_ram_ds_factory(ep, phys_alloc, phys_range, local_rm, _sliced_heap),
+			_rpc_cap_factory(_sliced_heap),
 			_native_pd(*this, args),
 			_address_space(ep, _sliced_heap, pager_ep,
 			               platform()->vm_start(), platform()->vm_size()),
