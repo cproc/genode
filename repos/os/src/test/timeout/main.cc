@@ -113,10 +113,10 @@ struct Mixed_timeouts : Test
 	Duration init_time { Microseconds(0) };
 	unsigned event_id  { 0 };
 
-	Periodic_timeout<Mixed_timeouts> pt1 { timer, *this, &Mixed_timeouts::handle_pt1, timeouts[0].us };
-	Periodic_timeout<Mixed_timeouts> pt2 { timer, *this, &Mixed_timeouts::handle_pt2, timeouts[1].us };
-	One_shot_timeout<Mixed_timeouts> ot1 { timer, *this, &Mixed_timeouts::handle_ot1 };
-	One_shot_timeout<Mixed_timeouts> ot2 { timer, *this, &Mixed_timeouts::handle_ot2 };
+	Timer::Periodic_timeout<Mixed_timeouts> pt1 { timer, *this, &Mixed_timeouts::handle_pt1, timeouts[0].us };
+	Timer::Periodic_timeout<Mixed_timeouts> pt2 { timer, *this, &Mixed_timeouts::handle_pt2, timeouts[1].us };
+	Timer::One_shot_timeout<Mixed_timeouts> ot1 { timer, *this, &Mixed_timeouts::handle_ot1 };
+	Timer::One_shot_timeout<Mixed_timeouts> ot2 { timer, *this, &Mixed_timeouts::handle_ot2 };
 
 	void handle_pt1(Duration time) { handle(time, timeouts[0]); }
 	void handle_pt2(Duration time) { handle(time, timeouts[1]); }

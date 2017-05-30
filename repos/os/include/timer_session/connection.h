@@ -22,22 +22,26 @@
 #include <timer/timeout.h>
 #include <trace/timestamp.h>
 
-namespace Genode {
-
+namespace Timer
+{
+	class Connection;
 	template <typename> class Periodic_timeout;
 	template <typename> class One_shot_timeout;
 }
-
-namespace Timer { class Connection; }
 
 
 /**
  * Periodic timeout that is linked to a custom handler, scheduled when constructed
  */
 template <typename HANDLER>
-struct Genode::Periodic_timeout : private Noncopyable
+struct Timer::Periodic_timeout : private Genode::Noncopyable
 {
 	private:
+
+		using Duration          = Genode::Duration;
+		using Timeout           = Genode::Timeout;
+		using Timeout_scheduler = Genode::Timeout_scheduler;
+		using Microseconds      = Genode::Microseconds;
 
 		typedef void (HANDLER::*Handler_method)(Duration);
 
@@ -79,9 +83,14 @@ struct Genode::Periodic_timeout : private Noncopyable
  * One-shot timeout that is linked to a custom handler, scheduled manually
  */
 template <typename HANDLER>
-class Genode::One_shot_timeout : private Noncopyable
+class Timer::One_shot_timeout : private Genode::Noncopyable
 {
 	private:
+
+		using Duration          = Genode::Duration;
+		using Timeout           = Genode::Timeout;
+		using Timeout_scheduler = Genode::Timeout_scheduler;
+		using Microseconds      = Genode::Microseconds;
 
 		typedef void (HANDLER::*Handler_method)(Duration);
 
@@ -175,9 +184,9 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		enum { MAX_REMOTE_TIME_LATENCY_US = 500 };
 		enum { MAX_REMOTE_TIME_TRIALS     = 5 };
 
-		Genode::Io_signal_handler<Connection>                         _signal_handler;
-		Timeout_handler                                              *_handler = nullptr;
-		Genode::Constructible<Genode::Periodic_timeout<Connection> >  _real_time_update;
+		Genode::Io_signal_handler<Connection>                 _signal_handler;
+		Timeout_handler                                      *_handler = nullptr;
+		Genode::Constructible<Periodic_timeout<Connection> >  _real_time_update;
 
 		Lock             _real_time_lock        { Lock::UNLOCKED };
 		unsigned long    _ms                    { elapsed_ms() };
