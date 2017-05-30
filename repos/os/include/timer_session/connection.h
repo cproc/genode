@@ -178,7 +178,7 @@ class Timer::Connection : public  Genode::Connection<Session>,
 		 */
 		enum { TS_TO_US_RATIO_SHIFT       = 4 };
 		enum { MIN_TIMEOUT_US             = 5000 };
-		enum { REAL_TIME_UPDATE_PERIOD_US = 100000 };
+		enum { REAL_TIME_UPDATE_PERIOD_US = 500000 };
 		enum { MAX_TS                     = ~(Timestamp)0ULL >> TS_TO_US_RATIO_SHIFT };
 		enum { MAX_INTERPOLATION_QUALITY  = 3 };
 		enum { MAX_REMOTE_TIME_LATENCY_US = 500 };
