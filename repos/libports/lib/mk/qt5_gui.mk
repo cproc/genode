@@ -28,7 +28,7 @@ INC_DIR += $(REP_DIR)/include/qt5/qtbase/QtGui/private \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION) \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore
 
-LIBS += zlib libpng
+LIBS += qt5_core zlib libpng
 
 #
 # install fonts
