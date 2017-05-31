@@ -98,7 +98,7 @@
         <AttachedDevice type="HardDisk" port="0" device="0">
           <Image uuid="{4c5ed34f-f6cf-48e8-808d-2c06f0d11464}"/>
         </AttachedDevice>
-        <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/>
+<!--        <AttachedDevice passthrough="false" type="DVD" port="1" device="0"/> -->
       </StorageController>
     </StorageControllers>
   </Machine>
