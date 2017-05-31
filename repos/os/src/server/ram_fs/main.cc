@@ -70,13 +70,17 @@ class File_system::Session_component : public Session_rpc_object
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
+			Genode::log("READ");
 				if (content && (packet.length() <= packet.size()))
 					res_length = node.read((char *)content, length, packet.position());
+			Genode::log("READ finished");
 				break;
 
 			case Packet_descriptor::WRITE:
+			Genode::log("WRITE");
 				if (content && (packet.length() <= packet.size()))
 					res_length = node.write((char const *)content, length, packet.position());
+			Genode::log("WRITE finished");
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
