@@ -117,7 +117,7 @@ foreach pkg {bash coreutils} {
 
 set boot_modules {
 	ram_fs
-	noux libc_noux.lib.so bash.tar coreutils.tar
+	noux libc_noux.lib.so posix.lib.so bash.tar coreutils.tar
 	tcp_terminal lwip.lib.so nic_drv report_rom
 	input_merger
 	test.bin template.bat
@@ -141,7 +141,7 @@ set config_of_app {
 		</config>
 	</start>
 
-	<start name="noux" priority="-1">
+	<start name="noux" priority="-1" caps="600">
 		<resource name="RAM" quantum="32M" caps="200"/>
 		<config>
 			<fstab>
