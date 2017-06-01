@@ -1,5 +1,7 @@
 LIBSSL_PORT_DIR = $(call select_from_ports,openssl)
 
+CC_OPT += -Dsk_free=safestack_free
+
 LIBS += libc libcrypto
 
 SRC_C = s2_meth.c   s2_srvr.c s2_clnt.c  s2_lib.c  s2_enc.c s2_pkt.c \

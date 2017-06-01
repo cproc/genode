@@ -9,6 +9,8 @@ CC_OPT += -DDSO_DLFCN -DHAVE_DLFCN_H -Wa,--noexecstack -DL_ENDIAN -DTERMIOS \
           -DOPENSSL_NO_ASM -DGETPID_IS_MEANINGLESS
 CC_OPT += -DRAND_GENODE
 
+CC_OPT += -Dsk_free=safestack_free
+
 #
 # crypto base source
 #
