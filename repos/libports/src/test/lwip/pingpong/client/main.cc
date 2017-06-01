@@ -84,7 +84,7 @@ sendping(const char *addr, size_t dsize, size_t count)
 			printf("%u	%ld\n", (unsigned)p.h.id, (long)n);
 	}
 
-	close(s);
+	//close(s);
 	free(p.d);
 
 	switch (n) {
@@ -135,6 +135,8 @@ main(int argc, char *argv[])
 			endsize = atoi(argv[i+1]);
 		else if (strcmp(argv[i], "-count") == 0)
 			count = atoi(argv[i+1]);
+		else if (strcmp(argv[i], "-verbose") == 0)
+			verbose = atoi(argv[i+1]);
 	}
 
 	if ((endsize + sizeof (Packetheader)) > Databuf) {
@@ -144,6 +146,8 @@ main(int argc, char *argv[])
 
 	for (i = startsize; i <= endsize; i <<= 1)
 		sendping(serverip, i, count);
+
+	while(1);
 
 	return 0;
 }

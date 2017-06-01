@@ -1,6 +1,8 @@
 TARGET   = test-ping_client_lwip
-LIBS     = posix lwip
+LIBS     = posix lwip libc_lwip_nic_dhcp
 SRC_CC   = main.cc pingpong.cc
+
+CC_OPT += -DLWIP_NATIVE
 
 INC_DIR += $(REP_DIR)/src/lib/lwip/include
 

@@ -1,0 +1,6 @@
+set server_binary "test-ping_server_libc_lxip"
+set client_binary "test-ping_client_libc_lxip"
+
+append boot_modules { lxip.lib.so libc_resolv.lib.so }
+
+source ${genode_dir}/repos/libports/run/pingpong.inc

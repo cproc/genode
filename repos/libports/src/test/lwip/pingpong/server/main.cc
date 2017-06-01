@@ -138,7 +138,16 @@ int
 main(int argc, char *argv[])
 {
 	char listenip[16] = "0.0.0.0";
+	verbose = 0;
 
+	for (int i = 1; i < argc; i += 2) {
+		if (strcmp(argv[i], "-listenip") == 0)
+			strncpy(listenip, argv[i+1], sizeof(listenip));
+		else if (strcmp(argv[i], "-verbose") == 0)
+			verbose = atoi(argv[i+1]);
+	}
+
+#if 0
 #ifdef LWIP_NATIVE
 	enum { BUF_SIZE = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128 };
 
@@ -149,8 +158,7 @@ main(int argc, char *argv[])
 		return 1;
 	}
 #endif
-
-	verbose = 0;
+#endif
 
 	recvping(listenip);
 

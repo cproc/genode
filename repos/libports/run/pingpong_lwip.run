@@ -1,0 +1,6 @@
+set server_binary "test-ping_server_lwip"
+set client_binary "test-ping_client_lwip"
+
+append boot_modules { lwip.lib.so }
+
+source ${genode_dir}/repos/libports/run/pingpong.inc
