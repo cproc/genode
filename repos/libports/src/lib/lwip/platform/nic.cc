@@ -61,8 +61,10 @@ class Nic_receiver_thread : public Genode::Thread_deprecated<8192>
 
 		void _handle_rx_packet_avail(unsigned)
 		{
+		//Genode::log("_handle_rx_packet_avail()");
 			while (_nic->rx()->packet_avail() && _nic->rx()->ready_to_ack()) {
 				_rx_packet = _nic->rx()->get_packet();
+				//Genode::log("got packet");
 				genode_netif_input(_netif);
 				_nic->rx()->acknowledge_packet(_rx_packet);
 			}

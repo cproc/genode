@@ -514,6 +514,7 @@ extern "C" int open(const char *pathname, int flags, ...)
 	va_start(ap, flags);
 	int res = _open(pathname, flags, va_arg(ap, unsigned));
 	va_end(ap);
+	//Genode::log("open(", pathname, "): ", res, ", ret: ", __builtin_return_address(0));
 	return res;
 }
 
@@ -593,6 +594,7 @@ extern "C" int rmdir(const char *path)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
+//Genode::log("stat(", path, ")");
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);

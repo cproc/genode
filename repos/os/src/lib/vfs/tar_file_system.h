@@ -397,11 +397,14 @@ class Vfs::Tar_file_system : public File_system
 
 		Stat_result stat(char const *path, Stat &out) override
 		{
+			//Genode::log("tar stat(", path, ")");
 			out = Stat();
 
 			Node const *node = dereference(path);
-			if (!node)
+			if (!node) {
+				//Genode::log("tar stat(", path, "): not found");
 				return STAT_ERR_NO_ENTRY;
+			}
 
 			if (!node->record) {
 				out.mode = STAT_MODE_DIRECTORY;
