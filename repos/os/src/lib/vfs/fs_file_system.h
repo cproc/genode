@@ -204,20 +204,28 @@ class Vfs::Fs_file_system : public File_system
 
 			/* XXX check if alloc_packet() and submit_packet() will succeed! */
 
-			Packet_descriptor packet_in(source.alloc_packet(count),
-			                            handle.file_handle(),
-			                            Packet_descriptor::WRITE,
-			                            count,
-			                            seek_offset);
+			try {
+				Packet_descriptor packet_in(source.alloc_packet(count),
+			                            	handle.file_handle(),
+			                            	Packet_descriptor::WRITE,
+			                            	count,
+			                            	seek_offset);
 
-			memcpy(source.packet_content(packet_in), buf, count);
+				memcpy(source.packet_content(packet_in), buf, count);
 
-			/* wait until packet was acknowledged */
-			handle.queued_write_state = Handle_state::Queued_state::QUEUED;
+				/* wait until packet was acknowledged */
+				handle.queued_write_state = Handle_state::Queued_state::QUEUED;
 
-			/* pass packet to server side */
-			source.submit_packet(packet_in);
-
+				/* pass packet to server side */
+				source.submit_packet(packet_in);
+			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
+				Genode::error("packet alloc failed");
+				return 0;
+			} catch (...) {
+				Genode::error("unhandled exception");
+				return 0;
+			}
+#if 0
 			while (handle.queued_write_state != Handle_state::Queued_state::ACK) {
 				_env.ep().wait_and_dispatch_one_io_signal();
 			}
@@ -233,6 +241,8 @@ class Vfs::Fs_file_system : public File_system
 			source.release_packet(packet_out);
 
 			return write_num_bytes;
+#endif
+			return count;
 		}
 
 		void _handle_ack()
@@ -272,6 +282,11 @@ class Vfs::Fs_file_system : public File_system
 					});
 				} catch (Handle_space::Unknown_id) {
 					Genode::warning("ack for unknown VFS handle"); }
+
+				if (packet.operation() == Packet_descriptor::WRITE) {
+					Lock::Guard guard(_lock);
+					source.release_packet(packet);
+				}
 			}
 		}
 
