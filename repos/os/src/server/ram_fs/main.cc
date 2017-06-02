@@ -76,15 +76,21 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
+			Genode::log("READ");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().read((char *)content, length, packet.position());
+			Genode::log("READ finished");
+
 				break;
 
 			case Packet_descriptor::WRITE:
+			Genode::log("WRITE");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().write((char const *)content, length, packet.position());
 
 				open_node.mark_as_written();
+			Genode::log("WRITE finished");
+
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
@@ -246,6 +252,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 		Symlink_handle symlink(Dir_handle dir_handle, Name const &name, bool create)
 		{
+			Genode::log("Ram_fs::symlink(): name: ", Genode::Cstring(name.string()), ", create: ", create);
 			if (!valid_name(name.string()))
 				throw Invalid_name();
 

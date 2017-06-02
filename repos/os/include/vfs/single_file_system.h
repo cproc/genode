@@ -177,7 +177,8 @@ class Vfs::Single_file_system : public File_system
 			return MKDIR_ERR_NO_PERM;
 		}
 
-		Symlink_result symlink(char const *, char const *) override
+		Symlink_result symlink(char const *, char const *,
+		                       Genode::Allocator &) override
 		{
 			return SYMLINK_ERR_NO_ENTRY;
 		}

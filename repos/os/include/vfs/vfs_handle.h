@@ -15,6 +15,7 @@
 #define _INCLUDE__VFS__VFS_HANDLE_H_
 
 #include <vfs/directory_service.h>
+#include <vfs/vfs.h>
 
 namespace Vfs{
 	class Vfs_handle;
@@ -22,7 +23,7 @@ namespace Vfs{
 }
 
 
-class Vfs::Vfs_handle
+class Vfs::Vfs_handle : public Vfs_handle_base
 {
 	private:
 
@@ -33,13 +34,6 @@ class Vfs::Vfs_handle
 		file_size          _seek = 0;
 
 	public:
-
-		/**
-		 * Opaque handle context
-		 */
-		struct Context { };
-
-		Context *context = nullptr;
 
 		struct Guard
 		{

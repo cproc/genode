@@ -15,6 +15,7 @@
 #define _INCLUDE__VFS__DIRECTORY_SERVICE_H_
 
 #include <vfs/types.h>
+#include <vfs/vfs.h>
 
 namespace Vfs {
 	class Vfs_handle;
@@ -104,7 +105,8 @@ struct Vfs::Directory_service
 	 ** Dirent **
 	 ************/
 
-	enum Dirent_result { DIRENT_ERR_INVALID_PATH, DIRENT_ERR_NO_PERM, DIRENT_OK };
+	enum Dirent_result { DIRENT_ERR_INVALID_PATH, DIRENT_ERR_NO_PERM,
+	                     DIRENT_QUEUED, DIRENT_OK };
 
 	enum { DIRENT_MAX_NAME_LEN = 128 };
 
@@ -127,6 +129,22 @@ struct Vfs::Directory_service
 
 	virtual Dirent_result dirent(char const *path, file_offset index, Dirent &) = 0;
 
+	/**
+	 * Queue dirent operation
+	 *
+	 * \return false if queue is full
+	 */
+	virtual bool queue_dirent(char const *path, file_offset index,
+	                          Vfs_handle_base::Context *context = nullptr)
+	{
+		return true;
+	}
+
+	virtual Dirent_result complete_dirent(char const *path, file_offset index,
+	                                      Dirent &out)
+	{
+		return dirent(path, index, out);
+	}
 
 	/************
 	 ** Unlink **
@@ -142,11 +160,23 @@ struct Vfs::Directory_service
 	 ** Readlink **
 	 **************/
 
-	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM, READLINK_OK };
+	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM,
+	                       READLINK_QUEUED, READLINK_OK };
 
 	virtual Readlink_result readlink(char const *path, char *buf,
 	                                 file_size buf_size, file_size &out_len) = 0;
 
+	virtual bool queue_readlink(char const *path, file_size buf_size,
+	                            Vfs_handle_base::Context *context = nullptr)
+	{
+		return true;
+	}
+
+	virtual Readlink_result complete_readlink(char const *path, char *buf,
+	                                          file_size buf_size, file_size &out_len)
+	{
+		return readlink(path, buf, buf_size, out_len);
+	}
 
 	/************
 	 ** Rename **
@@ -177,7 +207,8 @@ struct Vfs::Directory_service
 	                      SYMLINK_ERR_NO_SPACE,      SYMLINK_ERR_NO_PERM,
 	                      SYMLINK_ERR_NAME_TOO_LONG, SYMLINK_OK };
 
-	virtual Symlink_result symlink(char const *from, char const *to) = 0;
+	virtual Symlink_result symlink(char const *from, char const *to,
+	                               Genode::Allocator &alloc) = 0;
 
 
 	/**

@@ -82,7 +82,10 @@ class Noux::Rom_session_component : public Rpc_object<Rom_session>
 			Vfs_dataspace(Vfs::Dir_file_system &root_dir, Name const &name)
 			:
 				root_dir(root_dir), name(name), ds(root_dir.dataspace(name.string()))
-			{ }
+			{
+				void *dummy;
+				Genode::log("Vfs_dataspace(): ", Genode::Cstring(name.string()), ", stack: ", &dummy);
+			}
 
 			~Vfs_dataspace() { root_dir.release(name.string(), ds); }
 		};
