@@ -20,15 +20,8 @@
 
 namespace Vfs {
 	class Vfs_handle;
-	struct Io_response_handler;
 	struct File_io_service;
 }
-
-
-struct Vfs::Io_response_handler
-{
-	virtual void handle_io_response(Vfs::Vfs_handle::Context *context) = 0;
-};
 
 
 struct Vfs::File_io_service
@@ -62,14 +55,12 @@ struct Vfs::File_io_service
 	                         file_size &out_count) = 0;
 
 	/**
-	 * Read from handle with potential queueing of operation
+	 * Queue read operation
 	 *
 	 * \return false if queue is full
 	 */
-	virtual bool queue_read(Vfs_handle *vfs_handle, char *dst, file_size count,
-	                        Read_result &out_result, file_size &out_count)
+	virtual bool queue_read(Vfs_handle *vfs_handle, file_size count)
 	{
-		out_result = read(vfs_handle, dst, count, out_count);
 		return true;
 	}
 

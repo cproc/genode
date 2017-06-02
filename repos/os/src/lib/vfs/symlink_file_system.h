@@ -47,7 +47,8 @@ class Vfs::Symlink_file_system : public Single_file_system
 		 ** Directory-service interface **
 		 *********************************/
 
-		Symlink_result symlink(char const *from, char const *to) override {
+		Symlink_result symlink(char const *from, char const *to,
+		                       Genode::Allocator &) override {
 			return SYMLINK_ERR_EXISTS; }
 
 		Readlink_result readlink(char const *path,
@@ -62,6 +63,13 @@ class Vfs::Symlink_file_system : public Single_file_system
 			if (out_len < buf_len)
 				buf[out_len] = '\0';
 			return READLINK_OK;
+		}
+
+		bool queue_readlink(char const *path, file_size buf_size,
+		                    Vfs_handle_base::Context *context) override
+		{
+			// XXX: check path
+			return true;
 		}
 
 		Open_result open(char const *, unsigned, Vfs_handle **out_handle,
