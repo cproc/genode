@@ -185,7 +185,7 @@ append config {
 }
 
 if {![info exists verbose_mode]} {set verbose_mode "yes"}
-append config " <config verbose=\"$verbose_mode\">"
+append config " <config verbose=\"$verbose_mode\" verbose_syscalls=\"false\">"
 
 append config {
 			<fstab>
