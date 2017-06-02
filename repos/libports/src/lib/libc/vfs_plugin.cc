@@ -367,62 +367,60 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 }
 
 
-typedef Vfs::File_io_service::Read_result Result;
-
-struct Read_check : Libc::Suspend_functor {
-	Vfs::Vfs_handle * handle;
-	void            * buf;
-	::size_t        * count;
-	Vfs::file_size  * out_count;
-	Result          * out_result;
-
-	Read_check(Vfs::Vfs_handle * handle, void * buf, ::size_t * count,
-	           Vfs::file_size  * out_count, Result * out_result)
-	: handle(handle), buf(buf), count(count), out_count(out_count),
-	  out_result(out_result)
-	{ }
-};
-
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-	Vfs::Vfs_handle *handle = vfs_handle(fd);
+	typedef Vfs::File_io_service::Read_result Result;
 
-	Vfs::file_size out_count  = 0;
-	Result         out_result = Result::READ_OK;
+	Vfs::Vfs_handle *handle = vfs_handle(fd);
 
 	if (fd->flags & O_NONBLOCK && !Libc::read_ready(fd))
 		return Errno(EAGAIN);
 
-	while (!handle->fs().queue_read(handle, (char *)buf, count,
-	                                out_result, out_count)) {
-		struct Check : Read_check {
-			Check(Vfs::Vfs_handle * handle, void * buf, ::size_t * count,
-			      Vfs::file_size * out_count, Result * out_result)
-			: Read_check (handle, buf, count, out_count, out_result) { }
+	while (!handle->fs().queue_read(handle, count)) {
+		struct Check : Libc::Suspend_functor
+		{
+			Vfs::Vfs_handle *handle;
+			::size_t         count;
+
+			Check(Vfs::Vfs_handle *handle, ::size_t count)
+			: handle(handle), count(count) { }
 
 			bool suspend() override {
-				return !handle->fs().queue_read(handle, (char *)buf, *count,
-				                                *out_result, *out_count); }
-		} check ( handle, buf, &count, &out_count, &out_result);
+				return !handle->fs().queue_read(handle, count); }
+		} check ( handle, count);
 
 		Libc::suspend(check);
 	}
 
-	while (out_result == Result::READ_QUEUED) {
+	Vfs::file_size out_count = 0;
+	Result         out_result;
 
-		struct Check : Read_check {
-			Check(Vfs::Vfs_handle * handle, void * buf, ::size_t * count,
-			      Vfs::file_size * out_count, Result * out_result)
-			: Read_check (handle, buf, count, out_count, out_result) { }
+	while ((out_result = handle->fs().complete_read(handle, (char *)buf,
+				                                    count, out_count)) ==
+	       Result::READ_QUEUED) {
+
+		struct Check : Libc::Suspend_functor
+		{
+			Vfs::Vfs_handle *handle;
+			void            *buf;
+			::size_t         count;
+			Vfs::file_size  &out_count;
+			Result          &out_result;
+
+			Check(Vfs::Vfs_handle *handle, void *buf, ::size_t count,
+			      Vfs::file_size &out_count, Result &out_result)
+			: handle(handle), buf(buf), count(count), out_count(out_count),
+	  	  	  out_result(out_result)
+			{ }
 
 			bool suspend() override {
-				*out_result = handle->fs().complete_read(handle, (char *)buf,
-				                                         *count, *out_count);
+				out_result = handle->fs().complete_read(handle, (char *)buf,
+				                                        count, out_count);
 				/* suspend me if read is still queued */
-				return *out_result == Result::READ_QUEUED;
+				return out_result == Result::READ_QUEUED;
 			}
-		} check ( handle, buf, &count, &out_count, &out_result);
+		} check ( handle, buf, count, out_count, out_result);
 
 		Libc::suspend(check);
 	}
@@ -456,12 +454,65 @@ ssize_t Libc::Vfs_plugin::getdirentries(Libc::File_descriptor *fd, char *buf,
 
 	Vfs::Vfs_handle *handle = vfs_handle(fd);
 
-	Vfs::Directory_service::Dirent dirent_out;
+	typedef Vfs::Directory_service::Dirent Dirent;
+	
+	Dirent dirent_out;
 	Genode::memset(&dirent_out, 0, sizeof(dirent_out));
 
 	unsigned const index = handle->seek() / sizeof(Vfs::Directory_service::Dirent);
 
-	switch (handle->ds().dirent(fd->fd_path, index, dirent_out)) {
+	while (!handle->ds().queue_dirent(fd->fd_path, index)) {
+
+		struct Check : Libc::Suspend_functor
+		{
+			Vfs::Vfs_handle *handle;
+			char const      *path;
+			unsigned const   index;
+
+			Check(Vfs::Vfs_handle *handle, char const *path,
+			      unsigned const index)
+			: handle(handle), path(path), index(index) { }
+
+			bool suspend() override
+			{
+				return !handle->ds().queue_dirent(path, index);
+			}
+		} check(handle, fd->fd_path, index);
+
+		Libc::suspend(check);
+	}
+
+	Result out_result;
+
+	while ((out_result = handle->ds().complete_dirent(fd->fd_path, index, dirent_out)) ==
+	       Result::DIRENT_QUEUED) {
+
+		struct Check : Libc::Suspend_functor
+		{
+			Vfs::Vfs_handle &handle;
+			char const      *path;
+			unsigned const   index;
+			Dirent          &dirent_out;
+			Result          &out_result;
+
+			Check(Vfs::Vfs_handle &handle, char const *path,
+			      unsigned const index, Dirent &dirent_out, Result &out_result)
+			: handle(handle), path(path), index(index), dirent_out(dirent_out),
+			  out_result(out_result) { }
+
+			bool suspend() override
+			{
+				out_result = handle.ds().complete_dirent(path, index, dirent_out);
+
+				/* suspend me if read is still queued */
+				return out_result == Result::DIRENT_QUEUED;
+			}
+		} check(*handle, fd->fd_path, index, dirent_out, out_result);
+
+		Libc::suspend(check);
+	}
+
+	switch (out_result) {
 	case Result::DIRENT_ERR_INVALID_PATH: errno = ENOENT; return -1;
 	case Result::DIRENT_ERR_NO_PERM:      errno = EACCES; return -1;
 	case Result::DIRENT_OK:                               break;
