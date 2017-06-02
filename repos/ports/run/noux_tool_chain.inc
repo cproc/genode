@@ -180,12 +180,12 @@ append config {
 }
 
 append config {
-	<start name="noux" caps="1000">
+	<start name="noux" caps="32000">
 		<resource name="RAM" quantum="1G" />
 }
 
 if {![info exists verbose_mode]} {set verbose_mode "yes"}
-append config " <config verbose=\"$verbose_mode\">"
+append config " <config verbose=\"$verbose_mode\" verbose_syscalls=\"false\">"
 
 append config {
 			<fstab>
