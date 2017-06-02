@@ -154,6 +154,7 @@ class Vfs::Fs_file_system : public File_system
 		file_size _read(Fs_vfs_handle &handle, void *buf,
 		                file_size const count, file_size const seek_offset)
 		{
+		Genode::log("Fs_file_system::_read(): ", &buf);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
@@ -175,7 +176,9 @@ class Vfs::Fs_file_system : public File_system
 			source.submit_packet(packet_in);
 
 			while (handle.queued_read_state != Handle_state::Queued_state::ACK) {
+Genode::log("Fs_file_system::_read(): calling wait_and_dispatch_one_io_signal()");
 				_env.ep().wait_and_dispatch_one_io_signal();
+Genode::log("Fs_file_system::_read(): wait_and_dispatch_one_io_signal() returned");
 			}
 
 			/* obtain result packet descriptor with updated status info */
@@ -196,13 +199,14 @@ class Vfs::Fs_file_system : public File_system
 			memcpy(buf, source.packet_content(packet_out), read_num_bytes);
 
 			source.release_packet(packet_out);
-
+Genode::log("Fs_file_system::_read() finished: ", read_num_bytes);
 			return read_num_bytes;
 		}
 
 		file_size _write(Fs_vfs_handle &handle,
 		                 const char *buf, file_size count, file_size seek_offset)
 		{
+			Genode::log("Fs_file_system::_write(): ", &buf);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
@@ -240,6 +244,7 @@ class Vfs::Fs_file_system : public File_system
 
 		void _handle_ack()
 		{
+		Genode::log("_handle_ack()");
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
