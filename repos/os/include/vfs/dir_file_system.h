@@ -66,18 +66,20 @@ class Vfs::Dir_file_system : public File_system
 		RES _dir_op(RES const no_entry, RES const no_perm, RES const ok,
 		            char const *path, FN const &fn)
 		{
+			Genode::log("_dir_op()");
 			path = _sub_path(path);
 
 			/* path does not match directory name */
 			if (!path)
 				return no_entry;
-
+Genode::log("_dir_op(): check 1");
 			/*
 			 * Prevent operation if path equals directory name defined
 			 * via the static VFS configuration.
 			 */
 			if (strlen(path) == 0)
 				return no_perm;
+Genode::log("_dir_op(): check 2");
 
 			/*
 			 * If any of the sub file systems returns a permission error and
@@ -107,6 +109,7 @@ class Vfs::Dir_file_system : public File_system
 
 				if (err == ok)
 					return err;
+Genode::log("_dir_op(): check 3");
 
 				if (err != no_entry && err != no_perm) {
 					error = err;
@@ -115,6 +118,7 @@ class Vfs::Dir_file_system : public File_system
 				if (err == no_perm)
 					permission_denied = true;
 			}
+Genode::log("_dir_op(): check 4");
 
 			/* none of our file systems could successfully operate on the path */
 			return error != ok ? error : permission_denied ? no_perm : no_entry;
@@ -171,6 +175,68 @@ class Vfs::Dir_file_system : public File_system
 				if (index - base < fs_num_dirent) {
 					index = index - base;
 					return fs->dirent(path, index, out);;
+				}
+
+				/* adjust base index for next file system */
+				base += fs_num_dirent;
+			}
+
+			out.type = DIRENT_TYPE_END;
+			return DIRENT_OK;
+		}
+
+		/**
+		 * The 'path' is relative to the child file systems.
+		 */
+		bool _queue_dirent_of_file_systems(char const *path, file_offset index,
+		                                   Vfs_handle_base::Context *context)
+		{
+			int base = 0;
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				/*
+				 * Determine number of matching directory entries within
+				 * the current file system.
+				 */
+				int const fs_num_dirent = fs->num_dirent(path);
+
+				/*
+				 * Query directory entry if index lies with the file
+				 * system.
+				 */
+				if (index - base < fs_num_dirent) {
+					index = index - base;
+					return fs->queue_dirent(path, index, context);
+				}
+
+				/* adjust base index for next file system */
+				base += fs_num_dirent;
+			}
+
+			return DIRENT_QUEUED;
+		}
+
+		/**
+		 * The 'path' is relative to the child file systems.
+		 */
+		Dirent_result _complete_dirent_of_file_systems(char const *path, file_offset index, Dirent &out)
+		{
+			int base = 0;
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				/*
+				 * Determine number of matching directory entries within
+				 * the current file system.
+				 */
+				int const fs_num_dirent = fs->num_dirent(path);
+
+				/*
+				 * Query directory entry if index lies with the file
+				 * system.
+				 */
+				if (index - base < fs_num_dirent) {
+					index = index - base;
+					return fs->complete_dirent(path, index, out);;
 				}
 
 				/* adjust base index for next file system */
@@ -352,6 +418,57 @@ class Vfs::Dir_file_system : public File_system
 			return _dirent_of_file_systems(*path ? path : "/", index, out);
 		}
 
+		bool queue_dirent(char const *path, file_offset index,
+		                  Vfs_handle_base::Context *context) override
+		{
+			Genode::log("Dir_file_system::queue_dirent(): ", Genode::Cstring(path));
+			if (_root()) {
+				Genode::log("Dir_file_system::queue_dirent(): root, delegating...");
+				return _queue_dirent_of_file_systems(path, index, context);
+			}
+
+			if (strcmp(path, "/") == 0) {
+				Genode::log("Dir_file_system::queue_dirent(): /, queued");
+				return DIRENT_QUEUED;
+			}
+
+			/* path contains at least one element */
+
+			/* remove current element from path */
+			path = _sub_path(path);
+
+			/* path does not lie within our tree */
+			if (!path)
+				return DIRENT_ERR_INVALID_PATH;
+
+			Genode::log("Dir_file_system::queue_dirent(): delegating path ", Genode::Cstring(*path ? path : "/"));
+
+			return _queue_dirent_of_file_systems(*path ? path : "/", index, context);
+		}
+
+		Dirent_result complete_dirent(char const *path, file_offset index, Dirent &out) override
+		{
+			Genode::log("Dir_file_system::complete_dirent(): ret: ", __builtin_return_address(0));
+			if (_root())
+				return _complete_dirent_of_file_systems(path, index, out);
+
+			if (strcmp(path, "/") == 0) {
+				_dirent_of_this_dir_node(index, out);
+				return DIRENT_OK;
+			}
+
+			/* path contains at least one element */
+
+			/* remove current element from path */
+			path = _sub_path(path);
+
+			/* path does not lie within our tree */
+			if (!path)
+				return DIRENT_ERR_INVALID_PATH;
+
+			return _complete_dirent_of_file_systems(*path ? path : "/", index, out);
+		}
+
 		file_size num_dirent(char const *path) override
 		{
 			if (_root()) {
@@ -470,6 +587,59 @@ class Vfs::Dir_file_system : public File_system
 
 			/* path does not match any existing file or directory */
 			return OPEN_ERR_UNACCESSIBLE;
+		}
+
+		Opendir_result opendir(char const *path, bool create,
+		                       Vfs_handle **out_handle, Allocator &alloc) override
+		{
+			Genode::log("Dir_file_system::opendir(): ", Genode::Cstring(path));
+			if (!directory(path))
+				return OPENDIR_ERR_LOOKUP_FAILED; 
+
+			/* remove current element from path */
+			path = _sub_path(path);
+
+			/* path does not lie within our tree */
+			if (!path)
+				return OPENDIR_ERR_LOOKUP_FAILED;
+
+			/* path equals directory name */
+			if (strlen(path) == 0) {
+				*out_handle = new (alloc) Vfs_handle(*this, *this, alloc, 0);
+				return OPENDIR_OK;
+			}
+		
+			/* path refers to any of our sub file systems */
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				Opendir_result const opendir_result =
+					fs->opendir(path, create, out_handle, alloc);
+
+				switch (opendir_result) {
+					case OPENDIR_OK:
+						return OPENDIR_OK;
+					case OPENDIR_ERR_LOOKUP_FAILED:
+						continue;
+				}
+			}
+
+			return OPENDIR_ERR_LOOKUP_FAILED;
+		}
+
+		Openlink_result openlink(char const *path, bool create,
+		                         Vfs_handle **out_handle, Allocator &alloc) override
+		{
+			Genode::log("Dir_file_system::openlink()");
+
+			auto openlink_fn = [&] (File_system &fs, char const *path)
+			{
+				return fs.openlink(path, create, out_handle, alloc);
+			};
+
+			return _dir_op(OPENLINK_ERR_LOOKUP_FAILED,
+			               OPENLINK_ERR_PERMISSION_DENIED,
+			               OPENLINK_OK,
+			               path, openlink_fn);
 		}
 
 		void close(Vfs_handle *handle) override
@@ -614,9 +784,27 @@ class Vfs::Dir_file_system : public File_system
 			return WRITE_ERR_INVALID;
 		}
 
-		Read_result read(Vfs_handle *, char *, file_size, file_size &) override
+		Read_result read(Vfs_handle *vfs_handle, char *dst,
+		                 file_size count, file_size &out_count) override
 		{
-			return READ_ERR_INVALID;
+			Genode::log("Dir_file_system::read(): ", vfs_handle->seek());
+			if (count < sizeof(Dirent))
+				return READ_ERR_INVALID;
+
+			Dirent *dirent = (Dirent*)dst;
+			file_offset index = vfs_handle->seek();
+
+			if (index == 0) {
+				strncpy(dirent->name, _name, sizeof(dirent->name));
+
+				dirent->type = DIRENT_TYPE_DIRECTORY;
+				dirent->fileno = 1;
+			} else {
+				dirent->type = DIRENT_TYPE_END;
+			}
+			Genode::log("Dir_file_system::read(): ", Genode::Cstring(dirent->name));
+
+			return READ_OK;
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *, file_size) override

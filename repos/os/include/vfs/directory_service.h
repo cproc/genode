@@ -15,6 +15,7 @@
 #define _INCLUDE__VFS__DIRECTORY_SERVICE_H_
 
 #include <vfs/types.h>
+#include <vfs/vfs.h>
 
 namespace Vfs {
 	class Vfs_handle;
@@ -63,6 +64,33 @@ struct Vfs::Directory_service
 	                         Vfs_handle **handle,
 	                         Allocator   &alloc) = 0;
 
+	enum Opendir_result
+	{
+		OPENDIR_ERR_LOOKUP_FAILED,
+		OPENDIR_OK
+	};
+
+	virtual Opendir_result opendir(char const *path, bool create,
+	                               Vfs_handle **out_handle, Allocator &alloc)
+	{
+		Genode::warning("Vfs::Directory_service::opendir() called");
+		return OPENDIR_ERR_LOOKUP_FAILED;
+	}
+
+	enum Openlink_result
+	{
+		OPENLINK_ERR_LOOKUP_FAILED,
+		OPENLINK_ERR_PERMISSION_DENIED,
+		OPENLINK_OK
+	};
+
+	virtual Openlink_result openlink(char const *path, bool create,
+	                                 Vfs_handle **out_handle, Allocator &alloc)
+	{
+		Genode::warning("Vfs::Directory_service::openlink() called");
+		return OPENLINK_ERR_LOOKUP_FAILED;
+	}
+
 	/**
 	 * Close handle resources and deallocate handle
 	 */
@@ -104,7 +132,8 @@ struct Vfs::Directory_service
 	 ** Dirent **
 	 ************/
 
-	enum Dirent_result { DIRENT_ERR_INVALID_PATH, DIRENT_ERR_NO_PERM, DIRENT_OK };
+	enum Dirent_result { DIRENT_ERR_INVALID_PATH, DIRENT_ERR_NO_PERM,
+	                     DIRENT_QUEUED, DIRENT_OK };
 
 	enum { DIRENT_MAX_NAME_LEN = 128 };
 
@@ -127,6 +156,22 @@ struct Vfs::Directory_service
 
 	virtual Dirent_result dirent(char const *path, file_offset index, Dirent &) = 0;
 
+	/**
+	 * Queue dirent operation
+	 *
+	 * \return false if queue is full
+	 */
+	virtual bool queue_dirent(char const *path, file_offset index,
+	                          Vfs_handle_base::Context *context = nullptr)
+	{
+		return true;
+	}
+
+	virtual Dirent_result complete_dirent(char const *path, file_offset index,
+	                                      Dirent &out)
+	{
+		return dirent(path, index, out);
+	}
 
 	/************
 	 ** Unlink **
@@ -142,11 +187,11 @@ struct Vfs::Directory_service
 	 ** Readlink **
 	 **************/
 
-	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM, READLINK_OK };
+	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM,
+	                       READLINK_OK };
 
 	virtual Readlink_result readlink(char const *path, char *buf,
 	                                 file_size buf_size, file_size &out_len) = 0;
-
 
 	/************
 	 ** Rename **

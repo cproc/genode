@@ -53,7 +53,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				size_t const count_in = _sysio.write_in.count;
 
 				for (size_t offset = 0; offset != count_in; ) {
-
+Genode::log("PID ", pid(), " -> SYSCALL_WRITE: ", _sysio.write_in.fd);
 					Shared_pointer<Io_channel> io = _lookup_channel(_sysio.write_in.fd);
 
 					if (!io->nonblocking())
@@ -80,6 +80,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READ:
 			{
+Genode::log("PID ", pid(), " -> SYSCALL_READ: ", _sysio.read_in.fd);
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio.read_in.fd);
 
 				if (!io->nonblocking())
@@ -176,7 +177,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			break;
 
 		case SYSCALL_OPEN:
-			{
+			{	Genode::log("PID ", pid(), " -> SYSCALL_OPEN: ", Genode::Cstring(_sysio.open_in.path));
+
 				Vfs::Vfs_handle *vfs_handle = 0;
 				_sysio.error.open = _root_dir.open(_sysio.open_in.path,
 				                                   _sysio.open_in.mode,
@@ -202,6 +204,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_heap);
 
 				_sysio.open_out.fd = add_io_channel(channel);
+				Genode::log("PID ", pid(), " -> SYSCALL_OPEN: ", _sysio.open_out.fd);
 				result = true;
 				break;
 			}
@@ -235,36 +238,38 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				 * could be a script that uses an interpreter which maybe
 				 * does not exist.
 				 */
-				Dataspace_capability binary_ds =
-					_root_dir.dataspace(_sysio.execve_in.filename);
+				Genode::Reconstructible<Vfs_dataspace> binary_ds {
+					_root_dir, _sysio.execve_in.filename,
+					_env.ram(), _env.rm(), _heap
+				};
 
-				if (!binary_ds.valid()) {
+				if (!binary_ds->ds.valid()) {
 					_sysio.error.execve = Sysio::EXECVE_NONEXISTENT;
 					break;
 				}
 
 				Child_env<sizeof(_sysio.execve_in.args)>
 					child_env(_env.rm(),
-					          _sysio.execve_in.filename, binary_ds,
+					          _sysio.execve_in.filename, binary_ds->ds,
 					          _sysio.execve_in.args, _sysio.execve_in.env);
 
-				_root_dir.release(_sysio.execve_in.filename, binary_ds);
+				binary_ds.construct(_root_dir, child_env.binary_name(),
+				                    _env.ram(), _env.rm(), _heap);
 
-				binary_ds = _root_dir.dataspace(child_env.binary_name());
-
-				if (!binary_ds.valid()) {
+				if (!binary_ds->ds.valid()) {
 					_sysio.error.execve = Sysio::EXECVE_NONEXISTENT;
 					break;
 				}
 
-				_root_dir.release(child_env.binary_name(), binary_ds);
+				binary_ds.destruct();
 
 				try {
+Genode::log("PID ", pid(), ": SYSCALL_EXECVE: calling execve_child()");
 					_parent_execve.execve_child(*this,
 					                            child_env.binary_name(),
 					                            child_env.args(),
 					                            child_env.env());
-
+Genode::log("PID ", pid(), ": SYSCALL_EXECVE finished");
 					/*
 					 * 'return' instead of 'break' to skip possible signal delivery,
 					 * which might cause the old child process to exit itself
@@ -570,7 +575,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_sysio.pipe_out.fd[0] = add_io_channel(pipe_source);
 				_sysio.pipe_out.fd[1] = add_io_channel(pipe_sink);
-
+Genode::log("PID ", pid(), ": SYSCALL_PIPE: ", _sysio.pipe_out.fd[0], "/", _sysio.pipe_out.fd[1]);
 				result = true;
 				break;
 			}
@@ -595,14 +600,66 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READLINK:
 		{
+			Genode::log("SYSCALL_READLINK: ", Genode::Cstring(_sysio.readlink_in.path));
+
+			Vfs::Vfs_handle *symlink_handle { 0 };
+
+			Vfs::Directory_service::Openlink_result openlink_result =
+				_root_dir.openlink(_sysio.readlink_in.path, false, &symlink_handle, _heap);
+
+			switch (openlink_result) {
+				case Vfs::Directory_service::OPENLINK_OK:
+					_sysio.error.readlink = Vfs::Directory_service::READLINK_OK;
+					break;
+				case Vfs::Directory_service::OPENLINK_ERR_LOOKUP_FAILED:
+					_sysio.error.readlink = Vfs::Directory_service::READLINK_ERR_NO_ENTRY;
+					break;
+				case Vfs::Directory_service::OPENLINK_ERR_PERMISSION_DENIED:
+					_sysio.error.readlink = Vfs::Directory_service::READLINK_ERR_NO_PERM;
+			}
+
+			if (openlink_result != Vfs::Directory_service::OPENLINK_OK)
+				break;
+
+			Vfs_handle_context context;
+
+			symlink_handle->context = &context;
+
+			for (;;) {
+				Genode::log("SYSCALL_READLINK: calling queue_read()");
+				if (symlink_handle->fs().queue_read(symlink_handle,
+				                                    min(_sysio.readlink_in.bufsiz,
+			                                            sizeof(_sysio.readlink_out.chunk))))
+			    	break;
+
+				Genode::log("SYSCALL_READLINK: blocking for queue_read()");
+				context.wait_for_completion();
+				Genode::log("SYSCALL_READLINK: unblocked for queue_read()");
+			}
+
 			Vfs::file_size out_count = 0;
 
-			_sysio.error.readlink =
-				_root_dir.readlink(_sysio.readlink_in.path,
-			                       _sysio.readlink_out.chunk,
-			                       min(_sysio.readlink_in.bufsiz,
-			                           sizeof(_sysio.readlink_out.chunk)),
-			                       out_count);
+			for (;;) {
+				Genode::log("SYSCALL_READLINK: calling complete_read()");
+
+				Vfs::File_io_service::Read_result read_result =
+					symlink_handle->fs().complete_read(symlink_handle,
+				                                       _sysio.readlink_out.chunk,
+				                                       min(_sysio.readlink_in.bufsiz,
+			    	                                       sizeof(_sysio.readlink_out.chunk)),
+			        	                               out_count);
+
+				if (read_result != Vfs::File_io_service::READ_QUEUED)
+					break;
+
+				Genode::log("SYSCALL_READLINK: blocking for complete_read()");
+				context.wait_for_completion();
+				Genode::log("SYSCALL_READLINK: unblocked for complete_read()");
+			}
+
+			// FIXME: handle complete_read() errors
+
+			symlink_handle->ds().close(symlink_handle);
 
 			_sysio.readlink_out.count = out_count;
 
@@ -626,12 +683,44 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			break;
 
 		case SYSCALL_SYMLINK:
+		{
 
-			_sysio.error.symlink = _root_dir.symlink(_sysio.symlink_in.oldpath,
-			                                         _sysio.symlink_in.newpath);
+			Vfs::Vfs_handle *symlink_handle { 0 };
+
+			Vfs::Directory_service::Openlink_result openlink_result =
+				_root_dir.openlink(_sysio.symlink_in.newpath, true, &symlink_handle, _heap);
+
+			switch (openlink_result) {
+				case Vfs::Directory_service::OPENLINK_OK:
+					_sysio.error.symlink = Vfs::Directory_service::SYMLINK_OK;
+					break;
+				case Vfs::Directory_service::OPENLINK_ERR_LOOKUP_FAILED:
+					_sysio.error.symlink = Vfs::Directory_service::SYMLINK_ERR_NO_ENTRY;
+					break;
+				case Vfs::Directory_service::OPENLINK_ERR_PERMISSION_DENIED:
+					_sysio.error.symlink = Vfs::Directory_service::SYMLINK_ERR_NO_PERM;
+			}
+
+			if (openlink_result != Vfs::Directory_service::OPENLINK_OK)
+				break;
+
+			try {
+				Vfs::file_size out_count;	
+				Vfs::File_io_service::Write_result write_result =
+					symlink_handle->fs().write(symlink_handle, _sysio.symlink_in.oldpath,
+					                           strlen(_sysio.symlink_in.oldpath) + 1,
+					                           out_count);
+				// FIXME: check out_count
+			} catch (...) {
+				// FIXME: handle write errors (alloc_packet())
+				//        or use out_count=0 instead of exceptions
+			}
+
+			symlink_handle->ds().close(symlink_handle);
 
 			result = (_sysio.error.symlink == Vfs::Directory_service::SYMLINK_OK);
 			break;
+		}
 
 		case SYSCALL_USERINFO:
 			{
@@ -793,6 +882,6 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		   (_sysio.pending_signals.avail_capacity() > 0)) {
 		_sysio.pending_signals.add(_pending_signals.get());
 	}
-
+//Genode::log("PID ", pid(), ": syscall finished");
 	return result;
 }
