@@ -215,7 +215,21 @@ struct Noux::Main
 
 	struct Io_response_handler : Vfs::Io_response_handler
 	{
-		void handle_io_response(Vfs::Vfs_handle::Context *) override { }
+		void handle_io_response(Vfs::Vfs_handle::Context *context) override
+		{
+			Genode::log("handle_io_response(): context: ", context);
+
+			/*
+			 * The local 'Rom_session_component' uses the VFS, but does not set
+			 * a context.
+			 */
+			if (!context)
+				return;
+
+			Vfs_io_channel *io_channel = static_cast<Vfs_io_channel*>(context);
+			Genode::log("handle_io_response(): io_channel: ", io_channel);
+			io_channel->unblock();
+		}
 	} _io_response_handler;
 
 	Vfs::Dir_file_system _root_dir { _env, _heap, _config.xml().sub_node("fstab"),

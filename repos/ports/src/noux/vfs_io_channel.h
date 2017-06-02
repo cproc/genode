@@ -21,12 +21,13 @@
 namespace Noux { struct Vfs_io_channel; }
 
 
-struct Noux::Vfs_io_channel : Io_channel
+struct Noux::Vfs_io_channel : Io_channel, Vfs::Vfs_handle::Context
 {
 	Signal_handler<Vfs_io_channel> _read_avail_handler;
 
 	void _handle_read_avail()
 	{
+		Genode::log("_handle_read_avail()");
 		Io_channel::invoke_all_notifiers();
 	}
 
@@ -35,6 +36,8 @@ struct Noux::Vfs_io_channel : Io_channel
 	Absolute_path _path;
 	Absolute_path _leaf_path;
 
+	Lock _blocking_lock { Lock::LOCKED };
+
 	Vfs_io_channel(char const *path, char const *leaf_path,
 	               Vfs::Dir_file_system *root_dir, Vfs::Vfs_handle *vfs_handle,
 	               Entrypoint &ep)
@@ -42,20 +45,38 @@ struct Noux::Vfs_io_channel : Io_channel
 		_read_avail_handler(ep, *this, &Vfs_io_channel::_handle_read_avail),
 		_fh(vfs_handle), _path(path), _leaf_path(leaf_path)
 	{
+		_fh->context = this;
 		_fh->fs().register_read_ready_sigh(_fh, _read_avail_handler);
 	}
 
 	~Vfs_io_channel()
 	{
+		Genode::log("~Vfs_io_channel(): ", this);
 		_fh->ds().close(_fh);
 	}
 
 	bool write(Sysio &sysio, size_t &offset) override
 	{
+		Genode::log("Vfs_io_channel::write()");
 		Vfs::file_size out_count = 0;
 
+		/* reset to locked state */
+		_blocking_lock.unlock();
+		_blocking_lock.lock();
+
 		sysio.error.write = _fh->fs().write(_fh, sysio.write_in.chunk,
-	                                         sysio.write_in.count, out_count);
+				                            sysio.write_in.count, out_count);
+
+		if (sysio.error.write == Vfs::File_io_service::WRITE_ERR_WOULD_BLOCK) {
+			Genode::log("Vfs_io_channel::write(): blocking");
+	   	     /* block if not already unblocked */
+			_blocking_lock.lock();
+			Genode::log("Vfs_io_channel::write(): unblocked");
+		}
+		
+		sysio.error.write = _fh->fs().write(_fh, sysio.write_in.chunk,
+				                            sysio.write_in.count, out_count);
+
 		if (sysio.error.write != Vfs::File_io_service::WRITE_OK)
 			return false;
 
@@ -69,11 +90,42 @@ struct Noux::Vfs_io_channel : Io_channel
 
 	bool read(Sysio &sysio) override
 	{
+		Genode::log("Vfs_io_channel::read()");
 		size_t count = min(sysio.read_in.count, sizeof(sysio.read_out.chunk));
 
 		Vfs::file_size out_count = 0;
 
-		sysio.error.read = _fh->fs().read(_fh, sysio.read_out.chunk, count, out_count);
+		for (;;) {
+
+			/* reset to locked state */
+			_blocking_lock.unlock();
+			_blocking_lock.lock();
+
+			if (_fh->fs().queue_read(_fh, count))
+				break;
+				
+			Genode::log("Vfs_io_channel::read(): blocking for queue_read()");
+	        /* block if not already unblocked */
+			_blocking_lock.lock();
+			Genode::log("Vfs_io_channel::read(): unblocked for queue_read()");
+		}
+
+		for (;;) {
+
+			/* reset to locked state */
+			_blocking_lock.unlock();
+			_blocking_lock.lock();
+
+			sysio.error.read = _fh->fs().complete_read(_fh, sysio.read_out.chunk, count, out_count);
+		
+			if (sysio.error.read != Vfs::File_io_service::READ_QUEUED)
+				break;
+
+			Genode::log("Vfs_io_channel::read(): blocking for complete_read()");
+    	    /* block if not already unblocked */
+			_blocking_lock.lock();
+			Genode::log("Vfs_io_channel::read(): unblocked for complete_read()");
+		}
 
 		if (sysio.error.read != Vfs::File_io_service::READ_OK)
 			return false;
@@ -136,6 +188,7 @@ struct Noux::Vfs_io_channel : Io_channel
 	 */
 	bool dirent(Sysio &sysio) override
 	{
+		Genode::log("Vfs_io_channel::dirent()");
 		/*
 		 * Return artificial dir entries for "." and ".."
 		 */
@@ -156,8 +209,43 @@ struct Noux::Vfs_io_channel : Io_channel
 		 * Align index range to zero when calling the directory service.
 		 */
 
+		for (;;) {
+
+			/* reset to locked state */
+			_blocking_lock.unlock();
+			_blocking_lock.lock();
+
+			if (_fh->ds().queue_dirent(_path.base(), index - 2, this))
+				break;
+				
+			Genode::log("Vfs_io_channel::dirent(): blocking for queue_dirent()");
+	        /* block if not already unblocked */
+			_blocking_lock.lock();
+			Genode::log("Vfs_io_channel::dirent(): unblocked for queue_dirent()");
+		}
+
 		Vfs::Directory_service::Dirent dirent;
-		if (!_fh->ds().dirent(_path.base(), index - 2, dirent))
+		Vfs::Directory_service::Dirent_result result;
+
+		for (;;) {
+
+			/* reset to locked state */
+			_blocking_lock.unlock();
+			_blocking_lock.lock();
+
+			result = _fh->ds().complete_dirent(_path.base(), index - 2, dirent);
+			if (result != Vfs::Directory_service::DIRENT_QUEUED)
+				break;
+
+			Genode::log("Vfs_io_channel::dirent(): blocking for complete_dirent()");
+    	    /* block if not already unblocked */
+			_blocking_lock.lock();
+			Genode::log("Vfs_io_channel::dirent(): unblocked for complete_dirent()");
+		}
+
+		Genode::log("Vfs_io_channel::dirent(): finished");
+
+		if (result != Vfs::Directory_service::DIRENT_OK)
 			return false;
 		sysio.dirent_out.entry = dirent;
 
@@ -215,6 +303,11 @@ struct Noux::Vfs_io_channel : Io_channel
 		path[len - 1] = '\0';
 
 		return true;
+	}
+
+	void unblock()
+	{
+		_blocking_lock.unlock();
 	}
 };
 

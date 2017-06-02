@@ -575,7 +575,8 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			return DIRENT_OK;
 		}
 
-		Symlink_result symlink(char const *target, char const *path) override
+		Symlink_result symlink(char const *target, char const *path,
+		                       Genode::Allocator &) override
 		{
 			using namespace Vfs_ram;
 

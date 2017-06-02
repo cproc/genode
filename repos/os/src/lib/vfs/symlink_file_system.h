@@ -47,7 +47,8 @@ class Vfs::Symlink_file_system : public Single_file_system
 		 ** Directory-service interface **
 		 *********************************/
 
-		Symlink_result symlink(char const *from, char const *to) override {
+		Symlink_result symlink(char const *from, char const *to,
+		                       Genode::Allocator &) override {
 			return SYMLINK_ERR_EXISTS; }
 
 		Readlink_result readlink(char const *path,

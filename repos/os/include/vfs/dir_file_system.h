@@ -181,6 +181,68 @@ class Vfs::Dir_file_system : public File_system
 			return DIRENT_OK;
 		}
 
+		/**
+		 * The 'path' is relative to the child file systems.
+		 */
+		bool _queue_dirent_of_file_systems(char const *path, file_offset index,
+		                                   Vfs_handle_base::Context *context)
+		{
+			int base = 0;
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				/*
+				 * Determine number of matching directory entries within
+				 * the current file system.
+				 */
+				int const fs_num_dirent = fs->num_dirent(path);
+
+				/*
+				 * Query directory entry if index lies with the file
+				 * system.
+				 */
+				if (index - base < fs_num_dirent) {
+					index = index - base;
+					return fs->queue_dirent(path, index, context);
+				}
+
+				/* adjust base index for next file system */
+				base += fs_num_dirent;
+			}
+
+			return DIRENT_QUEUED;
+		}
+
+		/**
+		 * The 'path' is relative to the child file systems.
+		 */
+		Dirent_result _complete_dirent_of_file_systems(char const *path, file_offset index, Dirent &out)
+		{
+			int base = 0;
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				/*
+				 * Determine number of matching directory entries within
+				 * the current file system.
+				 */
+				int const fs_num_dirent = fs->num_dirent(path);
+
+				/*
+				 * Query directory entry if index lies with the file
+				 * system.
+				 */
+				if (index - base < fs_num_dirent) {
+					index = index - base;
+					return fs->complete_dirent(path, index, out);;
+				}
+
+				/* adjust base index for next file system */
+				base += fs_num_dirent;
+			}
+
+			out.type = DIRENT_TYPE_END;
+			return DIRENT_OK;
+		}
+
 		void _dirent_of_this_dir_node(file_offset index, Dirent &out)
 		{
 			if (index == 0) {
@@ -350,6 +412,52 @@ class Vfs::Dir_file_system : public File_system
 				return DIRENT_ERR_INVALID_PATH;
 
 			return _dirent_of_file_systems(*path ? path : "/", index, out);
+		}
+
+		bool queue_dirent(char const *path, file_offset index,
+		                  Vfs_handle_base::Context *context) override
+		{
+			Genode::log("Dir_file_system::queue_dirent(): ret: ", __builtin_return_address(0));
+			if (_root())
+				return _queue_dirent_of_file_systems(path, index, context);
+
+			if (strcmp(path, "/") == 0) {
+				return DIRENT_QUEUED;
+			}
+
+			/* path contains at least one element */
+
+			/* remove current element from path */
+			path = _sub_path(path);
+
+			/* path does not lie within our tree */
+			if (!path)
+				return DIRENT_ERR_INVALID_PATH;
+
+			return _queue_dirent_of_file_systems(*path ? path : "/", index, context);
+		}
+
+		Dirent_result complete_dirent(char const *path, file_offset index, Dirent &out) override
+		{
+			Genode::log("Dir_file_system::complete_dirent(): ret: ", __builtin_return_address(0));
+			if (_root())
+				return _complete_dirent_of_file_systems(path, index, out);
+
+			if (strcmp(path, "/") == 0) {
+				_dirent_of_this_dir_node(index, out);
+				return DIRENT_OK;
+			}
+
+			/* path contains at least one element */
+
+			/* remove current element from path */
+			path = _sub_path(path);
+
+			/* path does not lie within our tree */
+			if (!path)
+				return DIRENT_ERR_INVALID_PATH;
+
+			return _complete_dirent_of_file_systems(*path ? path : "/", index, out);
 		}
 
 		file_size num_dirent(char const *path) override
@@ -535,11 +643,12 @@ class Vfs::Dir_file_system : public File_system
 			return final;
 		}
 
-		Symlink_result symlink(char const *from, char const *to) override
+		Symlink_result symlink(char const *from, char const *to,
+		                       Genode::Allocator &alloc) override
 		{
 			auto symlink_fn = [&] (File_system &fs, char const *to)
 			{
-				return fs.symlink(from, to);
+				return fs.symlink(from, to, alloc);
 			};
 
 			return _dir_op(SYMLINK_ERR_NO_ENTRY, SYMLINK_ERR_NO_PERM, SYMLINK_OK,
