@@ -62,14 +62,18 @@ class Vfs::Fs_file_system : public File_system
 
 			enum class Queued_state { IDLE, QUEUED, ACK };
 			Queued_state queued_read_state  = Queued_state::IDLE;
-			Queued_state queued_write_state = Queued_state::IDLE;
 
 			::File_system::Packet_descriptor queued_read_packet;
-			::File_system::Packet_descriptor queued_write_packet;
 		};
 
 		struct Fs_vfs_handle : Vfs_handle, ::File_system::Node, Handle_space::Element, Handle_state
 		{
+			unsigned int _write_acks_pending { 0 };
+			Lock         _write_acks_pending_lock;
+
+			Lock         close_lock;
+			bool         close_requested { false };
+
 			Fs_vfs_handle(File_system &fs, Allocator &alloc, int status_flags,
 			              Handle_space &space, Handle_space::Id id)
 			:
@@ -79,6 +83,20 @@ class Vfs::Fs_file_system : public File_system
 
 			::File_system::File_handle file_handle() const
 			{ return ::File_system::File_handle { id().value }; }
+
+			void inc_write_acks_pending()
+			{
+				Lock::Guard guard(_write_acks_pending_lock);
+				_write_acks_pending++;
+			}
+
+			void dec_write_acks_pending()
+			{
+				Lock::Guard guard(_write_acks_pending_lock);
+				_write_acks_pending--;
+			}
+
+			bool write_acks_pending() { return (_write_acks_pending > 0); }
 		};
 
 		/**
@@ -193,20 +211,29 @@ class Vfs::Fs_file_system : public File_system
 
 			/* XXX check if alloc_packet() and submit_packet() will succeed! */
 
-			Packet_descriptor packet_in(source.alloc_packet(count),
-			                            handle.file_handle(),
-			                            Packet_descriptor::WRITE,
-			                            count,
-			                            seek_offset);
+			try {
+				Packet_descriptor packet_in(source.alloc_packet(count),
+			                            	handle.file_handle(),
+			                            	Packet_descriptor::WRITE,
+			                            	count,
+			                            	seek_offset);
 
-			memcpy(source.packet_content(packet_in), buf, count);
+				memcpy(source.packet_content(packet_in), buf, count);
 
-			/* wait until packet was acknowledged */
-			handle.queued_write_state = Handle_state::Queued_state::QUEUED;
+				/* wait until packet was acknowledged */
+				handle.queued_write_state = Handle_state::Queued_state::QUEUED;
 
-			/* pass packet to server side */
-			source.submit_packet(packet_in);
-
+				/* pass packet to server side */
+				handle.inc_write_acks_pending();
+				source.submit_packet(packet_in);
+			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
+				Genode::error("packet alloc failed");
+				return 0;
+			} catch (...) {
+				Genode::error("unhandled exception");
+				return 0;
+			}
+#if 0
 			while (handle.queued_write_state != Handle_state::Queued_state::ACK) {
 				_env.ep().wait_and_dispatch_one_io_signal();
 			}
@@ -222,6 +249,8 @@ class Vfs::Fs_file_system : public File_system
 			source.release_packet(packet_out);
 
 			return write_num_bytes;
+#endif
+			return count;
 		}
 
 		void _handle_ack()
@@ -249,8 +278,18 @@ class Vfs::Fs_file_system : public File_system
 							break;
 
 						case Packet_descriptor::WRITE:
-							handle.queued_write_packet = packet;
-							handle.queued_write_state  = Handle_state::Queued_state::ACK;
+						
+							handle.dec_write_acks_pending();
+
+							/* close the file if requested */
+							if (!handle.write_acks_pending()) {
+								Lock::Guard close_lock_guard(handle.close_lock);
+								if (handle.close_requested) {
+									Genode::log("closing 2");
+									_fs.close(handle.file_handle());
+									destroy(handle.alloc(), &handle);
+								}
+							}
 							break;
 
 						case Packet_descriptor::CONTENT_CHANGED:
@@ -261,6 +300,9 @@ class Vfs::Fs_file_system : public File_system
 					});
 				} catch (Handle_space::Unknown_id) {
 					Genode::warning("ack for unknown VFS handle"); }
+
+				if (packet.operation() == Packet_descriptor::WRITE)
+					source.release_packet(packet);
 			}
 		}
 
@@ -659,9 +701,22 @@ class Vfs::Fs_file_system : public File_system
 
 			Fs_vfs_handle *fs_handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 
-			if (fs_handle) {
+			if (fs_handle->close_requested) return;
+
+			/*
+			 * Critical section
+			 * 
+			 * block '_handle_ack()' between reading 'write_acks_pending()' as
+			 * true and writing 'close_requested;
+			 */
+			Lock::Guard close_lock_guard(fs_handle->close_lock);
+
+			if (!fs_handle->write_acks_pending()) {
+				Genode::log("closing 1");
 				_fs.close(fs_handle->file_handle());
 				destroy(fs_handle->alloc(), fs_handle);
+			} else {
+				fs_handle->close_requested = true;
 			}
 		}
 
