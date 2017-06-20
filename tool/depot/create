@@ -42,6 +42,7 @@ extract:
 	                     VERBOSE=$(VERBOSE) FORCE=$(FORCE) \
 	                     UPDATE_VERSIONS=$(UPDATE_VERSIONS) \
 
+$(MAKECMDGOALS): extract
 
 _versioned_src_of_bin = $1-$(call recipe_version,src/$(call bin_archive_recipe,$1))
 _versioned_pkg        = $1-$(call recipe_version,pkg/$(call bin_archive_recipe,$1))
@@ -49,13 +50,17 @@ _versioned_pkg        = $1-$(call recipe_version,pkg/$(call bin_archive_recipe,$
 versioned_archive = $(if $(call archive_has_type,$1,bin),$(call _versioned_src_of_bin,$1),\
                        $(if $(call archive_has_type,$1,pkg),$(call _versioned_pkg,$1)))
 
+VERSIONED_ARCHIVES := $(strip $(foreach A,$(MAKECMDGOALS),$(call versioned_archive,$A)))
+
 build: extract
-	$(VERBOSE)$(MAKE) -f $(GENODE_DIR)/tool/depot/build \
-	                     $(foreach A,$(MAKECMDGOALS),$(call versioned_archive,$A))\
+	$(VERBOSE)$(MAKE) -f $(GENODE_DIR)/tool/depot/build $(VERSIONED_ARCHIVES) \
 	                     VERBOSE=$(VERBOSE) FORCE=$(FORCE) \
 	                     KEEP_BUILD_DIR=$(KEEP_BUILD_DIR)
 
-
+ifneq ($(VERSIONED_ARCHIVES),)
 $(MAKECMDGOALS): build
+endif
+
+$(MAKECMDGOALS):
 	@true
 
