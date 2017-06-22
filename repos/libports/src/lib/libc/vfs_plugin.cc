@@ -316,9 +316,43 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 
 	Vfs::Vfs_handle *handle = vfs_handle(fd);
 
-	Vfs::file_size out_count = 0;
+	Vfs::file_size out_count  = 0;
+	Result         out_result = Result::WRITE_OK;
 
-	switch (handle->fs().write(handle, (char const *)buf, count, out_count)) {
+	if (fd->flags & O_NONBLOCK) {
+
+		out_result = handle->fs().write(handle, (char const *)buf, count, out_count);
+
+	} else {
+
+		do {
+
+			struct Write_check : Libc::Suspend_functor {
+				Vfs::Vfs_handle * handle;
+				void const      * buf;
+				::size_t        * count;
+				Vfs::file_size  * out_count;
+				Result          * out_result;
+
+				Write_check(Vfs::Vfs_handle * handle, void const * buf, ::size_t * count,
+	            			Vfs::file_size  * out_count, Result * out_result)
+				: handle(handle), buf(buf), count(count), out_count(out_count),
+	  	  	  	  out_result(out_result)
+				{ }
+
+				bool suspend() override {
+					*out_result = handle->fs().write(handle, (char const *)buf, *count, *out_count);
+					Genode::log("suspend(): ", *out_result == Result::WRITE_ERR_WOULD_BLOCK);
+					return *out_result == Result::WRITE_ERR_WOULD_BLOCK;
+				}
+			} check ( handle, buf, &count, &out_count, &out_result);
+
+			Libc::suspend(check);
+
+		} while (out_result == Result::WRITE_ERR_WOULD_BLOCK);
+	}
+
+	switch (out_result) {
 	case Result::WRITE_ERR_AGAIN:       errno = EAGAIN;      return -1;
 	case Result::WRITE_ERR_WOULD_BLOCK: errno = EWOULDBLOCK; return -1;
 	case Result::WRITE_ERR_INVALID:     errno = EINVAL;      return -1;
