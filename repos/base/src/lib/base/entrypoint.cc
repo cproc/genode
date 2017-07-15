@@ -51,6 +51,10 @@ void Entrypoint::Signal_proxy_component::signal()
 	/* XXX introduce while-pending loop */
 	try {
 		Signal sig = ep._sig_rec->pending_signal();
+
+		//if (sig.context()->level() != Signal_context::Level::App)
+			//Genode::log("signal(): dispatching io signal: ", &sig);
+
 		ep._dispatch_signal(sig);
 	} catch (Signal_receiver::Signal_not_pending) { }
 
@@ -122,7 +126,10 @@ void Entrypoint::_process_incoming_signals()
 				 * as result, which has to be caught.
 				 */
 				retry<Blocking_canceled>(
-					[&] () { _signal_proxy_cap.call<Signal_proxy::Rpc_signal>(); },
+					[&] () { //Genode::log("sending signal RPC");
+					         _signal_proxy_cap.call<Signal_proxy::Rpc_signal>();
+					         //Genode::log("signal RPC returned");
+					         },
 					[]  () { warning("blocking canceled during signal processing"); });
 
 				cmpxchg(&_signal_recipient, SIGNAL_PROXY, NONE);
@@ -174,6 +181,7 @@ void Entrypoint::_process_incoming_signals()
 
 void Entrypoint::wait_and_dispatch_one_io_signal()
 {
+Genode::warning("wait_and_dispatch_one_io_signal()");
 	for (;;) {
 
 		try {
@@ -192,6 +200,8 @@ void Entrypoint::wait_and_dispatch_one_io_signal()
 				_defer_signal(sig);
 				continue;
 			}
+
+	Genode::log("wait_and_dispatch_one_io_signal(): dispatching io signal: ", &sig);
 
 			_dispatch_signal(sig);
 			break;

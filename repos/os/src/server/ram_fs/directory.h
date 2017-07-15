@@ -190,12 +190,15 @@ class Ram_fs::Directory : public Node
 
 			seek_off_t index = seek_offset / sizeof(Directory_entry);
 
+Genode::log("Ram_fs::Directory::read(): index: ", index);
+
 			if (seek_offset % sizeof(Directory_entry)) {
 				Genode::error("seek offset not alighed to sizeof(Directory_entry)");
 				return 0;
 			}
 
 			Node *node = _entry_unsynchronized(index);
+Genode::log("Ram_fs::Directory::read(): node: ", node);
 
 			/* index out of range */
 			if (!node)
