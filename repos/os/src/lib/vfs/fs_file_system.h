@@ -306,9 +306,10 @@ Genode::log("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->name
 
 		struct Post_signal_hook : Genode::Entrypoint::Post_signal_hook
 		{
-			Genode::Entrypoint  &_ep;
-			Io_response_handler &_io_handler;
-			Vfs_handle::Context *_context = nullptr;
+			Genode::Entrypoint                    &_ep;
+			Io_response_handler                   &_io_handler;
+			Genode::Registry<Vfs_handle::Context>  _registry;
+			bool                                   _null_context_armed { false };
 
 			Post_signal_hook(Genode::Entrypoint &ep,
 			                 Io_response_handler &io_handler)
@@ -317,7 +318,14 @@ Genode::log("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->name
 			void arm(Vfs_handle::Context *context)
 			{
 				Genode::log("arm(): ", context);
-				_context = context;
+				if (!context) {
+					_null_context_armed = true;
+					return;
+				}
+
+				if (!context->registry_element.constructed())
+					context->registry_element.construct(_registry, *context);
+
 				_ep.schedule_post_signal_hook(this);
 			}
 

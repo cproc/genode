@@ -14,6 +14,7 @@
 #ifndef _INCLUDE__VFS__VFS_HANDLE_H_
 #define _INCLUDE__VFS__VFS_HANDLE_H_
 
+#include <base/registry.h>
 #include <vfs/directory_service.h>
 
 namespace Vfs{
@@ -35,9 +36,20 @@ class Vfs::Vfs_handle
 	public:
 
 		/**
-		 * Opaque handle context
+		 * Handle context, set by the VFS user and used as argument for the IO
+		 * response handler.
 		 */
-		struct Context { };
+
+		struct Context
+		{
+			/*
+			 * Constructed on-demand by the VFS plugin
+			 */
+			typedef Genode::Registry<Context>::Element Registry_element;
+			Genode::Constructible<Registry_element> registry_element;
+
+			virtual ~Context() { };
+		};
 
 		Context *context = nullptr;
 
