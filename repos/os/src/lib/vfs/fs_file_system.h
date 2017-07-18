@@ -72,6 +72,7 @@ class Vfs::Fs_file_system : public File_system
 
 			bool _queue_read(file_size count, file_size const seek_offset)
 			{
+				Genode::debug("Fs_vfs_handle::_queue_read(): seek: ", seek());
 				if (queued_read_state != Handle_state::Queued_state::IDLE)
 					return false;
 
@@ -87,6 +88,7 @@ class Vfs::Fs_file_system : public File_system
 				try {
 					p = source.alloc_packet(clipped_count);
 				} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
+					Genode::warning("Fs_file_system::_queue_read(): packet alloc failed");
 					return false;
 				}
 
@@ -100,6 +102,7 @@ class Vfs::Fs_file_system : public File_system
 
 				/* pass packet to server side */
 				source.submit_packet(packet);
+				//Genode::debug("Fs_file_system::_queue_read(): finished");
 
 				return true;
 			}
@@ -107,8 +110,10 @@ class Vfs::Fs_file_system : public File_system
 			Read_result _complete_read(void *dst, file_size count,
 		                           	   file_size &out_count)
 			{
+				Genode::debug("Fs_vfs_handle::_complete_read()");
 				if (queued_read_state != Handle_state::Queued_state::ACK)
 					return READ_QUEUED;
+				Genode::debug("Fs_vfs_handle::_complete_read(): check 1");
 
 				/* obtain result packet descriptor with updated status info */
 				::File_system::Packet_descriptor const
@@ -127,6 +132,8 @@ class Vfs::Fs_file_system : public File_system
 
 				source.release_packet(packet);
 
+				Genode::debug("Fs_vfs_handle::_complete_read(): finished");
+
 				return READ_OK;
 			}
 
@@ -138,7 +145,14 @@ class Vfs::Fs_file_system : public File_system
 				Vfs_handle(fs, fs, alloc, status_flags),
 				Handle_space::Element(*this, space, node_handle),
 				_fs(fs_connection)
-			{ }
+			{
+				Genode::debug("Fs_vfs_handle::Fs_vfs_handle(): id: ", id().value);
+			}
+
+			virtual ~Fs_vfs_handle()
+			{
+				Genode::debug("Fs_vfs_handle::~Fs_vfs_handle(): id: ", id().value);
+			}
 
 			::File_system::File_handle file_handle() const
 			{ return ::File_system::File_handle { id().value }; }
@@ -191,6 +205,7 @@ class Vfs::Fs_file_system : public File_system
 			Read_result complete_read(char *dst, file_size count,
 			                          file_size &out_count) override
 			{
+				Genode::debug("Fs_vfs_dir_handle::complete_read()");
 				if (count < sizeof(Dirent))
 					return READ_ERR_INVALID;
 
@@ -204,6 +219,7 @@ class Vfs::Fs_file_system : public File_system
 
 				if (read_result != READ_OK)
 					return read_result;
+				Genode::debug("Fs_vfs_dir_handle::complete_read(): check");
 
 				Dirent *dirent = (Dirent*)dst;
 
@@ -233,7 +249,7 @@ class Vfs::Fs_file_system : public File_system
 				strncpy(dirent->name, entry.name, sizeof(dirent->name));
 
 				out_count = sizeof(Dirent);
-
+Genode::debug("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->name));
 				return READ_OK;
 			}
 		};
@@ -250,7 +266,11 @@ class Vfs::Fs_file_system : public File_system
 			Read_result complete_read(char *dst, file_size count,
 			                          file_size &out_count) override
 			{
-				return _complete_read(dst, count, out_count);
+				Genode::debug("Fs_vfs_symlink_handle::complete_read()");
+				Read_result result = _complete_read(dst, count, out_count);
+				Genode::debug("Fs_vfs_symlink_handle::complete_read(): out_count: ",
+				            out_count);
+				return result;
 			}
 		};
 
@@ -274,6 +294,8 @@ class Vfs::Fs_file_system : public File_system
 
 			~Fs_handle_guard()
 			{
+				Genode::debug("~Fs_handle_guard()");
+
 				_fs_session.sync(file_handle());
 				_fs_session.close(file_handle());
 			}
@@ -293,6 +315,8 @@ class Vfs::Fs_file_system : public File_system
 
 			void arm(Vfs_handle::Context *context)
 			{
+				Genode::debug("arm(): ", context);
+
 				if (!context) {
 				
 					if (!_null_context_armed) {
@@ -352,6 +376,8 @@ class Vfs::Fs_file_system : public File_system
 		file_size _read(Fs_vfs_handle &handle, void *buf,
 		                file_size const count, file_size const seek_offset)
 		{
+		Genode::debug("Fs_file_system::_read(): seek_offset: ", seek_offset,
+		            ", stack: ", &buf, ", ret: ", __builtin_return_address(0));
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
@@ -400,14 +426,18 @@ class Vfs::Fs_file_system : public File_system
 		file_size _write(Fs_vfs_handle &handle,
 		                 const char *buf, file_size count, file_size seek_offset)
 		{
+			Genode::debug("Fs_file_system::_write(): count: ",
+			             count, ", seek: ", seek_offset, ", stack: ", &buf);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
 			file_size const max_packet_size = source.bulk_buffer_size() / 2;
 			count = min(max_packet_size, count);
 
-			if (!source.ready_to_submit())
+			if (!source.ready_to_submit()) {
+				Genode::warning("Fs_file_system::_write(): submit queue full");
 				return 0;
+			}
 
 			try {
 				Packet_descriptor packet_in(source.alloc_packet(count),
@@ -419,11 +449,15 @@ class Vfs::Fs_file_system : public File_system
 				memcpy(source.packet_content(packet_in), buf, count);
 
 				/* pass packet to server side */
+				Genode::debug("Fs_file_system::_write(): submitting packet");
 				source.submit_packet(packet_in);
 
 				/* XXX: sync only when needed (in status(), etc.) */
 				_fs.sync(handle.file_handle());
+
+				Genode::debug("Fs_file_system::_write(): packet submitted");
 			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
+				Genode::warning("Fs_file_system::_write(): packet alloc failed");
 				return 0;
 			} catch (...) {
 				Genode::error("unhandled exception");
@@ -434,6 +468,8 @@ class Vfs::Fs_file_system : public File_system
 
 		void _handle_ack()
 		{
+		void *dummy;
+		Genode::debug("Fs_file_system::_handle_ack(): ", &dummy);
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 			using ::File_system::Packet_descriptor;
 
@@ -443,16 +479,20 @@ class Vfs::Fs_file_system : public File_system
 
 				Handle_space::Id const id(packet.handle());
 
+				Genode::debug("Fs_file_system::_handle_ack(): id: ", id.value);
+
 				try {
 					_handle_space.apply<Fs_vfs_handle>(id, [&] (Fs_vfs_handle &handle)
 					{
 						switch (packet.operation()) {
 						case Packet_descriptor::READ_READY:
+							Genode::debug("Fs_file_system::_handle_ack(): READ_READY");
 							handle.read_ready_state = Handle_state::Read_ready_state::READY;
 							_post_signal_hook.arm(handle.context);
 							break;
 
 						case Packet_descriptor::READ:
+							Genode::debug("Fs_file_system::_handle_ack(): READ");
 							handle.queued_read_packet = packet;
 							handle.queued_read_state  = Handle_state::Queued_state::ACK;
 							_post_signal_hook.arm(handle.context);
@@ -463,6 +503,7 @@ class Vfs::Fs_file_system : public File_system
 							break;
 
 						case Packet_descriptor::CONTENT_CHANGED:
+							Genode::debug("Fs_file_system::_handle_ack(): CONTENT_CHANGED");
 							_post_signal_hook.arm(handle.context);
 							break;
 						}
@@ -475,6 +516,7 @@ class Vfs::Fs_file_system : public File_system
 					source.release_packet(packet);
 				}
 			}
+			Genode::debug("Fs_file_system::_handle_ack(): finished");
 		}
 
 		Genode::Io_signal_handler<Fs_file_system> _ack_handler {
@@ -506,6 +548,7 @@ class Vfs::Fs_file_system : public File_system
 
 		Dataspace_capability dataspace(char const *path) override
 		{
+Genode::debug("Fs_file_system::dataspace(): path: ", Genode::Cstring(path), ", ret: ", __builtin_return_address(0));
 			/* cannot be implemented without blocking */
 			return Dataspace_capability();
 		}
@@ -547,6 +590,7 @@ class Vfs::Fs_file_system : public File_system
 
 		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
 		{
+			Genode::debug("Fs_file_system::dirent(): ret: ", __builtin_return_address(0));
 			Lock::Guard guard(_lock);
 
 			using ::File_system::Directory_entry;
@@ -614,6 +658,7 @@ class Vfs::Fs_file_system : public File_system
 		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
 		                         file_size &out_len) override
 		{
+			Genode::debug("Fs_file_system::readlink(): ret: ", __builtin_return_address(0));
 			/*
 			 * Canonicalize path (i.e., path must start with '/')
 			 */
@@ -695,6 +740,9 @@ class Vfs::Fs_file_system : public File_system
 
 		Symlink_result symlink(char const *from, char const *to) override
 		{
+			Genode::debug("Fs_file_system::symlink(): from: ",
+			            Genode::Cstring(from), ", to: ",
+			            Genode::Cstring(to));
 			/*
 			 * We write to the symlink via the packet stream. Hence we need
 			 * to serialize with other packet-stream operations.
@@ -719,6 +767,8 @@ class Vfs::Fs_file_system : public File_system
 
 				Fs_handle_guard symlink_guard(*this, _fs, symlink_handle, _handle_space, _fs);
 				_write(symlink_guard, from, strlen(from) + 1, 0);
+
+Genode::debug("Fs_file_system::symlink(): _write() returned");
 			}
 			catch (::File_system::Invalid_handle)      { return SYMLINK_ERR_NO_ENTRY; }
 			catch (::File_system::Node_already_exists) { return SYMLINK_ERR_EXISTS;   }
@@ -820,6 +870,8 @@ class Vfs::Fs_file_system : public File_system
 		Opendir_result opendir(char const *path, bool create,
 		                       Vfs_handle **out_handle, Allocator &alloc) override
 		{
+			Genode::debug("Fs_file_system::opendir(): path: ", Genode::Cstring(path));
+
 			Lock::Guard guard(_lock);
 
 			Absolute_path dir_path(path);
@@ -845,6 +897,8 @@ class Vfs::Fs_file_system : public File_system
 		Openlink_result openlink(char const *path, bool create,
 		                         Vfs_handle **out_handle, Allocator &alloc) override
 		{
+			Genode::debug("Fs_file_system::openlink()");
+
 			Lock::Guard guard(_lock);
 
 			/*
@@ -925,6 +979,7 @@ class Vfs::Fs_file_system : public File_system
 		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
 		                 file_size &out_count) override
 		{
+			Genode::debug("Fs_file_system::read()");
 			Lock::Guard guard(_lock);
 
 			Fs_vfs_handle &handle = static_cast<Fs_vfs_handle &>(*vfs_handle);
@@ -940,6 +995,9 @@ class Vfs::Fs_file_system : public File_system
 		bool queue_read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			Lock::Guard guard(_lock);
+
+			Genode::debug("Fs_file_system::queue_read(): context: ",
+			            vfs_handle->context);
 
 			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 
