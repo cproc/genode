@@ -180,7 +180,7 @@ append config {
 }
 
 append config {
-	<start name="noux" caps="1000">
+	<start name="noux" caps="2000">
 		<resource name="RAM" quantum="1G" />
 }
 

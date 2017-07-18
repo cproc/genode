@@ -18,11 +18,117 @@
 #include <rom_session/connection.h>
 #include <base/rpc_server.h>
 
+/* Noux includes */
+#include "vfs_io_channel.h"
+
 namespace Noux {
 
+	struct Vfs_dataspace;
 	struct Rom_dataspace_info;
 	class Rom_session_component;
 }
+
+
+/**
+ * Dataspace obtained from the VFS
+ */
+struct Noux::Vfs_dataspace
+{
+	typedef Child_policy::Name Name;
+
+	Vfs::Dir_file_system &root_dir;
+
+	Name                 const name;
+	Genode::Ram_session &ram;
+	Genode::Region_map  &rm;
+	Genode::Allocator   &alloc;
+
+	Dataspace_capability  ds;
+	bool                  got_ds_from_vfs { true };
+
+	Vfs_dataspace(Vfs::Dir_file_system &root_dir, Name const &name,
+			      Genode::Ram_session &ram, Genode::Region_map &rm,
+			      Genode::Allocator &alloc)
+	:
+		root_dir(root_dir), name(name), ram(ram), rm(rm), alloc(alloc)
+	{
+		ds = root_dir.dataspace(name.string());
+
+		if (!ds.valid()) {
+
+			got_ds_from_vfs = false;
+
+			Vfs::Directory_service::Stat stat_out;
+			if (root_dir.stat(name.string(), stat_out) != Vfs::Directory_service::STAT_OK)
+				return;
+
+			Vfs::Vfs_handle *file;
+			if (root_dir.open(name.string(),
+					          Vfs::Directory_service::OPEN_MODE_RDONLY,
+					          &file,
+					          alloc) != Vfs::Directory_service::OPEN_OK)
+				return;
+
+			Vfs_handle_context context;
+			file->context = &context;
+
+			ds = ram.alloc(stat_out.size);
+
+			char *addr = rm.attach(static_cap_cast<Genode::Ram_dataspace>(ds));
+
+			for (Vfs::file_size bytes_read = 0; bytes_read < stat_out.size; ) {
+
+				while (!file->fs().queue_read(file, stat_out.size - bytes_read))
+				{
+					/*
+					 * XXX: block until generic io response, ideally after
+					 *      release_packet()
+					 */
+				}
+
+				context.wait_for_completion();
+
+				Vfs::File_io_service::Read_result read_result;
+
+				Vfs::file_size out_count;
+
+				for (;;) {
+					read_result = file->fs().complete_read(file, addr + bytes_read,
+						                               	   stat_out.size,
+						                               	   out_count);
+					Genode::warning("Vfs_dataspace(): size: ", stat_out.size,
+				                	", out_count: ", out_count);
+					if (read_result != Vfs::File_io_service::READ_QUEUED)
+						break;
+
+					context.wait_for_completion();
+				}
+
+				if (read_result != Vfs::File_io_service::READ_OK) {
+					Genode::error("Error reading dataspace from VFS");
+					rm.detach(addr);
+					ram.free(static_cap_cast<Genode::Ram_dataspace>(ds));
+					root_dir.close(file);
+					return;
+				}
+
+				bytes_read += out_count;
+				file->advance_seek(out_count);
+			}
+
+			rm.detach(addr);
+			root_dir.close(file);
+		}
+	}
+
+	~Vfs_dataspace()
+	{
+		if (got_ds_from_vfs)
+			root_dir.release(name.string(), ds);
+		else
+			ram.free(static_cap_cast<Genode::Ram_dataspace>(ds));
+	}
+};
 
 
 struct Noux::Rom_dataspace_info : Dataspace_info
@@ -69,24 +175,6 @@ class Noux::Rom_session_component : public Rpc_object<Rom_session>
 		Vfs::Dir_file_system &_root_dir;
 		Dataspace_registry   &_ds_registry;
 
-		/**
-		 * Dataspace obtained from the VFS
-		 */
-		struct Vfs_dataspace
-		{
-			Vfs::Dir_file_system &root_dir;
-
-			Name                 const name;
-			Dataspace_capability const ds;
-
-			Vfs_dataspace(Vfs::Dir_file_system &root_dir, Name const &name)
-			:
-				root_dir(root_dir), name(name), ds(root_dir.dataspace(name.string()))
-			{ }
-
-			~Vfs_dataspace() { root_dir.release(name.string(), ds); }
-		};
-
 		Constructible<Vfs_dataspace> _rom_from_vfs;
 
 		/**
@@ -97,7 +185,8 @@ class Noux::Rom_session_component : public Rpc_object<Rom_session>
 		Dataspace_capability _init_ds_cap(Env &env, Name const &name)
 		{
 			if (name.string()[0] == '/') {
-				_rom_from_vfs.construct(_root_dir, name);
+				_rom_from_vfs.construct(_root_dir, name, env.ram(), env.rm(),
+				                        _alloc);
 				return _rom_from_vfs->ds;
 			}
 

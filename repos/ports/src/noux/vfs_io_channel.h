@@ -18,8 +18,29 @@
 #include <io_channel.h>
 #include <vfs/dir_file_system.h>
 
-namespace Noux { struct Vfs_io_channel; }
+namespace Noux {
+	class Vfs_handle_context;
+	struct Vfs_io_channel;
+}
 
+class Noux::Vfs_handle_context : public Vfs::Vfs_handle::Context
+{
+	private:
+
+		Genode::Semaphore _sem;
+
+	public:
+
+		void wait_for_completion()
+		{
+			_sem.down();
+		}
+
+		void complete()
+		{
+			_sem.up();
+		}
+};
 
 struct Noux::Vfs_io_channel : Io_channel
 {
@@ -35,6 +56,8 @@ struct Noux::Vfs_io_channel : Io_channel
 	Absolute_path _path;
 	Absolute_path _leaf_path;
 
+	Vfs_handle_context _context;
+
 	Vfs_io_channel(char const *path, char const *leaf_path,
 	               Vfs::Dir_file_system *root_dir, Vfs::Vfs_handle *vfs_handle,
 	               Entrypoint &ep)
@@ -42,6 +65,7 @@ struct Noux::Vfs_io_channel : Io_channel
 		_read_avail_handler(ep, *this, &Vfs_io_channel::_handle_read_avail),
 		_fh(vfs_handle), _path(path), _leaf_path(leaf_path)
 	{
+		_fh->context = &_context;
 		_fh->fs().register_read_ready_sigh(_fh, _read_avail_handler);
 	}
 
@@ -55,7 +79,8 @@ struct Noux::Vfs_io_channel : Io_channel
 		Vfs::file_size out_count = 0;
 
 		sysio.error.write = _fh->fs().write(_fh, sysio.write_in.chunk,
-	                                         sysio.write_in.count, out_count);
+		                                    sysio.write_in.count, out_count);
+
 		if (sysio.error.write != Vfs::File_io_service::WRITE_OK)
 			return false;
 
@@ -73,7 +98,20 @@ struct Noux::Vfs_io_channel : Io_channel
 
 		Vfs::file_size out_count = 0;
 
-		sysio.error.read = _fh->fs().read(_fh, sysio.read_out.chunk, count, out_count);
+		if (!_fh->fs().queue_read(_fh, count)) {
+			sysio.error.read = Vfs::File_io_service::READ_ERR_INTERRUPT;
+			return false;
+		}
+
+		for (;;) {
+
+			sysio.error.read = _fh->fs().complete_read(_fh, sysio.read_out.chunk, count, out_count);
+
+			if (sysio.error.read != Vfs::File_io_service::READ_QUEUED)
+				break;
+
+			_context.wait_for_completion();
+		}
 
 		if (sysio.error.read != Vfs::File_io_service::READ_OK)
 			return false;
@@ -140,6 +178,7 @@ struct Noux::Vfs_io_channel : Io_channel
 		 * Return artificial dir entries for "." and ".."
 		 */
 		unsigned const index = _fh->seek() / sizeof(Sysio::Dirent);
+
 		if (index < 2) {
 			sysio.dirent_out.entry.type = Vfs::Directory_service::DIRENT_TYPE_DIRECTORY;
 			strncpy(sysio.dirent_out.entry.name,
@@ -148,17 +187,55 @@ struct Noux::Vfs_io_channel : Io_channel
 
 			sysio.dirent_out.entry.fileno = 1;
 			_fh->advance_seek(sizeof(Sysio::Dirent));
+
 			return true;
 		}
 
 		/*
 		 * Delegate remaining dir-entry request to the actual file system.
 		 * Align index range to zero when calling the directory service.
+		 * The VFS library interprets the seek offset as index.
 		 */
 
 		Vfs::Directory_service::Dirent dirent;
-		if (!_fh->ds().dirent(_path.base(), index - 2, dirent))
-			return false;
+
+		Vfs::file_size noux_dirent_seek = _fh->seek();
+		_fh->seek((index - 2) * sizeof(dirent));
+
+		Vfs::file_size const count = sizeof(dirent);
+
+		for (;;) {
+
+			if (_fh->fs().queue_read(_fh, count))
+				break;
+
+			/*
+			 * XXX: block until generic io response, ideally after
+			 *      release_packet()
+			 */
+		}
+
+		Vfs::File_io_service::Read_result read_result;
+		Vfs::file_size out_count = 0;
+
+		for (;;) {
+
+			read_result = _fh->fs().complete_read(_fh, (char*)&dirent,
+			                                      count, out_count);
+
+			if (read_result != Vfs::File_io_service::READ_QUEUED)
+				break;
+
+			_context.wait_for_completion();
+		}
+
+		if ((read_result != Vfs::File_io_service::READ_OK) ||
+		    (out_count != sizeof(dirent))) {
+		    dirent = Vfs::Directory_service::Dirent();
+		}
+
+		_fh->seek(noux_dirent_seek);
+
 		sysio.dirent_out.entry = dirent;
 
 		_fh->advance_seek(sizeof(Sysio::Dirent));
@@ -192,8 +269,10 @@ struct Noux::Vfs_io_channel : Io_channel
 	bool lseek(Sysio &sysio) override
 	{
 		switch (sysio.lseek_in.whence) {
-		case Sysio::LSEEK_SET: _fh->seek(sysio.lseek_in.offset); break;
-		case Sysio::LSEEK_CUR: _fh->advance_seek(sysio.lseek_in.offset); break;
+		case Sysio::LSEEK_SET:
+			_fh->seek(sysio.lseek_in.offset); break;
+		case Sysio::LSEEK_CUR:
+			_fh->advance_seek(sysio.lseek_in.offset); break;
 		case Sysio::LSEEK_END:
 			off_t offset = sysio.lseek_in.offset;
 			sysio.fstat_in.fd = sysio.lseek_in.fd;
@@ -201,6 +280,7 @@ struct Noux::Vfs_io_channel : Io_channel
 			break;
 		}
 		sysio.lseek_out.offset = _fh->seek();
+
 		return true;
 	}
 
