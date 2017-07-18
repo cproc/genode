@@ -217,6 +217,8 @@ struct Noux::Main
 	{
 		void handle_io_response(Vfs::Vfs_handle::Context *context) override
 		{
+			Genode::debug("handle_io_response(): context: ", context);
+
 			/*
 			 * The local 'Rom_session_component' uses the VFS, but does not set
 			 * a context.
@@ -225,7 +227,9 @@ struct Noux::Main
 				return;
 
 			Vfs_handle_context *vfs_handle_context = static_cast<Vfs_handle_context*>(context);
+			Genode::debug("handle_io_response(): calling vfs_handle_context->complete()");
 			vfs_handle_context->complete();
+			Genode::debug("handle_io_response(): finished");
 		}
 	} _io_response_handler;
 

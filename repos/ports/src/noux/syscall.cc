@@ -53,6 +53,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				size_t const count_in = _sysio.write_in.count;
 
 				for (size_t offset = 0; offset != count_in; ) {
+Genode::debug("PID ", pid(), " -> SYSCALL_WRITE: ", _sysio.write_in.fd);
 					Shared_pointer<Io_channel> io = _lookup_channel(_sysio.write_in.fd);
 
 					if (!io->nonblocking())
@@ -79,6 +80,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READ:
 			{
+Genode::debug("PID ", pid(), " -> SYSCALL_READ: ", _sysio.read_in.fd);
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio.read_in.fd);
 
 				if (!io->nonblocking())
@@ -139,10 +141,11 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_FSTAT:
 			{
+				Genode::debug("SYSCALL_FSTAT: ", _sysio.fstat_in.fd);
 				Shared_pointer<Io_channel> io = _lookup_channel(_sysio.fstat_in.fd);
 
 				result = io->fstat(_sysio);
-
+Genode::debug("SYSCALL_FSTAT: result: ", result);
 				if (result) {
 					Sysio::Path path;
 
@@ -175,7 +178,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			break;
 
 		case SYSCALL_OPEN:
-			{
+			{	Genode::debug("PID ", pid(), " -> SYSCALL_OPEN: ", Genode::Cstring(_sysio.open_in.path));
+
 				Vfs::Vfs_handle *vfs_handle = 0;
 
 				if (_root_dir.directory(_sysio.open_in.path)) {
@@ -236,7 +240,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 					_heap);
 
 				_sysio.open_out.fd = add_io_channel(channel);
-
+				Genode::debug("PID ", pid(), " -> SYSCALL_OPEN: ", _sysio.open_out.fd);
 				result = true;
 				break;
 			}
@@ -296,11 +300,12 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				binary_ds.destruct();
 
 				try {
+Genode::debug("PID ", pid(), ": SYSCALL_EXECVE: calling execve_child()");
 					_parent_execve.execve_child(*this,
 					                            child_env.binary_name(),
 					                            child_env.args(),
 					                            child_env.env());
-
+Genode::debug("PID ", pid(), ": SYSCALL_EXECVE finished");
 					/*
 					 * 'return' instead of 'break' to skip possible signal delivery,
 					 * which might cause the old child process to exit itself
@@ -606,7 +611,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 				_sysio.pipe_out.fd[0] = add_io_channel(pipe_source);
 				_sysio.pipe_out.fd[1] = add_io_channel(pipe_sink);
-
+Genode::debug("PID ", pid(), ": SYSCALL_PIPE: ", _sysio.pipe_out.fd[0], "/", _sysio.pipe_out.fd[1]);
 				result = true;
 				break;
 			}
@@ -631,6 +636,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_READLINK:
 		{
+			Genode::debug("SYSCALL_READLINK: ", Genode::Cstring(_sysio.readlink_in.path));
+
 			Vfs::Vfs_handle *symlink_handle { 0 };
 
 			Vfs::Directory_service::Openlink_result openlink_result =
@@ -654,6 +661,7 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			    	                   sizeof(_sysio.readlink_out.chunk));
 
 			for (;;) {
+				Genode::debug("SYSCALL_READLINK: calling queue_read()");
 				if (symlink_handle->fs().queue_read(symlink_handle, count))
 			    	break;
 
@@ -671,6 +679,8 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 			Vfs::File_io_service::Read_result read_result;
 
 			for (;;) {
+				Genode::debug("SYSCALL_READLINK: calling complete_read()");
+
 				read_result = symlink_handle->fs().complete_read(symlink_handle,
 				                                                 _sysio.readlink_out.chunk,
 				                                                 count,
@@ -679,7 +689,9 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				if (read_result != Vfs::File_io_service::READ_QUEUED)
 					break;
 
+				Genode::debug("SYSCALL_READLINK: blocking for complete_read()");
 				context.wait_for_completion();
+				Genode::debug("SYSCALL_READLINK: unblocked for complete_read()");
 			}
 
 			symlink_handle->ds().close(symlink_handle);
@@ -946,6 +958,6 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 		   (_sysio.pending_signals.avail_capacity() > 0)) {
 		_sysio.pending_signals.add(_pending_signals.get());
 	}
-
+//Genode::debug("PID ", pid(), ": syscall finished");
 	return result;
 }

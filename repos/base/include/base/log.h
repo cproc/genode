@@ -107,6 +107,8 @@ namespace Genode {
 	template <typename... ARGS>
 	void log(ARGS &&... args) { Log::log().output(Log::LOG, args...); }
 
+	template <typename... ARGS>
+	void debug(ARGS &&... args) { }
 
 	/**
 	 * Write 'args' as a warning message to the log
