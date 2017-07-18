@@ -474,6 +474,8 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 		void sync(Node_handle handle) override
 		{
+			_process_packets();
+
 			auto sync_fn = [&] (Open_node &open_node) {
 				open_node.node().notify_listeners();
 			};
