@@ -220,13 +220,18 @@ struct Noux::Main
 
 		void handle_io_response(Vfs::Vfs_handle::Context *context) override
 		{
+			Genode::debug("handle_io_response(): context: ", context);
+
 			if (context) {
 				Vfs_handle_context *vfs_handle_context = static_cast<Vfs_handle_context*>(context);
+				Genode::debug("handle_io_response(): calling vfs_handle_context->ivfs_io_waiter.wakeup()");
 				vfs_handle_context->vfs_io_waiter.wakeup();
+				Genode::debug("handle_io_response(): finished");
 				return;
 			}
 
 			io_waiter_registry.for_each([](Vfs_io_waiter &r) {
+				Genode::debug("handle_io_response(): calling r.wakeup()");
 				r.wakeup();
 			});
 		}

@@ -117,6 +117,7 @@ append_if [have_spec framebuffer] config {
 	<start name="fb_drv" caps="200">
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Framebuffer"/></provides>
+		<config width="800" height="600"/>
 	</start>}
 
 append_if [have_spec ps2] config {
@@ -137,7 +138,7 @@ append config {
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Terminal"/></provides>
 		<config>
-			<keyboard layout="de"/>
+			<keyboard layout="en"/>
 		</config>
 	</start>
 	<start name="ram_fs" caps="200">
@@ -180,12 +181,12 @@ append config {
 }
 
 append config {
-	<start name="noux" caps="2000">
+	<start name="noux" caps="32000">
 		<resource name="RAM" quantum="1G" />
 }
 
 if {![info exists verbose_mode]} {set verbose_mode "yes"}
-append config " <config verbose=\"$verbose_mode\">"
+append config " <config ld_verbose=\"yes\" verbose=\"$verbose_mode\" verbose_syscalls=\"false\">"
 
 append config {
 			<fstab>
