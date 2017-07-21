@@ -74,6 +74,11 @@ struct Noux::Vfs_io_channel : Io_channel
 	~Vfs_io_channel()
 	{
 		Genode::debug("~Vfs_io_channel(): ", this);
+		while (!_fh->ds().sync("/"))
+		{
+			/* XXX: block until generic IO response */
+		}
+
 		_fh->ds().close(_fh);
 	}
 
@@ -81,10 +86,16 @@ struct Noux::Vfs_io_channel : Io_channel
 	{
 		Genode::debug("Vfs_io_channel::write(): count: ", sysio.write_in.count,
 		            ", seek: ", _fh->seek());
+		Vfs::file_size count = sysio.write_in.count;
 		Vfs::file_size out_count = 0;
 
-		sysio.error.write = _fh->fs().write(_fh, sysio.write_in.chunk,
-		                                    sysio.write_in.count, out_count);
+		/* XXX: this might not be the best place for the loop */
+		do {
+			sysio.error.write = _fh->fs().write(_fh, sysio.write_in.chunk,
+			                                    count, out_count);
+		} while ((out_count == 0) && (count != 0));
+
+//		while (!_fh->ds().sync("/"));
 
 		if (sysio.error.write != Vfs::File_io_service::WRITE_OK)
 			return false;
@@ -138,7 +149,13 @@ Genode::debug("Vfs_io_channel::write(): new seek: ", _fh->seek());
 		 * 'sysio.stat_in' is not used in '_fh->ds().stat()',
 		 * so no 'sysio' member translation is needed here
 		 */
+
+		while (!_fh->ds().sync(_leaf_path.base())) {
+			/* XXX: block until generic IO response */
+		}
+
 		Vfs::Directory_service::Stat stat;
+
 		sysio.error.stat =  _fh->ds().stat(_leaf_path.base(), stat);
 		sysio.fstat_out.st = stat;
 
@@ -223,7 +240,7 @@ Genode::debug("Vfs_io_channel::write(): new seek: ", _fh->seek());
 				break;
 
 			/*
-			 * XXX: block until generic io response, ideally after
+			 * XXX: block until generic IO response, ideally after
 			 *      release_packet()
 			 */
 		}

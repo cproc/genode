@@ -373,6 +373,35 @@ Genode::debug("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->na
 
 		Post_signal_hook _post_signal_hook { _env.ep(), _io_handler };
 
+		class Synchronized_count
+		{
+			private:
+
+				unsigned int _count { 0 };
+				Lock         _lock;
+
+			public:
+
+				void inc()
+				{
+					Lock::Guard guard(_lock);
+					_count++;
+				}
+
+				void dec()
+				{
+					Lock::Guard guard(_lock);
+					_count--;
+				}
+
+				unsigned int operator()()
+				{
+					Lock::Guard guard(_lock);
+					return _count;
+				}
+
+		} _write_acks_pending;
+
 		file_size _read(Fs_vfs_handle &handle, void *buf,
 		                file_size const count, file_size const seek_offset)
 		{
@@ -450,10 +479,8 @@ Genode::debug("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->na
 
 				/* pass packet to server side */
 				Genode::debug("Fs_file_system::_write(): submitting packet");
+				_write_acks_pending.inc();
 				source.submit_packet(packet_in);
-
-				/* XXX: sync only when needed (in status(), etc.) */
-				_fs.sync(handle.file_handle());
 
 				Genode::debug("Fs_file_system::_write(): packet submitted");
 			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
@@ -514,6 +541,7 @@ Genode::debug("Fs_vfs_dir_handle::complete_read(): ", Genode::Cstring(dirent->na
 				if (packet.operation() == Packet_descriptor::WRITE) {
 					Lock::Guard guard(_lock);
 					source.release_packet(packet);
+					_write_acks_pending.dec();
 				}
 			}
 			Genode::debug("Fs_file_system::_handle_ack(): finished");
@@ -562,8 +590,6 @@ Genode::debug("Fs_file_system::dataspace(): path: ", Genode::Cstring(path), ", r
 			try {
 				::File_system::Node_handle node = _fs.node(path);
 				Fs_handle_guard node_guard(*this, _fs, node, _handle_space, _fs);
-				/* let the server process any pending requests */
-				_fs.sync(node);
 				status = _fs.status(node);
 			}
 			catch (::File_system::Lookup_failed) { return STAT_ERR_NO_ENTRY; }
@@ -950,13 +976,23 @@ Genode::debug("Fs_file_system::symlink(): _write() returned");
 		static char const *name()   { return "fs"; }
 		char const *type() override { return "fs"; }
 
-		void sync(char const *path) override
+		bool sync(char const *path) override
 		{
+			if (strcmp(path, "") == 0)
+				path = "/";
+
+			if (_write_acks_pending()) {
+				Genode::error("Fs_file_system::sync(): acks pending");
+				return false;
+			}
+
 			try {
 				::File_system::Node_handle node = _fs.node(path);
 				_fs.sync(node);
 				_fs.close(node);
 			} catch (...) { }
+
+			return true;
 		}
 
 

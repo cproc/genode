@@ -96,6 +96,10 @@ struct Vfs::Directory_service
 
 	/**
 	 * Close handle resources and deallocate handle
+	 *
+	 * Note: it might be necessary to call 'sync()' before 'close()'
+	 *       to ensure that previously written data has been completely
+	 *       processed.
 	 */
 	virtual void close(Vfs_handle *handle) = 0;
 
@@ -128,6 +132,10 @@ struct Vfs::Directory_service
 	enum Stat_result { STAT_ERR_NO_ENTRY = NUM_GENERAL_ERRORS,
 	                   STAT_ERR_NO_PERM, STAT_OK };
 
+	/*
+	 * Note: it might be necessary to call 'sync()' before 'stat()'
+	 *       to get the correct file size.
+	 */
 	virtual Stat_result stat(char const *path, Stat &) = 0;
 
 
@@ -226,8 +234,10 @@ struct Vfs::Directory_service
 	 * Synchronize file system
 	 *
 	 * This method flushes any delayed operations from the file system.
+	 *
+	 * \return true if successful, false if not successful
 	 */
-	virtual void sync(char const *path) { }
+	virtual bool sync(char const *path) { return true; }
 };
 
 #endif /* _INCLUDE__VFS__DIRECTORY_SERVICE_H_ */

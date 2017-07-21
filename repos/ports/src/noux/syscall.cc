@@ -118,6 +118,10 @@ Genode::debug("PID ", pid(), " -> SYSCALL_READ: ", _sysio.read_in.fd);
 				size_t   path_len  = strlen(_sysio.stat_in.path);
 				uint32_t path_hash = hash_path(_sysio.stat_in.path, path_len);
 
+				while (!_root_dir.sync(_sysio.stat_in.path)) {
+					/* XXX: block until generic IO response */
+				}
+
 				Vfs::Directory_service::Stat stat_out;
 				_sysio.error.stat = _root_dir.stat(_sysio.stat_in.path, stat_out);
 
@@ -666,7 +670,7 @@ Genode::debug("PID ", pid(), ": SYSCALL_PIPE: ", _sysio.pipe_out.fd[0], "/", _sy
 			    	break;
 
 				/*
-				 * XXX: block until generic io response, ideally after
+				 * XXX: block until generic IO response, ideally after
 				 *      release_packet()
 				 */
 			}
@@ -784,13 +788,18 @@ Genode::debug("PID ", pid(), ": SYSCALL_PIPE: ", _sysio.pipe_out.fd[0], "/", _sy
 					break;
 
 				/*
-				 * XXX: block until generic io response, ideally after
+				 * XXX: block until generic IO response, ideally after
 				 *      release_packet()
 				 */
 			}
 
 			if (out_count < count)
 				_sysio.error.symlink = Symlink_result::SYMLINK_ERR_NO_SPACE;
+
+			while (!_root_dir.sync("/"))
+			{
+				/* XXX: block until generic IO response */
+			}
 
 			symlink_handle->ds().close(symlink_handle);
 

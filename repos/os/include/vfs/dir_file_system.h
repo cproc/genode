@@ -773,20 +773,24 @@ class Vfs::Dir_file_system : public File_system
 		/**
 		 * Synchronize all file systems
 		 */
-		void sync(char const *path) override
+		bool sync(char const *path) override
 		{
 			if (strcmp("/", path, 2) == 0) {
 				for (File_system *fs = _first_file_system; fs; fs = fs->next)
-					fs->sync("/");
-				return;
+					if (!fs->sync("/"))
+						return false;
+				return true;
 			}
 
 			path = _sub_path(path);
 			if (!path)
-				return;
+				return true;
 
 			for (File_system *fs = _first_file_system; fs; fs = fs->next)
-				fs->sync(path);
+				if (!fs->sync(path))
+					return false;
+
+			return true;
 		}
 
 		void apply_config(Genode::Xml_node const &node) override
