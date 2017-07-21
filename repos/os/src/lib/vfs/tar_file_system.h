@@ -435,12 +435,19 @@ class Vfs::Tar_file_system : public File_system
 
 		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
 		{
+			Genode::debug("Tar_file_system::dirent(): ", Genode::Cstring(path),
+			            "index: ", index);
+
 			Node const *node = dereference(path);
+
+			Genode::debug("Tar_file_system::dirent(): node: ", node);
 
 			if (!node)
 				return DIRENT_ERR_INVALID_PATH;
 
 			node = node->lookup_child(index);
+
+			Genode::debug("Tar_file_system::dirent(): child node: ", node);
 
 			if (!node) {
 				out.type = DIRENT_TYPE_END;
@@ -564,11 +571,15 @@ class Vfs::Tar_file_system : public File_system
 
 		Opendir_result opendir(char const *path, bool create, Vfs_handle **out_handle, Genode::Allocator& alloc) override
 		{
+			Genode::debug("Tar_file_system::opendir(): ", Genode::Cstring(path));
+
 			Node const *node = dereference(path);
 	
 			if (!node ||
 			    (node->record && (node->record->type() != Record::TYPE_DIR)))
 				return OPENDIR_ERR_LOOKUP_FAILED;
+
+			Genode::debug("Tar_file_system::opendir(): found: ", node->record);
 
 			*out_handle = new (alloc) Tar_vfs_handle(*this, alloc, 0, node);
 
@@ -626,6 +637,8 @@ class Vfs::Tar_file_system : public File_system
 		Read_result complete_read(Vfs_handle *vfs_handle, char *dst,
 		                          file_size count, file_size &out_count) override
 		{
+			Genode::debug("Tar_file_system::complete_read()");
+			
 			if (count < sizeof(Dirent))
 				return READ_ERR_INVALID;
 
@@ -636,6 +649,8 @@ class Vfs::Tar_file_system : public File_system
 			if (!handle->record() ||
 			    (handle->record()->type() == Record::TYPE_DIR)) {
 
+	   			Genode::debug("Tar_file_system::complete_read(): directory");
+
 				Dirent *dirent = (Dirent*)dst;
 
 				/* initialize */
@@ -644,6 +659,8 @@ class Vfs::Tar_file_system : public File_system
 				file_offset index = handle->seek() / sizeof(Dirent);
 
 				Node const *node = handle->node()->lookup_child(index);
+
+				Genode::debug("Tar_file_system::dirent(): child node: ", node);
 
 				if (!node)
 					return READ_OK;
@@ -683,8 +700,9 @@ class Vfs::Tar_file_system : public File_system
 
 			} else {
 
+	   			Genode::debug("Tar_file_system::complete_read(): file or symlink");
+
 				return read(vfs_handle, dst, count, out_count);
-				
 			}
 		}
 

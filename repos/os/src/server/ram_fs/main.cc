@@ -76,15 +76,21 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
+			Genode::debug("READ");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().read((char *)content, length, packet.position());
+			Genode::debug("READ finished");
+
 				break;
 
 			case Packet_descriptor::WRITE:
+			Genode::debug("WRITE");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().write((char const *)content, length, packet.position());
 
 				open_node.mark_as_written();
+			Genode::debug("WRITE finished");
+
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
@@ -103,6 +109,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 			packet.length(res_length);
 			packet.succeeded(res_length > 0);
+			Genode::debug("_process_packet_op(): calling acknowledge_packet()");
 			tx_sink()->acknowledge_packet(packet);
 		}
 
@@ -141,8 +148,10 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 				 * of the main thread. The main thread is however needed
 				 * for receiving any subsequent 'ready-to-ack' signals.
 				 */
-				if (!tx_sink()->ready_to_ack())
+				if (!tx_sink()->ready_to_ack()) {
+					//Genode::warning("Ram_fs::sync(): cannot ack");
 					return;
+				}
 
 				_process_packet();
 			}
@@ -250,6 +259,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 		Symlink_handle symlink(Dir_handle dir_handle, Name const &name, bool create)
 		{
+			Genode::debug("Ram_fs::symlink(): name: ", Genode::Cstring(name.string()), ", create: ", create);
 			if (!valid_name(name.string()))
 				throw Invalid_name();
 
@@ -294,7 +304,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 		Dir_handle dir(Path const &path, bool create)
 		{
 			char const *path_str = path.string();
-
+Genode::debug("Ram_fs::dir(): path: ", path_str);
 			_assert_valid_path(path_str);
 
 			/* skip leading '/' */
@@ -356,6 +366,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 		Status status(Node_handle node_handle)
 		{
+			Genode::debug("Ram_fs::status()");
 			auto status_fn = [&] (Open_node &open_node) {
 				return open_node.node().status(); };
 

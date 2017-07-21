@@ -57,6 +57,7 @@ struct Noux::Vfs_io_channel : Io_channel
 
 	void _handle_read_avail()
 	{
+		Genode::debug("_handle_read_avail()");
 		Io_channel::invoke_all_notifiers();
 	}
 
@@ -78,12 +79,15 @@ struct Noux::Vfs_io_channel : Io_channel
 		_fh(vfs_handle), _vfs_io_waiter_registry(vfs_io_waiter_registry),
 		_path(path), _leaf_path(leaf_path)
 	{
+		Genode::debug("Vfs_io_channel(): ", Genode::Cstring(path));
 		_fh->context = &_context;
 		_fh->fs().register_read_ready_sigh(_fh, _read_avail_handler);
 	}
 
 	~Vfs_io_channel()
 	{
+		Genode::debug("~Vfs_io_channel(): ", this);
+
 		Registered_no_delete<Vfs_io_waiter>
 			vfs_io_waiter(_vfs_io_waiter_registry);
 
@@ -98,6 +102,9 @@ struct Noux::Vfs_io_channel : Io_channel
 
 	bool write(Sysio &sysio, size_t &offset) override
 	{
+		Genode::debug("Vfs_io_channel::write(): count: ", sysio.write_in.count,
+		            ", seek: ", _fh->seek());
+
 		Vfs::file_size count = sysio.write_in.count;
 		Vfs::file_size out_count = 0;
 
@@ -116,8 +123,9 @@ struct Noux::Vfs_io_channel : Io_channel
 
 		if (sysio.error.write != Vfs::File_io_service::WRITE_OK)
 			return false;
-
+Genode::debug("Vfs_io_channel::write(): out_count: ", out_count);
 		_fh->advance_seek(out_count);
+Genode::debug("Vfs_io_channel::write(): new seek: ", _fh->seek());
 
 		sysio.write_out.count = out_count;
 		offset = out_count;
@@ -127,6 +135,7 @@ struct Noux::Vfs_io_channel : Io_channel
 
 	bool read(Sysio &sysio) override
 	{
+		Genode::debug("Vfs_io_channel::read()");
 		size_t count = min(sysio.read_in.count, sizeof(sysio.read_out.chunk));
 
 		Vfs::file_size out_count = 0;
@@ -144,7 +153,9 @@ struct Noux::Vfs_io_channel : Io_channel
 			if (sysio.error.read != Vfs::File_io_service::READ_QUEUED)
 				break;
 
+			Genode::debug("Vfs_io_channel::read(): blocking for complete_read()");
 			_context.vfs_io_waiter.wait_for_io();
+			Genode::debug("Vfs_io_channel::read(): unblocked for complete_read()");
 		}
 
 		if (sysio.error.read != Vfs::File_io_service::READ_OK)
@@ -220,6 +231,10 @@ struct Noux::Vfs_io_channel : Io_channel
 		 * Return artificial dir entries for "." and ".."
 		 */
 		unsigned const index = _fh->seek() / sizeof(Sysio::Dirent);
+
+		Genode::debug("Vfs_io_channel::dirent(): ", Genode::Cstring(_path.base()),
+		            ", index: ", index);
+
 		if (index < 2) {
 			sysio.dirent_out.entry.type = Vfs::Directory_service::DIRENT_TYPE_DIRECTORY;
 			strncpy(sysio.dirent_out.entry.name,
@@ -228,6 +243,7 @@ struct Noux::Vfs_io_channel : Io_channel
 
 			sysio.dirent_out.entry.fileno = 1;
 			_fh->advance_seek(sizeof(Sysio::Dirent));
+			Genode::debug("Vfs_io_channel::dirent(): .. or .");
 			return true;
 		}
 
@@ -260,13 +276,17 @@ struct Noux::Vfs_io_channel : Io_channel
 			if (read_result != Vfs::File_io_service::READ_QUEUED)
 				break;
 
+			Genode::debug("Vfs_io_channel::dirent(): blocking for complete_read()");
 			_context.vfs_io_waiter.wait_for_io();
+			Genode::debug("Vfs_io_channel::dirent(): unblocked for complete_read()");
 		}
 
 		if ((read_result != Vfs::File_io_service::READ_OK) ||
 		    (out_count != sizeof(dirent))) {
 		    dirent = Vfs::Directory_service::Dirent();
 		}
+
+		Genode::debug("Vfs_io_channel::dirent(): finished");
 
 		_fh->seek(noux_dirent_seek);
 
@@ -302,16 +322,23 @@ struct Noux::Vfs_io_channel : Io_channel
 
 	bool lseek(Sysio &sysio) override
 	{
+		Genode::debug("Vfs_io_channel::lseek(): ", sysio.lseek_in.offset);
 		switch (sysio.lseek_in.whence) {
-		case Sysio::LSEEK_SET: _fh->seek(sysio.lseek_in.offset); break;
-		case Sysio::LSEEK_CUR: _fh->advance_seek(sysio.lseek_in.offset); break;
+		case Sysio::LSEEK_SET:
+			Genode::debug("Vfs_io_channel::lseek(): LSEEK_SET");
+			_fh->seek(sysio.lseek_in.offset); break;
+		case Sysio::LSEEK_CUR:
+			Genode::debug("Vfs_io_channel::lseek(): LSEEK_CUR");
+			_fh->advance_seek(sysio.lseek_in.offset); break;
 		case Sysio::LSEEK_END:
+			Genode::debug("Vfs_io_channel::lseek(): LSEEK_END");
 			off_t offset = sysio.lseek_in.offset;
 			sysio.fstat_in.fd = sysio.lseek_in.fd;
 			_fh->seek(size(sysio) + offset);
 			break;
 		}
 		sysio.lseek_out.offset = _fh->seek();
+		Genode::debug("Vfs_io_channel::lseek(): new seek: ", _fh->seek());
 		return true;
 	}
 
