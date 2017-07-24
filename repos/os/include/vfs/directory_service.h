@@ -63,8 +63,41 @@ struct Vfs::Directory_service
 	                         Vfs_handle **handle,
 	                         Allocator   &alloc) = 0;
 
+	enum Opendir_result
+	{
+		OPENDIR_ERR_LOOKUP_FAILED,
+		OPENDIR_ERR_NAME_TOO_LONG,
+		OPENDIR_ERR_NODE_ALREADY_EXISTS,
+		OPENDIR_ERR_NO_SPACE,
+		OPENDIR_ERR_PERMISSION_DENIED,
+		OPENDIR_OK
+	};
+
+	virtual Opendir_result opendir(char const *path, bool create,
+	                               Vfs_handle **out_handle, Allocator &alloc)
+	{
+		return OPENDIR_ERR_LOOKUP_FAILED;
+	}
+
+	enum Openlink_result
+	{
+		OPENLINK_ERR_LOOKUP_FAILED,
+		OPENLINK_ERR_PERMISSION_DENIED,
+		OPENLINK_OK
+	};
+
+	virtual Openlink_result openlink(char const *path, bool create,
+	                                 Vfs_handle **out_handle, Allocator &alloc)
+	{
+		return OPENLINK_ERR_LOOKUP_FAILED;
+	}
+
 	/**
 	 * Close handle resources and deallocate handle
+	 *
+	 * Note: it might be necessary to call 'sync()' before 'close()'
+	 *       to ensure that previously written data has been completely
+	 *       processed.
 	 */
 	virtual void close(Vfs_handle *handle) = 0;
 
@@ -97,6 +130,10 @@ struct Vfs::Directory_service
 	enum Stat_result { STAT_ERR_NO_ENTRY = NUM_GENERAL_ERRORS,
 	                   STAT_ERR_NO_PERM, STAT_OK };
 
+	/*
+	 * Note: it might be necessary to call 'sync()' before 'stat()'
+	 *       to get the correct file size.
+	 */
 	virtual Stat_result stat(char const *path, Stat &) = 0;
 
 
@@ -193,8 +230,10 @@ struct Vfs::Directory_service
 	 * Synchronize file system
 	 *
 	 * This method flushes any delayed operations from the file system.
+	 *
+	 * \return true if successful, false if not successful
 	 */
-	virtual void sync(char const *path) { }
+	virtual bool sync(char const *path) { return true; }
 };
 
 #endif /* _INCLUDE__VFS__DIRECTORY_SERVICE_H_ */
