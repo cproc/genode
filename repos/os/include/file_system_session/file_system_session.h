@@ -114,7 +114,7 @@ class File_system::Packet_descriptor : public Genode::Packet_descriptor
 {
 	public:
 
-		enum Opcode { READ, WRITE, CONTENT_CHANGED, READ_READY };
+		enum Opcode { READ, WRITE, CONTENT_CHANGED, READ_READY, SYNC };
 
 	private:
 

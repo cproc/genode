@@ -95,6 +95,10 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 			case Packet_descriptor::READ_READY:
 				/* not supported */
 				break;
+
+			case Packet_descriptor::SYNC:
+				open_node.node().notify_listeners();
+				break;
 			}
 
 			packet.length(res_length);
@@ -150,7 +154,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 		static void _assert_valid_path(char const *path)
 		{
 			if (!path || path[0] != '/') {
-				Genode::warning("malformed path ''", path, "'");
+				Genode::warning("malformed path '", Genode::Cstring(path), "'");
 				throw Lookup_failed();
 			}
 		}

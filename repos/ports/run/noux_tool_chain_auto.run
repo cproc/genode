@@ -59,6 +59,7 @@ source ${genode_dir}/repos/ports/run/noux_tool_chain.inc
 append qemu_args " -m 768 "
 
 # wait until Noux started
+run_genode_until forever
 run_genode_until {\[init -\> noux\].*--- noux started ---} $noux_boot_timeout
 set serial_id [output_spawn_id]
 
