@@ -88,6 +88,7 @@ append boot_modules {
 	stdcxx.lib.so
         libcrypto.lib.so
         libssl.lib.so
+        gallium.lib.so
 	qt5_fs_basic.tar
 }
 
