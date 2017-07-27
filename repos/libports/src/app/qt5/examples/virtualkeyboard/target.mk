@@ -18,4 +18,4 @@ CC_CXX_OPT += -D'MAIN_QML="Basic.qml"'
 
 include $(QT5_REP_DIR)/src/app/qt5/tmpl/target_final.inc
 
-LIBS += qt5_component
+LIBS += qt5_component qt5_qtvirtualkeyboardplugin
