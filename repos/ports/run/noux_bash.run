@@ -78,7 +78,7 @@ append_if [have_spec sdl] config {
 append_platform_drv_config
 
 append_if [have_spec framebuffer] config {
-	<start name="fb_drv">
+	<start name="fb_drv" caps="150">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Framebuffer"/></provides>
 		<config width="640" height="480"/>
@@ -109,7 +109,7 @@ append config {
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Terminal"/></provides>
 		<config>
-			<keyboard layout="de"/>
+			<keyboard layout="en"/>
 			<font size="12" />
 		</config>
 	</start>
@@ -124,6 +124,12 @@ append config {
 				</dir>
 				<dir name="home">
 					<dir name="user">
+						<inline name=".bash_profile">
+							#dd if=/dev/zero of=/tmp/test bs=1M count=1
+							#while true; do ls /tmp; done
+							#ln -s blubb /tmp/blubb2
+							#while true; do ls -l /tmp/blubb2; done
+						</inline>
 						<!-- just a place holder -->
 						<rom name="timer" />
 						<inline name="diff_me_a.txt">
@@ -143,8 +149,11 @@ Hello world !!
 	</start>
 	<start name="noux" caps="1000">
 		<resource name="RAM" quantum="1G" />
-		<config>
+		<config ld_verbose="yes">
 			<fstab>
+				<dir name="test1">
+					<dir name="test2"/>
+				</dir>
 				<tar name="coreutils.tar" />
 				<tar name="vim.tar" />
 				<tar name="diffutils.tar" />
@@ -162,7 +171,8 @@ Hello world !!
 				     directory. -->
 
 				<dir name="ram"> <fs label="root" /> </dir>
-				<dir name="tmp"> <fs label="tmp" /> </dir>
+				<!--<dir name="tmp"> <fs label="tmp" /> </dir>-->
+				<dir name="tmp"> <ram/> </dir>
 
 				<dir name="dev">}
 
@@ -174,6 +184,8 @@ append config {
 			</fstab>
 			<start name="/bin/bash">
 				<env name="TERM" value="linux" />
+				<env name="HOME" value="/home" />
+				<arg value="--login" />
 			</start>
 		</config>
 	</start>
