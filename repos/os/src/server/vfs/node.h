@@ -242,30 +242,9 @@ class Vfs_server::File : public Node
 			switch (op_state) {
 			case Op_state::IDLE:
 
-				if (!_handle->fs().queue_read(_handle, dst, len, out_result, out_count))
+				if (!_handle->fs().queue_read(_handle, len))
 					throw Operation_incomplete();
 
-				switch (out_result) {
-				case Result::READ_OK:
-					op_state = Op_state::IDLE;
-					return out_count;
-
-				case Result::READ_ERR_WOULD_BLOCK:
-				case Result::READ_ERR_AGAIN:
-				case Result::READ_ERR_INTERRUPT:
-					op_state = Op_state::IDLE;
-					throw Operation_incomplete();
-
-				case Result::READ_ERR_IO:
-				case Result::READ_ERR_INVALID:
-					op_state = Op_state::IDLE;
-					/* FIXME revise error handling */
-					return 0;
-
-				case Result::READ_QUEUED:
-					op_state = Op_state::READ_QUEUED;
-					break;
-				}
 				/* fall through */
 
 			case Op_state::READ_QUEUED:

@@ -180,8 +180,11 @@ class Vfs::Rump_file_system : public File_system
 		 ** Directory service interface **
 		 *********************************/
 
-		void sync(char const *path) override {
-			_rump_sync(); }
+		bool sync(char const *path) override
+		{
+			_rump_sync();
+			return true;
+		}
 
 		Genode::Dataspace_capability dataspace(char const *path) override
 		{

@@ -197,6 +197,18 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			case Packet_descriptor::CONTENT_CHANGED:
 				/* The VFS does not track file changes yet */
 				throw Dont_ack();
+
+			case Packet_descriptor::SYNC:
+
+				/**
+				 * Sync the VFS and send any pending signals on the node.
+				 */
+				try {
+					_apply(packet.handle(), [&] (Node &node) {
+						_vfs.sync(node.path());
+					});
+				} catch (...) { }
+				break;
 			}
 
 			packet.length(res_length);
