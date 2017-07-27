@@ -56,6 +56,9 @@ struct Noux::Vfs_dataspace
 		root_dir(root_dir), vfs_io_waiter_registry(vfs_io_waiter_registry),
 		name(name), ram(ram), rm(rm), alloc(alloc)
 	{
+		void *dummy;
+		Genode::debug("Vfs_dataspace(): ", Genode::Cstring(name.string()), ", stack: ", &dummy);
+
 		ds = root_dir.dataspace(name.string());
 
 		if (!ds.valid()) {

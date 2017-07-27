@@ -76,6 +76,7 @@ struct Vfs::Directory_service
 	virtual Opendir_result opendir(char const *path, bool create,
 	                               Vfs_handle **handle, Allocator &alloc)
 	{
+		Genode::warning("Directory_service::opendir() called");
 		return OPENDIR_ERR_LOOKUP_FAILED;
 	}
 
@@ -92,6 +93,7 @@ struct Vfs::Directory_service
 	virtual Openlink_result openlink(char const *path, bool create,
 	                                 Vfs_handle **handle, Allocator &alloc)
 	{
+		Genode::warning("Directory_service::openlink() called");
 		return OPENLINK_ERR_LOOKUP_FAILED;
 	}
 

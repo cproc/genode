@@ -71,6 +71,8 @@ class Vfs::Symlink_file_system : public Single_file_system
 		Openlink_result openlink(char const *path, bool create,
 		                         Vfs_handle **out_handle, Allocator &alloc) override
 		{
+			Genode::debug("Symlink_file_system::openlink()");
+
 			if (!_single_file(path))
 				return OPENLINK_ERR_LOOKUP_FAILED;
 
