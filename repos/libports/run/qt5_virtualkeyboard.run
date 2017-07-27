@@ -8,6 +8,8 @@ append build_components [qt5_build_components feature]
 
 append build_components {
 	app/qt5/examples/virtualkeyboard
+	lib/qt5/qtdeclarative/src/imports/qtquick2
+	lib/qt5/qtvirtualkeyboard/src/imports/qtvirtualkeyboard
 }
 
 build $build_components
@@ -19,7 +21,7 @@ create_boot_directory
 # Create Qt tar archive
 #
 
-create_qt5_fs_tar_archive "basic" "gui"
+create_qt5_fs_tar_archive "basic" "gui quick"
 
 #
 # Generate config
@@ -78,6 +80,8 @@ append boot_modules {
         qt5_network.lib.so
         qt5_qml.lib.so
         qt5_quick.lib.so
+	qt5_qtquick2plugin.lib.so
+	qt5_qtvirtualkeyboardplugin.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
 	zlib.lib.so
