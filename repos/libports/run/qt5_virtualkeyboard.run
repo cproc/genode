@@ -39,7 +39,7 @@ append config {
 append config [qt5_start_nodes feature]
 
 append config {
-	<start name="virtualkeyboard" caps="200">
+	<start name="basic" caps="200">
 		<resource name="RAM" quantum="80M"/>
 		<config>
 			<vfs>
@@ -61,7 +61,7 @@ install_config $config
 append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
-	virtualkeyboard
+	basic
 	freetype.lib.so
 	gallium.lib.so
 	ld.lib.so
@@ -75,10 +75,15 @@ append boot_modules {
 	qt5_component.lib.so
 	qt5_core.lib.so
 	qt5_gui.lib.so
+        qt5_network.lib.so
+        qt5_qml.lib.so
+        qt5_quick.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
 	zlib.lib.so
 	stdcxx.lib.so
+        libcrypto.lib.so
+        libssl.lib.so
 	qt5_fs_basic.tar
 }
 
