@@ -113,13 +113,13 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 		 ** Packet-stream processing **
 		 ******************************/
 
-		struct Not_read_ready { };
+		struct Not_ready { };
 		struct Dont_ack { };
 
 		/**
 		 * Perform packet operation
 		 *
-		 * \throw Not_read_ready
+		 * \throw Not_ready
 		 * \throw Dont_ack
 		 */
 		void _process_packet_op(Packet_descriptor &packet)
@@ -140,39 +140,40 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
-
+				Genode::log("READ");
 				try {
 					_apply(static_cast<File_handle>(packet.handle().value), [&] (File &node) {
 						if (!node.read_ready()) {
 							node.notify_read_ready(true);
-							throw Not_read_ready();
+							throw Not_ready();
 						}
 
 						if (node.mode&READ_ONLY)
 							res_length = node.read(_vfs, (char *)content, length, seek);
 					});
 				}
-				catch (Not_read_ready) { throw; }
-				catch (Operation_incomplete) { throw Not_read_ready(); }
+				catch (Not_ready) { throw; }
+				catch (Operation_incomplete) { throw Not_ready(); }
 				catch (...) {
 
 					try {
 						_apply(packet.handle(), [&] (Node &node) {
 							if (!node.read_ready())
-								throw Not_read_ready();
+								throw Not_ready();
 							
 							if (node.mode&READ_ONLY)
 								res_length = node.read(_vfs, (char *)content, length, seek);
 						});
 					}
-					catch (Not_read_ready) { throw; }
-					catch (Operation_incomplete) { throw Not_read_ready(); }
+					catch (Not_ready) { throw; }
+					catch (Operation_incomplete) { throw Not_ready(); }
 					catch (...) { }
 				}
 
 				break;
 
 			case Packet_descriptor::WRITE:
+				Genode::log("WRITE");
 				try {
 					_apply(packet.handle(), [&] (Node &node) {
 						if (node.mode&WRITE_ONLY)
@@ -182,6 +183,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				break;
 
 			case Packet_descriptor::READ_READY:
+				Genode::log("READ_READY");
 				try {
 					_apply(static_cast<File_handle>(packet.handle().value), [] (File &node) {
 						if (!node.read_ready()) {
@@ -195,18 +197,22 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
+				Genode::log("CONTENT_CHANGED");
 				/* The VFS does not track file changes yet */
 				throw Dont_ack();
 
 			case Packet_descriptor::SYNC:
-
+				Genode::log("SYNC");
 				/**
 				 * Sync the VFS and send any pending signals on the node.
 				 */
 				try {
 					_apply(packet.handle(), [&] (Node &node) {
-						_vfs.sync(node.path());
+						node.sync();
 					});
+				} catch (Operation_incomplete) {
+					Genode::log("SYNC: not ready");
+					throw Not_ready();
 				} catch (...) { }
 				break;
 			}
@@ -220,7 +226,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			try {
 				_process_packet_op(packet);
 				return true;
-			} catch (Not_read_ready) {
+			} catch (Not_ready) {
 				_backlog_packet = packet;
 			}
 
@@ -606,6 +612,7 @@ struct Vfs_server::Io_response_handler : Vfs::Io_response_handler
 
 	void handle_io_response(Vfs::Vfs_handle::Context *context) override
 	{
+		Genode::log("handle_io_response(): ", context);
 		if (Vfs_server::Node *node = static_cast<Vfs_server::Node *>(context))
 			node->handle_io_response();
 	}

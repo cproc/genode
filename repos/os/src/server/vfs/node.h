@@ -86,8 +86,13 @@ namespace Vfs_server {
 struct Vfs_server::Node : File_system::Node_base, Node_space::Element,
                           Vfs::Vfs_handle::Context
 {
-	Path const _path;
-	Mode const  mode;
+	enum Op_state { IDLE, READ_QUEUED, SYNC_QUEUED };
+
+	Path const       _path;
+	Mode const       mode;
+	Vfs::Vfs_handle *_handle { nullptr };
+	Op_state         op_state { Op_state::IDLE };
+
 
 	Node(Node_space &space, char const *node_path, Mode node_mode)
 	:
@@ -103,19 +108,50 @@ struct Vfs_server::Node : File_system::Node_base, Node_space::Element,
 	virtual size_t write(Vfs::File_system&, char const*, size_t, seek_off_t) { return 0; }
 	virtual bool read_ready() { return false; }
 	virtual void handle_io_response() { }
+
+	void sync()
+	{
+		typedef Vfs::File_io_service::Sync_result Result;
+		Result out_result = Result::SYNC_OK;
+
+		switch (op_state) {
+		case Op_state::IDLE:
+
+			if (!_handle->fs().queue_sync(_handle))
+				throw Operation_incomplete();
+
+			/* fall through */
+
+		case Op_state::SYNC_QUEUED:
+			out_result = _handle->fs().complete_sync(_handle);
+			switch (out_result) {
+			case Result::SYNC_OK:
+				op_state = Op_state::IDLE;
+				return;
+
+			case Result::SYNC_QUEUED:
+				op_state = Op_state::SYNC_QUEUED;
+				throw Operation_incomplete();
+			}
+			break;
+			
+		case Op_state::READ_QUEUED:
+			throw Operation_incomplete();
+		}
+	}
 };
 
 struct Vfs_server::Symlink : Node
 {
-	Symlink(Node_space &space,
-	        Vfs::File_system &vfs,
-	        char       const *link_path,
-	        Mode              mode,
-	        bool              create)
+	Symlink(Node_space        &space,
+	        Vfs::File_system  &vfs,
+	        Genode::Allocator &alloc,
+	        char       const  *link_path,
+	        Mode               mode,
+	        bool               create)
 	: Node(space, link_path, mode)
 	{
-		if (create)
-			assert_symlink(vfs.symlink("", link_path));
+		assert_openlink(vfs.openlink(link_path, create, &_handle, alloc));
 	}
 
 
@@ -146,16 +182,15 @@ struct Vfs_server::Symlink : Node
 		Genode::String<MAX_PATH_LEN+1> target(Genode::Cstring(src, len));
 		size_t const target_len = target.length()-1;
 
-		switch (vfs.symlink(target.string(), path())) {
-		case Directory_service::SYMLINK_OK: break;
-		case Directory_service::SYMLINK_ERR_NAME_TOO_LONG:
-			return target_len >> 1;
-		default: return 0;
-		}
+		file_size out_count;
+		
+		if (_handle->fs().write(_handle, target.string(), target_len, out_count) !=
+			File_io_service::WRITE_OK)
+			return 0;
 
 		mark_as_updated();
 		notify_listeners();
-		return target_len;
+		return out_count;
 	}
 
 	bool read_ready() override { return true; }
@@ -168,14 +203,9 @@ class Vfs_server::File : public Node
 
 		File_io_handler &_file_io_handler;
 
-		Vfs::Vfs_handle *_handle;
 		char const      *_leaf_path; /* offset pointer to Node::_path */
 
 		bool _notify_read_ready = false;
-
-		enum class Op_state {
-			IDLE, READ_QUEUED
-		} op_state = Op_state::IDLE;
 
 	public:
 
@@ -271,6 +301,9 @@ class Vfs_server::File : public Node
 					throw Operation_incomplete();
 				}
 				break;
+
+			case Op_state::SYNC_QUEUED:
+				throw Operation_incomplete();
 			}
 
 			return 0;
@@ -347,13 +380,8 @@ struct Vfs_server::Directory : Node
 		Path subpath(link_path, path());
 		char const *path_str = subpath.base();
 
-		if (!create) {
-			Vfs::file_size out;
-			assert_readlink(vfs.readlink(path_str, nullptr, 0, out));
-		}
-
 		Symlink *link;
-		try { link = new (alloc) Symlink(space, vfs, path_str, mode, create); }
+		try { link = new (alloc) Symlink(space, vfs, alloc, path_str, mode, create); }
 		catch (Out_of_memory) { throw Out_of_ram(); }
 		if (create)
 			mark_as_updated();

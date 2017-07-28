@@ -1,7 +1,7 @@
 set build_components {
 	core init drivers/timer noux/minimal lib/libc_noux
 	drivers/framebuffer drivers/input
-	server/terminal server/ram_fs
+	server/terminal server/ram_fs server/vfs
 	test/libports/ncurses
 }
 
@@ -145,8 +145,26 @@ Hello world !!
 			<policy label="noux -> root" root="/" />
 			<policy label="noux -> home" root="/home/user" writeable="yes" />
 			<policy label="noux -> tmp"  root="/tmp"       writeable="yes" />
+
+			<policy label="vfs -> tmp"   root="/tmp"       writeable="yes" />
 		</config>
 	</start>
+
+	<start name="vfs">
+		<resource name="RAM" quantum="12M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<dir name="tmp"> <fs label="tmp"/> </dir>
+			</vfs>
+			<policy label="noux -> tmp" root="/tmp" writeable="yes"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
 	<start name="noux" caps="1000">
 		<resource name="RAM" quantum="1G" />
 		<config ld_verbose="yes">
@@ -171,8 +189,8 @@ Hello world !!
 				     directory. -->
 
 				<dir name="ram"> <fs label="root" /> </dir>
-				<!--<dir name="tmp"> <fs label="tmp" /> </dir>-->
-				<dir name="tmp"> <ram/> </dir>
+				<dir name="tmp"> <fs label="tmp" /> </dir>
+				<!--<dir name="tmp"> <ram/> </dir>-->
 
 				<dir name="dev">}
 
@@ -188,6 +206,11 @@ append config {
 				<arg value="--login" />
 			</start>
 		</config>
+		<route>
+			<service name="File_system" label="tmp"> <child name="vfs"/> </service>
+			<service name="File_system"> <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 </config>
 }
@@ -201,7 +224,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	core init timer ld.lib.so noux terminal ram_fs
+	core init timer ld.lib.so noux terminal ram_fs vfs
 	libc.lib.so libm.lib.so libc_noux.lib.so ncurses.lib.so posix.lib.so
 	bash.tar coreutils.tar diffutils.tar less.tar vim.tar vimrc
 }

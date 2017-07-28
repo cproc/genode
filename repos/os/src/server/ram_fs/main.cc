@@ -76,11 +76,13 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 			switch (packet.operation()) {
 
 			case Packet_descriptor::READ:
+				Genode::log("READ");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().read((char *)content, length, packet.position());
 				break;
 
 			case Packet_descriptor::WRITE:
+				Genode::log("WRITE");
 				if (content && (packet.length() <= packet.size()))
 					res_length = open_node.node().write((char const *)content, length, packet.position());
 
@@ -88,15 +90,18 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
+				Genode::log("CONTENT_CHANGED");
 				open_node.register_notify(*tx_sink());
 				open_node.node().notify_listeners();
 				return;
 
 			case Packet_descriptor::READ_READY:
+				Genode::log("READ_READY");
 				/* not supported */
 				break;
 
 			case Packet_descriptor::SYNC:
+				Genode::log("SYNC");
 				open_node.node().notify_listeners();
 				break;
 			}

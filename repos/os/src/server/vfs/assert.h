@@ -50,6 +50,20 @@ namespace File_system {
 		}
 	}
 
+	static inline void assert_openlink(Directory_service::Openlink_result r)
+	{
+		typedef Directory_service::Openlink_result Result;
+
+		switch (r) {
+		case Result::OPENLINK_ERR_LOOKUP_FAILED:       throw Lookup_failed();
+		case Result::OPENLINK_ERR_NAME_TOO_LONG:       throw Invalid_name();
+		case Result::OPENLINK_ERR_NODE_ALREADY_EXISTS: throw Node_already_exists();
+		case Result::OPENLINK_ERR_NO_SPACE:            throw No_space();
+		case Result::OPENLINK_ERR_PERMISSION_DENIED:   throw Permission_denied();
+		case Result::OPENLINK_OK: break;
+		}
+	}
+
 	static inline void assert_symlink(Directory_service::Symlink_result r)
 	{
 		typedef Directory_service::Symlink_result Result;
