@@ -173,7 +173,10 @@ static int test_bind_accept(char const *sock_root, char const *sock_fd)
 		char sock_accept[96];
 		snprintf(sock_accept, sizeof(sock_accept), "%s/%s/accept", sock_root, sock_fd);
 
+		printf("test_bind_accept(): sock_root:\n");
 		ls_socket_fs(sock_root);
+
+		printf("test_bind_accept(): accepting...\n");
 
 		int fda = open(sock_accept, O_RDWR);
 		if (fda == -1) {
@@ -227,10 +230,15 @@ static int test_connect_recv(char const *sock_root, char const *sock_fd)
 
 static void test_proto(char const *sock_root, char const *proto)
 {
+	printf("test_proto(): --- testing protocol: %s ---\n", proto);
 	char proto_root[64];
 	snprintf(proto_root, sizeof(proto_root), "%s/%s", sock_root, proto);
 
+	printf("test_proto(): proto_root:\n");
+
 	ls_socket_fs(proto_root);
+
+	printf("test_proto(): opening socket\n");
 
 	char new_socket_path[64];
 	snprintf(new_socket_path, sizeof(new_socket_path), "%s/new_socket", proto_root);
@@ -246,19 +254,25 @@ static void test_proto(char const *sock_root, char const *proto)
 	sock_path[n-1] = '\0';
 	close(fd);
 
+	printf("test_proto(): proto_root:\n");
 	ls_socket_fs(proto_root);
 
 	char sock_dir[64];
 	snprintf(sock_dir, sizeof(sock_dir), "%s/%s", sock_root, sock_path);
 
+	printf("test_proto(): sock_dir:\n");
 	ls_socket_fs(sock_dir);
+
+	printf("test_proto(): testing bind and accept\n");
 
 	test_bind_accept(sock_root, sock_path);
 	if (0) test_connect_recv(proto_root, sock_path);
 
+	printf("test_proto(): sock_dir:\n");
 	ls_socket_fs(sock_dir);
 
 	remove_sock_dir(sock_root, sock_path);
+	printf("test_proto(): protocol test finished\n");
 }
 
 
