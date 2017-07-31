@@ -62,7 +62,7 @@ append config {
 	<!-- use telnet on the client to connect to the test component -->
 	<start name="test-vfs_lxip" caps="200">
 		<resource name="RAM" quantum="48M"/>
-		<config>
+		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev"> <log/> </dir>
 				<dir name="socket">
