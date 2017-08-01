@@ -234,7 +234,6 @@ struct Vfs::Directory : Vfs::Node
 	virtual ~Directory() { };
 
 	virtual Vfs::Node *child(char const *)                        = 0;
-	virtual void dirent(file_offset, Directory_service::Dirent &) = 0;
 	virtual file_size num_dirent()                                = 0;
 };
 
@@ -929,29 +928,6 @@ class Vfs::Lxip_socket_dir final : public Vfs::Directory,
 			return nullptr;
 		}
 
-		void dirent(file_offset index, Directory_service::Dirent &out) override
-		{
-			out.fileno  = index+1;
-			out.type    = Directory_service::DIRENT_TYPE_END;
-			out.name[0] = '\0';
-
-			Vfs::Node *node = nullptr;
-			for (Vfs::Node *n : _nodes) {
-				if (n) {
-					if (index == 0) {
-						node = n;
-						break;
-					}
-					--index;
-				}
-			}
-			if (!node) return;
-
-			out.type = Directory_service::DIRENT_TYPE_FILE;
-
-			strncpy(out.name, node->name(), sizeof(out.name));
-		}
-
 		file_size num_dirent() override { return _num_nodes(); }
 
 		Lxip::ssize_t read(char *dst, Genode::size_t len,
@@ -1188,33 +1164,6 @@ class Lxip::Protocol_dir_impl : public Protocol_dir,
 		 ** Directory interface **
 		 *************************/
 
-		void dirent(Vfs::file_offset index, Vfs::Directory_service::Dirent &out) override
-		{
-			out.fileno  = index+1;
-			out.type    = Vfs::Directory_service::DIRENT_TYPE_END;
-			out.name[0] = '\0';
-
-			Vfs::Node *node = nullptr;
-			for (Vfs::Node *n : _nodes) {
-				if (n) {
-					if (index == 0) {
-						node = n;
-						break;
-					}
-					--index;
-				}
-			}
-			if (!node) return;
-
-			if (dynamic_cast<Vfs::Directory*>(node))
-				out.type = Vfs::Directory_service::DIRENT_TYPE_DIRECTORY;
-
-			if (dynamic_cast<Vfs::File*>(node))
-				out.type = Vfs::Directory_service::DIRENT_TYPE_FILE;
-
-			Genode::strncpy(out.name, node->name(), sizeof(out.name));
-		}
-
 		Vfs::file_size num_dirent() override { return _num_nodes(); }
 
 		Lxip::ssize_t read(char *dst, Genode::size_t len,
@@ -1446,39 +1395,6 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 		 ** Directory interface **
 		 *************************/
 
-		void dirent(file_offset index, Directory_service::Dirent &out) override
-		{
-			if (index == 0) {
-				out.fileno  = (Genode::addr_t)&_tcp_dir;
-				out.type    = Directory_service::DIRENT_TYPE_DIRECTORY;
-				Genode::strncpy(out.name, "tcp", sizeof(out.name));
-			} else if (index == 1) {
-				out.fileno  = (Genode::addr_t)&_udp_dir;
-				out.type    = Directory_service::DIRENT_TYPE_DIRECTORY;
-				Genode::strncpy(out.name, "udp", sizeof(out.name));
-			} else if (index == 2) {
-				out.fileno  = (Genode::addr_t)&_address;
-				out.type    = Directory_service::DIRENT_TYPE_FILE;
-				Genode::strncpy(out.name, "address", sizeof(out.name));
-			} else if (index == 3) {
-				out.fileno  = (Genode::addr_t)&_netmask;
-				out.type    = Directory_service::DIRENT_TYPE_FILE;
-				Genode::strncpy(out.name, "netmask", sizeof(out.name));
-			} else if (index == 4) {
-				out.fileno  = (Genode::addr_t)&_gateway;
-				out.type    = Directory_service::DIRENT_TYPE_FILE;
-				Genode::strncpy(out.name, "gateway", sizeof(out.name));
-			} else if (index == 5) {
-				out.fileno  = (Genode::addr_t)&_nameserver;
-				out.type    = Directory_service::DIRENT_TYPE_FILE;
-				Genode::strncpy(out.name, "nameserver", sizeof(out.name));
-			} else {
-				out.fileno  = 0;
-				out.type    = Directory_service::DIRENT_TYPE_END;
-				out.name[0] = '\0';
-			}
-		}
-
 		file_size num_dirent() override { return 6; }
 
 		Lxip::ssize_t read(char *dst, Genode::size_t len,
@@ -1559,20 +1475,6 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 			}
 
 			return STAT_ERR_NO_ENTRY;
-		}
-
-		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
-		{
-			Vfs::Node *node = _lookup(path);
-			if (!node) return DIRENT_ERR_INVALID_PATH;
-
-			Vfs::Directory *dir = dynamic_cast<Vfs::Directory*>(node);
-			if (dir) {
-				dir->dirent(index, out);
-				return DIRENT_OK;
-			}
-
-			return DIRENT_ERR_INVALID_PATH;
 		}
 
 		file_size num_dirent(char const *path) override

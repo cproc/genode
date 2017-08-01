@@ -433,52 +433,6 @@ class Vfs::Tar_file_system : public File_system
 			return STAT_OK;
 		}
 
-		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
-		{
-			Node const *node = dereference(path);
-
-			if (!node)
-				return DIRENT_ERR_INVALID_PATH;
-
-			node = node->lookup_child(index);
-
-			if (!node) {
-				out.type = DIRENT_TYPE_END;
-				return DIRENT_OK;
-			}
-
-			out.fileno = (Genode::addr_t)node;
-
-			Record const *record = node->record;
-
-			while (record && (record->type() == Record::TYPE_HARDLINK)) {
-				Node const *target = dereference(record->linked_name());
-				record = target ? target->record : 0;
-			}
-
-			if (record) {
-				switch (record->type()) {
-				case Record::TYPE_FILE:
-					out.type = DIRENT_TYPE_FILE;      break;
-				case Record::TYPE_SYMLINK:
-					out.type = DIRENT_TYPE_SYMLINK;   break;
-				case Record::TYPE_DIR:
-					out.type = DIRENT_TYPE_DIRECTORY; break;
-
-				default:
-					Genode::error("unhandled record type ", record->type(), " "
-					              "for ", node->name);
-				}
-			} else {
-				/* If no record exists, assume it is a directory */
-				out.type = DIRENT_TYPE_DIRECTORY;
-			}
-
-			strncpy(out.name, node->name, sizeof(out.name));
-
-			return DIRENT_OK;
-		}
-
 		Unlink_result unlink(char const *path) override
 		{
 			Node const *node = dereference(path);
