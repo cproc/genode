@@ -177,6 +177,7 @@ class Vfs::Tar_file_system : public File_system
 		{
 			file_size count = 0;
 			for (Node *child_node = first(); child_node; child_node = child_node->next(), count++) ;
+			Genode::log("num_dirent(): ", count);
 			return count;
 		}
 
@@ -322,6 +323,7 @@ class Vfs::Tar_file_system : public File_system
 				cached_num_dirent = node->num_dirent();
 				valid = true;
 			}
+			Genode::log("num_dirent(): ", Genode::Cstring(path), ", ", cached_num_dirent);
 			return cached_num_dirent;
 		}
 	} _cached_num_dirent;
@@ -564,6 +566,8 @@ class Vfs::Tar_file_system : public File_system
 
 		Opendir_result opendir(char const *path, bool create, Vfs_handle **out_handle, Genode::Allocator& alloc) override
 		{
+			Genode::log("Tar_file_system::opendir(): path: ", path);
+
 			Node const *node = dereference(path);
 	
 			if (!node ||
@@ -645,8 +649,10 @@ class Vfs::Tar_file_system : public File_system
 
 				Node const *node = handle->node()->lookup_child(index);
 
-				if (!node)
+				if (!node) {
+					Genode::log("no node found for index", index);
 					return READ_OK;
+				}
 
 				dirent->fileno = (Genode::addr_t)node;
 
@@ -656,7 +662,7 @@ class Vfs::Tar_file_system : public File_system
 					Node const *target = dereference(record->linked_name());
 					record = target ? target->record : 0;
 				}
-
+Genode::log("found record: ", Genode::Cstring(record->name()));
 				if (record) {
 					switch (record->type()) {
 					case Record::TYPE_FILE:

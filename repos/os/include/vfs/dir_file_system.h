@@ -226,7 +226,7 @@ class Vfs::Dir_file_system : public File_system
 		bool _queue_read_of_file_systems(Dir_vfs_handle *dir_vfs_handle)
 		{
 			file_offset index = dir_vfs_handle->seek() / sizeof(Dirent);
-
+Genode::log("self: ", Genode::Cstring(_name), ", index: ", index);
 			char const *sub_path = _sub_path(dir_vfs_handle->path.base());
 
 			if (strlen(sub_path) == 0)
@@ -581,6 +581,8 @@ class Vfs::Dir_file_system : public File_system
 		Opendir_result opendir(char const *path, bool create,
 		                       Vfs_handle **out_handle, Allocator &alloc) override
 		{
+			Genode::log("Dir_file_system::opendir(): self: ", Genode::Cstring(_name),
+			            ", path: ", path);
 			/* path equals "/" (for reading the name of this directory) */
 			if (strcmp(path, "/") == 0) {
 				if (create)
