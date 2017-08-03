@@ -151,9 +151,13 @@ Hello world !!
 		<resource name="RAM" quantum="1G" />
 		<config ld_verbose="yes">
 			<fstab>
-				<dir name="test1">
-					<dir name="test2"/>
+				<dir name="a">
+					<dir name="b">
+						<dir name="dir"/>
+					</dir>
+					<tar name="b.tar"/>
 				</dir>
+				<tar name="a.tar"/>
 				<tar name="coreutils.tar" />
 				<tar name="vim.tar" />
 				<tar name="diffutils.tar" />
@@ -204,6 +208,7 @@ set boot_modules {
 	core init timer ld.lib.so noux terminal ram_fs
 	libc.lib.so libm.lib.so libc_noux.lib.so ncurses.lib.so posix.lib.so
 	bash.tar coreutils.tar diffutils.tar less.tar vim.tar vimrc
+	a.tar b.tar
 }
 
 # platform-specific modules
