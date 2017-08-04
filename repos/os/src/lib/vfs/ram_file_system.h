@@ -706,46 +706,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			return STAT_ERR_NO_ENTRY;
 		}
 
-		Symlink_result symlink(char const *target, char const *path) override
-		{
-			using namespace Vfs_ram;
-
-			auto const target_len = strlen(target);
-			if (target_len > MAX_PATH_LEN)
-				return SYMLINK_ERR_NAME_TOO_LONG;
-
-			Symlink *link;
-			Directory *parent = lookup_parent(path);
-			if (!parent) return SYMLINK_ERR_NO_ENTRY;
-			Node::Guard guard(parent);
-
-			char const *name = basename(path);
-
-			Node *node = parent->child(name);
-			if (node) {
-				node->lock();
-				link = dynamic_cast<Symlink *>(node);
-				if (!link) {
-					node->unlock();
-					return SYMLINK_ERR_EXISTS;
-				}
-			} else {
-				if (strlen(name) >= MAX_NAME_LEN)
-					return SYMLINK_ERR_NAME_TOO_LONG;
-
-				try { link = new (_alloc) Symlink(name); }
-				catch (Out_of_memory) { return SYMLINK_ERR_NO_SPACE; }
-
-				link->lock();
-				parent->adopt(link);
-			}
-
-			if (*target)
-				link->set(target, target_len);
-			link->unlock();
-			return SYMLINK_OK;
-		}
-
 		Rename_result rename(char const *from, char const *to) override
 		{
 			using namespace Vfs_ram;

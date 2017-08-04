@@ -549,11 +549,6 @@ class Vfs::Tar_file_system : public File_system
 			return RENAME_ERR_NO_ENTRY;
 		}
 
-		Symlink_result symlink(char const *, char const *) override
-		{
-			return SYMLINK_ERR_NO_ENTRY;
-		}
-
 		file_size num_dirent(char const *path) override
 		{
 			return _cached_num_dirent.num_dirent(path);

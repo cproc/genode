@@ -221,11 +221,6 @@ class Vfs::Single_file_system : public File_system
 			return RENAME_ERR_NO_ENTRY;
 		}
 
-		Symlink_result symlink(char const *, char const *) override
-		{
-			return SYMLINK_ERR_NO_ENTRY;
-		}
-
 
 		/********************************
 		 ** File I/O service interface **

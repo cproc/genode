@@ -573,26 +573,6 @@ class Vfs::Rump_file_system : public File_system
 			return UNLINK_ERR_NO_PERM;
 		}
 
-		Symlink_result symlink(char const *from, char const *to) override
-		{
-			if (rump_sys_symlink(from, to) != 0) switch (errno) {
-			case EEXIST: {
-				if (rump_sys_readlink(to, NULL, 0) == -1)
-					return SYMLINK_ERR_EXISTS;
-				rump_sys_unlink(to);
-				return rump_sys_symlink(from, to) == 0 ?
-					SYMLINK_OK : SYMLINK_ERR_EXISTS;
-			}
-			case ENOENT:       return SYMLINK_ERR_NO_ENTRY;
-			case ENOSPC:       return SYMLINK_ERR_NO_SPACE;
-			case EACCES:       return SYMLINK_ERR_NO_PERM;
-			case ENAMETOOLONG: return SYMLINK_ERR_NAME_TOO_LONG;
-			default:
-				return SYMLINK_ERR_NO_PERM;
-			}
-			return SYMLINK_OK;
-		}
-
 		Rename_result rename(char const *from, char const *to) override
 		{
 			if (rump_sys_rename(from, to) != 0) switch (errno) {

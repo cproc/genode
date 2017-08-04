@@ -47,9 +47,6 @@ class Vfs::Symlink_file_system : public Single_file_system
 		 ** Directory-service interface **
 		 *********************************/
 
-		Symlink_result symlink(char const *from, char const *to) override {
-			return SYMLINK_ERR_EXISTS; }
-
 		Open_result open(char const *, unsigned, Vfs_handle **out_handle,
 		                 Allocator&) override {
 			return OPEN_ERR_UNACCESSIBLE; }

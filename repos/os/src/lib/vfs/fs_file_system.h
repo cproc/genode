@@ -681,60 +681,6 @@ class Vfs::Fs_file_system : public File_system
 			return RENAME_OK;
 		}
 
-		Symlink_result symlink(char const *from, char const *to) override
-		{
-			auto const from_len = strlen(from);
-
-			/*
-			 * We write to the symlink via the packet stream. Hence we need
-			 * to serialize with other packet-stream operations.
-			 */
-			Lock::Guard guard(_lock);
-
-			/*
-			 * Canonicalize path (i.e., path must start with '/')
-			 */
-			Absolute_path abs_path(to);
-			abs_path.strip_last_element();
-
-			Absolute_path symlink_name(to);
-			symlink_name.keep_only_last_element();
-
-			try {
-				::File_system::Dir_handle dir_handle = _fs.dir(abs_path.base(),
-				                                               false);
-
-				Fs_handle_guard from_dir_guard(*this, _fs, dir_handle,
-				                               _handle_space, _fs, _io_handler);
-
-				::File_system::Symlink_handle symlink_handle =
-					_fs.symlink(dir_handle, symlink_name.base() + 1, true);
-
-				Fs_handle_guard symlink_guard(*this, _fs, symlink_handle,
-				                              _handle_space, _fs, _io_handler);
-
-				auto const n = _write(symlink_guard, from, from_len, 0);
-
-				/*
-				 * a convention at the VFS server is to return an invalid
-				 * result length when the target is too long
-				 */
-				if (n != from_len) {
-					return n ? SYMLINK_ERR_NAME_TOO_LONG : SYMLINK_ERR_NO_PERM;
-				}
-			}
-			catch (::File_system::Invalid_handle)      { return SYMLINK_ERR_NO_ENTRY; }
-			catch (::File_system::Node_already_exists) { return SYMLINK_ERR_EXISTS;   }
-			catch (::File_system::Invalid_name)        { return SYMLINK_ERR_NAME_TOO_LONG; }
-			catch (::File_system::Lookup_failed)       { return SYMLINK_ERR_NO_ENTRY; }
-			catch (::File_system::Permission_denied)   { return SYMLINK_ERR_NO_PERM;  }
-			catch (::File_system::No_space)            { return SYMLINK_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_ram)          { return SYMLINK_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_caps)         { return SYMLINK_ERR_NO_SPACE; }
-
-			return SYMLINK_OK;
-		}
-
 		file_size num_dirent(char const *path) override
 		{
 			if (strcmp(path, "") == 0)

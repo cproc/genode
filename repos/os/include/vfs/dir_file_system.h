@@ -623,17 +623,6 @@ class Vfs::Dir_file_system : public File_system
 			return final;
 		}
 
-		Symlink_result symlink(char const *from, char const *to) override
-		{
-			auto symlink_fn = [&] (File_system &fs, char const *to)
-			{
-				return fs.symlink(from, to);
-			};
-
-			return _dir_op(SYMLINK_ERR_NO_ENTRY, SYMLINK_ERR_NO_PERM, SYMLINK_OK,
-			               to, symlink_fn);
-		}
-
 		/***************************
 		 ** File_system interface **
 		 ***************************/

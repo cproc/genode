@@ -216,8 +216,6 @@ struct Vfs::Directory_service
 	                      SYMLINK_ERR_NO_SPACE,      SYMLINK_ERR_NO_PERM,
 	                      SYMLINK_ERR_NAME_TOO_LONG, SYMLINK_OK };
 
-	virtual Symlink_result symlink(char const *from, char const *to) = 0;
-
 
 	/**
 	 * Return number of directory entries located at given path
