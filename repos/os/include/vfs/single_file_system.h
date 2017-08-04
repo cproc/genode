@@ -166,27 +166,6 @@ class Vfs::Single_file_system : public File_system
 			return STAT_OK;
 		}
 
-		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
-		{
-			if (!_root(path))
-				return DIRENT_ERR_INVALID_PATH;
-
-			if (index == 0) {
-				out.fileno = (Genode::addr_t)this;
-				switch (_node_type) {
-				case NODE_TYPE_FILE:         out.type = DIRENT_TYPE_FILE;     break;
-				case NODE_TYPE_SYMLINK:      out.type = DIRENT_TYPE_SYMLINK;  break;
-				case NODE_TYPE_CHAR_DEVICE:  out.type = DIRENT_TYPE_CHARDEV;  break;
-				case NODE_TYPE_BLOCK_DEVICE: out.type = DIRENT_TYPE_BLOCKDEV; break;
-				}
-				strncpy(out.name, _filename, sizeof(out.name));
-			} else {
-				out.type = DIRENT_TYPE_END;
-			}
-
-			return DIRENT_OK;
-		}
-
 		file_size num_dirent(char const *path) override
 		{
 			if (_root(path))

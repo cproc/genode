@@ -316,36 +316,6 @@ class Vfs::Rump_file_system : public File_system
 			return buf;
 		}
 
-		Dirent_result _dirent(char const *path,
-		                      struct ::dirent *dent, Dirent &vfs_dir)
-		{
-			/*
-			 * We cannot use 'd_type' member of 'dirent' here since the EXT2
-			 * implementation sets the type to unkown. Hence we use stat.
-			 */
-			struct stat s;
-			rump_sys_lstat(path, &s);
-
-			if (S_ISREG(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_FILE;
-			else if (S_ISDIR(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_DIRECTORY;
-			else if (S_ISLNK(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_SYMLINK;
-			else if (S_ISBLK(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_BLOCKDEV;
-			else if (S_ISCHR(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_CHARDEV;
-			else if (S_ISFIFO(s.st_mode))
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_FIFO;
-			else
-				vfs_dir.type = Dirent_type::DIRENT_TYPE_FILE;
-
-			strncpy(vfs_dir.name, dent->d_name, sizeof(Dirent::name));
-
-			return DIRENT_OK;
-		}
-
 	public:
 
 		Rump_file_system(Genode::Env &env, Xml_node const &config)
@@ -597,44 +567,6 @@ class Vfs::Rump_file_system : public File_system
 			stat.device = sb.st_dev;
 
 			return STAT_OK;
-		}
-
-		Dirent_result dirent(char const *path, file_offset index_,
-		                     Dirent &vfs_dir) override
-		{
-			int fd = rump_sys_open(*path ? path : "/", O_RDONLY | O_DIRECTORY);
-			if (fd == -1)
-				return DIRENT_ERR_INVALID_PATH;
-
-			rump_sys_lseek(fd, 0, SEEK_SET);
-
-			int bytes;
-			unsigned const index = index_;
-			vfs_dir.fileno = 0;
-			char *buf      = _buffer();
-			struct ::dirent *dent = nullptr;
-			do {
-				bytes = rump_sys_getdents(fd, buf, BUFFER_SIZE);
-				void *current, *end;
-				for (current = buf, end = &buf[bytes];
-				     current < end;
-				     current = _DIRENT_NEXT((::dirent *)current))
-				{
-					dent = (::dirent *)current;
-					if (strcmp(".", dent->d_name) && strcmp("..", dent->d_name)) {
-						if (vfs_dir.fileno++ == index) {
-							Path newpath(dent->d_name, path);
-							rump_sys_close(fd);
-							return _dirent(newpath.base(), dent, vfs_dir);
-						}
-					}
-				}
-			} while (bytes > 0);
-			rump_sys_close(fd);
-
-			vfs_dir.type = DIRENT_TYPE_END;
-			vfs_dir.name[0] = '\0';
-			return DIRENT_OK;
 		}
 
 		Unlink_result unlink(char const *path) override

@@ -365,37 +365,6 @@ class Vfs_ram::Directory : public Vfs_ram::Node
 
 		file_size length() override { return _count; }
 
-		void dirent(file_offset index, Directory_service::Dirent &dirent)
-		{
-			Node *node = _entries.first();
-			if (node) node = node->index(index);
-			if (!node) {
-				dirent.type = Directory_service::DIRENT_TYPE_END;
-				return;
-			}
-
-			dirent.fileno = node->inode;
-			strncpy(dirent.name, node->name(), sizeof(dirent.name));
-
-			File *file = dynamic_cast<File *>(node);
-			if (file) {
-				dirent.type = Directory_service::DIRENT_TYPE_FILE;
-				return;
-			}
-
-			Directory *dir = dynamic_cast<Directory *>(node);
-			if (dir) {
-				dirent.type = Directory_service::DIRENT_TYPE_DIRECTORY;
-				return;
-			}
-
-			Symlink *symlink = dynamic_cast<Symlink *>(node);
-			if (symlink) {
-				dirent.type = Directory_service::DIRENT_TYPE_SYMLINK;
-				return;
-			}
-		}
-
 		Vfs::File_io_service::Read_result complete_read(char *dst,
 		                                                file_size count,
 		                                                file_size seek_offset,
@@ -756,21 +725,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 
 			/* this should never happen */
 			return STAT_ERR_NO_ENTRY;
-		}
-
-		Dirent_result dirent(char const *path, file_offset index, Dirent &dirent) override
-		{
-			using namespace Vfs_ram;
-
-			Node *node = lookup(path);
-			if (!node) return DIRENT_ERR_INVALID_PATH;
-			Node::Guard guard(node);
-
-			Directory *dir = dynamic_cast<Directory *>(node);
-			if (!dir) return DIRENT_ERR_INVALID_PATH;
-
-			dir->dirent(index, dirent);
-			return DIRENT_OK;
 		}
 
 		Symlink_result symlink(char const *target, char const *path) override

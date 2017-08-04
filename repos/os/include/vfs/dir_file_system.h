@@ -167,49 +167,6 @@ class Vfs::Dir_file_system : public File_system
 			return path;
 		}
 
-		/**
-		 * The 'path' is relative to the child file systems.
-		 */
-		Dirent_result _dirent_of_file_systems(char const *path, file_offset index, Dirent &out)
-		{
-			int base = 0;
-			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
-
-				/*
-				 * Determine number of matching directory entries within
-				 * the current file system.
-				 */
-				int const fs_num_dirent = fs->num_dirent(path);
-
-				/*
-				 * Query directory entry if index lies with the file
-				 * system.
-				 */
-				if (index - base < fs_num_dirent) {
-					index = index - base;
-					return fs->dirent(path, index, out);;
-				}
-
-				/* adjust base index for next file system */
-				base += fs_num_dirent;
-			}
-
-			out.type = DIRENT_TYPE_END;
-			return DIRENT_OK;
-		}
-
-		void _dirent_of_this_dir_node(file_offset index, Dirent &out)
-		{
-			if (index == 0) {
-				strncpy(out.name, _name, sizeof(out.name));
-
-				out.type = DIRENT_TYPE_DIRECTORY;
-				out.fileno = 1;
-			} else {
-				out.type = DIRENT_TYPE_END;
-			}
-		}
-
 		/*
 		 * Accumulate number of directory entries that match in any of
 		 * our sub file systems.
@@ -430,28 +387,6 @@ class Vfs::Dir_file_system : public File_system
 
 			/* none of our file systems felt responsible for the path */
 			return STAT_ERR_NO_ENTRY;
-		}
-
-		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
-		{
-			if (_root())
-				return _dirent_of_file_systems(path, index, out);
-
-			if (strcmp(path, "/") == 0) {
-				_dirent_of_this_dir_node(index, out);
-				return DIRENT_OK;
-			}
-
-			/* path contains at least one element */
-
-			/* remove current element from path */
-			path = _sub_path(path);
-
-			/* path does not lie within our tree */
-			if (!path)
-				return DIRENT_ERR_INVALID_PATH;
-
-			return _dirent_of_file_systems(*path ? path : "/", index, out);
 		}
 
 		file_size num_dirent(char const *path) override

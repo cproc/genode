@@ -619,50 +619,6 @@ class Vfs::Fs_file_system : public File_system
 			return STAT_OK;
 		}
 
-		Dirent_result dirent(char const *path, file_offset index, Dirent &out) override
-		{
-			Lock::Guard guard(_lock);
-
-			using ::File_system::Directory_entry;
-
-			if (strcmp(path, "") == 0)
-				path = "/";
-
-			Genode::Constructible<::File_system::Dir_handle> dir_handle;
-			try { dir_handle.construct(_fs.dir(path, false)); }
-			catch (::File_system::Lookup_failed) { return DIRENT_ERR_INVALID_PATH; }
-			catch (::File_system::Name_too_long) { return DIRENT_ERR_INVALID_PATH; }
-			catch (...) { return DIRENT_ERR_NO_PERM; }
-
-			Fs_handle_guard dir_guard(*this, _fs, *dir_handle, _handle_space,
-			                          _fs, _io_handler);
-			Directory_entry entry;
-
-			enum { DIRENT_SIZE = sizeof(Directory_entry) };
-
-			_read(dir_guard, &entry, DIRENT_SIZE, index*DIRENT_SIZE);
-
-			/*
-			 * The default value has no meaning because the switch below
-			 * assigns a value in each possible branch. But it is needed to
-			 * keep the compiler happy.
-			 */
-			Dirent_type type = DIRENT_TYPE_END;
-
-			/* copy-out payload into destination buffer */
-			switch (entry.type) {
-			case Directory_entry::TYPE_DIRECTORY: type = DIRENT_TYPE_DIRECTORY; break;
-			case Directory_entry::TYPE_FILE:      type = DIRENT_TYPE_FILE;      break;
-			case Directory_entry::TYPE_SYMLINK:   type = DIRENT_TYPE_SYMLINK;   break;
-			}
-
-			out.fileno = entry.inode;
-			out.type   = type;
-			strncpy(out.name, entry.name, sizeof(out.name));
-
-			return DIRENT_OK;
-		}
-
 		Unlink_result unlink(char const *path) override
 		{
 			Absolute_path dir_path(path);
