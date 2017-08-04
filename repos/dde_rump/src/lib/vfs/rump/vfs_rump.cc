@@ -587,19 +587,6 @@ class Vfs::Rump_file_system : public File_system
 			return UNLINK_ERR_NO_PERM;
 		}
 
-		Readlink_result readlink(char const *path, char *buf,
-		                         file_size buf_size, file_size &out_len) override
-		{
-			ssize_t n = rump_sys_readlink(path, buf, buf_size);
-			if (n == -1) {
-				out_len = 0;
-				return READLINK_ERR_NO_ENTRY;
-			}
-
-			out_len = n;
-			return READLINK_OK;
-		}
-
 		Symlink_result symlink(char const *from, char const *to) override
 		{
 			if (rump_sys_symlink(from, to) != 0) switch (errno) {

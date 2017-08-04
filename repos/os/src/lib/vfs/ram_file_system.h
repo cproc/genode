@@ -767,25 +767,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			return SYMLINK_OK;
 		}
 
-		Readlink_result readlink(char const *path, char *buf,
-		                         file_size buf_size, file_size &out_len) override
-		{
-			using namespace Vfs_ram;
-			Directory *parent = lookup_parent(path);
-			if (!parent) return READLINK_ERR_NO_ENTRY;
-			Node::Guard parent_guard(parent);
-
-			Node *node = parent->child(basename(path));
-			if (!node) return READLINK_ERR_NO_ENTRY;
-			Node::Guard guard(node);
-
-			Symlink *link = dynamic_cast<Symlink *>(node);
-			if (!link) return READLINK_ERR_NO_ENTRY;
-
-			out_len = link->get(buf, buf_size);
-			return READLINK_OK;
-		}
-
 		Rename_result rename(char const *from, char const *to) override
 		{
 			using namespace Vfs_ram;

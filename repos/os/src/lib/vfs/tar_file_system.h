@@ -542,24 +542,6 @@ class Vfs::Tar_file_system : public File_system
 				return UNLINK_ERR_NO_PERM;
 		}
 
-		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
-		                         file_size &out_len) override
-		{
-			Node const *node = dereference(path);
-			Record const *record = node ? node->record : 0;
-
-			if (!record || (record->type() != Record::TYPE_SYMLINK))
-				return READLINK_ERR_NO_ENTRY;
-
-			file_size const count = min(buf_size, 100ULL);
-
-			memcpy(buf, record->linked_name(), count);
-
-			out_len = count;
-
-			return READLINK_OK;
-		}
-
 		Rename_result rename(char const *from, char const *to) override
 		{
 			if (_root_node.lookup(from) || _root_node.lookup(to))

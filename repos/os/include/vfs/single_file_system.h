@@ -214,12 +214,6 @@ class Vfs::Single_file_system : public File_system
 			return UNLINK_ERR_NO_PERM;
 		}
 
-		Readlink_result readlink(char const *, char *, file_size,
-		                         file_size &) override
-		{
-			return READLINK_ERR_NO_ENTRY;
-		}
-
 		Rename_result rename(char const *from, char const *to) override
 		{
 			if (_single_file(from) || _single_file(to))

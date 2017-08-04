@@ -188,9 +188,6 @@ struct Vfs::Directory_service
 
 	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM, READLINK_OK };
 
-	virtual Readlink_result readlink(char const *path, char *buf,
-	                                 file_size buf_size, file_size &out_len) = 0;
-
 
 	/************
 	 ** Rename **

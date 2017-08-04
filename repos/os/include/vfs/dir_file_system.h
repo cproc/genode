@@ -589,18 +589,6 @@ class Vfs::Dir_file_system : public File_system
 			               path, unlink_fn);
 		}
 
-		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
-		                         file_size &out_len) override
-		{
-			auto readlink_fn = [&] (File_system &fs, char const *path)
-			{
-				return fs.readlink(path, buf, buf_size, out_len);
-			};
-
-			return _dir_op(READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_ENTRY, READLINK_OK,
-			               path, readlink_fn);
-		}
-
 		Rename_result rename(char const *from_path, char const *to_path) override
 		{
 			from_path = _sub_path(from_path);

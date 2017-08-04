@@ -1569,10 +1569,6 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 			return UNLINK_ERR_NO_ENTRY;
 		}
 
-		Readlink_result readlink(char const *, char *, file_size,
-		                         file_size &) override {
-			return READLINK_ERR_NO_ENTRY; }
-
 		Rename_result rename(char const *, char const *) override {
 			return RENAME_ERR_NO_PERM; }
 

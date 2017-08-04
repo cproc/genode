@@ -643,37 +643,6 @@ class Vfs::Fs_file_system : public File_system
 			return UNLINK_OK;
 		}
 
-		Readlink_result readlink(char const *path, char *buf, file_size buf_size,
-		                         file_size &out_len) override
-		{
-			/*
-			 * Canonicalize path (i.e., path must start with '/')
-			 */
-			Absolute_path abs_path(path);
-			abs_path.strip_last_element();
-
-			Absolute_path symlink_name(path);
-			symlink_name.keep_only_last_element();
-
-			try {
-				::File_system::Dir_handle dir_handle = _fs.dir(abs_path.base(), false);
-				Fs_handle_guard from_dir_guard(*this, _fs, dir_handle,
-				                               _handle_space, _fs, _io_handler);
-
-				::File_system::Symlink_handle symlink_handle =
-				    _fs.symlink(dir_handle, symlink_name.base() + 1, false);
-				Fs_handle_guard symlink_guard(*this, _fs, symlink_handle,
-				                              _handle_space, _fs, _io_handler);
-
-				out_len = _read(symlink_guard, buf, buf_size, 0);
-
-				return READLINK_OK;
-			}
-			catch (::File_system::Lookup_failed)  { return READLINK_ERR_NO_ENTRY; }
-			catch (::File_system::Invalid_handle) { return READLINK_ERR_NO_ENTRY; }
-			catch (...) { return READLINK_ERR_NO_PERM; }
-		}
-
 		Rename_result rename(char const *from_path, char const *to_path) override
 		{
 			if ((strcmp(from_path, to_path) == 0) && leaf_path(from_path))

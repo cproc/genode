@@ -50,20 +50,6 @@ class Vfs::Symlink_file_system : public Single_file_system
 		Symlink_result symlink(char const *from, char const *to) override {
 			return SYMLINK_ERR_EXISTS; }
 
-		Readlink_result readlink(char const *path,
-		                         char       *buf,
-		                         file_size   buf_len,
-		                         file_size  &out_len) override
-		{
-			if (!_single_file(path))
-				return READLINK_ERR_NO_ENTRY;
-			out_len = min(buf_len, (file_size)_target.length()-1);
-			memcpy(buf, _target.string(), out_len);
-			if (out_len < buf_len)
-				buf[out_len] = '\0';
-			return READLINK_OK;
-		}
-
 		Open_result open(char const *, unsigned, Vfs_handle **out_handle,
 		                 Allocator&) override {
 			return OPEN_ERR_UNACCESSIBLE; }
