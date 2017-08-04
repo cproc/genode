@@ -535,27 +535,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		char const *leaf_path(char const *path) {
 			return lookup(path) ? path : nullptr; }
 
-		Mkdir_result mkdir(char const *path, unsigned mode) override
-		{
-			using namespace Vfs_ram;
-
-			Directory *parent = lookup_parent(path);
-			if (!parent) return MKDIR_ERR_NO_ENTRY;
-			Node::Guard guard(parent);
-
-			char const *name = basename(path);
-
-			if (strlen(name) >= MAX_NAME_LEN)
-				return MKDIR_ERR_NAME_TOO_LONG;
-
-			if (parent->child(name)) return MKDIR_ERR_EXISTS;
-
-			try { parent->adopt(new (_alloc) Directory(name)); }
-			catch (Out_of_memory) { return MKDIR_ERR_NO_SPACE; }
-
-			return MKDIR_OK;
-		}
-
 		Open_result open(char const  *path, unsigned mode,
 		                 Vfs_handle **handle,
 		                 Allocator   &alloc) override

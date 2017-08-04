@@ -207,8 +207,6 @@ struct Vfs::Directory_service
 	                    MKDIR_ERR_NO_SPACE,      MKDIR_ERR_NO_PERM,
 	                    MKDIR_ERR_NAME_TOO_LONG, MKDIR_OK};
 
-	virtual Mkdir_result mkdir(char const *path, unsigned mode) = 0;
-
 
 	/*************
 	 ** Symlink **

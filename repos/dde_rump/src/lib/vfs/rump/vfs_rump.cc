@@ -447,20 +447,6 @@ class Vfs::Rump_file_system : public File_system
 			return (rump_sys_lstat(path, &s) == 0) ? path : 0;
 		}
 
-		Mkdir_result mkdir(char const *path, unsigned mode) override
-		{
-			if (rump_sys_mkdir(path, mode|0777) != 0) switch (::errno) {
-			case ENAMETOOLONG: return MKDIR_ERR_NAME_TOO_LONG;
-			case EACCES:       return MKDIR_ERR_NO_PERM;
-			case ENOENT:       return MKDIR_ERR_NO_ENTRY;
-			case EEXIST:       return MKDIR_ERR_EXISTS;
-			case ENOSPC:       return MKDIR_ERR_NO_SPACE;
-			default:
-				return MKDIR_ERR_NO_PERM;
-			}
-			return MKDIR_OK;
-		}
-
 		Open_result open(char const *path, unsigned mode,
 		                 Vfs_handle **handle,
 		                 Allocator  &alloc) override

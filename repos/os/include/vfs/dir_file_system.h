@@ -634,18 +634,6 @@ class Vfs::Dir_file_system : public File_system
 			               to, symlink_fn);
 		}
 
-		Mkdir_result mkdir(char const *path, unsigned mode) override
-		{
-			auto mkdir_fn = [&] (File_system &fs, char const *path)
-			{
-				return fs.mkdir(path, mode);
-			};
-
-			return _dir_op(MKDIR_ERR_NO_ENTRY, MKDIR_ERR_NO_PERM, MKDIR_OK,
-			               path, mkdir_fn);
-		}
-
-
 		/***************************
 		 ** File_system interface **
 		 ***************************/

@@ -549,11 +549,6 @@ class Vfs::Tar_file_system : public File_system
 			return RENAME_ERR_NO_ENTRY;
 		}
 
-		Mkdir_result mkdir(char const *, unsigned) override
-		{
-			return MKDIR_ERR_NO_PERM;
-		}
-
 		Symlink_result symlink(char const *, char const *) override
 		{
 			return SYMLINK_ERR_NO_ENTRY;

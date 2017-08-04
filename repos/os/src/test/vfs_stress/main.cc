@@ -45,26 +45,6 @@
 
 using namespace Genode;
 
-inline void assert_mkdir(Vfs::Directory_service::Mkdir_result r)
-{
-	typedef Vfs::Directory_service::Mkdir_result Result;
-
-	switch (r) {
-	case Result::MKDIR_OK: return;
-	case Result::MKDIR_ERR_EXISTS:
-		error("MKDIR_ERR_EXISTS"); break;
-	case Result::MKDIR_ERR_NO_ENTRY:
-		error("MKDIR_ERR_NO_ENTRY"); break;
-	case Result::MKDIR_ERR_NO_SPACE:
-		error("MKDIR_ERR_NO_SPACE"); break;
-	case Result::MKDIR_ERR_NO_PERM:
-		error("MKDIR_ERR_NO_PERM"); break;
-	case Result::MKDIR_ERR_NAME_TOO_LONG:
-		error("MKDIR_ERR_NAME_TOO_LONG"); break;
-	}
-	throw Exception();
-}
-
 inline void assert_open(Vfs::Directory_service::Open_result r)
 {
 	typedef Vfs::Directory_service::Open_result Result;
@@ -190,7 +170,9 @@ struct Mkdir_test : public Stress_test
 		if (++depth > MAX_DEPTH) return;
 
 		path.append("/b");
-		assert_mkdir(vfs.mkdir(path.base(), 0));
+		Vfs::Vfs_handle *dir_handle;
+		assert_opendir(vfs.opendir(path.base(), true, &dir_handle, alloc));
+		vfs.close(dir_handle);
 		++count;
 		mkdir_b(depth);
 	}
@@ -201,15 +183,19 @@ struct Mkdir_test : public Stress_test
 
 		size_t path_len = strlen(path.base());
 
+		Vfs::Vfs_handle *dir_handle;
+
 		path.append("/b");
-		assert_mkdir(vfs.mkdir(path.base(), 0));
+		assert_opendir(vfs.opendir(path.base(), true, &dir_handle, alloc));
+		vfs.close(dir_handle);
 		++count;
 		mkdir_b(depth);
 
 		path.base()[path_len] = '\0';
 
 		path.append("/a");
-		assert_mkdir(vfs.mkdir(path.base(), 0));
+		assert_opendir(vfs.opendir(path.base(), true, &dir_handle, alloc));
+		vfs.close(dir_handle);
 		++count;
 		mkdir_a(depth);
 	}
@@ -570,7 +556,9 @@ void Component::construct(Genode::Env &env)
 
 		for (int i = 0; i < ROOT_TREE_COUNT; ++i) {
 			snprintf(path, 3, "/%d", i);
-			vfs_root.mkdir(path, 0);
+			Vfs::Vfs_handle *dir_handle;
+			vfs_root.opendir(path, true, &dir_handle, heap);
+			vfs_root.close(dir_handle);
 			Mkdir_test test(vfs_root, heap, path);
 			count += test.wait();
 		}

@@ -1572,9 +1572,6 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 		Rename_result rename(char const *, char const *) override {
 			return RENAME_ERR_NO_PERM; }
 
-		Mkdir_result mkdir(char const *, unsigned) override {
-			return MKDIR_ERR_NO_PERM; }
-
 		Symlink_result symlink(char const *, char const *) override {
 			return SYMLINK_ERR_NO_ENTRY; }
 

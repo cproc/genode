@@ -681,27 +681,6 @@ class Vfs::Fs_file_system : public File_system
 			return RENAME_OK;
 		}
 
-		Mkdir_result mkdir(char const *path, unsigned mode) override
-		{
-			/*
-			 * Canonicalize path (i.e., path must start with '/')
-			 */
-			Absolute_path abs_path(path);
-
-			try {
-				_fs.close(_fs.dir(abs_path.base(), true));
-			}
-			catch (::File_system::Permission_denied)   { return MKDIR_ERR_NO_PERM; }
-			catch (::File_system::Node_already_exists) { return MKDIR_ERR_EXISTS; }
-			catch (::File_system::Lookup_failed)       { return MKDIR_ERR_NO_ENTRY; }
-			catch (::File_system::Name_too_long)       { return MKDIR_ERR_NAME_TOO_LONG; }
-			catch (::File_system::No_space)            { return MKDIR_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_ram)          { return MKDIR_ERR_NO_SPACE; }
-			catch (::File_system::Out_of_caps)         { return MKDIR_ERR_NO_SPACE; }
-
-			return MKDIR_OK;
-		}
-
 		Symlink_result symlink(char const *from, char const *to) override
 		{
 			auto const from_len = strlen(from);
