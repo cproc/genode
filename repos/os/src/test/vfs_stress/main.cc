@@ -366,6 +366,8 @@ struct Write_test : public Stress_test
 
 struct Read_test : public Stress_test
 {
+	Genode::Entrypoint &_ep;
+
 	void read(int depth)
 	{
 		if (++depth > MAX_DEPTH) return;
@@ -384,7 +386,17 @@ struct Read_test : public Stress_test
 
 			char tmp[MAX_PATH_LEN];
 			file_size n;
-			assert_read(handle->fs().read(handle, tmp, sizeof(tmp), n));
+			handle->fs().queue_read(handle, sizeof(tmp));
+
+			Vfs::File_io_service::Read_result read_result;
+
+			while ((read_result =
+			        handle->fs().complete_read(handle, tmp, sizeof(tmp), n)) ==
+			       Vfs::File_io_service::READ_QUEUED)
+				_ep.wait_and_dispatch_one_io_signal();
+
+			assert_read(read_result);
+
 			if (strcmp(path.base(), tmp, n))
 				error("read returned bad data");
 			count += n;
@@ -409,8 +421,9 @@ struct Read_test : public Stress_test
 		}
 	}
 
-	Read_test(Vfs::File_system &vfs, Genode::Allocator &alloc, char const *parent)
-	: Stress_test(vfs, alloc, parent)
+	Read_test(Vfs::File_system &vfs, Genode::Allocator &alloc, char const *parent,
+	          Genode::Entrypoint &ep)
+	: Stress_test(vfs, alloc, parent), _ep(ep)
 	{
 		size_t path_len = strlen(path.base());
 		try {
@@ -643,7 +656,7 @@ void Component::construct(Genode::Env &env)
 
 		for (int i = 0; i < ROOT_TREE_COUNT; ++i) {
 			snprintf(path, 3, "/%d", i);
-			Read_test test(vfs_root, heap, path);
+			Read_test test(vfs_root, heap, path, env.ep());
 			count += test.wait();
 		}
 

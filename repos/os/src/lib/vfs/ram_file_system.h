@@ -952,22 +952,6 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle,
-		                 char *buf, file_size len,
-		                 file_size &out) override
-		{
-			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) == OPEN_MODE_WRONLY)
-				return READ_ERR_INVALID;
-
-			Ram_vfs_handle const *handle =
-				static_cast<Ram_vfs_handle *>(vfs_handle);
-
-			Vfs_ram::Node::Guard guard(&handle->node);
-
-			out = handle->node.read(buf, len, handle->seek());
-			return READ_OK;
-		}
-
 		Read_result complete_read(Vfs_handle *vfs_handle, char *dst, file_size count,
 		                          file_size &out_count) override
 		{

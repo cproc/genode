@@ -263,8 +263,9 @@ class Vfs::Single_file_system : public File_system
 		 ** File I/O service interface **
 		 ********************************/
 
-		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
-		                 file_size &out_count) override
+		Read_result complete_read(Vfs_handle *vfs_handle, char *dst,
+		                          file_size count,
+		                          file_size &out_count) override
 		{
 			Single_vfs_handle *handle =
 				static_cast<Single_vfs_handle*>(vfs_handle);

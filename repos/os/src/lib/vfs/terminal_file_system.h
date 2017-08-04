@@ -137,13 +137,6 @@ class Vfs::Terminal_file_system : public Single_file_system
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *, char *dst, file_size count,
-		                 file_size &out_count) override
-		{
-			out_count = _terminal.read(dst, count);
-			return READ_OK;
-		}
-
 		Read_result complete_read(Vfs_handle *vfs_handle, char *dst, file_size count,
 		                          file_size &out_count) override
 		{

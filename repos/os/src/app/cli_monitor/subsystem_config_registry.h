@@ -32,8 +32,9 @@ class Cli_monitor::Subsystem_config_registry
 
 	private:
 
-		Vfs::File_system  &_fs;
-		Genode::Allocator &_alloc;
+		Vfs::File_system   &_fs;
+		Genode::Allocator  &_alloc;
+		Genode::Entrypoint &_ep;
 
 		enum { CONFIG_BUF_SIZE = 32*1024 };
 		char _config_buf[CONFIG_BUF_SIZE];
@@ -62,9 +63,10 @@ class Cli_monitor::Subsystem_config_registry
 		/**
 		 * Constructor
 		 */
-		Subsystem_config_registry(Vfs::File_system &fs, Genode::Allocator &alloc)
+		Subsystem_config_registry(Vfs::File_system &fs, Genode::Allocator &alloc,
+		                          Genode::Entrypoint &ep)
 		:
-			_fs(fs), _alloc(alloc)
+			_fs(fs), _alloc(alloc), _ep(ep)
 		{ }
 
 		/**
@@ -103,8 +105,17 @@ class Cli_monitor::Subsystem_config_registry
 			}
 
 			Vfs::file_size out_count = 0;
-			Vfs::File_io_service::Read_result read_result =
-				handle->fs().read(handle, _config_buf, sizeof(_config_buf), out_count);
+
+			handle->fs().queue_read(handle, sizeof(_config_buf));
+
+			Vfs::File_io_service::Read_result read_result;
+			
+			while ((read_result =
+			        handle->fs().complete_read(handle, _config_buf,
+			                                   sizeof(_config_buf),
+			                                   out_count)) ==
+			       Vfs::File_io_service::READ_QUEUED)
+				_ep.wait_and_dispatch_one_io_signal();
 
 			if (read_result != Vfs::File_io_service::READ_OK) {
 				error("could not read '", path, "', err=", (int)read_result);
@@ -155,7 +166,7 @@ class Cli_monitor::Subsystem_config_registry
 				                                      sizeof(dirent),
 				                                      out_count) ==
 				       Vfs::File_io_service::READ_QUEUED)
-					/*_ep.wait_and_dispatch_one_io_signal()*/;
+					_ep.wait_and_dispatch_one_io_signal();
 
 				if (dirent.type == Vfs::Directory_service::DIRENT_TYPE_END) {
 					_fs.close(dir_handle);

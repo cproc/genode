@@ -101,8 +101,8 @@ class Vfs::Tar_file_system : public File_system
 			: Vfs_handle(fs, fs, alloc, status_flags), _node(node)
 			{ }
 
-			virtual Read_result complete_read(char *dst, file_size count,
-			                                  file_size &out_count) = 0;
+			virtual Read_result read(char *dst, file_size count,
+			                         file_size &out_count) = 0;
 	};
 
 
@@ -110,8 +110,8 @@ class Vfs::Tar_file_system : public File_system
 	{
 		using Tar_vfs_handle::Tar_vfs_handle;
 
-		Read_result complete_read(char *dst, file_size count,
-		                          file_size &out_count) override
+		Read_result read(char *dst, file_size count,
+		                 file_size &out_count) override
 		{
 			file_size const record_size = _node->record->size();
 
@@ -133,8 +133,8 @@ class Vfs::Tar_file_system : public File_system
 	{
 		using Tar_vfs_handle::Tar_vfs_handle;
 
-		Read_result complete_read(char *dst, file_size count,
-		                          file_size &out_count) override
+		Read_result read(char *dst, file_size count,
+		                 file_size &out_count) override
 		{
 			if (count < sizeof(Dirent))
 				return READ_ERR_INVALID;
@@ -191,8 +191,8 @@ class Vfs::Tar_file_system : public File_system
 	{
 		using Tar_vfs_handle::Tar_vfs_handle;
 
-		Read_result complete_read(char *buf, file_size buf_size,
-		                          file_size &out_count) override
+		Read_result read(char *buf, file_size buf_size,
+		                 file_size &out_count) override
 		{
 			Record const *record = _node->record;
 
@@ -719,12 +719,6 @@ class Vfs::Tar_file_system : public File_system
 			return WRITE_ERR_INVALID;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
-		                 file_size &out_count) override
-		{
-			return complete_read(vfs_handle, dst, count, out_count);
-		}
-
 		Read_result complete_read(Vfs_handle *vfs_handle, char *dst,
 		                          file_size count, file_size &out_count) override
 		{
@@ -735,7 +729,7 @@ class Vfs::Tar_file_system : public File_system
 			if (!handle)
 				return READ_ERR_INVALID;
 
-			return handle->complete_read(dst, count, out_count);
+			return handle->read(dst, count, out_count);
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle *handle, file_size) override

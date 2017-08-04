@@ -1704,14 +1704,6 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs::Vfs_handle *vfs_handle, char *dst,
-		                 Vfs::file_size count,
-		                 Vfs::file_size &out_count) override
-		{
-			try { return _read(vfs_handle, dst, count, out_count); }
-			catch (File::Would_block) { return READ_ERR_WOULD_BLOCK; }
-		}
-
 		Read_result complete_read(Vfs_handle *vfs_handle,
 		                          char *dst, file_size count,
 		                          file_size &out_count) override

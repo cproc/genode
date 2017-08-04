@@ -1038,21 +1038,6 @@ class Vfs::Fs_file_system : public File_system
 			return WRITE_OK;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
-		                 file_size &out_count) override
-		{
-			Lock::Guard guard(_lock);
-
-			Fs_vfs_handle &handle = static_cast<Fs_vfs_handle &>(*vfs_handle);
-
-			/* reset the ready_ready state */
-			handle.read_ready_state = Handle_state::Read_ready_state::IDLE;
-
-			out_count = _read(handle, dst, count, handle.seek());
-
-			return READ_OK;
-		}
-
 		bool queue_read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			Lock::Guard guard(_lock);

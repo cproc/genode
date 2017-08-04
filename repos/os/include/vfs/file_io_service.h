@@ -64,9 +64,6 @@ struct Vfs::File_io_service
 	                   READ_ERR_INTERRUPT, READ_QUEUED,
 	                   READ_OK };
 
-	virtual Read_result read(Vfs_handle *vfs_handle, char *dst, file_size count,
-	                         file_size &out_count) = 0;
-
 	/**
 	 * Queue read operation
 	 *
@@ -79,8 +76,7 @@ struct Vfs::File_io_service
 
 	virtual Read_result complete_read(Vfs_handle *vfs_handle,
 	                                  char *dst, file_size count,
-	                                  file_size &out_count)
-	{ return read(vfs_handle, dst, count, out_count); }
+	                                  file_size &out_count) = 0;
 
 	/**
 	 * Return true if the handle has readable data

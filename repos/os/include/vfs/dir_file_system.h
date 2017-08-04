@@ -783,11 +783,6 @@ class Vfs::Dir_file_system : public File_system
 			return WRITE_ERR_INVALID;
 		}
 
-		Read_result read(Vfs_handle *, char *, file_size, file_size &) override
-		{
-			return READ_ERR_INVALID;
-		}
-
 		bool queue_read(Vfs_handle *vfs_handle, file_size count) override
 		{
 			Dir_vfs_handle *dir_vfs_handle =

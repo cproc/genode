@@ -716,8 +716,9 @@ class Vfs::Rump_file_system : public File_system
 			return WRITE_ERR_INVALID;
 		}
 
-		Read_result read(Vfs_handle *vfs_handle, char *buf, file_size buf_size,
-		                 file_size &out_count) override
+		Read_result complete_read(Vfs_handle *vfs_handle, char *buf,
+		                          file_size buf_size,
+		                          file_size &out_count) override
 		{
 			Rump_vfs_handle *handle =
 				static_cast<Rump_vfs_handle *>(vfs_handle);

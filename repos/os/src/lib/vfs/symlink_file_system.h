@@ -98,9 +98,6 @@ class Vfs::Symlink_file_system : public Single_file_system
 		                   file_size &) override {
 			return WRITE_ERR_INVALID; }
 
-		Read_result read(Vfs_handle *, char *, file_size, file_size &) override {
-			return READ_ERR_INVALID; }
-
 		Read_result complete_read(Vfs_handle *, char *buf, file_size buf_len,
 		                          file_size &out_len) override
 		{
