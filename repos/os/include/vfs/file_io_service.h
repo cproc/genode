@@ -40,6 +40,12 @@ struct Vfs::File_io_service
 	 ** Write **
 	 ***********/
 
+	/*
+	 * Exception, thrown when 'alloc_packet()' or 'submit_packet()' failed in the
+	 * VFS plugin and the caller should wait for an IO response and try again.
+	 */
+	struct Insufficient_buffer { };
+
 	enum Write_result { WRITE_ERR_AGAIN,     WRITE_ERR_WOULD_BLOCK,
 	                    WRITE_ERR_INVALID,   WRITE_ERR_IO,
 	                    WRITE_ERR_INTERRUPT, WRITE_OK };
@@ -62,14 +68,12 @@ struct Vfs::File_io_service
 	                         file_size &out_count) = 0;
 
 	/**
-	 * Read from handle with potential queueing of operation
+	 * Queue read operation
 	 *
 	 * \return false if queue is full
 	 */
-	virtual bool queue_read(Vfs_handle *vfs_handle, char *dst, file_size count,
-	                        Read_result &out_result, file_size &out_count)
+	virtual bool queue_read(Vfs_handle *vfs_handle, file_size count)
 	{
-		out_result = read(vfs_handle, dst, count, out_count);
 		return true;
 	}
 
@@ -163,6 +167,27 @@ struct Vfs::File_io_service
 	virtual void register_read_ready_sigh(Vfs_handle *vfs_handle,
 	                                      Signal_context_capability sigh)
 	{ }
+
+	/**********
+	 ** Sync **
+	 **********/
+
+	enum Sync_result { SYNC_QUEUED, SYNC_OK };
+
+	/**
+	 * Queue sync operation
+	 *
+	 * \return false if queue is full
+	 */
+	virtual bool queue_sync(Vfs_handle *vfs_handle)
+	{
+		return true;
+	}
+
+	virtual Sync_result complete_sync(Vfs_handle *vfs_handle)
+	{
+		return SYNC_OK;
+	}
 };
 
 #endif /* _INCLUDE__VFS__FILE_IO_SERVICE_H_ */
