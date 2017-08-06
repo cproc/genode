@@ -29,6 +29,9 @@
 #include <libc-plugin/plugin.h>
 #include <libc-plugin/fd_alloc.h>
 
+/* libc component inclludes */
+#include <libc/component.h>
+
 /* libc includes */
 #include <errno.h>
 #include <sys/disk.h>
@@ -79,6 +82,8 @@ namespace Libc {
 	 */
 	Genode::Xml_node config()     { return Xml_node("<libc/>"); }
 	Genode::Xml_node vfs_config() { return Xml_node("<vfs/>");  }
+
+	Genode::size_t Component::stack_size() { return 64UL*1024*sizeof(long); }
 }
 
 

@@ -93,6 +93,10 @@ class Rump_fs::Session_component : public Session_rpc_object
 			case Packet_descriptor::READ_READY:
 				/* not supported */
 				break;
+
+			case Packet_descriptor::SYNC:
+				rump_sys_sync();
+				break;
 			}
 
 			packet.length(res_length);

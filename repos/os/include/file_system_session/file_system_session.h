@@ -114,7 +114,20 @@ class File_system::Packet_descriptor : public Genode::Packet_descriptor
 {
 	public:
 
-		enum Opcode { READ, WRITE, CONTENT_CHANGED, READ_READY };
+		enum Opcode {
+			READ,
+			WRITE,
+			CONTENT_CHANGED,
+			READ_READY,
+
+			/**
+	 	 	 * Synchronize file system
+	 	 	 *
+	 	 	 * This is only needed by file systems that maintain an internal
+	 	 	 * cache, which needs to be flushed on certain occasions.
+	 	 	 */
+			SYNC
+		};
 
 	private:
 
