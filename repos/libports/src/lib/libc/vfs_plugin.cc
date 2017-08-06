@@ -286,8 +286,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 
 int Libc::Vfs_plugin::close(Libc::File_descriptor *fd)
 {
-	_vfs_sync(fd->fd_path);
 	Vfs::Vfs_handle *handle = vfs_handle(fd);
+	_vfs_sync(handle);
 	handle->ds().close(handle);
 	Libc::file_descriptor_allocator()->free(fd);
 	return 0;
@@ -328,7 +328,6 @@ int Libc::Vfs_plugin::mkdir(const char *path, mode_t mode)
 
 	switch (_root_dir.opendir(path, true, &dir_handle, _alloc)) {
 	case Opendir_result::OPENDIR_OK:
-		_vfs_sync(path);
 		dir_handle->ds().close(dir_handle);
 		break;
 	case Opendir_result::OPENDIR_ERR_LOOKUP_FAILED:
@@ -355,8 +354,6 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 		errno = EFAULT;
 		return -1;
 	}
-
-	_vfs_sync(path);
 
 	typedef Vfs::Directory_service::Stat_result Result;
 
@@ -865,7 +862,8 @@ int Libc::Vfs_plugin::fcntl(Libc::File_descriptor *fd, int cmd, long arg)
 
 int Libc::Vfs_plugin::fsync(Libc::File_descriptor *fd)
 {
-	_vfs_sync(fd->fd_path);
+	Vfs::Vfs_handle *handle = vfs_handle(fd);
+	_vfs_sync(handle);
 	return 0;
 }
 
@@ -933,7 +931,7 @@ int Libc::Vfs_plugin::symlink(const char *oldpath, const char *newpath)
 		Libc::suspend(check);
 	} while (check.retry);
 
-	_vfs_sync(newpath);
+	_vfs_sync(handle);
 	handle->ds().close(handle);
 
 	if (out_count != count)

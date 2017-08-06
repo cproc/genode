@@ -415,8 +415,6 @@ class Rump_fs::Session_component : public Session_rpc_object
 				throw Invalid_handle();
 			}
 		}
-
-		void sync(Node_handle) override { rump_sys_sync(); }
 };
 
 class Rump_fs::Root : public Root_component<Session_component>

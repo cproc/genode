@@ -357,12 +357,6 @@ class Vfs::Rump_file_system : public File_system
 		 ** Directory service interface **
 		 *********************************/
 
-		bool sync(char const *path) override
-		{
-			_rump_sync();
-			return true;
-		}
-
 		Genode::Dataspace_capability dataspace(char const *path) override
 		{
 			int fd = rump_sys_open(path, O_RDONLY);
@@ -625,6 +619,12 @@ class Vfs::Rump_file_system : public File_system
 				return handle->ftruncate(len);
 
 			return FTRUNCATE_ERR_NO_PERM;
+		}
+
+		Sync_result complete_sync(Vfs_handle *) override
+		{
+			_rump_sync();
+			return SYNC_OK;
 		}
 };
 

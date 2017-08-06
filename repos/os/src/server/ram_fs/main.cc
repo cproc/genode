@@ -475,19 +475,6 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 				throw Invalid_handle();
 			}
 		}
-
-		void sync(Node_handle handle) override
-		{
-			auto sync_fn = [&] (Open_node &open_node) {
-				open_node.node().notify_listeners();
-			};
-
-			try {
-				_open_node_registry.apply<Open_node>(handle, sync_fn);
-			} catch (Id_space<File_system::Node>::Unknown_id const &) {
-				throw Invalid_handle();
-			}
-		}
 };
 
 

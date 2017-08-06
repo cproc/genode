@@ -122,9 +122,6 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 				Registered_no_delete<Vfs_io_waiter>
 					vfs_io_waiter(_vfs_io_waiter_registry);
 
-				while (!_root_dir.sync(_sysio.stat_in.path))
-					vfs_io_waiter.wait_for_io();
-
 				Vfs::Directory_service::Stat stat_out;
 				_sysio.error.stat = _root_dir.stat(_sysio.stat_in.path, stat_out);
 
@@ -923,9 +920,33 @@ bool Noux::Child::syscall(Noux::Session::Syscall sc)
 
 		case SYSCALL_SYNC:
 			{
-				/* XXX: queue/complete */
-				_root_dir.sync("/");
+				/* no errors supported at this time */
 				result = true;
+
+				Vfs::Vfs_handle *sync_handle;
+
+				Vfs::Directory_service::Opendir_result opendir_result =
+					_root_dir.opendir("/", false, &sync_handle, _heap);
+
+				if (opendir_result != Vfs::Directory_service::OPENDIR_OK)
+					break;
+
+				Registered_no_delete<Vfs_io_waiter>
+					vfs_io_waiter(_vfs_io_waiter_registry);
+
+				while (!sync_handle->fs().queue_sync(sync_handle))
+					vfs_io_waiter.wait_for_io();
+
+				Vfs_handle_context sync_context;
+
+				sync_handle->context = &sync_context;
+
+				while (sync_handle->fs().complete_sync(sync_handle) ==
+				   Vfs::File_io_service::SYNC_QUEUED)
+					sync_context.vfs_io_waiter.wait_for_io();
+
+				sync_handle->ds().close(sync_handle);
+
 				break;
 			}
 

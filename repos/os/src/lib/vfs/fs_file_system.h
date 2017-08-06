@@ -170,7 +170,7 @@ class Vfs::Fs_file_system : public File_system
 			bool queue_sync()
 			{
 				if (queued_sync_state != Handle_state::Queued_state::IDLE)
-					return false;
+					return true;
 
 				::File_system::Session::Tx::Source &source = *_fs.tx();
 
@@ -340,7 +340,6 @@ class Vfs::Fs_file_system : public File_system
 
 			~Fs_handle_guard()
 			{
-				_fs_session.sync(file_handle());
 				_fs_session.close(file_handle());
 			}
 		};
@@ -856,20 +855,6 @@ class Vfs::Fs_file_system : public File_system
 
 		static char const *name()   { return "fs"; }
 		char const *type() override { return "fs"; }
-
-		bool sync(char const *path) override
-		{
-			if (strcmp(path, "") == 0)
-				path = "/";
-
-			try {
-				::File_system::Node_handle node = _fs.node(path);
-				_fs.sync(node);
-				_fs.close(node);
-			} catch (...) { }
-
-			return true;
-		}
 
 
 		/********************************

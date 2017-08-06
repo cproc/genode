@@ -73,36 +73,65 @@ class Libc::Vfs_plugin : public Libc::Plugin
 			} catch (Xml_node::Nonexistent_attribute) { }
 		}
 
-		void _vfs_sync(char const *path)
+		void _vfs_sync(Vfs::Vfs_handle *vfs_handle)
 		{
-			struct Check : Libc::Suspend_functor
 			{
-				bool retry { false };
-
-				Vfs::File_system &root_dir;
-				char const       *path;
-
-				Check(Vfs::File_system &root_dir, char const *path)
-				: root_dir(root_dir), path(path) { }
-
-				bool suspend() override
+				struct Check : Libc::Suspend_functor
 				{
-					retry = !root_dir.sync(path);
+					bool retry { false };
 
-					return retry;
+					Vfs::Vfs_handle *vfs_handle;
+
+					Check(Vfs::Vfs_handle *vfs_handle)
+					: vfs_handle(vfs_handle) { }
+
+					bool suspend() override
+					{
+						retry = !vfs_handle->fs().queue_sync(vfs_handle);
+						return retry;
+					}
+				} check(vfs_handle);
+
+				/*
+			 	 * Cannot call Libc::suspend() immediately, because the Libc kernel
+			 	 * might not be running yet.
+			 	 */
+				if (!vfs_handle->fs().queue_sync(vfs_handle)) {
+					do {
+						Libc::suspend(check);
+					} while (check.retry);
 				}
-			} check(_root_dir, path);
+			}
 
-			/*
-			 * Cannot call Libc::suspend() immediately, because the Libc kernel
-			 * might not be running yet.
-			 */
-			if (_root_dir.sync(path))
-				return;
+			{
+				struct Check : Libc::Suspend_functor
+				{
+					bool retry { false };
 
-			do {
-				Libc::suspend(check);
-			} while (check.retry);
+					Vfs::Vfs_handle *vfs_handle;
+
+					Check(Vfs::Vfs_handle *vfs_handle)
+					: vfs_handle(vfs_handle) { }
+
+					bool suspend() override
+					{
+						retry = (vfs_handle->fs().complete_sync(vfs_handle) ==
+						         Vfs::File_io_service::SYNC_QUEUED);
+						return retry;
+					}
+				} check(vfs_handle);
+
+				/*
+			 	 * Cannot call Libc::suspend() immediately, because the Libc kernel
+			 	 * might not be running yet.
+			 	 */
+				if (vfs_handle->fs().complete_sync(vfs_handle) ==
+				    Vfs::File_io_service::SYNC_QUEUED) {
+					do {
+						Libc::suspend(check);
+					} while (check.retry);
+				}
+			}
 		}
 
 	public:

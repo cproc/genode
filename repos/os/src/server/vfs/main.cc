@@ -589,16 +589,6 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			});
 		}
 
-		/**
-		 * Sync the VFS and send any pending signals on the node.
-		 */
-		void sync(Node_handle handle) override
-		{
-			_apply(handle, [&] (Node &node) {
-				_vfs.sync(node.path());
-			});
-		}
-
 		void control(Node_handle, Control) override { }
 };
 

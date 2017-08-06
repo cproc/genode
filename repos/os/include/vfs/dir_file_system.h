@@ -16,6 +16,7 @@
 #ifndef _INCLUDE__VFS__DIR_FILE_SYSTEM_H_
 #define _INCLUDE__VFS__DIR_FILE_SYSTEM_H_
 
+#include <base/registry.h>
 #include <vfs/file_system_factory.h>
 #include <vfs/vfs_handle.h>
 
@@ -33,9 +34,14 @@ class Vfs::Dir_file_system : public File_system
 
 		struct Dir_vfs_handle : Vfs_handle
 		{
-			Absolute_path  path;
-			File_system   *fs_for_complete_read { nullptr };
-			Vfs_handle    *fs_dir_handle { nullptr };
+			typedef Genode::Registered<Vfs_handle> Registered_vfs_handle;
+			typedef Genode::Registry<Registered_vfs_handle>
+			        Sync_dir_handle_registry;
+
+			Absolute_path             path;
+			File_system              *fs_for_complete_read { nullptr };
+			Vfs_handle               *fs_dir_handle { nullptr };
+			Sync_dir_handle_registry  sync_dir_handle_registry;
 
 			Dir_vfs_handle(Directory_service &ds,
 			               File_io_service   &fs,
@@ -630,29 +636,6 @@ class Vfs::Dir_file_system : public File_system
 		char const *name() const    { return "dir"; }
 		char const *type() override { return "dir"; }
 
-		/**
-		 * Synchronize all file systems
-		 */
-		bool sync(char const *path) override
-		{
-			if (strcmp("/", path, 2) == 0) {
-				for (File_system *fs = _first_file_system; fs; fs = fs->next)
-					if (!fs->sync("/"))
-						return false;
-				return true;
-			}
-
-			path = _sub_path(path);
-			if (!path)
-				return true;
-
-			for (File_system *fs = _first_file_system; fs; fs = fs->next)
-				if (!fs->sync(path))
-					return false;
-
-			return true;
-		}
-
 		void apply_config(Genode::Xml_node const &node) override
 		{
 			using namespace Genode;
@@ -752,6 +735,79 @@ class Vfs::Dir_file_system : public File_system
 				return true;
 
 			return handle->fs().notify_read_ready(handle);
+		}
+
+		bool queue_sync(Vfs_handle *vfs_handle) override
+		{
+			Dir_vfs_handle *dir_vfs_handle =
+				static_cast<Dir_vfs_handle*>(vfs_handle);
+
+			char const *sub_path = _sub_path(dir_vfs_handle->path.base());
+
+			if (strlen(sub_path) == 0)
+				sub_path = "/";
+
+			/*
+			 * Call 'opendir()' on each file system and, if successful,
+			 * 'queue_sync()'. If one file system's 'queue_sync()' returns
+			 * false, this function returns false. Any VFS handles returned by
+			 * 'opendir()' are kept in a registry.
+			 */
+			for (File_system *fs = _first_file_system; fs; fs = fs->next) {
+
+				bool fs_dir_already_open = false;
+
+				dir_vfs_handle->sync_dir_handle_registry.for_each(
+					[&] (Vfs_handle &sync_dir_handle) {
+						if (&sync_dir_handle.fs() == fs) {
+							fs_dir_already_open = true;
+							return;
+						}
+					}
+				);
+
+				if (fs_dir_already_open)
+					continue;
+
+				Vfs_handle *sync_dir_handle;
+
+				if (fs->opendir(sub_path, false, &sync_dir_handle,
+				                dir_vfs_handle->alloc()) != OPENDIR_OK)
+					continue;
+
+				new (dir_vfs_handle->alloc())
+					Dir_vfs_handle::Registered_vfs_handle(
+						dir_vfs_handle->sync_dir_handle_registry,
+						*sync_dir_handle);
+
+				if (!sync_dir_handle->fs().queue_sync(sync_dir_handle))
+					return false;
+			}
+
+			return true;
+		}
+
+		Sync_result complete_sync(Vfs_handle *vfs_handle) override
+		{
+			Sync_result result = SYNC_OK;
+
+			Dir_vfs_handle *dir_vfs_handle =
+				static_cast<Dir_vfs_handle*>(vfs_handle);
+
+			dir_vfs_handle->sync_dir_handle_registry.for_each(
+				[&] (Vfs_handle &sync_dir_handle) {
+
+					result =
+						sync_dir_handle.fs().complete_sync(&sync_dir_handle);
+
+					if (result != SYNC_OK)
+						return;
+
+					destroy(sync_dir_handle.alloc(), &sync_dir_handle);
+				}
+			);
+
+			return result;
 		}
 };
 

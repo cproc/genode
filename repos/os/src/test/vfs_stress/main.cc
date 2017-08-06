@@ -534,6 +534,20 @@ void Component::construct(Genode::Env &env)
 	Vfs::Dir_file_system vfs_root(env, heap, config_xml.sub_node("vfs"),
 	                              io_response_handler,
 	                              global_file_system_factory);
+
+	Vfs::Vfs_handle *vfs_root_handle;
+	vfs_root.opendir("/", false, &vfs_root_handle, heap);
+
+	auto vfs_root_sync = [&] ()
+	{
+		while (!vfs_root_handle->fs().queue_sync(vfs_root_handle))
+			env.ep().wait_and_dispatch_one_io_signal();
+
+		while (vfs_root_handle->fs().complete_sync(vfs_root_handle) ==
+		       Vfs::File_io_service::SYNC_QUEUED)
+			env.ep().wait_and_dispatch_one_io_signal();
+	};
+
 	char path[Vfs::MAX_PATH_LEN];
 
 	MAX_DEPTH = config_xml.attribute_value("depth", 16U);
@@ -564,7 +578,7 @@ void Component::construct(Genode::Env &env)
 		}
 		elapsed_ms = timer.elapsed_ms() - elapsed_ms;
 
-		vfs_root.sync("/");
+		vfs_root_sync();
 
 		log("created ",count," empty directories, ",
 		    (elapsed_ms*1000)/count,"μs/op , ",
@@ -588,7 +602,7 @@ void Component::construct(Genode::Env &env)
 
 		elapsed_ms = timer.elapsed_ms() - elapsed_ms;
 
-		vfs_root.sync("/");
+		vfs_root_sync();
 
 		log("created ",count," empty files, ",
 		    (elapsed_ms*1000)/count,"μs/op, ",
@@ -619,7 +633,7 @@ void Component::construct(Genode::Env &env)
 
 		elapsed_ms = timer.elapsed_ms() - elapsed_ms;
 
-		vfs_root.sync("/");
+		vfs_root_sync();
 
 		log("wrote ",count," bytes ",
 		    count/elapsed_ms,"kB/s, ",
@@ -650,7 +664,7 @@ void Component::construct(Genode::Env &env)
 
 		elapsed_ms = timer.elapsed_ms() - elapsed_ms;
 
-		vfs_root.sync("/");
+		vfs_root_sync();
 
 		log("read ",count," bytes, ",
 		    count/elapsed_ms,"kB/s, ",
@@ -683,7 +697,7 @@ void Component::construct(Genode::Env &env)
 
 		elapsed_ms = timer.elapsed_ms() - elapsed_ms;
 
-		vfs_root.sync("/");
+		vfs_root_sync();
 
 		log("unlinked ",count," files in ",elapsed_ms,"ms, ",
 		    env.ram().used_ram().value/1024,"KiB consumed");

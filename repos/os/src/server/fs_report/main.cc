@@ -71,7 +71,8 @@ class Fs_report::Session_component : public Genode::Rpc_object<Report::Session>
 
 		Path _leaf_path;
 
-		Attached_ram_dataspace _ds;
+		Attached_ram_dataspace  _ds;
+		Genode::Entrypoint     &_ep;
 
 		Vfs_handle *_handle;
 		file_size   _file_size = 0;
@@ -84,7 +85,7 @@ class Fs_report::Session_component : public Genode::Rpc_object<Report::Session>
 		                  Vfs::File_system            &vfs,
 		                  Genode::Session_label const &label,
 		                  size_t                       buffer_size)
-		: _ds(env.ram(), env.rm(), buffer_size)
+		: _ds(env.ram(), env.rm(), buffer_size), _ep(env.ep())
 		{
 			typedef Vfs::Directory_service::Open_result Open_result;
 
@@ -159,7 +160,12 @@ class Fs_report::Session_component : public Genode::Rpc_object<Report::Session>
 			_success = true;
 
 			/* flush to notify watchers */
-			_handle->ds().sync(_leaf_path.base());
+			while (!_handle->fs().queue_sync(_handle))
+				_ep.wait_and_dispatch_one_io_signal();
+
+			while (_handle->fs().complete_sync(_handle) ==
+			       Vfs::File_io_service::SYNC_QUEUED)
+				_ep.wait_and_dispatch_one_io_signal();
 		}
 
 		void response_sigh(Genode::Signal_context_capability) override { }

@@ -435,11 +435,6 @@ class Fuse_fs::Session_component : public Session_rpc_object
 				throw Invalid_handle();
 			}
 		}
-
-		void sync(Node_handle) override
-		{
-			Fuse::sync_fs();
-		}
 };
 
 
