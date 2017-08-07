@@ -160,7 +160,7 @@ class Fatfs::File_system : public Vfs::File_system
 					return READ_ERR_INVALID;
 
 				file_size dir_index = seek() / sizeof(Dirent);
-
+Genode::warning("Fatfs_dir_handle::complete_read(): index: ", dir_index);
 				Dirent *vfs_dir = (Dirent*)buf;
 
 				FILINFO info;
@@ -170,6 +170,7 @@ class Fatfs::File_system : public Vfs::File_system
 				do {
 					res = f_readdir (&dir, &info);
 					if ((res != FR_OK) || (!info.fname[0])) {
+						Genode::error("error");
 						vfs_dir->type    = DIRENT_TYPE_END;
 						vfs_dir->name[0] = '\0';
 						out_count = sizeof(Dirent);
@@ -395,7 +396,7 @@ class Fatfs::File_system : public Vfs::File_system
 					}
 				}
 			}
-
+Genode::warning("opendir(): ", Genode::Cstring(path));
 			FRESULT res = f_opendir(&handle->dir, (const TCHAR*)path);
 			if (res != FR_OK) {
 				destroy(alloc, handle);
@@ -404,7 +405,7 @@ class Fatfs::File_system : public Vfs::File_system
 				default:         return OPENDIR_ERR_PERMISSION_DENIED;
 				}
 			}
-
+Genode::warning("opendir() finished");
 			*vfs_handle = handle;
 
 			return OPENDIR_OK;
@@ -465,16 +466,18 @@ class Fatfs::File_system : public Vfs::File_system
 
 		file_size num_dirent(char const *path) override
 		{
+			Genode::warning("num_dirent()");
 			DIR       dir;
 			FILINFO   fno;
 			file_size count = 0;
 
 			if (f_opendir(&dir, (const TCHAR*)path) != FR_OK) return 0;
-
+Genode::warning("num_dirent(): check");
 			fno.fname[0] = 0xFF;
 			while ((f_readdir (&dir, &fno) == FR_OK) && fno.fname[0])
 				++count;
 			f_closedir(&dir);
+Genode::warning("num_dirent(): count: ", count);
 			return count;
 		}
 
