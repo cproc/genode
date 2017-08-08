@@ -304,6 +304,9 @@ int Libc::Vfs_plugin::dup2(Libc::File_descriptor *fd,
 
 int Libc::Vfs_plugin::fstat(Libc::File_descriptor *fd, struct stat *buf)
 {
+	Vfs::Vfs_handle *handle = vfs_handle(fd);
+	_vfs_sync(handle);
+
 	return stat(fd->fd_path, buf);
 }
 
@@ -383,7 +386,10 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 	if (fd->flags & O_NONBLOCK) {
 
 		try {
-			out_result = handle->fs().write(handle, (char const *)buf, count, out_count);
+			if (fd->flags & O_APPEND)
+				handle->fs().append(handle, (char const *)buf, count, out_count);
+			else
+				out_result = handle->fs().write(handle, (char const *)buf, count, out_count);
 		} catch (Vfs::File_io_service::Insufficient_buffer) { }
 
 	} else {
@@ -397,19 +403,24 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 			::size_t         count;
 			Vfs::file_size  &out_count;
 			Result          &out_result;
+			bool             append;
 
 			Check(Vfs::Vfs_handle *handle, void const *buf,
 			      ::size_t count, Vfs::file_size &out_count,
-			      Result &out_result)
+			      Result &out_result, bool append)
 			: handle(handle), buf(buf), count(count), out_count(out_count),
-	  	  	  out_result(out_result)
+	  	  	  out_result(out_result), append(append)
 			{ }
 
 			bool suspend() override
 			{
 				try {
-					out_result = handle->fs().write(handle, (char const *)buf,
-						                            count, out_count);
+					if (append)
+						handle->fs().append(handle, (char const *)buf,
+						                    count, out_count);
+					else
+						out_result = handle->fs().write(handle, (char const *)buf,
+							                            count, out_count);
 					retry = false;
 				} catch (Vfs::File_io_service::Insufficient_buffer) {
 					retry = true;
@@ -417,7 +428,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 
 				return retry;
 			}
-		} check(handle, buf, count, out_count, out_result);
+		} check(handle, buf, count, out_count, out_result, (fd->flags & O_APPEND));
 
 		do {
 			Libc::suspend(check);

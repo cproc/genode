@@ -54,6 +54,13 @@ struct Vfs::File_io_service
 	                           char const *buf, file_size buf_size,
 	                           file_size &out_count) = 0;
 
+	virtual void append(Vfs_handle *vfs_handle,
+	                    char const *buf, file_size buf_size,
+	                    file_size &out_count)
+	{
+		Genode::error("Vfs::File_io_service::append() called");
+		out_count = 0;
+	};
 
 	/**********
 	 ** Read **
