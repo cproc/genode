@@ -55,6 +55,8 @@ struct Vfs::Directory_service
 		OPEN_ERR_EXISTS,
 		OPEN_ERR_NAME_TOO_LONG,
 		OPEN_ERR_NO_SPACE,
+		OPEN_ERR_OUT_OF_RAM,
+		OPEN_ERR_OUT_OF_CAPS,
 		OPEN_OK
 	};
 
@@ -63,8 +65,48 @@ struct Vfs::Directory_service
 	                         Vfs_handle **handle,
 	                         Allocator   &alloc) = 0;
 
+	enum Opendir_result
+	{
+		OPENDIR_ERR_LOOKUP_FAILED,
+		OPENDIR_ERR_NAME_TOO_LONG,
+		OPENDIR_ERR_NODE_ALREADY_EXISTS,
+		OPENDIR_ERR_NO_SPACE,
+		OPENDIR_ERR_OUT_OF_RAM,
+		OPENDIR_ERR_OUT_OF_CAPS,
+		OPENDIR_ERR_PERMISSION_DENIED,
+		OPENDIR_OK
+	};
+
+	virtual Opendir_result opendir(char const *path, bool create,
+	                               Vfs_handle **handle, Allocator &alloc)
+	{
+		return OPENDIR_ERR_LOOKUP_FAILED;
+	}
+
+	enum Openlink_result
+	{
+		OPENLINK_ERR_LOOKUP_FAILED,
+		OPENLINK_ERR_NAME_TOO_LONG,
+		OPENLINK_ERR_NODE_ALREADY_EXISTS,
+		OPENLINK_ERR_NO_SPACE,
+		OPENLINK_ERR_OUT_OF_RAM,
+		OPENLINK_ERR_OUT_OF_CAPS,
+		OPENLINK_ERR_PERMISSION_DENIED,
+		OPENLINK_OK
+	};
+
+	virtual Openlink_result openlink(char const *path, bool create,
+	                                 Vfs_handle **handle, Allocator &alloc)
+	{
+		return OPENLINK_ERR_PERMISSION_DENIED;
+	}
+
 	/**
 	 * Close handle resources and deallocate handle
+	 *
+	 * Note: it might be necessary to call 'sync()' before 'close()'
+	 *       to ensure that previously written data has been completely
+	 *       processed.
 	 */
 	virtual void close(Vfs_handle *handle) = 0;
 
@@ -97,6 +139,10 @@ struct Vfs::Directory_service
 	enum Stat_result { STAT_ERR_NO_ENTRY = NUM_GENERAL_ERRORS,
 	                   STAT_ERR_NO_PERM, STAT_OK };
 
+	/*
+	 * Note: it might be necessary to call 'sync()' before 'stat()'
+	 *       to get the correct file size.
+	 */
 	virtual Stat_result stat(char const *path, Stat &) = 0;
 
 
@@ -125,8 +171,6 @@ struct Vfs::Directory_service
 		char          name[DIRENT_MAX_NAME_LEN] = { 0 };
 	};
 
-	virtual Dirent_result dirent(char const *path, file_offset index, Dirent &) = 0;
-
 
 	/************
 	 ** Unlink **
@@ -143,9 +187,6 @@ struct Vfs::Directory_service
 	 **************/
 
 	enum Readlink_result { READLINK_ERR_NO_ENTRY, READLINK_ERR_NO_PERM, READLINK_OK };
-
-	virtual Readlink_result readlink(char const *path, char *buf,
-	                                 file_size buf_size, file_size &out_len) = 0;
 
 
 	/************
@@ -166,8 +207,6 @@ struct Vfs::Directory_service
 	                    MKDIR_ERR_NO_SPACE,      MKDIR_ERR_NO_PERM,
 	                    MKDIR_ERR_NAME_TOO_LONG, MKDIR_OK};
 
-	virtual Mkdir_result mkdir(char const *path, unsigned mode) = 0;
-
 
 	/*************
 	 ** Symlink **
@@ -176,8 +215,6 @@ struct Vfs::Directory_service
 	enum Symlink_result { SYMLINK_ERR_EXISTS,        SYMLINK_ERR_NO_ENTRY,
 	                      SYMLINK_ERR_NO_SPACE,      SYMLINK_ERR_NO_PERM,
 	                      SYMLINK_ERR_NAME_TOO_LONG, SYMLINK_OK };
-
-	virtual Symlink_result symlink(char const *from, char const *to) = 0;
 
 
 	/**
@@ -188,13 +225,6 @@ struct Vfs::Directory_service
 	virtual bool directory(char const *path) = 0;
 
 	virtual char const *leaf_path(char const *path) = 0;
-
-	/**
-	 * Synchronize file system
-	 *
-	 * This method flushes any delayed operations from the file system.
-	 */
-	virtual void sync(char const *path) { }
 };
 
 #endif /* _INCLUDE__VFS__DIRECTORY_SERVICE_H_ */
