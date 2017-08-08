@@ -140,6 +140,42 @@ class Vfs::Fs_file_system : public File_system
 				return READ_OK;
 			}
 
+			Write_result _write(const char *buf, file_size count,
+			                    file_size seek_offset,
+			                    file_size &out_count)
+			{
+				out_count = 0;
+
+				::File_system::Session::Tx::Source &source = *_fs.tx();
+				using ::File_system::Packet_descriptor;
+
+				file_size const max_packet_size = source.bulk_buffer_size() / 2;
+				count = min(max_packet_size, count);
+
+				if (!source.ready_to_submit())
+					throw Insufficient_buffer();
+
+				try {
+					Packet_descriptor packet_in(source.alloc_packet(count),
+			                            		file_handle(),
+			                            		Packet_descriptor::WRITE,
+			                            		count,
+			                            		seek_offset);
+
+					memcpy(source.packet_content(packet_in), buf, count);
+
+					/* pass packet to server side */
+					source.submit_packet(packet_in);
+				} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
+					throw Insufficient_buffer();
+				} catch (...) {
+					Genode::error("unhandled exception");
+					return WRITE_ERR_IO;
+				}
+				out_count = count;
+				return WRITE_OK;
+			}
+
 			Fs_vfs_handle(File_system &fs, Allocator &alloc,
 			              int status_flags, Handle_space &space,
 			              ::File_system::Node_handle node_handle,
@@ -165,6 +201,13 @@ class Vfs::Fs_file_system : public File_system
 			{
 				Genode::error("Fs_vfs_handle::complete_read() called");
 				return READ_ERR_INVALID;
+			}
+
+			virtual Write_result write(char const *buf, file_size buf_size,
+			                           file_size &out_count)
+			{
+				Genode::error("Fs_vfs_handle::write() called");
+				return WRITE_ERR_INVALID;
 			}
 
 			bool queue_sync()
@@ -235,6 +278,12 @@ class Vfs::Fs_file_system : public File_system
 			                          file_size &out_count) override
 			{
 				return _complete_read(dst, count, out_count);
+			}
+
+			Write_result write(char const *buf, file_size buf_size,
+			                   file_size &out_count) override
+			{
+				return _write(buf, buf_size, seek(), out_count);
 			}
 		};
 
@@ -316,6 +365,12 @@ class Vfs::Fs_file_system : public File_system
 			                          file_size &out_count) override
 			{
 				return _complete_read(dst, count, out_count);
+			}
+
+			Write_result write(char const *buf, file_size buf_size,
+			                   file_size &out_count) override
+			{
+				return _write(buf, buf_size, seek(), out_count);
 			}
 		};
 
@@ -461,38 +516,6 @@ class Vfs::Fs_file_system : public File_system
 			source.release_packet(packet_out);
 
 			return read_num_bytes;
-		}
-
-		file_size _write(Fs_vfs_handle &handle,
-		                 const char *buf, file_size count, file_size seek_offset)
-		{
-			::File_system::Session::Tx::Source &source = *_fs.tx();
-			using ::File_system::Packet_descriptor;
-
-			file_size const max_packet_size = source.bulk_buffer_size() / 2;
-			count = min(max_packet_size, count);
-
-			if (!source.ready_to_submit())
-				throw Insufficient_buffer();
-
-			try {
-				Packet_descriptor packet_in(source.alloc_packet(count),
-			                            	handle.file_handle(),
-			                            	Packet_descriptor::WRITE,
-			                            	count,
-			                            	seek_offset);
-
-				memcpy(source.packet_content(packet_in), buf, count);
-
-				/* pass packet to server side */
-				source.submit_packet(packet_in);
-			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
-				throw Insufficient_buffer();
-			} catch (...) {
-				Genode::error("unhandled exception");
-				return 0;
-			}
-			return count;
 		}
 
 		void _handle_ack()
@@ -866,11 +889,9 @@ class Vfs::Fs_file_system : public File_system
 		{
 			Lock::Guard guard(_lock);
 
-			Fs_vfs_handle &handle = static_cast<Fs_vfs_handle &>(*vfs_handle);
+			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 
-			out_count = _write(handle, buf, buf_size, handle.seek());
-
-			return WRITE_OK;
+			return handle->write(buf, buf_size, out_count);
 		}
 
 		bool queue_read(Vfs_handle *vfs_handle, file_size count) override
