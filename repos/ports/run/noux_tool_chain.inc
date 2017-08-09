@@ -21,7 +21,7 @@ set use_usb_input [expr ![have_spec ps2] && ![have_spec sdl] && [have_spec usb]]
 set build_components {
 	core init drivers/timer noux/minimal lib/libc_noux
 	drivers/framebuffer drivers/input
-	server/terminal server/ram_fs
+	server/terminal server/ram_fs server/vfs
 	test/libports/ncurses
 }
 
@@ -176,8 +176,26 @@ append config {
 			<policy label="noux -> home" root="/home/user" writeable="yes" />
 			<policy label="noux -> tmp"  root="/tmp"       writeable="yes" />
 			<policy label="noux -> usr"  root="/usr"       writeable="yes" />
+
+			<policy label="vfs -> home" root="/home/user" writeable="yes" />
 		</config>
 	</start>
+
+	<start name="vfs" caps="200">
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<dir name="home"> <fs label="home"/> </dir>
+			</vfs>
+			<policy label="noux -> home" root="/home" writeable="yes"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
 }
 
 append config {
@@ -234,6 +252,11 @@ append config {			</dir>
 				<arg value="--login" />
 			</start>
 		</config>
+		<route>
+			<service name="File_system" label="home"> <child name="vfs"/> </service>
+			<service name="File_system"> <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 </config>
 }
@@ -247,7 +270,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	core init timer ld.lib.so noux terminal ram_fs
+	core init timer ld.lib.so noux terminal ram_fs vfs
 	libc.lib.so libm.lib.so libc_noux.lib.so ncurses.lib.so stdcxx.lib.so
 	pcre.lib.so posix.lib.so vimrc
 }
