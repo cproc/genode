@@ -124,6 +124,9 @@ append config {
 				</dir>
 				<dir name="home">
 					<dir name="user">
+						<inline name=".bash_profile">
+							for ((i=0;;i++)); do /bin/echo $i; done
+						 </inline>
 						<!-- just a place holder -->
 						<rom name="timer" />
 						<inline name="diff_me_a.txt">
@@ -174,6 +177,8 @@ append config {
 			</fstab>
 			<start name="/bin/bash">
 				<env name="TERM" value="linux" />
+				<env name="HOME" value="/home" />
+				<arg value="--login" />
 			</start>
 		</config>
 	</start>

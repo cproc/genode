@@ -66,21 +66,27 @@ Untyped_capability Rpc_entrypoint::_manage(Rpc_object_base *obj)
 
 void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 {
+Genode::log(obj, ": Rpc_entrypoint::_dissolve()");
 	/* don't dissolve RPC object twice */
 	if (!obj->cap().valid())
 		return;
+Genode::log(obj, ": 1");
 
 	/* de-announce object from cap_session */
 	_free_rpc_cap(_pd_session, obj->cap());
+Genode::log(obj, ": 2");
 
 	/* avoid any incoming IPC */
 	Nova::revoke(Nova::Obj_crd(obj->cap().local_name(), 0), true);
+Genode::log(obj, ": 3");
 
 	/* make sure nobody is able to find this object */
 	remove(obj);
+Genode::log(obj, ": 4");
 
 	/* effectively invalidate the capability used before */
 	obj->cap(Untyped_capability());
+Genode::log(obj, ": 5");
 
 	/*
 	 * The activation may execute a blocking operation in a dispatch function.
@@ -92,18 +98,26 @@ void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 	using namespace Nova;
 
 	Utcb *utcb = reinterpret_cast<Utcb *>(Thread::myself()->utcb());
+
+Genode::log(obj, ": 6");
+
 	/* don't call ourself */
-	if (utcb == reinterpret_cast<Utcb *>(this->utcb()))
+	if (utcb == reinterpret_cast<Utcb *>(this->utcb())) {
+		Genode::log(this, ": Rpc_entrypoint::_dissolve() finished");
 		return;
+	}
+Genode::log(obj, ": 7");
 
 	/* activate entrypoint now - otherwise cleanup call will block forever */
 	_delay_start.unlock();
+Genode::log(obj, ": 8");
 
 	/* make a IPC to ensure that cap() identifier is not used anymore */
 	utcb->msg()[0] = 0xdead;
 	utcb->set_msg_word(1);
 	if (uint8_t res = call(_cap.local_name()))
 		error(utcb, " - could not clean up entry point of thread ", this->utcb(), " - res ", res);
+Genode::log(obj, ": Rpc_entrypoint::_dissolve() finished");
 }
 
 
