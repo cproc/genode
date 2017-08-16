@@ -66,7 +66,7 @@ Untyped_capability Rpc_entrypoint::_manage(Rpc_object_base *obj)
 
 void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 {
-Genode::log(obj, ": Rpc_entrypoint::_dissolve()");
+Genode::log(obj, ": Rpc_entrypoint::_dissolve() valid=", obj->cap().valid());
 	/* don't dissolve RPC object twice */
 	if (!obj->cap().valid())
 		return;
@@ -103,7 +103,7 @@ Genode::log(obj, ": 6");
 
 	/* don't call ourself */
 	if (utcb == reinterpret_cast<Utcb *>(this->utcb())) {
-		Genode::log(this, ": Rpc_entrypoint::_dissolve() finished");
+		Genode::log(obj, ": Rpc_entrypoint::_dissolve() finished");
 		return;
 	}
 Genode::log(obj, ": 7");
