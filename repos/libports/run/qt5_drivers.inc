@@ -27,6 +27,11 @@ proc use_fb_sdl { feature_arg } {
 	return [have_spec linux]
 }
 
+proc use_intel_gpu_drv { feature_arg } {
+	upvar $feature_arg feature
+	return [info exists feature(Gpu)]
+}
+
 proc use_gpio_drv { feature_arg } {
 	upvar $feature_arg feature
 	return [expr {[use_usb_drv feature] &&
@@ -96,15 +101,16 @@ proc drivers_build_components { feature_arg } {
 	# the local version defined above.
 	append_platform_drv_build_components
 
-	lappend_if [use_audio_drv feature]    build_components drivers/audio
-	lappend_if [use_fb_drv feature]       build_components drivers/framebuffer
-	lappend_if [use_fb_sdl feature]       build_components drivers/framebuffer/spec/sdl
-	lappend_if [use_gpio_drv feature]     build_components drivers/gpio
-	lappend_if [use_input_filter feature] build_components server/input_filter
-	lappend_if [use_nic_drv feature]      build_components drivers/nic
-	lappend_if [use_ps2_drv feature]      build_components drivers/input/spec/ps2
-	lappend_if [use_timer feature]        build_components drivers/timer
-	lappend_if [use_usb_drv feature]      build_components drivers/usb
+	lappend_if [use_audio_drv feature]     build_components drivers/audio
+	lappend_if [use_fb_drv feature]        build_components drivers/framebuffer
+	lappend_if [use_fb_sdl feature]        build_components drivers/framebuffer/spec/sdl
+	lappend_if [use_intel_gpu_drv feature] build_components drivers/gpu/intel
+	lappend_if [use_gpio_drv feature]      build_components drivers/gpio
+	lappend_if [use_input_filter feature]  build_components server/input_filter
+	lappend_if [use_nic_drv feature]       build_components drivers/nic
+	lappend_if [use_ps2_drv feature]       build_components drivers/input/spec/ps2
+	lappend_if [use_timer feature]         build_components drivers/timer
+	lappend_if [use_usb_drv feature]       build_components drivers/usb
 
 	return $build_components
 }
@@ -172,6 +178,13 @@ proc drivers_start_nodes { feature_arg } {
 				<service name="Input"/>
 				<service name="Framebuffer"/>
 			</provides>
+		</start>
+	}
+
+	append_if [use_intel_gpu_drv feature] start_nodes {
+		<start name="intel_gpu_drv" caps="200">
+			<resource name="RAM" quantum="40M"/>
+			<provides> <service name="Gpu"/> </provides>
 		</start>
 	}
 
@@ -304,16 +317,17 @@ proc drivers_boot_modules { feature_arg } {
 	# local version defined above.
 	append_platform_drv_boot_modules
 
-	lappend_if [use_audio_drv feature]    boot_modules [audio_drv_binary]
-	lappend_if [use_fb_drv feature]       boot_modules fb_drv
-	lappend_if [use_fb_sdl feature]       boot_modules fb_sdl
-	lappend_if [use_gpio_drv feature]     boot_modules [gpio_drv]
-	lappend_if [use_input_filter feature] boot_modules input_filter
-	lappend_if [use_input_filter feature] boot_modules [language_chargen].chargen
-	lappend_if [use_nic_drv feature]      boot_modules [nic_drv_binary]
-	lappend_if [use_ps2_drv feature]      boot_modules ps2_drv
-	lappend_if [use_timer feature]        boot_modules timer
-	lappend_if [use_usb_drv feature]      boot_modules usb_drv
+	lappend_if [use_audio_drv feature]     boot_modules [audio_drv_binary]
+	lappend_if [use_fb_drv feature]        boot_modules fb_drv
+	lappend_if [use_fb_sdl feature]        boot_modules fb_sdl
+	lappend_if [use_intel_gpu_drv feature] boot_modules intel_gpu_drv
+	lappend_if [use_gpio_drv feature]      boot_modules [gpio_drv]
+	lappend_if [use_input_filter feature]  boot_modules input_filter
+	lappend_if [use_input_filter feature]  boot_modules [language_chargen].chargen
+	lappend_if [use_nic_drv feature]       boot_modules [nic_drv_binary]
+	lappend_if [use_ps2_drv feature]       boot_modules ps2_drv
+	lappend_if [use_timer feature]         boot_modules timer
+	lappend_if [use_usb_drv feature]       boot_modules usb_drv
 
 	return $boot_modules
 }

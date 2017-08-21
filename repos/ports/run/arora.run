@@ -1,6 +1,7 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
 set feature(Nic) 1
+set feature(Gpu) 1
 
 #
 # Build
@@ -10,7 +11,7 @@ append build_components [qt5_build_components feature]
 
 append build_components {
 	server/clipboard server/loader server/tar_rom server/nit_fb app/launchpad test/nitpicker
-	lib/mesa/swrast
+	lib/mesa/i965
 	lib/vfs/jitterentropy
 	app/arora
 }
@@ -101,7 +102,7 @@ append config {
 			<service name="Nitpicker"> <child name="wm"/> </service>
 			<service name="Report"> <child name="clipboard"/> </service>
 			<service name="ROM" label="clipboard"> <child name="clipboard"/> </service>
-			<service name="ROM" label="egl_drv.lib.so"> <parent label="egl_swrast.lib.so" /> </service>
+			<service name="ROM" label="egl_drv.lib.so"> <parent label="egl_i965.lib.so" /> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -137,8 +138,9 @@ append boot_modules {
 # Qt5-specific boot modules
 #
 append boot_modules {
+	drm.lib.so
 	egl.lib.so
-	egl_swrast.lib.so
+	egl_i965.lib.so
 	expat.lib.so
 	glapi.lib.so
 	icu.lib.so

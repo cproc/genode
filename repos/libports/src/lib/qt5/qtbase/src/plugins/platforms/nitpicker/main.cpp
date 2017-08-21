@@ -20,6 +20,7 @@
 QT_BEGIN_NAMESPACE
 
 Genode::Env *QNitpickerIntegrationPlugin::_env = nullptr;
+Genode::Env *genode_env;
 
 void initialize_qt_gui(Genode::Env &env)
 {

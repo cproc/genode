@@ -47,7 +47,7 @@ unsigned long Timer::Connection::_ts_to_us_ratio(Timestamp     ts,
 	 */
 	Timestamp const max_ts = ~(Timestamp)0ULL >> shift;
 	while (ts > max_ts) {
-		warning("timestamp value too big");
+		//warning("timestamp value too big");
 		ts >>= 1;
 		us >>= 1;
 	}

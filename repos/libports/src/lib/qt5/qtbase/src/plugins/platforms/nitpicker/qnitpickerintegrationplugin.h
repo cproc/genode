@@ -23,6 +23,8 @@
 
 QT_BEGIN_NAMESPACE
 
+extern Genode::Env *genode_env;
+
 class QNitpickerIntegrationPlugin : public QPlatformIntegrationPlugin
 {
 	Q_OBJECT
@@ -35,7 +37,7 @@ public:
     QStringList keys() const;
     QPlatformIntegration *create(const QString&, const QStringList&);
 
-	static void env(Genode::Env &env) { _env = &env; }
+	static void env(Genode::Env &env) { _env = &env; genode_env = &env; }
 };
 
 QT_END_NAMESPACE
