@@ -58,91 +58,31 @@ struct Igd::Cmd_header : Genode::Register<32>
 	struct Mi_cmd_opcode : Bitfield<23, 6>
 	{
 		enum {
-			MI_NOOP             = 0x00,
-			MI_USER_INTERRUPT   = 0x02,
-			MI_WAIT_FOR_EVENT   = 0x03,
-			MI_FLUSH            = 0x04,
-				// #define   MI_READ_FLUSH     (1 << 0)
-				// #define   MI_EXE_FLUSH      (1 << 1)
-				// #define   MI_NO_WRITE_FLUSH (1 << 2)
-				// #define   MI_SCENE_COUNT    (1 << 3) /* just increment scene count */
-				// #define   MI_END_SCENE      (1 << 4) /* flush binner and incr scene count */
-				// #define   MI_INVALIDATE_ISP (1 << 5) /* invalidate indirect state pointers */
-			MI_REPORT_HEAD      = 0x07,
-			MI_ARB_ON_OFF       = 0x08,
-				// #define   MI_ARB_ENABLE  (1<<0)
-				// #define   MI_ARB_DISABLE (0<<0)
-			MI_BATCH_BUFFER_END = 0x0A,
-			MI_SUSPEND_FLUSH    = 0x0B,
-				// #define   MI_SUSPEND_FLUSH_EN (1<<0)
-			MI_SET_APPID        = 0x0E,
-			MI_OVERLAY_FLIP     = 0x11,
-				// #define   MI_OVERLAY_CONTINUE (0x0<<21)
-				// #define   MI_OVERLAY_ON       (0x1<<21)
-				// #define   MI_OVERLAY_OFF      (0x2<<21)
+			MI_NOOP                 = 0x00,
+			MI_USER_INTERRUPT       = 0x02,
+			MI_WAIT_FOR_EVENT       = 0x03,
+			MI_FLUSH                = 0x04,
+			MI_REPORT_HEAD          = 0x07,
+			MI_ARB_ON_OFF           = 0x08,
+			MI_BATCH_BUFFER_END     = 0x0A,
+			MI_SUSPEND_FLUSH        = 0x0B,
+			MI_SET_APPID            = 0x0E,
+			MI_OVERLAY_FLIP         = 0x11,
 			MI_LOAD_SCAN_LINES_INCL = 0x12,
-			MI_DISPLAY_FLIP         = 0x14, /* flags: 2 */
-			MI_DISPLAY_FLIP_I915    = 0x14, /* flags: 1 */
-			MI_SEMAPHORE_MBOX       = 0x16, /* flags: 1 */
-				// #define   MI_SEMAPHORE_GLOBAL_GTT   (1<<22)
-				// #define   MI_SEMAPHORE_UPDATE       (1<<21)
-				// #define   MI_SEMAPHORE_COMPARE      (1<<20)
-				// #define   MI_SEMAPHORE_REGISTER     (1<<18)
-				// #define   MI_SEMAPHORE_SYNC_VR      (0<<16) /* RCS  wait for VCS  (RVSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_VER     (1<<16) /* RCS  wait for VECS (RVESYNC) */
-				// #define   MI_SEMAPHORE_SYNC_BR      (2<<16) /* RCS  wait for BCS  (RBSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_BV      (0<<16) /* VCS  wait for BCS  (VBSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_VEV     (1<<16) /* VCS  wait for VECS (VVESYNC) */
-				// #define   MI_SEMAPHORE_SYNC_RV      (2<<16) /* VCS  wait for RCS  (VRSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_RB      (0<<16) /* BCS  wait for RCS  (BRSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_VEB     (1<<16) /* BCS  wait for VECS (BVESYNC) */
-				// #define   MI_SEMAPHORE_SYNC_VB      (2<<16) /* BCS  wait for VCS  (BVSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_BVE     (0<<16) /* VECS wait for BCS  (VEBSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_VVE     (1<<16) /* VECS wait for VCS  (VEVSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_RVE     (2<<16) /* VECS wait for RCS  (VERSYNC) */
-				// #define   MI_SEMAPHORE_SYNC_INVALID (3<<16)
-				// #define   MI_SEMAPHORE_SYNC_MASK    (3<<16)
+			MI_DISPLAY_FLIP         = 0x14,
+			MI_DISPLAY_FLIP_I915    = 0x14,
+			MI_SEMAPHORE_MBOX       = 0x16,
 			MI_SET_CONTEXT          = 0x18,
-				// #define   MI_MM_SPACE_GTT            (1<<8)
-				// #define   MI_MM_SPACE_PHYSICAL       (0<<8)
-				// #define   MI_SAVE_EXT_STATE_EN       (1<<3)
-				// #define   MI_RESTORE_EXT_STATE_EN    (1<<2)
-				// #define   MI_FORCE_RESTORE           (1<<1)
-				// #define   MI_RESTORE_INHIBIT         (1<<0)
-				// #define   HSW_MI_RS_SAVE_STATE_EN    (1<<3)
-				// #define   HSW_MI_RS_RESTORE_STATE_EN (1<<2)
 			MI_SEMAPHORE_SIGNAL     = 0x1b,
-				// #define   MI_SEMAPHORE_TARGET(engine)   ((engine)<<15)
-			MI_SEMAPHORE_WAIT       = 0x1c, /* flags: 2 */
-				// #define   MI_SEMAPHORE_POLL        (1<<15)
-				// #define   MI_SEMAPHORE_SAD_GTE_SDD (1<<12)
-			MI_STORE_DWORD_IMM      = 0x20, /* flags: 2 */
-			MI_STORE_DWORD_INDEX    = 0x21, /* flags: 1 */
-				// #define   MI_STORE_DWORD_INDEX_SHIFT 2
-			MI_LOAD_REGISTER_IMM    = 0x22, /* in x, flags: 2*(x)-1 */
-				// #define   MI_LRI_FORCE_POSTED       (1<<12)
-			MI_STORE_REGISTER_MEM   = 0x24, /* flags: 1 old 2 gen8 */
-				// #define   MI_SRM_LRM_GLOBAL_GTT     (1<<22)
-			MI_FLUSH_DW             = 0x26, /* flags: 1 */
-				// #define   MI_FLUSH_DW_STORE_INDEX (1<<21)
-				// #define   MI_INVALIDATE_TLB       (1<<18)
-				// #define   MI_FLUSH_DW_OP_STOREDW  (1<<14)
-				// #define   MI_FLUSH_DW_OP_MASK     (3<<14)
-				// #define   MI_FLUSH_DW_NOTIFY      (1<<8)
-				// #define   MI_INVALIDATE_BSD       (1<<7)
-				// #define   MI_FLUSH_DW_USE_GTT     (1<<2)
-				// #define   MI_FLUSH_DW_USE_PPGTT   (0<<2)
-			MI_LOAD_REGISTER_MEM    = 0x29, /* flags: 1 old 2 gen8 */
-			MI_BATCH_BUFFER         = 0x30, /* flags: 1 */
-				// #define   MI_BATCH_NON_SECURE       (1)
-				// 			/* for snb/ivb/vlv this also means "batch in ppgtt" when ppgtt is enabled. */
-				// #define   MI_BATCH_NON_SECURE_I965 (1<<8)
-				// #define   MI_BATCH_PPGTT_HSW       (1<<8)
-				// #define   MI_BATCH_NON_SECURE_HSW  (1<<13)
-			MI_BATCH_BUFFER_START   = 0x31, /* flags: 1 */
-				// #define   MI_BATCH_GTT               (2<<6) /* aliased with (1<<7) on gen4 */
-				// #define   MI_BATCH_RESOURCE_STREAMER (1<<10)
-
+			MI_SEMAPHORE_WAIT       = 0x1c,
+			MI_STORE_DWORD_IMM      = 0x20,
+			MI_STORE_DWORD_INDEX    = 0x21,
+			MI_LOAD_REGISTER_IMM    = 0x22,
+			MI_STORE_REGISTER_MEM   = 0x24,
+			MI_FLUSH_DW             = 0x26,
+			MI_LOAD_REGISTER_MEM    = 0x29,
+			MI_BATCH_BUFFER         = 0x30,
+			MI_BATCH_BUFFER_START   = 0x31,
 		};
 	};
 

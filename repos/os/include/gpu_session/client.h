@@ -40,8 +40,8 @@ class Gpu::Session_client : public Genode::Rpc_client<Session>
 		Info info() const override {
 			return call<Rpc_info>(); }
 
-		void execbuffer(Genode::Dataspace_capability cap, Genode::size_t size) override {
-			call<Rpc_execbuffer>(cap, size); }
+		void exec_buffer(Genode::Dataspace_capability cap, Genode::size_t size) override {
+			call<Rpc_exec_buffer>(cap, size); }
 
 		void completion_sigh(Genode::Signal_context_capability sigh) override {
 			call<Rpc_completion_sigh>(sigh); }

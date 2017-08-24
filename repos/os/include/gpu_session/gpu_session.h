@@ -80,7 +80,7 @@ struct Gpu::Session : public Genode::Session
 	 * \param cap   capability to buffer object containing the exec buffer
 	 * \param size  size of the batch buffer in bytes
 	 */
-	virtual void execbuffer(Genode::Dataspace_capability cap, Genode::size_t size) = 0;
+	virtual void exec_buffer(Genode::Dataspace_capability cap, Genode::size_t size) = 0;
 
 	/**
 	 * Register completion signal handler
@@ -153,7 +153,8 @@ struct Gpu::Session : public Genode::Session
 	 *******************/
 
 	GENODE_RPC(Rpc_info, Info, info);
-	GENODE_RPC(Rpc_execbuffer, void, execbuffer, Genode::Dataspace_capability, Genode::size_t);
+	GENODE_RPC(Rpc_exec_buffer, void, exec_buffer, Genode::Dataspace_capability,
+	           Genode::size_t);
 	GENODE_RPC(Rpc_completion_sigh, void, completion_sigh,
 	           Genode::Signal_context_capability);
 	GENODE_RPC_THROW(Rpc_alloc_buffer, Genode::Dataspace_capability, alloc_buffer,
@@ -173,7 +174,7 @@ struct Gpu::Session : public Genode::Session
 	GENODE_RPC(Rpc_set_tiling, bool, set_tiling,
 	           Genode::Dataspace_capability, unsigned);
 
-	GENODE_RPC_INTERFACE(Rpc_info, Rpc_execbuffer,
+	GENODE_RPC_INTERFACE(Rpc_info, Rpc_exec_buffer,
 	                     Rpc_completion_sigh, Rpc_alloc_buffer,
 	                     Rpc_free_buffer, Rpc_map_buffer, Rpc_unmap_buffer,
 	                     Rpc_map_buffer_ppgtt, Rpc_unmap_buffer_ppgtt,

@@ -1436,8 +1436,8 @@ class Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 			return Info(_device.id(), _device.features(), aperture_size, _vgpu.id());
 		}
 
-		void execbuffer(Genode::Dataspace_capability cap,
-		                Genode::size_t size) override
+		void exec_buffer(Genode::Dataspace_capability cap,
+		                 Genode::size_t size) override
 		{
 			Igd::addr_t ppgtt_va = 0;
 
