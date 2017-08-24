@@ -118,10 +118,10 @@ class Igd::Ring_buffer
 				_tail = 0;
 			}
 
-			// if (_tail == _head) {
-			// 	Genode::error("tail: ", Genode::Hex(_tail), " == head: ",
-			// 	              Genode::Hex(_head), " in ring buffer");
-			// }
+			if (_tail == _head) {
+				Genode::error("tail: ", Genode::Hex(_tail), " == head: ",
+				              Genode::Hex(_head), " in ring buffer");
+			}
 
 			return 1;
 		}

@@ -669,12 +669,7 @@ struct Igd::Device
 			Ring_buffer::Index advance = 0;
 
 			size_t const need = 4 /* batchbuffer cmd */ + 6 /* prolog */ + 16 /* epilog + w/a */;
-			if (!el.ring_avail(need)) {
-				Ring_buffer::Index const tail = el.ring_tail();
-				el.ring_reset_and_fill_zero();
-				// account remaining cmds before wrap
-				advance += (tail + need) % el.ring_max();
-			}
+			if (!el.ring_avail(need)) { el.ring_reset_and_fill_zero(); }
 
 			/* save old tail */
 			Ring_buffer::Index const tail = el.ring_tail();
@@ -791,7 +786,7 @@ struct Igd::Device
 			}
 
 			addr_t const offset = (((tail + advance) * sizeof(uint32_t)) >> 3) - 1;
-			rcs.context->tail_offset(offset % ((4*4096)>>3)); // XXX move to better location, ring_buffer?
+			rcs.context->tail_offset(offset % ((4*4096)>>3));
 		}
 
 		void rcs_map_ppgtt(addr_t vo, addr_t pa, size_t size)
@@ -896,8 +891,10 @@ struct Igd::Device
 
 		_mmio->flush_gfx_tlb();
 
-		// XXX check if HWSP is shared across contexts and if not when
-		//     we actually need to write the register
+		/*
+		 * XXX check if HWSP is shared across contexts and if not when
+		 *     we actually need to write the register
+		 */
 		Mmio::HWS_PGA_RCSUNIT::access_t const addr = rcs.hw_status_page();
 		_mmio->write_post<Igd::Mmio::HWS_PGA_RCSUNIT>(addr);
 
@@ -955,7 +952,6 @@ struct Igd::Device
 		bool const fault_valid = _mmio->fault_regs_valid();
 		if (fault_valid) { Genode::error("FAULT_REG valid"); }
 
-		// XXX proper handling needed
 		bool const csb = _mmio->csb_unread();
 		(void)csb;
 
@@ -1334,7 +1330,7 @@ class Gpu::Session_component : public Genode::Session_object<Gpu::Session>
 	private:
 
 		Genode::Region_map       &_rm;
-		Genode::Allocator_guard   _guard; // better use slab
+		Genode::Allocator_guard   _guard;
 
 		Igd::Device       &_device;
 		Igd::Device::Vgpu &_vgpu;

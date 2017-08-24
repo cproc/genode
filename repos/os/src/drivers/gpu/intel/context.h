@@ -363,9 +363,6 @@ class Igd::Execlist_context : public Igd::Common_context_regs
 				typename Context_control_value::access_t v = read<Context_control_value>();
 				Context_control_value::Engine_context_restore_inhibit_mask::set(v, 1);
 				Context_control_value::Engine_context_restore_inhibit::set(v, 1);
-				// Context_control_value::Rs_context_enable_mask::set(v, 1);
-				// Context_control_value::Rs_context_enable::set(v, 1);
-				// XXX clear on next submission of same ctx?
 				Context_control_value::Inhibit_syn_context_switch_mask::set(v, 1);
 				Context_control_value::Inhibit_syn_context_switch::set(v, 1);
 				write<Context_control_value>(v);

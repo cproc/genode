@@ -248,12 +248,10 @@ class Igd::Mmio : public Genode::Mmio
 
 		/*
 		 * IHD-OS-BDW-Vol 2c-11.15 p. 75
+		 *
+		 * TODO registers are not continuous
 		 */
-		/* spacing between registers is offset minus register width */
-#if 0
-		enum { FAULT_REG_SPACING = 0x100 - 4, };
-		struct FAULT_REG : Register_array<0x04000, 32, NUM_ENGINES,
-		                                  32, false, FAULT_REG_SPACING>
+		struct FAULT_REG : Register_array<0x04000, 32, NUM_ENGINES, 32>
 		{
 			struct Engine_ID  : Bitfield<12,3>
 			{
@@ -277,7 +275,6 @@ class Igd::Mmio : public Genode::Mmio
 			};
 			struct Valid_Bit  : Bitfield<0,1> { };
 		};
-#endif
 
 		/*
 		 * IHD-OS-BDW-Vol 2c-11.15 p. 446
@@ -1012,15 +1009,7 @@ class Igd::Mmio : public Genode::Mmio
 		 */
 		void _clear_fault_regs()
 		{
-			// for (int i = 0; i < NUM_ENGINES; i++) {
-			// 	FAULT_REG::access_t const v = read<FAULT_REG>(i);
-			// 	if (FAULT_REG::Valid_Bit::get(v)) {
-			// 		Genode::warning("FAULT_REG[", engine_name(i),
-			// 		                "] was not clear: ", Genode::Hex(v));
-			// 	}
-			// 	write<FAULT_REG>(i, 0);
-			// 	read<FAULT_REG>(i);
-			// }
+			/* TODO */
 		}
 
 		/**
@@ -1300,10 +1289,7 @@ class Igd::Mmio : public Genode::Mmio
 		{
 			bool result = false;
 
-			// for (int i = 0; i < NUM_ENGINES; i++) {
-			// 	FAULT_REG::access_t const v = read<FAULT_REG>(i);
-			// 	result |= FAULT_REG::Valid_Bit::get(v);
-			// }
+			/* TODO */
 
 			return result;
 		}

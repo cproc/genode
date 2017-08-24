@@ -240,10 +240,6 @@ void Igd::Mmio::intr_dump()
 
 void Igd::Mmio::fault_dump()
 {
-	// for (int i = 0; i < NUM_ENGINES; i++) {
-	// 	FAULT_REG::access_t v = read<FAULT_REG>(i);
-	// 	Genode::log("FAULT_REG[", engine_name(i), "]: ", Genode::Hex(v));
-	// }
 	Genode::log("FAULT_TLB_RB_DATA0: ", Genode::Hex(read<FAULT_TLB_RB_DATA0>()));
 	Genode::log("FAULT_TLB_RB_DATA1: ", Genode::Hex(read<FAULT_TLB_RB_DATA1>()));
 
@@ -319,10 +315,6 @@ void Igd::Mmio::context_status_pointer_dump()
 		log(i, "  Context_status:     ", Hex(cs));
 
 		Igd::Context_status_qword::access_t const v = csl;
-		// log(i, "    Wait_on_scanline:  ", Igd::Context_status_qword::Wait_on_scanline::get(v));
-		// log(i, "    Wait_on_semaphore: ", Igd::Context_status_qword::Wait_on_semaphore::get(v));
-		// log(i, "    Wait_on_v_blank:   ", Igd::Context_status_qword::Wait_on_v_blank::get(v));
-		// log(i, "    Wait_on_sync_flip: ", Igd::Context_status_qword::Wait_on_sync_flip::get(v));
 		log(i, "    Context_complete:  ", Igd::Context_status_qword::Context_complete::get(v));
 		log(i, "    Active_to_idle:    ", Igd::Context_status_qword::Active_to_idle::get(v));
 		log(i, "    Element_switch:    ", Igd::Context_status_qword::Element_switch::get(v));
