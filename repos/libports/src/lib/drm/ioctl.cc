@@ -712,7 +712,7 @@ class Drm_call
 				return -1;
 			}
 
-			_gpu_session.execbuffer(bb_cap, batch_len);
+			_gpu_session.exec_buffer(bb_cap, batch_len);
 			return 0;
 		}
 
