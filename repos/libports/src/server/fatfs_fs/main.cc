@@ -92,18 +92,30 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 
 			switch (packet.operation()) {
 
-				case Packet_descriptor::READ:
-					res_length = open_node.node().read((char *)content, length, offset);
+				case Packet_descriptor::READ: {
+					Locked_ptr<Node> node { open_node.node() };
+					if (!node.valid())
+						break; 
+					res_length = node->read((char *)content, length, offset);
 					break;
+				}
 
-				case Packet_descriptor::WRITE:
-					res_length = open_node.node().write((char const *)content, length, offset);
+				case Packet_descriptor::WRITE: {
+					Locked_ptr<Node> node { open_node.node() };
+					if (!node.valid())
+						break; 
+					res_length = node->write((char const *)content, length, offset);
 					break;
+				}
 
-				case Packet_descriptor::CONTENT_CHANGED:
+				case Packet_descriptor::CONTENT_CHANGED: {
+					Locked_ptr<Node> node { open_node.node() };
+					if (!node.valid())
+						return; 
 					open_node.register_notify(*tx_sink());
-					open_node.node().notify_listeners();
+					node->notify_listeners();
 					return;
+				}
 
 				case Packet_descriptor::READ_READY:
 					/* not supported */
@@ -228,6 +240,11 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 
 				using namespace Fatfs;
 
+				Locked_ptr<Node> dir { open_node.node() };
+
+				if (!dir.valid())
+					throw Invalid_handle();
+
 				FIL fatfs_fil;
 				BYTE fatfs_flags = 0;
 
@@ -247,7 +264,7 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 				Absolute_path absolute_path(_root.name());
 
 				try {
-					absolute_path.append(open_node.node().name());
+					absolute_path.append(dir->name());
 					absolute_path.append("/");
 					absolute_path.append(name.string());
 				} catch (Path_base::Path_too_long) {
@@ -262,7 +279,8 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 						file_node->fatfs_fil(fatfs_fil);
 
 						Open_node *open_file =
-							new (_heap) Open_node(*file_node, _open_node_registry);
+							new (_heap) Open_node(file_node->weak_ptr(),
+							                      _open_node_registry);
 
 						return open_file->id();
 					}
@@ -395,7 +413,8 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 						dir_node->fatfs_dir(fatfs_dir);
 
 						Open_node *open_dir =
-							new (_heap) Open_node(*dir_node, _open_node_registry);
+							new (_heap) Open_node(dir_node->weak_ptr(),
+							                      _open_node_registry);
 
 						return Dir_handle { open_dir->id().value };
 					}
@@ -493,7 +512,7 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 			}
 
 			Open_node *open_node =
-				new (_heap) Open_node(*node, _open_node_registry);
+				new (_heap) Open_node(node->weak_ptr(), _open_node_registry);
 
 			return open_node->id();
 		}
@@ -501,9 +520,10 @@ class Fatfs_fs::Session_component : public Session_rpc_object
 		void close(Node_handle handle)
 		{
 			auto close_fn = [&] (Open_node &open_node) {
-				Node &node = open_node.node();
+				Locked_ptr<Node> node { open_node.node() };
 				destroy(_heap, &open_node);
-				destroy(_heap, &node);
+				if (node.valid())
+					destroy(_heap, /*node*/XXX);
 			};
 
 			try {

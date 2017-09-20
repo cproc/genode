@@ -17,6 +17,7 @@
 /* Genode includes */
 #include <file_system/node.h>
 #include <base/log.h>
+#include <base/weak_ptr.h>
 #include <os/path.h>
 
 /* fatfs includes */
@@ -33,7 +34,7 @@ namespace Fatfs_fs {
 }
 
 
-class Fatfs_fs::Node : public Node_base
+class Fatfs_fs::Node : public Node_base, public Genode::Weak_object<Node>
 {
 	protected:
 
@@ -42,6 +43,8 @@ class Fatfs_fs::Node : public Node_base
 	public:
 
 		Node(const char *name) : _name(name) { }
+
+		virtual ~Node() { lock_for_destruction(); }
 
 		char const *name() { return _name.base(); }
 
