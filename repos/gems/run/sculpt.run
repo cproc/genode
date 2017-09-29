@@ -81,6 +81,7 @@ install_config {
 				<rom name="vimrc"/>
 				<rom name="leitzentrale.config"/>
 				<rom name="wlan.config"/>
+				<rom name="vbox_nit_fb.config"/>
 				<dir name="runtime">
 					<rom name="empty_runtime.config"  as="config"/>
 					<rom name="empty_runtime.config"  as="empty.config" />
@@ -358,9 +359,9 @@ file copy -force [genode_dir]/repos/os/recipes/raw/drivers_interactive-pc/input_
 # XXX remove
 #
 
-build { drivers/ahci noux-pkg/bash drivers/wifi lib/vfs/jitterentropy }
+build { drivers/ahci noux-pkg/bash drivers/wifi lib/vfs/jitterentropy drivers/nic }
 
-append boot_modules { ahci_drv bash.tar }
+append boot_modules { ahci_drv bash.tar nic_drv }
 
 append boot_modules {
 	iwlwifi-6000-4.ucode
