@@ -91,6 +91,7 @@ install_config {
 				<rom name="vimrc"/>
 				<rom name="leitzentrale.config"/>
 				<rom name="wlan.config"/>
+				<rom name="vbox_nit_fb.config"/>
 				<dir name="runtime">
 					<rom name="empty_runtime.config"  as="config"/>
 					<rom name="empty_runtime.config"  as="empty.config" />
@@ -181,7 +182,7 @@ install_config {
 		<resource name="RAM" quantum="64M" constrain_phys="yes"/>
 		<binary name="init"/>
 		<route>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="ROM" label="config">
 				<child name="config_rom" label="drivers.config"/> </service>
 			<service name="ROM" label="input_filter.config">  <child name="config_rom"/> </service>
@@ -236,7 +237,7 @@ install_config {
 	<start name="xray_trigger" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<config initial="yes">
-			<press name="KEY_F1" xray="toggle"/>
+			<press name="KEY_F11" xray="toggle"/>
 		</config>
 		<route>
 			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
@@ -251,8 +252,8 @@ install_config {
 		<binary name="xray_trigger"/>
 		<resource name="RAM" quantum="1M"/>
 		<config>
-			<press   name="KEY_F2" xray="on"/>
-			<release name="KEY_F2" xray="off"/>
+			<press   name="KEY_F12" xray="on"/>
+			<release name="KEY_F12" xray="off"/>
 		</config>
 		<route>
 			<service name="Report">    <child name="report_rom"/> </service>
@@ -371,9 +372,9 @@ file copy -force [genode_dir]/repos/os/recipes/raw/drivers_interactive-pc/input_
 # XXX remove
 #
 
-build { noux-pkg/bash drivers/wifi lib/vfs/jitterentropy }
+build { noux-pkg/bash drivers/wifi lib/vfs/jitterentropy drivers/nic }
 
-append boot_modules { bash.tar }
+append boot_modules { bash.tar nic_drv }
 
 append boot_modules {
 	iwlwifi-6000-4.ucode
