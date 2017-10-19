@@ -1,0 +1,6 @@
+##
+## Run tool configuration
+##
+
+RUN_OPT = --include power_on/xen --include log/xen --include power_off/xen --include image/iso
+
