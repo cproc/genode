@@ -20,7 +20,7 @@
 /* core includes */
 #include <board.h>
 
-namespace Genode
+namespace X86_64
 {
 	/*
 	 * Redirection table entry
@@ -38,16 +38,18 @@ namespace Genode
 	class Pic;
 
 	enum { IRQ_COUNT = 256 };
+
+	using namespace Genode;
 }
 
-struct Genode::Irte : Register<64>
+struct X86_64::Irte : Register<64>
 {
 	struct Pol  : Bitfield<13, 1> { };
 	struct Trg  : Bitfield<15, 1> { };
 	struct Mask : Bitfield<16, 1> { };
 };
 
-class Genode::Ioapic : public Mmio
+class X86_64::Ioapic : public Mmio
 {
 	private:
 
@@ -134,7 +136,7 @@ class Genode::Ioapic : public Mmio
 		};
 };
 
-class Genode::Pic : public Mmio
+class X86_64::Pic : public Mmio
 {
 	private:
 

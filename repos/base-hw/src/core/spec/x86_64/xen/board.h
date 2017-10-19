@@ -1,5 +1,5 @@
 /*
- * \brief  x86_64 constants
+ * \brief  x86_64_xen constants
  * \author Reto Buerki
  * \date   2015-03-18
  */
@@ -11,8 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _CORE__SPEC__X86_64__BOARD_H_
-#define _CORE__SPEC__X86_64__BOARD_H_
+#ifndef _CORE__SPEC__X86_64__XEN__BOARD_H_
+#define _CORE__SPEC__X86_64__XEN__BOARD_H_
 
 #include <drivers/uart/x86_pc.h>
 
@@ -34,7 +34,7 @@ struct Board::Serial : Genode::X86_uart {
 };
 
 
-namespace X86_64 { struct Pic; }
-namespace Genode { using Pic = X86_64::Pic; };
+namespace Xen { struct Pic; }
+namespace Genode { using Pic = Xen::Pic; };
 
-#endif /* _CORE__SPEC__X86_64__BOARD_H_ */
+#endif /* _CORE__SPEC__X86_64__XEN__BOARD_H_ */

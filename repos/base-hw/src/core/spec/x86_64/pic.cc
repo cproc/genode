@@ -21,8 +21,6 @@
 #include <pic.h>
 #include <platform.h>
 
-using namespace Genode;
-
 enum {
 	PIC_CMD_MASTER  = 0x20,
 	PIC_CMD_SLAVE   = 0xa0,
@@ -30,7 +28,7 @@ enum {
 	PIC_DATA_SLAVE  = 0xa1,
 };
 
-Pic::Pic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_LAPIC_BASE))
+X86_64::Pic::Pic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_LAPIC_BASE))
 {
 	/* Start initialization sequence in cascade mode */
 	outb(PIC_CMD_MASTER, 0x11);
@@ -59,7 +57,7 @@ Pic::Pic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_LAPIC_BASE))
 	write<Svr::APIC_enable>(1);
 }
 
-bool Pic::take_request(unsigned &irq)
+bool X86_64::Pic::take_request(unsigned &irq)
 {
 	irq = get_lowest_bit();
 	if (!irq) {
@@ -70,22 +68,22 @@ bool Pic::take_request(unsigned &irq)
 	return true;
 }
 
-void Pic::finish_request()
+void X86_64::Pic::finish_request()
 {
 	write<EOI>(0);
 }
 
-void Pic::unmask(unsigned const i, unsigned)
+void X86_64::Pic::unmask(unsigned const i, unsigned)
 {
 	ioapic.toggle_mask(i, false);
 }
 
-void Pic::mask(unsigned const i)
+void X86_64::Pic::mask(unsigned const i)
 {
 	ioapic.toggle_mask(i, true);
 }
 
-inline unsigned Pic::get_lowest_bit(void)
+inline unsigned X86_64::Pic::get_lowest_bit(void)
 {
 	unsigned bit, vec_base = 0;
 
@@ -99,10 +97,10 @@ inline unsigned Pic::get_lowest_bit(void)
 	return 0;
 }
 
-Ioapic::Irq_mode Ioapic::_irq_mode[IRQ_COUNT];
+X86_64::Ioapic::Irq_mode X86_64::Ioapic::_irq_mode[IRQ_COUNT];
 
-void Ioapic::setup_irq_mode(unsigned irq_number, unsigned trigger,
-                            unsigned polarity)
+void X86_64::Ioapic::setup_irq_mode(unsigned irq_number, unsigned trigger,
+                                    unsigned polarity)
 {
 	const unsigned irq_nr = irq_number - REMAP_BASE;
 	bool needs_sync = false;
@@ -141,7 +139,7 @@ void Ioapic::setup_irq_mode(unsigned irq_number, unsigned trigger,
 }
 
 
-void Ioapic::_update_irt_entry(unsigned irq)
+void X86_64::Ioapic::_update_irt_entry(unsigned irq)
 {
 	Irte::access_t irte;
 
@@ -156,7 +154,7 @@ void Ioapic::_update_irt_entry(unsigned irq)
 }
 
 
-Irte::access_t Ioapic::_create_irt_entry(unsigned const irq)
+X86_64::Irte::access_t X86_64::Ioapic::_create_irt_entry(unsigned const irq)
 {
 	Irte::access_t irte = REMAP_BASE + irq;
 	Irte::Mask::set(irte, 1);
@@ -168,7 +166,7 @@ Irte::access_t Ioapic::_create_irt_entry(unsigned const irq)
 }
 
 
-Ioapic::Ioapic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_IOAPIC_BASE))
+X86_64::Ioapic::Ioapic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_IOAPIC_BASE))
 {
 	write<Ioregsel>(IOAPICVER);
 	_irte_count = read<Iowin::Maximum_redirection_entry>() + 1;
@@ -196,7 +194,7 @@ Ioapic::Ioapic() : Mmio(Platform::mmio_to_virt(Hw::Cpu_memory_map::MMIO_IOAPIC_B
 };
 
 
-void Ioapic::toggle_mask(unsigned const vector, bool const set)
+void X86_64::Ioapic::toggle_mask(unsigned const vector, bool const set)
 {
 	/*
 	 * Ignore toggle requests for vectors not handled by the I/O APIC.
