@@ -1,0 +1,10 @@
+LICENSE   := xen
+VERSION   := 4.9.0
+DOWNLOADS := xen.archive
+
+URL(xen) := https://downloads.xenproject.org/release/xen/$(VERSION)/xen-$(VERSION).tar.gz
+SHA(xen) := b698b0cc2435035415e509c264c38c78aa3750e2
+SIG(xen) := ${URL(xen)}.sig
+DIR(xen) := include/xen
+
+TAR_OPT(xen) := --strip-components=4 xen-$(VERSION)/xen/include/public
