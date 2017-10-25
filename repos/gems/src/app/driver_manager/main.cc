@@ -33,6 +33,7 @@ namespace Driver_manager {
 	struct Device_driver;
 	struct Intel_fb_driver;
 	struct Vesa_fb_driver;
+	struct Boot_fb_driver;
 	struct Ahci_driver;
 
 	struct Priority { int value; };
@@ -156,6 +157,32 @@ struct Driver_manager::Vesa_fb_driver : Device_driver
 };
 
 
+struct Driver_manager::Boot_fb_driver : Device_driver
+{
+	Ram_quota const _ram_quota;
+
+	Boot_fb_driver(uint32_t width, uint32_t height, uint32_t bpp)
+	:
+	_ram_quota { width * height * bpp / 8 + 512 * 1024 }
+	{ }
+
+	void generate_start_node(Xml_generator &xml) const override
+	{
+		xml.node("start", [&] () {
+			_gen_common_start_node_content(xml, "fb_boot_drv", "fb_boot_drv",
+			                               _ram_quota, Cap_quota{100},
+			                               Priority{-1});
+			_gen_provides_node<Framebuffer::Session>(xml);
+			xml.node("route", [&] () {
+				_gen_config_route(xml, "fb_drv.config");
+				_gen_default_parent_route(xml);
+			});
+		});
+		_gen_forwarded_service<Framebuffer::Session>(xml, "fb_boot_drv");
+	}
+};
+
+
 struct Driver_manager::Ahci_driver : Device_driver
 {
 	void generate_start_node(Xml_generator &xml) const override
@@ -203,6 +230,7 @@ struct Driver_manager::Main : Block_devices_generator
 {
 	Env &_env;
 
+	Attached_rom_dataspace _platform    { _env, "platform_info" };
 	Attached_rom_dataspace _init_state  { _env, "init_state"  };
 	Attached_rom_dataspace _usb_devices { _env, "usb_devices" };
 	Attached_rom_dataspace _pci_devices { _env, "pci_devices" };
@@ -214,6 +242,7 @@ struct Driver_manager::Main : Block_devices_generator
 
 	Constructible<Intel_fb_driver> _intel_fb_driver;
 	Constructible<Vesa_fb_driver>  _vesa_fb_driver;
+	Constructible<Boot_fb_driver>  _boot_fb_driver;
 	Constructible<Ahci_driver>     _ahci_driver;
 
 	void _handle_pci_devices_update();
@@ -269,9 +298,20 @@ void Driver_manager::Main::_handle_pci_devices_update()
 {
 	_pci_devices.update();
 
+	/* decide about fb not before the first valid pci report is available */
+	if (!_pci_devices.valid())
+		return;
+
 	bool has_vga            = false;
+	bool has_boot_fb        = false;
 	bool has_intel_graphics = false;
 	bool has_ahci           = false;
+
+	struct {
+		uint32_t width;
+		uint32_t height;
+		uint32_t bpp;
+	} boot_fb;
 
 	_pci_devices.xml().for_each_sub_node([&] (Xml_node device) {
 
@@ -294,14 +334,32 @@ void Driver_manager::Main::_handle_pci_devices_update()
 			has_ahci = true;
 	});
 
+	try {
+		Xml_node fb = _platform.xml().sub_node("boot").sub_node("framebuffer");
+
+		boot_fb.width  = fb.attribute_value("width", 0U);
+		boot_fb.height = fb.attribute_value("height", 0U);
+		boot_fb.bpp    = fb.attribute_value("bpp", 0U);
+	} catch (...) { }
+
 	if (!_intel_fb_driver.constructed() && has_intel_graphics) {
 		_intel_fb_driver.construct();
 		_vesa_fb_driver.destruct();
+		_boot_fb_driver.destruct();
 		_generate_init_config(_init_config);
 	}
 
-	if (!_vesa_fb_driver.constructed() && has_vga && !has_intel_graphics) {
+	if (!_boot_fb_driver.constructed() && has_boot_fb && !has_intel_graphics) {
 		_intel_fb_driver.destruct();
+		_vesa_fb_driver.destruct();
+		_boot_fb_driver.construct(boot_fb.width, boot_fb.height, boot_fb.bpp);
+		_generate_init_config(_init_config);
+	}
+
+	if (!_vesa_fb_driver.constructed() && has_vga && !has_intel_graphics &&
+	    !has_boot_fb) {
+		_intel_fb_driver.destruct();
+		_boot_fb_driver.destruct();
 		_vesa_fb_driver.construct();
 		_generate_init_config(_init_config);
 	}
@@ -357,6 +415,9 @@ void Driver_manager::Main::_generate_init_config(Reporter &init_config) const
 
 		if (_vesa_fb_driver.constructed())
 			_vesa_fb_driver->generate_start_node(xml);
+
+		if (_boot_fb_driver.constructed())
+			_boot_fb_driver->generate_start_node(xml);
 
 		if (_ahci_driver.constructed())
 			_ahci_driver->generate_start_node(xml);
