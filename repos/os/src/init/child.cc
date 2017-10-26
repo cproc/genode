@@ -281,6 +281,9 @@ void Init::Child::report_state(Xml_generator &xml, Report_detail const &detail) 
 		if (!_child.active())
 			xml.attribute("state", "incomplete");
 
+		if (_exited)
+			xml.attribute("exited", _exit_value);
+
 		if (detail.child_ram() && _child.ram_session_cap().valid()) {
 			xml.node("ram", [&] () {
 
@@ -656,7 +659,8 @@ Init::Child::Child(Env                      &env,
 	                    _check_cap_constraints(cap_limit), true)),
 	_parent_services(parent_services),
 	_child_services(child_services),
-	_session_requester(_env.ep().rpc_ep(), _env.ram(), _env.rm())
+	_session_requester(_env.ep().rpc_ep(), _env.ram(), _env.rm()),
+	_exited(false), _exit_value(-1)
 {
 	if (_verbose.enabled()) {
 		log("child \"",       _unique_name, "\"");
