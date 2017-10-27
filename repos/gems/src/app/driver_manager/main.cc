@@ -161,10 +161,25 @@ struct Driver_manager::Boot_fb_driver : Device_driver
 {
 	Ram_quota const _ram_quota;
 
-	Boot_fb_driver(uint32_t width, uint32_t height, uint32_t bpp)
-	:
-	_ram_quota { width * height * bpp / 8 + 512 * 1024 }
-	{ }
+	struct Mode
+	{
+		unsigned _width = 0, _height = 0, _bpp = 0;
+
+		Mode() { }
+
+		Mode(Xml_node node)
+		:
+			_width (node.attribute_value("width",  0U)),
+			_height(node.attribute_value("height", 0U)),
+			_bpp   (node.attribute_value("bpp",    0U))
+		{ }
+
+		size_t num_bytes() const { return _width * _height * _bpp/8 + 512*1024; }
+
+		bool valid() const { return _width*_height*_bpp != 0; }
+	};
+
+	Boot_fb_driver(Mode const mode) : _ram_quota(Ram_quota{mode.num_bytes()}) { }
 
 	void generate_start_node(Xml_generator &xml) const override
 	{
@@ -245,6 +260,15 @@ struct Driver_manager::Main : Block_devices_generator
 	Constructible<Boot_fb_driver>  _boot_fb_driver;
 	Constructible<Ahci_driver>     _ahci_driver;
 
+	Boot_fb_driver::Mode _boot_fb_mode() const
+	{
+		try {
+			Xml_node fb = _platform.xml().sub_node("boot").sub_node("framebuffer");
+			return Boot_fb_driver::Mode(fb);
+		} catch (...) { }
+		return Boot_fb_driver::Mode();
+	}
+
 	void _handle_pci_devices_update();
 
 	Signal_handler<Main> _pci_devices_update_handler {
@@ -303,15 +327,10 @@ void Driver_manager::Main::_handle_pci_devices_update()
 		return;
 
 	bool has_vga            = false;
-	bool has_boot_fb        = false;
 	bool has_intel_graphics = false;
 	bool has_ahci           = false;
 
-	struct {
-		uint32_t width;
-		uint32_t height;
-		uint32_t bpp;
-	} boot_fb;
+	Boot_fb_driver::Mode const boot_fb_mode = _boot_fb_mode();
 
 	_pci_devices.xml().for_each_sub_node([&] (Xml_node device) {
 
@@ -334,14 +353,6 @@ void Driver_manager::Main::_handle_pci_devices_update()
 			has_ahci = true;
 	});
 
-	try {
-		Xml_node fb = _platform.xml().sub_node("boot").sub_node("framebuffer");
-
-		boot_fb.width  = fb.attribute_value("width", 0U);
-		boot_fb.height = fb.attribute_value("height", 0U);
-		boot_fb.bpp    = fb.attribute_value("bpp", 0U);
-	} catch (...) { }
-
 	if (!_intel_fb_driver.constructed() && has_intel_graphics) {
 		_intel_fb_driver.construct();
 		_vesa_fb_driver.destruct();
@@ -349,15 +360,15 @@ void Driver_manager::Main::_handle_pci_devices_update()
 		_generate_init_config(_init_config);
 	}
 
-	if (!_boot_fb_driver.constructed() && has_boot_fb && !has_intel_graphics) {
+	if (!_boot_fb_driver.constructed() && boot_fb_mode.valid() && !has_intel_graphics) {
 		_intel_fb_driver.destruct();
 		_vesa_fb_driver.destruct();
-		_boot_fb_driver.construct(boot_fb.width, boot_fb.height, boot_fb.bpp);
+		_boot_fb_driver.construct(boot_fb_mode);
 		_generate_init_config(_init_config);
 	}
 
 	if (!_vesa_fb_driver.constructed() && has_vga && !has_intel_graphics &&
-	    !has_boot_fb) {
+	    !boot_fb_mode.valid()) {
 		_intel_fb_driver.destruct();
 		_boot_fb_driver.destruct();
 		_vesa_fb_driver.construct();
