@@ -41,6 +41,9 @@
 /* libc memory allocator */
 #include <libc_mem_alloc.h>
 
+/* libc */
+#include <sched.h> /* sched_yield */
+
 #include "mm.h"
 
 
@@ -754,9 +757,9 @@ bool PGMUnmapMemoryGenode(void * vmm_local, ::size_t size)
 }
 
 
-extern "C" void pthread_yield(void)
+extern "C" int sched_yield(void)
 {
-	Nova::ec_ctrl(Nova::EC_YIELD);
+	return (Nova::ec_ctrl(Nova::EC_YIELD) == Nova::NOVA_OK) ? 0 : -1;
 }
 
 
