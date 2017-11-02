@@ -104,6 +104,7 @@ install_config {
 				<rom name="vimrc"/>
 				<rom name="leitzentrale.config"/>
 				<rom name="wlan.config"/>
+				<rom name="vbox_nit_fb.config"/>
 				<dir name="runtime">
 					<rom name="empty_runtime.config"  as="config"/>
 					<rom name="empty_runtime.config"  as="empty.config" />
