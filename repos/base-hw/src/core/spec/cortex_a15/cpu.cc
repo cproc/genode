@@ -1,5 +1,5 @@
 /*
- * \brief   Cortex A15 cpu context initialization
+ * \brief   Cortex A15 specific MMU context initialization
  * \author  Stefan Kalkowski
  * \date    2017-10-17
  */
@@ -25,3 +25,11 @@ static Asid_allocator &alloc() {
 Genode::Cpu::Mmu_context::Mmu_context(addr_t table)
 : ttbr0(Ttbr_64bit::Ba::masked((Ttbr_64bit::access_t)table)) {
 	Ttbr_64bit::Asid::set(ttbr0, (Genode::uint8_t)alloc().alloc()); }
+
+
+Genode::Cpu::Mmu_context::~Mmu_context()
+{
+	/* flush TLB by ASID */
+	Cpu::Tlbiasid::write(id());
+	alloc().free(id());
+}

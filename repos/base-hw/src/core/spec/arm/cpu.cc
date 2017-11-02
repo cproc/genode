@@ -41,7 +41,7 @@ Genode::Arm_cpu::Mmu_context::Mmu_context(addr_t table)
 : cidr((Genode::uint8_t)alloc().alloc()), ttbr0(Ttbr0::init(table)) { }
 
 
-Genode::Cpu::Mmu_context::~Mmu_context()
+Genode::Arm_cpu::Mmu_context::~Mmu_context()
 {
 	/* flush TLB by ASID */
 	Cpu::Tlbiasid::write(id());
