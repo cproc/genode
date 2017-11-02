@@ -1179,10 +1179,9 @@ struct Nitpicker::Main
 	 */
 	Genode::Sliced_heap sliced_heap { env.ram(), env.rm() };
 
-	Genode::Reporter pointer_reporter  = { env, "pointer" };
-	Genode::Reporter hover_reporter    = { env, "hover" };
-	Genode::Reporter focus_reporter    = { env, "focus" };
-	Genode::Reporter keystate_reporter = { env, "keystate" };
+	Genode::Reporter pointer_reporter = { env, "pointer" };
+	Genode::Reporter hover_reporter   = { env, "hover" };
+	Genode::Reporter focus_reporter   = { env, "focus" };
 
 	Genode::Attached_rom_dataspace config { env, "config" };
 
@@ -1274,26 +1273,9 @@ void Nitpicker::Main::handle_input()
 	bool        const old_user_active     = user_active;
 
 	/* handle batch of pending events */
-	unsigned const num_events = input.flush();
-	if (import_input_events(ev_buf, num_events, user_state)) {
+	if (import_input_events(ev_buf, input.flush(), user_state)) {
 		last_active_period = period_cnt;
 		user_active        = true;
-	}
-
-	/*
-	 * Report information about currently pressed keys whenever the key state
-	 * is affected by the incoming events.
-	 */
-	if (keystate_reporter.enabled()) {
-
-		bool key_state_affected = false;
-		for (unsigned i = 0; i < num_events; i++)
-			key_state_affected |= (ev_buf[i].type() == Input::Event::PRESS) ||
-			                      (ev_buf[i].type() == Input::Event::RELEASE);
-
-		if (key_state_affected)
-			Genode::Reporter::Xml_generator xml(keystate_reporter, [&] () {
-				user_state.report_keystate(xml); });
 	}
 
 	user_state.Mode::apply_pending_focus_change();
@@ -1311,6 +1293,7 @@ void Nitpicker::Main::handle_input()
 
 	/* report mouse-position updates */
 	if (pointer_reporter.enabled() && old_pointer_pos != new_pointer_pos) {
+
 		Genode::Reporter::Xml_generator xml(pointer_reporter, [&] ()
 		{
 			xml.attribute("xpos", new_pointer_pos.x());
@@ -1381,7 +1364,6 @@ void Nitpicker::Main::handle_config()
 	configure_reporter(config.xml(), pointer_reporter);
 	configure_reporter(config.xml(), hover_reporter);
 	configure_reporter(config.xml(), focus_reporter);
-	configure_reporter(config.xml(), keystate_reporter);
 
 	/* update domain registry and session policies */
 	for (::Session *s = session_list.first(); s; s = s->next())
