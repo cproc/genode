@@ -116,6 +116,7 @@ install_config {
 				<rom name="numlock_remap.config"/>
 				<rom name="vimrc"/>
 				<rom name="wlan.config"/>
+				<rom name="vbox_nit_fb.config"/>
 				<dir name="leitzentrale">
 					<rom name="leitzentrale.config" as="config"/>
 				</dir>
