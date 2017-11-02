@@ -409,8 +409,8 @@ class Init::Child : Child_policy, Routed_service::Wakeup
 		 * and reported afterwards through the state report.
 		 */
 
-		bool _exited;
-		int  _exit_value;
+		bool _exited     { false };
+		int  _exit_value { -1 };
 
 	public:
 

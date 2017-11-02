@@ -659,8 +659,7 @@ Init::Child::Child(Env                      &env,
 	                    _check_cap_constraints(cap_limit), true)),
 	_parent_services(parent_services),
 	_child_services(child_services),
-	_session_requester(_env.ep().rpc_ep(), _env.ram(), _env.rm()),
-	_exited(false), _exit_value(-1)
+	_session_requester(_env.ep().rpc_ep(), _env.ram(), _env.rm())
 {
 	if (_verbose.enabled()) {
 		log("child \"",       _unique_name, "\"");
