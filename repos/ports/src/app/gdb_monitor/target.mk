@@ -39,6 +39,20 @@ SRC_CC  =  genode-low.cc \
            signal_handler_thread.cc \
            main.cc
 
-vpath % $(GDB_CONTRIB_DIR)/gdb/common
-vpath % $(GDB_CONTRIB_DIR)/gdb/gdbserver
-vpath % $(PRG_DIR)/gdbserver
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.cc $(PRG_DIR)/gdbserver
+
+# files used from init
+
+INIT_SERVER_CC = $(call select_from_repositories,src/init/server.cc)
+
+INIT_DIR = $(dir $(call select_from_repositories,src/init/server.cc))
+
+$(info INIT_SERVER_CC: $(INIT_SERVER_CC))
+
+INC_DIR += $(INIT_DIR)
+
+SRC_CC += $(INIT_DIR)/server.cc
+
+vpath %.cc $(INIT_DIR)
