@@ -27,7 +27,6 @@
 #include <base/log.h>
 #include <base/debug.h>
 #include <base/registry.h>
-#include <os/backtrace.h>
 #include <util/reconstructible.h>
 
 /* LX kit */
