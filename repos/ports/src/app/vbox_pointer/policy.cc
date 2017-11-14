@@ -59,6 +59,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 
 		void _import_shape()
 		{
+Genode::log("import_shape()");
 			using namespace Genode;
 
 			_shape_ds.update();
@@ -79,6 +80,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 				_shape_size = Nitpicker::Area();
 				_shape_hot  = Nitpicker::Point();
 				_updater.update_pointer(*this);
+				//return;
 			}
 
 			_shape_size = Nitpicker::Area(shape_report->width, shape_report->height);
@@ -105,6 +107,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 				/* import the RGBA-encoded line into the texture */
 				texture.rgba(rgba_line, _shape_size.w(), y);
 			}
+Genode::log("import_shape(): check");
 
 			_updater.update_pointer(*this);
 		}

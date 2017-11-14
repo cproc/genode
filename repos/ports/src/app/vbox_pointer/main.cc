@@ -122,6 +122,7 @@ void Vbox_pointer::Main::_resize_nitpicker_buffer_if_needed(Nitpicker::Area poin
 
 void Vbox_pointer::Main::_show_default_pointer()
 {
+Genode::log("_show_default_pointer()");
 	/* only draw default pointer if not already drawn */
 	if (_default_pointer_visible)
 		return;
@@ -152,6 +153,7 @@ void Vbox_pointer::Main::_show_default_pointer()
 
 void Vbox_pointer::Main::_show_shape_pointer(Policy *p)
 {
+Genode::log("_show_shape_pointer()");
 	try {
 		_resize_nitpicker_buffer_if_needed(p->shape_size());
 	} catch (...) {
@@ -180,17 +182,21 @@ void Vbox_pointer::Main::_update_pointer()
 
 	if (_xray
 	 || !(policy = _policy_registry.lookup(_hovered_label, _hovered_domain))
-	 || !policy->shape_valid())
+	 || !policy->shape_valid()) {
+	 	//Genode::log("_update_pointer(): default pointer 1, valid: ", policy->shape_valid());
 		_show_default_pointer();
+	}
 	else
 		try {
+			Genode::log("_update_pointer(): trying shape pointer");
 			_show_shape_pointer(policy);
-		} catch (...) { _show_default_pointer(); }
+		} catch (...) { Genode::log("_update_pointer(): default pointer 2"); _show_default_pointer(); }
 }
 
 
 void Vbox_pointer::Main::_handle_hover()
 {
+Genode::log("_handle_hover()");
 	using Vbox_pointer::read_string_attribute;
 
 	_hover_ds.update();
@@ -242,6 +248,8 @@ void Vbox_pointer::Main::_handle_xray()
 
 void Vbox_pointer::Main::update_pointer(Policy &policy)
 {
+Genode::log("update_pointer(): _hovered_label: ", Genode::Cstring(_hovered_label.string()),
+            ", _hovered_domain: ", Genode::Cstring(_hovered_domain.string()));
 	/* update pointer if shape-changing policy is hovered */
 	if (&policy == _policy_registry.lookup(_hovered_label, _hovered_domain))
 		_update_pointer();
