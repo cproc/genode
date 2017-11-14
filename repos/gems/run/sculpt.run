@@ -38,10 +38,10 @@ install_config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="top">
+	<!--<start name="top">
 		<resource name="RAM" quantum="2M"/>
 		<config period_ms="5000"/>
-	</start>
+	</start>-->
 
 	<start name="trace_subject_reporter" >
 		<resource name="RAM" quantum="24M"/>
@@ -332,7 +332,7 @@ install_config {
 			<service name="Report" label="state"> <child name="report_rom"/> </service>
 			<service name="Report"> <child name="fs_report"/> </service>
 			<service name="LOG" label="unlogged"> <parent/> </service>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="Rtc"> <child name="rtc_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
@@ -369,7 +369,7 @@ file copy -force [genode_dir]/repos/gems/recipes/raw/drivers_managed-pc/input_fi
 # XXX remove
 #
 
-build { drivers/wifi lib/vfs/jitterentropy }
+build { drivers/wifi lib/vfs/jitterentropy app/vbox_pointer }
 
 append boot_modules {
 	iwlwifi-6000-4.ucode
@@ -383,6 +383,7 @@ append boot_modules {
 	wifi.lib.so wifi_drv
 	vfs_jitterentropy.lib.so
 	libcrypto.lib.so libssl.lib.so
+	vbox_pointer
 }
 
 build_boot_image $boot_modules

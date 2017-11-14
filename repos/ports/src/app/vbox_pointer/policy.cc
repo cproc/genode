@@ -59,6 +59,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 
 		void _import_shape()
 		{
+Genode::log("_import_shape()");
 			using namespace Genode;
 
 			_shape_ds.update();
@@ -72,6 +73,10 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 			Vbox_pointer::Shape_report *shape_report =
 				_shape_ds.local_addr<Vbox_pointer::Shape_report>();
 
+Genode::log("_import_shape(): visible: ", shape_report->visible);
+Genode::log("_import_shape(): width: ", shape_report->width);
+Genode::log("_import_shape(): height: ", shape_report->height);
+
 			if (!shape_report->visible
 			 || shape_report->width == 0 || shape_report->height == 0
 			 || shape_report->width > Vbox_pointer::MAX_WIDTH
@@ -79,6 +84,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 				_shape_size = Nitpicker::Area();
 				_shape_hot  = Nitpicker::Point();
 				_updater.update_pointer(*this);
+				return;
 			}
 
 			_shape_size = Nitpicker::Area(shape_report->width, shape_report->height);
@@ -105,6 +111,7 @@ class Vbox_pointer::Policy_entry : public Vbox_pointer::Policy,
 				/* import the RGBA-encoded line into the texture */
 				texture.rgba(rgba_line, _shape_size.w(), y);
 			}
+Genode::log("import_shape(): check");
 
 			_updater.update_pointer(*this);
 		}
