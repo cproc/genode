@@ -6,9 +6,9 @@ if {![have_spec x86] || [have_spec linux]} {
 create_boot_directory
 
 import_from_depot genodelabs/src/[base_src] \
-                  genodelabs/pkg/sculpt \
+                  cproc/pkg/sculpt \
                   genodelabs/src/e2fsprogs \
-                  genodelabs/src/vbox5-nova \
+                  cproc/src/vbox5-nova \
                   genodelabs/src/libiconv \
                   genodelabs/src/nic_router \
                   genodelabs/src/acpica \
