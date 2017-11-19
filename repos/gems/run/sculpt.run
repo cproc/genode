@@ -74,6 +74,10 @@ install_config {
 			<policy label="drivers -> capslock" report="global_keys_handler -> capslock"/>
 			<policy label="runtime -> capslock" report="global_keys_handler -> capslock"/>
 			<policy label="drivers -> numlock"  report="global_keys_handler -> numlock"/>
+			<policy label="nit_user_focus -> clicked" report="nitpicker -> clicked"/>
+			<policy label="nit_focus -> focus" report="nit_user_focus -> focus"/>
+			<policy label="nit_focus -> leitzentrale"
+			        report="global_keys_handler -> leitzentrale"/>
 		</config>
 	</start>
 
@@ -222,12 +226,57 @@ install_config {
 		<route>
 			<service name="ROM" label="config">
 				<child name="config_rom" label="nitpicker.config"/> </service>
+			<service name="ROM" label="focus">
+				<child name="nit_focus"/> </service>
 			<service name="Report" label="keystate">
 				<child name="report_logger"/> </service>
 			<service name="Report">      <child name="report_rom"/> </service>
 			<service name="Framebuffer"> <child name="drivers"/>    </service>
 			<service name="Input">       <child name="drivers"/>    </service>
 			<service name="Timer">       <child name="timer"/>      </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<!-- override user focus when leitzentrale is active -->
+	<start name="nit_focus" priority="-1">
+		<binary name="rom_filter"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config>
+			<input name="leitzentrale_enabled" rom="leitzentrale" node="leitzentrale">
+				<attribute name="enabled" /> </input>
+			<input name="user_focus" rom="focus" node="focus">
+				<attribute name="label"/> </input>
+			<output node="focus">
+				<if>
+					<has_value input="leitzentrale_enabled" value="yes" />
+					<then>
+						<attribute name="label" value="leitzentrale -> control_fader -> "/>
+					</then>
+					<else>
+						<attribute name="label" input="user_focus"/>
+					</else>
+				</if>
+			</output>
+		</config>
+		<route>
+			<service name="ROM" label="leitzentrale"> <child name="report_rom"/> </service>
+			<service name="ROM" label="focus">        <child name="report_rom"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="nit_user_focus" priority="-1">
+		<binary name="nit_focus"/>
+		<resource name="RAM" quantum="1M"/>
+		<config>
+			<policy label_prefix="leitzentrale" focus="no"/>
+			<default-policy focus="yes"/>
+		</config>
+		<route>
+			<service name="ROM" label="clicked"> <child name="report_rom"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -284,8 +333,6 @@ install_config {
 			<service name="ROM" label="reset">        <child name="report_rom"/> </service>
 			<service name="ROM" label="config">
 				<child name="config_rom" label="leitzentrale.config"/> </service>
-			<service name="ROM" label="runtime.state">
-				<child name="report_rom"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>

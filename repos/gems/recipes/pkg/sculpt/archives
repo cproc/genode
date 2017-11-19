@@ -5,6 +5,7 @@ _/src/init
 _/src/nitpicker
 _/src/global_keys_handler
 _/src/nit_fb
+_/src/nit_focus
 _/src/nit_fader
 _/src/rtc_drv
 _/src/top
