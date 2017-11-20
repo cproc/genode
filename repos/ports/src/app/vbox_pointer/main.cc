@@ -19,10 +19,12 @@
 #include <base/attached_rom_dataspace.h>
 #include <os/pixel_rgb565.h>
 #include <nitpicker_session/connection.h>
+#include <report_rom/report_service.h>
 
 /* local includes */
 #include "util.h"
 #include "policy.h"
+#include "rom_registry.h"
 #include "big_mouse.h"
 
 namespace Vbox_pointer { class Main; }
@@ -48,7 +50,8 @@ void convert_default_pointer_data_to_pixels(PT *pixel, Nitpicker::Area size)
 }
 
 
-class Vbox_pointer::Main : public Vbox_pointer::Pointer_updater
+class Vbox_pointer::Main : public Vbox_pointer::Pointer_updater,
+                           public Rom::Reader
 {
 	private:
 
@@ -75,6 +78,14 @@ class Vbox_pointer::Main : public Vbox_pointer::Pointer_updater
 
 		Policy_registry _policy_registry { *this, _env, _heap };
 
+		Genode::Sliced_heap _sliced_heap { _env.ram(), _env.rm() };
+
+		Rom::Registry _rom_registry { _sliced_heap, _env.ram(), _env.rm() };
+
+		bool _verbose = _config.xml().attribute_value("verbose", false);
+
+		Report::Root _report_root { _env, _sliced_heap, _rom_registry, _verbose };
+
 		String _hovered_label;
 		String _hovered_domain;
 
@@ -92,6 +103,19 @@ class Vbox_pointer::Main : public Vbox_pointer::Pointer_updater
 		void _handle_xray();
 
 	public:
+
+		/**
+		 * Reader interface
+		 */
+		void notify_module_changed() override
+		{
+			Genode::log("notify_module_changed()");
+		}
+
+		void notify_module_invalidated() override
+		{
+			Genode::log("notify_module_invalidated()");
+		}
 
 		Main(Genode::Env &);
 
@@ -248,9 +272,10 @@ void Vbox_pointer::Main::update_pointer(Policy &policy)
 		_update_pointer();
 }
 
-
+extern "C" void wait_for_continue();
 Vbox_pointer::Main::Main(Genode::Env &env) : _env(env)
 {
+//wait_for_continue();
 	/*
 	 * Try to allocate the Nitpicker buffer for the maximum supported
 	 * pointer size to let the user know right from the start if the
@@ -274,6 +299,9 @@ Vbox_pointer::Main::Main(Genode::Env &env) : _env(env)
 	_handle_hover();
 	_handle_xray();
 	_update_pointer();
+
+	/* announce 'Report' service */
+	env.parent().announce(env.ep().manage(_report_root));
 }
 
 

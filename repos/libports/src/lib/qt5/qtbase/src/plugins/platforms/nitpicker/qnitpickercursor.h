@@ -43,6 +43,7 @@ class QNitpickerCursor : public QPlatformCursor
 
 		virtual void changeCursor(QCursor *widgetCursor, QWindow *window) override
 		{
+Genode::log("changeCursor()");
 			Q_UNUSED(window);
 
 #ifndef QT_NO_CURSOR
@@ -77,7 +78,7 @@ class QNitpickerCursor : public QPlatformCursor
 			       cursor.width() * cursor.height() * 4);
 
 			_shape_report_connection.submit(sizeof(Vbox_pointer::Shape_report));
-
+Genode::log("changeCursor() finished");
 #else // !QT_NO_CURSOR
 			Q_UNUSED(widgetCursor);
 #endif
