@@ -100,6 +100,7 @@ install_config {
 				<rom name="input_filter.config"/>
 				<rom name="en_us.chargen"/>
 				<rom name="de.chargen"/>
+				<rom name="numlock_remap.config"/>
 				<rom name="vimrc"/>
 				<rom name="leitzentrale.config"/>
 				<rom name="wlan.config"/>
@@ -193,15 +194,17 @@ install_config {
 		</route>
 	</start>
 
-	<start name="drivers" caps="2500" priority="-1">
-		<resource name="RAM" quantum="64M" constrain_phys="yes"/>
+	<start name="drivers" caps="3000" priority="-1">
+		<resource name="RAM" quantum="66M" constrain_phys="yes"/>
 		<binary name="init"/>
 		<route>
 			<service name="LOG"> <child name="log"/> </service>
 			<service name="ROM" label="config">
 				<child name="config_rom" label="drivers.config"/> </service>
 			<service name="ROM" label="input_filter.config">  <child name="config_rom"/> </service>
+			<service name="ROM" label="numlock_remap.config"> <child name="config_rom"/> </service>
 			<service name="ROM" label_suffix=".chargen">      <child name="config_rom"/> </service>
+			<service name="ROM" label_suffix=".remap">        <child name="config_rom"/> </service>
 			<service name="ROM" label="capslock"> <child name="report_rom"/> </service>
 			<service name="ROM" label="numlock">  <child name="report_rom"/> </service>
 			<service name="ROM" label="system">   <child name="config_rom"/> </service>
