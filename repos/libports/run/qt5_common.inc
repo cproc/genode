@@ -81,7 +81,8 @@ proc qt5_start_nodes { feature_arg } {
 		<start name="pointer">
 			<binary name="vbox_pointer"/>
 			<resource name="RAM" quantum="1M"/>
-			<config>
+			<provides> <service name="Report"/> </provides>
+			<config verbose="yes">
 				<policy label="wm -> calculatorform -> " rom="shape"/>
 			</config>
 			<route>

@@ -51,6 +51,7 @@ append config {
 		</config>
 		<route>
 			<service name="Nitpicker"> <child name="wm"/> </service>
+			<service name="Report"> <child name="pointer"/> </service>
 			<service name="ROM" label="egl_drv.lib.so"> <parent label="egl_swrast.lib.so" /> </service>
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
