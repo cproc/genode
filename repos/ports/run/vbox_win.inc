@@ -113,12 +113,6 @@ append config_of_app {
 		<config>
 			<policy label="vbox_pointer -> hover"               report="nitpicker -> hover"/>
 			<policy label="vbox_pointer -> xray"                report="nitpicker -> xray"/>}
-
-for { set i 1} { $i <= $use_vms } { incr i} {
-append config_of_app "
-			<policy label=\"vbox_pointer -> shape$i\"           report=\"vbox$i -> shape\"/>"
-}
-
 append config_of_app {
 			<policy label="usb_report_filter -> devices"        report="usb_drv -> devices"/>
 			<policy label="usb_report_filter -> usb_drv_config" report="usb_drv -> config"/>
@@ -154,22 +148,13 @@ append config_of_app {
 
 	<start name="vbox_pointer" priority="-1">
 		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Report"/> </provides>
 		<config>}
-
-for { set i 1} { $i <= $use_vms } { incr i} {
-append config_of_app "
-			<policy label=\"nit_fb$i\" rom=\"shape$i\"/>"
-}
 
 append config_of_app {
 		</config>
 		<route>
 			<service name="Nitpicker"> <child name="nitpicker"/>  </service>}
-
-for { set i 1} { $i <= $use_vms } { incr i} {
-append config_of_app "
-			<service name=\"ROM\" label=\"shape$i\"> <child name=\"report_rom\"/> </service>"
-}
 
 append config_of_app {
 			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
@@ -313,7 +298,10 @@ for { set i 1} { $i <= $use_vms } { incr i} {
 				<service name="Block"> <child name="part_blk"/> </service>}
 	append config_of_app "
 			<service name=\"Framebuffer\"> <child name=\"nit_fb${i}\" /> </service>
-			<service name=\"Input\"> <child name=\"nit_fb${i}\" /> </service>"
+			<service name=\"Input\"> <child name=\"nit_fb${i}\" /> </service>
+			<service name=\"Report\" label=\"shape\">
+				<child name=\"vbox_pointer\" label=\"nit_fb${i} -> \"/>
+			</service>"
 	append config_of_app {
 			<service name="Report"><child name="report_rom" /></service>
 			<service name="ROM" label="usb_devices"> <child name="report_rom" /> </service>
@@ -337,8 +325,8 @@ append_if [expr !$use_rumpfs] boot_modules " ${raw_image} "
 
 build_boot_image $boot_modules
 
-run_genode_until {\[init -\> vbox.*].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} 70
-# run_genode_until forever 0 [output_spawn_id]
+#run_genode_until {\[init -\> vbox.*].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} 70
+ run_genode_until forever
 
 if {$use_rumpfs} {
 	set wait_timeout 170
