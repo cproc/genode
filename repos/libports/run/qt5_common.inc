@@ -24,7 +24,7 @@ proc qt5_build_components { feature_arg } {
 		server/report_rom
 		app/floating_window_layouter
 		app/decorator
-		app/pointer
+		app/vbox_pointer
 		server/wm
 	}
 
@@ -68,7 +68,7 @@ proc qt5_start_nodes { feature_arg } {
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
 			<config>
-				<report focus="yes"/>
+				<report focus="yes" hover="yes" xray="yes"/>
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client" focus="click" hover="always" />
@@ -79,9 +79,13 @@ proc qt5_start_nodes { feature_arg } {
 		</start>
 
 		<start name="pointer">
+			<binary name="vbox_pointer"/>
 			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> </provides>
 			<route>
 				<service name="Nitpicker"> <child name="nitpicker"/> </service>
+				<service name="ROM" label="hover"> <child name="report_rom"/> </service>
+				<service name="ROM" label="xray"> <child name="report_rom"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
@@ -92,7 +96,7 @@ proc qt5_start_nodes { feature_arg } {
 				<service name="Report"/>
 				<service name="ROM"/>
 			</provides>
-			<config>
+			<config verbose="no">
 				<policy label="layouter -> window_list"       report="wm -> window_list"/>
 				<policy label="layouter -> focus_request"     report="wm -> focus_request"/>
 				<policy label="decorator -> window_layout"    report="layouter -> window_layout"/>
@@ -102,6 +106,8 @@ proc qt5_start_nodes { feature_arg } {
 				<policy label="wm -> focus"                   report="layouter -> focus"/>
 				<policy label="clipboard -> focus"            report="nitpicker -> focus"/>
 				<policy label="layouter -> decorator_margins" report="decorator -> decorator_margins"/>
+				<policy label="pointer -> hover"              report="nitpicker -> hover"/>
+				<policy label="pointer -> xray"               report="nitpicker -> xray"/>
 			</config>
 		</start>
 
@@ -177,7 +183,7 @@ proc qt5_boot_modules { feature_arg } {
 		floating_window_layouter
 		decorator
 		wm
-		pointer
+		vbox_pointer
 	}
 
 	return $boot_modules
