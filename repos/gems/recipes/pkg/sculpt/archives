@@ -22,7 +22,6 @@ _/src/noux
 _/src/bash
 _/src/vim
 _/src/coreutils
-_/src/vbox_pointer
 _/src/vfs
 _/src/rump
 _/src/ipxe_nic_drv
