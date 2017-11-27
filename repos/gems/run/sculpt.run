@@ -285,17 +285,13 @@ install_config {
 	</start>
 
 	<start name="pointer" priority="-1">
-		<binary name="vbox_pointer"/>
 		<resource name="RAM" quantum="2M"/>
-		<config>
-			<policy label="runtime -> demo -> wm -> wm -> win10 -> vbox_nit_fb -> " rom="shape"/>
-			<policy label="runtime -> vbox_nit_fb -> " rom="shape"/>
-		</config>
+		<provides> <service name="Report"/> </provides>
+		<config shapes="yes"/>
 		<route>
 			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
 			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
 			<service name="ROM" label="xray">  <child name="report_rom"/> </service>
-			<service name="ROM" label="shape"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -398,7 +394,7 @@ install_config {
 			<service name="Nitpicker" label="backdrop"> <child name="nitpicker" label="backdrop"/> </service>
 			<service name="Nitpicker"> <child name="nitpicker"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
-			<service name="Report" label_suffix="-> shape"> <child name="report_rom" label="shape"/> </service>
+			<service name="Report" label_suffix="-> shape"> <child name="pointer"/> </service>
 			<service name="Report" label="state"> <child name="report_rom"/> </service>
 			<service name="Report"> <child name="fs_report"/> </service>
 			<service name="LOG" label="unlogged"> <parent/> </service>
