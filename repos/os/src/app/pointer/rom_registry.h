@@ -118,6 +118,7 @@ struct Rom::Registry : Registry_for_reader, Registry_for_writer, Genode::Noncopy
 
 		void release(Writer &writer, Module &module) override
 		{
+			module._unregister(_reader);
 			module._unregister(writer);
 			_try_to_destroy(module);
 		}
