@@ -106,6 +106,7 @@ Hello world !!
 				<tar name="coreutils.tar" />
 				<tar name="vim.tar" />
 				<tar name="bash.tar" />
+				<tar name="mc.tar" />
 
 				<!-- Example of how to impose policy onto a file system
 				     session. The label attached to the 'fs' node is used
@@ -131,6 +132,7 @@ Hello world !!
 	</start>
 </config>}
 
-build_boot_image { }
+build { noux-pkg/mc }
+build_boot_image { glib.lib.so libiconv.lib.so pthread.lib.so mc.tar }
 
 run_genode_until forever
