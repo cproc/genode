@@ -1,0 +1,34 @@
+configure.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ configure |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index 2e891bb..18d8ecc 100755
+--- a/configure
++++ b/configure
+@@ -15871,7 +15871,7 @@ fi
+  else
+     pkg_failed=untried
+ fi
+-if test -n "$GLIB_LIBS"; then
++if test -z "$GLIB_LIBS"; then
+     pkg_cv_GLIB_LIBS="$GLIB_LIBS"
+  elif test -n "$PKG_CONFIG"; then
+     if test -n "$PKG_CONFIG" && \
+@@ -17503,9 +17503,9 @@ for ac_lib in '' ncurses curses; do
+     ac_res=-l$ac_lib
+     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+   fi
+-  if ac_fn_c_try_link "$LINENO"; then :
++  #if ac_fn_c_try_link "$LINENO"; then :
+   ac_cv_search_has_colors=$ac_res
+-fi
++#fi
+ rm -f core conftest.err conftest.$ac_objext \
+     conftest$ac_exeext
+   if ${ac_cv_search_has_colors+:} false; then :
