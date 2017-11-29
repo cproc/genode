@@ -64,6 +64,6 @@ install_config {
 </config>}
 
 build { noux-pkg/mc }
-build_boot_image { glib.lib.so libiconv.lib.so pthread.lib.so mc.tar }
+build_boot_image { glib.lib.so libiconv.lib.so pthread.lib.so libc_noux.lib.so mc.tar }
 
 run_genode_until forever

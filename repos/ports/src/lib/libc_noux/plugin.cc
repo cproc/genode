@@ -147,11 +147,12 @@ class Noux_connection
  * Defined by Libc::Plugin::init
  */
 static Genode::Env *_env_ptr = nullptr;
-
+extern "C" void wait_for_continue();
 Noux_connection *noux_connection()
 {
 	if (!_env_ptr) {
 		Genode::error("missing call of 'Libc::Plugin::init'");
+		wait_for_continue();
 		return nullptr;
 	}
 
