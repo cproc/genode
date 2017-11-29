@@ -11,7 +11,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/coreutils \
                   [depot_user]/src/ram_fs
 
-build { noux lib/libc_noux }
+build { noux lib/libc_noux noux-pkg/mc }
 
 # write default vimrc file
 set vimrc_fd [open [run_dir]/genode/vimrc w]
@@ -106,6 +106,7 @@ Hello world !!
 				<tar name="coreutils.tar" />
 				<tar name="vim.tar" />
 				<tar name="bash.tar" />
+				<tar name="mc.tar" />
 
 				<!-- Example of how to impose policy onto a file system
 				     session. The label attached to the 'fs' node is used
@@ -126,6 +127,8 @@ Hello world !!
 			</fstab>
 			<start name="/bin/bash">
 				<env name="TERM" value="screen" />
+				<env name="HOME" value="/home"/>
+				<env name="SHELL" value="/bin/bash"/>
 			</start>
 		</config>
 	</start>
@@ -134,6 +137,7 @@ Hello world !!
 build_boot_image {
 	noux libc_noux.lib.so
 	libc.lib.so libm.lib.so vfs.lib.so
+	glib.lib.so libiconv.lib.so mc.tar 
 }
 
 run_genode_until forever
