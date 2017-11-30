@@ -55,15 +55,22 @@ install_config {
 	<start name="noux" caps="1000">
 		<resource name="RAM" quantum="1G"/>
 		<config>
-			<fstab> <tar name="mc.tar" /> </fstab>
+			<fstab>
+				<tar name="mc.tar" />
+				<dir name="tmp"> <ram/> </dir>
+				<ram/>
+			</fstab>
 			<start name="/bin/mc">
+				<arg value="mc"/>
+				<arg value="-a"/>
 				<env name="TERM" value="linux" />
+				<env name="HOME" value="/" />
 			</start>
 		</config>
 	</start>
 </config>}
 
-build { noux-pkg/mc }
-build_boot_image { glib.lib.so libiconv.lib.so pthread.lib.so mc.tar }
+build { noux-pkg/mc server/terminal noux }
+build_boot_image { glib.lib.so libiconv.lib.so pthread.lib.so libc_noux.lib.so mc.tar terminal noux }
 
 run_genode_until forever

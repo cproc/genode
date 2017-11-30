@@ -180,6 +180,9 @@ static sigset_t signal_mask;
 
 static bool noux_syscall(Noux::Session::Syscall opcode)
 {
+	if (!noux_connection())
+		return false;
+
 	/*
 	 * Signal handlers might do syscalls themselves, so the 'sysio' object
 	 * needs to be saved before and restored after calling the signal handler.
@@ -1349,7 +1352,7 @@ namespace {
 
 		case TIOCGETA:
 			{
-				if (verbose)
+				//if (verbose)
 					log(__func__, ": TIOCGETA - argp=", (void *)argp);
 				::termios *termios = (::termios *)argp;
 
@@ -1390,10 +1393,31 @@ namespace {
 				break;
 			}
 
+		case TIOCSETA:
+			{
+				::termios *termios = (::termios *)argp;
+Genode::log("TIOCSETA: iflag: ",  Genode::Hex(termios->c_iflag),
+                    ", oflag: ",  Genode::Hex(termios->c_oflag),
+                    ", cflag: ",  Genode::Hex(termios->c_cflag),
+                    ", lflag: ",  Genode::Hex(termios->c_lflag),
+                    ", ispeed: ", Genode::Hex(termios->c_ispeed),
+                    ", ospeed: ", Genode::Hex(termios->c_ospeed));
+				break;
+			}
+
 		case TIOCSETAW:
 			{
 				sysio()->ioctl_in.request = Vfs::File_io_service::IOCTL_OP_TIOCSETAW;
 				sysio()->ioctl_in.argp = argp ? *(int*)argp : 0;
+
+				::termios *termios = (::termios *)argp;
+
+Genode::log("TIOCSETAW: iflag: ",  Genode::Hex(termios->c_iflag),
+                     ", oflag: ",  Genode::Hex(termios->c_oflag),
+                     ", cflag: ",  Genode::Hex(termios->c_cflag),
+                     ", lflag: ",  Genode::Hex(termios->c_lflag),
+                     ", ispeed: ", Genode::Hex(termios->c_ispeed),
+                     ", ospeed: ", Genode::Hex(termios->c_ospeed));
 
 				break;
 			}
