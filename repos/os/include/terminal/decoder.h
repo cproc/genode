@@ -406,7 +406,12 @@ class Terminal::Decoder
 
 		void insert(unsigned char c)
 		{
-			//Genode::log("insert(): ", Genode::Hex(c));
+			Genode::log("insert(): ", Genode::Hex(c));
+
+			if (c >= 0x20) {
+				char buf[2] = {c, 0};
+				Genode::log("c: ", Genode::Cstring(buf));
+			}
 
 #if 0
 			enum { ESC_PREFIX = 0x1b };
