@@ -79,6 +79,7 @@ class Cell_array
 			_num_lines(num_lines),
 			_alloc(alloc)
 		{
+			Genode::log("Cell_array(): ", num_cols, num_lines);
 			_array = new (alloc) Char_cell_line[num_lines];
 
 			_line_dirty = new (alloc) bool[num_lines];
@@ -102,6 +103,7 @@ class Cell_array
 		{
 			_array[line][column] = cell;
 			_line_dirty[line] = true;
+			Genode::log("set_cell(): dirty line ", line);
 		}
 
 		CELL get_cell(int column, int line)

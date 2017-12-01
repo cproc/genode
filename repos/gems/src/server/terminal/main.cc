@@ -683,21 +683,31 @@ void Component::construct(Genode::Env &env)
 	Attached_rom_dataspace config(env, "config");
 
 	/* initialize color palette */
-	color_palette[0] = Color(  0,   0,   0);  /* black */
-	color_palette[1] = Color(255, 128, 128);  /* red */
-	color_palette[2] = Color(128, 255, 128);  /* green */
-	color_palette[3] = Color(255, 255,   0);  /* yellow */
-	color_palette[4] = Color(128, 128, 255);  /* blue */
-	color_palette[5] = Color(255,   0, 255);  /* magenta */
-	color_palette[6] = Color(  0, 255, 255);  /* cyan */
-	color_palette[7] = Color(255, 255, 255);  /* white */
+	color_palette[ 0] = Color(  0,   0,   0);  /* black */
+	color_palette[ 1] = Color(205,   0,   0);  /* red */
+	color_palette[ 2] = Color(  0, 205,   0);  /* green */
+	color_palette[ 3] = Color(205, 205,   0);  /* yellow */
+	color_palette[ 4] = Color(  0,   0, 205);  /* blue */
+	color_palette[ 5] = Color(205,   0, 205);  /* magenta */
+	color_palette[ 6] = Color(  0, 205, 205);  /* cyan */
+	color_palette[ 7] = Color(229, 229, 229);  /* white */
+	color_palette[ 8] = Color(127, 127, 127);  /* black */
+	color_palette[ 9] = Color(255,   0,   0);  /* red */
+	color_palette[10] = Color(  0, 255,   0);  /* green */
+	color_palette[11] = Color(255, 255,   0);  /* yellow */
+	color_palette[12] = Color( 92,  92, 255);  /* blue */
+	color_palette[13] = Color(255,   0, 255);  /* magenta */
+	color_palette[14] = Color(  0, 255, 255);  /* cyan */
+	color_palette[15] = Color(255, 255, 255);  /* white */
 
+#if 0
 	/* the upper portion of the palette contains highlight colors */
 	for (int i = 0; i < 8; i++) {
 		Color col = color_palette[i];
 		col = Color((col.r*2)/3, (col.g*2)/3, (col.b*2)/3);
 		color_palette[i + 8] = col;
 	}
+#endif
 
 	/* pick font according to config file */
 	char const *font_data = &_binary_terminus_16_tff_start;
