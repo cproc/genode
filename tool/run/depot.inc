@@ -341,3 +341,11 @@ proc drivers_interactive_pkg { } {
 	puts stderr "drivers_interactive package undefined for this build configuration"
 	exit 1
 }
+
+proc drivers_network_pkg { } {
+
+	if {[have_spec x86]}   { return drivers_network-pc }
+
+	puts stderr "drivers_network package undefined for this build configuration"
+	exit 1
+}
