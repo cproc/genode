@@ -49,9 +49,9 @@ SRC_CC += $(SRC_CC_QT_GENERATED)
 #
 # Locations of moc, rcc, and uic binaries
 #
-MOC = $(BUILD_BASE_DIR)/tool/qt5/moc/moc
-RCC = $(BUILD_BASE_DIR)/tool/qt5/rcc/rcc
-UIC = $(BUILD_BASE_DIR)/tool/qt5/uic/uic
+MOC = /usr/local/genode-qt5/bin/moc
+RCC = /usr/local/genode-qt5/bin/rcc
+UIC = /usr/local/genode-qt5/bin/uic
 
 # moc rules
 moc_%.cpp: %.h $(MOC)

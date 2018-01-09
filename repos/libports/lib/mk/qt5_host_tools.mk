@@ -13,7 +13,7 @@ MOC_DIR      := $(QT5_TOOL_DIR)/moc
 RCC_DIR      := $(QT5_TOOL_DIR)/rcc
 UIC_DIR      := $(QT5_TOOL_DIR)/uic
 
-HOST_TOOLS += $(QMAKE_DIR)/bin/qmake $(MOC_DIR)/moc $(RCC_DIR)/rcc $(UIC_DIR)/uic
+#HOST_TOOLS += $(QMAKE_DIR)/bin/qmake $(MOC_DIR)/moc $(RCC_DIR)/rcc $(UIC_DIR)/uic
 
 $(QMAKE_DIR)/bin/qmake:
 	$(VERBOSE)mkdir -p $(QMAKE_DIR)/bin
