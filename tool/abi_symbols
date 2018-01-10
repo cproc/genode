@@ -66,7 +66,7 @@ foreach line [split $symbols "\n"] {
 	# arguments won't. We can discard symbols for the former but not the
 	# latter.
 	#
-	if {[regexp {^[^(]+<} $demangled_name dummy]} { set keep 0 }
+	if {[regexp {^[^(]+<[^(]+>} $demangled_name dummy]} { set keep 0 }
 
 	#
 	# Drop weak vtable and typeinfo symbols
