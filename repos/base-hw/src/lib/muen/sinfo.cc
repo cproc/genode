@@ -30,7 +30,7 @@ static_assert(sizeof(subject_info_type) <= Sinfo::SIZE,
 	 "Size of subject info type larger than Sinfo::SIZE.");
 
 /* Log channel information */
-static bool log_channel(Genode::Sinfo::Channel_info * const channel, void *)
+static bool log_channel(const Genode::Sinfo::Channel_info * const channel, void *)
 {
 	if (channel->has_event || channel->has_vector) {
 		Genode::log("muen-sinfo: [",
@@ -73,7 +73,7 @@ static char *hash_to_hex(char *buffer, const unsigned char *first)
 
 
 /* Log memory region information */
-static bool log_memregion(Genode::Sinfo::Memregion_info * const region, void *)
+static bool log_memregion(const Genode::Sinfo::Memregion_info * const region, void *)
 {
 	char hash_str[65];
 
@@ -128,7 +128,7 @@ bool Sinfo::check_magic(void)
 }
 
 
-const char * const Sinfo::get_subject_name(void)
+const char * Sinfo::get_subject_name(void)
 {
 	if (!check_magic())
 		return nullptr;
@@ -279,7 +279,7 @@ void Sinfo::log_status()
 				Sinfo::get_subject_name(), "'");
 	Genode::log("muen-sinfo: Subject information exports ",
 	            sinfo->memregion_count, " memory region(s)");
-	for_each_memregion(log_memregion, 0);
+	for_each_memregion(log_memregion, nullptr);
 	Genode::log("muen-sinfo: Subject information exports ",
 	            sinfo->channel_info_count, " channel(s)");
 	for_each_channel(log_channel, 0);
