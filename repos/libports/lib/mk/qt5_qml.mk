@@ -6,10 +6,7 @@ ifneq ($(call select_from_ports,qt5),)
 all: $(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag
 endif
 
-# make the 'HOST_TOOLS' variable known
-include $(REP_DIR)/lib/mk/qt5_host_tools.mk
-
-$(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag: $(HOST_TOOLS)
+$(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag:
 
 	$(VERBOSE)mkdir -p $(dir $@)
 
