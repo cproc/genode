@@ -35,6 +35,6 @@ INC_DIR += $(REP_DIR)/include/qt5/qtbase/QtCore/private \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore/private
 
-LIBS += qt5_host_tools zlib pcre16 libc libm libc_pipe pthread
+LIBS += zlib pcre16 libc libm libc_pipe pthread
 
 CC_CXX_WARN_STRICT =
