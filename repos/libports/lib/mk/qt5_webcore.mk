@@ -41,10 +41,7 @@ GENERATE_BINDINGS_PL = export "SOURCE_ROOT=$(WEBCORE_DIR)" && perl -I$(WEBCORE_D
 # system, because it is not a subdirectory of the current directory.
 GENERATE_BINDINGS_PL += --include $(dir $@)
 
-# make the 'HOST_TOOLS' variable known
-include $(REP_DIR)/lib/mk/qt5_host_tools.mk
-
-$(QT5_PORT_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag: $(HOST_TOOLS)
+$(QT5_PORT_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
 
 	$(VERBOSE)mkdir -p $(dir $@)
 
