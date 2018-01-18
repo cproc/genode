@@ -49,9 +49,13 @@ SRC_CC += $(SRC_CC_QT_GENERATED)
 #
 # Locations of moc, rcc, and uic binaries
 #
-MOC = $(BUILD_BASE_DIR)/tool/qt5/moc/moc
-RCC = $(BUILD_BASE_DIR)/tool/qt5/rcc/rcc
-UIC = $(BUILD_BASE_DIR)/tool/qt5/uic/uic
+QT5_HOST_TOOL_INSTALL_LOCATION ?= /usr/local/genode-qt5
+MOC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/moc
+RCC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/rcc
+UIC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/uic
+
+$(MOC) $(RCC) $(UIC):
+	$(error Error: could not find '$@'. The Qt5 host tools can be installed with the '<GENODE_DIR>/tool/tool_chain_qt5' script)
 
 # moc rules
 moc_%.cpp: %.h $(MOC)
