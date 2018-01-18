@@ -16,10 +16,7 @@ endif
 
 ANGLE_DIR = $(QT5_CONTRIB_DIR)/qtwebkit/Source/ThirdParty/ANGLE
 
-# make the 'HOST_TOOLS' variable known
-include $(REP_DIR)/lib/mk/qt5_host_tools.mk
-
-$(QT5_PORT_DIR)/src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag: $(HOST_TOOLS)
+$(QT5_PORT_DIR)/src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag:
 
 	$(VERBOSE)mkdir -p $(dir $@)
 
