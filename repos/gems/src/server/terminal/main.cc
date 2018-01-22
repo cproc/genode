@@ -166,6 +166,7 @@ struct Terminal::Main : Character_consumer
 extern char const _binary_notix_8_tff_start;
 extern char const _binary_terminus_12_tff_start;
 extern char const _binary_terminus_16_tff_start;
+extern char const _binary_droid_18_tff_start;
 
 
 char const *Terminal::Main::_font_data(Xml_node config)
@@ -177,6 +178,7 @@ char const *Terminal::Main::_font_data(Xml_node config)
 		case  8: return &_binary_notix_8_tff_start;     break;
 		case 12: return &_binary_terminus_12_tff_start; break;
 		case 16: return &_binary_terminus_16_tff_start; break;
+		case 18: return &_binary_droid_18_tff_start;    break;
 		default: break;
 		}
 	}
