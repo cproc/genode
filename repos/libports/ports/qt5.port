@@ -36,3 +36,106 @@ $(call check_tool,perl)
 $(call check_tool,python)
 $(call check_tool,sed)
 $(call check_tool,gperf)
+
+# generate Qt headers suitable for API package creation (no forwarding headers)
+
+ifneq ($(VERBOSE),)
+OUTPUT_FILTER = 2>&1 > /dev/null
+endif
+
+QT5_CONTRIB_DIR = $(CURDIR)/${DIR(${QT5})}
+BUILD_DIR       = $(CURDIR)/build
+
+QMAKE = $(BUILD_DIR)/qtbase/bin/qmake
+
+$(QMAKE):
+	$(VERBOSE)mkdir -p $(BUILD_DIR)
+	$(VERBOSE)cd $(BUILD_DIR) && $(QT5_CONTRIB_DIR)/configure \
+	                             -opensource \
+	                             -confirm-license \
+	                             -no-iconv \
+	                             -no-opengl \
+	                             $(OUTPUT_FILTER)
+
+#
+# generate Makefile from Qmake project file
+#
+# $(1): path of Qmake project file
+#
+define generate_makefile
+	$(VERBOSE)mkdir -p $(dir $@) && \
+	          cd $(dir $@) && \
+	          $(QMAKE) -o Makefile $(1) -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource $(OUTPUT_FILTER) && \
+	          sed -i 's/first: all/first:/g' $@
+endef
+
+$(BUILD_DIR)/qtbase/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/qtbase.pro)
+
+$(BUILD_DIR)/qtbase/src/Makefile: $(BUILD_DIR)/qtbase/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/src.pro)
+
+$(BUILD_DIR)/qtbase/src/corelib/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/corelib/corelib.pro)
+
+$(BUILD_DIR)/qtbase/src/gui/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/gui/gui.pro)
+
+$(BUILD_DIR)/qtbase/src/network/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/network/network.pro)
+
+$(BUILD_DIR)/qtbase/src/opengl/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/opengl/opengl.pro)
+
+$(BUILD_DIR)/qtbase/src/printsupport/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/printsupport/printsupport.pro)
+
+$(BUILD_DIR)/qtbase/src/sql/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/sql/sql.pro)
+
+$(BUILD_DIR)/qtbase/src/widgets/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/widgets/widgets.pro)
+
+$(BUILD_DIR)/qtbase/src/xml/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/xml/xml.pro)
+
+define install_headers
+	make INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER) && \
+	make INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
+endef
+
+include/QtCore: $(BUILD_DIR)/qtbase/src/corelib/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtGui: $(BUILD_DIR)/qtbase/src/gui/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtNetwork: $(BUILD_DIR)/qtbase/src/network/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtOpenGL: $(BUILD_DIR)/qtbase/src/opengl/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtPrintSupport: $(BUILD_DIR)/qtbase/src/printsupport/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtSql: $(BUILD_DIR)/qtbase/src/sql/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtWidgets: $(BUILD_DIR)/qtbase/src/widgets/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtXml: $(BUILD_DIR)/qtbase/src/xml/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+qt5_headers: include/QtCore \
+             include/QtGui \
+             include/QtNetwork \
+             include/QtOpenGL \
+             include/QtPrintSupport \
+             include/QtSql \
+             include/QtWidgets \
+             include/QtXml
+	#$(VERBOSE)rm -rf $(BUILD_DIR)
+
+default: _patch qt5_headers
