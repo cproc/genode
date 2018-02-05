@@ -119,7 +119,7 @@ _patch_input = $(wildcard $1 $(REP_DIR)/$1)
 # all other steps such as downloading and hash-sum checks. For each patch, there
 # dependency to a phony rule.
 #
-_PATCH_TARGETS := $(addprefix phony/patches/,$(PATCHES))
+#_PATCH_TARGETS := $(addprefix phony/patches/,$(PATCHES))
 
 _patch: $(_PATCH_TARGETS)
 
@@ -228,7 +228,8 @@ _unzip_opt = $(call _prefer,$(UNZIP_OPT($1)),$(UNZIP_OPT))
 _extract_function(tar)     = tar xf  $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
 _extract_function(tgz)     = tar xfz $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
 _extract_function(tar.gz)  = tar xfz $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
-_extract_function(tar.xz)  = tar xfJ $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
+#_extract_function(tar.xz)  = tar xfJ $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
+_extract_function(tar.xz)  = true
 _extract_function(tar.bz2) = tar xfj $(ARCHIVE) -C $(DIR) $(call _tar_opt,$1)
 _extract_function(zip)     = unzip -o -q -d $(DIR) $(call _unzip_opt,$1) $(ARCHIVE)
 
