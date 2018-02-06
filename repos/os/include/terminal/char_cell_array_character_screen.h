@@ -159,6 +159,10 @@ class Char_cell_array_character_screen : public Terminal::Character_screen
 		{
 			if (c.ascii() > 0x10) {
 				Cursor_guard guard(*this);
+				Genode::log("output(): ", _cursor_pos.x,
+				            ", ", _cursor_pos.y,
+				            ", ", Genode::Hex(_color_index));
+				            
 				_char_cell_array.set_cell(_cursor_pos.x, _cursor_pos.y,
 				                          Char_cell(c.ascii(), Font_face::REGULAR,
 				                          _color_index, _inverse, _highlight));
@@ -262,6 +266,7 @@ class Char_cell_array_character_screen : public Terminal::Character_screen
 			y = max(0, min(y, _boundary.height - 1));
 
 			_cursor_pos = Terminal::Position(x, y);
+			Genode::log("*** cup(): ", _cursor_pos.x, ", ", _cursor_pos.y);
 		}
 
 		void cuu1()   { Genode::warning(__func__, " not implemented"); }
@@ -321,6 +326,7 @@ class Char_cell_array_character_screen : public Terminal::Character_screen
 
 		void home()
 		{
+			Genode::log("home()");
 			Cursor_guard guard(*this);
 
 			_cursor_pos = Terminal::Position(0, 0);
@@ -335,6 +341,7 @@ class Char_cell_array_character_screen : public Terminal::Character_screen
 
 			using namespace Genode;
 			_cursor_pos.x = max(0, min(x, _boundary.width  - 1));
+			Genode::log("*** hpa(): ", _cursor_pos.x, ", ", _cursor_pos.y);
 		}
 
 		void hts()    { Genode::warning(__func__, " not implemented"); }
@@ -423,6 +430,7 @@ class Char_cell_array_character_screen : public Terminal::Character_screen
 
 			using namespace Genode;
 			_cursor_pos.y = max(0, min(y, _boundary.height - 1));
+			Genode::log("*** vpa(): ", _cursor_pos.x, ", ", _cursor_pos.y);
 		}
 };
 

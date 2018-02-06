@@ -405,10 +405,20 @@ class Terminal::Decoder
 
 		void insert(unsigned char c)
 		{
+			//Genode::log("insert(): ", Genode::Hex(c));
+
+#if 0
+			enum { ESC_PREFIX = 0x1b };
+			if (c == ESC_PREFIX) {
+				if (_state != STATE_IDLE)
+					Genode::warning("skipping unsupported sequence");
+				_enter_state_idle();
+			}
+#endif
 			switch (_state) {
 
 			case STATE_IDLE:
-
+//Genode::log("STATE_IDLE");
 				enum { ESC_PREFIX = 0x1b };
 				if (c == ESC_PREFIX) {
 					_enter_state_esc_seq();
@@ -423,7 +433,7 @@ class Terminal::Decoder
 				break;
 
 			case STATE_ESC_SEQ:
-
+//Genode::log("STATE_ESC_SEQ");
 				/*
 				 * We received the prefix character of an escape sequence,
 				 * collect the escape-sequence elements until we detect the
@@ -443,7 +453,7 @@ class Terminal::Decoder
 				break;
 
 			case STATE_ESC_NUMBER:
-
+//Genode::log("STATE_ESC_NUMBER");
 				/*
 				 * We got the first character belonging to a number
 				 * argument of an escape sequence. Keep reading digits.
