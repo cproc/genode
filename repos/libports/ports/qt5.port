@@ -192,6 +192,9 @@ include/QtSvg: $(BUILD_DIR)/qtsvg/src/svg/Makefile
 include/QtUiTools: $(BUILD_DIR)/qttools/src/designer/src/uitools/Makefile
 	$(VERBOSE)cd $(dir $<) && $(call install_headers)
 
+include/QtWebKit: $(BUILD_DIR)/qtwebkit/Source/WebKit/src/uitools/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
 qt5_headers: include/QtCore \
              include/QtGui \
              include/QtNetwork \
@@ -203,7 +206,8 @@ qt5_headers: include/QtCore \
              include/QtQml \
              include/QtQuick \
              include/QtSvg \
-             include/QtUiTools
+             include/QtUiTools \
+             include/QtWebKit
 	#$(VERBOSE)rm -rf $(BUILD_DIR)
 
 default: _patch qt5_headers
