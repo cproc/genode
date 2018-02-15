@@ -37,7 +37,7 @@ MAKE_JOBS ?= 4
 GENODE_DIR       ?= $(realpath $(dir $(firstword $(MAKEFILE_LIST)))/..)
 CONTRIB_DIR       = $(shell $(GENODE_DIR)/tool/ports/current qt5)/src/lib/qt5/qt-everywhere-opensource-src-5.8.0
 BUILD_DIR         = $(GENODE_DIR)/build/tool/qt5-5.8.0
-INSTALL_LOCATION  = /usr/local/genode-qt5
+INSTALL_LOCATION  = $(HOME)/opt/genode-qt5
 
 $(CONTRIB_DIR)/configure:
 	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port qt5
@@ -76,15 +76,15 @@ build: $(BUILD_DIR)/qtbase/bin/moc \
 
 $(INSTALL_LOCATION)/bin/moc: $(BUILD_DIR)/qtbase/bin/moc
 	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-moc-install_subtargets
+              make INSTALL_ROOT=$(INSTALL_LOCATION) sub-moc-install_subtargets
 
 $(INSTALL_LOCATION)/bin/rcc: $(BUILD_DIR)/qtbase/bin/rcc
 	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-rcc-install_subtargets
+              make INSTALL_ROOT=$(INSTALL_LOCATION) sub-rcc-install_subtargets
 
 $(INSTALL_LOCATION)/bin/uic: $(BUILD_DIR)/qtbase/bin/uic
 	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-uic-install_subtargets
+              make INSTALL_ROOT=$(INSTALL_LOCATION) sub-uic-install_subtargets
 
 install: $(INSTALL_LOCATION)/bin/moc \
          $(INSTALL_LOCATION)/bin/rcc \
