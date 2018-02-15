@@ -22,10 +22,9 @@ DIR(${QTSCRIPTCLASSIC}) := src/lib/qt5/${QTSCRIPTCLASSIC}
 
 PATCHES_DIR             := $(REP_DIR)/src/lib/qt5/patches
 QT5_PATCHES             := $(shell cat $(PATCHES_DIR)/series)
-QT5_WEBKIT_PATCHES      := $(shell cat $(PATCHES_DIR)/series.qtwebkit)
 QTSCRIPTCLASSIC_PATCHES := $(shell cat $(PATCHES_DIR)/series.qtscriptclassic)
 
-PATCHES := $(addprefix src/lib/qt5/patches/, ${QT5_PATCHES} ${QT5_WEBKIT_PATCHES} ${QTSCRIPTCLASSIC_PATCHES})
+PATCHES := $(addprefix src/lib/qt5/patches/, ${QT5_PATCHES} ${QTSCRIPTCLASSIC_PATCHES})
 
 PATCH_OPT                                                  := -p1 -d ${DIR(${QT5})}
 PATCH_OPT(src/lib/qt5/patches/qtscriptclassic_qt5.patch)   := -p1 -d ${DIR(${QTSCRIPTCLASSIC})}
@@ -36,3 +35,211 @@ $(call check_tool,perl)
 $(call check_tool,python)
 $(call check_tool,sed)
 $(call check_tool,gperf)
+
+# generate Qt headers suitable for API package creation (no forwarding headers)
+
+ifneq ($(VERBOSE),)
+OUTPUT_FILTER = >/dev/null 2>&1
+endif
+
+QT5_CONTRIB_DIR = $(CURDIR)/${DIR(${QT5})}
+BUILD_DIR       = $(CURDIR)/build
+
+QMAKE = $(BUILD_DIR)/qtbase/bin/qmake
+
+$(QMAKE):
+	$(VERBOSE)$(MSG_GENERATE)headers...
+	$(VERBOSE)mkdir -p $(BUILD_DIR)
+	$(VERBOSE)cd $(BUILD_DIR) && $(QT5_CONTRIB_DIR)/configure \
+	                             -opensource \
+	                             -confirm-license \
+	                             -no-iconv \
+	                             -no-opengl \
+	                             $(OUTPUT_FILTER)
+
+#
+# generate Makefile from Qmake project file
+#
+# $(1): path of Qmake project file
+#
+define generate_makefile
+	$(VERBOSE)mkdir -p $(dir $@) && \
+	          cd $(dir $@) && \
+	          $(QMAKE) -o $@ $(1) -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource $(OUTPUT_FILTER) && \
+	          sed -i 's/first: all/first:/g' $@
+endef
+
+# qtbase
+
+$(BUILD_DIR)/qtbase/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/qtbase.pro)
+
+$(BUILD_DIR)/qtbase/src/Makefile: $(BUILD_DIR)/qtbase/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/src.pro)
+
+$(BUILD_DIR)/qtbase/src/corelib/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/corelib/corelib.pro)
+
+$(BUILD_DIR)/qtbase/src/gui/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/gui/gui.pro)
+
+$(BUILD_DIR)/qtbase/src/network/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/network/network.pro)
+
+# the 'include/QtWidgets' dependency is needed for a correct 'QtOpenGLDepends' header
+$(BUILD_DIR)/qtbase/src/opengl/Makefile: $(BUILD_DIR)/qtbase/src/Makefile include/QtWidgets
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/opengl/opengl.pro)
+
+# the 'include/QtWidgets' dependency is needed for a correct 'QtPrintSupportDepends' header
+$(BUILD_DIR)/qtbase/src/printsupport/Makefile: $(BUILD_DIR)/qtbase/src/Makefile include/QtWidgets
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/printsupport/printsupport.pro)
+
+$(BUILD_DIR)/qtbase/src/sql/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/sql/sql.pro)
+
+$(BUILD_DIR)/qtbase/src/widgets/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/widgets/widgets.pro)
+
+$(BUILD_DIR)/qtbase/src/xml/Makefile: $(BUILD_DIR)/qtbase/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/xml/xml.pro)
+
+# qtdeclarative
+
+$(BUILD_DIR)/qtdeclarative/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtdeclarative/qtdeclarative.pro)
+
+$(BUILD_DIR)/qtdeclarative/src/Makefile: $(BUILD_DIR)/qtdeclarative/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtdeclarative/src/src.pro)
+
+$(BUILD_DIR)/qtdeclarative/src/qml/Makefile: $(BUILD_DIR)/qtdeclarative/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtdeclarative/src/qml/qml.pro)
+
+$(BUILD_DIR)/qtdeclarative/src/quick/Makefile: $(BUILD_DIR)/qtdeclarative/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtdeclarative/src/quick/quick.pro)
+
+# qtsvg
+
+$(BUILD_DIR)/qtsvg/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtsvg/qtsvg.pro)
+
+$(BUILD_DIR)/qtsvg/src/Makefile: $(BUILD_DIR)/qtsvg/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtsvg/src/src.pro)
+
+$(BUILD_DIR)/qtsvg/src/svg/Makefile: $(BUILD_DIR)/qtsvg/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtsvg/src/svg/svg.pro)
+
+# qttools
+
+$(BUILD_DIR)/qttools/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qttools/qttools.pro)
+
+$(BUILD_DIR)/qttools/src/Makefile: $(BUILD_DIR)/qttools/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qttools/src/src.pro)
+
+$(BUILD_DIR)/qttools/src/designer/Makefile: $(BUILD_DIR)/qttools/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qttools/src/designer/designer.pro)
+
+$(BUILD_DIR)/qttools/src/designer/src/Makefile: $(BUILD_DIR)/qttools/src/designer/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qttools/src/designer/src/src.pro)
+
+$(BUILD_DIR)/qttools/src/designer/src/uitools/Makefile: $(BUILD_DIR)/qttools/src/designer/src/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qttools/src/designer/src/uitools/uitools.pro)
+
+# qtwebkit
+
+$(BUILD_DIR)/qtwebkit/Makefile: $(QMAKE)
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtwebkit/WebKit.pro)
+
+$(BUILD_DIR)/qtwebkit/Source/Makefile.api: $(BUILD_DIR)/qtwebkit/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtwebkit/Source/api.pri)
+
+$(BUILD_DIR)/qtwebkit/Source/Makefile.widgetsapi: $(BUILD_DIR)/qtwebkit/Makefile
+	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtwebkit/Source/widgetsapi.pri)
+
+
+#
+# call Makefile targets for header installation
+#
+define install_headers
+	$(MSG_GENERATE)$@
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER) && \
+	make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER) && \
+	make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
+endef
+
+# qtbase
+
+include/QtCore: $(BUILD_DIR)/qtbase/src/corelib/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/qtcore-config.h $@/
+
+include/QtGui: $(BUILD_DIR)/qtbase/src/gui/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/gui/qtgui-config.h $@/
+
+include/QtNetwork: $(BUILD_DIR)/qtbase/src/network/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/network/qtnetwork-config.h $@/
+
+include/QtOpenGL: $(BUILD_DIR)/qtbase/src/opengl/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtPrintSupport: $(BUILD_DIR)/qtbase/src/printsupport/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/printsupport/qtprintsupport-config.h $@/
+
+include/QtSql: $(BUILD_DIR)/qtbase/src/sql/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtWidgets: $(BUILD_DIR)/qtbase/src/widgets/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/widgets/qtwidgets-config.h $@/
+
+include/QtXml: $(BUILD_DIR)/qtbase/src/xml/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/xml/qtxml-config.h $@/
+
+# qtdeclarative
+
+include/QtQml: $(BUILD_DIR)/qtdeclarative/src/qml/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtQuick: $(BUILD_DIR)/qtdeclarative/src/quick/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+# qtsvg
+
+include/QtSvg: $(BUILD_DIR)/qtsvg/src/svg/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+# qttools
+
+include/QtUiTools: $(BUILD_DIR)/qttools/src/designer/src/uitools/Makefile
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+# qtwebkit
+
+include/QtWebKit: $(BUILD_DIR)/qtwebkit/Source/Makefile.api
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+include/QtWebKitWidgets: $(BUILD_DIR)/qtwebkit/Source/Makefile.widgetsapi
+	$(VERBOSE)cd $(dir $<) && $(call install_headers)
+
+
+qt5_headers: include/QtCore \
+             include/QtGui \
+             include/QtNetwork \
+             include/QtOpenGL \
+             include/QtPrintSupport \
+             include/QtSql \
+             include/QtWidgets \
+             include/QtXml \
+             include/QtQml \
+             include/QtQuick \
+             include/QtSvg \
+             include/QtUiTools \
+             include/QtWebKit \
+             include/QtWebKitWidgets
+	$(VERBOSE)rm -rf $(BUILD_DIR)
+
+default: _patch qt5_headers
