@@ -49,7 +49,7 @@ SRC_CC += $(SRC_CC_QT_GENERATED)
 #
 # Locations of moc, rcc, and uic binaries
 #
-QT5_HOST_TOOL_INSTALL_LOCATION ?= /usr/local/genode-qt5
+QT5_HOST_TOOL_INSTALL_LOCATION ?= $(HOME)/opt/genode-qt5
 MOC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/moc
 RCC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/rcc
 UIC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/uic
