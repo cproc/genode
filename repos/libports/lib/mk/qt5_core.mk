@@ -1,4 +1,4 @@
-include $(REP_DIR)/lib/import/import-qt5_core.mk
+include $(call select_from_repositories,lib/import/import-qt5_core.mk)
 
 SHARED_LIB = yes
 
