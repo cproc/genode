@@ -863,6 +863,16 @@ Section [Building the boot image] presents the creation of the boot image
 from pre-built packages. You may want to build those packages from source,
 in particular for customizing the system.
 
+Before building the packages, various ports of 3rd-party software need to
+be prepared. The following command prepares all of them at once:
+
+! <genode-dir>/tool/ports/prepare_port \
+!      bash coreutils curl dde_ipxe dde_linux \
+!      dde_rump e2fsprogs gnupg grub2 jitterentropy \
+!      libarchive libc libgcrypt libiconv libssh \
+!      lwip ncurses nova openssl qemu-usb stdcxx \
+!      vim virtualbox5 x86emu xz zlib
+
 The ingredients of the boot image are subsumed by the 'pkg/sculpt' package.
 The default set of software installed by the update runtime is defined by
 the 'pkg/sculpt-installation' package. You can find the depot recipes for
@@ -883,10 +893,6 @@ files. The empty 'REBUILD=' argument limits the creation of binary packages
 to those that do not yet exist in binary form. If not specified, the
 command would recompile all packages each time. You may further add '-j<N>'
 to parallelize the build process where '<N>' is the level of parallelism.
-
-You will need to prepare various ports of 3rd-party software in the
-process. Please follow the instructions that are printed whenever a port is
-missing.
 
 With these packages created, the _repos/gems/run/sculpt.run_ script can be
 executed to build a boot image. By default, the boot image refers to
