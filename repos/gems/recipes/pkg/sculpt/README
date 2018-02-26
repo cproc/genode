@@ -9,6 +9,9 @@
 
 
 
+Introduction
+############
+
 Sculpt is a component-based desktop operating system that puts the user in
 the position of full control. It is empowered by the Genode OS Framework,
 which provides a comprehensive set of building blocks, out of which custom
@@ -951,7 +954,8 @@ Credits
 Sculpt is an example system scenario of the Genode project, which is an
 operating-system technology designed and developed from scratch.
 
-:Genode OS Framework: [https://genode.org]
+:Genode OS Framework:
+  [https://genode.org]
 
 That said, Genode is not developed in a vacuum. It rather stands on the
 shoulders of giants and greatly benefits from the free-software/open-source
@@ -963,18 +967,21 @@ the Sculpt scenario.
   Sculpt's kernel is a derivate of NOVA, maintained by Genode Labs.
   NOVA was originally created by Udo Steinberg [http://hypervisor.org].
 
-:Linux kernel: [https://kernel.org]
+:Linux kernel:
+  [https://kernel.org]
 
   Sculpt reuses several Linux subsystems as individual components, in
   particular the USB stack, the Intel wireless stack, the Intel graphics
   driver, and the TCP/IP stack.
 
-:NetBSD's rump kernel: [https://wiki.netbsd.org/rumpkernel/]
+:NetBSD's rump kernel:
+  [https://wiki.netbsd.org/rumpkernel/]
 
   The file-system support is based on NetBSD kernel code, which became
   reusable on Genode thanks to the rump kernel project.
 
-:FreeBSD: [https://www.freebsd.org/]
+:FreeBSD:
+  [https://www.freebsd.org/]
 
   The C runtime that is used by most 3rd-part software is based on FreeBSD's
   libc.
@@ -983,49 +990,101 @@ the Sculpt scenario.
 Device drivers
 --------------
 
-:WPA supplicant: [https://w1.fi/wpa_supplicant/] _(used by the wireless driver)_
-:iPXE: [http://ipxe.org] _(basis of the wired network driver)_
-:xf86emu: [http://xorg.freedesktop.org/] _(used by the VESA driver)_
+:WPA supplicant:
+  [https://w1.fi/wpa_supplicant/]
+  _(used by the wireless driver)_
+
+:iPXE:
+  [http://ipxe.org]
+  _(basis of the wired network driver)_
+
+:xf86emu:
+  [http://xorg.freedesktop.org/]
+  _(used by the VESA driver)_
 
 
 Programs and libraries used within the noux runtime
 ---------------------------------------------------
 
-:Vim:           [http://www.vim.org]
-:ncurses:       [https://www.gnu.org/software/ncurses/ncurses.html]
-:GNU coreutils: [https://www.gnu.org/software/coreutils/coreutils.html]
-:GNU bash:      [https://www.gnu.org/software/bash/]
-:E2fsprogs:     [http://e2fsprogs.sourceforge.net/]
+:Vim:
+  [http://www.vim.org]
+
+:ncurses:
+  [https://www.gnu.org/software/ncurses/ncurses.html]
+
+:GNU coreutils:
+  [https://www.gnu.org/software/coreutils/coreutils.html]
+
+:GNU bash:
+  [https://www.gnu.org/software/bash/]
+
+:E2fsprogs:
+  [http://e2fsprogs.sourceforge.net/]
 
 
 Libraries used for the package-management infrastructure
 --------------------------------------------------------
 
-:curl:       [https://curl.haxx.se]       _(basis of the fetchurl tool)_
-:libssh:     [https://www.libssh.org]
-:OpenSSL:    [https://www.openssl.org]
-:XZ Utils:   [https://tukaani.org/xz/]    _(support for tar.xz archives)_
-:libarchive: [https://www.libarchive.org] _(basis of the extract tool)_
-:zlib:       [https://www.zlib.net]
-:GnuPG:      [https://www.gnupg.org]      _(basis of the verify tool)_
+:curl:
+  [https://curl.haxx.se]
+  _(basis of the fetchurl tool)_
+
+:libssh:
+  [https://www.libssh.org]
+
+:OpenSSL:
+  [https://www.openssl.org]
+
+:XZ Utils:
+  [https://tukaani.org/xz/]
+  _(support for tar.xz archives)_
+
+:libarchive:
+  [https://www.libarchive.org]
+  _(basis of the extract tool)_
+
+:zlib:
+  [https://www.zlib.net]
+
+:GnuPG:
+  [https://www.gnupg.org]
+  _(basis of the verify tool)_
 
 
 Applications
 ------------
 
-:VirtualBox: [https://www.virtualbox.org] _(used for hosting virtual machines)_
+:VirtualBox:
+  [https://www.virtualbox.org]
+  _(used for hosting virtual machines)_
 
 
 Crucial tools used during development
 -------------------------------------
 
 :GNU/Linux: (various distributions)
-:Git:                     [https://git-scm.com]
-:GNU compiler collection: [https://gcc.gnu.org]
-:GNU binutils:            [https://www.gnu.org/software/binutils/]
-:GNU make:                [https://www.gnu.org/software/make/]
-:Tcl:                     [https://www.tcl.tk]
-:Expect:                  [http://expect.sourceforge.net]
-:Qemu:                    [https://www.qemu.org]
-:GitHub issues:           [https://github.com]
+
+:Git:
+  [https://git-scm.com]
+
+:GNU compiler collection:
+  [https://gcc.gnu.org]
+
+:GNU binutils:
+  [https://www.gnu.org/software/binutils/]
+
+:GNU make:
+  [https://www.gnu.org/software/make/]
+
+:Tcl:
+  [https://www.tcl.tk]
+
+:Expect:
+  [http://expect.sourceforge.net]
+
+:Qemu:
+  [https://www.qemu.org]
+
+:GitHub issues:
+  [https://github.com]
 
