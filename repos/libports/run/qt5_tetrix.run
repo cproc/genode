@@ -1,5 +1,7 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
+import_from_depot genodelabs/src/qt5_component
+
 #
 # Build
 #
@@ -79,7 +81,6 @@ append boot_modules {
 	jpeg.lib.so
 	mesa.lib.so
 	pthread.lib.so
-	qt5_component.lib.so
 	qt5_gui.lib.so
 	qt5_widgets.lib.so
 	qt5_scriptclassic.lib.so
