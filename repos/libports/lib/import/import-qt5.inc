@@ -89,12 +89,6 @@ INC_DIR += $(QT5_REP_DIR)/include/qt5/genode
 LIBS += stdcxx
 include $(call select_from_repositories,lib/import/import-stdcxx.mk)
 
-# custom main() thread stack size support via main() wrapper
-ifeq ($(findstring -DQT_MAIN_STACK_SIZE, $(CC_CXX_OPT)), -DQT_MAIN_STACK_SIZE)
-SRC_CC += qt_main.cc
-vpath qt_main.cc $(QT5_REP_DIR)/src/lib/qt5
-endif
-
 # set QT_ARCH definition according to the SPECS variable
 ifneq ($(filter x86_32,$(SPECS)),)
 	QT_DEFINES += -DQT_ARCH_I386
