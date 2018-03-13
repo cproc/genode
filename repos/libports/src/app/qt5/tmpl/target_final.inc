@@ -2,9 +2,6 @@ INC_DIR += $(PRG_DIR)
 
 LIBS += libc base
 
-# set the stack size of the main thread
-CC_CXX_OPT += -DQT_MAIN_STACK_SIZE=$(QT_MAIN_STACK_SIZE)
-
 # QtCore
 ifeq ($(findstring core, $(QT)), core)
 QT_DEFINES += -DQT_CORE_LIB
