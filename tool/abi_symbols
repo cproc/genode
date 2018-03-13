@@ -54,7 +54,7 @@ foreach line [split $symbols "\n"] {
 	# arguments won't. We can discard symbols for the former but not the
 	# latter.
 	#
-	if {[regexp {^[^(]+<[^(]+>} $demangled_name dummy]} { set keep 0 }
+	#if {[regexp {^[^(]+<[^(]+>} $demangled_name dummy]} { set keep 0 }
 
 	#
 	# Drop weak vtable and typeinfo symbols
@@ -65,8 +65,8 @@ foreach line [split $symbols "\n"] {
 	# of shared libraries is rather small compared to the huge inflation of the
 	# ABI size caused by such symbols.
 	#
-	if {($type == "V") && ([regexp {^(typeinfo |vtable )} $demangled_name dummy])} {
-		set keep 0 }
+	#if {($type == "V") && ([regexp {^(typeinfo |vtable )} $demangled_name dummy])} {
+	#	set keep 0 }
 
 	#
 	# Drop weak C++ symbols
@@ -75,8 +75,8 @@ foreach line [split $symbols "\n"] {
 	# created, weak C++ symbols are implicitly created by the compiler for
 	# inline functions.
 	#
-	if {[regexp {W|V} $type] && ($name != $demangled_name)} {
-		set keep 0 }
+	#if {[regexp {W|V} $type] && ($name != $demangled_name)} {
+	#	set keep 0 }
 
 	# write result
 	if {$keep} {
@@ -91,9 +91,9 @@ foreach line [split $symbols "\n"] {
 		# binary's BSS.
 		#
 		if {($type == "D") || ($type == "B") || ($type == "R")} {
-			puts "$name $type $size_dec"
+			puts "$demangled_name $name $type $size_dec"
 		} else {
-			puts "$name $type"
+			puts "$demangled_name $name $type"
 		}
 	}
 	incr i
