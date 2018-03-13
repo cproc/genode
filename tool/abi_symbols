@@ -69,6 +69,16 @@ foreach line [split $symbols "\n"] {
 	if {[regexp {^[^(]+<[^(]+>} $demangled_name dummy]} { set keep 0 }
 
 	#
+	# Drop weak C++ symbols
+	#
+	# In contrast to weak C symbols, which are rarely and always deliberately
+	# created, weak C++ symbols are implicitly created by the compiler for
+	# inline functions.
+	#
+	if {[regexp {W|V} $type] && ($name != $demangled_name)} {
+		set keep 0 }
+
+	#
 	# Drop weak vtable and typeinfo symbols
 	#
 	# Those symbols are solely used to merge vtables between the executable and
@@ -78,17 +88,7 @@ foreach line [split $symbols "\n"] {
 	# ABI size caused by such symbols.
 	#
 	if {($type == "V") && ([regexp {^(typeinfo |vtable )} $demangled_name dummy])} {
-		set keep 0 }
-
-	#
-	# Drop weak C++ symbols
-	#
-	# In contrast to weak C symbols, which are rarely and always deliberately
-	# created, weak C++ symbols are implicitly created by the compiler for
-	# inline functions.
-	#
-	if {[regexp {W|V} $type] && ($name != $demangled_name)} {
-		set keep 0 }
+		set keep 1 }
 
 	#
 	# Drop weak local symbols
