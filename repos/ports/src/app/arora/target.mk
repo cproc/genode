@@ -31,8 +31,6 @@ HEADERS_FILTER_OUT = \
   xbelreader.h \
   xbelwriter.h
 
-QT_MAIN_STACK_SIZE = 768*1024
-
 SRC_CC += arora_component.cc
 
 LIBS += libm libc_lwip libc_lwip_nic_dhcp
