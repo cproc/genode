@@ -1,4 +1,4 @@
-INCLUDE_SUB_DIRS := os util packet_stream_rx packet_stream_tx
+INCLUDE_SUB_DIRS := os util packet_stream_rx packet_stream_tx spec
 
 MIRRORED_FROM_REP_DIR := $(addprefix include/,$(INCLUDE_SUB_DIRS)) \
                          $(addprefix lib/mk/,alarm.mk timeout.mk) \
