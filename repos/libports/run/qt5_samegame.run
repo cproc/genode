@@ -89,7 +89,6 @@ append boot_modules {
 	pthread.lib.so
 	qt5_network.lib.so
 	qt5_qml.lib.so
-	qt5_gui.lib.so
 	qt5_quick.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so

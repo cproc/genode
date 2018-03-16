@@ -144,7 +144,6 @@ append boot_modules {
 	mesa.lib.so
 	pthread.lib.so
 	qt5_angle.lib.so
-	qt5_gui.lib.so
 	qt5_jscore.lib.so
 	qt5_network.lib.so
 	qt5_opengl.lib.so

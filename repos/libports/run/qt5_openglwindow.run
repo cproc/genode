@@ -81,7 +81,6 @@ append boot_modules {
 	egl_swrast.lib.so
 	glapi.lib.so
 	pthread.lib.so
-	qt5_gui.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
 	qt5_fs_openglwindow.tar
