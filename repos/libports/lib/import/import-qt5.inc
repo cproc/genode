@@ -18,9 +18,13 @@ include $(QT5_REP_DIR)/lib/mk/qt5_version.inc
 QT5_PORT_DIR := $(call select_from_ports,qt5)
 QT5_CONTRIB_DIR := $(QT5_PORT_DIR)/src/lib/qt5/$(QT5)
 
-QT5_INC_DIR := $(QT5_REP_DIR)/include/qt5 \
-               $(QT5_PORT_DIR)/include \
-               $(QT5_CONTRIB_DIR)/qtbase/mkspecs/genode-g++
+ifeq ($(CONTRIB_DIR),)
+QT5_INC_DIR += $(call select_from_repositories,src/lib/qt5/$(QT5)/qtbase/mkspecs/genode-g++)
+else
+QT5_INC_DIR += $(QT5_PORT_DIR)/include \
+               $(QT5_CONTRIB_DIR)/qtbase/mkspecs/genode-g++ \
+               $(QT5_REP_DIR)/include/qt5
+endif
 
 INC_DIR += $(QT5_INC_DIR)
 
