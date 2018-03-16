@@ -17,8 +17,6 @@ append build_components {
 
 build $build_components
 
-create_boot_directory
-
 #
 # Create Qt tar archive
 #
@@ -126,12 +124,10 @@ append boot_modules {
 	launchpad
 	testnit
 	arora
-	ld.lib.so
-	libc.lib.so libm.lib.so lwip.lib.so
-	zlib.lib.so libpng.lib.so jpeg.lib.so libssl.lib.so libcrypto.lib.so
+	libm.lib.so lwip.lib.so
+	libpng.lib.so jpeg.lib.so libssl.lib.so libcrypto.lib.so
 	freetype.lib.so
 	libc_pipe.lib.so
-	stdcxx.lib.so
 	vfs_jitterentropy.lib.so
 	nitpicker_plugin.tar
 }
@@ -146,10 +142,8 @@ append boot_modules {
 	glapi.lib.so
 	icu.lib.so
 	mesa.lib.so
-	pcre16.lib.so
 	pthread.lib.so
 	qt5_angle.lib.so
-	qt5_core.lib.so
 	qt5_gui.lib.so
 	qt5_jscore.lib.so
 	qt5_network.lib.so

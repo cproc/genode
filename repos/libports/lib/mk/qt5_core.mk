@@ -1,4 +1,4 @@
-include $(REP_DIR)/lib/import/import-qt5_core.mk
+include $(call select_from_repositories,lib/import/import-qt5_core.mk)
 
 SHARED_LIB = yes
 
@@ -29,11 +29,7 @@ include $(REP_DIR)/lib/mk/qt5.inc
 SRC_CC += libc_dummies.cc
 vpath libc_dummies.cc $(REP_DIR)/src/lib/qt5
 
-INC_DIR += $(REP_DIR)/include/qt5/qtbase/QtCore/private \
-           $(REP_DIR)/src/lib/qt5/qtbase/src/corelib/thread \
-           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION) \
-           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore \
-           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore/private
+QT5_INC_DIR += $(QT5_CORE_INC_DIR)/$(QT_VERSION)/QtCore/private
 
 LIBS += zlib pcre16 libc libm libc_pipe pthread
 
