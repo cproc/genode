@@ -14,8 +14,6 @@ append build_components {
 
 build $build_components
 
-create_boot_directory
-
 #
 # Create Qt tar archive
 #
@@ -79,8 +77,6 @@ append boot_modules {
 	expat.lib.so
 	freetype.lib.so
 	glapi.lib.so
-	ld.lib.so
-	libc.lib.so
 	libc_pipe.lib.so
 	libcrypto.lib.so
 	libm.lib.so
@@ -88,18 +84,14 @@ append boot_modules {
 	libssl.lib.so
 	jpeg.lib.so
 	mesa.lib.so
-	pcre16.lib.so
 	pthread.lib.so
 	qt5_component.lib.so
-	qt5_core.lib.so
 	qt5_network.lib.so
 	qt5_qml.lib.so
 	qt5_gui.lib.so
 	qt5_quick.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
-	zlib.lib.so
-	stdcxx.lib.so
 	qt5_fs_qt_quicktest.tar
 	qt5_qtquick2plugin.lib.so
 }
