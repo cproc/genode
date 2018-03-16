@@ -4,6 +4,16 @@ set feature(Input) 1
 set feature(Framebuffer) 1
 set feature(Timer) 1
 
+create_boot_directory
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/src/init \
+                  genodelabs/src/libc \
+                  genodelabs/src/pcre16 \
+                  genodelabs/src/qt5_core \
+                  genodelabs/src/stdcxx \
+                  genodelabs/src/zlib
+
 #
 # Build
 #
@@ -12,10 +22,7 @@ proc qt5_build_components { feature_arg } {
 
 	upvar $feature_arg feature
 
-	set build_components {
-		core
-		init
-	}
+	set build_components { }
 
 	append build_components [drivers_build_components feature]
 
@@ -170,10 +177,7 @@ proc qt5_boot_modules { feature_arg } {
 
 	upvar $feature_arg feature
 
-	set boot_modules {
-		core
-		init
-	}
+	set boot_modules { }
 
 	append boot_modules [drivers_boot_modules feature]
 
