@@ -7,10 +7,16 @@ set feature(Timer) 1
 create_boot_directory
 
 import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/src/expat \
+                  genodelabs/src/freetype \
                   genodelabs/src/init \
+                  genodelabs/src/jpeg \
                   genodelabs/src/libc \
+                  genodelabs/src/libpng \
+                  genodelabs/src/mesa \
                   genodelabs/src/pcre16 \
                   genodelabs/src/qt5_core \
+                  genodelabs/src/qt5_gui \
                   genodelabs/src/stdcxx \
                   genodelabs/src/zlib
 

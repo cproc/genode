@@ -73,32 +73,19 @@ append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
 	basic
-	freetype.lib.so
-	egl.lib.so
-	egl_swrast.lib.so
-        glapi.lib.so
-        expat.lib.so
-	mesa.lib.so
-	libc_pipe.lib.so
-	libm.lib.so
-	libpng.lib.so
-	jpeg.lib.so
-	pthread.lib.so
-	qt5_gui.lib.so
-        qt5_network.lib.so
-        qt5_svg.lib.so
-        qt5_qml.lib.so
-        qt5_quick.lib.so
+	qt5_network.lib.so
+	qt5_svg.lib.so
+	qt5_qml.lib.so
+	qt5_quick.lib.so
 	qt5_qtquick2plugin.lib.so
-        qt5_qquicklayoutsplugin.lib.so
-        qt5_qmlfolderlistmodelplugin.lib.so
+	qt5_qquicklayoutsplugin.lib.so
+	qt5_qmlfolderlistmodelplugin.lib.so
 	qt5_qtvirtualkeyboardplugin.lib.so
 	qt5_qtvirtualkeyboardstylesplugin.lib.so
 	qt5_widgets.lib.so
-        qt5_windowplugin.lib.so
-	qt5_xml.lib.so
-        libcrypto.lib.so
-        libssl.lib.so
+	qt5_windowplugin.lib.so
+	libcrypto.lib.so
+	libssl.lib.so
 	qt5_fs_basic.tar
 }
 
