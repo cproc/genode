@@ -11,7 +11,13 @@ endif
 # QtGui
 ifeq ($(findstring gui, $(QT)), gui)
 QT_DEFINES += -DQT_GUI_LIB
-LIBS += qt5_gui qt5_qpa_nitpicker qt5_widgets qt5_qjpeg
+LIBS += qt5_gui qt5_qpa_nitpicker qt5_qjpeg
+endif
+
+# QtWidgets
+ifeq ($(findstring widgets, $(QT)), widgets)
+QT_DEFINES += -DQT_WIDGETS_LIB
+LIBS += qt5_widgets
 endif
 
 # QtNetwork
