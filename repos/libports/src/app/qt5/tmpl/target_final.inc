@@ -1,6 +1,6 @@
 INC_DIR += $(PRG_DIR)
 
-LIBS += libc
+LIBS += libc base
 
 # QtCore
 ifeq ($(findstring core, $(QT)), core)
