@@ -140,21 +140,8 @@ append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
 	textedit
-	egl.lib.so
-	egl_swrast.lib.so
-	expat.lib.so
-	freetype.lib.so
-	glapi.lib.so
-	libc_pipe.lib.so
-	libm.lib.so
-	libpng.lib.so
-	jpeg.lib.so
-	mesa.lib.so
-	pthread.lib.so
-	qt5_gui.lib.so
 	qt5_printsupport.lib.so
 	qt5_widgets.lib.so
-	qt5_xml.lib.so
 	qt5_fs_textedit.tar
 }
 
