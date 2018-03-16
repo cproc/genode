@@ -26,8 +26,6 @@ if {![file exists bin/mediafile]} {
 	catch { exec wget -O bin/mediafile $media_url }
 }
 
-create_boot_directory
-
 #
 # Create Qt tar archive
 #
@@ -89,22 +87,17 @@ append boot_modules {
 	expat.lib.so
 	freetype.lib.so
 	glapi.lib.so
-	ld.lib.so
-	libc.lib.so
 	mesa.lib.so
 	posix.lib.so
 	libc_pipe.lib.so
 	libm.lib.so
 	libpng.lib.so
 	jpeg.lib.so
-	pcre16.lib.so
 	pthread.lib.so
-	qt5_core.lib.so
 	qt5_gui.lib.so
 	qt5_qnitpickerviewwidget.lib.so
 	qt5_widgets.lib.so
 	qt5_xml.lib.so
-	zlib.lib.so
 	avcodec.lib.so
 	avformat.lib.so
 	avutil.lib.so
@@ -115,7 +108,6 @@ append boot_modules {
 	pthread.lib.so
 	avplay
 	mediafile
-	stdcxx.lib.so
 	qt5_fs_qt_avplay.tar
 }
 
