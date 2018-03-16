@@ -74,25 +74,12 @@ append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
 	qt_quicktest
-	egl.lib.so
-	egl_swrast.lib.so
-	expat.lib.so
-	freetype.lib.so
-	glapi.lib.so
-	libc_pipe.lib.so
 	libcrypto.lib.so
-	libm.lib.so
-	libpng.lib.so
 	libssl.lib.so
-	jpeg.lib.so
-	mesa.lib.so
-	pthread.lib.so
 	qt5_network.lib.so
 	qt5_qml.lib.so
-	qt5_gui.lib.so
 	qt5_quick.lib.so
 	qt5_widgets.lib.so
-	qt5_xml.lib.so
 	qt5_fs_qt_quicktest.tar
 	qt5_qtquick2plugin.lib.so
 }
