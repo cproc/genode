@@ -286,3 +286,7 @@ _ZThn16_NK24QNitpickerPlatformWindow6formatEv T
 _ZThn16_NK24QNitpickerPlatformWindow8geometryEv T
 _ZThn16_NK24QNitpickerPlatformWindow8isActiveEv T
 _ZThn16_NK24QNitpickerPlatformWindow9isExposedEv T
+
+# manually added typeinfo and vtable symbols
+
+_ZTI24QNitpickerPlatformWindow V
