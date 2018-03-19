@@ -1,5 +1,7 @@
 include $(REP_DIR)/lib/import/import-qt5_qpa_nitpicker.mk
 
+SHARED_LIB = yes
+
 # get the correct harfbuzz header included
 QT_DEFINES += -DQT_BUILD_GUI_LIB
 
@@ -30,8 +32,10 @@ INC_DIR += $(QT5_CONTRIB_DIR)/qtbase/src/platformsupport/eventdispatchers \
            $(QT5_CONTRIB_DIR)/qtbase/src/3rdparty/harfbuzz/src \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtEglSupport/$(QT_VERSION) \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtGui/$(QT_VERSION) \
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtGui/$(QT_VERSION)/QtGui \
            $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION) \
-           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore
+           $(QT5_CONTRIB_DIR)/qtbase/include/QtCore/$(QT_VERSION)/QtCore \
+           $(QT5_CONTRIB_DIR)/qtbase/src/platformsupport/input/evdevkeyboard 
 
 LIBS += qt5_gui qt5_core libm freetype mesa egl qoost
 

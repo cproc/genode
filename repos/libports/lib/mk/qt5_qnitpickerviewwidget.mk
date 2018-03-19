@@ -7,6 +7,8 @@ HEADERS += qnitpickerviewwidget.h
 vpath %.h $(REP_DIR)/include/qt5/qnitpickerviewwidget
 vpath %.cpp $(REP_DIR)/src/lib/qt5/qnitpickerviewwidget
 
+INC_DIR += $(REP_DIR)/src/lib/qt5/qtbase/src/plugins/platforms/nitpicker
+
 LIBS += qt5_gui qt5_widgets qt5_core libc qt5_qpa_nitpicker qoost
 
 CC_CXX_WARN_STRICT =
