@@ -10,7 +10,7 @@
 
 #include <QtGui>
 
-#include <qnitpickerplatformwindow.h>
+#include <qpa_nitpicker/qnitpickerplatformwindow.h>
 #include <qnitpickerviewwidget/qnitpickerviewwidget.h>
 
 

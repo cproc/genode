@@ -22,7 +22,7 @@
 #include <nitpicker_session/connection.h>
 
 /* Qt includes */
-#include <qnitpickerplatformwindow.h>
+#include <qpa_nitpicker/qnitpickerplatformwindow.h>
 #include <qnitpickerviewwidget/qnitpickerviewwidget.h>
 
 

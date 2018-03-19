@@ -25,7 +25,7 @@
 /* Qt includes */
 #include <qpa/qplatformwindow.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <qevdevkeyboardhandler_p.h>
+#include <QtInputSupport/private/qevdevkeyboardhandler_p.h>
 #include <qtouchdevice.h>
 
 /* Qoost includes */
