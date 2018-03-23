@@ -12,4 +12,4 @@ include $(IMPORT_QT5_INC)
 LIBS += mesa
 include $(call select_from_repositories,lib/import/import-mesa.mk)
 
-QT5_INC_DIR += $(QT5_CONTRIB_DIR)/qtbase/include/QtGui
+QT5_INC_DIR += $(QT5_PORT_DIR)/include/QtGui
