@@ -17,6 +17,8 @@ import_from_depot genodelabs/src/[base_src] \
                   genodelabs/src/pcre16 \
                   genodelabs/src/qt5_core \
                   genodelabs/src/qt5_gui \
+                  genodelabs/src/qt5_qjpeg \
+                  genodelabs/src/qt5_qpa_nitpicker \
                   genodelabs/src/stdcxx \
                   genodelabs/src/zlib
 
