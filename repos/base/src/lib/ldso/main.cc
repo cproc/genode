@@ -570,15 +570,17 @@ Elf::Sym const *Linker::lookup_symbol(char const *name, Dependency const &dep,
 		if (binary_ptr && &dep != binary_ptr->first_dep()) {
 			return lookup_symbol(name, *binary_ptr->first_dep(), base, undef, other);
 		} else {
-			throw Not_found(name);
+			//throw Not_found(name);
 		}
 	}
 
 	if (dep.root() && verbose_lookup)
 		log("LD: return ", weak_symbol);
 
-	if (!weak_symbol)
-		throw Not_found(name);
+	if (!weak_symbol) {
+		error("LD: symbol not found: '", name, "'");
+		//throw Not_found(name);
+	}
 
 	*base = weak_base;
 	return weak_symbol;
@@ -625,7 +627,7 @@ class Linker::Config
 			try {
 				Attached_rom_dataspace config(env, "config");
 
-				if (config.xml().attribute_value("ld_bind_now", false))
+				//if (config.xml().attribute_value("ld_bind_now", false))
 					_bind = BIND_NOW;
 
 				_verbose = config.xml().attribute_value("ld_verbose", false);
@@ -693,6 +695,8 @@ void Component::construct(Genode::Env &env)
 	Timeout_thread::env(env);
 
 	binary_ready_hook_for_gdb();
+
+	log("call_entry_point()");
 
 	/* start binary */
 	binary_ptr->call_entry_point(env);
