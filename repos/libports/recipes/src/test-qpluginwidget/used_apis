@@ -1,0 +1,12 @@
+base
+libc
+mesa
+qoost
+qt5_core
+qt5_gui
+qt5_network
+qt5_qjpeg
+qt5_qpa_nitpicker
+qt5_qpluginwidget
+qt5_widgets
+stdcxx
