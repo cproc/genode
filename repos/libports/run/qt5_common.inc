@@ -20,7 +20,8 @@ import_from_depot genodelabs/src/[base_src] \
                   genodelabs/src/qt5_qjpeg \
                   genodelabs/src/qt5_qpa_nitpicker \
                   genodelabs/src/stdcxx \
-                  genodelabs/src/zlib
+                  genodelabs/src/zlib \
+                  genodelabs/raw/qt5_dejavusans
 
 #
 # Build
