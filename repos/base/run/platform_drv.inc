@@ -196,6 +196,7 @@ proc platform_drv_config {} {
 		append drv_config {
 		<route>
 			<service name="IO_MEM"> <parent/> </service>
+			<service name="IO_PORT"> <parent/> </service>
 			<service name="LOG">    <parent/> </service>
 			<service name="PD">     <parent/> </service>
 			<service name="RM">     <parent/> </service>
