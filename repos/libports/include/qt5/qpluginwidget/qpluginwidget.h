@@ -22,7 +22,7 @@
 #include <QtGui>
 #include <QtNetwork>
 
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qnitpickerviewwidget.h>
 
 enum Plugin_loading_state
 {

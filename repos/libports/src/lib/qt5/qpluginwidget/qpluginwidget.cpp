@@ -20,7 +20,7 @@
 
 #include <qnitpickerplatformwindow.h>
 
-#include <qpluginwidget/qpluginwidget.h>
+#include <qpluginwidget.h>
 
 Libc::Env     *QPluginWidget::_env = 0;
 QPluginWidget *QPluginWidget::_last = 0;
