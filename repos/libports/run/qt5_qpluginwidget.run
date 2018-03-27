@@ -1,6 +1,13 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
-import_from_depot genodelabs/src/qt5_component
+import_from_depot genodelabs/src/libcrypto \
+                  genodelabs/src/libssl \
+                  genodelabs/src/qt5_component \
+                  genodelabs/src/qt5_network \
+                  genodelabs/src/qt5_qnitpickerviewwidget \
+                  genodelabs/src/qt5_qpluginwidget \
+                  genodelabs/src/qt5_widgets \
+                  genodelabs/src/test-qpluginwidget
 
 #
 # Build
@@ -9,20 +16,12 @@ import_from_depot genodelabs/src/qt5_component
 append build_components [qt5_build_components feature]
 
 append build_components {
-	lib/mesa/swrast
 	server/loader
 	server/tar_rom
 	test/nitpicker
-	test/qt5/qpluginwidget
 }
 
 build $build_components
-
-#
-# Create Qt tar archive
-#
-
-create_qt5_fs_tar_archive "test-qpluginwidget" "gui"
 
 #
 # Generate config
@@ -63,7 +62,13 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
-				<tar name="qt5_fs_test-qpluginwidget.tar"/>
+				<dir name="qt">
+					<dir name="lib">
+						<dir name="fonts">
+							<rom name="DejaVuSans.ttf"/>
+						</dir>
+					</dir>
+				</dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"/>
 		</config>
@@ -85,27 +90,14 @@ install_config $config
 # Boot modules
 #
 
-exec sh -c "ln -sf [pwd]/test/qt5/qpluginwidget/test-plugin.tar bin/"
-
 append boot_modules [qt5_boot_modules feature]
 
 append boot_modules {
 	loader
 	tar_rom
 	testnit
-	test-qpluginwidget
-	libcrypto.lib.so
-	libssl.lib.so
-	qt5_qnitpickerviewwidget.lib.so
-	qt5_qpluginwidget.lib.so
-	qt5_widgets.lib.so
-	qt5_network.lib.so
-	test-plugin.tar
-	qt5_fs_test-qpluginwidget.tar
 }
 
 build_boot_image $boot_modules
 
-
 run_genode_until forever
-
