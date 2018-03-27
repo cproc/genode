@@ -1,6 +1,10 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
-import_from_depot genodelabs/src/qt5_component
+import_from_depot genodelabs/src/qt5_component \
+                  genodelabs/src/qt5_scriptclassic \
+                  genodelabs/src/qt5_tetrix \
+                  genodelabs/src/qt5_ui_tools \
+                  genodelabs/src/qt5_widgets
 
 #
 # Build
@@ -8,18 +12,7 @@ import_from_depot genodelabs/src/qt5_component
 
 append build_components [qt5_build_components feature]
 
-append build_components {
-	lib/mesa/swrast
-	app/qt5/examples/tetrix
-}
-
 build $build_components
-
-#
-# Create Qt tar archive
-#
-
-create_qt5_fs_tar_archive "tetrix" "gui"
 
 #
 # Generate config
@@ -44,7 +37,13 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
-				<tar name="qt5_fs_tetrix.tar"/>
+				<dir name="qt">
+					<dir name="lib">
+						<dir name="fonts">
+							<rom name="DejaVuSans.ttf"/>
+						</dir>
+					</dir>
+				</dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"/>
 		</config>
@@ -68,16 +67,6 @@ install_config $config
 
 append boot_modules [qt5_boot_modules feature]
 
-append boot_modules {
-	tetrix
-	qt5_widgets.lib.so
-	qt5_scriptclassic.lib.so
-	qt5_ui_tools.lib.so
-	qt5_fs_tetrix.tar
-}
-
 build_boot_image $boot_modules
 
-
 run_genode_until forever
-
