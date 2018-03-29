@@ -19,7 +19,7 @@ QT5_PORT_DIR := $(call select_from_ports,qt5)
 QT5_CONTRIB_DIR := $(QT5_PORT_DIR)/src/lib/qt5/$(QT5)
 
 QT5_INC_DIR := $(QT5_REP_DIR)/include/qt5 \
-               $(QT5_CONTRIB_DIR)/qtbase/include \
+               $(QT5_PORT_DIR)/include \
                $(QT5_CONTRIB_DIR)/qtbase/mkspecs/genode-g++
 
 INC_DIR += $(QT5_INC_DIR)
