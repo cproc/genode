@@ -17,7 +17,7 @@
 /* Qt includes */
 #include <QVBoxLayout>
 #include <QWidget>
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qnitpickerviewwidget.h>
 
 /* Qoost includes */
 #include <qoost/compound_widget.h>
