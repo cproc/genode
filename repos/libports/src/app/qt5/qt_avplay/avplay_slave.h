@@ -84,6 +84,8 @@ class Avplay_slave : public QObject
 					vfs_dev_node.setAttribute("name", "dev");
 					QDomElement vfs_dev_log_node = config_doc.createElement("log");
 					vfs_dev_node.appendChild(vfs_dev_log_node);
+					QDomElement vfs_dev_null_node = config_doc.createElement("null");
+					vfs_dev_node.appendChild(vfs_dev_null_node);
 					vfs_node.appendChild(vfs_dev_node);
 					QDomElement vfs_mediafile_node = config_doc.createElement("rom");
 					vfs_mediafile_node.setAttribute("name", "mediafile");
@@ -93,6 +95,7 @@ class Avplay_slave : public QObject
 					QDomElement libc_node = config_doc.createElement("libc");
 					libc_node.setAttribute("stdout", "/dev/log");
 					libc_node.setAttribute("stderr", "/dev/log");
+					libc_node.setAttribute("rtc", "/dev/null");
 					config_node.appendChild(libc_node);
 
 					QDomElement sdl_audio_volume_node = config_doc.createElement("sdl_audio_volume");

@@ -22,8 +22,8 @@
 #include <nitpicker_session/connection.h>
 
 /* Qt includes */
-#include <qpa_nitpicker/qnitpickerplatformwindow.h>
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qnitpickerplatformwindow.h>
+#include <qnitpickerviewwidget.h>
 
 
 struct Framebuffer_service_factory
