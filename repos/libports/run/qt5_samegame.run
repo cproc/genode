@@ -1,6 +1,14 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
-import_from_depot genodelabs/src/qt5_component
+import_from_depot genodelabs/raw/qt5_samegame \
+                  genodelabs/src/libcrypto \
+                  genodelabs/src/libssl \
+                  genodelabs/src/qt5_component \
+                  genodelabs/src/qt5_network \
+                  genodelabs/src/qt5_qml \
+                  genodelabs/src/qt5_qtquick2plugin \
+                  genodelabs/src/qt5_quick \
+                  genodelabs/src/qt5_samegame
 
 #
 # Build
@@ -8,19 +16,7 @@ import_from_depot genodelabs/src/qt5_component
 
 append build_components [qt5_build_components feature]
 
-append build_components {
-	lib/mesa/swrast
-	app/qt5/examples/samegame
-	lib/qt5/qtdeclarative/src/imports/qtquick2
-}
-
 build $build_components
-
-#
-# Create Qt tar archive
-#
-
-create_qt5_fs_tar_archive "samegame" "gui quick"
 
 #
 # Generate config
@@ -45,7 +41,15 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
-				<tar name="qt5_fs_samegame.tar" />
+				<dir name="qt">
+					<dir name="lib">
+						<dir name="fonts">
+							<rom name="DejaVuSans.ttf"/>
+						</dir>
+					</dir>
+				</dir>
+				<tar name="qt5_qtquick2plugin.tar"/>
+				<tar name="qt5_samegame.tar"/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"/>
 		</config>
@@ -72,20 +76,6 @@ install_config $config
 
 append boot_modules [qt5_boot_modules feature]
 
-append boot_modules {
-	samegame
-	libcrypto.lib.so
-	libssl.lib.so
-	qt5_network.lib.so
-	qt5_qml.lib.so
-	qt5_quick.lib.so
-	qt5_widgets.lib.so
-	qt5_fs_samegame.tar
-	qt5_qtquick2plugin.lib.so
-}
-
 build_boot_image $boot_modules
 
-
 run_genode_until forever
-
