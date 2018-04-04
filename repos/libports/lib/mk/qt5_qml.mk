@@ -1,18 +1,6 @@
-include $(REP_DIR)/lib/import/import-qt5_qml.mk
+include $(call select_from_repositories,lib/import/import-qt5_qml.mk)
 
 SHARED_LIB = yes
-
-ifneq ($(call select_from_ports,qt5),)
-all: $(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag
-endif
-
-$(QT5_PORT_DIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag:
-
-	$(VERBOSE)mkdir -p $(dir $@)
-
-	python $(QT5_CONTRIB_DIR)/qtdeclarative/src/3rdparty/masm/create_regex_tables > $(dir $@)/RegExpJitTables.h
-
-	$(VERBOSE)touch $@
 
 include $(REP_DIR)/lib/mk/qt5_qml_generated.inc
 
