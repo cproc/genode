@@ -1,0 +1,16 @@
+content: qt5_qtquick_window.tar
+
+PORT_DIR := $(call port_dir,$(REP_DIR)/ports/qt5)
+
+INSTALL_DIR := qt/qml/QtQuick/Window.2
+QMLDIR      := $(INSTALL_DIR)/qmldir
+
+$(INSTALL_DIR):
+	$(VERBOSE)mkdir -p $@
+
+$(QMLDIR): $(INSTALL_DIR)
+	$(VERBOSE)cp $(PORT_DIR)/src/lib/qt5/qt-everywhere-opensource-src-5.8.0/qtdeclarative/src/imports/window/qmldir $@
+
+qt5_qtquick_window.tar: $(QMLDIR)
+	$(VERBOSE)tar cf $@ qt
+	$(VERBOSE)rm -rf qt
