@@ -11,7 +11,7 @@
 #include <QtGui>
 
 #include <qnitpickerplatformwindow.h>
-#include <qnitpickerviewwidget.h>
+#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
 
 
 /*************************
