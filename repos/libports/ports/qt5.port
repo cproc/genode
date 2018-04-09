@@ -348,7 +348,7 @@ include/QtWebKitWidgets: $(BUILD_DIR)/qtwebkit/Source/Makefile.widgetsapi
 
 # qtdeclarative
 
-src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag:
+$(CURDIR)/src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag:
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)python $(QT5_CONTRIB_DIR)/qtdeclarative/src/3rdparty/masm/create_regex_tables > $(dir $@)/RegExpJitTables.h
 	$(VERBOSE)touch $@
@@ -357,7 +357,7 @@ src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag:
 
 ANGLE_DIR := $(QT5_CONTRIB_DIR)/qtwebkit/Source/ThirdParty/ANGLE
 
-src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag:
+$(CURDIR)/src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag:
 
 	$(VERBOSE)mkdir -p $(dir $@)
 
@@ -370,7 +370,7 @@ src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag:
 
 JAVASCRIPTCORE_DIR = $(QT5_CONTRIB_DIR)/qtwebkit/Source/JavaScriptCore
 
-src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag:
+$(CURDIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag:
 
 	$(VERBOSE)mkdir -p $(dir $@)
 
@@ -417,71 +417,26 @@ GENERATE_BINDINGS_PL = export "SOURCE_ROOT=$(WEBCORE_DIR)" && perl -I$(WEBCORE_D
 # system, because it is not a subdirectory of the current directory.
 GENERATE_BINDINGS_PL += --include $(dir $@)
 
-src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
+$(CURDIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag:
+
+	$(VERBOSE)rm -rf $(dir $@)
 
 	$(VERBOSE)mkdir -p $(dir $@)
-
-	@# make_names.pl
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --tags $(WEBCORE_DIR)/mathml/mathtags.in --attrs $(WEBCORE_DIR)/mathml/mathattrs.in          --extraDefines $(EXTRA_DEFINES) --preprocessor "$(MOC) -E" --factory --wrapperFactory --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --tags $(WEBCORE_DIR)/svg/svgtags.in --attrs $(WEBCORE_DIR)/svg/svgattrs.in                  --extraDefines $(EXTRA_DEFINES) --preprocessor "$(MOC) -E" --factory --wrapperFactory --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --attrs $(WEBCORE_DIR)/svg/xlinkattrs.in --preprocessor "$(MOC) -E" --outputDir $(dir $@)
-
-	@# makeprop.pl
-	$(VERBOSE)perl -ne "print $1" $(WEBCORE_DIR)/css/CSSPropertyNames.in $(WEBCORE_DIR)/css/SVGCSSPropertyNames.in > $(dir $@)/CSSPropertyNames.in && cd $(dir $@) && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/css/makeprop.pl --defines $(DEFINES) --preprocessor "$(MOC) -E" $(WEBCORE_DIR)/css/CSSPropertyNames.in && $(DEL_FILE) CSSPropertyNames.in CSSPropertyNames.gperf
-
+	touch pwd0.txt
 	@# make_settings.pl
 	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/page/make_settings.pl --input $(WEBCORE_DIR)/page/Settings.in --outputDir $(dir $@)
-
+	touch pwd1.txt
 	@# makevalues.pl
-	$(VERBOSE)perl -ne "print $1" $(WEBCORE_DIR)/css/CSSValueKeywords.in $(WEBCORE_DIR)/css/SVGCSSValueKeywords.in > $(dir $@)/CSSValueKeywords.in && cd $(dir $@) && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/css/makevalues.pl --defines $(DEFINES) --preprocessor "$(MOC) -E" $(WEBCORE_DIR)/css/CSSValueKeywords.in && $(DEL_FILE) CSSValueKeywords.in CSSValueKeywords.gperf
-
+	$(VERBOSE)perl -ne "print $1" $(WEBCORE_DIR)/css/CSSValueKeywords.in $(WEBCORE_DIR)/css/SVGCSSValueKeywords.in > $(dir $@)/CSSValueKeywords.in && cd $(dir $@) && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/css/makevalues.pl --defines $(DEFINES) --preprocessor "$(MOC) -E" $(WEBCORE_DIR)/css/CSSValueKeywords.in #&& $(DEL_FILE) CSSValueKeywords.in CSSValueKeywords.gperf
+	touch pwd2.txt
 	@# preprocess-idls.pl
 	$(VERBOSE)sed -e "s,^qtwebkit,$(QT5_CONTRIB_DIR)/qtwebkit,g" -e "s,^generated/,$(dir $@),g" $(REP_DIR)/src/lib/qt5/qtwebkit/Source/WebCore/idl_files > $(dir $@)/idl_files.tmp
+	touch pwd3.txt
 	$(VERBOSE)export "QT5_CONTRIB_DIR=$(QT5_CONTRIB_DIR)" && perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/bindings/scripts/preprocess-idls.pl --defines $(DEFINES) --idlFilesList $(dir $@)/idl_files.tmp --supplementalDependencyFile $(dir $@)/supplemental_dependency.tmp  --windowConstructorsFile $(dir $@)/DOMWindowConstructors.idl --workerGlobalScopeConstructorsFile $(dir $@)/WorkerGlobalScopeConstructors.idl --sharedWorkerGlobalScopeConstructorsFile $(dir $@)/SharedWorkerGlobalScopeConstructors.idl --dedicatedWorkerGlobalScopeConstructorsFile $(dir $@)/DedicatedWorkerGlobalScopeConstructors.idl
-
+	touch pwd4.txt
 	@# generate-bindings.pl
-	$(VERBOSE)while read -r idl_file; do $(GENERATE_BINDINGS_PL) $$idl_file; done < $(dir $@)/idl_files.tmp
+	#$(VERBOSE)while read -r idl_file; do $(GENERATE_BINDINGS_PL) $$idl_file; done < $(dir $@)/idl_files.tmp
 	#$(VERBOSE)while read -r idl_file; do echo "$(GENERATE_BINDINGS_PL) $$idl_file"; $(GENERATE_BINDINGS_PL) $$idl_file; done < $(dir $@)/idl_files.tmp
-
-	@# CodeGeneratorInspector.py
-	$(VERBOSE)python $(WEBCORE_DIR)/inspector/CodeGeneratorInspector.py $(WEBCORE_DIR)/inspector/Inspector.json --output_h_dir $(dir $@) --output_cpp_dir $(dir $@)
-
-	@# xxd.pl
-	$(VERBOSE)perl $(WEBCORE_DIR)/inspector/xxd.pl InspectorOverlayPage_html $(WEBCORE_DIR)/inspector/InspectorOverlayPage.html $(dir $@)/InspectorOverlayPage.h
-	$(VERBOSE)perl $(WEBCORE_DIR)/inspector/xxd.pl InjectedScriptSource_js $(WEBCORE_DIR)/inspector/InjectedScriptSource.js $(dir $@)/InjectedScriptSource.h
-	$(VERBOSE)perl $(WEBCORE_DIR)/inspector/xxd.pl InjectedScriptCanvasModuleSource_js $(WEBCORE_DIR)/inspector/InjectedScriptCanvasModuleSource.js $(dir $@)/InjectedScriptCanvasModuleSource.h
-
-	@# makegrammar.pl
-	$(VERBOSE)perl -I $(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/css/makegrammar.pl --outputDir $(dir $@) --extraDefines $(EXTRA_DEFINES) --preprocessor "$(MOC) -E" --symbolsPrefix cssyy $(WEBCORE_DIR)/css/CSSGrammar.y.in
-
-	@# make_names.pl
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --tags $(WEBCORE_DIR)/html/HTMLTagNames.in --attrs $(WEBCORE_DIR)/html/HTMLAttributeNames.in --extraDefines $(EXTRA_DEFINES) --preprocessor "$(MOC) -E" --factory --wrapperFactory --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --attrs $(WEBCORE_DIR)/xml/xmlnsattrs.in --preprocessor "$(MOC) -E" --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --attrs $(WEBCORE_DIR)/xml/xmlattrs.in --preprocessor "$(MOC) -E" --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_names.pl --fonts $(WEBCORE_DIR)/css/WebKitFontFamilyNames.in --outputDir $(dir $@)
-
-	@# make_event_factory.pl
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_event_factory.pl --input $(WEBCORE_DIR)/dom/EventNames.in --outputDir $(dir $@)
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_event_factory.pl --input $(WEBCORE_DIR)/dom/EventTargetFactory.in --outputDir $(dir $@)
-
-	@# make-dom-exceptions.pl
-	$(VERBOSE)perl -I$(WEBCORE_DIR)/bindings/scripts $(WEBCORE_DIR)/dom/make_dom_exceptions.pl --input $(WEBCORE_DIR)/dom/DOMExceptions.in --outputDir $(dir $@)
-
-	@# create-html-entity-table
-	$(VERBOSE)python $(WEBCORE_DIR)/html/parser/create-html-entity-table -o $(dir $@)/HTMLEntityTable.cpp $(WEBCORE_DIR)/html/parser/HTMLEntityNames.in
-
-	@# make-hash-tools.pl
-	$(VERBOSE)perl $(WEBCORE_DIR)/make-hash-tools.pl $(dir $@) $(WEBCORE_DIR)/platform/ColorData.gperf
-
-	@# make-css-file-arrays.pl
-	$(VERBOSE)perl $(WEBCORE_DIR)/css/make-css-file-arrays.pl $(dir $@)/UserAgentStyleSheets.h $(dir $@)/UserAgentStyleSheetsData.cpp $(WEBCORE_DIR)/css/html.css $(WEBCORE_DIR)/css/quirks.css $(WEBCORE_DIR)/css/mathml.css $(WEBCORE_DIR)/css/svg.css $(WEBCORE_DIR)/css/view-source.css $(WEBCORE_DIR)/css/fullscreen.css $(WEBCORE_DIR)/css/mediaControls.css $(WEBCORE_DIR)/css/mediaControlsQt.css $(WEBCORE_DIR)/css/mediaControlsQtFullscreen.css $(WEBCORE_DIR)/css/plugIns.css $(WEBCORE_DIR)/css/themeQtNoListboxes.css $(WEBCORE_DIR)/css/mobileThemeQt.css
-	$(VERBOSE)perl $(WEBCORE_DIR)/css/make-css-file-arrays.pl $(dir $@)/PlugInsResources.h $(dir $@)/PlugInsResourcesData.cpp $(WEBCORE_DIR)/Resources/plugIns.js
-
-	@# XPathGrammar
-	$(VERBOSE)bison -d -p xpathyy $(WEBCORE_DIR)/xml/XPathGrammar.y -o $(dir $@)/XPathGrammar.tab.c && $(MOVE) $(dir $@)/XPathGrammar.tab.c $(dir $@)/XPathGrammar.cpp && $(MOVE) $(dir $@)/XPathGrammar.tab.h $(dir $@)/XPathGrammar.h
-
-	@# generate-webkit-version.pl
-	$(VERBOSE)perl $(WEBCORE_DIR)/../WebKit/scripts/generate-webkitversion.pl --config $(WEBCORE_DIR)/../WebKit/mac/Configurations/Version.xcconfig --outputDir $(dir $@)/
 
 	$(VERBOSE)touch $@
 
@@ -512,8 +467,11 @@ qt5_headers: include/QtCore \
 
 qtdeclarative_generated: src/lib/qt5/qtdeclarative/src/3rdparty/masm/generated.tag
 
-qtwebkit_generated: src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag \
-                    src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag \
-                    src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag
+qtwebkit_generated: $(CURDIR)/src/lib/qt5/qtwebkit/Source/ThirdParty/ANGLE/generated/generated.tag \
+                    $(CURDIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag \
+                    $(CURDIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag
 
-default: _patch qt5_headers qtdeclarative_generated qtwebkit_generated
+test: $(CURDIR)/src/lib/qt5/qtwebkit/Source/WebCore/generated/generated.tag
+
+#default: _patch qt5_headers qtdeclarative_generated qtwebkit_generated
+default: test
