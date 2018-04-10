@@ -1,4 +1,4 @@
-include $(REP_DIR)/lib/import/import-qt5_xml.mk
+include $(REP_DIR)/lib/import/import-qt5_opengl.mk
 
 SHARED_LIB = yes
 
