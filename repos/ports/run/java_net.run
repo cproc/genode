@@ -1,0 +1,119 @@
+
+set build_components {
+	core init
+	drivers/timer
+	drivers/rtc
+	drivers/nic
+	lib/vfs/lxip
+	app/jdk/java
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+create_boot_directory
+
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="LOG"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="IRQ"/>
+		<service name="IO_PORT"/>
+		<service name="IO_MEM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100" />
+	<start name="timer">
+		<resource name="RAM" quantum="2M" />
+		<provides> <service name="Timer" /> </provides>
+	</start>
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="2M" />
+		<provides> <service name="Rtc" /> </provides>
+	</start>
+	<start name="nic_drv">
+		<binary name="} [nic_drv_binary] {"/>
+		<resource name="RAM" quantum="4M" />
+		<provides> <service name="Nic" /> </provides>
+		<config>
+			<nic tap="tap_chpro"/>
+		</config>
+	</start>
+	<start name="java" caps="300">
+		<resource name="RAM" quantum="96M" />
+		<route>
+			<service name="ROM" label="zip.lib.so">
+				<parent label="jzip.lib.so" />
+			</service>
+			<service name="ROM" label="net.lib.so">
+				<parent label="jnet.lib.so" />
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config ld_verbose="no">
+			<arg value="/bin/java" />
+			<arg value="-jar" />
+			<arg value="httpserver.jar" />
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket" />
+			<vfs rtc="/dev/rtc">
+				<dir name="dev">
+					<dir name="socket"> <lxip ip_addr="10.0.10.55" netmask="255.255.255.0" gateway="10.0.10.1"/> </dir>
+					<log/><rtc/><null/>
+				</dir>
+				<dir name="bin">
+					<rom name="java" />
+				</dir>
+				<dir name="lib">
+					<rom name="java.lib.so" />
+					<inline name="jvm.cfg">-server KNOWN
+-client IGNORE
+</inline>
+					<dir name="server">
+						<rom name="jvm.lib.so" />
+					</dir>
+					<rom name="tzdb.dat"/>
+				</dir>
+				<dir name="modules">
+					<tar name="classes.tar" />
+				</dir>
+				<rom name="httpserver.jar" />
+				<rom name="zip.lib.so" />
+				<rom name="nio.lib.so" />
+				<rom name="net.lib.so" />
+			</vfs>
+		</config>
+	</start>
+}
+
+append_platform_drv_config
+
+append config {
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	core init ld.lib.so timer rtc_drv
+	java jli.lib.so httpserver.jar
+	java.lib.so jvm.lib.so jzip.lib.so jimage.lib.so
+	libc.lib.so libm.lib.so zlib.lib.so nio.lib.so jnet.lib.so
+	posix.lib.so pthread.lib.so stdcxx.lib.so ffi.lib.so
+	vfs_lxip.lib.so lxip.lib.so libc_pipe.lib.so
+	classes.tar tzdb.dat
+}
+
+append boot_modules [nic_drv_binary]
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+run_genode_until forever
