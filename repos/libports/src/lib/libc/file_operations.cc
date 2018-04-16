@@ -554,6 +554,7 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 
 extern "C" int open(const char *pathname, int flags, ...)
 {
+//PDBG(pathname);
 	va_list ap;
 	va_start(ap, flags);
 	int res = _open(pathname, flags, va_arg(ap, unsigned));
@@ -643,7 +644,6 @@ extern "C" int rmdir(const char *path)
 		return -1;
 	}
 }
-
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
