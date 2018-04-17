@@ -4,11 +4,11 @@ DOWNLOADS := egl.h.file eglext.h.file khrplatform.h.file
 
  URL(egl.h) := https://www.khronos.org/registry/EGL/api/EGL/egl.h
 NAME(egl.h) := include/EGL/egl.h
- SHA(egl.h) := 572914c13175b1317dc18ae5ef6b6714c2fcad76
+ SHA(egl.h) := 02bfbe587f2310354f51a9ca32f90c13b29fd4dc
 
  URL(eglext.h) := https://www.khronos.org/registry/EGL/api/EGL/eglext.h
 NAME(eglext.h) := include/EGL/eglext.h
- SHA(eglext.h) := 1667d58f56fd2676e3d6ea9f62849f1fccb1649c
+ SHA(eglext.h) := 937bf9432775a90679287c27b0c6c1ccc546bfb5
 
  URL(khrplatform.h) := https://www.khronos.org/registry/EGL/api/KHR/khrplatform.h
 NAME(khrplatform.h) := include/KHR/khrplatform.h
