@@ -83,6 +83,14 @@ struct Usb::Block_driver : Usb::Completion,
 			return;
 		}
 
+		{
+			Timer::Connection timer { env };
+			timer.msleep(3000);
+			Genode::log("");
+			Genode::log("-----");
+			Genode::log("");
+		}
+
 		Genode::log("Device plugged");
 
 		if (!initialize()) {
@@ -361,8 +369,10 @@ struct Usb::Block_driver : Usb::Completion,
 	bool initialize()
 	{
 		device.update_config();
-
+Genode::log("calling device.interface()");
 		Usb::Interface &iface = device.interface(active_interface);
+Genode::log("calling iface.claim()");
+
 		try { iface.claim(); }
 		catch (Usb::Session::Interface_already_claimed) {
 			Genode::error("Device already claimed");
@@ -378,8 +388,12 @@ struct Usb::Block_driver : Usb::Completion,
 			IPROTO_BULK_ONLY    = 80
 		};
 		try {
+Genode::log("calling iface.alternate_interface()");
 			Alternate_interface &alt_iface = iface.alternate_interface(0);
+Genode::log("calling iface.set_alternate_interface()");
+
 			iface.set_alternate_interface(alt_iface);
+Genode::log("iface.set_alternate_interface() returned");
 
 			if (alt_iface.iclass != ICLASS_MASS_STORAGE
 				|| alt_iface.isubclass != ISUBCLASS_SCSI
@@ -393,9 +407,15 @@ struct Usb::Block_driver : Usb::Completion,
 		}
 
 		try {
+Genode::log("calling iface.alloc() for reset");
+
 			/* reset */
 			Usb::Packet_descriptor p = iface.alloc(0);
+Genode::log("calling iface.control_transfer()");
+
 			iface.control_transfer(p, 0x21, 0xff, 0, active_interface, 100);
+Genode::log("iface.control_transfer() returned");
+
 			if (!p.succeded) {
 				Genode::error("Could not reset device");
 				throw -1;
@@ -405,8 +425,11 @@ struct Usb::Block_driver : Usb::Completion,
 			 * Let us do GetMaxLUN and simply ignore the return value because none
 			 * of the devices that were tested did infact report another value than 0.
 			 */
+Genode::log("calling iface.alloc() for GetMaxLUN");
 			p = iface.alloc(1);
+Genode::log("calling iface.contron_transfer()");
 			iface.control_transfer(p, 0xa1, 0xfe, 0, active_interface, 100);
+Genode::log("iface.control_transfer() returned");
 			uint8_t max_lun = *(uint8_t*)iface.content(p);
 			if (p.succeded && max_lun == 0) { max_lun = 1; }
 			iface.release(p);
@@ -417,20 +440,23 @@ struct Usb::Block_driver : Usb::Completion,
 
 			char cbw_buffer[Cbw::LENGTH];
 
+
 			/*
 			 * We should probably execute the SCSI REPORT_LUNS command first
 			 * but we will receive LOGICAL UNIT NOT SUPPORTED if we try to
 			 * access an invalid unit. The user has to specify the LUN in
 			 * the configuration anyway.
 			 */
-
+Genode::log("inq");
 			/* Scsi::Opcode::INQUIRY */
 			Inquiry inq((addr_t)cbw_buffer, INQ_TAG, active_lun);
-
+Genode::log("cbw");
 			cbw(cbw_buffer, init, true);
+Genode::log("resp");
 			resp(Scsi::Inquiry_response::LENGTH, init, true);
+Genode::log("csw");
 			csw(init, true);
-
+Genode::log("csw done");
 			if (!init.inquiry) {
 				Genode::warning("Inquiry_cmd failed");
 				throw -1;

@@ -109,8 +109,8 @@ struct Inquiry : Usb::Cbw, Scsi::Inquiry
 {
 	Inquiry(addr_t addr, uint32_t tag, uint8_t lun)
 	:
-		Cbw(addr, tag, Scsi::Inquiry_response::LENGTH,
-		    Usb::ENDPOINT_IN, lun, Scsi::Inquiry::LENGTH),
+		Cbw(addr, tag, /*Scsi::Inquiry_response::LENGTH*/36,
+		    /*Usb::ENDPOINT_IN*/128, lun, /*Scsi::Inquiry::LENGTH*/6),
 		Scsi::Inquiry(addr+15)
 	{ if (verbose_scsi) dump(); }
 
