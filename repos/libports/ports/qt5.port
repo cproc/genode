@@ -34,12 +34,15 @@ PATCH_OPT                                                  := -p1 -d ${DIR(${QT5
 PATCH_OPT(src/lib/qt5/patches/qtscriptclassic_qt5.patch)   := -p1 -d ${DIR(${QTSCRIPTCLASSIC})}
 PATCH_OPT(src/lib/qt5/patches/qtscriptclassic_qt5_7.patch) := -p1 -d ${DIR(${QTSCRIPTCLASSIC})}
 
+MOC := /usr/local/genode-qt5/bin/moc
+
 $(call check_tool,bison)
 $(call check_tool,flex)
 $(call check_tool,gperf)
 $(call check_tool,perl)
 $(call check_tool,python)
 $(call check_tool,sed)
+$(call check_tool,$(MOC))
 
 # generate Qt headers suitable for API package creation (no forwarding headers)
 
@@ -410,7 +413,6 @@ $(CURDIR)/src/lib/qt5/qtwebkit/Source/JavaScriptCore/generated/generated.tag: _p
 # command names used by some of the extracted generator commands
 DEL_FILE := rm
 MOVE := mv
-MOC := $(HOME)/opt/genode-qt5/bin/moc
 
 WEBCORE_DIR = $(QT5_CONTRIB_DIR)/qtwebkit/Source/WebCore
 

@@ -35,56 +35,51 @@ MAKE_JOBS ?= 4
 #
 
 GENODE_DIR       ?= $(realpath $(dir $(firstword $(MAKEFILE_LIST)))/..)
-CONTRIB_DIR       = $(shell $(GENODE_DIR)/tool/ports/current qt5)/src/lib/qt5/qt5
+CONTRIB_DIR       = $(shell $(GENODE_DIR)/tool/ports/current qt5-host)/src/lib/qt5-host
 BUILD_DIR         = $(GENODE_DIR)/build/tool/qt5-5.8.0
 INSTALL_LOCATION  = /usr/local/genode-qt5
 
 $(CONTRIB_DIR)/configure:
-	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port qt5
+	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port qt5-host
 
-QMAKE = $(BUILD_DIR)/qtbase/bin/qmake
+QMAKE = $(BUILD_DIR)/bin/qmake
 
 $(QMAKE): $(CONTRIB_DIR)/configure
 	$(VERBOSE)mkdir -p $(BUILD_DIR)
-	$(VERBOSE)cd $(BUILD_DIR) && $(CONTRIB_DIR)/configure -opensource -confirm-license -no-iconv -no-opengl
+	$(VERBOSE)cd $(BUILD_DIR) && $(CONTRIB_DIR)/configure -opensource -confirm-license -no-iconv -no-opengl -prefix $(INSTALL_LOCATION)
 
-$(BUILD_DIR)/qtbase/Makefile: $(QMAKE)
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase && \
+$(BUILD_DIR)/src/Makefile: $(QMAKE)
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
 	          $(QMAKE) -o Makefile \
-	          $(CONTRIB_DIR)/qtbase/qtbase.pro -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource
+	          $(CONTRIB_DIR)/src/src.pro -qtconf $(BUILD_DIR)/bin/qt.conf -- -opensource
 
-$(BUILD_DIR)/qtbase/src/Makefile: $(BUILD_DIR)/qtbase/Makefile
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-	          $(QMAKE) -o Makefile \
-	          $(CONTRIB_DIR)/qtbase/src/src.pro -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource
-
-$(BUILD_DIR)/qtbase/bin/moc: $(BUILD_DIR)/qtbase/src/Makefile
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
+$(BUILD_DIR)/bin/moc: $(BUILD_DIR)/src/Makefile
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
 	          make -j$(MAKE_JOBS) sub-moc
 
-$(BUILD_DIR)/qtbase/bin/rcc: $(BUILD_DIR)/qtbase/src/Makefile
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
+$(BUILD_DIR)/bin/rcc: $(BUILD_DIR)/src/Makefile
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
 	          make -j$(MAKE_JOBS) sub-rcc
 
-$(BUILD_DIR)/qtbase/bin/uic: $(BUILD_DIR)/qtbase/src/Makefile
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
+$(BUILD_DIR)/bin/uic: $(BUILD_DIR)/src/Makefile
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
 	          make -j$(MAKE_JOBS) sub-uic
 
-build: $(BUILD_DIR)/qtbase/bin/moc \
-       $(BUILD_DIR)/qtbase/bin/rcc \
-       $(BUILD_DIR)/qtbase/bin/uic
+build: $(BUILD_DIR)/bin/moc \
+       $(BUILD_DIR)/bin/rcc \
+       $(BUILD_DIR)/bin/uic
 
-$(INSTALL_LOCATION)/bin/moc: $(BUILD_DIR)/qtbase/bin/moc
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-moc-install_subtargets
+$(INSTALL_LOCATION)/bin/moc: $(BUILD_DIR)/bin/moc
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
+              sudo make sub-moc-install_subtargets
 
-$(INSTALL_LOCATION)/bin/rcc: $(BUILD_DIR)/qtbase/bin/rcc
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-rcc-install_subtargets
+$(INSTALL_LOCATION)/bin/rcc: $(BUILD_DIR)/bin/rcc
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
+              sudo make sub-rcc-install_subtargets
 
-$(INSTALL_LOCATION)/bin/uic: $(BUILD_DIR)/qtbase/bin/uic
-	$(VERBOSE)cd $(BUILD_DIR)/qtbase/src && \
-              sudo make INSTALL_ROOT=$(INSTALL_LOCATION) sub-uic-install_subtargets
+$(INSTALL_LOCATION)/bin/uic: $(BUILD_DIR)/bin/uic
+	$(VERBOSE)cd $(BUILD_DIR)/src && \
+              sudo make sub-uic-install_subtargets
 
 install: $(INSTALL_LOCATION)/bin/moc \
          $(INSTALL_LOCATION)/bin/rcc \
