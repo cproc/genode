@@ -23,7 +23,7 @@
 namespace Usb {
 
 	/* debugging */
-	bool constexpr verbose_descr = false;
+	bool constexpr verbose_descr = true;
 
 	class  Device;
 	class  Config;
@@ -67,7 +67,7 @@ class Usb::Sync_completion : Completion
 		{
 			Completion *c = p.completion;
 			p.completion  = this;
-
+Genode::log("Sync_completion()");
 			handler.submit(p);
 
 			while (!_completed)
@@ -79,6 +79,7 @@ class Usb::Sync_completion : Completion
 
 		void complete(Packet_descriptor &p) override
 		{
+Genode::log("Sync_completion::complete()");
 			_p         = p;
 			_completed = true;
 		}
@@ -561,8 +562,8 @@ class Usb::Device : public Meta_data
 				return;
 			}
 
-			if (config && num == config->config_value)
-				return;
+			//if (config && num == config->config_value)
+				//return;
 
 			Packet_descriptor p = _handler.alloc(0);
 			p.type              = Packet_descriptor::CONFIG;

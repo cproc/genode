@@ -1002,8 +1002,8 @@ class Platform::Root : public Genode::Root_component<Session_component>
 				                     (bridge_bdf >> 3) & 0x1f,
 				                      bridge_bdf & 0x7, &config_access);
 
-				if (!config.valid())
-					continue;
+				//if (!config.valid())
+					//continue;
 
 				/* drop routing information on non ACPI platform */
 				if (!acpi_platform) {

@@ -104,6 +104,7 @@ class Lx_kit::Irq : public Lx::Irq
 
 					while (1) {
 						Lx::scheduler().current()->block_and_schedule();
+						Genode::log("irq");
 						ctx->handle_irq();
 					}
 				}
