@@ -98,7 +98,7 @@ Genode::uint64_t Scsi::be64(Genode::uint64_t val)
 
 struct Scsi::Inquiry_response : Genode::Mmio
 {
-	enum { LENGTH = 36 /* default */ + 20 /* drive serial number and vendor unique */};
+	enum { LENGTH = 36 /* default */ + 0 /* drive serial number and vendor unique */};
 
 	struct Dt  : Register<0x0, 8> { }; /* device type */
 	struct Rm  : Register<0x1, 8> { struct Rmb : Bitfield<7, 1> { }; }; /* removable media */
