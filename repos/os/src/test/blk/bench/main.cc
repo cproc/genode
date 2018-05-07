@@ -65,7 +65,7 @@ class Throughput
 
 			try {
 				while (_session.tx()->ready_to_submit()) {
-					//Genode::log("current: ", _current);
+					Genode::log("current: ", _current);
 					Block::Packet_descriptor p(
 						_session.tx()->alloc_packet(REQUEST_SIZE),
 						!_read_done ? Block::Packet_descriptor::READ : Block::Packet_descriptor::WRITE,

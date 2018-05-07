@@ -269,7 +269,7 @@ struct Scsi::Inquiry : Cmd_6
 	Inquiry(addr_t addr) : Cmd_6(addr)
 	{
 		write<Cmd_6::Op>(Opcode::INQUIRY);
-		write<Cmd_6::Len>(Inquiry_response::LENGTH);
+		write<Cmd_6::Len>(/*Inquiry_response::LENGTH*/36);
 	}
 };
 

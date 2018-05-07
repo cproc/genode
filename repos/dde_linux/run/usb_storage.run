@@ -66,7 +66,9 @@ append config {
 	<start name="usb_drv">
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Block"/> </provides>
-		<config uhci="yes" ohci="yes" ehci="yes" xhci="yes"><storage /></config>
+		<config uhci="yes" ohci="yes" ehci="yes" xhci="yes">
+			<storage />
+		</config>
 	</start>
 		<start name="test-usb">
 		<resource name="RAM" quantum="2M" />
@@ -128,7 +130,8 @@ append qemu_args {  \
 #-device usb-storage,bus=xhci.0,drive=disk \
 #-boot order=d }
 
-run_genode_until {.*child "test-usb" exited with exit value 0.*} 100
+run_genode_until forever
+#run_genode_until {.*child "test-usb" exited with exit value 0.*} 100
 
 puts "\nTest succeeded\n"
 
