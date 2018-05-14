@@ -147,8 +147,6 @@ class Fs_report::Session_component : public Genode::Rpc_object<Report::Session>
 
 		void submit(size_t const length) override
 		{
-			/* TODO: close and reopen on error */
-
 			auto fn = [&] (Vfs_handle *handle) {
 
 				typedef Vfs::File_io_service::Write_result Write_result;
