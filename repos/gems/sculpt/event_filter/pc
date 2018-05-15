@@ -17,6 +17,7 @@
 					</accelerate>
 					<input name="usb"/>
 				</merge>
+				<key name="BTN_EXTRA" to="BTN_MIDDLE"/>
 			</remap>
 			<mod1>
 				<key name="KEY_LEFTSHIFT"/> <key name="KEY_RIGHTSHIFT"/>
