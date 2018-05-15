@@ -575,9 +575,14 @@ void Sculpt_manager::Main::_generate_runtime_config(Xml_generator &xml) const
 	});
 
 	_storage_devices.block_devices.for_each([&] (Block_device const &dev) {
+	
+		bool const part_blk_needed_for_use =
+			(_sculpt_partition.device == dev.label) &&
+			_sculpt_partition.partition.valid();
 
 		if (dev.part_blk_needed_for_discovery()
-		 || dev.part_blk_needed_for_access())
+		 || dev.part_blk_needed_for_access()
+		 || part_blk_needed_for_use)
 
 			xml.node("start", [&] () {
 				Storage_device::Label const parent { };
