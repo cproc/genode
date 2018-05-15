@@ -556,7 +556,9 @@ void Sculpt_manager::Main::_generate_runtime_config(Xml_generator &xml) const
 		xml.attribute("init_ram",   "yes");
 		xml.attribute("init_caps",  "yes");
 		xml.attribute("child_ram",  "yes");
-		xml.attribute("delay_ms", 4*500); });
+		xml.attribute("delay_ms",   4*500);
+		xml.attribute("buffer",     "64K");
+	});
 
 	xml.node("parent-provides", [&] () {
 		gen_parent_service<Rom_session>(xml);
