@@ -4,13 +4,16 @@ import_from_depot genodelabs/src/qt5_component \
                   genodelabs/src/qt5_scriptclassic \
                   genodelabs/src/qt5_tetrix \
                   genodelabs/src/qt5_ui_tools \
-                  genodelabs/src/qt5_widgets
+                  genodelabs/src/qt5_widgets \
+                  genodelabs/src/rtc_drv
 
 #
 # Build
 #
 
 append build_components [qt5_build_components feature]
+
+append build_components { app/qt5/examples/tetrix }
 
 build $build_components
 
@@ -22,6 +25,7 @@ append config {
 <config>
 	<parent-provides>}
 append config [qt5_parent_provides feature]
+append config { <service name="RTC"/> }
 append config {
 	</parent-provides>
 	<default caps="100"/>
@@ -32,13 +36,19 @@ append config {
 append config [qt5_start_nodes feature]
 
 append config {
-	<start name="tetrix" caps="200">
+
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="tetrix" caps="500">
 		<resource name="RAM" quantum="80M"/>
 		<config>
 			<vfs>
 				<dir name="dev">
 					<log/>
-					<inline name="rtc">2018-01-01 00:01</inline>
+					<rtc/>
 				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
@@ -63,6 +73,8 @@ install_config $config
 #
 
 append boot_modules [qt5_boot_modules feature]
+
+append boot_modules { libc.lib.so }
 
 build_boot_image $boot_modules
 
