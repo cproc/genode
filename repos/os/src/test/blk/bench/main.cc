@@ -22,9 +22,9 @@
 using namespace Genode;
 
 enum {
-	TEST_WRITE   = false,
+	TEST_WRITE   = true,
 	TEST_SIZE    = 1024 * 1024 * 1024,
-	REQUEST_SIZE = 8 * 512,
+	REQUEST_SIZE = 1024 * 512,
 	TX_BUFFER    = Block::Session::TX_QUEUE_SIZE * REQUEST_SIZE
 };
 
@@ -45,7 +45,7 @@ class Throughput
 		                                          &Throughput::_ack };
 		Signal_handler<Throughput> _disp_submit { _env.ep(), *this,
 		                                          &Throughput::_submit };
-		bool                          _read_done  = false;
+		bool                          _read_done  = true;
 		bool                          _write_done = false;
 
 		unsigned long   _start   = 0;
@@ -65,6 +65,7 @@ class Throughput
 
 			try {
 				while (_session.tx()->ready_to_submit()) {
+					//Genode::log("current: ", _current);
 					Block::Packet_descriptor p(
 						_session.tx()->alloc_packet(REQUEST_SIZE),
 						!_read_done ? Block::Packet_descriptor::READ : Block::Packet_descriptor::WRITE,
@@ -94,7 +95,7 @@ class Throughput
 
 				_session.tx()->release_packet(p);
 			}
-
+Genode::log("bytes: ", _bytes);
 			if (_bytes >= TEST_SIZE) {
 				_finish();
 				return;
@@ -120,6 +121,7 @@ class Throughput
 				_start      = _timer.elapsed_ms();
 				_bytes      = 0;
 				_current    = 0;
+				Genode::log("starting write test");
 				if (TEST_WRITE)
 					_submit();
 				else
