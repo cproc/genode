@@ -228,6 +228,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 		void _async_finish(Packet_descriptor &p, urb *urb, bool read)
 		{
+#if 0
+			Genode::log("_async_finish()");
+#endif
 			if (urb->status == 0) {
 				p.transfer.actual_size = urb->actual_length;
 				p.succeded             = true;
@@ -246,6 +249,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 		static void _async_complete(urb *urb)
 		{
+#if 0
+			Genode::log("_async_complete()");
+#endif
 			Complete_data *data = (Complete_data *)urb->context;
 
 			{
@@ -266,6 +272,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		bool _bulk(Packet_descriptor &p, bool read)
 		{
+#if 0
+Genode::log("_bulk(): ", p.size());
+#endif
 			unsigned pipe;
 			void    *buf = dma_malloc(p.size());
 
@@ -289,7 +298,13 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			usb_fill_bulk_urb(bulk_urb, _device->udev, pipe, buf, p.size(),
 			                 _async_complete, data);
 
+#if 0
+			for (size_t i = 0; i < sizeof(urb); i++)
+				Genode::log("urb[", i, "]: ", ((unsigned char*)bulk_urb)[i]);
+#endif
+
 			int ret = usb_submit_urb(bulk_urb, GFP_KERNEL);
+
 			if (ret != 0) {
 				error("Failed to submit URB, error: ", ret);
 				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
@@ -299,7 +314,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 				dma_free(buf);
 				return false;
 			}
-
+#if 0
+Genode::log("_bulk(): urb submitted");
+#endif
 			return true;
 		}
 
@@ -434,6 +451,12 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 						break;
 
 					case Packet_descriptor::CTRL:
+#if 0
+						log("CTRL: request: ", Genode::Hex(p.control.request));
+						log("CTRL: request_type: ", Genode::Hex(p.control.request_type));
+						log("CTRL: value: ", Genode::Hex(p.control.value));
+						log("CTRL: index: ", Genode::Hex(p.control.index));
+#endif
 						if (p.control.request_type & Usb::ENDPOINT_IN)
 							_ctrl_in(p);
 						else

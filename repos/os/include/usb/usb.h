@@ -67,7 +67,9 @@ class Usb::Sync_completion : Completion
 		{
 			Completion *c = p.completion;
 			p.completion  = this;
-
+#if 0
+Genode::log("Sync_completion()");
+#endif
 			handler.submit(p);
 
 			while (!_completed)
@@ -79,6 +81,9 @@ class Usb::Sync_completion : Completion
 
 		void complete(Packet_descriptor &p) override
 		{
+#if 0
+Genode::log("Sync_completion::complete()");
+#endif
 			_p         = p;
 			_completed = true;
 		}

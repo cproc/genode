@@ -204,6 +204,9 @@ Irq_session_component::Irq_session_component(Range_allocator *irq_alloc,
 	_irq_number(~0U), _irq_alloc(irq_alloc), _irq_object()
 {
 	long irq_number = Arg_string::find_arg(args, "irq_number").long_value(-1);
+#if 0
+	Genode::log("Irq_session_component(): ", irq_number);
+#endif
 	long device_phys = Arg_string::find_arg(args, "device_config_phys").long_value(0);
 	if (device_phys) {
 
