@@ -49,7 +49,7 @@ static Genode::Lock &vfs_lock()
 
 
 #define VFS_THREAD_SAFE(code) ({ \
-	Genode::Lock::Guard g(vfs_lock()); \
+	/*Genode::Lock::Guard g(vfs_lock());*/ \
 	code; \
 })
 
