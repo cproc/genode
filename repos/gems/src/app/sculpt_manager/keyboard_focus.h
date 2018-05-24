@@ -25,7 +25,7 @@ namespace Sculpt_manager { struct Keyboard_focus; }
 
 struct Sculpt_manager::Keyboard_focus
 {
-	enum Target { WPA_PASSPHRASE, WM } target { WM };
+	enum Target { INITIAL, WPA_PASSPHRASE, WM } target { INITIAL };
 
 	Expanding_reporter _focus_reporter;
 
@@ -54,6 +54,7 @@ struct Sculpt_manager::Keyboard_focus
 				xml.attribute("label", "manager -> input");
 				break;
 
+			case INITIAL:
 			case WM:
 				xml.attribute("label", "wm -> ");
 				break;
