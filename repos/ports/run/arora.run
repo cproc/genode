@@ -96,15 +96,29 @@ append config {
 		</route>
 	</start>
 
+	<start name="vfs" caps="150">
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<dir name="etc">
+					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
+				</dir>
+				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+			</vfs>
+			<default-policy writeable="yes" root="/"/>
+		</config>
+	</start>
+
 	<start name="arora" caps="2000">
 		<resource name="RAM" quantum="2G"/>
 		<config clipboard="yes">
 			<vfs>
 				<dir name="dev">
-					<dir name="socket"> <lxip dhcp="yes"/> </dir>
 					<log/>
 					<jitterentropy name="random"/>
-					<inline name="rtc">2018-01-01 00:01</inline> 
+					<inline name="rtc">2018-01-01 00:01</inline>
+					<fs/>
 				</dir>
 				<dir name="etc">
 					<inline name="resolv.conf">nameserver 10.0.2.3</inline>
