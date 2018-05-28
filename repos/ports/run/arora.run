@@ -32,6 +32,10 @@ append build_components {
 	server/nit_fb
 	app/launchpad
 	test/nitpicker
+	app/arora
+	lib/vfs/lxip
+	lib/ld
+	server/vfs
 }
 
 build $build_components
@@ -96,22 +100,33 @@ append config {
 		</route>
 	</start>
 
+	<start name="vfs" caps="150">
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<dir name="etc">
+					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
+				</dir>
+				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+			</vfs>
+			<default-policy writeable="yes" root="/"/>
+		</config>
+	</start>
+
 	<start name="arora" caps="2000">
 		<resource name="RAM" quantum="2G"/>
 		<config clipboard="yes">
 			<vfs>
 				<dir name="dev">
-					<dir name="socket"> <lxip dhcp="yes"/> </dir>
 					<log/>
 					<jitterentropy name="random"/>
-					<inline name="rtc">2018-01-01 00:01</inline> 
+					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
-				<dir name="etc">
-					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
-				</dir>
+				<fs/>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
 		</config>
 		<route>
 			<service name="Nitpicker"> <child name="wm"/> </service>
@@ -142,6 +157,14 @@ append boot_modules {
 	launchpad
 	testnit
 	nitpicker_plugin.tar
+
+	arora
+	ld.lib.so
+	libc.lib.so
+	lxip.lib.so
+	vfs
+	vfs.lib.so
+	vfs_lxip.lib.so
 }
 
 build_boot_image $boot_modules
