@@ -19,6 +19,8 @@
 #include <base/log.h>
 #include <util/avl_tree.h>
 
+extern "C" void wait_for_continue();
+
 namespace Genode { template <typename T> class Id_space; }
 
 
@@ -154,8 +156,11 @@ class Genode::Id_space : public Noncopyable
 		 */
 		void _check_conflict(Id id)
 		{
-			if (_elements.first() && _elements.first()->_lookup(id))
+			if (_elements.first() && _elements.first()->_lookup(id)) {
+				Genode::log("conflicting id");
+				wait_for_continue();
 				throw Conflicting_id();
+			}
 		}
 
 	public:
