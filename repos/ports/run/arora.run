@@ -107,7 +107,7 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
 				<dir name="etc">
-					<inline name="resolv.conf">nameserver 10.0.2.3</inline>
+					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
 				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
