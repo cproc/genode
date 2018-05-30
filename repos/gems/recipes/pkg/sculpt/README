@@ -1,8 +1,8 @@
 
 
-                      ==============================
-                      Sculpt for Early Adopters (EA)
-                      ==============================
+                      ===========================
+                      Sculpt for The Curious (TC)
+                      ===========================
 
 
                                Norman Feske
@@ -155,7 +155,7 @@ GNU/Linux system. For reference, Ubuntu 16.04 is known to work well.
   Most importantly, enable the 'gems' source-code repository where the
   sculpt scenario resides. In addition the 'ports', 'dde_linux' and 'dde_ipxe'
   repository are needed as well. Second, change the default configuration
-  of the 'QEMU_RUN_OPT' variable to use 'image/disk' instead of 'image/iso'.
+  of the 'QEMU_RUN_OPT' variable to 'image/disk' instead of 'image/iso'.
   This way, the build process will produce a valid disk image with a GPT
   partition table instead of a legacy ISO image.
 
@@ -301,8 +301,8 @@ The Leitzentrale can be toggled at any time by pressing F12 and will be enabled
 right after boot. It presents itself with a minimalistic GUI for accessing
 the storage devices attached to your machine and for configuring your network
 connectivity. Most importantly, however, it allows the user to spawn an
-interactive shell for manually accessing the _config_ and _report_ file
-systems. To spawn this command-line interface, click on the "ram" item from
+interactive shell for manual _config_ and _report_ file
+systems access. To spawn this command-line interface, click on the "ram" item from
 the menu and select "Inspect".
 
 [image noux 45%]
@@ -312,7 +312,7 @@ The inspect window hosts a small Unix runtime called noux (Figure [noux])
 as user interface. Don't let the presence of a Unix shell mislead you.
 Sculpt is not a Unix system. It merely uses Unix subsystems in the form of
 noux instances as convenient tools for managing and editing files.
-With the inspect window, you can interact with both the report and
+Within the inspect window, you can interact with both the report and
 config file systems using familiar commands such as the bash shell, a
 subset of coreutils, and Vim.
 
@@ -434,16 +434,16 @@ Runtime management
 [image sculpt_runtime_highlighted]
 
 So far, we have not lost any word about the third subsystem called
-"runtime" that lives besides the drivers and Leitzentrale subsystems.
+"runtime" that exists besides the drivers and Leitzentrale subsystems.
 The runtime subsystem has no predefined purpose but can be filled with
-life as you wish.
+life at your wish.
 
 Analogously to the drivers subsystem, the current configuration of the runtime
 subsystem is located at _/config/runtime_. Wheres the initial Sculpt EA
 version required the user to control the runtime configuration manually,
-Sculpt TC automates these steps by the interactive Sculpt manager that is
+Sculpt TC automates these steps through the interactive Sculpt manager that is
 hosted in the Leitzentrale subsystem. You can click on any of those items to
-reveal possible operations with the selected item.
+reveal possible operations of the selected item.
 
 For the start, it is best to experiment with the "ram" in-memory file system.
 In the previous section, we have already launched the inspect window via the
@@ -464,14 +464,14 @@ In order to install any software packages, one needs to select either
 of an access point and the WPA passphrase (if needed). Once connected, the
 network dialog displays the IP address of the machine.
 
-With a file system selected, and connected to the internet, it is time to
+With a file system selected and an Internet connection, it is time to
 install and run additional software. The interface for software installation
 and deployment is the _/config/deploy_ file. It contains a number of
 commented-out template snippets for various subsystems. As a first test,
 uncomment the '<start>' entries for the _fonts_fs_, _wm_, and _backdrop_.
 When saving the file, the Sculpt manager will automatically kick off the
-downloading of the selected packages and its dependencies and thereby
-populate the depot. Once the download is completed, the packages are
+download of the selected packages and its dependencies and thereby
+populate the depot. Once the download has completed, the packages are
 started. Pay special attention to the '<route>' definitions. They define
 how the respective subsystem is connected to other parts of the system.
 For example, by default, the backdrop is directly connected to the nitpicker
@@ -480,15 +480,15 @@ to '<child name="wm"/>' the backdrop subsystem will be connected to the window
 manager instead.
 
 
-Accessing and preparing storage devices
-=======================================
+Storage device access and preparation
+=====================================
 
 Whereas the RAM file system is practical for quick tests, it goes without
 saying that we want to persistently store data, programs, and configuration
 information on a storage device. Sculpt TC supports SATA disks, NVMe devices,
 and USB-storage devices. The storage dialog lists all devices detected by
 the drivers subsystem. A click on a device reveals possible operations or -
-it a partition table is present - more details about the device structure.
+if a partition table is present - more details about the device structure.
 
 Depending on the operation selected by the user, the Sculpt manager will
 automatically reshape the runtime subsystem to perform the selected operation.
@@ -509,9 +509,9 @@ the USB stick.
 
 All file systems supported by Sculpt present an "Inspect" button. By toggling
 this button, the selected file system becomes accessible in the inspect
-window. Note that more than one file system can be inspected at one time.
+window. Note that more than one file system can be inspected at a time.
 Each file system will appear as a directory at the root of the inspect
-directoy tree, named after the corresponding device and partition number.
+directory tree, named after the corresponding device and partition number.
 This way, the inspect window becomes a convenient tool for copying files
 between file systems. Under the hood, the Sculpt manager spawns a file-system
 component for each inspected file system, which translates the notion of files
@@ -528,11 +528,11 @@ to the Sculpt version number as found in the '/VERSION' file.
 Each time, this file system is selected for "Use", those files will be
 automatically copied to the in-memory config file system. Note that this
 mechanism works even for the '/config/deploy' file, which allows one to
-reproduce a once sculpted system composition directly at boot time.
+restore a once sculpted system composition directly at boot time.
 
-To streamline to boot procedure into a customized Sculpt system even more,
+To streamline the boot procedure into a customized Sculpt system even more,
 it is possible to mark one file system as default. At boot time - when the
-Sculpt manager discoveres the attached storage devices - it automatically
+Sculpt manager discovers the attached storage devices - it automatically
 selects a file system for use according to the following order of preference:
 
 # Partition labeled as "GENODE*" on a USB device,
@@ -557,7 +557,7 @@ installed on demand when uncommenting the corresponding '<start>' nodes.
   This provides a hook for customizing the font size of any component that
   uses the font server, and relieves components from depending on a specific
   font-rendering library. According to the '<route>' information, its
-  configuration is taken from _/config/managed/fonfs_. The 'fonts_fs'
+  configuration is taken from _/config/managed/fonts_. The 'fonts_fs'
   is used by the graphical terminal of the noux subsystem and the 'top_view'
   application.
 
@@ -608,7 +608,7 @@ day-to-day OS today.
 
 By convention, we host the content of each VM in a dedicated
 directory _/vm/<guest-os>/_ at the file system. The VM directory contains
-a virtual disk image(s) well as the VM configuration.
+a virtual disk image(s) as well as the VM configuration.
 To install the ingredients for running Debian in the VM,
 you may start the 'download_debian' subsystem, which will automatically
 download the ISO image of the Debian installer and install a reasonable
@@ -687,11 +687,11 @@ work flows and configuration tweaks are largely automated. For example,
 * The management of storage devices,
 * The creation of file-system components for used or inspected file systems,
 * The selection and configuration of network access,
-* Selecting the font size depending on the screen resolution,
+* Font size selection depending on the screen resolution,
 * Triggering the download of missing depot content on demand.
 
 This convenience comes at the price of built-in policy, which may stand in
-the way for sophisticated scenarios. For this reason, almost all policies
+the way of sophisticated scenarios. For this reason, almost all policies
 of the Sculpt manager can be manually overriden by manually managing
 configuration files.
 
@@ -710,6 +710,7 @@ a network:
 Now, the copy at _/config/nic_router_ can be edited. Note that changes
 usually take immediate effect. 
 
+Examples of manual customization are:
 * Adding custom NIC router policies such as port-forwarding rules,
 * Installing depot content manually by managing _/config/installation_
   by hand. This includes the ability to download the source code for
