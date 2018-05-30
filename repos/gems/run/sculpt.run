@@ -656,6 +656,15 @@ append manual_deploy_config {
 	</start>
 -->
 
+	<start name="arora" pkg="} cproc/pkg/[current_pkg arora] {">
+		<route>
+			<service name="Nic">       <child name="nic_router"/> </service>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<service name="Report" label="shape"> <parent label="wm -> wm -> arora -> shape"/> </service>
+			<service name="RM">     <parent/> </service>
+		</route>
+	</start>
+
 </config>}
 
 set fd [open [run_dir]/genode/manual_deploy.config w]
