@@ -47,7 +47,7 @@ Your feedback is appreciated!
   [https://www.genode-labs.com]
 
 A printable PDF version of this document is available at
-[https://genode.org/documentation/sculpt-ea.pdf].
+[https://genode.org/documentation/sculpt-tc.pdf].
 
 
 Prerequisites
@@ -134,18 +134,18 @@ GNU/Linux system. For reference, Ubuntu 16.04 is known to work well.
 
   ! git clone https://github.com/genodelabs/genode.git
   ! cd genode
-  ! git checkout 18.02
+  ! git checkout 18.05
 
 # Download the support for the NOVA microkernel
 
-  ! ./tool/depot/download genodelabs/bin/x86_64/base-nova/2018-02-26
+  ! ./tool/depot/download genodelabs/bin/x86_64/base-nova/2018-05-30
 
   The content is downloaded to the _public/_ directory and extracted to
   the _depot/_ directory.
 
 # Download all ingredients for the Sculpt boot image
 
-  ! ./tool/depot/download genodelabs/pkg/x86_64/sculpt/2018-02-27
+  ! ./tool/depot/download genodelabs/pkg/x86_64/sculpt/2018-05-31
 
 # Create a build directory
 
@@ -439,7 +439,7 @@ The runtime subsystem has no predefined purpose but can be filled with
 life at your wish.
 
 Analogously to the drivers subsystem, the current configuration of the runtime
-subsystem is located at _/config/runtime_. Wheres the initial Sculpt EA
+subsystem is located at _/config/runtime_. Where the initial Sculpt EA
 version required the user to control the runtime configuration manually,
 Sculpt TC automates these steps through the interactive Sculpt manager that is
 hosted in the Leitzentrale subsystem. You can click on any of those items to
