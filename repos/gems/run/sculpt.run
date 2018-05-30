@@ -646,6 +646,16 @@ append manual_deploy_config {
 	</start>
 	-->
 
+<!--
+	<start name="qt5_textedit" pkg="cproc/pkg/qt5_textedit/2018-05-30">
+		<route>
+			<service name="File_system" label="rw"> <parent label="config"/> </service>
+			<service name="Nitpicker"> <child name="wm"/> </service>
+			<service name="Report" label="shape"> <parent label="wm -> wm -> qt5_textedit -> shape"/> </service>
+		</route>
+	</start>
+-->
+
 </config>}
 
 set fd [open [run_dir]/genode/manual_deploy.config w]
