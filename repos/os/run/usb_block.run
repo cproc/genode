@@ -82,6 +82,9 @@ append_if [expr !$use_qemu] config  {
 					picked up - an entry may be moved to the front to test the
 					corresponding device.
 				 -->
+
+				<default-policy vendor_id="0x0781" product_id="0x5583"/>
+
 				<!-- zte open c needs interface="3" -->
 				<default-policy vendor_id="0x19d2" product_id="0x1350"/>
 				<!-- kingston -->
