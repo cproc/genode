@@ -75,13 +75,20 @@ append config {
 		<provides> <service name="Usb"/> </provides>
 		<config uhci="yes" ehci="yes" xhci="yes">
 			<raw>
-				<report devices="no"/>}
+				<report devices="yes"/>}
 append_if [expr !$use_qemu] config  {
 				<!--
 					The order is important because only the first policy is
 					picked up - an entry may be moved to the front to test the
 					corresponding device.
 				 -->
+				
+				<default-policy vendor_id="0x0781" product_id="0x5583"/>
+
+				<default-policy vendor_id="0x1b1c" product_id="0x1a09"/>
+
+				<default-policy vendor_id="0x1b1c" product_id="0x1a03"/>
+
 				<!-- zte open c needs interface="3" -->
 				<default-policy vendor_id="0x19d2" product_id="0x1350"/>
 				<!-- kingston -->
@@ -114,7 +121,7 @@ append config {
 		</route>
 	</start>
 	<start name="test-usb">
-		<resource name="RAM" quantum="128M"/>
+		<resource name="RAM" quantum="256M"/>
 		<binary name="test-blk-bench"/>
 		<!--binary name="test-blk-cli"/-->
 		<config>
@@ -164,5 +171,5 @@ if {$use_qemu} {
 append qemu_args "  -nographic -M pc -boot order=d "
 append qemu_args " -drive if=none,id=disk,file=$disk_image,format=raw "
 append qemu_args " -device usb-ehci,id=ehci -device usb-storage,bus=ehci.0,drive=disk "
-
+run_genode_until forever
 run_genode_until {.*child "test-usb" exited with exit value 0.*} 100
