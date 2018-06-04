@@ -22,7 +22,7 @@
 using namespace Genode;
 
 enum {
-	TEST_WRITE   = false,
+	TEST_WRITE   = true,
 	TEST_SIZE    = 1024 * 1024 * 1024,
 	REQUEST_SIZE = 8 * 512,
 	TX_BUFFER    = Block::Session::TX_QUEUE_SIZE * REQUEST_SIZE
@@ -45,7 +45,7 @@ class Throughput
 		                                          &Throughput::_ack };
 		Signal_handler<Throughput> _disp_submit { _env.ep(), *this,
 		                                          &Throughput::_submit };
-		bool                          _read_done  = false;
+		bool                          _read_done  = true;
 		bool                          _write_done = false;
 
 		unsigned long   _start   = 0;
