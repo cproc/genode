@@ -438,17 +438,43 @@ struct Usb::Block_driver : Usb::Completion,
 			 * the configuration anyway.
 			 */
 
+bool retry_inquiry = false;
+do {
+			Genode::log("trying inqyiry");
 			/* Scsi::Opcode::INQUIRY */
 			Inquiry inq((addr_t)cbw_buffer, INQ_TAG, active_lun);
+			Genode::log("cbw");
 
 			cbw(cbw_buffer, init, true);
+			Genode::log("resp");
+
 			resp(Scsi::Inquiry_response::LENGTH, init, true);
+			Genode::log("csw");
+
 			csw(init, true);
 
 			if (!init.inquiry) {
 				Genode::warning("Inquiry_cmd failed");
-				throw -1;
+				if (!retry_inquiry) {
+					{
+						Genode::log("resetting device");
+						Usb::Packet_descriptor p = iface.alloc(0);
+						iface.control_transfer(p, 0x21, 0xff, 0, active_interface, 100);
+						if (!p.succeded) {
+							Genode::error("Could not reset device");
+							iface.release(p);
+							throw -1;
+						}
+						iface.release(p);
+					}
+					retry_inquiry = true;
+				} else
+					throw -1;
+			} else {
+				Genode::log("inquiry successful");
+				retry_inquiry = false;
 			}
+} while (retry_inquiry);
 
 			/* Scsi::Opcode::TEST_UNIT_READY */
 			{
@@ -787,6 +813,7 @@ struct Usb::Block_driver : Usb::Completion,
 	void io(bool read, Block::sector_t lba, size_t count,
 	        char *buffer, Block::Packet_descriptor &p)
 	{
+Genode::log("io()");
 		if (!device_plugged)          throw Io_error();
 		if (lba+count > _block_count) throw Io_error();
 		if (req.pending)              throw Request_congestion();
