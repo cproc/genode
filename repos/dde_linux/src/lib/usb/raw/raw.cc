@@ -178,6 +178,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		void _ctrl_out(Packet_descriptor &p)
 		{
+#if 0
+			if ((p.control.request_type == 0x21) &&
+			    (p.control.request == 0xff)) {
+				Genode::log("*** reset ***");
+				usb_reset_device(_device->udev);
+				return;
+			}
+#endif
 			void *buf = kmalloc(4096, GFP_NOIO);
 
 			if (p.size())
@@ -472,6 +480,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			wait_queue_head_t wait;
 			_wait_event(wait, _device);
 			_wait_event(wait, _device->udev->actconfig);
+
+Genode::log("*** device ready ***");
+
+#if 1
+			/* reset device */
+			Genode::log("*** resetting device ***");
+			usb_reset_device(_device->udev);
+#endif
 
 			if (_sigh_ready.valid())
 				Signal_transmitter(_sigh_ready).submit(1);
@@ -784,6 +800,8 @@ class Usb::Session_component : public Session_rpc_object,
 						         Hex(device->udev->descriptor.idVendor),
 						         " product: ", Hex(device->udev->descriptor.idProduct),
 						         ") Overwrite!");
+
+
 
 					_device = device;
 					_worker.device(_device, _sigh_state_change);
