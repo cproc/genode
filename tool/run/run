@@ -942,6 +942,11 @@ proc build_core_image { modules } {
 
 source [genode_dir]/tool/run/depot.inc
 
+##
+# Add '/sbin' to the 'PATH' environment variable so that tools like 'gdisk'
+# are found on Linux distributions like Debian, where this is not the default.
+#
+set env(PATH) "$env(PATH):/sbin"
 
 ##
 ## Execution of run scripts
