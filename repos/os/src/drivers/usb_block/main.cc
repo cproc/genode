@@ -191,7 +191,7 @@ struct Usb::Block_driver : Usb::Completion,
 			}
 
 			if (!p.succeded) {
-				Genode::error("init complete error: packet not succeeded");
+				Genode::warning("init complete error: packet not succeeded");
 				iface.release(p);
 				return;
 			}
@@ -352,6 +352,24 @@ struct Usb::Block_driver : Usb::Completion,
 		} catch (...) { Genode::warning("Could not report block device"); }
 	}
 
+	void reset_endpoint(uint8_t ep)
+	{
+		enum {
+			REQUEST_CLEAR_FEATURE = 0x01,
+			FEATURE_ENDPOINT_HALT = 0x00
+		};
+
+		Usb::Interface &iface = device.interface(active_interface);
+		Usb::Packet_descriptor p = iface.alloc(0);
+		uint8_t ep_address = iface.endpoint(ep).address;
+		iface.control_transfer(p, 0x02, REQUEST_CLEAR_FEATURE,
+			                   FEATURE_ENDPOINT_HALT, ep_address, 100);
+		if (!p.succeded)
+			Genode::warning("Could not reset endpoint");
+
+		iface.release(p);
+	}
+
 	/**
 	 * Initialize device
 	 *
@@ -446,15 +464,32 @@ struct Usb::Block_driver : Usb::Completion,
 			 */
 
 			/* Scsi::Opcode::INQUIRY */
-			Inquiry inq((addr_t)cbw_buffer, INQ_TAG, active_lun);
+			{
+				enum { MAX_RETRIES = 2 };
 
-			cbw(cbw_buffer, init, true);
-			resp(Scsi::Inquiry_response::LENGTH, init, true);
-			csw(init, true);
+				for (int retries = 1; retries <= MAX_RETRIES; retries++) {
 
-			if (!init.inquiry) {
-				Genode::warning("Inquiry_cmd failed");
-				throw -1;
+					Inquiry inq((addr_t)cbw_buffer, INQ_TAG, active_lun);
+
+					cbw(cbw_buffer, init, true);
+
+					resp(Scsi::Inquiry_response::LENGTH, init, true);
+
+					csw(init, true);
+
+					if (!init.inquiry) {
+
+						if (retries < MAX_RETRIES) {
+							Genode::warning("INQUIRY failed, retrying...");
+						} else {
+							Genode::error("INQUIRY failed");
+							throw -1;
+						}
+
+						reset_endpoint(ep_in);
+						reset_endpoint(ep_out);
+					}
+				}
 			}
 
 			/* Scsi::Opcode::TEST_UNIT_READY */
