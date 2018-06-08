@@ -153,8 +153,6 @@ struct Usb::Block_driver : Usb::Completion,
 	uint8_t ep_in = 0;
 	uint8_t ep_out = 0;
 
-	bool reset_device = false;
-
 	/*
 	 * Completion used while initializing the device
 	 */
@@ -182,6 +180,7 @@ struct Usb::Block_driver : Usb::Completion,
 
 		void complete(Packet_descriptor &p)
 		{
+Genode::log("Init_completion::complete()");
 			Usb::Interface iface = device.interface(interface);
 
 			if (p.type != Packet_descriptor::BULK) {
@@ -302,12 +301,14 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	void cbw(void *cb, Completion &c, bool block = false)
 	{
+Genode::log("cbw()");
 		enum { CBW_VALID_SIZE = Cbw::LENGTH };
 		Usb::Interface     &iface = device.interface(active_interface);
 		Usb::Endpoint         &ep = iface.endpoint(ep_out);
 		Usb::Packet_descriptor  p = iface.alloc(CBW_VALID_SIZE);
 		memcpy(iface.content(p), cb, CBW_VALID_SIZE);
 		iface.bulk_transfer(p, ep, block, &c);
+Genode::log("cbw() finished");
 	}
 
 	/**
@@ -315,11 +316,13 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	void csw(Completion &c, bool block = false)
 	{
+		Genode::log("csw()");
 		enum { CSW_VALID_SIZE = Csw::LENGTH };
 		Usb::Interface     &iface = device.interface(active_interface);
 		Usb::Endpoint         &ep = iface.endpoint(ep_in);
 		Usb::Packet_descriptor  p = iface.alloc(CSW_VALID_SIZE);
 		iface.bulk_transfer(p, ep, block, &c);
+		Genode::log("csw() finished");
 	}
 
 	/**
@@ -327,10 +330,12 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	void resp(size_t size, Completion &c, bool block = false)
 	{
+		Genode::log("resp()");
 		Usb::Interface     &iface = device.interface(active_interface);
 		Usb::Endpoint         &ep = iface.endpoint(ep_in);
 		Usb::Packet_descriptor  p = iface.alloc(size);
 		iface.bulk_transfer(p, ep, block, &c);
+		Genode::log("resp() finished");
 	}
 
 	/**
@@ -374,15 +379,17 @@ struct Usb::Block_driver : Usb::Completion,
 	 * Initialize device
 	 *
 	 * All USB transfers in this method are done synchronously. First we reset
-	 * the device (optional), then we query the max LUN. Afterwards we start
-	 * sending CBWs.
+	 * the device, than we query the max LUN. Afterwards we start sending CBWs.
 	 *
 	 * Since it might take some time for the device to get ready to use, we
 	 * have to check the SCSI logical unit several times.
 	 */
 	bool initialize()
 	{
+		Genode::log("initialize()");
 		device.update_config();
+
+		device.set_configuration(1);
 
 		Usb::Interface &iface = device.interface(active_interface);
 		try { iface.claim(); }
@@ -401,6 +408,7 @@ struct Usb::Block_driver : Usb::Completion,
 		};
 
 		Alternate_interface &alt_iface = iface.current();
+		//iface.set_alternate_interface(alt_iface);
 
 		if (alt_iface.iclass != ICLASS_MASS_STORAGE
 			|| alt_iface.isubclass != ISUBCLASS_SCSI
@@ -419,36 +427,54 @@ struct Usb::Block_driver : Usb::Completion,
 				ep_out = i;
 		}
 
+		Genode::log("-----");
+
+#if 0
+		{
+			Genode::log("sleeping for 5 seconds");
+			Timer::Connection timer { env };
+			timer.msleep(5000);
+			Genode::log("msleep() returned");
+		}
+#endif
+
 		try {
-
-			/*
-			 * reset
-			 *
-			 * This command caused write command errors on a
-			 * 'SanDisk Cruzer Force' (0781:557d) USB stick, so it is
-			 * omitted by default.
-			 */
-			if (reset_device) {
-				Usb::Packet_descriptor p = iface.alloc(0);
-				iface.control_transfer(p, 0x21, 0xff, 0, active_interface, 100);
-				if (!p.succeded) {
-					Genode::error("Could not reset device");
-					iface.release(p);
-					throw -1;
-				}
+			/* reset */
+			Usb::Packet_descriptor p = iface.alloc(0);
+#if 0
+			Genode::log("reset");
+			iface.control_transfer(p, 0x21, 0xff, 0, active_interface, 100);
+			if (!p.succeded) {
+				Genode::error("Could not reset device");
 				iface.release(p);
+				throw -1;
 			}
+#endif
+			iface.release(p);
 
+#if 0
+		{
+			Genode::log("sleeping for 5 seconds");
+			Timer::Connection timer { env };
+			timer.msleep(5000);
+			Genode::log("msleep() returned");
+		}
+#endif
+
+			//reset_endpoint(ep_in);
+			//reset_endpoint(ep_out);
+
+#if 1
 			/*
 			 * Let us do GetMaxLUN and simply ignore the return value because none
 			 * of the devices that were tested did infact report another value than 0.
 			 */
-			Usb::Packet_descriptor p = iface.alloc(1);
+			p = iface.alloc(1);
 			iface.control_transfer(p, 0xa1, 0xfe, 0, active_interface, 100);
 			uint8_t max_lun = *(uint8_t*)iface.content(p);
 			if (p.succeded && max_lun == 0) { max_lun = 1; }
 			iface.release(p);
-
+#endif
 			/*
 			 * Query device
 			 */
@@ -464,7 +490,7 @@ struct Usb::Block_driver : Usb::Completion,
 
 			/* Scsi::Opcode::INQUIRY */
 			{
-				enum { MAX_RETRIES = 2 };
+				enum { MAX_RETRIES = 1 };
 
 				for (int retries = 1; retries <= MAX_RETRIES; retries++) {
 
@@ -614,6 +640,7 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	bool execute_pending_request()
 	{
+Genode::log("execute_pending_request()");
 		Usb::Interface     &iface = device.interface(active_interface);
 		Usb::Endpoint          ep = iface.endpoint(req.read ? ep_in : ep_out);
 		Usb::Packet_descriptor  p = iface.alloc(req.size);
@@ -621,7 +648,7 @@ struct Usb::Block_driver : Usb::Completion,
 		if (!req.read) memcpy(iface.content(p), req.buffer, req.size);
 
 		iface.bulk_transfer(p, ep, false, this);
-
+Genode::log("execute_pending_request() finished");
 		return true;
 	}
 
@@ -632,6 +659,7 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	void ack_pending_request(bool success = true)
 	{
+Genode::log("ack_pending_request()");
 		/*
 		 * Needs to be reset bevor calling ack_packet to prevent getting a new
 		 * request imediately and throwing Request_congestion() in io() again.
@@ -651,6 +679,7 @@ struct Usb::Block_driver : Usb::Completion,
 	 */
 	void complete(Packet_descriptor &p)
 	{
+Genode::log("complete()");
 		Usb::Interface iface = device.interface(active_interface);
 
 		if (p.type != Packet_descriptor::BULK) {
@@ -673,6 +702,7 @@ struct Usb::Block_driver : Usb::Completion,
 
 		static bool request_executed = false;
 		if (!p.read_transfer()) {
+Genode::log("complete(): write complete (cbw or data)");
 			/* send read/write request */
 			if (req.pending) {
 
@@ -681,8 +711,10 @@ struct Usb::Block_driver : Usb::Completion,
 				 * actual content.
 				 */
 				if (!request_executed) {
+					Genode::log("complete(): cbw write complete");
 					request_executed = execute_pending_request();
 				} else {
+					Genode::log("complete(): data write complete");
 					/* the content was successfully written, get the CSW */
 					csw(*this);
 				}
@@ -691,7 +723,7 @@ struct Usb::Block_driver : Usb::Completion,
 			iface.release(p);
 			return;
 		}
-
+Genode::log("read complete (csw or data)");
 		int actual_size = p.transfer.actual_size;
 		if (actual_size < 0) {
 			Genode::error("Transfer actual size: ", actual_size);
@@ -701,7 +733,7 @@ struct Usb::Block_driver : Usb::Completion,
 		/* the size indicates an IN I/O packet */
 		if ((uint32_t)actual_size >= _block_size) {
 			if (req.pending) {
-
+Genode::log("complete(): data read complete");
 				/* the content was successfully read, get the CSW */
 				memcpy(req.buffer, iface.content(p), actual_size);
 				csw(*this);
@@ -710,7 +742,7 @@ struct Usb::Block_driver : Usb::Completion,
 			iface.release(p);
 			return;
 		}
-
+Genode::log("complete(): csw read complete");
 		/* when ending up here, we should have gotten an CSW packet */
 		if (actual_size != Csw::LENGTH)
 			Genode::warning("This is not the actual size you are looking for");
@@ -768,8 +800,6 @@ struct Usb::Block_driver : Usb::Completion,
 
 		active_interface = node.attribute_value<unsigned long>("interface", 0);
 		active_lun       = node.attribute_value<unsigned long>("lun", 0);
-
-		reset_device = node.attribute_value<bool>("reset_device", false);
 
 		verbose_scsi = node.attribute_value<bool>("verbose_scsi", false);
 	}
@@ -830,9 +860,14 @@ struct Usb::Block_driver : Usb::Completion,
 	void io(bool read, Block::sector_t lba, size_t count,
 	        char *buffer, Block::Packet_descriptor &p)
 	{
+Genode::log("io(): read: ", read, ", lba: ", lba, ", count: ", count);
 		if (!device_plugged)          throw Io_error();
 		if (lba+count > _block_count) throw Io_error();
-		if (req.pending)              throw Request_congestion();
+
+		if (req.pending) {
+			Genode::log("io(): request congestion");
+			throw Request_congestion();
+		}
 
 		req.pending = true;
 		req.packet  = p;

@@ -67,7 +67,9 @@ class Usb::Sync_completion : Completion
 		{
 			Completion *c = p.completion;
 			p.completion  = this;
-
+#if 0
+Genode::log("Sync_completion()");
+#endif
 			handler.submit(p);
 
 			while (!_completed)
@@ -79,6 +81,9 @@ class Usb::Sync_completion : Completion
 
 		void complete(Packet_descriptor &p) override
 		{
+#if 0
+Genode::log("Sync_completion::complete()");
+#endif
 			_p         = p;
 			_completed = true;
 		}
@@ -521,21 +526,36 @@ class Usb::Device : public Meta_data
 		 */
 		void update_config()
 		{
+			Genode::log("Device::update_config()");
 			/* free info from previous call */
 			_clear();
 
 			Config_descriptor config_descr;
 
+			Genode::log("Device::update_config(): calling config_descriptor()");
+
 			_connection.config_descriptor(&device_descr, &config_descr);
+			
+			Genode::log("Device::update_config(): config_descriptor() returned");
+
 			dump();
 
 			config = new (_md_alloc) Config(config_descr, *this);
 
 			/* retrieve string descriptors */
+			Genode::log("Device::update_config(): calling string_descriptor()");
 			string_descriptor(device_descr.manufactorer_index, &manufactorer_string);
+
+			Genode::log("Device::update_config(): calling string_descriptor()");
 			string_descriptor(device_descr.product_index, &product_string);
+
+			Genode::log("Device::update_config(): calling string_descriptor()");
 			string_descriptor(device_descr.serial_number_index, &serial_number_string);
+
+			Genode::log("Device::update_config(): calling string_descriptor()");
 			string_descriptor(config->config_index, &config->config_string);
+
+			Genode::log("Device::update_config(): string_descriptor() calls returned");
 
 			for (unsigned i = 0; i < config->num_interfaces; i++) {
 				Interface &iface = config->interface(i);
@@ -544,6 +564,7 @@ class Usb::Device : public Meta_data
 					string_descriptor(iface.alternate_interface(j).interface_index,
 					                  &iface.alternate_interface(j).interface_string);
 			}
+			Genode::log("Device::update_config() finished");
 		}
 
 		/**

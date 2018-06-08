@@ -138,6 +138,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		void _retrieve_string(Packet_descriptor &p)
 		{
+			Genode::log("session: _retrieve_string(): ", p.string.index);
 			char *buffer = _sink->packet_content(p);
 			int   length;
 
@@ -228,6 +229,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 		void _async_finish(Packet_descriptor &p, urb *urb, bool read)
 		{
+#if 1
+			Genode::log("_async_finish()");
+#endif
 			if (urb->status == 0) {
 				p.transfer.actual_size = urb->actual_length;
 				p.succeded             = true;
@@ -246,6 +250,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 		static void _async_complete(urb *urb)
 		{
+#if 1
+			Genode::log("_async_complete()");
+#endif
 			Complete_data *data = (Complete_data *)urb->context;
 
 			{
@@ -266,6 +273,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		bool _bulk(Packet_descriptor &p, bool read)
 		{
+#if 1
+Genode::log("BULK: ep: ", Genode::Hex(p.transfer.ep), ", size: ", p.size());
+#endif
 			unsigned pipe;
 			void    *buf = dma_malloc(p.size());
 
@@ -274,6 +284,42 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			else {
 				pipe = usb_sndbulkpipe(_device->udev, p.transfer.ep);
 				Genode::memcpy(buf, _sink->packet_content(p), p.size());
+
+				if ((p.size() == 31) && (*(uint32_t*)buf == 0x43425355)) {
+					unsigned char *cbw = (unsigned char*)buf;
+#if 0
+					for (size_t i = 0; i < 31; i++)
+						Genode::log("BULK: CBW[", i, "]: ", Genode::Hex(cbw[i]));
+#endif
+					if (cbw[14] > 0) {
+						unsigned char *cbwcb = &cbw[15];
+						switch (cbwcb[0]) {
+						case 0x00: Genode::log("BULK: CBW: TEST UNIT READY"); break;
+						case 0x03: Genode::log("BULK: CBW: REQUEST SENSE"); break;
+						case 0x12: Genode::log("BULK: CBW: INQUIRY"); break;
+						case 0x1a: Genode::log("BULK: CBW: MODE SENSE (6)"); break;
+						case 0x1e: Genode::log("BULK: CBW: PREVENT ALLOW MEDIUM REMOVAL"); break;
+						case 0x25: Genode::log("BULK: CBW: READ CAPACITY (10)"); break;
+						case 0x28:
+						{
+							uint32_t lba = ((cbwcb[2] << 24) | (cbwcb[3] << 16) | (cbwcb[4] << 8) | cbwcb[5]);
+							uint16_t blocks = (cbwcb[7] << 8) | cbwcb[8];
+							Genode::log("BULK: CBW: READ (10): lba: ", lba, ", blocks: ", blocks);
+							break;
+						}
+						case 0x2a:
+						{
+							uint32_t lba = ((cbwcb[2] << 24) | (cbwcb[3] << 16) | (cbwcb[4] << 8) | cbwcb[5]);
+							uint16_t blocks = (cbwcb[7] << 8) | cbwcb[8];
+							Genode::log("BULK: CBW: WRITE (10): lba: ", lba, ", blocks: ", blocks);
+							break;
+						}
+						default:   Genode::log("BULK: CBW: SCSI command ", Genode::Hex(cbw[15]));
+						}
+					} else {
+						Genode::log("BULK: CBW: empty");
+					}
+				}
 			}
 
 			urb *bulk_urb = usb_alloc_urb(0, GFP_KERNEL);
@@ -289,7 +335,13 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			usb_fill_bulk_urb(bulk_urb, _device->udev, pipe, buf, p.size(),
 			                 _async_complete, data);
 
+#if 0
+			for (size_t i = 0; i < sizeof(urb); i++)
+				Genode::log("urb[", i, "]: ", ((unsigned char*)bulk_urb)[i]);
+#endif
+
 			int ret = usb_submit_urb(bulk_urb, GFP_KERNEL);
+
 			if (ret != 0) {
 				error("Failed to submit URB, error: ", ret);
 				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
@@ -299,7 +351,9 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 				dma_free(buf);
 				return false;
 			}
-
+#if 0
+Genode::log("_bulk(): urb submitted");
+#endif
 			return true;
 		}
 
@@ -308,6 +362,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		bool _irq(Packet_descriptor &p, bool read)
 		{
+			Genode::log("IRQ: ep: ", Genode::Hex(p.transfer.ep));
 			unsigned pipe;
 			void    *buf = dma_malloc(p.size());
 
@@ -361,6 +416,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		void _alt_setting(Packet_descriptor &p)
 		{
+			Genode::log("session: _alt_setting(): interface: ", p.interface.number, ", setting: ", p.interface.alt_setting);
 			int err = usb_set_interface(_device->udev, p.interface.number,
 			                            p.interface.alt_setting);
 			if (!err)
@@ -372,6 +428,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		 */
 		void _config(Packet_descriptor &p)
 		{
+			Genode::log("session: _config(): ", p.number);
 			usb_host_config *config = _device->udev->actconfig;
 
 			if (!config)
@@ -396,7 +453,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 		void _release_interface(Packet_descriptor &p)
 		{
 			usb_interface *iface = _device->interface(p.number);
-
+Genode::log("session: _release_interface(): ", p.number, ", ", (void*)iface);
 			if (!iface)
 				return;
 
@@ -434,6 +491,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 						break;
 
 					case Packet_descriptor::CTRL:
+#if 1
+						log("CTRL: request_type: ", Genode::Hex(p.control.request_type));
+						log("CTRL: request: ", Genode::Hex(p.control.request));
+						log("CTRL: value: ", Genode::Hex(p.control.value));
+						log("CTRL: index: ", Genode::Hex(p.control.index));
+						log("CTRL: timeout: ", p.control.timeout);
+						log("CTRL: size: ", p.size());
+#endif
 						if (p.control.request_type & Usb::ENDPOINT_IN)
 							_ctrl_in(p);
 						else
@@ -472,6 +537,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			wait_queue_head_t wait;
 			_wait_event(wait, _device);
 			_wait_event(wait, _device->udev->actconfig);
+
+Genode::log("*** device ready ***");
+
+#if 0
+			/* reset device */
+			Genode::log("*** resetting device ***");
+			usb_reset_device(_device->udev);
+#endif
 
 			if (_sigh_ready.valid())
 				Signal_transmitter(_sigh_ready).submit(1);
@@ -565,12 +638,13 @@ class Usb::Cleaner : List<::Interface>
 
 			while (true) {
 				cleaner->_task.block_and_schedule();
-
+Genode::log("cleaner");
 				while (::Interface *interface = cleaner->first()) {
 					usb_driver_release_interface(&raw_intf_driver, interface->iface);
 					cleaner->remove(interface);
 					destroy(Lx::Malloc::mem(), interface);
 				}
+Genode::log("cleaner finished");
 			}
 		}
 
@@ -657,6 +731,7 @@ class Usb::Session_component : public Session_rpc_object,
 
 		~Session_component()
 		{
+			Genode::log("*** Usb::Session_component::~Session_component()");
 			/* release claimed interfaces */
 			if (_device && _device->udev && _device->udev->actconfig) {
 				unsigned const num = _device->udev->actconfig->desc.bNumInterfaces;
@@ -665,16 +740,22 @@ class Usb::Session_component : public Session_rpc_object,
 			}
 
 			_worker.stop();
+			Genode::log("*** Usb::Session_component::~Session_component() finished");
 		}
 
 		/***********************
 		 ** Session interface **
 		 ***********************/
 
-		bool plugged() { return _device != nullptr; }
+		bool plugged()
+		{
+			Genode::log("session: plugged()");
+			return _device != nullptr;
+		}
 
 		void claim_interface(unsigned interface_num) override
 		{
+			Genode::log("session: claim_interface(): ", interface_num);
 			if (!_device)
 				throw Device_not_found();
 
@@ -683,11 +764,14 @@ class Usb::Session_component : public Session_rpc_object,
 				throw Interface_not_found();
 
 			if (usb_driver_claim_interface(&raw_intf_driver, iface, nullptr))
-				throw Interface_already_claimed();
+				//throw Interface_already_claimed();
+				return;
 		}
 
 		void release_interface(unsigned interface_num) override
 		{
+			Genode::log("session: release_interface(): ", interface_num);
+#if 1
 			if (!_device)
 				throw Device_not_found();
 
@@ -696,11 +780,13 @@ class Usb::Session_component : public Session_rpc_object,
 				throw Interface_not_found();
 
 			_cleaner.schedule_release(iface);
+#endif
 		}
 
 		void config_descriptor(Device_descriptor *device_descr,
 		                       Config_descriptor *config_descr) override
 		{
+			Genode::log("session: config_descriptor()");
 			if (!_device)
 				throw Device_not_found();
 
@@ -717,6 +803,7 @@ class Usb::Session_component : public Session_rpc_object,
 
 		unsigned alt_settings(unsigned index) override
 		{
+			Genode::log("session: alt_settings()");
 			if (!_device)
 				throw Device_not_found();
 
@@ -730,6 +817,7 @@ class Usb::Session_component : public Session_rpc_object,
 		void interface_descriptor(unsigned index, unsigned alt_setting,
 		                          Interface_descriptor *interface_descr) override
 		{
+			Genode::log("session: interface_descriptor");
 			if (!_device)
 				throw Device_not_found();
 
@@ -749,6 +837,7 @@ class Usb::Session_component : public Session_rpc_object,
 		                         unsigned              endpoint_num,
 		                         Endpoint_descriptor  *endpoint_descr) override
 		{
+			Genode::log("session: endpoint_descriptor()");
 			if (!_device || !_device->udev)
 				throw Device_not_found();
 
@@ -784,6 +873,8 @@ class Usb::Session_component : public Session_rpc_object,
 						         Hex(device->udev->descriptor.idVendor),
 						         " product: ", Hex(device->udev->descriptor.idProduct),
 						         ") Overwrite!");
+
+
 
 					_device = device;
 					_worker.device(_device, _sigh_state_change);

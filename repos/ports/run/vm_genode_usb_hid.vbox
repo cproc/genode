@@ -10,7 +10,7 @@
     <MediaRegistry>
       <HardDisks/>
       <DVDImages>
-        <Image uuid="{81763434-9a51-49e8-9444-528a5a28c4bc}" location="usb_hid.iso"/>
+        <Image uuid="{81763434-9a51-49e8-9444-528a5a28c4bc}" location="usb_storage.iso"/>
       </DVDImages>
       <FloppyImages/>
     </MediaRegistry>
