@@ -19,6 +19,7 @@ set build_components {
 	drivers/input
 	drivers/timer
 	drivers/usb
+	server/dynamic_rom
 	server/log_terminal
 	server/fs_rom
 	server/ram_fs
@@ -86,7 +87,7 @@ append config {
 <config>
 	<!-- USB device whitelist -->
 	<client label="virtualbox"/>
-	<device vendor_id="0x03eb" product_id="0x204d"/> <!-- 'Pro Micro' test device -->
+	<device vendor_id="0x0781" product_id="0x5583"/>
 </config>
 				</inline>
 			</content>
@@ -153,10 +154,33 @@ append config {
 	<start name="report_rom" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
-		<config>
+		<config verbose="yes">
 			<policy label="usb_report_filter -> devices"        report="usb_drv -> devices"/>
 			<policy label="usb_report_filter -> usb_drv_config" report="usb_drv -> config"/>
 			<policy label="virtualbox -> usb_devices"           report="usb_report_filter -> usb_devices"/>
+		</config>
+	</start>
+
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="ROM"/></provides>
+		<config verbose="yes">
+			<rom name="usb_devices">
+				<inline description="iteration 1">
+					<devices>
+						<device label="usb-2-2" vendor_id="0x0781" product_id="0x5583" bus="0x0002" dev="0x0002" class="0x08"/>
+					</devices>
+				</inline>
+
+				<sleep milliseconds="10000" />
+
+				<inline description="iteration 2">
+					<devices/>
+				</inline>
+
+				<sleep milliseconds="10000" />
+
+			</rom>
 		</config>
 	</start>
 
@@ -168,13 +192,13 @@ append config {
 				<dir name="dev"> <log/> </dir>
 				<dir name="dev"> <terminal/> </dir>
 				<rom name="vm_genode_usb_hid.vbox" />
-				<rom name="usb_hid.iso" />
+				<rom name="usb_storage.iso" />
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"/>
 		</config>
 		<route>
 			<service name="Report"><child name="report_rom" /></service>
-			<service name="ROM" label="usb_devices"> <child name="report_rom"/> </service>
+			<service name="ROM" label="usb_devices"> <child name="dynamic_rom"/> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
@@ -191,16 +215,16 @@ global repositories
 exec -ignorestderr \
      $::argv0 \
      --genode-dir [genode_dir] \
-     --name usb_hid \
+     --name usb_storage \
      --specs "$specs" \
      --repositories "$repositories" \
      --cross-dev-prefix "[cross_dev_prefix]" \
      --include boot_dir/nova \
      --include image/iso \
-     --include [repository_contains /run/usb_hid.run]/run/usb_hid.run
+     --include [repository_contains /run/usb_storage.run]/run/usb_storage.run
 
 exec ln -sf ${genode_dir}/repos/ports/run/vm_genode_usb_hid.vbox bin/
-exec ln -sf ../../usb_hid.iso bin/
+exec ln -sf ../../usb_storage.iso bin/
 
 set boot_modules {
 	core
@@ -210,12 +234,13 @@ set boot_modules {
 	ps2_drv
 	log_terminal
 	usb_drv
+	dynamic_rom
 	usb_report_filter
 	fs_rom
 	ram_fs
 	report_rom
 	virtualbox5-nova
-	usb_hid.iso
+	usb_storage.iso
 	vm_genode_usb_hid.vbox
 	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so pthread.lib.so libc_pipe.lib.so
 	libc_terminal.lib.so libiconv.lib.so stdcxx.lib.so

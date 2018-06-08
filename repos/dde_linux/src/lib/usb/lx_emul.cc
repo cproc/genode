@@ -14,6 +14,7 @@
 
 /* Genode includes */
 #include <base/allocator_avl.h>
+#include <base/printf.h>
 #include <dataspace/client.h>
 #include <region_map/client.h>
 #include <timer_session/connection.h>
@@ -1120,3 +1121,36 @@ int hex2bin(u8 *dst, const char *src, size_t count)
 	}
 	return 0;
 }
+
+#if 0
+
+/*********************************
+ ** drivers/usb/storage/debug.c **
+ *********************************/
+
+extern "C" void usb_stor_show_command(const struct us_data *us, struct scsi_cmnd *srb)
+{
+	Genode::log("*** usb_stor_show_command(): ", Genode::Hex(srb->cmnd[0]));
+}
+
+extern "C" void usb_stor_show_sense(const struct us_data *us,
+			 unsigned char key,
+			 unsigned char asc,
+			 unsigned char ascq)
+{
+	Genode::log("*** usb_stor_show_sense()");
+}
+
+extern "C" void usb_stor_dbg(const struct us_data *us, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+
+	Genode::log("*** usb_stor_dbg():");
+	Genode::vprintf(fmt, args);
+	Genode::log("*** usb_stor_dbg() finished");
+
+	va_end(args);
+}
+#endif

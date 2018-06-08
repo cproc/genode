@@ -27,7 +27,7 @@
 #define DEBUG_DMA          0
 #define DEBUG_DRIVER       0
 #define DEBUG_KREF         0
-#define DEBUG_LINUX_PRINTK 0
+#define DEBUG_LINUX_PRINTK 1
 #define DEBUG_PCI          0
 #define DEBUG_SKB          0
 #define DEBUG_SLAB         0
@@ -946,6 +946,7 @@ int dev_pm_qos_expose_flags(struct device *dev, s32 value);
 #define dev_dbg(dev, format, arg...)  lx_printf("dev_dbg: " format, ## arg)
 #define dev_vdbg(dev, format, arg...) lx_printf("dev_dbg: " format, ## arg)
 #define CONFIG_DYNAMIC_DEBUG
+//#define CONFIG_USB_STORAGE_DEBUG
 #else
 #define dev_dbg( dev, format, arg...)
 #define dev_vdbg( dev, format, arg...)

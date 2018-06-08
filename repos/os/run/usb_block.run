@@ -75,7 +75,7 @@ append config {
 		<provides> <service name="Usb"/> </provides>
 		<config uhci="yes" ehci="yes" xhci="yes">
 			<raw>
-				<report devices="no"/>}
+				<report devices="yes"/>}
 append_if [expr !$use_qemu] config  {
 				<!--
 					The order is important because only the first policy is
@@ -85,20 +85,21 @@ append_if [expr !$use_qemu] config  {
 				
 				<!-- sandisk ultra fit 32gb -->
 				<default-policy vendor_id="0x0781" product_id="0x5583"/>
+
+				<!-- kingston data traveler g4 8gb -->
+				<default-policy vendor_id="0x0951" product_id="0x1666"/>
+				<!-- kingston hyperx 16gb -->
+				<default-policy vendor_id="0x0951" product_id="0x16a5"/>
+				<!-- corsair voyager gt stick -->
+				<default-policy vendor_id="0x1b1c" product_id="0x1a09"/>
 				<!-- corsair voyager stick -->
 				<default-policy vendor_id="0x1b1c" product_id="0x1a03"/>
 				<!-- sandisk ultra 32gb -->
 				<default-policy vendor_id="0x0781" product_id="0x5581"/>
-				<!-- kingston hyperx 16gb -->
-				<default-policy vendor_id="0x0951" product_id="0x16a5"/>
 				<!-- platinum -->
 				<default-policy vendor_id="0x058f" product_id="0x6387"/>
 				<!-- hama sd card reader -->
 				<default-policy vendor_id="0x05e3" product_id="0x0738"/>
-				<!-- kingston data traveler g4 8gb -->
-				<default-policy vendor_id="0x0951" product_id="0x1666"/>
-				<!-- corsair voyager gt stick -->
-				<default-policy vendor_id="0x1b1c" product_id="0x1a09"/>
 				<!-- sandisk cruzer edge 4gb -->
 				<default-policy vendor_id="0x0781" product_id="0x556b"/>
 				<!-- zte open c needs interface="3" -->
