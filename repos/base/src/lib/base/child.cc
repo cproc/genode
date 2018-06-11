@@ -581,6 +581,7 @@ void Child::session_response(Server::Id id, Session_response response)
 						        "(", session.donated_cap_quota(), ")"); }
 
 					session.destroy();
+					_policy.session_state_changed();
 				}
 				break;
 
