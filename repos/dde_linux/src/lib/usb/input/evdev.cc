@@ -333,7 +333,7 @@ class Keyboard_led
 	public:
 
 		Keyboard_led(Genode::Registry<Keyboard_led> &registry, input_dev *dev)
-		: _reg_elem(registry, *this), _input_dev(dev) { }
+		: _reg_elem(registry, *this), _input_dev(dev) { Genode::log("Keyboard_led(): ", this); }
 
 		bool match(input_dev const *other) const { return _input_dev == other; }
 
@@ -341,10 +341,12 @@ class Keyboard_led
 		{
 			unsigned *buf = (unsigned *)kmalloc(4, GFP_LX_DMA);
 			*buf = leds;
+Genode::log("Keyboard_led::update(): ", this);
 			usb_control_msg(_usb_device(), usb_sndctrlpipe(_usb_device(), 0),
 			                0x9, USB_TYPE_CLASS  | USB_RECIP_INTERFACE, 0x200,
 			                _interface()->cur_altsetting->desc.bInterfaceNumber,
 			                buf, 1, 500);
+Genode::log("Keyboard_led::update() finished: ", this);
 			kfree(buf);
 		}
 };
@@ -449,21 +451,25 @@ static Genode::Constructible<Usb::Led> _led;
 static int led_connect(struct input_handler *handler, struct input_dev *dev,
                        const struct input_device_id *id)
 {
+Genode::log("led_connect()");
 	Keyboard_led *keyboard = new (Lx_kit::env().heap()) Keyboard_led(_registry, dev);
+Genode::log("led_connect() 1");
 	_led->update(*keyboard);
+Genode::log("led_connect() 2");
 
 	input_handle *handle = (input_handle *)kzalloc(sizeof(input_handle), 0);
 	handle->dev     = input_get_device(dev);
 	handle->handler = handler;
 
 	input_register_handle(handle);
-
+Genode::log("led_connect() finished");
 	return 0;
 }
 
 
 static void led_disconnect(struct input_handle *handle)
 {
+Genode::log("led_disconnect()");
 	input_dev *dev = handle->dev;
 
 	_led->wait_for_registry();
@@ -476,6 +482,7 @@ static void led_disconnect(struct input_handle *handle)
 	input_unregister_handle(handle);
 	input_put_device(dev);
 	kfree(handle);
+Genode::log("led_disconnect() finished");
 }
 
 

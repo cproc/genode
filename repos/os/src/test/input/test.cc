@@ -40,4 +40,9 @@ struct Main
 };
 
 
-void Component::construct(Env &env) { static Main main(env); }
+void Component::construct(Env &env)
+{
+	Timer::Connection timer(env);
+	timer.msleep(100000);
+	//static Main main(env);
+}
