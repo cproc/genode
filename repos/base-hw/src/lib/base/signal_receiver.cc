@@ -77,7 +77,9 @@ void Signal_receiver::_platform_destructor()
 
 void Signal_receiver::_platform_begin_dissolve(Signal_context * const c)
 {
+	Genode::log("Signal_receiver::_platform_begin_dissolve()");
 	Kernel::kill_signal_context(Capability_space::capid(c->_cap));
+	Genode::log("Signal_receiver::_platform_begin_dissolve() finished");
 }
 
 void Signal_receiver::_platform_finish_dissolve(Signal_context *) { }
