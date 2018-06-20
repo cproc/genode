@@ -477,6 +477,7 @@ void Thread::_call_ack_signal()
 
 void Thread::_call_kill_signal_context()
 {
+Genode::log("_call_kill_signal_context()");
 	/* lookup signal context */
 	Signal_context * const c = pd()->cap_tree().find<Signal_context>(user_arg_1());
 	if (!c) {
@@ -491,6 +492,7 @@ void Thread::_call_kill_signal_context()
 		user_arg_0(-1);
 		return;
 	}
+Genode::log("_call_kill_signal_context() finished");
 }
 
 
