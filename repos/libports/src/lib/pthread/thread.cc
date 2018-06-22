@@ -73,8 +73,11 @@ void pthread::Thread_object::entry()
 	_stack_size = info.top - info.base;
 
 	void *exit_status = _start_routine(_arg);
+Genode::log("t: start routine returned");
 	_exiting = true;
+Genode::log("t: calling resume_all()");
 	Libc::resume_all();
+Genode::log("t: calling pthread_exit()");
 	pthread_exit(exit_status);
 }
 
@@ -138,16 +141,24 @@ extern "C" {
 	{
 		struct Check : Libc::Suspend_functor
 		{
+			pthread_t thread;
+			Check(pthread_t &thread) : thread(thread) { }
 			bool suspend() override {
-				return true;
+				//if (!thread->exiting())
+					Genode::log("check()");
+					return true;
+				//return false;
 			}
-		} check;
+		} check(thread);
 
+		Genode::log("pthread_join(): checking if thread is exiting");
 		while (!thread->exiting()) {
+			Genode::log("pthread_join(): thread not exiting, calling suspend()");
 			Libc::suspend(check);
+			Genode::log("pthread_join(): suspend() returned");
 		}
 
-
+Genode::log("pthread_join: thread exiting, calling join()");
 		thread->join();
 		*((int **)retval) = 0;
 

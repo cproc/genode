@@ -187,6 +187,7 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 
 		~pthread()
 		{
+			Genode::log("~pthread()");
 			pthread_registry().remove(this);
 		}
 
