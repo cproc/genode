@@ -73,8 +73,11 @@ void pthread::Thread_object::entry()
 	_stack_size = info.top - info.base;
 
 	void *exit_status = _start_routine(_arg);
+Genode::log(&info, ": start routine returned");
 	_exiting = true;
+Genode::log(&info, ": calling resume_all()");
 	Libc::resume_all();
+Genode::log(&info, ": calling pthread_exit()");
 	pthread_exit(exit_status);
 }
 
@@ -148,7 +151,13 @@ extern "C" {
  			}
 		} check(thread);
 
+#if 0
+		for (int i = 0; i < 10; i++)
+			Genode::log(&retval, ": pthread_join(): delay");
+#endif
+		Genode::log(&retval, ": pthread_join(): calling suspend()");
 		Libc::suspend(check);
+		Genode::log(&retval, ": pthread_join(): suspend() returned");
 
 		if (retval)
 			*retval = NULL;
@@ -194,15 +203,18 @@ extern "C" {
 
 	int pthread_cancel(pthread_t thread)
 	{
+		Genode::log(&thread, ": pthread_cancel()");
 		/* cleanup threads which tried to self-destruct */
 		pthread_cleanup();
 
 		if (pthread_equal(pthread_self(), thread)) {
+			Genode::log(&thread, ": pthread_cancel(): self");
 			Lock_guard<Lock> lock_guard(pthread_cleanup_list_lock);
 			pthread_cleanup_list.insert(new thread_cleanup(thread));
-		} else
+		} else {
+			Genode::log(&thread, ": pthread_cancel(): !self");
 			delete thread;
-
+		}
 		return 0;
 	}
 

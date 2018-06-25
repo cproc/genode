@@ -135,6 +135,7 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 		Genode::Thread &_construct_thread_object(ARGS &&... args)
 		{
 			_thread_object.construct(args...);
+			Genode::log("_construct_thread_object()");
 			return *_thread_object;
 		}
 
@@ -193,6 +194,7 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 		void start() { _thread.start(); }
 		bool exiting() const
 		{
+			Genode::log("pthread::exiting()");
 			return _thread_object->_exiting;
 		}
 

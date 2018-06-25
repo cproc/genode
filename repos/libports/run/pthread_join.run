@@ -34,4 +34,5 @@ build_boot_image {
 
 append qemu_args " -nographic  "
 
+run_genode_until forever
 run_genode_until {--- returning from main ---.*\n} 10

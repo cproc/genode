@@ -356,6 +356,7 @@ struct Libc::Pthreads
 
 	unsigned long suspend_myself(Suspend_functor & check, unsigned long timeout_ms)
 	{
+		Genode::log(&timeout_ms, ": Pthreads::suspend_myself()");
 		Pthread myself { timer_accessor, timeout_ms };
 		{
 			Genode::Lock::Guard g(mutex);
@@ -364,8 +365,13 @@ struct Libc::Pthreads
 			pthreads    = &myself;
 		}
 
-		if (check.suspend())
+		Genode::log(&timeout_ms, ": Pthreads::suspend_myself(): checking");
+
+		if (check.suspend()) {
+			Genode::log(&timeout_ms, ": Pthreads::suspend_myself(): locking");
 			myself.lock.lock();
+			Genode::log(&timeout_ms, ": Pthreads::suspend_myself(): unlocked");
+		}
 
 		{
 			Genode::Lock::Guard g(mutex);
@@ -589,6 +595,7 @@ struct Libc::Kernel
 		unsigned long _suspend_main(Suspend_functor &check,
 		                            unsigned long timeout_ms)
 		{
+Genode::log(&timeout_ms, ": _suspend_main()");
 			/* check that we're not running on libc kernel context */
 			if (Thread::mystack().top == _kernel_stack) {
 				error("libc suspend() called from non-user context (",
@@ -601,11 +608,13 @@ struct Libc::Kernel
 
 			if (timeout_ms > 0)
 				_main_timeout.timeout(timeout_ms);
-
+Genode::log(&timeout_ms, ": _suspend_main(): calling setjmp()");
 			if (!_setjmp(_user_context)) {
+				Genode::log(&timeout_ms, ": _suspend_main(): returned directly");
 				_valid_user_context = true;
 				_switch_to_kernel();
 			} else {
+				Genode::log(&timeout_ms, ": suspend_main(): returned from longjmp()");
 				_valid_user_context = false;
 			}
 
@@ -668,12 +677,16 @@ struct Libc::Kernel
 			/* _setjmp() returned after _longjmp() - user context suspended */
 
 			while ((!_app_returned) && (!_suspend_scheduled)) {
+				Genode::log("run(): before if");
 				if (_dispatch_pending_io_signals) {
+					Genode::log("run(): dispatch_pending_io_signals()");
 					/* dispatch pending signals but don't block */
 					while (_env.ep().dispatch_pending_io_signal()) ;
 				} else {
+					Genode::log("run(): wait_and_dispatch_one_io_signal()");
 					/* block for signals */
 					_env.ep().wait_and_dispatch_one_io_signal();
+					Genode::log("run(): wait_and_dispatch_one_io_signal() returned");
 				}
 
 				if (_resume_main_once && !_setjmp(_kernel_context))
@@ -705,6 +718,8 @@ struct Libc::Kernel
 		 */
 		void resume_all()
 		{
+			void *dummy;
+			Genode::log(&dummy, ": resume_all()");
 			if (_app_returned) {
 				if (_scheduled_select_handler)
 					_scheduled_select_handler->dispatch_select();
@@ -723,6 +738,7 @@ struct Libc::Kernel
 		 */
 		unsigned long suspend(Suspend_functor &check, unsigned long timeout_ms)
 		{
+			Genode::log(&timeout_ms, ": suspend()");
 			if (timeout_ms > 0
 			 && timeout_ms > _timer_accessor.timer().max_timeout()) {
 				Genode::warning("libc: limiting exceeding timeout of ",
