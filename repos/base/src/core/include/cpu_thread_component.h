@@ -84,6 +84,7 @@ class Genode::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 
 			~Trace_control_slot()
 			{
+				Genode::log("~Trace_control_slot()");
 				trace_control_area.free(index);
 			}
 
@@ -173,6 +174,7 @@ class Genode::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 
 		~Cpu_thread_component()
 		{
+			Genode::log("~Cpu_thread_component()");
 			_trace_sources.remove(&_trace_source);
 			_pager_ep.dissolve(&_rm_client);
 			_ep.dissolve(this);

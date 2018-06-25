@@ -71,7 +71,7 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 	catch (Native_capability::Reference_count_overflow) { throw Thread_creation_failed(); }
 
 	thread->session_exception_sigh(_exception_sigh);
-
+Genode::log("inserting thread: ", thread->cap());
 	_thread_list.insert(thread);
 
 	return thread->cap();
@@ -99,6 +99,7 @@ Affinity::Location Cpu_session_component::_thread_affinity(Affinity::Location lo
 
 void Cpu_session_component::_unsynchronized_kill_thread(Thread_capability thread_cap)
 {
+Genode::log("_unsynchronized_kill_thread()");
 	Cpu_thread_component *thread = nullptr;
 	_thread_ep->apply(thread_cap, [&] (Cpu_thread_component *t) { thread = t; });
 
@@ -112,23 +113,32 @@ void Cpu_session_component::_unsynchronized_kill_thread(Thread_capability thread
 		Lock::Guard lock_guard(_thread_alloc_lock);
 		destroy(&_thread_alloc, thread);
 	}
+Genode::log("_unsynchronized_kill_thread() finished");
 }
 
-
+extern "C" void wait_for_continue();
 void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 {
+Genode::log("kill_thread(): ", thread_cap);
 	if (!thread_cap.valid())
 		return;
+Genode::log("kill_thread(): locking");
 
 	Lock::Guard lock_guard(_thread_list_lock);
 
+Genode::log("kill_thread(): locked");
+
 	/* check that cap belongs to this session */
 	for (Cpu_thread_component *t = _thread_list.first(); t; t = t->next()) {
+		Genode::log("kill_thread(): thread_cap: ", thread_cap, ", t->cap(): ", t->cap());
+		wait_for_continue();
 		if (t->cap() == thread_cap) {
+			Genode::log("kill_thread(): calling _unsynchronized_kill_thread()");
 			_unsynchronized_kill_thread(thread_cap);
 			break;
 		}
 	}
+Genode::log("kill_thread(): finished");
 }
 
 

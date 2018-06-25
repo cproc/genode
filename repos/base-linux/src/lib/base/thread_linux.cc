@@ -105,6 +105,7 @@ void Thread::_init_platform_thread(size_t /* weight */, Type type)
 
 void Thread::_deinit_platform_thread()
 {
+Genode::log("Thread::_deinit_platform_thread()");
 	/*
 	 * Kill thread until it is really really dead
 	 *
@@ -128,7 +129,7 @@ void Thread::_deinit_platform_thread()
 		struct timespec ts = { 0, 500 };
 		lx_nanosleep(&ts, 0);
 	}
-
+Genode::log("Thread::_deinit_platform_thread(): calling kill_thread()");
 	/* inform core about the killed thread */
 	_cpu_session->kill_thread(_thread_cap);
 }

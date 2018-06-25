@@ -26,5 +26,6 @@ build_boot_image "core ld.lib.so init test-thread_create_destroy"
 
 append qemu_args "-nographic "
 
+run_genode_until forever
 run_genode_until {.*test completed successfully.*\n} 300
 

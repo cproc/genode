@@ -82,6 +82,7 @@ class Genode::Trace::Control_area
 
 				_local_base[index].alloc();
 				index_out = index;
+				Genode::log("*** alloc(): ", index_out);
 				return true;
 			}
 
@@ -91,6 +92,7 @@ class Genode::Trace::Control_area
 
 		void free(unsigned index)
 		{
+			Genode::log("*** free(): ", index);
 			if (_index_valid(index))
 				_local_base[index].reset();
 		}
