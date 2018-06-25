@@ -138,18 +138,25 @@ extern "C" {
 	{
 		struct Check : Libc::Suspend_functor
 		{
-			bool suspend() override {
-				return true;
-			}
-		} check;
+			bool retry { false };
 
-		while (!thread->exiting()) {
+			pthread_t _thread;
+
+			Check(pthread_t &thread) : _thread(thread) { }
+			
+			bool suspend() override
+			{
+				retry = !_thread->exiting();
+				return retry;
+ 			}
+		} check(thread);
+
+		do {
 			Libc::suspend(check);
-		}
+		} while (check.retry);
 
-
-		thread->join();
-		*((int **)retval) = 0;
+		if (retval)
+			*retval = NULL;
 
 		return 0;
 	}
