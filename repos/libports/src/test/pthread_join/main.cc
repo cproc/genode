@@ -45,7 +45,8 @@ int main()
 	pthread_t  thread1;
 	void      *expected_thread1_retval = (void*)1;
 	void      *thread1_retval = 0;
-
+for (int i = 0; i < 1000; i++) {
+Genode::log(i);
 	pthread_create(&thread1, 0, thread1_run, expected_thread1_retval);
 
 	pthread_join(thread1, &thread1_retval);
@@ -54,7 +55,7 @@ int main()
 		Genode::error("main(): return value does not match");
 		return -1;
 	}
-
+}
 	printf("--- returning from main ---\n");
 
 	return 0;
