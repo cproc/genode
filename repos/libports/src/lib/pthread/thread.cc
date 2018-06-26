@@ -26,24 +26,6 @@
 
 using namespace Genode;
 
-/*
- * Structure to handle self-destructing pthreads.
- */
-struct thread_cleanup : List<thread_cleanup>::Element
-{
-	pthread_t thread;
-
-	thread_cleanup(pthread_t t) : thread(t) { }
-
-	~thread_cleanup() {
-		if (thread)
-			delete thread;
-	}
-};
-
-static Lock pthread_cleanup_list_lock;
-static List<thread_cleanup> pthread_cleanup_list;
-
 
 void * operator new(__SIZE_TYPE__ size) { return malloc(size); }
 void operator delete (void * p) { return free(p); }
@@ -72,10 +54,7 @@ void pthread::Thread_object::entry()
 	_stack_addr = (void *)info.base;
 	_stack_size = info.top - info.base;
 
-	void *exit_status = _start_routine(_arg);
-	_exiting = true;
-	Libc::resume_all();
-	pthread_exit(exit_status);
+	pthread_exit(_start_routine(_arg));
 }
 
 
@@ -156,7 +135,9 @@ extern "C" {
 		} while (check.retry);
 
 		if (retval)
-			*retval = NULL;
+			*retval = thread->retval();
+
+		delete thread;
 
 		return 0;
 	}
@@ -185,35 +166,23 @@ extern "C" {
 	}
 
 
-	void pthread_cleanup()
-	{
-		{
-			Lock_guard<Lock> lock_guard(pthread_cleanup_list_lock);
-
-			while (thread_cleanup * t = pthread_cleanup_list.first()) {
-				pthread_cleanup_list.remove(t);
-				delete t;
-			}
-		}
-	}
-
 	int pthread_cancel(pthread_t thread)
 	{
-		/* cleanup threads which tried to self-destruct */
-		pthread_cleanup();
-
-		if (pthread_equal(pthread_self(), thread)) {
-			Lock_guard<Lock> lock_guard(pthread_cleanup_list_lock);
-			pthread_cleanup_list.insert(new thread_cleanup(thread));
-		} else
-			delete thread;
+		/*
+		 * The thread will be deleted by 'pthread_join()' after retrieving its
+		 * return value.
+		 */
+		thread->exiting(true);
+		Libc::resume_all();
 
 		return 0;
 	}
 
 	void pthread_exit(void *value_ptr)
 	{
-		pthread_cancel(pthread_self());
+		pthread_t myself = pthread_self();
+		myself->retval(value_ptr);
+		pthread_cancel(myself);
 
 		Lock lock;
 		while (true) lock.lock();

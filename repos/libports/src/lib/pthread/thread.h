@@ -60,8 +60,6 @@ extern "C" {
 	 * defined as 'struct pthread*' in '_pthreadtypes.h'
 	 */
 	struct pthread;
-
-	void pthread_cleanup();
 }
 
 
@@ -104,7 +102,6 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 		{
 			start_routine_t _start_routine;
 			void           *_arg;
-			bool            _exiting = false;
 
 			void          *&_stack_addr;
 			size_t         &_stack_size;
@@ -149,6 +146,11 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 			pthread_registry().insert(this);
 		}
 
+		bool _exiting = false;
+
+		/* return value received by 'pthread_exit()' */
+		void *_retval = PTHREAD_CANCELED;
+
 		/* attributes for 'pthread_attr_get_np()' */
 		void   *_stack_addr = nullptr;
 		size_t  _stack_size = 0;
@@ -191,12 +193,13 @@ struct pthread : Genode::Noncopyable, Genode::Thread::Tls::Base
 		}
 
 		void start() { _thread.start(); }
-		bool exiting() const
-		{
-			return _thread_object->_exiting;
-		}
+		void join()  { _thread.join(); }
 
-		void join() { _thread.join(); }
+		void exiting(bool exiting) { _exiting = exiting; }
+		bool exiting() const       { return _exiting; }
+
+		void  retval(void *val) { _retval = val; }
+		void *retval() const    { return _retval; }
 
 		void   *stack_addr() const { return _stack_addr; }
 		size_t  stack_size() const { return _stack_size; }
