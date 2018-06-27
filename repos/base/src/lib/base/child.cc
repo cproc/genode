@@ -342,7 +342,7 @@ Parent::Upgrade_result Child::upgrade(Client::Id id, Parent::Upgrade_args const 
 	}
 
 	/* ignore suprious request that may arrive after 'close_all_sessions' */
-	if (!_pd.closed())
+	if (_pd.closed())
 		return UPGRADE_PENDING;
 
 	Upgrade_result result = UPGRADE_PENDING;
