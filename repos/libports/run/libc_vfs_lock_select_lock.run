@@ -1,0 +1,49 @@
+build "core init server/vfs test/libc_vfs_lock_select_lock"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<start name="vfs" caps="100">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="File_system"/></provides>
+		<config>
+			<policy label_prefix="test-libc_vfs_lock_select_lock" root="/" writeable="yes"/>
+			<vfs><zero/></vfs>
+		</config>
+	</start>
+	<start name="test-libc_vfs_lock_select_lock" caps="100">
+		<resource name="RAM" quantum="8M"/>
+		<config>
+			<vfs>
+				<dir name="dev"> <log/> </dir>
+				<dir name="fs"> <fs/> </dir>
+			</vfs>
+			<libc stdout="/dev/log"/>
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init vfs test-libc_vfs_lock_select_lock
+	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so pthread.lib.so posix.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until forever
