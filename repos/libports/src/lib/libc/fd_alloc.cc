@@ -53,6 +53,8 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 {
 	Lock::Guard guard(_lock);
 
+Genode::log("fd alloc: avail: ", avail());
+
 	/* we use addresses returned by the allocator as file descriptors */
 	addr_t addr = (libc_fd <= ANY_FD ? ANY_FD : libc_fd);
 
