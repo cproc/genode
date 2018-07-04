@@ -256,7 +256,7 @@ class Lx_kit::Malloc : public Lx::Malloc
 				              1UL << msb, " requested ", size, " cached ", (int)_cached);
 				return 0;
 			}
-
+Genode::log(&size, ": alloc(", size, "): ", msb - SLAB_START_LOG2);
 			addr_t addr =  _allocator[msb - SLAB_START_LOG2]->alloc();
 			if (!addr) {
 				Genode::error("failed to get slab for ", 1 << msb);
@@ -292,6 +292,7 @@ class Lx_kit::Malloc : public Lx::Malloc
 
 			/* XXX changes addr */
 			unsigned nr = _slab_index(&addr);
+Genode::log(&a, ": free(): ", nr);
 			/* we need to decrease addr by 2, orig_size and index come first */
 			_allocator[nr]->free((void *)(addr - 2));
 		}
