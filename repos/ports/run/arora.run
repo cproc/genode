@@ -115,7 +115,7 @@ append config {
 
 	<start name="arora" caps="2000">
 		<resource name="RAM" quantum="2G"/>
-		<config clipboard="yes">
+		<config clipboard="yes" ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<log/>
