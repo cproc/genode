@@ -451,7 +451,11 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 			msghdr msg = create_msghdr(&_parent.remote_addr(),
 			                           sizeof(sockaddr_in), len, &iov);
 
-			return _sock.ops->sendmsg(&_sock, &msg, len);
+			Lxip::ssize_t res = _sock.ops->sendmsg(&_sock, &msg, len);
+
+			Genode::log("Lxip_data_file::write(): ", len, ", ", res);
+
+			return res;
 		}
 
 		Lxip::ssize_t read(Lxip_vfs_file_handle &,
@@ -622,6 +626,8 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 		                    file_size /* ignored */) override
 		{
 			using namespace Linux;
+
+			Genode::log("Lxip_connect_file::write(): ", len);
 
 			if (!_sock_valid()) return -1;
 

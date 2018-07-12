@@ -35,7 +35,7 @@ append build_components {
 
 	app/arora
 	lib/vfs/jitterentropy
-	lib/vfs/lxip
+	lib/vfs/lwip
 	lib/ld
 	server/vfs
 }
@@ -153,7 +153,7 @@ append boot_modules {
 	libc_pipe.lib.so
 	libcrypto.lib.so
 	libssl.lib.so
-	lxip.lib.so
+	lwip.lib.so
 	pthread.lib.so
 	qt5_angle.lib.so
 	qt5_core.lib.so
@@ -178,7 +178,7 @@ append boot_modules {
 	vfs
 	vfs_jitterentropy.lib.so
 	vfs.lib.so
-	vfs_lxip.lib.so
+	vfs_lwip.lib.so
 
 }
 
