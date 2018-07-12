@@ -2,22 +2,22 @@ source ${genode_dir}/repos/libports/run/qt5_common.inc
 
 set feature(Nic) 1
 
-import_from_depot genodelabs/src/arora \
-                  genodelabs/src/icu \
-                  genodelabs/src/libcrypto \
-                  genodelabs/src/libssl \
-                  genodelabs/src/qt5_network \
-                  genodelabs/src/qt5_printsupport \
-                  genodelabs/src/qt5_qnitpickerviewwidget \
-                  genodelabs/src/qt5_opengl \
-                  genodelabs/src/qt5_qpluginwidget \
-                  genodelabs/src/qt5_scriptclassic \
-                  genodelabs/src/qt5_sql \
-                  genodelabs/src/qt5_ui_tools \
-                  genodelabs/src/qt5_webkit \
-                  genodelabs/src/qt5_widgets \
-                  genodelabs/src/vfs_jitterentropy \
-                  genodelabs/src/vfs_lxip
+#import_from_depot genodelabs/src/arora \
+#                  genodelabs/src/icu \
+#                  genodelabs/src/libcrypto \
+#                  genodelabs/src/libssl \
+#                  genodelabs/src/qt5_network \
+#                  genodelabs/src/qt5_printsupport \
+#                  genodelabs/src/qt5_qnitpickerviewwidget \
+#                  genodelabs/src/qt5_opengl \
+#                  genodelabs/src/qt5_qpluginwidget \
+#                  genodelabs/src/qt5_scriptclassic \
+#                  genodelabs/src/qt5_sql \
+#                  genodelabs/src/qt5_ui_tools \
+#                  genodelabs/src/qt5_webkit \
+#                  genodelabs/src/qt5_widgets \
+#                  genodelabs/src/vfs_jitterentropy \
+#                  genodelabs/src/vfs_lxip
 
 #
 # Build
@@ -32,6 +32,12 @@ append build_components {
 	server/nit_fb
 	app/launchpad
 	test/nitpicker
+
+	app/arora
+	lib/vfs/jitterentropy
+	lib/vfs/lxip
+	lib/ld
+	server/vfs
 }
 
 build $build_components
@@ -109,7 +115,7 @@ append config {
 
 	<start name="arora" caps="2000">
 		<resource name="RAM" quantum="2G"/>
-		<config clipboard="yes">
+		<config clipboard="yes" ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<log/>
@@ -150,6 +156,41 @@ append boot_modules {
 	launchpad
 	testnit
 	nitpicker_plugin.tar
+
+	arora
+	icu.lib.so
+	ld.lib.so
+	libc.lib.so
+	libc_pipe.lib.so
+	libcrypto.lib.so
+	libssl.lib.so
+	lxip.lib.so
+	pthread.lib.so
+	qt5_angle.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_jscore.lib.so
+	qt5_network.lib.so
+	qt5_opengl.lib.so
+	qt5_printsupport.lib.so
+	qt5_qjpeg.lib.so
+	qt5_qnitpickerviewwidget.lib.so
+	qt5_qpa_nitpicker.lib.so
+	qt5_qpluginwidget.lib.so
+	qt5_scriptclassic.lib.so
+	qt5_sql.lib.so
+	qt5_ui_tools.lib.so
+	qt5_webcore.lib.so
+	qt5_webkit.lib.so
+	qt5_webkitwidgets.lib.so
+	qt5_widgets.lib.so
+	qt5_wtf.lib.so
+	stdcxx.lib.so
+	vfs
+	vfs_jitterentropy.lib.so
+	vfs.lib.so
+	vfs_lxip.lib.so
+
 }
 
 build_boot_image $boot_modules
