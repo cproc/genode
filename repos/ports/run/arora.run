@@ -17,7 +17,7 @@ import_from_depot genodelabs/src/arora \
                   genodelabs/src/qt5_webkit \
                   genodelabs/src/qt5_widgets \
                   genodelabs/src/vfs_jitterentropy \
-                  genodelabs/src/vfs_lxip
+                  genodelabs/src/vfs_lwip
 
 #
 # Build
@@ -105,7 +105,7 @@ append config {
 					<jitterentropy name="random"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
-				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+				<dir name="socket"> <lwip dhcp="yes"/> </dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
