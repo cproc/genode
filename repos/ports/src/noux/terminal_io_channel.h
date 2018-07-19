@@ -181,6 +181,7 @@ struct Noux::Terminal_io_channel : Io_channel
 				Terminal::Session::Size size = _terminal.size();
 				sysio.ioctl_out.tiocgwinsz.rows    = size.lines();
 				sysio.ioctl_out.tiocgwinsz.columns = size.columns();
+				Genode::log("terminal size: ", size.columns(), "x", size.lines());
 				return true;
 			}
 
