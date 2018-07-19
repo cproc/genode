@@ -180,6 +180,9 @@ static sigset_t signal_mask;
 
 static bool noux_syscall(Noux::Session::Syscall opcode)
 {
+	if (!noux_connection())
+		return false;
+
 	/*
 	 * Signal handlers might do syscalls themselves, so the 'sysio' object
 	 * needs to be saved before and restored after calling the signal handler.
