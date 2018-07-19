@@ -197,9 +197,11 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 							if (res_length != length) {
 								Genode::error("partial write detected ",
 								              res_length, " vs ", length);
-								wait_for_continue();
+								//wait_for_continue();
 								/* don't acknowledge */
-								throw Dont_ack();
+								//throw Dont_ack();
+								succeeded = false;
+								throw 1;
 							}
 							succeeded = true;
 						}
