@@ -457,6 +457,20 @@ class Terminal::Decoder
 		{
 			auto const c = character.value;
 
+			Genode::log("insert(): ", Genode::Hex(c));
+
+			if (c >= 0x20) {
+				char buf[2] = {(char)c, 0};
+				Genode::log("c: ", Genode::Cstring(buf));
+			}
+
+			enum { ESC_PREFIX = 0x1b };
+			if (c == ESC_PREFIX) {
+				if (_state != STATE_IDLE)
+					Genode::warning("skipping unsupported sequence");
+				_enter_state_idle();
+			}
+
 			switch (_state) {
 
 			case STATE_IDLE:
