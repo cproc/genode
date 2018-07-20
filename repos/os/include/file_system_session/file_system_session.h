@@ -21,6 +21,9 @@
 #include <packet_stream_tx/packet_stream_tx.h>
 #include <session/session.h>
 
+#include <base/log.h>
+extern "C" void wait_for_continue();
+
 namespace File_system {
 
 	struct Node
@@ -106,7 +109,7 @@ namespace File_system {
 	 * Exception types
 	 */
 	class Exception           : public Genode::Exception { };
-	class Invalid_handle      : Exception { };
+	class Invalid_handle      : Exception { public: Invalid_handle() { Genode::error("Invalid_handle()"); /*wait_for_continue();*/} };
 	class Invalid_name        : Exception { };
 	class Lookup_failed       : Exception { };
 	class Name_too_long       : Exception { };
