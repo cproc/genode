@@ -594,6 +594,8 @@ extern "C" int socket_fs_bind(int libc_fd, sockaddr const *addr, socklen_t addrl
 
 extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t addrlen)
 {
+	Genode::log("*** socket_fs_connect()");
+
 	Libc::File_descriptor *fd = Libc::file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	if (!fd) return Errno(EBADF);
 
@@ -669,6 +671,8 @@ Genode::log("socket_fs_connect(): connecting from state CONNECTING");
 				context->state(Context::CONNECTED);
 			else
 				context->state(Context::UNCONNECTED);
+
+Genode::log("socket_fs_connect() result: ", connect_status);
 
 			/* errno was set by context->read_connect_status() */
 			return connect_status;
@@ -941,7 +945,7 @@ extern "C" int socket_fs_socket(int domain, int type, int protocol)
 
 	Libc::File_descriptor *fd =
 		Libc::file_descriptor_allocator()->alloc(&plugin(), context);
-
+//Genode::log("socket(): ", fd->libc_fd, ", context: ", context);
 	return fd->libc_fd;
 }
 
@@ -1029,6 +1033,8 @@ int Socket_fs::Plugin::select(int nfds,
 
 	for (int fd = 0; fd < nfds; ++fd) {
 
+//Genode::log("Socket_fs::Plugin::select(): ", fd);
+
 		Libc::File_descriptor *fdo =
 			Libc::file_descriptor_allocator()->find_by_libc_fd(fd);
 
@@ -1067,11 +1073,13 @@ int Socket_fs::Plugin::select(int nfds,
 
 int Socket_fs::Plugin::close(Libc::File_descriptor *fd)
 {
+//Genode::log("Socket_fs::Plugin::close(): ", fd->libc_fd, ", context: ", fd->context);
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(EBADF);
 
 	Genode::destroy(&global_allocator, context);
 	Libc::file_descriptor_allocator()->free(fd);
+//Genode::log("Socket_fs::Plugin::close() finished: ", fd->libc_fd);
 
 	/*
 	 * the socket is freed when the initial handle

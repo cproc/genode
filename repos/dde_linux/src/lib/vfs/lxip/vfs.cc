@@ -471,6 +471,8 @@ class Vfs::Lxip_data_file : public Vfs::Lxip_file
 
 			Lxip::ssize_t res = _sock.ops->sendmsg(&_sock, &msg, len);
 
+			Genode::log("Lxip_data_file::write(): ", len, ", ", res);
+
 			if (res < 0) _write_err = res;
 
 			return res;
@@ -663,6 +665,8 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 		                    file_size /* ignored */) override
 		{
 			using namespace Linux;
+
+			Genode::log("Lxip_connect_file::write(): ", len);
 
 			if (!_sock_valid()) return -1;
 

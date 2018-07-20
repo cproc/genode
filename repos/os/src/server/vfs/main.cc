@@ -28,6 +28,7 @@
 #include "assert.h"
 #include "node.h"
 
+extern "C" void wait_for_continue();
 
 namespace Vfs_server {
 	using namespace File_system;
@@ -101,7 +102,10 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 			Node_space::Id id { handle.value };
 
 			try { return _node_space.apply<Node>(id, fn); }
-			catch (Node_space::Unknown_id) { throw Invalid_handle(); }
+			catch (Node_space::Unknown_id) {
+				Genode::error("unknown id: ", id);
+				throw Invalid_handle();
+			}
 		}
 
 		/**
@@ -121,7 +125,10 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				if (!n)
 					throw Invalid_handle();
 				return fn(*n);
-			}); } catch (Node_space::Unknown_id) { throw Invalid_handle(); }
+			}); } catch (Node_space::Unknown_id) {
+				Genode::error("unknown id: ", id);
+				throw Invalid_handle();
+			}
 		}
 
 
@@ -190,6 +197,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 							if (res_length != length) {
 								Genode::error("partial write detected ",
 								              res_length, " vs ", length);
+								wait_for_continue();
 								/* don't acknowledge */
 								//throw Dont_ack();
 								succeeded = false;
@@ -204,7 +212,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				break;
 
 			case Packet_descriptor::READ_READY:
-
+//Genode::log("READ_READY: ", packet.handle().value);
 				try {
 					_apply(static_cast<File_handle>(packet.handle().value), [] (File &node) {
 						if (!node.read_ready()) {
@@ -214,8 +222,9 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 					});
 					succeeded = true;
 				}
-				catch (Dont_ack) { throw; }
-				catch (...) { }
+				catch (Dont_ack) { /*Genode::log("READ_READY: Dont_ack");*/ throw; }
+				catch (...) { Genode::log("READ_READY: exception (ignored)"); }
+//				Genode::log("READ_READY: finished");
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
@@ -526,9 +535,13 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				char const *name_str = name.string();
 				_assert_valid_name(name_str);
 
-				return File_handle {
+				File_handle f {
 					dir.file(_node_space, _vfs, _alloc, name_str, fs_mode, create).value
 				};
+
+//				Genode::log("file(): ", f);
+
+				return f;
 			});
 		}
 
@@ -601,6 +614,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 
 		void close(Node_handle handle) override
 		{
+//			Genode::log("close(): ", handle);
 			try { _apply_node(handle, [&] (Node &node) {
 				_close(node);
 			}); } catch (File_system::Invalid_handle) { }
