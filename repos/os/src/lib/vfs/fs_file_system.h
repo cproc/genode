@@ -21,7 +21,6 @@
 #include <base/id_space.h>
 #include <file_system_session/connection.h>
 
-
 namespace Vfs { class Fs_file_system; }
 
 
@@ -153,6 +152,12 @@ class Vfs::Fs_file_system : public File_system
 				Handle_space::Element(*this, space, node_handle),
 				_fs(fs_connection), _io_handler(io_handler)
 			{ }
+
+			~Fs_vfs_handle()
+			{
+//				void *dummy;
+//				Genode::log(&dummy, ": ~Fs_vfs_handle(): ", file_handle());
+			}
 
 			::File_system::File_handle file_handle() const
 			{ return ::File_system::File_handle { id().value }; }
@@ -662,6 +667,7 @@ class Vfs::Fs_file_system : public File_system
 
 			try {
 				::File_system::Node_handle node = _fs.node(path);
+//				Genode::log(&path, ": stat(", Genode::Cstring(path), "): ", node);
 				Fs_handle_guard node_guard(*this, _fs, node, _handle_space,
 				                           _fs, _env.io_handler());
 				status = _fs.status(node);
@@ -698,6 +704,7 @@ class Vfs::Fs_file_system : public File_system
 
 			try {
 				::File_system::Dir_handle dir = _fs.dir(dir_path.base(), false);
+//				Genode::log(&path, ": unlink(): ", dir);
 				Fs_handle_guard dir_guard(*this, _fs, dir, _handle_space, _fs,
 				                          _env.io_handler());
 
@@ -733,12 +740,13 @@ class Vfs::Fs_file_system : public File_system
 			try {
 				::File_system::Dir_handle from_dir =
 					_fs.dir(from_dir_path.base(), false);
-
+//Genode::log(&from_path, ": rename(): from_dir: ", from_dir);
 				Fs_handle_guard from_dir_guard(*this, _fs, from_dir,
 				                               _handle_space, _fs, _env.io_handler());
 
 				::File_system::Dir_handle to_dir = _fs.dir(to_dir_path.base(),
 				                                           false);
+//Genode::log(&from_path, ": rename(): to_dir: ", to_dir);
 				Fs_handle_guard to_dir_guard(*this, _fs, to_dir, _handle_space,
 				                             _fs, _env.io_handler());
 
@@ -758,6 +766,7 @@ class Vfs::Fs_file_system : public File_system
 
 			::File_system::Node_handle node;
 			try { node = _fs.node(path); } catch (...) { return 0; }
+//			Genode::log(&path, ": num_dirent(): ", node);
 			Fs_handle_guard node_guard(*this, _fs, node, _handle_space, _fs,
 			                           _env.io_handler());
 
@@ -770,6 +779,7 @@ class Vfs::Fs_file_system : public File_system
 		{
 			try {
 				::File_system::Node_handle node = _fs.node(path);
+//				Genode::log(&path, ": directory(", Genode::Cstring(path), "): ", node);
 				Fs_handle_guard node_guard(*this, _fs, node, _handle_space,
 				                           _fs, _env.io_handler());
 
@@ -816,13 +826,14 @@ class Vfs::Fs_file_system : public File_system
 
 			try {
 				::File_system::Dir_handle dir = _fs.dir(dir_path.base(), false);
+// Genode::log(&path, ": open(", Genode::Cstring(path), "): dir: ", dir);
 				Fs_handle_guard dir_guard(*this, _fs, dir, _handle_space, _fs,
 				                          _env.io_handler());
 
 				::File_system::File_handle file = _fs.file(dir,
 				                                           file_name.base() + 1,
 				                                           mode, create);
-
+//Genode::log(&path, ": open(", Genode::Cstring(path), "): file: ", file);
 				*out_handle = new (alloc)
 					Fs_vfs_file_handle(*this, alloc, vfs_mode, _handle_space,
 					                   file, _fs, _env.io_handler());
@@ -850,7 +861,7 @@ class Vfs::Fs_file_system : public File_system
 
 			try {
 				::File_system::Dir_handle dir = _fs.dir(dir_path.base(), create);
-
+//Genode::log(&path, "opendir(): ", dir);
 				*out_handle = new (alloc)
 					Fs_vfs_dir_handle(*this, alloc, ::File_system::READ_ONLY,
 					                  _handle_space, dir, _fs, _env.io_handler());
@@ -883,13 +894,13 @@ class Vfs::Fs_file_system : public File_system
 			try {
 				::File_system::Dir_handle dir_handle = _fs.dir(abs_path.base(),
 				                                               false);
-
+//Genode::log(&path, ": openlink(): dir: ", dir_handle);
 				Fs_handle_guard from_dir_guard(*this, _fs, dir_handle,
 				                               _handle_space, _fs, _env.io_handler());
 
 				::File_system::Symlink_handle symlink_handle =
 				    _fs.symlink(dir_handle, symlink_name.base() + 1, create);
-
+//Genode::log(&path, ": openlink(): symlink: ", symlink_handle);
 				*out_handle = new (alloc)
 					Fs_vfs_symlink_handle(*this, alloc,
 					                      ::File_system::READ_ONLY,
@@ -917,6 +928,8 @@ class Vfs::Fs_file_system : public File_system
 
 			Fs_vfs_handle *fs_handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 
+//			Genode::log(&vfs_handle, ": Fs_file_system::close(): ", fs_handle->file_handle());
+
 			_fs.close(fs_handle->file_handle());
 			destroy(fs_handle->alloc(), fs_handle);
 		}
@@ -935,7 +948,7 @@ class Vfs::Fs_file_system : public File_system
 			catch (Permission_denied) { return WATCH_ERR_STATIC; }
 			catch (Out_of_ram)        { return WATCH_ERR_OUT_OF_RAM; }
 			catch (Out_of_caps)       { return WATCH_ERR_OUT_OF_CAPS; }
-
+//Genode::log(&path, ": watch(): ", fs_handle);
 			try {
 				*handle = new (alloc)
 					Fs_vfs_watch_handle(
@@ -1021,7 +1034,8 @@ class Vfs::Fs_file_system : public File_system
 			if (!source.ready_to_submit()) return false;
 
 			using ::File_system::Packet_descriptor;
-
+//Genode::log(&vfs_handle, ": notify_read_ready(): ", handle->file_handle());
+//wait_for_continue();
 			Packet_descriptor packet(Packet_descriptor(),
 			                         handle->file_handle(),
 			                         Packet_descriptor::READ_READY,
