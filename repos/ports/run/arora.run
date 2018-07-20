@@ -35,7 +35,7 @@ append build_components {
 
 	app/arora
 	lib/vfs/jitterentropy
-	lib/vfs/lwip
+	lib/vfs/lxip
 	lib/ld
 	server/vfs
 }
@@ -107,7 +107,7 @@ append config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs>
-				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+				<dir name="socket"> <lxip dhcp="yes"/> </dir>
 			</vfs>
 			<default-policy writeable="yes" root="/"/>
 		</config>
@@ -123,7 +123,7 @@ append config {
 					<jitterentropy name="random"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
-				<!--<dir name="socket"> <lwip dhcp="yes"/> </dir>-->
+				<!--<dir name="socket"> <lxip dhcp="yes"/> </dir>-->
 				<fs/>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
@@ -190,8 +190,8 @@ append boot_modules {
 	vfs
 	vfs_jitterentropy.lib.so
 	vfs.lib.so
-	vfs_lwip.lib.so
-
+	vfs_lxip.lib.so
+	lxip.lib.so
 }
 
 build_boot_image $boot_modules
