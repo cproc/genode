@@ -100,7 +100,7 @@ void *Libc::Mem_alloc_impl::alloc(size_t size, size_t align_log2)
 	 * structure if the allocation above failed.
 	 * Finally, we align the size to a 4K page.
 	 */
-	size_t request_size = size + max((1 << align_log2), 1024);
+	size_t request_size = size + 2*max((1 << align_log2), 1024);
 
 	if (request_size < _chunk_size*sizeof(umword_t)) {
 		request_size = _chunk_size*sizeof(umword_t);
@@ -111,12 +111,12 @@ void *Libc::Mem_alloc_impl::alloc(size_t size, size_t align_log2)
 		 */
 		_chunk_size = min(2*_chunk_size, (size_t)MAX_CHUNK_SIZE);
 	}
-
+Genode::log("expanding ", align_addr(request_size, 12), "bytes");
 	if (_ds_pool.expand(align_addr(request_size, 12), &_alloc) < 0) {
 		Genode::warning("libc: could not expand dataspace pool");
 		return 0;
 	}
-
+Genode::log("trying to allocate ", size, " bytes");
 	/* allocate originally requested block */
 	return _alloc.alloc_aligned(size, &out_addr, align_log2).ok() ? out_addr : 0;
 }
