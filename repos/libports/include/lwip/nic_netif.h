@@ -166,7 +166,7 @@ class Lwip::Nic_netif
 
 		void configure(Genode::Xml_node const &config)
 		{
-			if (!config.has_attribute("ip_addr")) {
+			if (config.attribute_value("dhcp", false)) {
 
 				err_t err = dhcp_start(&_netif);
 				if (err == ERR_OK)
