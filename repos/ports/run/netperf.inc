@@ -306,7 +306,11 @@ append config {
 				</dir>
 				<dir name="socket">
 					<} [socket_fs_plugin] { }
-append_if [expr [have_spec linux] && !$use_nic_router] config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
+if {[expr [have_spec linux] && !$use_nic_router]} {
+	append config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
+} else {
+	append config " dhcp=\"yes\""
+}
 append config {/>
 				</dir>
 			</vfs>
