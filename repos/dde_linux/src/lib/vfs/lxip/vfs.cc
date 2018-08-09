@@ -618,7 +618,7 @@ class Vfs::Lxip_listen_file : public Vfs::Lxip_file
 		}
 };
 
-
+extern "C" void wait_for_continue();
 class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 {
 	private:
@@ -635,7 +635,40 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 		 ** File interface **
 		 ********************/
 
-		bool poll(bool, Vfs::Vfs_handle::Context *) { return true; }
+		bool poll(bool trigger_io_response, Vfs::Vfs_handle::Context *context)
+		{
+			/*
+			 * The connect file is considered readable when the socket is
+			 * writeable (connected or error).
+			 */
+
+			Genode::log("Lxip_connect_file::poll(): ", trigger_io_response);
+
+			using namespace Linux;
+
+			file f;
+			f.f_flags = 0;
+			if (_sock.ops->poll(&f, &_sock, nullptr) & (POLLOUT_SET)) {
+				Genode::log("Lxip_connect_file::poll(): returning true");
+				if (trigger_io_response)
+					_parent.trigger_io_response(context);
+				return true;
+			}
+			Genode::log("Lxip_connect_file::poll(): returning false");
+			return false;
+
+#if 0
+			Genode::log("Lxip_connect_file::poll(): ", trigger_io_response);
+			if (_is_connected) {
+				Genode::log("Lxip_connect_file::poll(): returning true");
+				return true;
+			}
+
+			Genode::log("Lxip_connect_file::poll(): returning false");
+			return false;
+#endif
+//			return true;
+		}
 
 		Lxip::ssize_t write(Lxip_vfs_file_handle &handle,
 		                    char const *src, Genode::size_t len,
@@ -657,12 +690,13 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			addr->sin_addr.s_addr = get_addr(handle.content_buffer);
 			addr->sin_family      = AF_INET;
 
-			_write_err = _sock.ops->connect(&_sock, (sockaddr *)addr, sizeof(addr_storage), 0);
-
+Genode::log("Vfs::Lxip_connect_file: connect()");
+			_write_err = _sock.ops->connect(&_sock, (sockaddr *)addr, sizeof(addr_storage), O_NONBLOCK);
+Genode::log("Vfs::Lxip_connect_file: connect() returned: ", _write_err);
 			switch (_write_err) {
 			case Lxip::Io_result::LINUX_EINPROGRESS:
 				_connecting = true;
-				return -1;
+				return len;
 
 			case Lxip::Io_result::LINUX_EALREADY:
 				return -1;
@@ -690,6 +724,19 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			_parent.connect(true);
 
 			return len;
+		}
+
+		Lxip::ssize_t read(Lxip_vfs_file_handle &handle,
+		                   char *dst, Genode::size_t len,
+		                   file_size /* ignored */) override
+		{
+			Genode::log("Vfs::Lxip_connect_file::read()");
+			if (_is_connected)
+				return Genode::snprintf(dst, len, "connected");
+			else if (_connecting)
+				return Genode::snprintf(dst, len, "connecting");
+
+			return Genode::snprintf(dst, len, "unconnected");
 		}
 };
 
