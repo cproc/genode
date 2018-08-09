@@ -157,6 +157,7 @@ namespace Libc {
 
 	void notify_read_ready(Vfs::Vfs_handle *handle)
 	{
+Genode::log("Libc::notify_read_ready()");
 		struct Check : Libc::Suspend_functor
 		{
 			Vfs::Vfs_handle *handle;
@@ -171,10 +172,12 @@ namespace Libc {
 
 	bool read_ready(Libc::File_descriptor *fd)
 	{
+Genode::log("Libc::read_ready()");
 		Vfs::Vfs_handle *handle = vfs_handle(fd);
 		if (!handle) return false;
 
 		notify_read_ready(handle);
+Genode::log("Libc::read_ready(): check");
 
 		return VFS_THREAD_SAFE(handle->fs().read_ready(handle));
 	}
@@ -487,6 +490,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+Genode::log("Libc::Vfs_plugin::read()");
 	Libc::dispatch_pending_io_signals();
 
 	typedef Vfs::File_io_service::Read_result Result;
@@ -495,9 +499,11 @@ ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
 
 	if (fd->flags & O_DIRECTORY)
 		return Errno(EISDIR);
+Genode::log("Libc::Vfs_plugin::read(): check 1");
 
 	if (fd->flags & O_NONBLOCK && !Libc::read_ready(fd))
 		return Errno(EAGAIN);
+Genode::log("Libc::Vfs_plugin::read(): check 2");
 
 	{
 		struct Check : Libc::Suspend_functor
