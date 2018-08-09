@@ -194,7 +194,7 @@ struct Socket_fs::Context : Libc::Plugin_context
 		}
 
 		int data_fd()    { return _fd_for_type(Fd::DATA,    O_RDWR); }
-		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_WRONLY); }
+		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_RDWR); }
 		int bind_fd()    { return _fd_for_type(Fd::BIND,    O_WRONLY); }
 		int listen_fd()  { return _fd_for_type(Fd::LISTEN,  O_WRONLY); }
 		int accept_fd()  { return _fd_for_type(Fd::ACCEPT,  O_RDONLY); }
@@ -556,6 +556,8 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(ENOTSOCK);
 
+Genode::log("socket_fs_connect(): ", context->fd_flags() & O_NONBLOCK);
+
 	if (!addr) return Errno(EFAULT);
 
 	if (addr->sa_family != AF_INET) {
@@ -578,8 +580,25 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 	int const n   = write(context->connect_fd(), addr_string.base(), len);
 	if (n != len) return Errno(ECONNREFUSED);
 
-	/* sync to block for write completion */
-	return fsync(context->connect_fd());
+	char state[32];
+	ssize_t state_len = read(context->connect_fd(), state, sizeof(state));
+
+	if (state_len < sizeof(state)) {
+		state[state_len] = '\0';
+	} else {
+		return Errno(ECONNREFUSED);
+	}
+
+	Genode::log("socket_fs_connect(): state_len: ", state_len, ", state: ", Genode::Cstring(state));
+
+	if (strncmp(state, "connecting", state_len) == 0) {
+		return Errno(EINPROGRESS);
+	} else if (strncmp(state, "connected", state_len)) {
+		/* XXX: return Errno(EISCONN) when called multiple times */
+		return 0;
+	}
+
+	return Errno(ECONNREFUSED);
 }
 
 
