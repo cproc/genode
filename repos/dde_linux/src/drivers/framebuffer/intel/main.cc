@@ -122,8 +122,11 @@ static void run_linux(void * m)
 	main->config.sigh(pa.sd);
 
 	while (1) {
+		lx_printf("*** run_linux(): calling block_and_schedule()\n");
 		Lx::scheduler().current()->block_and_schedule();
+		lx_printf("*** run_linux(): block_and_schedule() returned, calling config_changed()\n");
 		main->root.session.config_changed();
+		lx_printf("*** run_linux(): config_changed() returned\n");
 	}
 }
 

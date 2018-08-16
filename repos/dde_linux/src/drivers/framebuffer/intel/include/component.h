@@ -131,6 +131,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Session>
 
 		void config_changed()
 		{
+Genode::log("*** config changed");
 			_config.update();
 			if (!_config.valid()) return;
 

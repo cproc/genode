@@ -81,12 +81,14 @@ append config {
 				<any-service> <parent/> <any-child/> </any-service>
 			</default-route>
 			<default caps="100"/>
-			<report init_ram="yes" child_ram="yes" delay_ms="10000"/>
+			<!--<report init_ram="yes" child_ram="yes" delay_ms="10000"/>-->
 
+<!--
 			<start name="top">
 				<resource name="RAM" quantum="2M"/>
 				<config period_ms="40000"/>
 			</start>
+-->
 
 			<start name="report_rom" priority="-1">
 				<resource name="RAM" quantum="2M"/>

@@ -82,6 +82,7 @@ out2:
 void lx_c_set_mode(struct drm_device * dev, struct drm_connector * connector,
                    struct drm_framebuffer *fb, struct drm_display_mode *mode)
 {
+lx_printf("lx_c_set_mode(): %p\n", mode);
 	struct drm_crtc        * crtc    = NULL;
 	struct drm_encoder     * encoder = connector->encoder;
 

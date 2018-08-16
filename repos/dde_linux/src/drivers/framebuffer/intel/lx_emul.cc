@@ -133,6 +133,7 @@ Framebuffer::Driver::_preferred_mode(drm_connector *connector,
 		};
 		}
 	} catch (...) {
+Genode::log("*** _preferred_mode(", connector, "): no config");
 		/**
 		 * If no config is given, we take the most wide mode of a
 		 * connector as long as it is connected at all
@@ -140,8 +141,12 @@ Framebuffer::Driver::_preferred_mode(drm_connector *connector,
 		if (connector->status != connector_status_connected)
 			return nullptr;
 
+Genode::log("*** _preferred_mode(): check 1");
+
 		struct drm_display_mode *mode = nullptr, *tmp;
 		list_for_each_entry(tmp, &connector->modes, head) {
+Genode::log("*** _preferred_mode(): mode: ", mode);
+if (mode) Genode::log("tmp->hdisplay: ", tmp->hdisplay, ", mode->hdisplay: ", mode->hdisplay);
 			if (!mode || tmp->hdisplay > mode->hdisplay) mode = tmp;
 		};
 		return mode;
@@ -152,6 +157,7 @@ Framebuffer::Driver::_preferred_mode(drm_connector *connector,
 
 void Framebuffer::Driver::finish_initialization()
 {
+lx_printf("*** finish_initialization()\n");
 	if (!lx_drm_device) {
 		Genode::error("no drm device");
 		return;
@@ -160,6 +166,7 @@ void Framebuffer::Driver::finish_initialization()
 
 	generate_report();
 	_session.config_changed();
+lx_printf("*** finish_initialization() finished\n");
 }
 
 
@@ -189,6 +196,7 @@ void Framebuffer::Driver::set_polling(unsigned long poll)
 
 void Framebuffer::Driver::update_mode()
 {
+lx_printf("*** update_mode()\n");
 	using namespace Genode;
 
 	Configuration old = _config;
@@ -197,6 +205,7 @@ void Framebuffer::Driver::update_mode()
 	lx_for_each_connector(lx_drm_device, [&] (drm_connector *c) {
 		unsigned brightness;
 		drm_display_mode * mode = _preferred_mode(c, brightness);
+		lx_printf("*** update_mode(): c: %p, mode: %p\n", c, mode);
 		if (!mode) return;
 		if (mode->hdisplay > _config._lx.width)  _config._lx.width  = mode->hdisplay;
 		if (mode->vdisplay > _config._lx.height) _config._lx.height = mode->vdisplay;
@@ -1007,7 +1016,7 @@ unsigned long round_jiffies_up(unsigned long j)
  ** DRM implementation **
  ************************/
 
-unsigned int drm_debug = 0x0;
+unsigned int drm_debug = 0xffffffff;
 
 int drm_dev_init(struct drm_device *dev, struct drm_driver *driver,
                  struct device *parent)
@@ -1597,13 +1606,17 @@ bool preemptible()
 
 void drm_sysfs_hotplug_event(struct drm_device *dev)
 {
+DRM_DEBUG("*** drm_sysfs_hotplug_event()\n");
+
 	Framebuffer::Driver * driver = (Framebuffer::Driver*)
 		lx_c_get_driver(lx_drm_device);
 
 	if (driver) {
-		DRM_DEBUG("generating hotplug event\n");
+		DRM_DEBUG("*** generating hotplug event\n");
 		driver->generate_report();
+		DRM_DEBUG("*** report generated\n");
 		driver->trigger_reconfiguration();
+		DRM_DEBUG("*** reconfiguration triggered\n");
 	}
 }
 
