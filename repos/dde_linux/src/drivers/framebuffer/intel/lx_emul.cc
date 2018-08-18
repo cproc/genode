@@ -1007,7 +1007,7 @@ unsigned long round_jiffies_up(unsigned long j)
  ** DRM implementation **
  ************************/
 
-unsigned int drm_debug = 0x0;
+unsigned int drm_debug = 0xffffffff;
 
 int drm_dev_init(struct drm_device *dev, struct drm_driver *driver,
                  struct device *parent)

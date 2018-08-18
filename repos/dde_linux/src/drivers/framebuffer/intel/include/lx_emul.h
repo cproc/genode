@@ -21,7 +21,7 @@
 
 enum { HZ = 100UL };
 
-#define DEBUG_LINUX_PRINTK 0
+#define DEBUG_LINUX_PRINTK 1
 
 #include <lx_emul/compiler.h>
 #include <lx_emul/printf.h>

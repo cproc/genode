@@ -26,12 +26,12 @@ void init_waitqueue_head(wait_queue_head_t *wq)
 
 void add_wait_queue(wait_queue_head_t *q, wait_queue_entry_t *wait)
 {
-	printk("%s called\n", __func__);
+	//printk("%s called\n", __func__);
 }
 
 void remove_wait_queue(wait_queue_head_t *wq, wait_queue_entry_t *wait)
 {
-	printk("%s called\n", __func__);
+	//printk("%s called\n", __func__);
 }
 
 
