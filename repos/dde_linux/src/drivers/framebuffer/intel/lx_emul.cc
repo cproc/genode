@@ -1917,7 +1917,7 @@ size_t strnlen(const char *s, size_t maxlen)
 u64 local_clock(void)
 {
 	Lx::timer_update_jiffies();
-	return jiffies * JIFFIES_TICK_MS;
+	return jiffies * JIFFIES_TICK_NS;
 }
 
 } /* extern "C" */

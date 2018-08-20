@@ -26,6 +26,7 @@ extern unsigned long jiffies;
 enum {
 	JIFFIES_TICK_MS = 1000/HZ,
 	JIFFIES_TICK_US = 1000*1000/HZ,
+	JIFFIES_TICK_NS = 1000*1000*1000/HZ,
 };
 
 static inline unsigned long msecs_to_jiffies(const unsigned int m) { return m / JIFFIES_TICK_MS; }
