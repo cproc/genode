@@ -155,7 +155,23 @@ struct Socket_fs::Context : Libc::Plugin_context
 			/* open file on demand */
 			if (_fd[type].num == -1) {
 				Absolute_path file(_fd[type].name, path.base());
-				int const fd = open(file.base(), flags|_fd_flags);
+				flags |= _fd_flags;
+				if (type == CONNECT) {
+					/*
+					 * The 'read_ready' state of the connect file indicates
+					 * the 'connected' and 'error' states of the socket (since
+					 * there is no 'write_ready' state available'). For this
+					 * reason, the 'read_ready' state would always be false
+					 * when trying to read the socket state from the connect
+					 * file with the 'O_NONBLOCK' flag set if the socket is
+					 * still 'connecting' and the 'read()' function would
+					 * return without reading the file content.
+					 * To work around this issue, the file descriptor of the
+					 * connect file is never marked as 'O_NONBLOCK'.
+					 */
+					flags &= ~O_NONBLOCK;
+				}
+				int const fd = open(file.base(), flags);
 				if (fd == -1) {
 					Genode::error(__func__, ": ", _fd[type].name, " file not accessible at ", file);
 					throw Inaccessible();
@@ -196,7 +212,7 @@ struct Socket_fs::Context : Libc::Plugin_context
 		}
 
 		int data_fd()    { return _fd_for_type(Fd::DATA,    O_RDWR); }
-		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_RDWR | 0x80000000); }
+		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_RDWR); }
 		int bind_fd()    { return _fd_for_type(Fd::BIND,    O_WRONLY); }
 		int listen_fd()  { return _fd_for_type(Fd::LISTEN,  O_WRONLY); }
 		int accept_fd()  { return _fd_for_type(Fd::ACCEPT,  O_RDONLY); }
@@ -610,6 +626,8 @@ Genode::log("socket_fs_connect(): ", context->fd_flags() & O_NONBLOCK);
 	switch (context->state()) {
 	case Context::NONE:
 		{
+Genode::log("socket_fs_connect(): connecting from state NONE");
+
 			Sockaddr_string addr_string;
 			try {
 				addr_string = Sockaddr_string(host_string(*(sockaddr_in const *)addr),
@@ -672,15 +690,16 @@ Genode::log("socket_fs_connect(): written: ", n, ", of: ", len);
 		return Errno(EISCONN);
 	case Context::CONNECTING:
 		{
+Genode::log("socket_fs_connect(): connecting from state CONNECTING");
+
 			/* read connect state from connect file */
 
 			char connect_state[32];
 			ssize_t connect_state_len;
 
-			do {
-				/* XXX: Libc::suspend() */
-				connect_state_len = read(context->connect_fd(), connect_state, sizeof(connect_state));
-			} while ((connect_state_len == -1) && (errno == EAGAIN));
+			connect_state_len = read(context->connect_fd(), connect_state, sizeof(connect_state));
+
+Genode::log("socket_fs_connect(): connect_state_len: ", connect_state_len);
 
 			if (connect_state_len == -1) {
 				Genode::error("socket_fs_connect(): reading from the connect file failed");

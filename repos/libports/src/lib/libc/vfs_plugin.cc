@@ -490,7 +490,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-Genode::log("Libc::Vfs_plugin::read(): ", Genode::Hex(fd->flags));
+Genode::log("Libc::Vfs_plugin::read(): flags: ", Genode::Hex(fd->flags));
 
 	Libc::dispatch_pending_io_signals();
 
