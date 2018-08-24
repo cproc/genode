@@ -403,7 +403,7 @@ struct Libc::Io_response_handler : Vfs::Io_response_handler
 /* internal utility */
 static void resumed_callback();
 static void suspended_callback();
-
+extern "C" void wait_for_continue();
 
 /**
  * Libc "kernel"
@@ -593,6 +593,7 @@ struct Libc::Kernel
 			if (Thread::mystack().top == _kernel_stack) {
 				error("libc suspend() called from non-user context (",
 				      __builtin_return_address(0), ") - aborting");
+				wait_for_continue();
 				exit(1);
 			}
 
