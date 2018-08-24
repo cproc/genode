@@ -113,6 +113,8 @@ struct Socket_fs::Context : Libc::Plugin_context
 
 		enum Proto { TCP, UDP };
 
+		enum State { UNCONNECTED, ACCEPT_ONLY, CONNECTING, CONNECTED };
+
 		struct Inaccessible { }; /* exception */
 
 		Absolute_path const path {
@@ -140,7 +142,7 @@ struct Socket_fs::Context : Libc::Plugin_context
 
 		Proto const _proto;
 
-		bool _accept_only = false;
+		State _state { UNCONNECTED };
 
 		template <typename FUNC>
 		void _fd_apply(FUNC const &fn)
@@ -195,7 +197,7 @@ struct Socket_fs::Context : Libc::Plugin_context
 		}
 
 		int data_fd()    { return _fd_for_type(Fd::DATA,    O_RDWR); }
-		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_WRONLY); }
+		int connect_fd() { return _fd_for_type(Fd::CONNECT, O_RDWR); }
 		int bind_fd()    { return _fd_for_type(Fd::BIND,    O_WRONLY); }
 		int listen_fd()  { return _fd_for_type(Fd::LISTEN,  O_WRONLY); }
 		int accept_fd()  { return _fd_for_type(Fd::ACCEPT,  O_RDONLY); }
@@ -203,16 +205,58 @@ struct Socket_fs::Context : Libc::Plugin_context
 		int remote_fd()  { return _fd_for_type(Fd::REMOTE,  O_RDWR); }
 
 		/* request the appropriate fd to ensure the file is open */
-		bool data_read_ready()   { data_fd();   return _fd_read_ready(Fd::DATA); }
-		bool accept_read_ready() { accept_fd(); return _fd_read_ready(Fd::ACCEPT); }
-		bool local_read_ready()  { local_fd();  return _fd_read_ready(Fd::LOCAL); }
-		bool remote_read_ready() { remote_fd(); return _fd_read_ready(Fd::REMOTE); }
+		bool connect_read_ready() { connect_fd(); return _fd_read_ready(Fd::CONNECT); }
+		bool data_read_ready()    { data_fd();    return _fd_read_ready(Fd::DATA); }
+		bool accept_read_ready()  { accept_fd();  return _fd_read_ready(Fd::ACCEPT); }
+		bool local_read_ready()   { local_fd();   return _fd_read_ready(Fd::LOCAL); }
+		bool remote_read_ready()  { remote_fd();  return _fd_read_ready(Fd::REMOTE); }
 
-		void accept_only() { _accept_only = true; }
+		void state(State state) { _state = state; }
+		State state() const     { return _state; }
 
 		bool read_ready()
 		{
-			return _accept_only ? accept_read_ready() : data_read_ready();
+			return (_state == ACCEPT_ONLY) ? accept_read_ready() : data_read_ready();
+		}
+
+		bool write_ready()
+		{
+			if (_state == CONNECTING)
+				return connect_read_ready();
+
+			/* XXX ask if "data" is writeable */
+			return true;
+		}
+
+		/*
+		 * Read the connect status from the connect file and return 0 if connected
+		 * or -1 with errno set to the error code.
+		 */
+		int read_connect_status()
+		{
+			char connect_status[32];
+			ssize_t connect_status_len;
+
+			connect_status_len = read(connect_fd(), connect_status,
+									  sizeof(connect_status));
+
+			if (connect_status_len == -1) {
+				Genode::error("socket_fs: reading from the connect file failed");
+				return -1;
+			}
+
+			if (strncmp(connect_status, "connected", connect_status_len) == 0) {
+				Genode::log("socket_fs: connected");
+				return 0;
+			}
+
+			if (strncmp(connect_status, "connection refused", connect_status_len) == 0) {
+				Genode::log("socket_fs: connection refused");
+				return Errno(ECONNREFUSED);
+			}
+
+			Genode::error("socket_fs: unhandled connection state");
+			return Errno(ECONNREFUSED);
 		}
 };
 
@@ -558,6 +602,8 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(ENOTSOCK);
 
+Genode::log("*** socket_fs_connect(): ", context->fd_flags() & O_NONBLOCK);
+
 	if (!addr) return Errno(EFAULT);
 
 	if (addr->sa_family != AF_INET) {
@@ -565,23 +611,77 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 		return Errno(EAFNOSUPPORT);
 	}
 
+	switch (context->state()) {
+	case Context::UNCONNECTED:
+		{
+Genode::log("socket_fs_connect(): connecting from state UNCONNECTED");
+
+			Sockaddr_string addr_string;
+			try {
+				addr_string = Sockaddr_string(host_string(*(sockaddr_in const *)addr),
+				                              port_string(*(sockaddr_in const *)addr));
+			}
+			catch (Address_conversion_failed) { return Errno(EINVAL); }
+
+			context->state(Context::CONNECTING);
+
+			int const len = strlen(addr_string.base());
+			int const n   = write(context->connect_fd(), addr_string.base(), len);
+Genode::log("socket_fs_connect(): written: ", n, ", of: ", len);
+			if (n != len) return Errno(ECONNREFUSED);
+
+			if (context->fd_flags() & O_NONBLOCK)
+				return Errno(EINPROGRESS);
+
+			/* block until socket is ready for writing */
+
+			Genode::log("socket_fs_connect(): calling select()");
+
+			fd_set writefds;
+			FD_ZERO(&writefds);
+			FD_SET(libc_fd, &writefds);
+			struct timeval timeout {1, 0};
+			int res = select(libc_fd + 1, NULL, &writefds, NULL, &timeout);
+
+			Genode::log("socket_fs_connect(): select() returned: ", res);
+
+			int connect_status = context->read_connect_status();
+
+			if (connect_status == 0)
+				context->state(Context::CONNECTED);
+			else
+				context->state(Context::UNCONNECTED);
+
+			/* errno was set by context->read_connect_status() */
+			return connect_status;
+		}
+		break;
+	case Context::ACCEPT_ONLY:
+		/* XXX: error */
+		break;
+	case Context::CONNECTED:
+		return Errno(EISCONN);
+	case Context::CONNECTING:
+		{
+Genode::log("socket_fs_connect(): connecting from state CONNECTING");
+
+			int connect_status = context->read_connect_status();
+
+			if (connect_status == 0)
+				context->state(Context::CONNECTED);
+			else
+				context->state(Context::UNCONNECTED);
+
+			/* errno was set by context->read_connect_status() */
+			return connect_status;
+		}
+	}
+
 	/* TODO EISCONN */
 	/* TODO ECONNREFUSED */
 	/* TODO maybe EALREADY, EINPROGRESS, ETIMEDOUT */
 
-	Sockaddr_string addr_string;
-	try {
-		addr_string = Sockaddr_string(host_string(*(sockaddr_in const *)addr),
-		                              port_string(*(sockaddr_in const *)addr));
-	}
-	catch (Address_conversion_failed) { return Errno(EINVAL); }
-
-	int const len = strlen(addr_string.base());
-	int const n   = write(context->connect_fd(), addr_string.base(), len);
-	if (n != len) return Errno(ECONNREFUSED);
-
-	/* sync to block for write completion */
-	return fsync(context->connect_fd());
+	return Errno(ECONNREFUSED);
 }
 
 
@@ -598,7 +698,7 @@ extern "C" int socket_fs_listen(int libc_fd, int backlog)
 	int const n   = write(context->listen_fd(), buf, len);
 	if (n != len) return Errno(EOPNOTSUPP);
 
-	context->accept_only();
+	context->state(Context::ACCEPT_ONLY);
 	return 0;
 }
 
@@ -731,6 +831,21 @@ extern "C" int socket_fs_getsockopt(int libc_fd, int level, int optname,
 			*(int *)optval = 1;
 			return 0;
 		case SO_ERROR:
+			if (context->state() == Context::CONNECTING) {
+
+				int connect_status = context->read_connect_status();
+
+				if (connect_status == 0) {
+					*(int*)optval = 0;
+					context->state(Context::CONNECTED);
+				} else {
+					*(int*)optval = errno;
+					context->state(Context::UNCONNECTED);
+				}
+
+				return 0;
+			}
+
 			/* not yet implemented - but return true */
 			*(int *)optval = 0;
 			return 0;
@@ -935,10 +1050,14 @@ int Socket_fs::Plugin::select(int nfds,
 		}
 
 		if (FD_ISSET(fd, &in_writefds)) {
-			if (true /* XXX ask if "data" is writeable */) {
-				FD_SET(fd, writefds);
-				++nready;
-			}
+			try {
+				Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fdo->context);
+
+				if (context->write_ready()) {
+					FD_SET(fd, writefds);
+					++nready;
+				}
+			} catch (Socket_fs::Context::Inaccessible) { }
 		}
 
 		/* XXX exceptfds not supported */
