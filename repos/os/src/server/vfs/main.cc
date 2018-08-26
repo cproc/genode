@@ -80,6 +80,8 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 
 		bool const _writable;
 
+		bool _continue_process_packets { false };
+
 		/*
 		 * XXX Currently, we have only one packet in backlog, which must finish
 		 *     processing before new packets can be processed.
@@ -302,50 +304,57 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 		{
 			using namespace Genode;
 
-			/*
-			 * XXX Process client backlog before looking at new requests. This
-			 *     limits the number of simultaneously addressed handles (which
-			 *     was also the case before adding the backlog in case of
-			 *     blocking operations).
-			 */
-			if (!_process_backlog())
-				/* backlog not cleared - block for next condition change */
-				return;
-
-			/**
-			 * Process packets in batches, otherwise a client that
-			 * submits packets as fast as they are processed will
-			 * starve the signal handler.
-			 */
-			int quantum = TX_QUEUE_SIZE;
-
-			while (tx_sink()->packet_avail()) {
-				if (--quantum == 0) {
-					/* come back to this later */
-					Signal_transmitter(_process_packet_handler).submit();
-					break;
-				}
+			do {
+Genode::log("_process_packets()");
+				_continue_process_packets = false;
 
 				/*
-				 * Make sure that the '_process_packet' function does not
-				 * block.
-				 *
-				 * If the acknowledgement queue is full, we defer packet
-				 * processing until the client processed pending
-				 * acknowledgements and thereby emitted a ready-to-ack
-				 * signal. Otherwise, the call of 'acknowledge_packet()'
-				 * in '_process_packet' would infinitely block the context
-				 * of the main thread. The main thread is however needed
-				 * for receiving any subsequent 'ready-to-ack' signals.
+				 * XXX Process client backlog before looking at new requests. This
+				 *     limits the number of simultaneously addressed handles (which
+				 *     was also the case before adding the backlog in case of
+				 *     blocking operations).
 				 */
-				if (!tx_sink()->ready_to_ack())
+				if (!_process_backlog())
+					/* backlog not cleared - block for next condition change */
 					return;
 
-				try {
-					if (!_process_packet())
+				/**
+				 * Process packets in batches, otherwise a client that
+				 * submits packets as fast as they are processed will
+				 * starve the signal handler.
+				 */
+				int quantum = TX_QUEUE_SIZE;
+
+				while (tx_sink()->packet_avail()) {
+					if (--quantum == 0) {
+						/* come back to this later */
+						Signal_transmitter(_process_packet_handler).submit();
+						break;
+					}
+
+					/*
+					 * Make sure that the '_process_packet' function does not
+					 * block.
+					 *
+					 * If the acknowledgement queue is full, we defer packet
+					 * processing until the client processed pending
+					 * acknowledgements and thereby emitted a ready-to-ack
+					 * signal. Otherwise, the call of 'acknowledge_packet()'
+					 * in '_process_packet' would infinitely block the context
+					 * of the main thread. The main thread is however needed
+					 * for receiving any subsequent 'ready-to-ack' signals.
+					 */
+					if (!tx_sink()->ready_to_ack())
 						return;
-				} catch (Dont_ack) { }
-			}
+
+					try {
+						if (!_process_packet())
+							//return;
+							break;
+					} catch (Dont_ack) { }
+				}
+			} while (_continue_process_packets);
+			Genode::log("_process_packets() finished");
 		}
 
 		/**
@@ -464,6 +473,9 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				tx_sink()->acknowledge_packet(packet);
 				node.notify_read_ready(false);
 			}
+
+			Genode::log("_handle_node_io()");
+			_continue_process_packets = true;
 		}
 
 		void handle_node_watch(Watch_node &node) override
