@@ -575,6 +575,8 @@ class Genode::Packet_stream_source : private Packet_stream_base
 		Packet_descriptor_transmitter<Submit_queue> _submit_transmitter;
 		Packet_descriptor_receiver<Ack_queue>       _ack_receiver;
 
+		unsigned long _submitted { 0 };
+
 	public:
 
 		/**
@@ -714,6 +716,7 @@ class Genode::Packet_stream_source : private Packet_stream_base
 		void submit_packet(Packet_descriptor packet)
 		{
 			_submit_transmitter.tx(packet);
+			Genode::log(this, ": submitted: ", ++_submitted);
 		}
 
 		/**
@@ -765,6 +768,8 @@ class Genode::Packet_stream_sink : private Packet_stream_base
 
 		Packet_descriptor_receiver<Submit_queue> _submit_receiver;
 		Packet_descriptor_transmitter<Ack_queue> _ack_transmitter;
+
+		unsigned long _acked { 0 };
 
 	public:
 
@@ -891,6 +896,7 @@ class Genode::Packet_stream_sink : private Packet_stream_base
 		void acknowledge_packet(Packet_descriptor packet)
 		{
 			_ack_transmitter.tx(packet);
+			Genode::log(this, ": acked: ", ++_acked);
 		}
 
 		void debug_print_buffers() {
