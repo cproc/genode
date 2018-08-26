@@ -464,6 +464,8 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				tx_sink()->acknowledge_packet(packet);
 				node.notify_read_ready(false);
 			}
+
+			_process_packets();
 		}
 
 		void handle_node_watch(Watch_node &node) override
