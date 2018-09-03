@@ -450,7 +450,7 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 
 		void handle_node_io(Io_node &node) override
 		{
-			_process_backlog();
+			_process_packets();
 
 			if (!tx_sink()->ready_to_ack()) {
 				Genode::error(
