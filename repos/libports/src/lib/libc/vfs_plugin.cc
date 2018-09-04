@@ -165,8 +165,10 @@ namespace Libc {
 				return !VFS_THREAD_SAFE(handle->fs().notify_read_ready(handle)); }
 		} check(handle);
 
-		while (!VFS_THREAD_SAFE(handle->fs().notify_read_ready(handle)))
+		while (!VFS_THREAD_SAFE(handle->fs().notify_read_ready(handle))) {
+			Genode::error("*** suspend() in notify_read_ready()");
 			Libc::suspend(check);
+		}
 	}
 
 	bool read_ready(Libc::File_descriptor *fd)

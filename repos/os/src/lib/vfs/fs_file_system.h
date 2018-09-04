@@ -1027,6 +1027,7 @@ Genode::log("*** Fs open(", path, "): finished");
 
 		bool notify_read_ready(Vfs_handle *vfs_handle) override
 		{
+Genode::log("Fs_file_system::notify_read_ready()");
 			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 			if (handle->read_ready_state != Handle_state::Read_ready_state::IDLE)
 				return true;
@@ -1034,7 +1035,10 @@ Genode::log("*** Fs open(", path, "): finished");
 			::File_system::Session::Tx::Source &source = *_fs.tx();
 
 			/* if not ready to submit suggest retry */
-			if (!source.ready_to_submit()) return false;
+			if (!source.ready_to_submit()) {
+Genode::error("Fs_file_system::notify_read_ready(): not ready to submit");
+				return false;
+			}
 
 			using ::File_system::Packet_descriptor;
 
