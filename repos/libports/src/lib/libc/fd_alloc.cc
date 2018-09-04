@@ -53,6 +53,8 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 {
 	Lock::Guard guard(_lock);
 
+Genode::log("fd alloc: fd_in: ", libc_fd, ", avail: ", avail());
+
 	/* we use addresses returned by the allocator as file descriptors */
 	addr_t addr = (libc_fd <= ANY_FD ? ANY_FD : libc_fd);
 
@@ -68,7 +70,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 		      libc_fd <= ANY_FD ? " (any)" : "");
 		return 0;
 	}
-
+//Genode::log("fd_alloc: fd: ", (int)addr);
 	File_descriptor *fdo = metadata((void*)addr);
 	fdo->libc_fd = (int)addr;
 	fdo->fd_path = 0;
@@ -84,6 +86,7 @@ void File_descriptor_allocator::free(File_descriptor *fdo)
 	Lock::Guard guard(_lock);
 	::free((void *)fdo->fd_path);
 	Allocator_avl_base::free(reinterpret_cast<void*>(fdo->libc_fd));
+Genode::log("fd free: fd: ", fdo->libc_fd, ", avail: ", avail());
 }
 
 
