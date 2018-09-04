@@ -961,7 +961,7 @@ int Socket_fs::Plugin::fcntl(Libc::File_descriptor *fd, int cmd, long arg)
 	case F_GETFL:
 		return context->fd_flags();
 	case F_SETFL:
-		context->fd_flags(arg);
+		//context->fd_flags(arg);
 		return 0;
 	default:
 		Genode::error(__func__, " command ", cmd, " not supported on sockets");
