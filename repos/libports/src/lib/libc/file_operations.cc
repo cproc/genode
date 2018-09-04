@@ -225,6 +225,7 @@ extern "C" int chdir(const char *path)
  */
 extern "C" int _close(int libc_fd)
 {
+Genode::log("close(): ", libc_fd);
 	Libc::File_descriptor *fd =
 		Libc::file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	return (!fd || !fd->plugin)
@@ -505,7 +506,7 @@ extern "C" int msync(void *start, ::size_t len, int flags)
 }
 
 
-
+extern "C" void wait_for_continue();
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
 	Absolute_path resolved_path;
@@ -542,9 +543,12 @@ extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 	new_fdo = plugin->open(resolved_path.base(), flags);
 	if (!new_fdo) {
 		Genode::error("plugin()->open(\"", pathname, "\") failed");
+		wait_for_continue();
 		return -1;
 	}
 	new_fdo->path(resolved_path.base());
+
+Genode::log("open(", pathname, ": ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 }

@@ -795,6 +795,7 @@ class Vfs::Fs_file_system : public File_system
 		Open_result open(char const *path, unsigned vfs_mode, Vfs_handle **out_handle,
 		                 Genode::Allocator& alloc) override
 		{
+Genode::log("*** Fs open(", path, ")");
 			Lock::Guard guard(_lock);
 
 			Absolute_path dir_path(path);
@@ -815,17 +816,21 @@ class Vfs::Fs_file_system : public File_system
 			bool const create = vfs_mode & OPEN_MODE_CREATE;
 
 			try {
+Genode::log("*** Fs open(", path, "): check 1");
+
 				::File_system::Dir_handle dir = _fs.dir(dir_path.base(), false);
+Genode::log("*** Fs open(", path, "): check 2");
 				Fs_handle_guard dir_guard(*this, _fs, dir, _handle_space, _fs,
 				                          _env.io_handler());
-
+Genode::log("*** Fs open(", path, "): check 3");
 				::File_system::File_handle file = _fs.file(dir,
 				                                           file_name.base() + 1,
 				                                           mode, create);
-
+Genode::log("*** Fs open(", path, "): check 4");
 				*out_handle = new (alloc)
 					Fs_vfs_file_handle(*this, alloc, vfs_mode, _handle_space,
 					                   file, _fs, _env.io_handler());
+Genode::log("*** Fs open(", path, "): finished");
 			}
 			catch (::File_system::Lookup_failed)       { return OPEN_ERR_UNACCESSIBLE;  }
 			catch (::File_system::Permission_denied)   { return OPEN_ERR_NO_PERM;       }

@@ -950,6 +950,7 @@ int Socket_fs::Plugin::select(int nfds,
 
 int Socket_fs::Plugin::close(Libc::File_descriptor *fd)
 {
+Genode::log("socket_fs: close()");
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(EBADF);
 
@@ -960,7 +961,7 @@ int Socket_fs::Plugin::close(Libc::File_descriptor *fd)
 	 * the socket is freed when the initial handle
 	 * on 'new_socket' is released at the VFS plugin
 	 */
-
+Genode::log("socket_fs: close() finished");
 	return 0;
 }
 
