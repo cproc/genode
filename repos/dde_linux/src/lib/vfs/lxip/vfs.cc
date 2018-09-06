@@ -1857,19 +1857,30 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 		Opendir_result opendir(char const *path, bool create,
 		                       Vfs_handle **out_handle, Allocator &alloc) override
 		{
+Genode::log("opendir(", path, ")");
 			Vfs::Node *node = _lookup(path);
+Genode::log("opendir(", path, "): node: ", node);
 
 			if (!node) return OPENDIR_ERR_LOOKUP_FAILED;
 
 			Vfs::Directory *dir = dynamic_cast<Vfs::Directory*>(node);
+
+Genode::log("opendir(", path, "): dir: ", dir);
+
 			if (dir) {
+try {
 				Lxip_vfs_dir_handle *handle =
 					new (alloc) Vfs::Lxip_vfs_dir_handle(*this, alloc, 0, *dir);
+Genode::log("opendir(", path, "): handle: ", handle);
 				*out_handle = handle;
-
+} catch (...) {
+	Genode::error("unhandled exception");
+	throw;
+}
+Genode::log("opendir(", path, "): returning OPENDIR_OK");
 				return OPENDIR_OK;
 			}
-
+Genode::log("opendir(", path, "): error");
 			return OPENDIR_ERR_LOOKUP_FAILED;
 		}
 

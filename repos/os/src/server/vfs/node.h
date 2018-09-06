@@ -498,6 +498,7 @@ struct Vfs_server::Directory : Io_node
 	          bool                create)
 	: Io_node(space, dir_path, READ_ONLY, node_io_handler)
 	{
+		Genode::log("Directory(", Genode::Cstring(dir_path), ")");
 		assert_opendir(vfs.opendir(dir_path, create, &_handle, alloc));
 		_handle->context = &context();
 	}
