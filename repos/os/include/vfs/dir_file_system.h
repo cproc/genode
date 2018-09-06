@@ -623,14 +623,15 @@ class Vfs::Dir_file_system : public File_system
 		Opendir_result open_composite_dirs(char const *sub_path,
 		                                   Dir_vfs_handle &dir_vfs_handle)
 		{
+Genode::log("Dir_file_system::open_composite_dirs()");
 			Opendir_result res = OPENDIR_ERR_LOOKUP_FAILED;
 			try {
 				for (File_system *fs = _first_file_system; fs; fs = fs->next) {
 					Vfs_handle *sub_dir_handle = nullptr;
-
+Genode::log("Dir_file_system::open_composite_dirs(): calling fs->opendir()");
 					Opendir_result r = fs->opendir(
 						sub_path, false, &sub_dir_handle, dir_vfs_handle.alloc());
-
+Genode::log("Dir_file_system::open_composite_dirs() fs->opendir() returned ", (int)r);
 					switch (r) {
 					case OPENDIR_OK:
 						break;
@@ -650,7 +651,7 @@ class Vfs::Dir_file_system : public File_system
 			}
 			catch (Genode::Out_of_ram)  { res = OPENDIR_ERR_OUT_OF_RAM; }
 			catch (Genode::Out_of_caps) { res = OPENDIR_ERR_OUT_OF_CAPS; }
-
+Genode::log("Dir_file_system::open_composite_dirs() res: ", (int)res);
 			return res;
 		}
 
@@ -658,7 +659,7 @@ class Vfs::Dir_file_system : public File_system
 		                       Vfs_handle **out_handle, Allocator &alloc) override
 		{
 			Opendir_result result = OPENDIR_OK;
-
+Genode::log("Dir_file_system::opendir(", Genode::Cstring(path), ")");
 			if (_top_dir(path)) {
 				if (create)
 					return OPENDIR_ERR_PERMISSION_DENIED;
