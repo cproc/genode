@@ -266,7 +266,7 @@ extern "C" int _socket(int domain, int type, int protocol)
 		Genode::error("plugin()->socket() failed");
 		return -1;
 	}
-
+Genode::log("socket(): ", new_fdo->libc_fd);
 	return new_fdo->libc_fd;
 }
 
