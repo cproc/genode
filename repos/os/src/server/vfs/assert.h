@@ -41,9 +41,9 @@ namespace File_system {
 	static inline void assert_opendir(Directory_service::Opendir_result r)
 	{
 		typedef Directory_service::Opendir_result Result;
-
+Genode::log("assert_opendir(): ", (int)r);
 		switch (r) {
-		case Result::OPENDIR_ERR_LOOKUP_FAILED:       throw Lookup_failed();
+		case Result::OPENDIR_ERR_LOOKUP_FAILED:       Genode::log("assert_opendir() lookup failed"); throw Lookup_failed();
 		case Result::OPENDIR_ERR_NAME_TOO_LONG:       throw Invalid_name();
 		case Result::OPENDIR_ERR_NODE_ALREADY_EXISTS: throw Node_already_exists();
 		case Result::OPENDIR_ERR_NO_SPACE:            throw No_space();
@@ -52,6 +52,7 @@ namespace File_system {
 		case Result::OPENDIR_ERR_PERMISSION_DENIED:   throw Permission_denied();
 		case Result::OPENDIR_OK: break;
 		}
+Genode::log("assert_opendir() ok");
 	}
 
 	static inline void assert_openlink(Directory_service::Openlink_result r)

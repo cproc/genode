@@ -503,13 +503,19 @@ class Vfs_server::Session_component : public File_system::Session_rpc_object,
 				fullpath.append(path_str);
 			path_str = fullpath.base();
 
-			if (!create && !_vfs.directory(path_str))
+			if (!create && !_vfs.directory(path_str)) {
+				Genode::error("dir(", Genode::Cstring(path_str), "): lookup failed, create: ", create);
 				throw Lookup_failed();
+			}
+
+			Genode::log("dir(", Genode::Cstring(path_str), "): check 1");
 
 			Directory *dir;
 			try { dir = new (_alloc) Directory(_node_space, _vfs, _alloc,
 			                                  *this, path_str, create); }
 			catch (Out_of_memory) { throw Out_of_ram(); }
+
+			Genode::log("dir(", Genode::Cstring(path_str), "): finished");
 
 			return Dir_handle(dir->id().value);
 		}

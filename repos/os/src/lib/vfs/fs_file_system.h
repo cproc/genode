@@ -111,6 +111,8 @@ class Vfs::Fs_file_system : public File_system
 				read_ready_state  = Handle_state::Read_ready_state::IDLE;
 				queued_read_state = Handle_state::Queued_state::QUEUED;
 
+				Genode::log(&count, ": READ");
+
 				/* pass packet to server side */
 				source.submit_packet(packet);
 
@@ -193,6 +195,8 @@ class Vfs::Fs_file_system : public File_system
 					       ::File_system::Packet_descriptor::SYNC, 0);
 
 				queued_sync_state = Handle_state::Queued_state::QUEUED;
+
+				Genode::log(&p, ": SYNC");
 
 				/* pass packet to server side */
 				source.submit_packet(packet);
@@ -488,6 +492,8 @@ class Vfs::Fs_file_system : public File_system
 			/* wait until packet was acknowledged */
 			handle.queued_read_state = Handle_state::Queued_state::QUEUED;
 
+Genode::log(&buf, ": READ");
+
 			/* pass packet to server side */
 			source.submit_packet(packet_in);
 
@@ -537,7 +543,7 @@ class Vfs::Fs_file_system : public File_system
 				                            seek_offset);
 
 				memcpy(source.packet_content(packet_in), buf, count);
-
+Genode::log(&buf, ": WRITE");
 				/* pass packet to server side */
 				source.submit_packet(packet_in);
 			} catch (::File_system::Session::Tx::Source::Packet_alloc_failed) {
@@ -573,17 +579,20 @@ class Vfs::Fs_file_system : public File_system
 
 					switch (packet.operation()) {
 					case Packet_descriptor::READ_READY:
+						Genode::log("ack READ_READY");
 						handle.read_ready_state = Handle_state::Read_ready_state::READY;
 						_post_signal_hook.arm_io_event(handle.context);
 						break;
 
 					case Packet_descriptor::READ:
+						Genode::log("ack READ");
 						handle.queued_read_packet = packet;
 						handle.queued_read_state  = Handle_state::Queued_state::ACK;
 						_post_signal_hook.arm_io_event(handle.context);
 						break;
 
 					case Packet_descriptor::WRITE:
+						Genode::log("ack WRITE");
 						/*
 						 * Notify anyone who might have failed on
 						 * 'alloc_packet()'
@@ -592,12 +601,14 @@ class Vfs::Fs_file_system : public File_system
 						break;
 
 					case Packet_descriptor::SYNC:
+						Genode::log("ack SYNC");
 						handle.queued_sync_packet = packet;
 						handle.queued_sync_state  = Handle_state::Queued_state::ACK;
 						_post_signal_hook.arm_io_event(handle.context);
 						break;
 
 					case Packet_descriptor::CONTENT_CHANGED:
+						Genode::log("ack CONTENT_CHANGED");
 						/* previously handled */
 						break;
 					}
@@ -638,7 +649,7 @@ class Vfs::Fs_file_system : public File_system
 			_fs(_env.env(), _fs_packet_alloc,
 			    _label.string(), _root.string(),
 			    config.attribute_value("writeable", true),
-			    ::File_system::DEFAULT_TX_BUF_SIZE)
+			    /*::File_system::DEFAULT_TX_BUF_SIZE*/4096)
 		{
 			_fs.sigh_ack_avail(_ack_handler);
 			_fs.sigh_ready_to_submit(_ready_handler);
@@ -795,6 +806,7 @@ class Vfs::Fs_file_system : public File_system
 		Open_result open(char const *path, unsigned vfs_mode, Vfs_handle **out_handle,
 		                 Genode::Allocator& alloc) override
 		{
+Genode::log("*** Fs open(", path, ")");
 			Lock::Guard guard(_lock);
 
 			Absolute_path dir_path(path);
@@ -815,28 +827,32 @@ class Vfs::Fs_file_system : public File_system
 			bool const create = vfs_mode & OPEN_MODE_CREATE;
 
 			try {
+Genode::log("*** Fs open(", path, "): check 1");
+
 				::File_system::Dir_handle dir = _fs.dir(dir_path.base(), false);
+Genode::log("*** Fs open(", path, "): check 2");
 				Fs_handle_guard dir_guard(*this, _fs, dir, _handle_space, _fs,
 				                          _env.io_handler());
-
+Genode::log("*** Fs open(", path, "): check 3");
 				::File_system::File_handle file = _fs.file(dir,
 				                                           file_name.base() + 1,
 				                                           mode, create);
-
+Genode::log("*** Fs open(", path, "): check 4");
 				*out_handle = new (alloc)
 					Fs_vfs_file_handle(*this, alloc, vfs_mode, _handle_space,
 					                   file, _fs, _env.io_handler());
+Genode::log("*** Fs open(", path, "): finished");
 			}
-			catch (::File_system::Lookup_failed)       { return OPEN_ERR_UNACCESSIBLE;  }
-			catch (::File_system::Permission_denied)   { return OPEN_ERR_NO_PERM;       }
-			catch (::File_system::Invalid_handle)      { return OPEN_ERR_UNACCESSIBLE;  }
-			catch (::File_system::Node_already_exists) { return OPEN_ERR_EXISTS;        }
-			catch (::File_system::Invalid_name)        { return OPEN_ERR_NAME_TOO_LONG; }
-			catch (::File_system::Name_too_long)       { return OPEN_ERR_NAME_TOO_LONG; }
-			catch (::File_system::No_space)            { return OPEN_ERR_NO_SPACE;      }
-			catch (::File_system::Unavailable)         { return OPEN_ERR_UNACCESSIBLE;  }
-			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
-			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
+			catch (::File_system::Lookup_failed)       { Genode::error("1"); return OPEN_ERR_UNACCESSIBLE;  }
+			catch (::File_system::Permission_denied)   { Genode::error("2"); return OPEN_ERR_NO_PERM;       }
+			catch (::File_system::Invalid_handle)      { Genode::error("3"); return OPEN_ERR_UNACCESSIBLE;  }
+			catch (::File_system::Node_already_exists) { Genode::error("4"); return OPEN_ERR_EXISTS;        }
+			catch (::File_system::Invalid_name)        { Genode::error("5"); return OPEN_ERR_NAME_TOO_LONG; }
+			catch (::File_system::Name_too_long)       { Genode::error("6"); return OPEN_ERR_NAME_TOO_LONG; }
+			catch (::File_system::No_space)            { Genode::error("7"); return OPEN_ERR_NO_SPACE;      }
+			catch (::File_system::Unavailable)         { Genode::error("8"); return OPEN_ERR_UNACCESSIBLE;  }
+			catch (Genode::Out_of_ram)  { Genode::error("9"); return OPEN_ERR_OUT_OF_RAM; }
+			catch (Genode::Out_of_caps) { Genode::error("10"); return OPEN_ERR_OUT_OF_CAPS; }
 
 			return OPEN_OK;
 		}
@@ -1028,7 +1044,7 @@ class Vfs::Fs_file_system : public File_system
 			                         0, 0);
 
 			handle->read_ready_state = Handle_state::Read_ready_state::PENDING;
-
+Genode::log(&vfs_handle, ": READ_READY");
 			source.submit_packet(packet);
 
 			/*
