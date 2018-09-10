@@ -642,15 +642,19 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			 * writeable (connected or error).
 			 */
 
+//			Genode::log("Lxip_connect_file::poll(): ", trigger_io_response);
+
 			using namespace Linux;
 
 			file f;
 			f.f_flags = 0;
 			if (_sock.ops->poll(&f, &_sock, nullptr) & (POLLOUT_SET)) {
+//				Genode::log("Lxip_connect_file::poll(): returning true");
 				if (trigger_io_response)
 					_parent.trigger_io_response(context);
 				return true;
 			}
+//			Genode::log("Lxip_connect_file::poll(): returning false");
 			return false;
 		}
 
@@ -674,8 +678,9 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 			addr->sin_addr.s_addr = get_addr(handle.content_buffer);
 			addr->sin_family      = AF_INET;
 
+Genode::log("Vfs::Lxip_connect_file: connect()");
 			_write_err = _sock.ops->connect(&_sock, (sockaddr *)addr, sizeof(addr_storage), O_NONBLOCK);
-
+Genode::log("Vfs::Lxip_connect_file: connect() returned: ", _write_err);
 			switch (_write_err) {
 			case Lxip::Io_result::LINUX_EINPROGRESS:
 				_connecting = true;
@@ -714,6 +719,8 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 		                   char *dst, Genode::size_t len,
 		                   file_size /* ignored */) override
 		{
+			Genode::log("Vfs::Lxip_connect_file::read()");
+			
 			int so_error = 0;
 			int opt_len = sizeof(so_error);
 			int res = sock_getsockopt(&_sock, SOL_SOCKET, SO_ERROR, (char*)&so_error, &opt_len);
