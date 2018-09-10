@@ -245,11 +245,15 @@ struct Socket_fs::Context : Libc::Plugin_context
 				return -1;
 			}
 
-			if (strncmp(connect_status, "connected", connect_status_len) == 0)
+			if (strncmp(connect_status, "connected", connect_status_len) == 0) {
+				Genode::log("socket_fs: connected");
 				return 0;
+			}
 
-			if (strncmp(connect_status, "connection refused", connect_status_len) == 0)
+			if (strncmp(connect_status, "connection refused", connect_status_len) == 0) {
+				Genode::log("socket_fs: connection refused");
 				return Errno(ECONNREFUSED);
+			}
 
 			Genode::error("socket_fs: unhandled connection state");
 			return Errno(ECONNREFUSED);
@@ -598,6 +602,8 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(ENOTSOCK);
 
+Genode::log("*** socket_fs_connect(): ", context->fd_flags() & O_NONBLOCK);
+
 	if (!addr) return Errno(EFAULT);
 
 	if (addr->sa_family != AF_INET) {
@@ -608,6 +614,8 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 	switch (context->state()) {
 	case Context::UNCONNECTED:
 		{
+Genode::log("socket_fs_connect(): connecting from state UNCONNECTED");
+
 			Sockaddr_string addr_string;
 			try {
 				addr_string = Sockaddr_string(host_string(*(sockaddr_in const *)addr),
@@ -619,7 +627,7 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 
 			int const len = strlen(addr_string.base());
 			int const n   = write(context->connect_fd(), addr_string.base(), len);
-
+Genode::log("socket_fs_connect(): written: ", n, ", of: ", len);
 			if (n != len) return Errno(ECONNREFUSED);
 
 			if (context->fd_flags() & O_NONBLOCK)
@@ -627,11 +635,15 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 
 			/* block until socket is ready for writing */
 
+			Genode::log("socket_fs_connect(): calling select()");
+
 			fd_set writefds;
 			FD_ZERO(&writefds);
 			FD_SET(libc_fd, &writefds);
 			struct timeval timeout {1, 0};
 			int res = select(libc_fd + 1, NULL, &writefds, NULL, &timeout);
+
+			Genode::log("socket_fs_connect(): select() returned: ", res);
 
 			int connect_status = context->read_connect_status();
 
@@ -650,6 +662,8 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 		return Errno(EISCONN);
 	case Context::CONNECTING:
 		{
+Genode::log("socket_fs_connect(): connecting from state CONNECTING");
+
 			int connect_status = context->read_connect_status();
 
 			if (connect_status == 0)
