@@ -34,11 +34,11 @@ append config {
 		<resource name="RAM" quantum="2M" />
 		<provides> <service name="Timer" /> </provides>
 	</start>
-	<start name="rtc_drv">
+	<start name="rtc_drv" ld="no">
 		<resource name="RAM" quantum="2M" />
 		<provides> <service name="Rtc" /> </provides>
 	</start>
-	<start name="nic_drv">
+	<start name="nic_drv" ld="no">
 		<binary name="} [nic_drv_binary] {"/>
 		<resource name="RAM" quantum="4M" />
 		<provides> <service name="Nic" /> </provides>
@@ -110,8 +110,8 @@ set boot_modules {
 	java jli.lib.so httpserver.jar
 	java.lib.so jvm.lib.so jzip.lib.so jimage.lib.so
 	libc.lib.so libm.lib.so zlib.lib.so nio.lib.so jnet.lib.so
-	posix.lib.so pthread.lib.so stdcxx.lib.so ffi.lib.so
-	vfs_lxip.lib.so lxip.lib.so libc_pipe.lib.so
+	pthread.lib.so stdcxx.lib.so
+	vfs.lib.so vfs_lxip.lib.so lxip.lib.so libc_pipe.lib.so
 	classes.tar tzdb.dat
 }
 
