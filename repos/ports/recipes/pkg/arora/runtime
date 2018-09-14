@@ -12,6 +12,7 @@
 
 		<rom label="init.config"/>
 		<rom label="egl.lib.so"/>
+		<rom label="egl_swrast.lib.so"/>
 		<rom label="expat.lib.so"/>
 		<rom label="freetype.lib.so"/>
 		<rom label="glapi.lib.so"/>
