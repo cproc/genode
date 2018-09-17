@@ -98,12 +98,6 @@ void Cpu_sampler::Cpu_thread_component::take_sample()
 }
 
 
-void Cpu_sampler::Cpu_thread_component::reset()
-{
-	_sample_buf_index = 0;
-}
-
-
 void Cpu_sampler::Cpu_thread_component::flush()
 {
 	if (_sample_buf_index == 0)
