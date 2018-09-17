@@ -127,7 +127,7 @@ namespace {
 		                           Affinity             const &affinity) override
 		{
 			Lock::Guard guard(_lock);
-
+Genode::log("Env::session(): ", name.string());
 			/*
 			 * Since we account for the backing store for session meta data on
 			 * the route between client and server, the session quota provided
@@ -154,9 +154,10 @@ namespace {
 					Arg_string::set_arg(argbuf, sizeof(argbuf), "cap_quota",
 					                    String<32>(cap_quota).string());
 
+Genode::log("Env::session(): calling _parent.session()");
 					Session_capability cap =
 						_parent.session(id, name, Parent::Session_args(argbuf), affinity);
-
+Genode::log("Env::session(): parent.session() returned");
 					if (cap.valid())
 						return cap;
 
@@ -165,12 +166,15 @@ namespace {
 				}
 
 				catch (Insufficient_ram_quota) {
+					Genode::error("Insufficient_ram_quota");
 					ram_quota = Ram_quota { ram_quota.value + 4096 }; }
 
 				catch (Insufficient_cap_quota) {
+					Genode::error("Insufficient_cap_quota");
 					cap_quota = Cap_quota { cap_quota.value + 4 }; }
 
 				catch (Out_of_ram) {
+					Genode::error("Out_of_ram");
 					if (ram_quota.value > ram().avail_ram().value) {
 						Parent::Resource_args args(String<64>("ram_quota=", ram_quota));
 						_parent.resource_request(args);
@@ -178,6 +182,7 @@ namespace {
 				}
 
 				catch (Out_of_caps) {
+					Genode::error("Out_of_caps");
 					if (cap_quota.value > pd().avail_caps().value) {
 						Parent::Resource_args args(String<64>("cap_quota=", cap_quota));
 						_parent.resource_request(args);

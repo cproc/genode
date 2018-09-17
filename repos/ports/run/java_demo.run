@@ -56,27 +56,29 @@ append config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="100" />
+	
 	<start name="timer">
 		<resource name="RAM" quantum="2M" />
 		<provides> <service name="Timer" /> </provides>
 	</start>}
 
-append_if [have_spec nit6_solox] config {
-	<start name="gpio_drv" caps="200">
-		<resource name="RAM" quantum="8M"/>
-		<provides><service name="Gpio"/></provides>
-		<config/>
-	</start>
-}
-append config {
-	<start name="nic_drv" caps="300" ld="no">
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="32M" />
-		<provides> <service name="Nic" /> </provides>
-		<config ld_verbose="yes">}
+#append_if [have_spec nit6_solox] config {
+#	<start name="gpio_drv" caps="200">
+#		<resource name="RAM" quantum="8M"/>
+#		<provides><service name="Gpio"/></provides>
+#		<config/>
+#	</start>
+#}
 
-append_if [have_spec linux] config {
-			<nic tap="} $tap {"/> }
+#append config {
+#	<start name="nic_drv" caps="300" ld="yes">
+#		<binary name="} [nic_drv_binary] {"/>
+#		<resource name="RAM" quantum="32M" />
+#		<provides> <service name="Nic" /> </provides>
+#		<config ld_verbose="yes">}
+#
+#append_if [have_spec linux] config {
+#			<nic tap="} $tap {"/> }
 
 #append_if [have_spec nit6_solox] config {
 #			<card name="fec0" type="fsl,imx6sx-fec" mii="rgmii" phy="phy0" irq="150" mmio="0x2188000">
@@ -87,12 +89,13 @@ append_if [have_spec linux] config {
 #			</card>
 #			<card name="fec1" type="fsl,imx6sx-fec" mii="rgmii" phy="phy1" irq="134" mmio="0x21b4000"/>}
 #
-append config {
-		</config>
-	</start>
-}
+#append config {
+#		</config>
+#	</start>
+#}
 
 append config {
+
 <!--
 	<start name="disk">
 		<binary name="ram_fs" />
@@ -119,20 +122,23 @@ append config {
 			</config>
 		</start>
 -->
-<!--
-		<start name="cpu_sampler" caps="1000">
-			<resource name="RAM" quantum="64M"/>
-			<provides>
-				<service name="CPU"/>
-			</provides>
-			<config sample_interval_ms="100" sample_duration_s="1000">
-				<policy label_prefix="java" />
-			</config>
-		</start>
--->
+
+	<start name="cpu_sampler" caps="1000">
+		<resource name="RAM" quantum="64M"/>
+		<provides>
+			<service name="CPU"/>
+		</provides>
+		<config sample_interval_ms="100" sample_duration_s="100">
+			<policy label_prefix="java" />
+		</config>
+	</start>
+
 	<start name="java" caps="1000">
 		<resource name="RAM" quantum="512M" />
 		<route>
+		
+			<service name="CPU"> <child name="cpu_sampler"/> </service>
+
 			<service name="ROM" label="zip.lib.so">
 				<parent label="jzip.lib.so" />
 			</service>
@@ -140,7 +146,6 @@ append config {
 				<parent label="jnet.lib.so" />
 			</service>
 			<!--<service name="Nic"><child name="nic_drv" label="fec1" /></service>-->
-			<!--<service name="CPU"> <child name="cpu_sampler"/> </service>-->
 			<!-- <service name="LOG"><child name="fs_log" /></service> -->
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>

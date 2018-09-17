@@ -67,6 +67,8 @@ Rpc_exception_code Genode::ipc_call(Native_capability dst,
 		/* printf doesn't work here since for IPC also rcv_prepare* is used */
 		nova_die();
 
+static bool recursion = false;
+
 	/* establish the mapping via a portal traversal */
 	uint8_t res = Nova::call(dst.local_name());
 

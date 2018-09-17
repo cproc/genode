@@ -77,7 +77,7 @@ Affinity::Location Platform_thread::affinity() const { return _location; }
 int Platform_thread::start(void *ip, void *sp)
 {
 	using namespace Nova;
-
+Genode::log("Platform_thread::start(): ", pd_name(), "->", _name);
 	if (!_pager) {
 		error("pager undefined");
 		return -1;

@@ -446,6 +446,7 @@ void Init::Child::init(Cpu_session &session, Cpu_session_capability cap)
 Init::Child::Route Init::Child::resolve_session_request(Service::Name const &service_name,
                                                         Session_label const &label)
 {
+Genode::log("Init::Child::resolve_session_request(): ", service_name);
 	/* check for "config" ROM request */
 	if (service_name == Rom_session::service_name() &&
 	    label.last_element() == "config") {

@@ -31,7 +31,10 @@ struct Genode::Cpu_session_client : Rpc_client<Cpu_session>
 		return call<Rpc_create_thread>(pd, name, affinity, weight, utcb); }
 
 	void kill_thread(Thread_capability thread) override {
-		call<Rpc_kill_thread>(thread); }
+		Genode::log("kill_thread()");
+		call<Rpc_kill_thread>(thread);
+		Genode::log("kill_thread() returned");
+	}
 
 	void exception_sigh(Signal_context_capability sigh) override {
 		call<Rpc_exception_sigh>(sigh); }

@@ -55,14 +55,17 @@ void Child::notify_resource_avail() const
 
 void Child::announce(Parent::Service_name const &name)
 {
+Genode::log("Child::announce()");
 	if (!name.valid_string()) return;
 
 	_policy.announce_service(name.string());
+Genode::log("Child::announce() finished");
 }
 
 
 void Child::session_sigh(Signal_context_capability sigh)
 {
+Genode::log("Child::session_sigh()");
 	_session_sigh = sigh;
 
 	if (!_session_sigh.valid())
@@ -86,6 +89,7 @@ void Child::session_sigh(Signal_context_capability sigh)
 				Signal_transmitter(sigh).submit();
 		}
 	});
+Genode::log("Child::session_sigh() finished");
 }
 
 
@@ -168,6 +172,7 @@ Session_capability Child::session(Parent::Client::Id id,
                                   Parent::Session_args const &args,
                                   Affinity             const &affinity)
 {
+Genode::log("Child::session(): ", name.string());
 	if (!name.valid_string() || !args.valid_string() || _pd.closed())
 		throw Service_denied();
 
@@ -283,12 +288,15 @@ Session_capability Child::session(Parent::Client::Id id,
 	if (cap.valid())
 		session.phase = Session_state::CAP_HANDED_OUT;
 
+Genode::log("Child::session() finished");
+
 	return cap;
 }
 
 
 Session_capability Child::session_cap(Client::Id id)
 {
+Genode::log("Child::session_cap()");
 	Session_capability cap;
 
 	auto lamda = [&] (Session_state &session) {
@@ -330,12 +338,14 @@ Session_capability Child::session_cap(Client::Id id)
 		warning(_policy.name(), " requested session cap for unknown ID"); }
 
 	_policy.session_state_changed();
+Genode::log("Child::session_cap() finished");
 	return cap;
 }
 
 
 Parent::Upgrade_result Child::upgrade(Client::Id id, Parent::Upgrade_args const &args)
 {
+Genode::log("Child::upgrade()");
 	if (!args.valid_string()) {
 		warning("no valid session-upgrade arguments");
 		return UPGRADE_DONE;
@@ -408,6 +418,7 @@ Parent::Upgrade_result Child::upgrade(Client::Id id, Parent::Upgrade_args const 
 	catch (Id_space<Parent::Client>::Unknown_id) { }
 
 	_policy.session_state_changed();
+Genode::log("Child::upgrade() finished");
 	return result;
 }
 
@@ -501,6 +512,7 @@ Child::Close_result Child::_close(Session_state &session)
 
 Child::Close_result Child::close(Client::Id id)
 {
+Genode::log("Child::close()");
 	/* refuse to close the child's initial sessions */
 	if (Parent::Env::session_id(id))
 		return CLOSE_DONE;
@@ -509,9 +521,10 @@ Child::Close_result Child::close(Client::Id id)
 		Close_result result = CLOSE_PENDING;
 		auto lamda = [&] (Session_state &session) { result = _close(session); };
 		_id_space.apply<Session_state>(id, lamda);
+Genode::log("Child::close() finished");
 		return result;
 	}
-	catch (Id_space<Parent::Client>::Unknown_id) { return CLOSE_DONE; }
+	catch (Id_space<Parent::Client>::Unknown_id) { Genode::log("Child::close() finished 2"); return CLOSE_DONE; }
 }
 
 
@@ -541,6 +554,8 @@ void Child::session_closed(Session_state &session)
 
 void Child::session_response(Server::Id id, Session_response response)
 {
+Genode::log("Child::session_response()");
+
 	try {
 		_policy.server_id_space().apply<Session_state>(id, [&] (Session_state &session) {
 
@@ -627,11 +642,13 @@ void Child::session_response(Server::Id id, Session_response response)
 	catch (Child_policy::Nonexistent_id_space) { }
 	catch (Id_space<Parent::Client>::Unknown_id) {
 		warning("unexpected session response for unknown session"); }
+Genode::log("Child::session_response() finished");
 }
 
 
 void Child::deliver_session_cap(Server::Id id, Session_capability cap)
 {
+Genode::log("Child::deliver_session_cap()");
 	try {
 		_policy.server_id_space().apply<Session_state>(id, [&] (Session_state &session) {
 
@@ -667,11 +684,13 @@ void Child::deliver_session_cap(Server::Id id, Session_capability cap)
 	}
 	catch (Child_policy::Nonexistent_id_space) { }
 	catch (Id_space<Parent::Client>::Unknown_id) { }
+Genode::log("Child::deliver_session_cap() finished");
 }
 
 
 void Child::exit(int exit_value)
 {
+Genode::log("Child::exit()");
 	/*
 	 * This function receives the hint from the child that now, its a good time
 	 * to kill it. An inherited child class could use this hint to schedule the
@@ -680,12 +699,14 @@ void Child::exit(int exit_value)
 	 * Note that the child object must not be destructed from by this function
 	 * because it is executed by the thread contained in the child object.
 	 */
-	return _policy.exit(exit_value);
+	/*return*/ _policy.exit(exit_value);
+Genode::log("Child::exit() finished");
 }
 
 
 Thread_capability Child::main_thread_cap() const
 {
+Genode::log("Child::main_thread_cap()");
 	/*
 	 * The '_initial_thread' is always constructed when this function is
 	 * called because the RPC call originates from the active child.
@@ -697,13 +718,17 @@ Thread_capability Child::main_thread_cap() const
 
 void Child::resource_avail_sigh(Signal_context_capability sigh)
 {
+Genode::log("Child::resource_avail_sigh()");
 	_resource_avail_sigh = sigh;
+Genode::log("Child::resource_avail_sigh() finished");
 }
 
 
 void Child::resource_request(Resource_args const &args)
 {
+Genode::log("Child::resource_request()");
 	_policy.resource_request(args);
+Genode::log("Child::resource_request() finished");
 }
 
 
@@ -712,13 +737,20 @@ void Child::yield_sigh(Signal_context_capability sigh) { _yield_sigh = sigh; }
 
 Parent::Resource_args Child::yield_request()
 {
+Genode::log("Child::yield_request()");
+
 	Lock::Guard guard(_yield_request_lock);
+Genode::log("Child::yield_request() finished");
 
 	return _yield_request_args;
 }
 
 
-void Child::yield_response() { _policy.yield_response(); }
+void Child::yield_response() {
+Genode::log("Child::yield_response()");
+	_policy.yield_response();
+Genode::log("Child::yield_response() finished");
+}
 
 
 namespace {

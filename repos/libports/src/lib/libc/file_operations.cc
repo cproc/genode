@@ -647,9 +647,9 @@ extern "C" int rmdir(const char *path)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
-	static int count;
-	Genode::log(++count);
-	Genode::log("stat: ", path);
+	//static int count;
+	//Genode::log(++count);
+	//Genode::log("stat: ", path);
 	//PDBG(path);
 	//for (volatile unsigned long i = 0; i < 1000000; i++) { }
 	//for (;;);

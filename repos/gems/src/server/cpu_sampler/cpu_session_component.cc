@@ -57,9 +57,9 @@ void Cpu_sampler::Cpu_session_component::kill_thread(Thread_capability thread_ca
 
 		if (cpu_thread->cap() == thread_cap) {
 			_thread_list.remove(cpu_thread_element);
+			_thread_list_change_handler.thread_list_changed();
 			destroy(_md_alloc, cpu_thread_element);
 			destroy(_md_alloc, cpu_thread);
-			_thread_list_change_handler.thread_list_changed();
 		}
 	};
 

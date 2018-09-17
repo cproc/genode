@@ -37,7 +37,7 @@ namespace Genode {
 			 * Constructor
 			 */
 			Log_session_component(const char *label) {
-				strncpy(_label, label, sizeof(_label)); }
+				strncpy(_label, label, sizeof(_label)); Genode::log("Log_session_component()");}
 
 
 			/*****************

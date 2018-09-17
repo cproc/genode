@@ -25,7 +25,11 @@ struct Genode::Parent_client : Rpc_client<Parent>
 	explicit Parent_client(Parent_capability parent)
 	: Rpc_client<Parent>(parent) { }
 
-	void exit(int exit_value) override { call<Rpc_exit>(exit_value); }
+	void exit(int exit_value) override {
+		Genode::log("Parent_client::exit()");
+		call<Rpc_exit>(exit_value);
+		Genode::log("Parent_client::exit() returned");
+	}
 
 	void announce(Service_name const &service) override {
 		call<Rpc_announce>(service); }

@@ -24,9 +24,10 @@ void __attribute((noinline)) func()
 
 extern int label_in_loop;
 
-void Component::construct(Genode::Env &)
+void Component::construct(Genode::Env &env)
 {
 	Genode::log("Test started. func: ", &label_in_loop);
 
-	func();
+	//func();
+	env.parent().exit(0);
 }
