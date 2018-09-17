@@ -116,10 +116,14 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 
 		auto remove_lambda = [&] (Thread_element *cpu_thread_element) {
 
+			Cpu_thread_component *cpu_thread = cpu_thread_element->object();
+
 			if (verbose)
 				Genode::log("removing thread ",
-				            cpu_thread_element->object()->label().string(),
+				            cpu_thread->label().string(),
 				            " from selection");
+
+			cpu_thread->flush();
 
 			selected_thread_list.remove(cpu_thread_element);
 			destroy(&alloc, cpu_thread_element);
@@ -140,7 +144,6 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 			try {
 
 				Session_policy policy(cpu_thread->label(), config.xml());
-				cpu_thread->reset();
 				selected_thread_list.insert(new (&alloc)
 				                            Thread_element(cpu_thread));
 
