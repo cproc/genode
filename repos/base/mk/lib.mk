@@ -268,5 +268,5 @@ $(LIB_SO).stripped: $(LIB_SO)
 $(DEBUG_SO): $(LIB_SO)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $@
 
-$(INSTALL_SO): $(LIB_SO).stripped
+$(INSTALL_SO): $(LIB_SO)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $@
