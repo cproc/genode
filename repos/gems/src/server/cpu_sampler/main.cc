@@ -123,7 +123,7 @@ struct Cpu_sampler::Main : Thread_list_change_handler
 				            cpu_thread->label().string(),
 				            " from selection");
 
-			cpu_thread->flush();
+			//cpu_thread->flush();
 
 			selected_thread_list.remove(cpu_thread_element);
 			destroy(&alloc, cpu_thread_element);

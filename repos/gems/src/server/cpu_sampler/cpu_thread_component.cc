@@ -100,12 +100,16 @@ void Cpu_sampler::Cpu_thread_component::take_sample()
 
 void Cpu_sampler::Cpu_thread_component::flush()
 {
+Genode::log(this, ": flush()");
 	if (_sample_buf_index == 0)
 		return;
+Genode::log(this, ": flush(): check 1");
 
-	if (!_log.constructed())
-		_log.construct(_env, _log_session_label);
-
+	if (!_log.constructed()) {
+Genode::log(this, ": flush(): constructing log session");
+		_log.construct(_env, /*_log_session_label*/"test");
+	}
+Genode::log(this, ": flush(): check 2");
 	/* number of hex characters + newline + '\0' */
 	enum { SAMPLE_STRING_SIZE = 2 * sizeof(addr_t) + 1 + 1 };
 
@@ -117,7 +121,7 @@ void Cpu_sampler::Cpu_thread_component::flush()
 		format_string = "%16lX\n";
 	else
 		format_string = "%8X\n";
-
+Genode::log(this, ": flush(): check 3");
 	for (unsigned int i = 0; i < _sample_buf_index; i++) {
 		snprintf(sample_string, SAMPLE_STRING_SIZE, format_string,
 		         _sample_buf[i]);
@@ -125,6 +129,7 @@ void Cpu_sampler::Cpu_thread_component::flush()
 	}
 
 	_sample_buf_index = 0;
+Genode::log(this, ": flush() finished");
 }
 
 
