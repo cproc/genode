@@ -60,8 +60,6 @@ Cpu_sampler::Cpu_thread_component::Cpu_thread_component(
 
 Cpu_sampler::Cpu_thread_component::~Cpu_thread_component()
 {
-	flush();
-
 	_cpu_session_component.thread_ep().dissolve(this);
 }
 
@@ -95,12 +93,6 @@ void Cpu_sampler::Cpu_thread_component::take_sample()
 		Genode::log("thread state access failed");
 
 	}
-}
-
-
-void Cpu_sampler::Cpu_thread_component::reset()
-{
-	_sample_buf_index = 0;
 }
 
 
