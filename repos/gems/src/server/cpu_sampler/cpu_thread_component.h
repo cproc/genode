@@ -72,7 +72,6 @@ class Cpu_sampler::Cpu_thread_component : public Rpc_object<Cpu_thread>
 		Session_label &label() { return _label; }
 
 		void take_sample();
-		void reset();
 		void flush();
 
 		/**************************
