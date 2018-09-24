@@ -198,7 +198,7 @@ STRIP_TARGET_CMD ?= $(STRIP) -o $@ $<
 $(TARGET).stripped: $(TARGET)
 	$(VERBOSE)$(STRIP_TARGET_CMD)
 
-$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
+$(INSTALL_DIR)/$(TARGET): $(TARGET)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $@
 
 ifneq ($(DEBUG_DIR),)

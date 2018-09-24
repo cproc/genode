@@ -41,6 +41,12 @@ set config {
 		</route>
 		<config ld_verbose="no">
 			<arg value="/bin/java" />
+			<arg value="-XX:+PrintCommandLineFlags" />
+			<arg value="-XX:+PrintCompilation" />
+			<arg value="-XX:+CITime" />
+			<arg value="-XX:+NeverActAsServerClassMachine" />
+			<!--<arg value="-XX:+TraceClassLoading" />-->
+			<!--<arg value="-Xcomp"/>-->
 			<arg value="-jar" />
 			<arg value="hello.jar" />
 			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
@@ -80,7 +86,7 @@ set boot_modules {
 	java jli.lib.so hello.tar
 	java.lib.so jvm.lib.so jzip.lib.so jimage.lib.so
 	libc.lib.so libm.lib.so zlib.lib.so nio.lib.so jnet.lib.so
-	vfs.lib.so pthread.lib.so stdcxx.lib.so
+	vfs.lib.so pthread.lib.so stdcxx.lib.so libc_pipe.lib.so
 	classes.tar
 }
 

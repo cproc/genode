@@ -189,7 +189,7 @@ append config {
 	</start>
 -->
 
-	<start name="java" caps="500">
+	<start name="java" caps="1000">
 		<resource name="RAM" quantum="256M" />
 		<route>
 			<service name="ROM" label="zip.lib.so">
@@ -204,6 +204,10 @@ append config {
 		</route>
 		<config ld_verbose="no">
 			<arg value="/bin/java" />
+			<arg value="-XX:+PrintCompilation" />
+			<arg value="-XX:+CITime" />
+			<arg value="-XX:+NeverActAsServerClassMachine" />
+			<!--<arg velue="-XX:TieredStopAtLevel=1" />-->
 			<arg value="-jar" />
 			<arg value="servlet.jar" />
 			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket" />

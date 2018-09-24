@@ -34,7 +34,6 @@ extern "C"
 		                                   "pthread", nullptr,
 		                                   Genode::Affinity::Location());
 
-
 		PDBG("start ", start_routine);
 		if (!thread_obj)
 			return EAGAIN;

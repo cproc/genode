@@ -22,7 +22,7 @@ extern void genode_printf(const char *format, ...) __attribute__((format(printf,
 #ifdef GENODE_RELEASE
 #define DO_PDBG 0
 #else
-#define DO_PDBG 1
+#define DO_PDBG 0
 #endif /* GENODE_RELEASE */
 
 #define ESC_DBG  "\033[33m"
