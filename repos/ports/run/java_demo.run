@@ -60,12 +60,12 @@ append_if [have_spec nit6_solox] config {
 		<config/>
 	</start>
 }
-append config {
-	<start name="nic_drv" caps="300" ld="no">
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="32M" />
-		<provides> <service name="Nic" /> </provides>
-		<config ld_verbose="yes">}
+#append config {
+#	<start name="nic_drv" caps="300" ld="no">
+#		<binary name="} [nic_drv_binary] {"/>
+#		<resource name="RAM" quantum="32M" />
+#		<provides> <service name="Nic" /> </provides>
+#		<config ld_verbose="yes">}
 
 #append_if [have_spec linux] config {
 #			<nic tap="} $tap {"/> }
@@ -80,6 +80,7 @@ append_if [have_spec nit6_solox] config {
 			<card name="fec1" type="fsl,imx6sx-fec" mii="rgmii" phy="phy1" irq="134" mmio="0x21b4000"/>}
 
 append config {
+<!--
 		</config>
 	</start>
 
@@ -107,7 +108,7 @@ append config {
 				<default-policy />
 			</config>
 		</start>
-
+-->
 <!--
 	<start name="dynamic_rom">
 		<resource name="RAM" quantum="8M" />
