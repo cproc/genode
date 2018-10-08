@@ -23,7 +23,7 @@ void Genode::Timeout_thread::entry()
 		Signal s = _receiver.wait_for_signal();
 
 		/* handle timouts of this point in time */
-		Genode::Alarm_scheduler::handle(_timer.elapsed_ms());
+		Genode::Alarm_scheduler::handle(_timer.curr_time().trunc_to_plain_ms().value);
 	}
 }
 

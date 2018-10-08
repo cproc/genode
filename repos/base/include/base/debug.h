@@ -17,8 +17,8 @@
 
 #include <base/log.h>
 
-#define PDBG(...) \
-    Genode::log("\033[33m", __PRETTY_FUNCTION__, "\033[0m ", ##__VA_ARGS__)
+#define PDBG(...)
+//    Genode::log("\033[33m", __PRETTY_FUNCTION__, "\033[0m ", ##__VA_ARGS__)
 
 #endif /* GENODE_RELEASE */
 #endif /* _INCLUDE__BASE__DEBUG_H_ */

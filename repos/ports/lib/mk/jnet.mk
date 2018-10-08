@@ -1,4 +1,4 @@
-LIBS          = libc
+LIBS          = libc pthread
 SHARED_LIB    = yes
 JDK_BASE      = $(call select_from_ports,jdk)/src/app/jdk/jdk/src/java.base
 JDK_GENERATED = $(call select_from_ports,jdk_generated)/src/app/jdk

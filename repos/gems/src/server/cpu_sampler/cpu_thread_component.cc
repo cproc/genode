@@ -60,6 +60,7 @@ Cpu_sampler::Cpu_thread_component::Cpu_thread_component(
 
 Cpu_sampler::Cpu_thread_component::~Cpu_thread_component()
 {
+	flush();
 	_cpu_session_component.thread_ep().dissolve(this);
 }
 

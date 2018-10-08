@@ -44,12 +44,17 @@ static __attribute__((constructor)) Thread * main_thread()
 	return thread;
 }
 
-
+extern "C" void wait_for_continue();
 /*
  * pthread
  */
 void pthread::Thread_object::entry()
 {
+	static bool first = true;
+	if (first) {
+		first = false;
+		//wait_for_continue();
+	}
 	/* obtain stack attributes of new thread */
 	Thread::Stack_info info = Thread::mystack();
 	_stack_addr = (void *)info.base;

@@ -32,7 +32,7 @@ class Cpu_sampler::Cpu_thread_component : public Rpc_object<Cpu_thread>
 {
 	private:
 
-		enum { SAMPLE_BUF_SIZE = 1024 };
+		enum { SAMPLE_BUF_SIZE = 10240 };
 
 		Cpu_session_component &_cpu_session_component;
 		Env                   &_env;

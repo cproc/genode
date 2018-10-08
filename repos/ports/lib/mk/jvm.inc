@@ -11,13 +11,19 @@ CC_OPT += -fpermissive -Wno-comment -Wno-reorder -Wno-switch -Wno-unused-variabl
           -Wno-unused-local-typedefs -Wno-unused-but-set-variable \
           -Wno-parentheses
 
+CC_OPT += -fno-delete-null-pointer-checks
+
 CC_OPT += -D__GENODE__
 
 ##XXX: may have to use our own
 CC_OPT += -DINCLUDE_SUFFIX_OS=_bsd -DTARGET_COMPILER_gcc -D_ALLBSD_SOURCE -DUSE_LIBRARY_BASED_TLS_ONLY \
           -DVM_LITTLE_ENDIAN
 
-CC_OLEVEL = -O0
+CC_OPT += -DCOMPILER1 -DCOMPILER2
+
+CC_OPT += -DPRODUCT
+
+#CC_OLEVEL = -O0
 
 ## DEBUGGING ##
 #CC_OPT += -DASSERT
