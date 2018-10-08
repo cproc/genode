@@ -11,7 +11,7 @@ $(TARGET): $(INSTALL_DIR)/$(CORE_OBJ) $(DEBUG_DIR)/$(CORE_OBJ)
 $(CORE_OBJ).stripped: $(CORE_OBJ)
 	$(VERBOSE)$(STRIP) --strip-debug -o $@ $<
 
-$(INSTALL_DIR)/$(CORE_OBJ) : $(CORE_OBJ).stripped
+$(INSTALL_DIR)/$(CORE_OBJ) : $(CORE_OBJ)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $(INSTALL_DIR)/$(CORE_OBJ)
 
 $(DEBUG_DIR)/$(CORE_OBJ) : $(CORE_OBJ)

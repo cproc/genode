@@ -647,13 +647,19 @@ extern "C" int rmdir(const char *path)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
-	PDBG(path);
+	//static int count;
+	//Genode::log(++count);
+	//Genode::log("stat: ", path);
+	//PDBG(path);
+	//for (volatile unsigned long i = 0; i < 1000000; i++) { }
+	//for (;;);
+	//sleep(1);
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
 		FNAME_FUNC_WRAPPER(stat, resolved_path.base(), buf);
 	} catch(Symlink_resolve_error) {
-		Genode::warning("stat failed: ", path);
+		//Genode::warning("stat failed: ", path);
 		return -1;
 	}
 }
@@ -682,9 +688,18 @@ extern "C" int unlink(const char *path)
 	}
 }
 
-
+extern "C" void wait_for_continue();
 extern "C" ssize_t _write(int libc_fd, const void *buf, ::size_t count)
 {
+#if 0
+//if ((count == 21) &&
+//    (strncmp((char const*)buf, "makeImpl(): check 1.1", 21) == 0))
+if ((count == 21) &&
+    (strncmp((char const*)buf, "get(): returning null", 21) == 0)) {
+    Genode::log("trigger");
+	wait_for_continue();
+}
+#endif
 	int flags = fcntl(libc_fd, F_GETFL);
 
 	if ((flags != -1) && (flags & O_APPEND))

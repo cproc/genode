@@ -67,7 +67,7 @@ class Genode::Timeout_thread : public  Thread_deprecated<2048*sizeof(long)>,
 			start();
 		}
 
-		Genode::Alarm::Time time(void) { return _timer.elapsed_ms(); }
+		Genode::Alarm::Time time(void) { return _timer.curr_time().trunc_to_plain_ms().value; }
 
 		/*
 		 * Returns the singleton timeout-thread used for all timeouts.
