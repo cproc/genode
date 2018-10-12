@@ -1,4 +1,4 @@
-build "core init test/log"
+build "core init server/ram_fs test/log"
 
 create_boot_directory
 
@@ -11,16 +11,23 @@ install_config {
 			<service name="ROM"/>
 		</parent-provides>
 		<default-route>
-			<any-service> <parent/> </any-service>
+			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 		<default caps="50"/>
-		<start name="test-log">
+		<start name="ram_fs">
+			<resource name="RAM" quantum="4M"/>
+			<provides> <service name="File_system"/> </provides>
+			<config>
+				<policy label="test-log -> gcov" root="/" writeable="yes"/>
+			</config>
+		</start>
+		<start name="test-log" caps="100">
 			<resource name="RAM" quantum="10M"/>
 		</start>
 	</config>
 }
 
-build_boot_image "core ld.lib.so init test-log"
+build_boot_image "core ld.lib.so init ram_fs test-log"
 
 append qemu_args "-nographic "
 append xen_args  { sdl="0" }

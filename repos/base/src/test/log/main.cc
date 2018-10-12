@@ -16,10 +16,19 @@
 #include <base/log.h>
 #include <log_session/connection.h>
 
+extern void func();
+extern void gcov_init(Genode::Env &env);
+extern void genode_exit(int status);
 
 void Component::construct(Genode::Env &env)
 {
 	using namespace Genode;
+
+	env.exec_static_constructors();
+
+	gcov_init(env);
+
+	func();
 
 	log("hex range:          ", Hex_range<uint16_t>(0xe00, 0x880));
 	log("empty hex range:    ", Hex_range<uint32_t>(0xabc0000, 0));
@@ -56,4 +65,6 @@ void Component::construct(Genode::Env &env)
 	log(Cstring(buf));
 
 	log("Test done.");
+
+	genode_exit(0);
 }
