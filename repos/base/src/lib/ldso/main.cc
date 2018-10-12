@@ -337,7 +337,7 @@ static int exit_status;
 
 static void exit_on_suspended() { genode_exit(exit_status); }
 
-
+extern "C" void wait_for_continue();
 /**
  * The dynamic binary to load
  */
@@ -395,11 +395,12 @@ struct Linker::Binary : private Root_object, public Elf_object
 		/* call static construtors and register destructors */
 		Func * const ctors_start = (Func *)lookup_symbol("_ctors_start");
 		Func * const ctors_end   = (Func *)lookup_symbol("_ctors_end");
-		for (Func * ctor = ctors_end; ctor != ctors_start; (*--ctor)());
+//wait_for_continue();
+		for (Func * ctor = ctors_end; ctor != ctors_start; (*--ctor)()) { /*Genode::log("calling ctor ", *(ctor - 1));*/ };
 
 		Func * const dtors_start = (Func *)lookup_symbol("_dtors_start");
 		Func * const dtors_end   = (Func *)lookup_symbol("_dtors_end");
-		for (Func * dtor = dtors_start; dtor != dtors_end; genode_atexit(*dtor++));
+		for (Func * dtor = dtors_start; dtor != dtors_end; genode_atexit(*dtor++)) { Genode::log("registering dtor"); };
 
 		static_construction_finished = true;
 	}

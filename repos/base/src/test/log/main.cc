@@ -21,6 +21,8 @@ void Component::construct(Genode::Env &env)
 {
 	using namespace Genode;
 
+	//env.exec_static_constructors();
+
 	log("hex range:          ", Hex_range<uint16_t>(0xe00, 0x880));
 	log("empty hex range:    ", Hex_range<uint32_t>(0xabc0000, 0));
 	log("hex range to limit: ", Hex_range<uint8_t>(0xf8, 8));
