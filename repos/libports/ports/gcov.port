@@ -1,0 +1,15 @@
+LICENSE   := LGPL
+VERSION   := 6.3.0
+DOWNLOADS := gcc.archive
+
+URL(gcc) := ftp://ftp.fu-berlin.de/gnu/gcc/gcc-$(VERSION)/gcc-$(VERSION).tar.bz2
+SHA(gcc) := f06ae7f3f790fbf0f018f6d40e844451e6bc3b7bc96e128e63b09825c1f8b29f
+DIR(gcc) := src/lib/gcov
+SIG(gcc) := ${URL(gcc)}
+KEY(gcc) := GNU
+
+#TAR_OPT(gcc) := gcc-$(VERSION)/libgcc \
+#                --strip-components=2
+
+PATCHES   := src/lib/gcov/*.patch
+PATCH_OPT := -p1 -d src/lib/gcov
