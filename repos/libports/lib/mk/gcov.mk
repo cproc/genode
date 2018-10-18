@@ -7,6 +7,8 @@ SRC_C = libgcov-merge.c \
         libgcov-interface.c \
         libgcov-driver.c
 
+SRC_CC = libc.cc
+
 LIBGCOV_MERGE = _gcov_merge_add \
                 _gcov_merge_single \
                 _gcov_merge_delta \
@@ -26,14 +28,16 @@ LIBGCOV_PROFILER = _gcov_interval_profiler \
 
 LIBGCOV_INTERFACE = _gcov_dump \
                     _gcov_flush \
-                    _gcov_fork \
-                    _gcov_execl \
-                    _gcov_execlp \
-                    _gcov_execle \
-                    _gcov_execv \
-                    _gcov_execvp \
-                    _gcov_execve \
                     _gcov_reset
+
+# Currently disabled on Genode
+#LIBGCOV_INTERFACE += _gcov_fork \
+#                     _gcov_execl \
+#                     _gcov_execlp \
+#                     _gcov_execle \
+#                     _gcov_execv \
+#                     _gcov_execvp \
+#                     _gcov_execve \
 
 LIBGCOV_DRIVER = _gcov
 
@@ -44,12 +48,14 @@ CC_OPT += $(addprefix -DL,$(LIBGCOV_PROFILER))
 CC_OPT += $(addprefix -DL,$(LIBGCOV_INTERFACE))
 CC_OPT += $(addprefix -DL,$(LIBGCOV_DRIVER))
 
-LIBS += libc
+#LIBS += libc
 
 INC_DIR += $(GCOV_DIR)/include \
-           $(GCOV_DIR)/gcc
+           $(GCOV_DIR)/gcc \
+           $(REP_DIR)/src/lib/gcov
 
 vpath %.c $(GCOV_DIR)/libgcc
+vpath %.cc $(REP_DIR)/src/lib/gcov
 
 # XXX: most symbols were missing in the shared library
 #SHARED_LIB = yes
