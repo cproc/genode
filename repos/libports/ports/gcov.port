@@ -8,8 +8,30 @@ DIR(gcov) := src/gcov
 SIG(gcov) := ${URL(gcov)}
 KEY(gcov) := GNU
 
-#TAR_OPT(gcov) := gcc-$(VERSION)/libgcc \
-#                --strip-components=2
+TAR_OPT(gcov) := gcc-$(VERSION)/gcc \
+                 gcc-$(VERSION)/include \
+                 gcc-$(VERSION)/libcpp \
+                 gcc-$(VERSION)/libgcc \
+                 gcc-$(VERSION)/libiberty \
+                 gcc-$(VERSION)/COPYING \
+                --strip-components=1
 
-#PATCHES   := src/app/gcov/patches/*.patch
-#PATCH_OPT := -p1 -d src/gcov
+PATCHES   := src/app/gcov/patches/*.patch \
+             src/lib/gcov/patches/*.patch
+PATCH_OPT := -p1 -d src/gcov
+
+default: symlinks
+
+symlinks: $(DOWNLOADS)
+	$(VERBOSE)ln -s diagnostic-color.c       ${DIR(gcov)}/gcc/diagnostic-color.cc
+	$(VERBOSE)ln -s diagnostic-show-locus.c  ${DIR(gcov)}/gcc/diagnostic-show-locus.cc
+	$(VERBOSE)ln -s diagnostic.c             ${DIR(gcov)}/gcc/diagnostic.cc
+	$(VERBOSE)ln -s gcov.c                   ${DIR(gcov)}/gcc/gcov.cc
+	$(VERBOSE)ln -s ggc-none.c               ${DIR(gcov)}/gcc/ggc-none.cc
+	$(VERBOSE)ln -s hash-table.c             ${DIR(gcov)}/gcc/hash-table.cc
+	$(VERBOSE)ln -s input.c                  ${DIR(gcov)}/gcc/input.cc
+	$(VERBOSE)ln -s intl.c                   ${DIR(gcov)}/gcc/intl.cc
+	$(VERBOSE)ln -s pretty-print.c           ${DIR(gcov)}/gcc/pretty-print.cc
+	$(VERBOSE)ln -s vec.c                    ${DIR(gcov)}/gcc/vec.cc
+	$(VERBOSE)ln -s version.c                ${DIR(gcov)}/gcc/version.cc
+	$(VERBOSE)ln -s line-map.c               ${DIR(gcov)}/libcpp/line-map.cc
