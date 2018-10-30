@@ -1,0 +1,75 @@
+build "core init server/lx_fs test/log app/gcov"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<default caps="50"/>
+		<start name="lx_fs" caps="200" ld="no">
+			<resource name="RAM" quantum="4M"/>
+			<provides> <service name="File_system"/> </provides>
+			<config>
+				<policy label="test-log -> gcov" root="/gcov_data" writeable="yes"/>
+				<policy label_prefix="gcov" root="/gcov_data/test/log" writeable="yes"/>
+			</config>
+		</start>
+
+		<start name="test-log" caps="100">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+
+<!--
+		<start name="gcov" caps="100">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+				<arg value="gcov"/>
+				<arg value="func"/>
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<fs/>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+			</config>
+		</start>
+-->
+	</config>
+}
+
+exec mkdir -p bin/gcov_data
+
+build_boot_image "core ld.lib.so init lx_fs test-log gcov_data
+                  gcov gmp.lib.so libc.lib.so stdcxx.lib.so vfs.lib.so libm.lib.so posix.lib.so"
+
+append qemu_args "-nographic "
+append xen_args  { sdl="0" }
+
+run_genode_until forever
+run_genode_until "Test done.*\n" 20
+
+grep_output {\[init -\> test-log}
+
+compare_output_to {
+[init -> test-log] hex range:          [0e00,1680)
+[init -> test-log] empty hex range:    [0abc0000,0abc0000) (empty!)
+[init -> test-log] hex range to limit: [f8,ff]
+[init -> test-log] invalid hex range:  [f8,08) (overflow!)
+[init -> test-log] negative hex char:  0xfe
+[init -> test-log] positive hex char:  0x02
+[init -> test-log] multiarg string:    "parent -> child.7"
+[init -> test-log] String(Hex(3)):     0x3
+[init -> test-log] Very long messages:
+[init -> test-log -> log] 1.....................................................................................................................................................................................................................................2
+[init -> test-log] 3.....................................................................................................................................................................................................................................4
+[init -> test-log] 5.....................................................................................................................................................................................................................................6
+[init -> test-log] 
+[init -> test-log] Test done.
+}
