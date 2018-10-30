@@ -1,0 +1,96 @@
+gcov.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gcc/gcov.c |   62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+
+diff --git a/gcc/gcov.c b/gcc/gcov.c
+index 50061c7..98098e5 100644
+--- a/gcc/gcov.c
++++ b/gcc/gcov.c
+@@ -41,6 +41,8 @@ along with Gcov; see the file COPYING3.  If not see
+ 
+ #include <getopt.h>
+ 
++#include <dirent.h>
++
+ #define IN_GCOV 1
+ #include "gcov-io.h"
+ #include "gcov-io.c"
+@@ -407,6 +409,55 @@ static void release_structures (void);
+ static void release_function (function_t *);
+ extern int main (int, char **);
+ 
++void process_files(const char *dir_path)
++{
++	char new_path[strlen(dir_path) + sizeof('/') + NAME_MAX];
++
++	DIR *dir = opendir(dir_path);
++
++	if (!dir) {
++		printf("opendir() failed\n");
++		return;
++	}
++
++	struct dirent *dirent;
++
++	while((dirent = readdir(dir)) != NULL) {
++
++		printf("found dir entry: %s\n", dirent->d_name);
++
++		snprintf(new_path, sizeof(new_path), "%s/%s", dir_path, dirent->d_name);
++
++		struct stat stat_buf;
++
++		if (stat(new_path, &stat_buf) != 0) {
++			printf("stat() failed\n");
++			continue;
++		}
++
++		if (S_ISDIR(stat_buf.st_mode)) {
++			printf("found dir\n");
++			process_files(new_path);
++			continue;
++		}
++		
++		if (!S_ISREG(stat_buf.st_mode)) {
++			printf("no regular file\n");
++			continue;
++		}
++		
++		if (!strstr(dirent->d_name, ".gcda")) {
++			printf("no .gcda file\n");
++			continue;
++		}
++
++		printf("processing file: %s\n", new_path);
++		process_file(new_path);
++	}
++
++  	closedir(dir);
++}
++
+ int
+ main (int argc, char **argv)
+ {
+@@ -445,6 +496,17 @@ main (int argc, char **argv)
+ 
+   first_arg = argno;
+   
++  if (strcmp(argv[first_arg], "*") == 0) {
++
++  	fprintf(stderr, "*** wildcard detected\n");
++
++  	/* search .gcda files and process each one */
++  	process_files("/");
++
++	/* finish processing arguments */
++	argno = argc;
++  }
++
+   for (; argno != argc; argno++)
+     {
+       if (flag_display_progress)
