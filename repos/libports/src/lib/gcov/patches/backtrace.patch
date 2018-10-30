@@ -1,0 +1,31 @@
+backtrace.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gcc/diagnostic.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/diagnostic.c b/gcc/diagnostic.c
+index 8106172..a921fb2 100644
+--- a/gcc/diagnostic.c
++++ b/gcc/diagnostic.c
+@@ -468,13 +468,16 @@ diagnostic_action_after_output (diagnostic_context *context,
+     case DK_ICE_NOBT:
+       {
+ 	struct backtrace_state *state = NULL;
++#if 0
+ 	if (diag_kind == DK_ICE)
+ 	  state = backtrace_create_state (NULL, 0, bt_err_callback, NULL);
++#endif
+ 	int count = 0;
++#if 0
+ 	if (state != NULL)
+ 	  backtrace_full (state, 2, bt_callback, bt_err_callback,
+ 			  (void *) &count);
+-
++#endif
+ 	if (context->abort_on_error)
+ 	  real_abort ();
+ 
