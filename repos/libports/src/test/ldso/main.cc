@@ -182,12 +182,15 @@ static void test_shared_object_api(Env &env, Allocator &alloc)
 	                        Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
 }
 
+extern void sanitizer_init(Genode::Env &);
 
 /**
  * Main function of LDSO test
  */
 void Libc::Component::construct(Libc::Env &env)
 {
+	sanitizer_init(env);
+
 	static Heap heap(env.ram(), env.rm());
 
 	printf("\n");
