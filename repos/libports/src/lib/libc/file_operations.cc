@@ -508,6 +508,7 @@ extern "C" int msync(void *start, ::size_t len, int flags)
 
 extern "C" int _open(const char *pathname, int flags, ::mode_t mode)
 {
+Genode::log("open(): ", Genode::Cstring(pathname));
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
