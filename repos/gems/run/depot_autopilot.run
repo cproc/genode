@@ -31,7 +31,7 @@ set single_test_modules { }
 # ! cd <GENODE_DIR>/repos
 # ! find . -type d -wholename *recipes/pkg/test-* -printf '%f\n' | sort
 #
-set avail_test_pkgs {
+set avail_test_pkgs_bak {
 	test-ada
 	test-ada_secondary_stack
 	test-blk
@@ -94,6 +94,11 @@ set avail_test_pkgs {
 	test-weak_ptr
 	test-xml_generator
 	test-xml_node
+}
+
+set avail_test_pkgs {
+	test-log_gcov
+	gcov
 }
 
 if { $single_test_pkg != "" && [lsearch -exact $avail_test_pkgs $single_test_pkg] == -1} {
@@ -388,9 +393,13 @@ proc prepare_to_run_genode { } {
 			<resource name="RAM" quantum="4M"/>
 			<provides> <service name="File_system"/> </provides>
 			<config>
-				<vfs> <tar name="depot.tar"/> </vfs>
+				<vfs>
+					<tar name="depot.tar"/>
+					<ram/>
+				</vfs>
 				<policy label="depot_query -> depot" root="/" />
 				<policy label="fs_rom -> "           root="/" />
+				<policy label_suffix="gcov_data"     root="/" writeable="yes" />
 			</config>
 		</start>
 
@@ -424,21 +433,23 @@ proc prepare_to_run_genode { } {
 						<service name="RM"/>
 						<service name="Timer"/>
 						<service name="TRACE"/>
+						<service name="File_system"/>
 					</parent-provides>
 				</static>
 				<common_routes>
 
 					} [single_test_module_routes] {
 
-					<service name="ROM" label_last="ld.lib.so"> <parent/> </service>
-					<service name="ROM" label_last="init">      <parent/> </service>
-					<service name="CPU">                        <parent/> </service>
-					<service name="PD">                         <parent/> </service>
-					<service name="LOG">                        <parent/> </service>
-					<service name="IO_PORT">                    <parent/> </service>
-					<service name="Timer">                      <parent/> </service>
-					<service name="RM">                         <parent/> </service>
-					<service name="TRACE">                      <parent/> </service>
+					<service name="ROM" label_last="ld.lib.so">           <parent/> </service>
+					<service name="ROM" label_last="init">                <parent/> </service>
+					<service name="CPU">                                  <parent/> </service>
+					<service name="PD">                                   <parent/> </service>
+					<service name="LOG">                                  <parent/> </service>
+					<service name="IO_PORT">                              <parent/> </service>
+					<service name="Timer">                                <parent/> </service>
+					<service name="RM">                                   <parent/> </service>
+					<service name="TRACE">                                <parent/> </service>
+					<service name="File_system" label_suffix="gcov_data"> <parent/> </service>
 				</common_routes>
 
 				<previous-results time_sec="} $previous_time_sec {">} $previous_results {</previous-results>
