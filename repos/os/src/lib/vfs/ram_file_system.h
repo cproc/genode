@@ -584,7 +584,7 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		                 Allocator   &alloc) override
 		{
 			using namespace Vfs_ram;
-
+Genode::log("open(", Genode::Cstring(path), ")");
 			File *file;
 			char const *name = basename(path);
 			bool const create = mode & OPEN_MODE_CREATE;
