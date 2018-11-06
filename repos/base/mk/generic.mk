@@ -55,6 +55,13 @@ endif
 %.o: %.cc
 	$(MSG_COMP)$@
 	$(VERBOSE)$(CXX) $(CXX_DEF) $(CC_CXX_OPT) $(INCLUDES) -c $< -o $@
+ifneq ($(COVERAGE),)
+	$(info building $@)
+	#$(VERBOSE)mkdir -p $(INSTALL_DIR)/gcov_notes/$(TARGET)/$(dir $@)
+	#$(VERBOSE)ln -sf $(CURDIR)/$(@:.o=.gcno) $(INSTALL_DIR)/gcov_notes/$(TARGET)/$(@:.o=.gcno)
+	$(VERBOSE)mkdir -p $(INSTALL_DIR)/gcov_data/$(TARGET)/$(dir $@)
+	$(VERBOSE)ln -sf $(CURDIR)/$(@:.o=.gcno) $(INSTALL_DIR)/gcov_data/$(TARGET)/$(@:.o=.gcno)
+endif
 
 %.o: %.cpp
 	$(MSG_COMP)$@

@@ -183,6 +183,25 @@ $(INSTALL_DIR)/$(TARGET).xsd: $(PRG_DIR)/$(CONFIG_XSD)
 endif
 
 #
+# Link gcov note files
+#
+#GENERATED_NOTE_FILES = $(addprefix $(CURDIR)/, $(OBJECTS:.o=.gcno))
+#INSTALLED_NOTE_FILES = $(addprefix $(INSTALL_DIR)/, $(OBJECTS:.o=.gcno))
+#$(info GENERATED: $(GENERATED_NOTE_FILES))
+#$(info INSTALLED: $(INSTALLED_NOTE_FILES))
+#all: $(INSTALLED_NOTE_FILES)
+#define create_gcno_link
+#mkdir -p $(INSTALL_DIR)/$(dir $1)
+#ln -sf $(CURDIR)/$1 $(INSTALL_DIR)/$1
+#endef
+
+#$(INSTALLED_NOTE_FILES) : $(GENERATED_NOTE_FILES)
+#	$(foreach note_file,$(OBJECTS:.o=.gcno),$(call create_gcno_link,$(note_file)))
+	#mkdir -p $(@D)
+	#ln -sf $< $@
+#endif
+
+#
 # Skip final linking if no objects are involved, i.e. no 'SRC' files are
 # specified in the 'target.mk' file. This applies for pseudo 'target.mk'
 # files that invoke a 3rd-party build system by providing local rule for
