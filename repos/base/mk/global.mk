@@ -104,6 +104,24 @@ LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 endif
 
 #
+# Add coverage options
+#
+# The directory for the coverage data (generated at runtime) is derived from
+# the current depot build directory and is going to look like
+#
+# '/genodelabs/bin/test-log_gcov/2018-11-13/gcov_data/test-log_gcov'
+#
+# to match the path where the gcov notes files (generated at build time) are
+# stored in the depot package of the test program.
+#
+ifeq ($(COVERAGE),yes)
+PROFILE_DIR = $(shell echo $(CURDIR) | \
+                      sed -e 's/^.*\/depot\//\//' \
+                          -e 's/\.build\/.*//')/gcov_data/$(TARGET)
+CC_OPT += -fprofile-arcs -ftest-coverage -fprofile-dir=$(PROFILE_DIR)
+endif
+
+#
 # Default optimization and warning levels
 #
 CC_OLEVEL ?= -O2
