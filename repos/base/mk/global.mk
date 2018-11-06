@@ -104,6 +104,17 @@ LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 endif
 
 #
+# Add coverage options
+#
+ifneq ($(COVERAGE),)
+#CC_OPT += -fprofile-arcs -ftest-coverage -fprofile-dir='/$(TARGET)'
+$(info CURDIR: $(CURDIR))
+PROFILE_DIR = $(shell echo $(CURDIR) | sed -e 's/^.*\/depot\//\//' -e 's/\.build\/.*//')/gcov_data/$(TARGET)
+$(info PROFILE_DIR: $(PROFILE_DIR))
+CC_OPT += -fprofile-arcs -ftest-coverage -fprofile-dir=$(PROFILE_DIR)
+endif
+
+#
 # Default optimization and warning levels
 #
 CC_OLEVEL ?= -O2
