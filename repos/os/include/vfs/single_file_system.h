@@ -196,6 +196,7 @@ class Vfs::Single_file_system : public File_system
 		                       Vfs_handle **out_handle,
 		                       Allocator &alloc) override
 		{
+Genode::log("Single_file_system::opendir(", Genode::Cstring(path), ")");
 			if (!_root(path))
 				return OPENDIR_ERR_LOOKUP_FAILED;
 

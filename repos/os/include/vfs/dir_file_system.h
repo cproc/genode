@@ -623,11 +623,12 @@ class Vfs::Dir_file_system : public File_system
 		Opendir_result open_composite_dirs(char const *sub_path,
 		                                   Dir_vfs_handle &dir_vfs_handle)
 		{
+Genode::log(this, ": Dir_file_system::open_composite_dirs(", Genode::Cstring(sub_path), ")");
 			Opendir_result res = OPENDIR_ERR_LOOKUP_FAILED;
 			try {
 				for (File_system *fs = _first_file_system; fs; fs = fs->next) {
 					Vfs_handle *sub_dir_handle = nullptr;
-
+Genode::log(this, ": Dir_file_system::open_composite_dirs(", Genode::Cstring(sub_path), "): calling opendir() on fs");
 					Opendir_result r = fs->opendir(
 						sub_path, false, &sub_dir_handle, dir_vfs_handle.alloc());
 
@@ -641,6 +642,7 @@ class Vfs::Dir_file_system : public File_system
 						continue;
 					}
 
+Genode::log(this, ": Dir_file_system::open_composite_dirs(", Genode::Cstring(sub_path), "): creating sub dir handle element for: ", sub_dir_handle);
 					new (dir_vfs_handle.alloc())
 						Dir_vfs_handle::Subdir_handle_element(
 							dir_vfs_handle.subdir_handle_registry, *sub_dir_handle);
@@ -657,9 +659,11 @@ class Vfs::Dir_file_system : public File_system
 		Opendir_result opendir(char const *path, bool create,
 		                       Vfs_handle **out_handle, Allocator &alloc) override
 		{
+Genode::log(this, ": Directory_file_system::opendir(", Genode::Cstring(path), "): ", name());
 			Opendir_result result = OPENDIR_OK;
 
 			if (_top_dir(path)) {
+Genode::log("top dir");
 				if (create)
 					return OPENDIR_ERR_PERMISSION_DENIED;
 
@@ -951,11 +955,12 @@ class Vfs::Dir_file_system : public File_system
 		bool queue_sync(Vfs_handle *vfs_handle) override
 		{
 			bool result = true;
-
+Genode::log(this, ": Dir_file_system::queue_sync(): ", vfs_handle);
 			Dir_vfs_handle *dir_vfs_handle =
 				static_cast<Dir_vfs_handle*>(vfs_handle);
 
 			auto f = [&result, dir_vfs_handle] (Dir_vfs_handle::Subdir_handle_element &e) {
+Genode::log("Dir_file_system::queue_sync() f: ", &e.vfs_handle.fs());
 				/* forward the handle context */
 				e.vfs_handle.context = dir_vfs_handle->context;
 				e.synced = false;

@@ -57,6 +57,7 @@ class Vfs::Log_file_system : public Single_file_system
 
 				void _flush()
 				{
+Genode::log("_flush(): ", this, ", ", _line_pos);
 					int strip = 0;
 					for (int i = _line_pos - 1; i > 0; --i) {
 						switch(_line_buf[i]) {
@@ -83,10 +84,14 @@ class Vfs::Log_file_system : public Single_file_system
 				               Genode::Allocator &alloc,
 				               Genode::Log_session &log)
 				: Single_vfs_handle(ds, fs, alloc, 0),
-				  _log(log) { }
+				  _log(log)
+				  {
+				  	Genode::log(this, ": Log_vfs_handle()");
+				  }
 
 				~Log_vfs_handle()
 				{
+Genode::log(this, ": ~Log_vfs_handle(): ");
 					if (_line_pos > 0) _flush();
 				}
 
@@ -100,7 +105,7 @@ class Vfs::Log_file_system : public Single_file_system
 				                   file_size &out_count) override
 				{
 					out_count = count;
-
+Genode::log(this, ": Log_file_system::Log_vfs_handle::write(): ", count);
 					/* count does not include the trailing '\0' */
 					while (count > 0) {
 						int curr_count = min(count, ((sizeof(_line_buf) - 1) - _line_pos));
@@ -122,7 +127,6 @@ class Vfs::Log_file_system : public Single_file_system
 						count -= curr_count;
 						src   += curr_count;
 					}
-
 					return WRITE_OK;
 				}
 
@@ -130,6 +134,7 @@ class Vfs::Log_file_system : public Single_file_system
 
 				void sync()
 				{
+Genode::log(this, ": Log_file_system::Log_vfs_handle::sync()");
 					if (_line_pos > 0)
 						_flush();
 				}
@@ -168,8 +173,15 @@ class Vfs::Log_file_system : public Single_file_system
 			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
 		}
 
+		bool queue_sync(Vfs_handle *vfs_handle)
+		{
+Genode::log(this, ": Log_file_system::queue__sync(): ", vfs_handle);
+			return true;
+		}
+
 		Sync_result complete_sync(Vfs_handle *vfs_handle)
 		{
+Genode::log(this, ": Log_file_system::complete__sync(): ", vfs_handle);
 			static_cast<Log_vfs_handle *>(vfs_handle)->sync();
 			return SYNC_OK;
 		}

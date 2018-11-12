@@ -58,8 +58,8 @@
 				<!--<arg value="func/func"/>-->
 				<vfs>
 					<dir name="dev"> <log/> </dir>
-					<fs label="depot"/>
-					<fs label="gcov_data"/>
+					<!--<fs label="depot"/>-->
+					<!--<fs label="gcov_data"/>-->
 				</vfs>
 				<libc stdout="/dev/log" stderr="/dev/log"/>
 			</config>

@@ -173,6 +173,7 @@ class Vfs::Fs_file_system : public File_system
 
 			bool queue_sync()
 			{
+Genode::log("Fs_file_system::queue_sync()");
 				if (queued_sync_state != Handle_state::Queued_state::IDLE)
 					return true;
 

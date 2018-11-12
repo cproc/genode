@@ -22,8 +22,8 @@
 #   set single_test_modules { ram_fs test-libc_vfs vfs.lib.so }
 #
 set single_test_pkg ""
-set single_test_build { }
-set single_test_modules { }
+set single_test_build { app/gcov }
+set single_test_modules { gcov }
 
 #
 # The list of available test packages - was obtained by issuing:
@@ -405,7 +405,7 @@ proc prepare_to_run_genode { } {
 		</start>
 
 		<start name="fs_rom" priority="-1">
-			<resource name="RAM" quantum="16M"/>
+			<resource name="RAM" quantum="32M"/>
 			<provides> <service name="ROM"/> </provides>
 		</start>
 
@@ -536,7 +536,8 @@ while {1} {
 
 	# wait for the next autopilot event
 	if {$serial_id == -1} {
-		run_genode_until {depot_autopilot\] --- .*?\n} $timeout
+		#run_genode_until {depot_autopilot\] --- .*?\n} $timeout
+		run_genode_until forever
 	} else {
 		set init_time_sec [clock clicks -millisec]
 		autopilot_run_genode_until {depot_autopilot\] --- .*?\n} $timeout $serial_id
@@ -565,6 +566,7 @@ while {1} {
 	# if the autopilot finished all tests, evaluate its return value
 	if {[regexp {depot_autopilot\] --- Finished} $output]} {
 		set output ""
+		run_genode_until forever
 		run_genode_until {child "depot_autopilot" exited with exit value.*?\n} 10 $serial_id
 		grep_output {^\[init\] }
 		compare_output_to {[init] child "depot_autopilot" exited with exit value 0}

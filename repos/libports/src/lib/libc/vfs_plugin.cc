@@ -337,9 +337,12 @@ int Libc::Vfs_plugin::dup2(Libc::File_descriptor *fd,
 
 int Libc::Vfs_plugin::fstat(Libc::File_descriptor *fd, struct stat *buf)
 {
+Genode::log("fstat(): ", fd->fd_path);
 	Vfs::Vfs_handle *handle = vfs_handle(fd);
 	_vfs_sync(handle);
-	return stat(fd->fd_path, buf);
+	int res = stat(fd->fd_path, buf);
+Genode::log("fstat() finished: ", fd->fd_path);
+	return res;
 }
 
 
