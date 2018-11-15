@@ -1,0 +1,64 @@
+<runtime ram="16M" caps="1000" binary="init">
+
+	<events>
+		<timeout meaning="failed" sec="3000" />
+		<!-- XXX adapt to gcov output -->
+		<log meaning="succeeded">
+			[init -> test-log] hex range:          [0e00,1680)
+			[init -> test-log] empty hex range:    [0abc0000,0abc0000) (empty!)
+			[init -> test-log] hex range to limit: [f8,ff]
+			[init -> test-log] invalid hex range:  [f8,08) (overflow!)
+			[init -> test-log] negative hex char:  0xfe
+			[init -> test-log] positive hex char:  0x02
+			[init -> test-log] multiarg string:    "parent -> child.7"
+			[init -> test-log] String(Hex(3)):     0x3
+			[init -> test-log] Very long messages:
+			[init -> test-log -> log] 1.....................................................................................................................................................................................................................................2
+			[init -> test-log] 3.....................................................................................................................................................................................................................................4
+			[init -> test-log] 5.....................................................................................................................................................................................................................................6
+			[init -> test-log] 
+			[init -> test-log] Test done.
+		</log>
+	</events>
+
+	<content>
+		<rom label="gcov"/>
+		<rom label="gmp.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="posix.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="File_system"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<default caps="150"/>
+		<start name="gcov">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+				<arg value="gcov"/>
+				<arg value="--genode-autopilot"/>
+				<arg value="--function-summaries"/>
+				<arg value="--demangled-names"/>
+				<!--<arg value="- -no-output"/>-->
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<fs label="depot"/>
+					<fs label="gcov_data"/>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+			</config>
+		</start>
+	</config>
+</runtime>
