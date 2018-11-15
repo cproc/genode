@@ -5,7 +5,7 @@ REP_INC_DIR += include/gmp
 INC_DIR += $(GMP_PORT_DIR)/include
 
 ifeq ($(filter-out $(SPECS),arm),)
-	REP_INC_DIR += include/spec/gmp/32bit
+	REP_INC_DIR += include/spec/32bit/gmp
 	INC_DIR += $(GMP_PORT_DIR)/include/spec/arm
 endif
 
