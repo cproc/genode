@@ -65,6 +65,7 @@ set avail_test_pkgs {
 	test-libc_vfs_fs_chained
 	test-libc_vfs_ram
 	test-log
+	test-log_gcov
 	test-lx_block
 	test-magic_ring_buffer
 	test-mmio
