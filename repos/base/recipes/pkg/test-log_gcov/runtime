@@ -1,0 +1,45 @@
+<runtime ram="32M" caps="1000" binary="init">
+
+	<events>
+		<timeout meaning="failed" sec="20" />
+		<log meaning="succeeded">
+			[init -> test-log_gcov] hex range:          [0e00,1680)
+			[init -> test-log_gcov] empty hex range:    [0abc0000,0abc0000) (empty!)
+			[init -> test-log_gcov] hex range to limit: [f8,ff]
+			[init -> test-log_gcov] invalid hex range:  [f8,08) (overflow!)
+			[init -> test-log_gcov] negative hex char:  0xfe
+			[init -> test-log_gcov] positive hex char:  0x02
+			[init -> test-log_gcov] multiarg string:    "parent -> child.7"
+			[init -> test-log_gcov] String(Hex(3)):     0x3
+			[init -> test-log_gcov] Very long messages:
+			[init -> test-log_gcov -> log] 1.....................................................................................................................................................................................................................................2
+			[init -> test-log_gcov] 3.....................................................................................................................................................................................................................................4
+			[init -> test-log_gcov] 5.....................................................................................................................................................................................................................................6
+			[init -> test-log_gcov] 
+			[init -> test-log_gcov] Test done.*
+			[init] child "test-log_gcov" exited with exit value 0
+		</log>
+	</events>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="test-log_gcov"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+			<service name="File_system"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+		<start name="test-log_gcov">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+	</config>
+</runtime>
