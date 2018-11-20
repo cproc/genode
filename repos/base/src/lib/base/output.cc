@@ -80,9 +80,21 @@ void Genode::print(Output &output, float value)
 	out_float<float>(value, 10, 3, [&] (char c) { output.out_char(c); });
 }
 
-void Genode::print(Output &output, double value)
+void Genode::print(Output &/*output*/, double value)
 {
-	out_float<double>(value, 10, 6, [&] (char c) { output.out_char(c); });
+	value *= 10;
+
+	double v = value;
+	//volatile double v = value;
+
+	uint64_t integer = (uint64_t)v;
+
+	if (integer == 16)
+		*(char*)(0x16) = 0;
+	else if (integer == 17)
+		*(char*)(0x17) = 0;
+
+	//out_float<double>(value, 10, 6, [&] (char c) { output.out_char(c); });
 }
 
 void Genode::Hex::print(Output &output) const
