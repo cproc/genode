@@ -16,10 +16,12 @@
 #include <base/log.h>
 #include <log_session/connection.h>
 
-
+extern void sanitizer_init(Genode::Env &);
 void Component::construct(Genode::Env &env)
 {
 	using namespace Genode;
+
+	sanitizer_init(env);
 
 	log("hex range:          ", Hex_range<uint16_t>(0xe00, 0x880));
 	log("empty hex range:    ", Hex_range<uint32_t>(0xabc0000, 0));

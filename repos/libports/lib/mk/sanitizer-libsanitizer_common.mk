@@ -22,8 +22,6 @@ SRC_CC = \
          sanitizer_symbolizer_libcdep.cc \
          sanitizer_symbolizer_posix_libcdep.cc
 
-LIBS += libc
-
 INC_DIR += \
            $(SANITIZER_DIR)
 

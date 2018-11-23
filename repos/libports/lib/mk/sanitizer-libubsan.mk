@@ -14,7 +14,7 @@ SRC_CC = \
 
 CC_OPT += -DCAN_SANITIZE_UB=1
 
-LIBS += libc sanitizer-libsanitizer_common
+LIBS += sanitizer-libsanitizer_common
 
 INC_DIR += \
            $(SANITIZER_DIR)
