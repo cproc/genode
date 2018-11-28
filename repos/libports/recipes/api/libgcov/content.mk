@@ -7,7 +7,8 @@ content: include \
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/gcov)
 
 include:
-	cp -r $(PORT_DIR)/include $@
+	mkdir $@
+	cp -r $(PORT_DIR)/include/* $@/
 	cp -r $(GENODE_DIR)/repos/os/include/file_system $@/
 
 lib/mk/libgcov.mk:

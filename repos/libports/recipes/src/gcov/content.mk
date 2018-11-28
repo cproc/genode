@@ -9,7 +9,8 @@ content: include \
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/gcov)
 
 include:
-	cp -r $(PORT_DIR)/include $@
+	mkdir $@
+	cp -r $(PORT_DIR)/include/* $@/
 
 lib/mk/%.mk:
 	$(mirror_from_rep_dir)
