@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	read(config_fd, buf, sizeof(buf));
+	read(config_fd, buf, sizeof(buf) - 1);
 
 	if (XML_Parse(parser, buf, strlen(buf), 1) == XML_STATUS_ERROR) {
 		printf(" Error: %s at line %lu\n",
