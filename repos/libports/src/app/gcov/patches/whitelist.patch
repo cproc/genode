@@ -1,0 +1,96 @@
+whitelist.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ gcc/gcov.c |   48 +++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/gcc/gcov.c b/gcc/gcov.c
+index eead285..9a37ea9 100644
+--- a/gcc/gcov.c
++++ b/gcc/gcov.c
+@@ -302,6 +302,11 @@ static unsigned bbg_stamp;
+ 
+ static char *da_file_name;
+ 
++/* Name and file pointer of the input file for the source file white list (gcwl).  */
++
++#define GCOV_WHITELIST_SUFFIX ".gcwl"
++static char *wl_file_name;
++
+ /* Data file is missing.  */
+ 
+ static int no_data_file;
+@@ -500,8 +505,11 @@ main (int argc, char **argv)
+   	/* search .gcda files and process each one */
+   	process_files("/");
+ 
+-	/* finish processing arguments */
+-	argno = argc;
++	generate_results(NULL);
++
++	release_structures();
++
++	return 0;
+   }
+ 
+   for (; argno != argc; argno++)
+@@ -849,6 +857,35 @@ static void
+ output_gcov_file (const char *file_name, source_t *src)
+ {
+   char *gcov_file_name = make_gcov_file_name (file_name, src->coverage.name);
++//printf("file_name: %s\nsrc: %s\ngcov_file_name: %s\n", file_name, src->coverage.name, gcov_file_name);
++
++  FILE *whitelist_file = fopen(wl_file_name, "r");
++
++  if (whitelist_file) {
++
++    char *whitelisted_file = NULL;
++    size_t len = 0;
++    bool found = false;
++
++    while (getline(&whitelisted_file, &len, whitelist_file) != -1) {
++
++		/* remove '\n' */
++		whitelisted_file[strlen(whitelisted_file) - 1] = 0;
++
++		//printf("whitelisted_file: %s\n", whitelisted_file);
++
++		if (strstr(src->coverage.name, whitelisted_file) != NULL) {
++			found = true;
++			break;
++		}
++    }
++
++    fclose(whitelist_file);
++
++    if (!found)
++      return;
++
++  }
+ 
+   if (src->coverage.lines)
+     {
+@@ -1035,7 +1072,8 @@ create_file_names (const char *file_name)
+   /* Free previous file names.  */
+   free (bbg_file_name);
+   free (da_file_name);
+-  da_file_name = bbg_file_name = NULL;
++  free (wl_file_name);
++  da_file_name = bbg_file_name = wl_file_name = NULL;
+   bbg_file_time = 0;
+   bbg_stamp = 0;
+ 
+@@ -1081,6 +1119,10 @@ create_file_names (const char *file_name)
+   strcpy (da_file_name, name);
+   strcpy (da_file_name + length, GCOV_DATA_SUFFIX);
+ 
++  wl_file_name = XNEWVEC (char, length + strlen (GCOV_WHITELIST_SUFFIX) + 1);
++  strcpy (wl_file_name, name);
++  strcpy (wl_file_name + length, GCOV_WHITELIST_SUFFIX);
++
+   free (name);
+   return;
+ }

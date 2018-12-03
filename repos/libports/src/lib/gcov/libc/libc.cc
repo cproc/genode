@@ -12,6 +12,7 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <base/attached_rom_dataspace.h>
 #include <base/env.h>
 #include <base/heap.h>
 #include <base/log.h>
@@ -20,6 +21,7 @@
 #include <file_system_session/connection.h>
 #include <file_system/util.h>
 #include <util/string.h>
+#include <util/xml_node.h>
 
 extern "C" {
 #include "stdio.h"
@@ -35,11 +37,12 @@ FILE *stderr = &stderr_file;
 
 struct Gcov_env
 {
-	Genode::Env             &env;
-	Genode::Heap             heap { env.ram(), env.rm() };
-	Genode::Allocator_avl    fs_alloc { &heap };
-	File_system::Connection  fs { env, fs_alloc, "gcov_data" };
-	unsigned long            seek_offset { 0 };
+	Genode::Env                    &env;
+	Genode::Attached_rom_dataspace  config { env, "config" };
+	Genode::Heap                    heap { env.ram(), env.rm() };
+	Genode::Allocator_avl           fs_alloc { &heap };
+	File_system::Connection         fs { env, fs_alloc, "gcov_data" };
+	unsigned long                   seek_offset { 0 };
 
 	/* only one file is open at a time */
 	Genode::Constructible<File_system::File_handle> file_handle;
@@ -117,6 +120,52 @@ extern "C" FILE *fopen(const char *path, const char *mode)
 	}
 
 	gcov_env->seek_offset = 0;
+
+//Genode::log("file name: ", Genode::Cstring(file_name.base()));
+
+	Genode::Xml_node config(gcov_env->config.local_addr<char>(),
+	                        gcov_env->config.size());
+	
+	try {
+		Genode::Xml_node libgcov_node = config.sub_node("libgcov");
+
+		Genode::Xml_node whitelist_node = libgcov_node.sub_node("whitelist");
+
+		Absolute_path whitelist_file_name { file_name };
+		whitelist_file_name.remove_trailing('a');
+		whitelist_file_name.remove_trailing('d');
+		whitelist_file_name.append("wl");
+
+		File_system::File_handle whitelist_file_handle {
+			gcov_env->fs.file(dir, whitelist_file_name.base() + 1,
+			                  File_system::WRITE_ONLY, true) };
+
+		unsigned int seek_offset = 0;
+		                                                
+		whitelist_node.for_each_sub_node("file", [&] (Genode::Xml_node file_node) {
+
+			Absolute_path whitelisted_path;
+			file_node.attribute("path").value(whitelisted_path.base(),
+			                                  whitelisted_path.capacity());
+			//Genode::log("found whitelisted path: ", whitelisted_path);
+			seek_offset += File_system::write(gcov_env->fs,
+			                                  whitelist_file_handle,
+			                                  whitelisted_path.base(),
+			                                  Genode::strlen(whitelisted_path.base()),
+			                                  seek_offset);
+
+			seek_offset += File_system::write(gcov_env->fs,
+			                                  whitelist_file_handle,
+			                                  "\n",
+			                                  1,
+			                                  seek_offset);
+		});
+
+		gcov_env->fs.close(whitelist_file_handle);	
+
+	}
+	catch (Genode::Xml_node::Nonexistent_sub_node) { }
+	catch (Genode::Xml_attribute::Nonexistent_attribute) { }
 
 	return &gcov_env->file;
 }

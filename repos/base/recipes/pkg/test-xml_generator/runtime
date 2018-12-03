@@ -80,6 +80,13 @@
 		<default caps="100"/>
 		<start name="test-xml_generator">
 			<resource name="RAM" quantum="2M"/>
+			<config>
+				<libgcov>
+					<whitelist>
+						<file path="include/util/xml_generator.h"/>
+					</whitelist>
+				</libgcov>
+			</config>
 		</start>
 	</config>
 </runtime>
