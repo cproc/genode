@@ -548,6 +548,7 @@ set default_test_pkgs {
 	test-rom_blk
 	test-rom_filter
 	test-rust
+	test-segfault
 	test-sequence
 	test-signal
 	test-slab

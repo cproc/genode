@@ -1,0 +1,32 @@
+<runtime ram="32M" caps="1000" binary="init">
+
+	<events>
+		<timeout meaning="failed" sec="10" />
+		<log meaning="succeeded">
+			[init -> test-segfault]*runtime error: *store to null pointer
+		</log>
+	</events>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="libsanitizer_common.lib.so"/>
+		<rom label="libubsan.lib.so"/>
+		<rom label="test-segfault"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="ROM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <any-child/> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+		<start name="test-segfault">
+			<resource name="RAM" quantum="16M"/>
+		</start>
+	</config>
+</runtime>
