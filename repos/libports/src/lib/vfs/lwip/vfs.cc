@@ -395,6 +395,7 @@ Lwip::Lwip_file_handle::~Lwip_file_handle()
 Lwip::Read_result Lwip::Lwip_file_handle::read(char *dst, file_size count,
                                                file_size &out_count)
 {
+Genode::log("Lwip_file_handle::read(): count: ", count, ", socket: ", socket);
 	return (socket)
 		? socket->read(*this, dst, count, out_count)
 		: Read_result::READ_ERR_INVALID;
@@ -1162,7 +1163,8 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
-				return !ip_addr_isany(&_pcb->remote_ip);
+				Genode::log("Tcp_socket_dir::read_ready(): ", Genode::Hex(_pcb->remote_ip.u_addr.ip4.addr));
+				return false/*!ip_addr_isany(&_pcb->remote_ip)*/;
 
 			case Lwip_file_handle::LOCATION:
 			case Lwip_file_handle::LOCAL:
@@ -1177,6 +1179,7 @@ class Lwip::Tcp_socket_dir final :
 		                 char *dst, file_size count,
 		                 file_size &out_count) override
 		{
+Genode::log("Tcp_socket_dir::read(): ", count, ", kind: ", (int)handle.kind);
 			switch(handle.kind) {
 
 			case Lwip_file_handle::DATA:
@@ -1303,10 +1306,12 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+				Genode::log("CONNECT: ", (int)state);
+				break;
 			case Lwip_file_handle::LISTEN:
 			case Lwip_file_handle::INVALID: break;
 			}
-
+Genode::log("Tcp_socket_dir::read(): returning READ_ERR_INVALID");
 			return Read_result::READ_ERR_INVALID;
 		}
 
@@ -1460,6 +1465,7 @@ void udp_recv_callback(void *arg, struct udp_pcb*, struct pbuf *buf, const ip_ad
 static
 err_t tcp_connect_callback(void *arg, struct tcp_pcb *pcb, err_t)
 {
+Genode::log("tcp_connect_callback()");
 	if (!arg) {
 		tcp_abort(pcb);
 		return ERR_ABRT;

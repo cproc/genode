@@ -15,8 +15,8 @@ int main()
 
 	fcntl(s, F_SETFL, O_NONBLOCK);
 
-	char const *server = "94.130.141.228"; /* genode.org */
-	//char const *server = "10.0.0.2";
+	//char const *server = "94.130.141.228"; /* genode.org */
+	char const *server = "10.0.0.2";
 	int port = 80;
 
 	struct sockaddr_in addr;

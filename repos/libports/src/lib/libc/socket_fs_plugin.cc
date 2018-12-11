@@ -241,15 +241,15 @@ struct Socket_fs::Context : Libc::Plugin_context
 			connect_status_len = read(connect_fd(), connect_status,
 									  sizeof(connect_status));
 
-			if (connect_status_len == -1) {
+			if (connect_status_len <= 0) {
 				Genode::error("socket_fs: reading from the connect file failed");
 				return -1;
 			}
 
-			if (strncmp(connect_status, "connected", connect_status_len) == 0)
+			if (strcmp(connect_status, "connected") == 0)
 				return 0;
 
-			if (strncmp(connect_status, "connection refused", connect_status_len) == 0)
+			if (strcmp(connect_status, "connection refused") == 0)
 				return Errno(ECONNREFUSED);
 
 			Genode::error("socket_fs: unhandled connection state");
