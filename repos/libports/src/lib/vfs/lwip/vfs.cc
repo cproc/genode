@@ -395,6 +395,7 @@ Lwip::Lwip_file_handle::~Lwip_file_handle()
 Lwip::Read_result Lwip::Lwip_file_handle::read(char *dst, file_size count,
                                                file_size &out_count)
 {
+//Genode::log("Lwip_file_handle::read(): count: ", count, ", socket: ", socket);
 	return (socket)
 		? socket->read(*this, dst, count, out_count)
 		: Read_result::READ_ERR_INVALID;
@@ -1097,6 +1098,7 @@ class Lwip::Tcp_socket_dir final :
 		 */
 		void error()
 		{
+			Genode::log("Tcp_socket_dir::error()");
 			state = CLOSED;
 			_pcb = NULL;
 
@@ -1111,6 +1113,7 @@ class Lwip::Tcp_socket_dir final :
 		 */
 		void shutdown()
 		{
+			Genode::log("Tcp_socket_dir::shutdown()");
 			state = CLOSING;
 			if (_recv_pbuf)
 				return;
@@ -1162,7 +1165,9 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
-				return !ip_addr_isany(&_pcb->remote_ip);
+				//Genode::log("Tcp_socket_dir::read_ready(): ", _pcb);
+				//return false/*!ip_addr_isany(&_pcb->remote_ip)*/;
+				return (state != CONNECT);
 
 			case Lwip_file_handle::LOCATION:
 			case Lwip_file_handle::LOCAL:
@@ -1177,6 +1182,7 @@ class Lwip::Tcp_socket_dir final :
 		                 char *dst, file_size count,
 		                 file_size &out_count) override
 		{
+//Genode::log("Tcp_socket_dir::read(): ", count, ", kind: ", (int)handle.kind);
 			switch(handle.kind) {
 
 			case Lwip_file_handle::DATA:
@@ -1303,10 +1309,20 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+				//Genode::log("CONNECT: ", (int)state);
+				switch (state) {
+				case READY:
+					out_count = Genode::snprintf(dst, count, "connected");
+					break;
+				default:
+					out_count = Genode::snprintf(dst, count, "connection refused");
+					break;
+				}
+				return Read_result::READ_OK;
 			case Lwip_file_handle::LISTEN:
 			case Lwip_file_handle::INVALID: break;
 			}
-
+//Genode::log("Tcp_socket_dir::read(): returning READ_ERR_INVALID");
 			return Read_result::READ_ERR_INVALID;
 		}
 
@@ -1460,6 +1476,7 @@ void udp_recv_callback(void *arg, struct udp_pcb*, struct pbuf *buf, const ip_ad
 static
 err_t tcp_connect_callback(void *arg, struct tcp_pcb *pcb, err_t)
 {
+Genode::log("tcp_connect_callback()");
 	if (!arg) {
 		tcp_abort(pcb);
 		return ERR_ABRT;
