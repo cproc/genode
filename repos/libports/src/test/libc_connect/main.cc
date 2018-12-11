@@ -1,82 +1,300 @@
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <unistd.h>
 
-int main()
+
+static char const *server_connected           = "10.0.1.2";
+static char const *server_connection_refused  = "10.0.1.2";
+static char const *server_timeout             = "10.0.1.4";
+
+static int const port_connected          = 80;
+static int const port_connection_refused = 81;
+static int const port_timeout            = 80;
+
+
+static void test_blocking_connect_connected()
 {
+	printf("Testing blocking connect (connected)\n");
+
+	/*
+	 * This is the first test and it can happen that the server is not ready
+	 * yet, so this test retries until success.
+	 */
+	for (;;) {
+		int s = socket(AF_INET, SOCK_STREAM, 0);
+
+		struct sockaddr_in addr;
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port_connected);
+		addr.sin_addr.s_addr = inet_addr(server_connected);
+
+		sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
+
+		int res = connect(s, paddr, sizeof(addr));
+
+		if (res == 0) {
+			close(s);
+			break;
+		}
+
+		if (errno != ECONNREFUSED) {
+			printf("Error: '%s' failed\n", __func__);
+			exit(-1);
+		}
+
+		close(s);
+
+		printf("Warning: got 'connection refused'. "
+		       "Server might not be ready yet, retrying...\n");
+	}
+}
+
+
+static void test_blocking_connect_connection_refused()
+{
+	printf("Testing blocking connect (connection refused)\n");
+
 	int s = socket(AF_INET, SOCK_STREAM, 0);
-
-	printf("socket() returned %d\n", s);
-
-	fcntl(s, F_SETFL, O_NONBLOCK);
-
-	char const *server = "94.130.141.228"; /* genode.org */
-	//char const *server = "10.0.0.2";
-	int port = 80;
 
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr(server);
+	addr.sin_port = htons(port_connection_refused);
+	addr.sin_addr.s_addr = inet_addr(server_connection_refused);
 
 	sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
 
-	int ret = connect(s, paddr, sizeof(addr));
+	int res = connect(s, paddr, sizeof(addr));
 
-	printf("connect() returned %d\n", ret);
+	if (!((res == -1) && (errno == ECONNREFUSED))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
 
-	if (ret == -1) {
-		printf("errno: %d\n", errno);
-		switch (errno) {
-		case EINPROGRESS:
-			{
-				fd_set writefds;
-				FD_ZERO(&writefds);
-				FD_SET(s, &writefds);
-				struct timeval timeout {100, 0};
-				printf("calling select()\n");
-				int res = select(s + 1, NULL, &writefds, NULL, &timeout);
-				printf("select() returned %d\n", res);
-				if (res == 0) {
-					printf("select() timed out\n");
-					//return -1;
-				}
-				break;
-			}
-		default: printf("errno: %d\n", errno);
-		}
+	close(s);
+}
+
+
+static void test_blocking_connect_timeout()
+{
+	printf("Testing blocking connect (timeout)\n");
+
+	int s = socket(AF_INET, SOCK_STREAM, 0);
+
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port_timeout);
+	addr.sin_addr.s_addr = inet_addr(server_timeout);
+
+	sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
+
+	int res = connect(s, paddr, sizeof(addr));
+
+	if (!((res == -1) && (errno == ETIMEDOUT))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	close(s);
+}
+
+
+static void test_nonblocking_connect_connected()
+{
+	printf("Testing nonblocking connect (connected)\n");
+
+	int s = socket(AF_INET, SOCK_STREAM, 0);
+
+	fcntl(s, F_SETFL, O_NONBLOCK);
+
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port_connected);
+	addr.sin_addr.s_addr = inet_addr(server_connected);
+
+	sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
+
+	int res = connect(s, paddr, sizeof(addr));
+
+	if (!((res == -1) && (errno == EINPROGRESS))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	/* wait until socket is ready for writing */
+
+	fd_set writefds;
+	FD_ZERO(&writefds);
+	FD_SET(s, &writefds);
+
+	struct timeval timeout {10, 0};
+	res = select(s + 1, NULL, &writefds, NULL, &timeout);
+
+	if (res != 1) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
 	}
 
 	int so_error = 0;
 	socklen_t opt_len = sizeof(so_error);
 
-	ret = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
+	res = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
 
-	printf("getsockopt() returned %d, %d\n", ret, so_error);
+	if (!((res == 0) && (so_error == 0))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
 
-	ret = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
+	res = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
 
-	printf("getsockopt() 2 returned %d, %d\n", ret, so_error);
+	if (!((res == 0) && (so_error == 0))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
 
-	ret = connect(s, paddr, sizeof(addr));
+	res = connect(s, paddr, sizeof(addr));
 
-	printf("second connect() returned %d\n", ret);
+	if (!((res == 0) || ((res == -1) && (errno == EISCONN)))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
 
-	if (ret < 0)
-		printf("errno: %d\n", errno);
+	res = connect(s, paddr, sizeof(addr));
 
-	ret = connect(s, paddr, sizeof(addr));
+	if (!((res == -1) && (errno == EISCONN))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
 
-	printf("third connect() returned %d\n", ret);
+	close(s);
+}
 
-	if (ret < 0)
-		printf("errno: %d\n", errno);
+
+static void test_nonblocking_connect_connection_refused()
+{
+	printf("Testing nonblocking connect (connection refused)\n");
+
+	int s = socket(AF_INET, SOCK_STREAM, 0);
+
+	fcntl(s, F_SETFL, O_NONBLOCK);
+
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port_connection_refused);
+	addr.sin_addr.s_addr = inet_addr(server_connection_refused);
+
+	sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
+
+	int res = connect(s, paddr, sizeof(addr));
+
+	if (!((res == -1) && (errno == EINPROGRESS))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	/* wait until socket is ready for writing */
+
+	fd_set writefds;
+	FD_ZERO(&writefds);
+	FD_SET(s, &writefds);
+
+	struct timeval timeout {10, 0};
+	res = select(s + 1, NULL, &writefds, NULL, &timeout);
+
+	if (res != 1) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	int so_error = 0;
+	socklen_t opt_len = sizeof(so_error);
+
+	res = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
+
+	if (!((res == 0) && (so_error == ECONNREFUSED))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	res = getsockopt(s, SOL_SOCKET, SO_ERROR, &so_error, &opt_len);
+
+	if (!((res == 0) && (so_error == 0))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	res = connect(s, paddr, sizeof(addr));
+
+	if (!((res == -1) && (errno == ECONNABORTED))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	close(s);
+}
+
+
+static void test_nonblocking_connect_timeout()
+{
+	printf("Testing nonblocking connect (timeout)\n");
+
+	int s = socket(AF_INET, SOCK_STREAM, 0);
+
+	fcntl(s, F_SETFL, O_NONBLOCK);
+
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port_timeout);
+	addr.sin_addr.s_addr = inet_addr(server_timeout);
+
+	sockaddr const *paddr = reinterpret_cast<sockaddr const *>(&addr);
+
+	int res = connect(s, paddr, sizeof(addr));
+
+	if (!((res == -1) && (errno == EINPROGRESS))) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	/* wait until socket is ready for writing */
+
+	fd_set writefds;
+	FD_ZERO(&writefds);
+	FD_SET(s, &writefds);
+
+	struct timeval timeout {10, 0};
+	res = select(s + 1, NULL, &writefds, NULL, &timeout);
+
+	if (res != 0) {
+		printf("Error: '%s' failed\n", __func__);
+		exit(-1);
+	}
+
+	close(s);
+}
+
+
+int main(int argc, char *argv[])
+{
+	test_blocking_connect_connected();
+	test_blocking_connect_connection_refused();
+	test_blocking_connect_timeout();
+
+	test_nonblocking_connect_connected();
+	test_nonblocking_connect_connection_refused();
+	test_nonblocking_connect_timeout();
 
 	return 0;
 }

@@ -722,7 +722,7 @@ class Vfs::Lxip_connect_file : public Vfs::Lxip_file
 				Genode::error("Vfs::Lxip_connect_file::read(): getsockopt() failed");
 				return -1;
 			}
-
+Genode::log("so_error: ", so_error);
 			switch (so_error) {
 			case 0:
 				return Genode::snprintf(dst, len, "connected");

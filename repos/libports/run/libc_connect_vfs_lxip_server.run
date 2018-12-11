@@ -3,6 +3,8 @@ set build_components {
 	drivers/timer drivers/nic
 	server/vfs
 	lib/vfs/lxip
+	server/nic_router
+	test/netty/tcp
 	test/libc_connect
 }
 
@@ -40,21 +42,51 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="nic_drv" } [nic_drv_ld_attr] {>
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="8M"/>
-		<provides> <service name="Nic"/> </provides>
+
+	<start name="nic_router" caps="1000">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Nic"/></provides>
+		<config>
+			<domain name="default" interface="10.0.1.1/24"/>
+			<default-policy domain="default"/>
+		</config>
 	</start>
 
-	<start name="vfs" caps="150">
+	<start name="socket_fs_server" caps="150">
+		<binary name="vfs"/>
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="File_system"/> </provides>
 		<config>
-			<vfs>
-				<dir name="socket"> <lxip dhcp="yes"/> </dir>
-			</vfs>
-			<default-policy writeable="yes" root="/"/>
+			<vfs> <lxip ip_addr="10.0.1.2" netmask="255.255.255.0" gateway="10.0.1.1"/> </vfs>
+			<policy label_prefix="server" root="/" writeable="yes"/>
 		</config>
+	</start>
+
+	<start name="socket_fs_client" caps="150">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs> <lxip ip_addr="10.0.1.3" netmask="255.255.255.0" gateway="10.0.1.1"/>	</vfs>
+			<policy label_prefix="test-libc_connect" root="/" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="server">
+		<binary name="test-netty_tcp"/>
+		<resource name="RAM" quantum="4M"/>
+		<config port="80" read_write="yes" nonblock="false">
+			<vfs>
+				<dir name="dev">    <log/> </dir>
+				<dir name="socket"> <fs/>  </dir>
+				<dir name="tmp">    <ram/> </dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="socket_fs_server"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
 	<start name="test-libc_connect" caps="200">
@@ -62,10 +94,14 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
-				<fs/>
+				<dir name="socket"> <fs/> </dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket" />
 		</config>
+		<route>
+			<service name="File_system"> <child name="socket_fs_client"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 }
 
@@ -82,11 +118,15 @@ append boot_modules {
 	ld.lib.so libc.lib.so vfs.lib.so posix.lib.so
 	libm.lib.so
 	vfs_lxip.lib.so lxip.lib.so
+	nic_router
+	test-netty_tcp
 	test-libc_connect
 }
 
 append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
+
+append qemu_args " -nographic "
 
 run_genode_until forever
