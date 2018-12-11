@@ -1,7 +1,9 @@
 set build_components {
 	core init
-	drivers/timer drivers/nic
+	drivers/timer
 	lib/vfs/lxip
+	server/nic_router
+	test/netty/tcp
 	test/libc_connect
 }
 
@@ -11,12 +13,6 @@ append_platform_drv_build_components
 build $build_components
 
 create_boot_directory
-
-# don't use the dynamic linker for loading the lx_hybrid nic_drv on Linux
-proc nic_drv_ld_attr {} {
-	if {[have_spec linux]} { return {ld="no"} }
-	return ""
-}
 
 append config {
 <config verbose="yes">
@@ -39,10 +35,29 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="nic_drv" } [nic_drv_ld_attr] {>
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="8M"/>
-		<provides> <service name="Nic"/> </provides>
+
+	<start name="nic_router" caps="1000">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Nic"/></provides>
+		<config>
+			<domain name="default" interface="10.0.1.1/24"/>
+			<default-policy domain="default"/>
+		</config>
+	</start>
+
+	<start name="server" caps="200">
+		<binary name="test-netty_tcp"/>
+		<resource name="RAM" quantum="32M"/>
+		<config port="80" read_write="yes" nonblock="false">
+			<vfs>
+				<dir name="dev">    <log/> </dir>
+				<dir name="socket">
+					<lxip ip_addr="10.0.1.2" netmask="255.255.255.0" gateway="10.0.1.1"/>
+				</dir>
+				<dir name="tmp">    <ram/> </dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
+		</config>
 	</start>
 
 	<start name="test-libc_connect" caps="200">
@@ -51,7 +66,7 @@ append config {
 			<vfs>
 				<dir name="dev"> <log/> </dir>
 				<dir name="socket">
-					<lxip dhcp="yes"/>
+					<lxip ip_addr="10.0.1.3" netmask="255.255.255.0" gateway="10.0.1.1"/>
 				</dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket" />
@@ -68,15 +83,19 @@ append config {
 install_config $config
 
 append boot_modules {
-	core init timer } [nic_drv_binary] {
+	core init timer
 	ld.lib.so libc.lib.so vfs.lib.so posix.lib.so
 	libm.lib.so
 	vfs_lxip.lib.so lxip.lib.so
+	nic_router
+	test-netty_tcp
 	test-libc_connect
 }
 
 append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
+
+append qemu_args " -nographic "
 
 run_genode_until forever

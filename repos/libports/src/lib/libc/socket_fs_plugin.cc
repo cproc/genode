@@ -114,7 +114,7 @@ struct Socket_fs::Context : Libc::Plugin_context
 
 		enum Proto { TCP, UDP };
 
-		enum State { UNCONNECTED, ACCEPT_ONLY, CONNECTING, CONNECTED };
+		enum State { UNCONNECTED, ACCEPT_ONLY, CONNECTING, CONNECTED, CONNECT_ABORTED };
 
 		struct Inaccessible { }; /* exception */
 
@@ -235,21 +235,21 @@ struct Socket_fs::Context : Libc::Plugin_context
 		 */
 		int read_connect_status()
 		{
-			char connect_status[32];
+			char connect_status[32] = { 0 };
 			ssize_t connect_status_len;
 
 			connect_status_len = read(connect_fd(), connect_status,
 									  sizeof(connect_status));
 
-			if (connect_status_len == -1) {
+			if (connect_status_len <= 0) {
 				Genode::error("socket_fs: reading from the connect file failed");
 				return -1;
 			}
 
-			if (strncmp(connect_status, "connected", connect_status_len) == 0)
+			if (strcmp(connect_status, "connected") == 0)
 				return 0;
 
-			if (strncmp(connect_status, "connection refused", connect_status_len) == 0)
+			if (strcmp(connect_status, "connection refused") == 0)
 				return Errno(ECONNREFUSED);
 
 			Genode::error("socket_fs: unhandled connection state");
@@ -631,24 +631,34 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 			fd_set writefds;
 			FD_ZERO(&writefds);
 			FD_SET(libc_fd, &writefds);
-			struct timeval timeout {1, 0};
+
+			enum { CONNECT_TIMEOUT_S = 15 };
+			struct timeval timeout {CONNECT_TIMEOUT_S, 0};
 			int res = select(libc_fd + 1, NULL, &writefds, NULL, &timeout);
+
+			if (res < 0) {
+				/* errno has been set by select() */
+				return res;
+			}
+
+			if (res == 0) {
+				context->state(Context::CONNECT_ABORTED);
+				return Errno(ETIMEDOUT);
+			}
 
 			int connect_status = context->read_connect_status();
 
 			if (connect_status == 0)
 				context->state(Context::CONNECTED);
 			else
-				context->state(Context::UNCONNECTED);
+				context->state(Context::CONNECT_ABORTED);
 
-			/* errno was set by context->read_connect_status() */
+			/* errno has been set by context->read_connect_status() */
 			return connect_status;
 		}
 		break;
 	case Context::ACCEPT_ONLY:
 		return Errno(EINVAL);
-	case Context::CONNECTED:
-		return Errno(EISCONN);
 	case Context::CONNECTING:
 		{
 			int connect_status = context->read_connect_status();
@@ -656,11 +666,15 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 			if (connect_status == 0)
 				context->state(Context::CONNECTED);
 			else
-				context->state(Context::UNCONNECTED);
+				context->state(Context::CONNECT_ABORTED);
 
 			/* errno was set by context->read_connect_status() */
 			return connect_status;
 		}
+	case Context::CONNECTED:
+		return Errno(EISCONN);
+	case Context::CONNECT_ABORTED:
+		return Errno(ECONNABORTED);
 	}
 
 	/* TODO maybe EALREADY, EINPROGRESS, ETIMEDOUT */
@@ -824,7 +838,7 @@ extern "C" int socket_fs_getsockopt(int libc_fd, int level, int optname,
 					context->state(Context::CONNECTED);
 				} else {
 					*(int*)optval = errno;
-					context->state(Context::UNCONNECTED);
+					context->state(Context::CONNECT_ABORTED);
 				}
 
 				return 0;
