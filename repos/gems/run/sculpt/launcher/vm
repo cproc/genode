@@ -12,5 +12,7 @@
 		<service name="Rtc">    <parent/> </service>
 		<service name="Usb">    <parent/> </service>
 		<service name="File_system" label="shared"> <child name="shared_fs"/> </service>
+		<service name="Audio_in"> <child name="bsd_audio_drv"/> </service>
+		<service name="Audio_out"> <child name="bsd_audio_drv"/> </service>
 	</route>
 </launcher>
