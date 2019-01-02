@@ -4,6 +4,7 @@
 		<file_system label="vm"/>
 		<file_system label="shared"/>
 		<nic/>
+		<audio_out/>
 	</requires>
 
 	<content>
