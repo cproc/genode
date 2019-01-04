@@ -324,7 +324,8 @@ class Decorator::Window : public Window_base, public Animator::Item
 			Area const size_top_bottom = _visible_top_bottom_area(geometry().area());
 
 			if (size_top_bottom.w() > _size_top_bottom.w()
-			 || size_top_bottom.h() > _size_top_bottom.h()) {
+			 || size_top_bottom.h() > _size_top_bottom.h()
+			 || !_buffer_top_bottom.constructed()) {
 
 				_nitpicker_top_bottom.buffer(Framebuffer::Mode(size_top_bottom.w(),
 				                                               size_top_bottom.h(),
@@ -340,7 +341,8 @@ class Decorator::Window : public Window_base, public Animator::Item
 			Area const size_left_right = _visible_left_right_area(geometry().area());
 
 			if (size_left_right.w() > _size_left_right.w()
-			 || size_left_right.h() > _size_left_right.h()) {
+			 || size_left_right.h() > _size_left_right.h()
+			 || !_buffer_left_right.constructed()) {
 
 				_nitpicker_left_right.buffer(Framebuffer::Mode(size_left_right.w(),
 				                                               size_left_right.h(),
