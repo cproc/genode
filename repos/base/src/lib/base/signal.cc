@@ -148,13 +148,17 @@ namespace Genode {
 
 			void remove(List_element<Signal_context> *le)
 			{
+				Genode::log(&le, ": remove(): trying to lock registry for context: ", le->object());
 				Lock::Guard guard(_lock);
+				Genode::log(&le, ": remove(): registry locked for context: ", le->object());
 				_list.remove(le);
 			}
 
 			bool test_and_lock(Signal_context *context) const
 			{
+				Genode::log(&context, ": test_and_lock(): trying to lock registry for context: ", context);
 				Lock::Guard guard(_lock);
+				Genode::log(&context, ": test_and_lock(): registry locked for context: ", context);
 
 				/* search list for context */
 				List_element<Signal_context> const *le = _list.first();
@@ -162,7 +166,9 @@ namespace Genode {
 
 					if (context == le->object()) {
 						/* lock object */
+						Genode::log(&context, ": test_and_lock(): trying to lock context: ", context);
 						context->_lock.lock();
+						Genode::log(&context, ": test_and_lock(): context locked: ", context);
 						return true;
 					}
 				}

@@ -189,7 +189,7 @@ append config {
 }
 
 if {![info exists verbose_mode]} {set verbose_mode "yes"}
-append config " <config verbose=\"$verbose_mode\">"
+append config " <config ld_verbose=\"yes\" verbose=\"$verbose_mode\">"
 
 append config {
 			<fstab>
@@ -267,6 +267,7 @@ build_boot_image $boot_modules
 append qemu_args " -nographic -m 768 "
 
 # wait until Noux started
+run_genode_until forever
 run_genode_until {\[init -\> noux\].*--- noux started ---} $noux_boot_timeout
 set serial_id [output_spawn_id]
 

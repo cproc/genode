@@ -232,8 +232,9 @@ void Signal_receiver::dissolve(Signal_context *context)
 
 	{
 		Lock::Guard contexts_lock_guard(_contexts_lock);
-
+		Genode::log(&context, ": dissolve(): trying to lock context: ", context);
 		Lock::Guard context_lock_guard(context->_lock);
+		Genode::log(&context, ": dissolve(): context locked: ", context);
 
 		_unsynchronized_dissolve(context);
 	}
