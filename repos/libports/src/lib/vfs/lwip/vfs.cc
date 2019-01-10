@@ -1162,7 +1162,11 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
-				return !ip_addr_isany(&_pcb->remote_ip);
+				/*
+				 * The connect file is considered readable when the socket is
+				 * writeable (connected or error).
+				 */
+				return ((state == READY) || (state == CLOSED));
 
 			case Lwip_file_handle::LOCATION:
 			case Lwip_file_handle::LOCAL:
@@ -1303,6 +1307,15 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+				switch (state) {
+				case READY:
+					out_count = Genode::snprintf(dst, count, "connected");
+					break;
+				default:
+					out_count = Genode::snprintf(dst, count, "connection refused");
+					break;
+				}
+				return Read_result::READ_OK;
 			case Lwip_file_handle::LISTEN:
 			case Lwip_file_handle::INVALID: break;
 			}
