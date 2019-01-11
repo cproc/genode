@@ -12,9 +12,6 @@ LIBS += qoost
 # We need Qt headers in a local directory for MOC to work correctly
 #
 
-# util.h from the test component directory
-UTIL_H = $(REP_DIR)/src/test/tiled_wm/util.h
-
 # icon.h from the qoost API package
 ICON_H = $(call select_from_repositories,include/qoost/icon.h)
 
@@ -22,9 +19,6 @@ ICON_H = $(call select_from_repositories,include/qoost/icon.h)
 ifeq ($(ICON_H),)
 ICON_H = $(call select_from_ports,qoost)/include/qoost/icon.h
 endif
-
-util.h: $(UTIL_H)
-	$(VERBOSE)cp $(UTIL_H) .
 
 icon.h: $(ICON_H)
 	$(VERBOSE)cp $(ICON_H) .
