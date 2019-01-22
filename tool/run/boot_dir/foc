@@ -113,7 +113,7 @@ proc run_boot_dir_x86 {binaries} {
 		puts $fh " insmod multiboot"
 		puts $fh " multiboot /boot/bender"
 		puts $fh " module /boot/bootstrap"
-		puts $fh " module /boot/kernel [fiasco_serial_esc_arg]"
+		puts $fh " module /boot/kernel [fiasco_serial_esc_arg] esc"
 		puts $fh " module /boot/sigma0"
 		puts $fh " module /boot/image.elf"
 		puts $fh "}"
@@ -137,7 +137,7 @@ proc run_boot_dir_x86 {binaries} {
 		set fh [open "[run_dir]/config-52-54-00-12-34-56" "WRONLY CREAT TRUNC"]
 		puts $fh " exec /boot/bender"
 		puts $fh " load /boot/bootstrap"
-		puts $fh " load /boot/kernel -serial_esc"
+		puts $fh " load /boot/kernel -serial_esc -esc"
 		puts $fh " load /boot/sigma0"
 		puts $fh " load /boot/image.elf"
 		close $fh
@@ -168,7 +168,7 @@ proc run_boot_dir_arm { binaries } {
 
 	puts $fh "modaddr 0x01100000\n"
 	puts $fh "entry    genode"
-	puts $fh "kernel   [kernel_binary] [fiasco_serial_esc_arg]"
+	puts $fh "kernel   [kernel_binary] [fiasco_serial_esc_arg] -esc"
 	puts $fh "roottask image.elf"
 	close $fh
 
