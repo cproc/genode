@@ -95,6 +95,7 @@ void Platform::Device_component::config_write(unsigned char address,
                                               unsigned value,
                                               Access_size size)
 {
+Genode::log("config_write()");
 	/* white list of ports which we permit to write */
 	switch (address) {
 		case 0x40 ... 0xff:
@@ -137,8 +138,12 @@ void Platform::Device_component::config_write(unsigned char address,
 		_enabled_bus_master = true;
 	}
 
+Genode::log("config_write(): address: ", Genode::Hex(address), ", value: ", Genode::Hex(value));
+	//if (value != 0x8f00)
 	_device_config.write(_config_access, address, value, size,
 	                     _device_config.DONT_TRACK_ACCESS);
+
+Genode::log("config_write() finished");
 }
 
 Genode::Irq_session_capability Platform::Device_component::irq(Genode::uint8_t id)

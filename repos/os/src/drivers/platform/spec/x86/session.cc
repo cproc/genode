@@ -72,6 +72,12 @@ void Platform::Pci_buses::scan_bus(Config_access &config_access,
 				if ((classcode == 0x2 && subclass == 0x00) /* ETHERNET */) {
 					config.disable_bus_master_dma(config_access);
 				}
+
+#if 0
+				if ((classcode == 0xc && subclass == 0x03) /* USB */) {
+					config.disable_bus_master_dma(config_access);
+				}
+#endif
 			}
 
 			if (!config.valid())

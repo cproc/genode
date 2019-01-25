@@ -85,10 +85,13 @@ class Lx::Pci_dev : public pci_dev, public Lx_kit::List<Pci_dev>::Element
 
 	public:
 
+		bool io = false;
+		bool mem = false;
+
 		/**
 		 * Constructor
 		 */
-		Pci_dev(Platform::Device_capability cap)
+		Pci_dev(Platform::Device_capability cap, bool enable_bus_master = true)
 		:
 			_client(cap)
 		{
@@ -123,8 +126,8 @@ class Lx::Pci_dev : public pci_dev, public Lx_kit::List<Pci_dev>::Element
 			this->bus = (struct pci_bus *)this;
 
 			/* setup resources */
-			bool io = false;
-			bool mem = false;
+			//bool io = false;
+			//bool mem = false;
 			for (int i = 0; i < Device::NUM_RESOURCES; i++) {
 				Device::Resource res = _client.resource(i);
 				if (res.type() == Device::Resource::INVALID)
@@ -148,14 +151,8 @@ class Lx::Pci_dev : public pci_dev, public Lx_kit::List<Pci_dev>::Element
 					mem = true;
 			}
 
-			/* enable bus master, memory and io bits */
-			uint16_t cmd = _client.config_read(CMD, Device::ACCESS_16BIT);
-			cmd |= io ? 0x1 : 0;
-			cmd |= mem ? 0x2 : 0;
-
-			/* enable bus master */
-			cmd |= 0x4;
-			config_write(CMD, cmd);
+			if (enable_bus_master)
+				this->enable_bus_master();
 
 			/* get pci express capability */
 			this->pcie_cap = 0;
@@ -176,6 +173,20 @@ class Lx::Pci_dev : public pci_dev, public Lx_kit::List<Pci_dev>::Element
 				uint16_t reg_val = _client.config_read(this->pcie_cap, Device::ACCESS_16BIT);
 				this->pcie_flags_reg = reg_val;
 			}
+		}
+
+		void enable_bus_master()
+		{
+			using namespace Platform;
+
+			/* enable bus master, memory and io bits */
+			uint16_t cmd = _client.config_read(CMD, Device::ACCESS_16BIT);
+			cmd |= io ? 0x1 : 0;
+			cmd |= mem ? 0x2 : 0;
+
+			/* enable bus master */
+			cmd |= 0x4;
+			config_write(CMD, cmd);
 		}
 
 		/**

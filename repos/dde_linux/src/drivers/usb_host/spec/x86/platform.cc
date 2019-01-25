@@ -135,22 +135,43 @@ extern "C" int pci_register_driver(struct pci_driver *driver)
 		if (!matching_id)
 			return false;
 
-		/* create 'pci_dev' struct for matching device */
-		Lx::Pci_dev *pci_dev = new (Lx::Malloc::mem()) Lx::Pci_dev(cap);
+#if 1
+		static int count = 0;
+		
+		count++;
 
+		Genode::log("count: ", count);
+
+		//if (count != 5)
+			//return false;
+#endif
+
+Genode::log("check 1");
+		/* create 'pci_dev' struct for matching device */
+		Lx::Pci_dev *pci_dev = new (Lx::Malloc::mem()) Lx::Pci_dev(cap, false);
+	
+Genode::log("check 2");
 		/* enable ioremap to work */
 		Lx::pci_dev_registry()->insert(pci_dev);
-
+Genode::log("check 3");
 		/* register driver at the 'pci_dev' struct */
 		pci_dev->dev.driver = &driver->driver;
-
+Genode::log("check 4");
 		/*
 		 * This quirk handles device handoff from BIOS, since the BIOS may still
 		 * access the USB controller after bootup. For this the ext cap register of
 		 * the PCI config space is checked
 		 */
-		if (Lx_kit::env().config_rom().xml().attribute_value("bios_handoff", true))
+#if 1
+		if (Lx_kit::env().config_rom().xml().attribute_value("bios_handoff", true)) {
+			Genode::log("handoff");
 			__pci_fixup_quirk_usb_early_handoff(pci_dev);
+			Genode::log("handoff finished");
+		}
+#endif
+		pci_dev->enable_bus_master();
+
+//while (count == 3) { Genode::log("8"); }
 
 		/* call probe function of the Linux driver */
 		if (driver->probe(pci_dev, matching_id)) {

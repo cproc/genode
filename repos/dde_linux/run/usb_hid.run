@@ -73,6 +73,8 @@ set build_components {
 
 lappend_if [have_spec gpio] build_components drivers/gpio
 
+#set use_acpica_as_acpi_drv 1
+
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
 
