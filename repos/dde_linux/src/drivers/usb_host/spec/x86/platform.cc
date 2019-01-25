@@ -82,8 +82,16 @@ class Pci_dev_list
 		template <typename FUNC>
 		void for_each_pci_device(FUNC const &func)
 		{
-			for (Element *e = _pci_caps.first(); e; e = e->next())
-				func(e->cap);
+			Element *elements[256] = { 0 };
+			int i = 0;
+			for (Element *e = _pci_caps.first(); e; e = e->next()) {
+				//func(e->cap);
+				elements[i] = e;
+				i++;
+			}
+
+			for (; i > 0; i--)
+				func(elements[i - 1]->cap);
 		}
 };
 
