@@ -132,7 +132,7 @@ class Depot_deploy::Child : public List_model<Child>::Element
 				return;
 
 			Xml_node const sub_node = from_node.sub_node(sub_node_type.string());
-			sub_node.with_raw_content([&] (char const *start, size_t length) {
+			sub_node.with_raw_node([&] (char const *start, size_t length) {
 				xml.append(start, length); });
 		}
 
