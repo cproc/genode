@@ -34,6 +34,24 @@ static Genode::Env &genode_env()
 	abort();
 }
 
+
+/*
+ * Entrypoint for handling 'ack avail' signals from the USB driver.
+ *
+ * The entrypoint is needed because the main thread of an application
+ * using libusb might be blocking on a pthread locking function, which
+ * currently do not dispatch signals while blocking.
+ */
+static Genode::Entrypoint &ep()
+{
+	static Genode::Entrypoint instance(genode_env(),
+	                                   2*1024*sizeof(Genode::addr_t),
+	                                   "usb_ack_ep",
+	                                   Genode::Affinity::Location());
+	return instance;
+}
+
+
 static Libc::Allocator libc_alloc { };
 
 
@@ -66,7 +84,7 @@ struct Usb_device
 		}
 
 		Genode::Io_signal_handler<Usb_device> _ack_avail_handler {
-			genode_env().ep(), *this, &Usb_device::_handle_ack_avail };
+			ep(), *this, &Usb_device::_handle_ack_avail };
 
 		void _handle_ack_avail()
 		{
