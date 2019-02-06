@@ -81,10 +81,16 @@ void Driver::Device::register_device()
 
 void Driver::Device::unregister_device()
 {
+Genode::log("unregister_device()");
 	for (unsigned i = 0; i < USB_MAXINTERFACES; i++) {
 		if (!udev->config->interface[i]) break;
-		else remove_interface(udev->config->interface[i]);
+		else {
+			Genode::log("unregister_device(): calling remove_interface()");
+			remove_interface(udev->config->interface[i]);
+			Genode::log("unregister_device(): remove_interface() returned");
+		}
 	}
+Genode::log("unregister_device: interfaces removed");
 	kfree(udev->bus);
 	kfree(udev->config);
 	kfree(udev);
@@ -102,8 +108,9 @@ void Driver::Device::state_task_entry(void * arg)
 
 		if (!dev.usb.plugged() && dev.udev)
 			dev.unregister_device();
-
+Genode::log("st b");
 		Lx::scheduler().current()->block_and_schedule();
+Genode::log("st u");
 	}
 }
 
@@ -134,15 +141,22 @@ Driver::Device::Device(Driver & driver, Label label)
   urb_task(env.ep(), urb_task_entry, reinterpret_cast<void*>(this),
              "usb_urb", Lx::Task::PRIORITY_0, Lx::scheduler())
 {
-	usb.tx_channel()->sigh_ack_avail(urb_task.handler);
+	usb.tx_channel()->sigh_ack_avail(urb_task->handler);
 	driver.devices.insert(&le);
 }
 
 
 Driver::Device::~Device()
 {
+Genode::log("~D1");
+	urb_task.destruct();
+Genode::log("~D2");
+	state_task.destruct();
+Genode::log("~D3");
 	driver.devices.remove(&le);
+Genode::log("~D4");
 	if (udev) unregister_device();
+Genode::log("~D5");
 }
 
 
@@ -191,7 +205,9 @@ void Driver::main_task_entry(void * arg)
 			static Device dev(*driver, Label(""));
 		else
 			driver->scan_report();
+		Genode::log("mt b");
 		Lx::scheduler().current()->block_and_schedule();
+		Genode::log("mt u");
 	}
 }
 
@@ -230,7 +246,12 @@ void Driver::scan_report()
 	};
 
 	devices.for_each([&] (Device & d) {
-		if (!d.updated) destroy(heap, &d); });
+		if (!d.updated) {
+			Genode::log("dd1");
+			destroy(heap, &d);
+			Genode::log("dd2");
+		}
+	});
 }
 
 

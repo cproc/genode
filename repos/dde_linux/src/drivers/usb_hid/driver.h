@@ -19,6 +19,7 @@
 #include <base/heap.h>
 #include <input/root.h>
 #include <usb_session/connection.h>
+//#include <util/reconstructible.h>
 #include <lx_kit/scheduler.h>
 
 struct usb_device_id;
@@ -36,8 +37,10 @@ struct Driver
 	
 		void handle_signal()
 		{
+			//Genode::log(&handler, " (", Genode::Cstring(task.name()), "): hs1");
 			task.unblock();
 			Lx::scheduler().schedule();
+			//Genode::log(&handler, " (", Genode::Cstring(task.name()), "): hs2");
 		}
 	
 		template <typename... ARGS>
@@ -54,10 +57,10 @@ struct Driver
 		Driver                        &driver;
 		Genode::Env                   &env;
 		Genode::Allocator_avl         &alloc;
-		Task                           state_task;
-		Task                           urb_task;
+		Genode::Reconstructible<Task>  state_task;
+		Genode::Reconstructible<Task>  urb_task;
 		Usb::Connection                usb { env, &alloc, label.string(),
-		                                     512 * 1024, state_task.handler };
+		                                     512 * 1024, state_task->handler };
 		usb_device                   * udev = nullptr;
 		bool                           updated = true;
 

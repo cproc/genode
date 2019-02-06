@@ -146,7 +146,7 @@ append config {
 	<start name="usb_hid_drv" caps="140">
 		<resource name="RAM" quantum="11M"/>
 		<provides><service name="Input"/></provides>
-		<config use_report="yes" capslock_led="rom" numlock_led="rom" scrlock_led="rom"/>
+		<config use_report="yes" capslock_led="rom" numlock_led="rom" scrlock_led="rom" ld_verbose="yes"/>
 		<route>
 			<service name="ROM" label="capslock"> <child name="dynamic_rom"/> </service>
 			<service name="ROM" label="numlock">  <child name="dynamic_rom"/> </service>

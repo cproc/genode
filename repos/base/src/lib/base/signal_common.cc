@@ -59,8 +59,10 @@ void Signal::_dec_ref_and_unlock()
 	if (_data.context) {
 		Lock::Guard lock_guard(_data.context->_lock);
 		_data.context->_ref_cnt--;
-		if (_data.context->_ref_cnt == 0)
+		if (_data.context->_ref_cnt == 0) {
+			//Genode::log("UL: ", _data.context);
 			_data.context->_destroy_lock.unlock();
+		}
 	}
 }
 
@@ -97,6 +99,7 @@ Signal::Signal(Signal::Data data) : _data(data)
 		 * is in its clear state).
 		 */
 		if (_data.context->_ref_cnt == 1) {
+			//Genode::log("L: ", _data.context);
 			_data.context->_destroy_lock.lock();
 		} else {
 
@@ -253,8 +256,9 @@ void Signal_receiver::dissolve(Signal_context *context)
 	}
 
 	_platform_finish_dissolve(context);
-
+Genode::log("1:", context);
 	Lock::Guard context_destroy_lock_guard(context->_destroy_lock);
+Genode::log("2");
 }
 
 
