@@ -1189,12 +1189,14 @@ class Lwip::Tcp_socket_dir final :
 
 			case Lwip_file_handle::DATA:
 				{
+//Genode::log("read() DATA: ", _recv_pbuf);
 					if (_recv_pbuf == nullptr) {
 						/*
 						 * queue the read if the PCB is active and
 						 * there is nothing to read, otherwise return
 						 * zero to indicate the connection is closed
 						 */
+//Genode::log("read() DATA: ", (state == READY));
 						return (state == READY)
 							? Read_result::READ_QUEUED
 							: Read_result::READ_OK;
@@ -1219,12 +1221,16 @@ class Lwip::Tcp_socket_dir final :
 						_recv_off = new_off;
 					}
 
+//Genode::log("read() DATA: sending ACK");
+
 					/* ACK the remote */
 					if (_pcb)
 						tcp_recved(_pcb, n);
+//Genode::log("read() DATA: ACK sent");
 
 					if (state == CLOSING)
 						shutdown();
+//Genode::log("read() DATA: finished: ", n);
 
 					out_count = n;
 					return Read_result::READ_OK;

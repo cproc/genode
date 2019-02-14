@@ -483,6 +483,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+//Genode::log("Vfs_plugin::read()");
 	Libc::dispatch_pending_io_signals();
 
 	typedef Vfs::File_io_service::Read_result Result;
@@ -540,12 +541,13 @@ ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
 
 			bool suspend() override
 			{
+//Genode::log("read(): calling complete_read()");
 				out_result = VFS_THREAD_SAFE(handle->fs().complete_read(handle, (char *)buf,
 				                             count, out_count));
 				/* suspend me if read is still queued */
 
 				retry = (out_result == Result::READ_QUEUED);
-
+//Genode::log("complete_read() retry: ", retry);
 				return retry;
 			}
 		} check ( handle, buf, count, out_count, out_result);
@@ -570,6 +572,7 @@ ssize_t Libc::Vfs_plugin::read(Libc::File_descriptor *fd, void *buf,
 	}
 
 	VFS_THREAD_SAFE(handle->advance_seek(out_count));
+//Genode::log("Vfs_plugin::read(): returning ", out_count);
 
 	return out_count;
 }

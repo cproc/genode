@@ -25,9 +25,9 @@
 #include <unistd.h>
 
 /* PCG includes */
-#include <pcg_variants.h>
+//#include <pcg_variants.h>
 
-enum { NUM_TEST_INTS = 1<<20, BULK_ITERATIONS = 2 };
+enum { NUM_TEST_INTS = 1<<20, BULK_ITERATIONS = 1<<8 };
 
 static uint32_t data[NUM_TEST_INTS];
 
@@ -45,7 +45,7 @@ int test_send(char const *host)
 		struct sockaddr_in addr;
 		addr.sin_family      = AF_INET;
 		addr.sin_addr.s_addr = inet_addr(host);
-		addr.sin_port        = htons(2);
+		addr.sin_port        = htons(2222);
 
 		fprintf(stderr, "connect to %s\n", host);
 		if (connect(sock, (struct sockaddr *)&addr, sizeof(addr))) {
@@ -54,17 +54,21 @@ int test_send(char const *host)
 		}
 	}
 
-	pcg32_random_t rng = PCG32_INITIALIZER;
+	//pcg32_random_t rng = PCG32_INITIALIZER;
 	for (int j = 0; j < BULK_ITERATIONS; ++j) {
-		for (size_t i = 0; i < NUM_TEST_INTS; ++i)
-			data[i] = pcg32_random_r(&rng);
+		for (size_t i = 0; i < NUM_TEST_INTS; ++i) {
+			data[i] = i/*pcg32_random_r(&rng)*/;
+			//fprintf(stderr, "d[%zu]: %08x\n", i, data[i]);
+		}
 
 		size_t total = sizeof(data);
 		size_t offset = 0;
 
 		char *buf = (char *)data;
 		while (offset < total) {
+			//fprintf(stderr, "s1\n");
 			ssize_t res = send(sock, buf+offset, total-offset, 0);
+			//fprintf(stderr, "s2: %zu, %zu\n", res, offset + res);
 			if (res < 1) {
 				perror("send failed");
 				return -1;
@@ -74,9 +78,11 @@ int test_send(char const *host)
 	}
 
 	fprintf(stderr, "close server\n");
+	fprintf(stderr, "calling shutdown()\n");
 	shutdown(sock, SHUT_RDWR);
-	usleep(10000000);
-
+	fprintf(stderr, "calling usleep()\n");
+	usleep(40000000);
+fprintf(stderr, "returning 0\n");
 	return 0;
 }
 
@@ -92,7 +98,7 @@ int test_recv()
 		struct sockaddr_in addr;
 		addr.sin_family      = AF_INET;
 		addr.sin_addr.s_addr = INADDR_ANY;
-		addr.sin_port        = htons(2);
+		addr.sin_port        = htons(2222);
 
 		if (bind(sock, (struct sockaddr *)&addr, sizeof(addr))) {
 			perror("`bind` failed");
@@ -118,14 +124,20 @@ int test_recv()
 		inet_ntop(AF_INET, &(addr.sin_addr), string, super_socket_safety);
 		fprintf(stderr, "recv from %s\n", string);
 
-		pcg32_random_t rng = PCG32_INITIALIZER;
+		//pcg32_random_t rng = PCG32_INITIALIZER;
 		for (int j = 0; j < BULK_ITERATIONS; ++j) {
+
+fprintf(stderr, "*** bulk iteration %d\n", j);
+
+			memset(data, 0, sizeof(data));
 
 			size_t total = sizeof(data);
 			size_t offset = 0;
 			char *buf = (char *)data;
 			while (offset < total) {
+				//fprintf(stderr, "r1\n");
 				ssize_t res = recv(client, buf+offset, total-offset, 0);
+				//fprintf(stderr, "r2: %zu, %zu\n", res, offset + res);
 				if (res < 1) {
 					perror("recv failed");
 					return ~0;
@@ -133,9 +145,13 @@ int test_recv()
 				offset += res;
 			}
 
+			//fprintf(stderr, "recv loop finished\n");
+
 			for (size_t i = 0; i < NUM_TEST_INTS; ++i) {
-				if (data[i] != pcg32_random_r(&rng)) {
-					fprintf(stderr, "bad data at byte offset %ld\n", i<<2);
+				uint32_t rnd = i/*pcg32_random_r(&rng)*/;
+				//fprintf(stderr, "d[%zu}: %08x, r: %08x\n", i, data[i], rnd);
+				if (data[i] != rnd) {
+					fprintf(stderr, "%d: bad data at byte offset %ld, expected %u, got %u\n", j, i<<2, rnd, data[i]);
 					return ~0;
 				}
 			}
@@ -143,6 +159,7 @@ int test_recv()
 
 		fprintf(stderr, "close client\n");
 		shutdown(client, SHUT_RDWR);
+fprintf(stderr, "client/receiver returning 0\n");
 		return 0;
 	}
 }
@@ -154,11 +171,11 @@ int main(int argc, char **argv)
 		return ~0;
 	}
 	if (argc < 2) {
-		if (strcmp(argv[0], "recv") == 0)
+		if (strcmp(argv[0], "./recv") == 0)
 			return test_recv();
 	}
 	if (argc < 3) {
-		if (strcmp(argv[0], "send") == 0)
+		if (strcmp(argv[0], "./send") == 0)
 			return test_send(argv[1]);
 	}
 
