@@ -159,6 +159,7 @@ proc drivers_start_nodes { feature_arg } {
 		<start name="fb_drv">
 			<resource name="RAM" quantum="4M"/>
 			<provides><service name="Framebuffer"/></provides>
+			<config width="1024" height="768"/>
 		</start>
 	}
 
