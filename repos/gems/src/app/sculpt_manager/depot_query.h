@@ -16,7 +16,14 @@
 
 #include "types.h"
 
-namespace Sculpt { struct Depot_query; }
+namespace Sculpt {
+
+	struct Depot_query;
+
+	static inline bool blueprint_missing        (Xml_node, Path const &);
+	static inline bool blueprint_any_missing    (Xml_node);
+	static inline bool blueprint_any_rom_missing(Xml_node);
+}
 
 
 struct Sculpt::Depot_query : Interface
@@ -27,5 +34,41 @@ struct Sculpt::Depot_query : Interface
 
 	virtual void trigger_depot_query() = 0;
 };
+
+
+static inline bool Sculpt::blueprint_missing(Xml_node blueprint, Path const &path)
+{
+	bool result = false;
+	blueprint.for_each_sub_node("missing", [&] (Xml_node missing) {
+		if (missing.attribute_value("path", Path()) == path)
+			result = true; });
+
+	return result;
+}
+
+
+static inline bool Sculpt::blueprint_any_missing(Xml_node blueprint)
+{
+	return blueprint.has_sub_node("missing");
+}
+
+
+static inline bool Sculpt::blueprint_any_rom_missing(Xml_node blueprint)
+{
+	bool result = false;
+	blueprint.for_each_sub_node("pkg", [&] (Xml_node pkg) {
+		pkg.for_each_sub_node("missing_rom", [&] (Xml_node missing_rom) {
+
+			/* ld.lib.so is always taken from the base system */
+			Label const label = missing_rom.attribute_value("label", Label());
+			if (label == "ld.lib.so")
+				return;
+
+			/* some ingredient is not extracted yet, or actually missing */
+			result = true;
+		});
+	});
+	return result;
+}
 
 #endif /* _DEPOT_QUERY_H_ */
