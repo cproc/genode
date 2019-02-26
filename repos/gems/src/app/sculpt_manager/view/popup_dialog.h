@@ -462,27 +462,8 @@ struct Sculpt::Popup_dialog
 		if (_state < PKG_REQUESTED)
 			return;
 
-		blueprint.for_each_sub_node("missing", [&] (Xml_node missing) {
-			if (missing.attribute_value("path", Path()) == construction.path)
-				_pkg_missing = true; });
-
-		/*
-		 * Watch missing ROMs
-		 *
-		 * This occurs during the installation
-		 */
-		blueprint.for_each_sub_node("pkg", [&] (Xml_node pkg) {
-			pkg.for_each_sub_node("missing_rom", [&] (Xml_node missing_rom) {
-
-				/* ld.lib.so is always taken from the base system */
-				Label const label = missing_rom.attribute_value("label", Label());
-				if (label == "ld.lib.so")
-					return;
-
-				/* some ingredient is not extracted yet, or actually missing */
-				_pkg_missing = true;
-			});
-		 });
+		_pkg_missing = blueprint_missing(blueprint, construction.path)
+		            || blueprint_any_rom_missing(blueprint);
 
 		construction.try_apply_blueprint(blueprint);
 		if (construction.blueprint_known)
