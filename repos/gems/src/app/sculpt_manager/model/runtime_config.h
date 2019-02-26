@@ -300,9 +300,9 @@ class Sculpt::Runtime_config
 			Registry<Parent_service> _r { };
 
 			Parent_service const
-				_focus     { _r, Type::NITPICKER ,  "keyboard focus",                 "focus" },
-				_backdrop  { _r, Type::NITPICKER ,  "desktop background",             "backdrop" },
-				_nitpicker { _r, Type::NITPICKER ,  "system GUI server" },
+				_focus     { _r, Type::NITPICKER,   "keyboard focus",                 "focus" },
+				_backdrop  { _r, Type::NITPICKER,   "desktop background",             "backdrop" },
+				_nitpicker { _r, Type::NITPICKER,   "system GUI server" },
 				_config_fs { _r, Type::FILE_SYSTEM, "writeable system configuration", "config" },
 				_report_fs { _r, Type::FILE_SYSTEM, "read-only system reports",       "report" },
 				_capslock  { _r, Type::ROM,         "global capslock state",          "capslock" },
