@@ -93,6 +93,8 @@ struct Sculpt::Route : List_model<Route>::Element
 
 	Constructible<Service> selected_service { };
 
+	Id selected_service_id { };
+
 	/**
 	 * Constructor
 	 *

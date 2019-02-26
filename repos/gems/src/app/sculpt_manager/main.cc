@@ -483,6 +483,7 @@ struct Sculpt::Main : Input_event_handler,
 
 				_popup.state = Popup::OFF;
 				_popup_dialog.reset();
+				discard_construction();
 
 				/* de-select '+' button */
 				_graph._gen_graph_dialog();
@@ -598,7 +599,8 @@ struct Sculpt::Main : Input_event_handler,
 		_runtime_state.with_construction([&] (Component const &c) { fn.with(c); });
 	}
 
-	Popup_dialog _popup_dialog { _env, _heap, _launchers, _network._nic_state,
+	Popup_dialog _popup_dialog { _env, _heap, _launchers,
+	                             _network._nic_state, _network._nic_target,
 	                             _runtime_state, _cached_runtime_config,
 	                             _download_queue, *this, *this };
 

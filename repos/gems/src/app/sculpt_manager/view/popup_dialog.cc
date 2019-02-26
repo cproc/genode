@@ -72,7 +72,7 @@ void Popup_dialog::_gen_pkg_elements(Xml_generator &xml,
 
 						bool const service_selected =
 							route.selected_service.constructed() &&
-							id == _selected_service_id;
+							id == route.selected_service_id;
 
 						if (service.type == route.required)
 							_gen_route_entry(xml, id, service.info, service_selected);
@@ -133,7 +133,7 @@ void Popup_dialog::_gen_menu_elements(Xml_generator &xml) const
 		 */
 		if (_state == DEPOT_SHOWN || _state == INDEX_REQUESTED) {
 
-			if (_nic_state.ready())
+			if (_nic_ready())
 				_gen_menu_entry(xml, "selection", "Selection ...", false);
 		}
 	}
@@ -210,7 +210,7 @@ void Popup_dialog::_gen_menu_elements(Xml_generator &xml) const
 
 							gen_named_node(xml, "vbox", "vbox", [&] () {
 
-								if (_nic_state.ready()) {
+								if (_nic_ready()) {
 
 									_gen_pkg_info(xml, component);
 									_gen_info_label(xml, "pad2", "");
@@ -402,21 +402,20 @@ void Popup_dialog::click(Action &action)
 
 							bool const clicked_service_already_selected =
 								route.selected_service.constructed() &&
-								id == _selected_service_id;
+								id == route.selected_service_id;
 
 							if (clicked_service_already_selected) {
 
 								/* clear selection */
 								route.selected_service.destruct();
-								_selected_service_id = Hoverable_item::Id();
+								route.selected_service_id = Hoverable_item::Id();
 
 							} else {
 
 								/* select different service */
 								route.selected_service.construct(service);
-								_selected_service_id = id;
+								route.selected_service_id = id;
 							}
-
 
 							_state = PKG_SHOWN;
 							_selected_route.destruct();

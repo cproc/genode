@@ -41,8 +41,11 @@ struct Sculpt::Popup_dialog
 
 	Sculpt_version const _sculpt_version { _env };
 
-	Launchers const &_launchers;
-	Nic_state const &_nic_state;
+	Launchers  const &_launchers;
+	Nic_state  const &_nic_state;
+	Nic_target const &_nic_target;
+
+	bool _nic_ready() const { return _nic_target.ready() && _nic_state.ready(); }
 
 	Runtime_info   const &_runtime_info;
 	Runtime_config const &_runtime_config;
@@ -127,8 +130,6 @@ struct Sculpt::Popup_dialog
 	Component::Name _construction_name { };
 
 	Constructible<Route::Id> _selected_route { };
-
-	Hoverable_item::Id _selected_service_id { };
 
 	bool _route_selected(Route::Id const &id) const
 	{
@@ -409,20 +410,21 @@ struct Sculpt::Popup_dialog
 		_state = TOP_LEVEL;
 		_selected_user = User();
 		_selected_route.destruct();
-		_selected_service_id = Hoverable_item::Id();
 		_menu._level = 0;
 	}
 
 	Popup_dialog(Env &env, Allocator &alloc,
 	             Launchers         const &launchers,
 	             Nic_state         const &nic_state,
+	             Nic_target        const &nic_target,
 	             Runtime_info      const &runtime_info,
 	             Runtime_config    const &runtime_config,
 	             Download_queue    const &download_queue,
 	             Depot_query             &depot_query,
 	             Construction_info const &construction_info)
 	:
-		_env(env), _alloc(alloc), _launchers(launchers), _nic_state(nic_state),
+		_env(env), _alloc(alloc), _launchers(launchers),
+		_nic_state(nic_state), _nic_target(nic_target),
 		_runtime_info(runtime_info), _runtime_config(runtime_config),
 		_download_queue(download_queue), _depot_query(depot_query),
 		_construction_info(construction_info)
