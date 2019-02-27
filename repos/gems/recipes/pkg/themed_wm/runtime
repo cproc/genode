@@ -7,7 +7,7 @@
 		<timer/>
 	</requires>
 
-	<provides> <nitpicker/> </provides>
+	<provides> <nitpicker/> <report/> </provides>
 
 	<content>
 		<rom label="ld.lib.so"/>
