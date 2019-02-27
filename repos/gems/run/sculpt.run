@@ -627,8 +627,6 @@ exec sh -c "tar cf [run_dir]/genode/depot_users.tar -C [genode_dir] \
 # Create boot image
 #
 
-build { drivers/framebuffer/vesa }
-
-append boot_modules { fb_drv }
+append boot_modules { }
 
 build_boot_image $boot_modules
