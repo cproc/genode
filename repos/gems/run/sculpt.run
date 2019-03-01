@@ -216,7 +216,7 @@ install_config {
 		<route>
 			<service name="ROM" label="log"> <parent label="kernel_log"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
-			<service name="LOG" label="log"> <child name="log" label="kernel"/> </service>
+			<!--<service name="LOG" label="log"> <child name="log" label="kernel"/> </service>-->
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -235,7 +235,7 @@ install_config {
 		<resource name="RAM" quantum="96M"/>
 		<binary name="init"/>
 		<route>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="ROM" label="config">
 				<child name="config_fs_rom" label="drivers"/> </service>
 			<service name="ROM" label_last="capslock"> <child name="report_rom"/> </service>
@@ -482,7 +482,7 @@ install_config {
 				<child name="leitzentrale" label="fonts"/> </service>
 			<service name="Report"> <child name="fs_report"/> </service>
 			<service name="LOG" label="unlogged"> <parent/> </service>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="Rtc"> <child name="rtc_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
