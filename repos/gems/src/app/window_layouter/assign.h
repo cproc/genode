@@ -110,7 +110,7 @@ class Window_layouter::Assign : public List_model<Assign>::Element
 			                _ypos_any ? any_pos.y() : _pos.y());
 
 			/* floating non-maximized window */
-			Rect const inner(pos, _size_defined ? _size : client_size);
+			Rect const inner(pos, /*_size_defined ? _size : */client_size);
 			Rect const outer = decorator_margins.outer_geometry(inner);
 
 			return Rect(outer.p1() + target_geometry.p1(), outer.area());
