@@ -174,7 +174,7 @@ class Vfs_server::Io_node : public  Vfs_server::Node,
 				if (!_handle->fs().queue_read(_handle, len))
 					throw Operation_incomplete();
 
-				/* fall through */
+				[[gnu::fallthrough]];
 
 			case Op_state::READ_QUEUED:
 				out_result = _handle->fs().complete_read(_handle, dst, len,
@@ -281,7 +281,7 @@ class Vfs_server::Io_node : public  Vfs_server::Node,
 				if (!_handle->fs().queue_sync(_handle))
 					throw Operation_incomplete();
 
-				/* fall through */
+				[[gnu::fallthrough]];
 
 			case Op_state::SYNC_QUEUED:
 				out_result = _handle->fs().complete_sync(_handle);
