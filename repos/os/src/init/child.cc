@@ -544,7 +544,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 
 					try {
 						return Route { find_service(_parent_services, service_name, no_filter),
-						               target_label, target_diag };
+						               Session_label(target_label.string()), target_diag };
 					} catch (Service_denied) { }
 				}
 
@@ -559,7 +559,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 
 					try {
 						return Route { find_service(_child_services, service_name, filter_server_name),
-						               target_label, target_diag };
+						               Session_label(target_label.string()), target_diag };
 
 					} catch (Service_denied) { }
 				}
@@ -573,7 +573,7 @@ Init::Child::Route Init::Child::resolve_session_request(Service::Name const &ser
 					}
 					try {
 						return Route { find_service(_child_services, service_name, no_filter),
-						               target_label, target_diag };
+						               Session_label(target_label.string()), target_diag };
 
 					} catch (Service_denied) { }
 				}
