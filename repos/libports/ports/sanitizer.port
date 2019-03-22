@@ -11,5 +11,5 @@ KEY(sanitizer) := GNU
 TAR_OPT(sanitizer) := gcc-$(VERSION)/libsanitizer \
                       --strip-components=2
 
-PATCHES   := src/lib/sanitizer/*.patch
-PATCH_OPT := -p1 -d src/lib/sanitizer
+#PATCHES   := src/lib/sanitizer/*.patch
+#PATCH_OPT := -p1 -d src/lib/sanitizer
