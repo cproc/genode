@@ -322,7 +322,7 @@ GCC_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-g
 GDB_BINARIES                = build/$(PLATFORM)/gdb/gdb/gdb
 
 
-build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES)
+build_all: $(BINUTILS_INSTALLED_BINARIES)
 
 GMP_CONTRIB_DIR = $(shell $(GENODE_DIR)/tool/ports/current gmp)/src/lib/gmp
 
