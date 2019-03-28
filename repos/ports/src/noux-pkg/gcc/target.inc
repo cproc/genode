@@ -16,7 +16,6 @@ CONFIGURE_ARGS = --program-prefix=$(PROGRAM_PREFIX) \
                  --with-gnu-ld \
                  --disable-tls \
                  --disable-threads \
-                 --disable-hosted-libstdcxx \
                  --enable-shared \
                  --enable-multiarch \
                  --disable-sjlj-exceptions \
@@ -30,6 +29,8 @@ ENV += CC_FOR_TARGET=$(CC) CXX_FOR_TARGET=$(CXX) GCC_FOR_TARGET=$(CC) CPP_FOR_TA
 
 # libgcc does not evaluate CPPFLAGS_FOR_TARGET, so everything is put into CFLAGS_FOR_TARGET here
 ENV += CFLAGS_FOR_TARGET='-I$(BASE_DIR)/../../tool -DUSE_PT_GNU_EH_FRAME -Dinhibit_libc -fPIC'
+
+ENV += CPPFLAGS_FOR_TARGET='$(CPPFLAGS)'
 
 # libsupc++
 ENV += CXXFLAGS_FOR_TARGET='-fPIC'
