@@ -104,7 +104,7 @@ static inline void out_unsigned(T value, unsigned base, int pad,
 		out_char(buf[i]);
 }
 
-
+extern "C" void wait_for_continue();
 /**
  * Output floating point value
  */
@@ -112,7 +112,7 @@ template <typename T, typename OUT_CHAR_FN>
 static inline void out_float(T value, unsigned base, unsigned length, OUT_CHAR_FN const &out_char)
 {
 	using namespace Genode;
-
+wait_for_continue();
 	/*
 	 * If the compiler decides to move a value from the FPU to the stack and
 	 * back, the value can slightly change because of different encodings. This
@@ -125,7 +125,9 @@ static inline void out_float(T value, unsigned base, unsigned length, OUT_CHAR_F
 	 * FPU and stack happens in a more deterministic way, which gives more
 	 * consistent results with this function.
 	 */
-	T volatile volatile_value = value;
+	T /*volatile*/ volatile_value = value;
+
+if (value < 1.7) out_char('*');
 
 	/* set flag if value is negative */
 	int neg = volatile_value < 0 ? 1 : 0;
