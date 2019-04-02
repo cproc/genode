@@ -15,7 +15,7 @@
 proc autopilot_wait_for_output { wait_for_re timeout_value running_spawn_id } {
 	global output
 	global run_genode_failed
-
+set wait_for_re "forever"
 	if {$wait_for_re == "forever"} {
 		set timeout -1
 		interact {
