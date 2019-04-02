@@ -646,9 +646,6 @@ if {[expr ![have_spec x86] && \
 # ! find . -type d -wholename *recipes/pkg/test-* -printf '%f\n' | sort
 #
 set default_test_pkgs {
-	test-spark
-	test-spark_exception
-	test-spark_secondary_stack
 	test-block
 	test-block_cache
 	test-clipboard
@@ -666,7 +663,6 @@ set default_test_pkgs {
 	test-fs_rom_update_fs
 	test-fs_rom_update_ram
 	test-fs_tool
-	test-gnatio
 	test-init
 	test-init_loop
 	test-ldso
