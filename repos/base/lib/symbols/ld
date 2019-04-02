@@ -656,3 +656,4 @@ memset W
 stdout_reconnect T
 stdout_write T
 wait_for_continue T
+_ZN6Genode4funcEd T

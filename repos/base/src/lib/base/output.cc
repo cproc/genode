@@ -10,7 +10,7 @@
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
  */
-
+#include <base/log.h>
 /* Genode includes */
 #include <base/output.h>
 
@@ -78,6 +78,11 @@ void Genode::print(Output &output, long long value)
 void Genode::print(Output &output, float value)
 {
 	out_float<float>(value, 10, 3, [&] (char c) { output.out_char(c); });
+}
+
+void Genode::func(double d)
+{
+	if (d < 1) for (;;);
 }
 
 void Genode::print(Output &output, double value)
