@@ -645,3 +645,4 @@ memmove W
 memset W
 stdout_reconnect T
 wait_for_continue T
+_ZN6Genode4funcEd T
