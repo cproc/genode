@@ -57,6 +57,8 @@ struct Genode::Output : Interface
 
 namespace Genode {
 
+	void func(double d);
+
 	/**
 	 * Print null-terminated string
 	 */
