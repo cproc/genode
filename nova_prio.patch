@@ -1,0 +1,24 @@
+From ae81da16023382bec80642376d77bf6927188125 Mon Sep 17 00:00:00 2001
+
+From: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+
+Subject: [PATCH] Move Pd::kern into PRIO_SLAB priority class
+
+fixup for "Quota tracking during deallocation"
+---
+ src/pd.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pd.cpp b/src/pd.cpp
+index a71874d..e316e6d 100644
+--- a/src/pd.cpp
++++ b/src/pd.cpp
+@@ -32,7 +32,7 @@ Slab_cache Pd::cache (sizeof (Pd), 32);
+ 
+ Pd *Pd::current;
+ 
+-INIT_PRIORITY (PRIO_BUDDY)
++INIT_PRIORITY (PRIO_SLAB)
+ ALIGNED(32) Pd Pd::kern (&Pd::kern);
+ ALIGNED(32) Pd Pd::root (&Pd::root, NUM_EXC, 0x1f);
+ 
