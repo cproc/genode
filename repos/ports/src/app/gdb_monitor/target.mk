@@ -13,18 +13,22 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
 LIBS    =  libc libc_terminal libc_pipe \
            gdbserver_platform gdbserver_libc_support
 
-SRC_C   =  event-loop.c \
+SRC_C   =  common-utils.c \
+           buffer.c \
+           event-loop.c \
            i386-low.c \
            i387-fp.c \
            inferiors.c \
            mem-break.c \
+           ptid.c \
            remote-utils.c \
            regcache.c \
            server.c \
            signals.c \
            target.c \
            tracepoint.c \
-           utils.c
+           utils.c \
+           xml-utils.c
 
 SRC_C  +=  linux-low.c
 
