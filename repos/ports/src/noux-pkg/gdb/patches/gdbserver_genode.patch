@@ -4,20 +4,20 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/gdbserver/linux-arm-low.c |   13 +++++
- gdb/gdbserver/linux-low.c     |  114 +++++++++++++++++++++++++++++++++++++++++
+ gdb/gdbserver/linux-arm-low.c |   13 ++++
+ gdb/gdbserver/linux-low.c     |  123 ++++++++++++++++++++++++++++++++++++++++-
  gdb/gdbserver/linux-low.h     |    2 +
- gdb/gdbserver/linux-x86-low.c |   53 +++++++++++++++++++
- gdb/gdbserver/remote-utils.c  |   12 ++++
- gdb/gdbserver/server.c        |   30 +++++++++--
+ gdb/gdbserver/linux-x86-low.c |   53 +++++++++++++++++-
+ gdb/gdbserver/remote-utils.c  |   12 +++-
+ gdb/gdbserver/server.c        |   30 ++++++++--
  gdb/gdbserver/server.h        |    4 +
- 7 files changed, 217 insertions(+), 11 deletions(-)
+ 7 files changed, 225 insertions(+), 12 deletions(-)
 
 diff --git a/gdb/gdbserver/linux-arm-low.c b/gdb/gdbserver/linux-arm-low.c
-index babb20c..23d9e60 100644
+index 3096546..cf61c86 100644
 --- a/gdb/gdbserver/linux-arm-low.c
 +++ b/gdb/gdbserver/linux-arm-low.c
-@@ -25,6 +25,9 @@
+@@ -24,6 +24,9 @@
  #ifndef ELFMAG0
  #include <elf.h>
  #endif
@@ -25,9 +25,9 @@ index babb20c..23d9e60 100644
 +#include <sys/procfs.h>
 +#endif
  #include <sys/ptrace.h>
+ #include <signal.h>
  
- /* Defined in auto-generated files.  */
-@@ -209,7 +212,11 @@ static const unsigned short thumb2_breakpoint[] = { 0xf7f0, 0xa000 };
+@@ -268,7 +271,11 @@ static const unsigned short thumb2_breakpoint[] = { 0xf7f0, 0xa000 };
     is used for gdbserver, so single threaded debugging should work
     OK, but for multi-threaded debugging we only insert the current
     ABI's breakpoint instruction.  For now at least.  */
@@ -39,9 +39,9 @@ index babb20c..23d9e60 100644
  
  static int
  arm_breakpoint_at (CORE_ADDR where)
-@@ -306,6 +313,11 @@ static void
- arm_arch_setup (void)
- {
+@@ -772,6 +779,11 @@ arm_arch_setup (void)
+   arm_linux_init_hwbp_cap (pid);
+ 
    arm_hwcap = 0;
 +
 +#ifndef __GENODE__
@@ -51,7 +51,7 @@ index babb20c..23d9e60 100644
    if (arm_get_hwcap (&arm_hwcap) == 0)
      {
        init_registers_arm ();
-@@ -347,6 +359,7 @@ arm_arch_setup (void)
+@@ -811,6 +823,7 @@ arm_arch_setup (void)
  
        return;
      }
@@ -60,12 +60,12 @@ index babb20c..23d9e60 100644
    /* The default configuration uses legacy FPA registers, probably
       simulated.  */
 diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
-index e597e2f..62215fc 100644
+index 1925fd5..1aeaa99 100644
 --- a/gdb/gdbserver/linux-low.c
 +++ b/gdb/gdbserver/linux-low.c
 @@ -20,6 +20,10 @@
- #include "server.h"
  #include "linux-low.h"
+ #include "linux-osdata.h"
  
 +#ifdef __GENODE__
 +#include "genode-low.h"
@@ -74,7 +74,7 @@ index e597e2f..62215fc 100644
  #include <sys/wait.h>
  #include <stdio.h>
  #include <sys/param.h>
-@@ -606,6 +610,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+@@ -607,6 +611,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
    ptid_t ptid;
    struct lwp_info *new_lwp;
  
@@ -82,15 +82,15 @@ index e597e2f..62215fc 100644
    if (ptrace (PTRACE_ATTACH, lwpid, 0, 0) != 0)
      {
        if (!initial)
-@@ -621,6 +626,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+@@ -622,6 +627,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
  	error ("Cannot attach to lwp %ld: %s (%d)\n", lwpid,
  	       strerror (errno), errno);
      }
 +#endif
  
    if (initial)
-     /* NOTE/FIXME: This lwp might have not been the tgid.  */
-@@ -637,6 +643,9 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+     /* If lwp is the tgid, we handle adding existing threads later.
+@@ -640,6 +646,9 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
    new_lwp = (struct lwp_info *) add_lwp (ptid);
    add_thread (ptid, new_lwp);
  
@@ -100,7 +100,7 @@ index e597e2f..62215fc 100644
    /* We need to wait for SIGSTOP before being able to make the next
       ptrace call on this LWP.  */
    new_lwp->must_set_ptrace_flags = 1;
-@@ -675,6 +684,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
+@@ -680,6 +689,7 @@ linux_attach_lwp_1 (unsigned long lwpid, int initial)
       end of the list, and so the new thread has not yet reached
       wait_for_sigstop (but will).  */
    new_lwp->stop_expected = 1;
@@ -108,7 +108,7 @@ index e597e2f..62215fc 100644
  }
  
  void
-@@ -689,6 +699,7 @@ linux_attach (unsigned long pid)
+@@ -699,6 +709,7 @@ linux_attach (unsigned long pid)
    linux_attach_lwp_1 (pid, 1);
    linux_add_process (pid, 1);
  
@@ -116,15 +116,16 @@ index e597e2f..62215fc 100644
    if (!non_stop)
      {
        struct thread_info *thread;
-@@ -698,6 +709,7 @@ linux_attach (unsigned long pid)
-       thread = find_thread_ptid (ptid_build (pid, pid, 0));
-       thread->last_resume_kind = resume_stop;
+@@ -767,7 +778,7 @@ Found and attached to new lwp %ld\n", lwp);
+ 	  closedir (dir);
+ 	}
      }
+-
 +#endif
- 
    return 0;
  }
-@@ -812,7 +824,11 @@ linux_kill (int pid)
+ 
+@@ -890,7 +901,11 @@ linux_kill (int pid)
    return 0;
  }
  
@@ -136,7 +137,7 @@ index e597e2f..62215fc 100644
  linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
  {
    struct thread_info *thread = (struct thread_info *) entry;
-@@ -822,6 +838,7 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
+@@ -900,6 +915,7 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
    if (ptid_get_pid (entry->id) != pid)
      return 0;
  
@@ -144,7 +145,7 @@ index e597e2f..62215fc 100644
    /* If this process is stopped but is expecting a SIGSTOP, then make
       sure we take care of that now.  This isn't absolutely guaranteed
       to collect the SIGSTOP, but is fairly likely to.  */
-@@ -833,13 +850,16 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
+@@ -911,13 +927,16 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
        linux_resume_one_lwp (lwp, 0, 0, NULL);
        linux_wait_for_event (lwp->head.id, &wstat, __WALL);
      }
@@ -161,7 +162,7 @@ index e597e2f..62215fc 100644
  
    delete_lwp (lwp);
    return 0;
-@@ -1071,6 +1091,10 @@ retry:
+@@ -1144,6 +1163,10 @@ retry:
  
    if (WIFSTOPPED (*wstatp) && WSTOPSIG (*wstatp) == SIGTRAP)
      {
@@ -172,7 +173,7 @@ index e597e2f..62215fc 100644
        if (the_low_target.stopped_by_watchpoint == NULL)
  	{
  	  child->stopped_by_watchpoint = 0;
-@@ -1096,7 +1120,8 @@ retry:
+@@ -1169,7 +1192,8 @@ retry:
  
  	  current_inferior = saved_inferior;
  	}
@@ -182,7 +183,7 @@ index e597e2f..62215fc 100644
  
    /* Store the STOP_PC, with adjustment applied.  This depends on the
       architecture being defined already (so that CHILD has a valid
-@@ -2469,18 +2494,22 @@ linux_wait (ptid_t ptid,
+@@ -2542,18 +2566,22 @@ linux_wait (ptid_t ptid,
    if (debug_threads)
      fprintf (stderr, "linux_wait: [%s]\n", target_pid_to_str (ptid));
  
@@ -205,7 +206,7 @@ index e597e2f..62215fc 100644
  
    return event_ptid;
  }
-@@ -2958,10 +2987,25 @@ lwp %ld wants to get out of fast tracepoint jump pad single-stepping\n",
+@@ -3031,10 +3059,25 @@ lwp %ld wants to get out of fast tracepoint jump pad single-stepping\n",
    lwp->stopped = 0;
    lwp->stopped_by_watchpoint = 0;
    lwp->stepping = step;
@@ -231,7 +232,7 @@ index e597e2f..62215fc 100644
  
    current_inferior = saved_inferior;
    if (errno)
-@@ -5009,6 +5053,13 @@ linux_core_of_thread (ptid_t ptid)
+@@ -4868,6 +4911,13 @@ linux_read_loadmap (const char *annex, CORE_ADDR offset,
  static void
  linux_process_qsupported (const char *query)
  {
@@ -245,7 +246,18 @@ index e597e2f..62215fc 100644
    if (the_low_target.process_qsupported != NULL)
      the_low_target.process_qsupported (query);
  }
-@@ -5110,26 +5161,56 @@ linux_emit_ops (void)
+@@ -4983,6 +5033,10 @@ static int
+ get_phdr_phnum_from_proc_auxv (const int pid, const int is_elf64,
+ 			       CORE_ADDR *phdr_memaddr, int *num_phdr)
+ {
++#ifdef __GENODE__
++	typedef Elf32_Auxinfo Elf32_auxv_t;
++	typedef Elf64_Auxinfo Elf64_auxv_t;
++#endif
+   char filename[PATH_MAX];
+   int fd;
+   const int auxv_size = is_elf64
+@@ -5356,26 +5410,56 @@ linux_qxfer_libraries_svr4 (const char *annex, unsigned char *readbuf,
  static struct target_ops linux_target_ops = {
    linux_create_inferior,
    linux_attach,
@@ -302,7 +314,7 @@ index e597e2f..62215fc 100644
  #if defined(__UCLIBC__) && defined(HAS_NOMMU)
    linux_read_offsets,
  #else
-@@ -5140,6 +5221,7 @@ static struct target_ops linux_target_ops = {
+@@ -5386,6 +5470,7 @@ static struct target_ops linux_target_ops = {
  #else
    NULL,
  #endif
@@ -310,7 +322,7 @@ index e597e2f..62215fc 100644
    linux_qxfer_spu,
    hostio_last_error_from_errno,
    linux_qxfer_osdata,
-@@ -5148,13 +5230,28 @@ static struct target_ops linux_target_ops = {
+@@ -5394,14 +5479,30 @@ static struct target_ops linux_target_ops = {
    linux_async,
    linux_start_non_stop,
    linux_supports_multi_process,
@@ -330,8 +342,10 @@ index e597e2f..62215fc 100644
    NULL,
  #endif
 +#ifndef __GENODE__
-   linux_core_of_thread,
+   linux_common_core_of_thread,
+   linux_read_loadmap,
 +#else
++  NULL,
 +  NULL,
 +#endif
    linux_process_qsupported,
@@ -339,11 +353,14 @@ index e597e2f..62215fc 100644
    linux_supports_tracepoints,
    linux_read_pc,
    linux_write_pc,
-@@ -5166,6 +5263,19 @@ static struct target_ops linux_target_ops = {
-   linux_stabilize_threads,
-   linux_install_fast_tracepoint_jump_pad,
-   linux_emit_ops
+@@ -5416,6 +5517,22 @@ static struct target_ops linux_target_ops = {
+   linux_supports_disable_randomization,
+   linux_get_min_fast_tracepoint_insn_len,
+   linux_qxfer_libraries_svr4,
 +#else
++  NULL,
++  NULL,
++  NULL,
 +  NULL,
 +  NULL,
 +  NULL,
@@ -359,7 +376,7 @@ index e597e2f..62215fc 100644
  };
  
  static void
-@@ -5187,7 +5297,9 @@ initialize_low (void)
+@@ -5437,7 +5554,9 @@ initialize_low (void)
    set_breakpoint_data (the_low_target.breakpoint,
  		       the_low_target.breakpoint_len);
    linux_init_signals ();
@@ -370,7 +387,7 @@ index e597e2f..62215fc 100644
    for (num_regsets = 0; target_regsets[num_regsets].size >= 0; num_regsets++)
      ;
 diff --git a/gdb/gdbserver/linux-low.h b/gdb/gdbserver/linux-low.h
-index d449e1b..0bbcbfd 100644
+index 0cf58ae..90cf3fd 100644
 --- a/gdb/gdbserver/linux-low.h
 +++ b/gdb/gdbserver/linux-low.h
 @@ -22,7 +22,9 @@
@@ -384,10 +401,10 @@ index d449e1b..0bbcbfd 100644
  #ifdef HAVE_LINUX_REGSETS
  typedef void (*regset_fill_func) (struct regcache *, void *);
 diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
-index 82dcf83..e98e3bd 100644
+index c7f59b3..8ba158c 100644
 --- a/gdb/gdbserver/linux-x86-low.c
 +++ b/gdb/gdbserver/linux-x86-low.c
-@@ -28,8 +28,17 @@
+@@ -27,8 +27,17 @@
  #include "i386-xstate.h"
  #include "elf/common.h"
  
@@ -405,13 +422,14 @@ index 82dcf83..e98e3bd 100644
  /* Defined in auto-generated file i386-linux.c.  */
  void init_registers_i386_linux (void);
  /* Defined in auto-generated file amd64-linux.c.  */
-@@ -40,10 +49,24 @@ void init_registers_i386_avx_linux (void);
+@@ -39,11 +48,25 @@ void init_registers_i386_avx_linux (void);
  void init_registers_amd64_avx_linux (void);
  /* Defined in auto-generated file i386-mmx-linux.c.  */
  void init_registers_i386_mmx_linux (void);
 +#endif
  
  static unsigned char jump_insn[] = { 0xe9, 0, 0, 0, 0 };
+ static unsigned char small_jump_insn[] = { 0x66, 0xe9, 0, 0 };
  
  /* Backward compatibility for gdb without XML support.  */
 +#ifdef __GENODE__
@@ -493,7 +511,7 @@ index 82dcf83..e98e3bd 100644
      return 1;
  
    return 0;
-@@ -2561,7 +2604,11 @@ struct linux_target_ops the_low_target =
+@@ -2942,7 +2985,11 @@ struct linux_target_ops the_low_target =
    x86_breakpoint,
    x86_breakpoint_len,
    NULL,
@@ -505,7 +523,7 @@ index 82dcf83..e98e3bd 100644
    x86_breakpoint_at,
    x86_insert_point,
    x86_remove_point,
-@@ -2576,7 +2623,11 @@ struct linux_target_ops the_low_target =
+@@ -2957,7 +3004,11 @@ struct linux_target_ops the_low_target =
    x86_siginfo_fixup,
    x86_linux_new_process,
    x86_linux_new_thread,
@@ -518,10 +536,10 @@ index 82dcf83..e98e3bd 100644
    x86_supports_tracepoints,
    x86_get_thread_area,
 diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
-index 650ddf8..7a53e77 100644
+index 9052c48..0aa8381 100644
 --- a/gdb/gdbserver/remote-utils.c
 +++ b/gdb/gdbserver/remote-utils.c
-@@ -21,6 +21,12 @@
+@@ -19,6 +19,12 @@
  #include "server.h"
  #include "terminal.h"
  #include "target.h"
@@ -534,7 +552,7 @@ index 650ddf8..7a53e77 100644
  #include <stdio.h>
  #include <string.h>
  #if HAVE_SYS_IOCTL_H
-@@ -106,8 +112,10 @@ struct sym_cache
+@@ -104,8 +110,10 @@ struct sym_cache
  
  int remote_debug = 0;
  struct ui_file *gdb_stdlog;
@@ -548,10 +566,10 @@ index 650ddf8..7a53e77 100644
  
  /* FIXME headerize? */
 diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
-index 2f4484f..124c98d 100644
+index c75a58e..bbdb1e5 100644
 --- a/gdb/gdbserver/server.c
 +++ b/gdb/gdbserver/server.c
-@@ -20,6 +20,11 @@
+@@ -19,6 +19,11 @@
  
  #include "server.h"
  
@@ -563,7 +581,7 @@ index 2f4484f..124c98d 100644
  #if HAVE_UNISTD_H
  #include <unistd.h>
  #endif
-@@ -2055,11 +2060,11 @@ handle_v_requests (char *own_buf, int packet_len, int *new_packet_len)
+@@ -2133,11 +2138,11 @@ handle_v_requests (char *own_buf, int packet_len, int *new_packet_len)
  	  return;
  	}
      }
@@ -577,7 +595,7 @@ index 2f4484f..124c98d 100644
    if (strncmp (own_buf, "vAttach;", 8) == 0)
      {
        if (!multi_process && target_running ())
-@@ -2449,7 +2454,11 @@ join_inferiors_callback (struct inferior_list_entry *entry)
+@@ -2518,7 +2523,11 @@ detach_or_kill_for_exit (void)
  }
  
  int
@@ -589,7 +607,7 @@ index 2f4484f..124c98d 100644
  {
    int bad_attach;
    int pid;
-@@ -2754,6 +2763,9 @@ process_serial_event (void)
+@@ -2830,6 +2839,9 @@ process_serial_event (void)
    response_needed = 1;
  
    i = 0;
@@ -599,17 +617,17 @@ index 2f4484f..124c98d 100644
    ch = own_buf[i++];
    switch (ch)
      {
-@@ -2844,7 +2856,9 @@ process_serial_event (void)
+@@ -2919,7 +2931,9 @@ process_serial_event (void)
+ 		 need to hang around doing nothing, until the child is
  		 gone.  */
- 	      for_each_inferior (&all_processes,
- 				 join_inferiors_callback);
+ 	      join_inferior (pid);
 +#ifndef __GENODE__
  	      exit (0);
 +#endif
  	    }
  	}
        break;
-@@ -3076,7 +3090,11 @@ process_serial_event (void)
+@@ -3149,7 +3163,11 @@ process_serial_event (void)
  	  return 0;
  	}
        else
@@ -621,7 +639,7 @@ index 2f4484f..124c98d 100644
  
      case 'T':
        {
-@@ -3140,14 +3158,16 @@ process_serial_event (void)
+@@ -3213,14 +3231,16 @@ process_serial_event (void)
        own_buf[0] = '\0';
        break;
      }
@@ -640,7 +658,7 @@ index 2f4484f..124c98d 100644
    if (!extended_protocol && have_ran && !target_running ())
      {
        /* In non-stop, defer exiting until GDB had a chance to query
-@@ -3159,7 +3179,7 @@ process_serial_event (void)
+@@ -3232,7 +3252,7 @@ process_serial_event (void)
  	  exit (0);
  	}
      }
@@ -650,10 +668,10 @@ index 2f4484f..124c98d 100644
      return -1;
  
 diff --git a/gdb/gdbserver/server.h b/gdb/gdbserver/server.h
-index 77f5dd6..897abed 100644
+index 2d8a1c0..f37e06e 100644
 --- a/gdb/gdbserver/server.h
 +++ b/gdb/gdbserver/server.h
-@@ -664,8 +664,8 @@ struct emit_ops
+@@ -563,8 +563,8 @@ struct emit_ops
  /* Returns the address of the get_raw_reg function in the IPA.  */
  CORE_ADDR get_raw_reg_func_addr (void);
  
