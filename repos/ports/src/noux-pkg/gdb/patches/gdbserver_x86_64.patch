@@ -4,15 +4,15 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/gdbserver/linux-x86-low.c |   54 ++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 50 insertions(+), 4 deletions(-)
+ gdb/gdbserver/linux-x86-low.c |   61 ++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 57 insertions(+), 4 deletions(-)
 
 diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
-index 8ba158c..bfec4ee 100644
+index 99ba002..a2e01ef 100644
 --- a/gdb/gdbserver/linux-x86-low.c
 +++ b/gdb/gdbserver/linux-x86-low.c
-@@ -32,6 +32,12 @@
- #endif
+@@ -35,6 +35,12 @@
+ #include "agent.h"
  
  #ifdef __GENODE__
 +#ifdef __x86_64__
@@ -24,7 +24,7 @@ index 8ba158c..bfec4ee 100644
  /* Defined in auto-generated file i386.c.  */
  void init_registers_i386 (void);
  static inline void init_registers_i386_linux(void) { init_registers_i386(); }
-@@ -83,7 +89,9 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
+@@ -90,7 +96,9 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
  #endif /* __GENODE__ */
  
  #ifdef __GENODE__
@@ -35,7 +35,7 @@ index 8ba158c..bfec4ee 100644
  #include "i386.h"
  #endif /* __x86_64__ */
  #else
-@@ -153,7 +161,11 @@ static /*const*/ int i386_regmap[] =
+@@ -160,7 +168,11 @@ static /*const*/ int i386_regmap[] =
  /* So code below doesn't have to care, i386 or amd64.  */
  #define ORIG_EAX ORIG_RAX
  
@@ -48,7 +48,7 @@ index 8ba158c..bfec4ee 100644
  {
    RAX * 8, RBX * 8, RCX * 8, RDX * 8,
    RSI * 8, RDI * 8, RBP * 8, RSP * 8,
-@@ -165,7 +177,9 @@ static const int x86_64_regmap[] =
+@@ -172,7 +184,9 @@ static const int x86_64_regmap[] =
    -1, -1, -1, -1, -1, -1, -1, -1,
    -1, -1, -1, -1, -1, -1, -1, -1,
    -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -58,7 +58,7 @@ index 8ba158c..bfec4ee 100644
  };
  
  #define X86_64_NUM_REGS (sizeof (x86_64_regmap) / sizeof (x86_64_regmap[0]))
-@@ -188,6 +202,7 @@ static /*const*/ int i386_regmap[] =
+@@ -195,6 +209,7 @@ static /*const*/ int i386_regmap[] =
  
  /* Called by libthread_db.  */
  
@@ -66,7 +66,7 @@ index 8ba158c..bfec4ee 100644
  ps_err_e
  ps_get_thread_area (const struct ps_prochandle *ph,
  		    lwpid_t lwpid, int idx, void **base)
-@@ -225,6 +240,7 @@ ps_get_thread_area (const struct ps_prochandle *ph,
+@@ -232,6 +247,7 @@ ps_get_thread_area (const struct ps_prochandle *ph,
      return PS_OK;
    }
  }
@@ -74,7 +74,7 @@ index 8ba158c..bfec4ee 100644
  
  /* Get the thread area address.  This is used to recognize which
     thread is which when tracing with the in-process agent library.  We
-@@ -286,6 +302,20 @@ i386_cannot_fetch_register (int regno)
+@@ -293,6 +309,20 @@ i386_cannot_fetch_register (int regno)
    return regno >= I386_NUM_REGS;
  }
  
@@ -95,15 +95,29 @@ index 8ba158c..bfec4ee 100644
  static void
  x86_fill_gregset (struct regcache *regcache, void *buf)
  {
-@@ -728,6 +758,7 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
-    compatible with the siginfo type exported by the 32-bit userspace
+@@ -746,6 +776,7 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
     support.  */
  
-+#ifndef __GENODE__
  #ifdef __x86_64__
++#ifndef __GENODE__
  
  typedef int compat_int_t;
-@@ -969,6 +1000,7 @@ x86_siginfo_fixup (siginfo_t *native, void *inf, int direction)
+ typedef unsigned int compat_uptr_t;
+@@ -1131,11 +1162,12 @@ siginfo_from_compat_x32_siginfo (siginfo_t *to,
+ 	}
+     }
+ }
+-
++#endif /* __GENODE__ */
+ /* Is this process 64-bit?  */
+ static int linux_is_elf64;
+ #endif /* __x86_64__ */
+ 
++#ifndef __GENODE__
+ /* Convert a native/host siginfo object, into/from the siginfo in the
+    layout of the inferiors' architecture.  Returns true if any
+    conversion was done; false otherwise.  If DIRECTION is 1, then copy
+@@ -1178,6 +1210,7 @@ x86_siginfo_fixup (siginfo_t *native, void *inf, int direction)
  
    return 0;
  }
@@ -111,25 +125,41 @@ index 8ba158c..bfec4ee 100644
  
  static int use_xml;
  
-@@ -1138,11 +1170,15 @@ static void
+@@ -1350,6 +1383,10 @@ x86_linux_process_qsupported (const char *query)
+ static void
  x86_arch_setup (void)
  {
- #ifdef __x86_64__
++#ifdef __x86_64
 +#ifdef __GENODE__
-+  int use_64bit = 1;
++  int is_elf64 = 1;
 +#else
    int pid = pid_of (get_thread_lwp (current_inferior));
-   char *file = linux_child_pid_to_exec_file (pid);
-   int use_64bit = elf_64_file_p (file);
- 
-   free (file);
+   unsigned int machine;
+   int is_elf64 = linux_pid_exe_is_elf_64_file (pid, &machine);
+@@ -1358,13 +1395,18 @@ x86_arch_setup (void)
+     {
+       if (is_elf64 > 0)
+ 	error (_("Can't debug 64-bit process with 32-bit GDBserver"));
++#ifndef __GENODE__
+ #ifndef __x86_64__
+       else if (machine == EM_X86_64)
+ 	error (_("Can't debug x86-64 process with 32-bit GDBserver"));
+ #endif
++#endif
+     }
++#endif
 +#endif
  
-   if (use_64bit < 0)
+ #ifdef __x86_64__
++#ifndef __GENODE__
+   if (is_elf64 < 0)
      {
-@@ -1152,19 +1188,25 @@ x86_arch_setup (void)
+       /* This can only happen if /proc/<pid>/exe is unreadable,
+@@ -1372,13 +1414,20 @@ x86_arch_setup (void)
+ 	 Fall through and assume this is a 32-bit program.  */
      }
-   else if (use_64bit)
+   else if (machine == EM_X86_64)
++#endif
      {
 +#ifdef __GENODE__
 +      the_low_target.num_regs = X86_64_NUM_REGS;
@@ -147,15 +177,7 @@ index 8ba158c..bfec4ee 100644
        /* Amd64 has 16 xmm regs.  */
        num_xmm_registers = 16;
  
-       x86_linux_update_xmltarget ();
-       return;
-     }
--#endif
-+#endif /* __x86_64__ */
- 
-   /* Ok we have a 32-bit inferior.  */
- 
-@@ -3001,7 +3043,11 @@ struct linux_target_ops the_low_target =
+@@ -3249,7 +3298,11 @@ struct linux_target_ops the_low_target =
    NULL,
    NULL,
    /* need to fix up i386 siginfo if host is amd64 */

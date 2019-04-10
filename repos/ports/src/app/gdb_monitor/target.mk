@@ -13,9 +13,13 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
 LIBS    =  libc libc_terminal libc_pipe \
            gdbserver_platform gdbserver_libc_support
 
-SRC_C   =  common-utils.c \
+SRC_C   =  agent.c \
+           ax.c \
            buffer.c \
+           common-utils.c \
+           dll.c \
            event-loop.c \
+           format.c \
            i386-low.c \
            i387-fp.c \
            inferiors.c \
