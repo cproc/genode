@@ -8,7 +8,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 57 insertions(+), 4 deletions(-)
 
 diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
-index 99ba002..a2e01ef 100644
+index e7994fe..d262b56 100644
 --- a/gdb/gdbserver/linux-x86-low.c
 +++ b/gdb/gdbserver/linux-x86-low.c
 @@ -35,6 +35,12 @@
@@ -66,7 +66,7 @@ index 99ba002..a2e01ef 100644
  ps_err_e
  ps_get_thread_area (const struct ps_prochandle *ph,
  		    lwpid_t lwpid, int idx, void **base)
-@@ -232,6 +247,7 @@ ps_get_thread_area (const struct ps_prochandle *ph,
+@@ -233,6 +248,7 @@ ps_get_thread_area (const struct ps_prochandle *ph,
      return PS_OK;
    }
  }
@@ -74,7 +74,7 @@ index 99ba002..a2e01ef 100644
  
  /* Get the thread area address.  This is used to recognize which
     thread is which when tracing with the in-process agent library.  We
-@@ -293,6 +309,20 @@ i386_cannot_fetch_register (int regno)
+@@ -294,6 +310,20 @@ i386_cannot_fetch_register (int regno)
    return regno >= I386_NUM_REGS;
  }
  
@@ -95,7 +95,7 @@ index 99ba002..a2e01ef 100644
  static void
  x86_fill_gregset (struct regcache *regcache, void *buf)
  {
-@@ -746,6 +776,7 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
+@@ -750,6 +780,7 @@ x86_linux_prepare_to_resume (struct lwp_info *lwp)
     support.  */
  
  #ifdef __x86_64__
@@ -103,7 +103,7 @@ index 99ba002..a2e01ef 100644
  
  typedef int compat_int_t;
  typedef unsigned int compat_uptr_t;
-@@ -1131,11 +1162,12 @@ siginfo_from_compat_x32_siginfo (siginfo_t *to,
+@@ -1135,11 +1166,12 @@ siginfo_from_compat_x32_siginfo (siginfo_t *to,
  	}
      }
  }
@@ -117,7 +117,7 @@ index 99ba002..a2e01ef 100644
  /* Convert a native/host siginfo object, into/from the siginfo in the
     layout of the inferiors' architecture.  Returns true if any
     conversion was done; false otherwise.  If DIRECTION is 1, then copy
-@@ -1178,6 +1210,7 @@ x86_siginfo_fixup (siginfo_t *native, void *inf, int direction)
+@@ -1182,6 +1214,7 @@ x86_siginfo_fixup (siginfo_t *native, void *inf, int direction)
  
    return 0;
  }
@@ -125,7 +125,7 @@ index 99ba002..a2e01ef 100644
  
  static int use_xml;
  
-@@ -1350,6 +1383,10 @@ x86_linux_process_qsupported (const char *query)
+@@ -1354,6 +1387,10 @@ x86_linux_process_qsupported (const char *query)
  static void
  x86_arch_setup (void)
  {
@@ -136,7 +136,7 @@ index 99ba002..a2e01ef 100644
    int pid = pid_of (get_thread_lwp (current_inferior));
    unsigned int machine;
    int is_elf64 = linux_pid_exe_is_elf_64_file (pid, &machine);
-@@ -1358,13 +1395,18 @@ x86_arch_setup (void)
+@@ -1362,13 +1399,18 @@ x86_arch_setup (void)
      {
        if (is_elf64 > 0)
  	error (_("Can't debug 64-bit process with 32-bit GDBserver"));
@@ -155,7 +155,7 @@ index 99ba002..a2e01ef 100644
    if (is_elf64 < 0)
      {
        /* This can only happen if /proc/<pid>/exe is unreadable,
-@@ -1372,13 +1414,20 @@ x86_arch_setup (void)
+@@ -1376,13 +1418,20 @@ x86_arch_setup (void)
  	 Fall through and assume this is a 32-bit program.  */
      }
    else if (machine == EM_X86_64)
@@ -177,7 +177,7 @@ index 99ba002..a2e01ef 100644
        /* Amd64 has 16 xmm regs.  */
        num_xmm_registers = 16;
  
-@@ -3249,7 +3298,11 @@ struct linux_target_ops the_low_target =
+@@ -3253,7 +3302,11 @@ struct linux_target_ops the_low_target =
    NULL,
    NULL,
    /* need to fix up i386 siginfo if host is amd64 */

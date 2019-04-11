@@ -24,6 +24,7 @@ SRC_C   =  agent.c \
            i387-fp.c \
            inferiors.c \
            mem-break.c \
+           notif.c \
            ptid.c \
            remote-utils.c \
            regcache.c \
