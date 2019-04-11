@@ -1,0 +1,251 @@
+diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
+index 6d1457e..e1d7709 100644
+--- a/gdb/gdbserver/linux-low.c
++++ b/gdb/gdbserver/linux-low.c
+@@ -1107,7 +1107,9 @@ linux_detach_one_lwp (struct inferior_list_entry *entry, void *args)
+   struct thread_info *thread = (struct thread_info *) entry;
+   struct lwp_info *lwp = get_thread_lwp (thread);
+   int pid = * (int *) args;
++#ifndef __GENODE__
+   int sig;
++#endif
+ 
+   if (ptid_get_pid (entry->id) != pid)
+     return 0;
+@@ -1945,7 +1947,9 @@ linux_wait_for_event (ptid_t ptid, int *wstat, int options)
+ 
+       if (event_child->must_set_ptrace_flags)
+ 	{
++#ifndef __GENODE__
+ 	  linux_enable_event_reporting (lwpid_of (event_child));
++#endif
+ 	  event_child->must_set_ptrace_flags = 0;
+ 	}
+ 
+diff --git a/gdb/gdbserver/linux-low.h b/gdb/gdbserver/linux-low.h
+index f3a959d..2d026d2 100644
+--- a/gdb/gdbserver/linux-low.h
++++ b/gdb/gdbserver/linux-low.h
+@@ -16,7 +16,9 @@
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
++#ifndef __GENODE__
+ #include "gdb_thread_db.h"
++#endif
+ #include <signal.h>
+ 
+ #include "gdbthread.h"
+diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
+index f00420f..6aafd05 100644
+--- a/gdb/gdbserver/linux-x86-low.c
++++ b/gdb/gdbserver/linux-x86-low.c
+@@ -38,6 +38,16 @@
+ #include "ax.h"
+ 
+ #ifdef __x86_64__
++#ifdef __GENODE__
++void init_registers_amd64 (void);
++static inline void init_registers_amd64_linux(void) { init_registers_amd64(); }
++extern const struct target_desc *tdesc_amd64_linux;
++
++void init_registers_amd64_avx (void);
++static inline void init_registers_amd64_avx_linux(void) { init_registers_amd64_avx(); }
++extern const struct target_desc *tdesc_amd64_avx_linux;
++#else
++
+ /* Defined in auto-generated file amd64-linux.c.  */
+ void init_registers_amd64_linux (void);
+ extern const struct target_desc *tdesc_amd64_linux;
+@@ -58,20 +68,18 @@ extern const struct target_desc *tdesc_x32_linux;
+ void init_registers_x32_avx_linux (void);
+ extern const struct target_desc *tdesc_x32_avx_linux;
+ 
++#endif /* __GENODE__ */
+ #endif
+ 
+ #ifdef __GENODE__
+-#ifdef __x86_64__
+-void init_registers_amd64 (void);
+-static inline void init_registers_amd64_linux(void) { init_registers_amd64(); }
+-void init_registers_amd64_avx (void);
+-static inline void init_registers_amd64_avx_linux(void) { init_registers_amd64_avx(); }
+-#endif /* __x64_64__ */
+ /* Defined in auto-generated file i386.c.  */
+ void init_registers_i386 (void);
+ static inline void init_registers_i386_linux(void) { init_registers_i386(); }
++extern const struct target_desc *tdesc_i386_linux;
++
+ void init_registers_i386_avx (void);
+ static inline void init_registers_i386_avx_linux(void) { init_registers_i386_avx(); }
++extern const struct target_desc *tdesc_i386_avx_linux;
+ #else
+ 
+ /* Defined in auto-generated file i386-linux.c.  */
+@@ -89,14 +97,13 @@ extern const struct target_desc *tdesc_i386_avx_linux;
+ /* Defined in auto-generated file i386-mpx-linux.c.  */
+ void init_registers_i386_mpx_linux (void);
+ extern const struct target_desc *tdesc_i386_mpx_linux;
++#endif /* __GENODE__ */
+ 
+ #ifdef __x86_64__
+ static struct target_desc *tdesc_amd64_linux_no_xml;
+ #endif
+ static struct target_desc *tdesc_i386_linux_no_xml;
+ 
+-#endif /* __GENODE__ */
+-
+ static unsigned char jump_insn[] = { 0xe9, 0, 0, 0, 0 };
+ static unsigned char small_jump_insn[] = { 0x66, 0xe9, 0, 0 };
+ 
+@@ -356,7 +363,11 @@ x86_cannot_store_register (int regno)
+ {
+ #ifdef __x86_64__
+   if (is_64bit_tdesc ())
++#ifdef __GENODE__
++    return regno >= X86_64_NUM_REGS;
++#else
+     return 0;
++#endif /* GENODE */
+ #endif
+ 
+   return regno >= I386_NUM_REGS;
+@@ -367,26 +378,16 @@ x86_cannot_fetch_register (int regno)
+ {
+ #ifdef __x86_64__
+   if (is_64bit_tdesc ())
++#ifdef __GENODE__
++    return regno >= X86_64_NUM_REGS;
++#else
+     return 0;
++#endif /* GENODE */
+ #endif
+ 
+   return regno >= I386_NUM_REGS;
+ }
+ 
+-#ifdef __x86_64__
+-static int
+-x86_64_cannot_store_register (int regno)
+-{
+-  return regno >= X86_64_NUM_REGS;
+-}
+-
+-static int
+-x86_64_cannot_fetch_register (int regno)
+-{
+-  return regno >= X86_64_NUM_REGS;
+-}
+-#endif /* __x86_64__ */
+-
+ static void
+ x86_fill_gregset (struct regcache *regcache, void *buf)
+ {
+@@ -1314,14 +1315,25 @@ int have_ptrace_getfpxregs =
+ #endif
+ ;
+ 
++#ifndef __GENODE__
+ /* Does the current host support PTRACE_GETREGSET?  */
+ static int have_ptrace_getregset = -1;
++#endif
+ 
+ /* Get Linux/x86 target description from running target.  */
+ 
+ static const struct target_desc *
+ x86_linux_read_description (void)
+ {
++#ifdef __GENODE__
++#ifdef __x86_64__
++  extern struct target_desc *tdesc_amd64;
++  return tdesc_amd64;
++#else
++  extern struct target_desc *tdesc_i386;
++  return tdesc_i386;
++#endif
++#else
+   unsigned int machine;
+   int is_elf64;
+   int xcr0_features;
+@@ -1469,7 +1481,7 @@ x86_linux_read_description (void)
+       else
+ 	return tdesc_i386_linux;
+     }
+-
++#endif /* __GENODE__ */
+   gdb_assert_not_reached ("failed to return tdesc");
+ }
+ 
+@@ -1558,13 +1570,24 @@ static struct regsets_info x86_regsets_info =
+   };
+ 
+ #ifdef __x86_64__
++static struct usrregs_info amd64_linux_usrregs_info =
++  {
++    X86_64_NUM_REGS,
++    x86_64_regmap,
++  };
++
+ static struct regs_info amd64_linux_regs_info =
+   {
+     NULL, /* regset_bitmap */
++#ifdef __GENODE__
++    &amd64_linux_usrregs_info,
++#else
+     NULL, /* usrregs_info */
++#endif
+     &x86_regsets_info
+   };
+ #endif
++
+ static struct usrregs_info i386_linux_usrregs_info =
+   {
+     I386_NUM_REGS,
+@@ -3474,23 +3497,30 @@ initialize_low_arch (void)
+ #ifdef __x86_64__
+   init_registers_amd64_linux ();
+   init_registers_amd64_avx_linux ();
++#ifndef __GENODE__
+   init_registers_amd64_mpx_linux ();
+ 
+   init_registers_x32_linux ();
+   init_registers_x32_avx_linux ();
+-
+   tdesc_amd64_linux_no_xml = xmalloc (sizeof (struct target_desc));
+   copy_target_description (tdesc_amd64_linux_no_xml, tdesc_amd64_linux);
+   tdesc_amd64_linux_no_xml->xmltarget = xmltarget_amd64_linux_no_xml;
++#endif /* __GENODE__ */
+ #endif
+   init_registers_i386_linux ();
++#ifndef __GENODE__
+   init_registers_i386_mmx_linux ();
++#endif
+   init_registers_i386_avx_linux ();
++#ifndef __GENODE__
+   init_registers_i386_mpx_linux ();
++#endif
+ 
++#ifndef __GENODE__
+   tdesc_i386_linux_no_xml = xmalloc (sizeof (struct target_desc));
+   copy_target_description (tdesc_i386_linux_no_xml, tdesc_i386_linux);
+   tdesc_i386_linux_no_xml->xmltarget = xmltarget_i386_linux_no_xml;
++#endif /* __GENODE__ */
+ 
+   initialize_regsets_info (&x86_regsets_info);
+ }
+diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
+index c998c4e..04bc286 100644
+--- a/gdb/gdbserver/remote-utils.c
++++ b/gdb/gdbserver/remote-utils.c
+@@ -114,7 +114,10 @@ struct ui_file *gdb_stdlog;
+ 
+ static int remote_is_stdio = 0;
+ 
+-static gdb_fildes_t remote_desc = INVALID_DESCRIPTOR;
++#ifndef __GENODE__
++static
++#endif
++gdb_fildes_t remote_desc = INVALID_DESCRIPTOR;
+ static gdb_fildes_t listen_desc = INVALID_DESCRIPTOR;
+ 
+ /* FIXME headerize? */

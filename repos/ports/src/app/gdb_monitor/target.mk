@@ -3,8 +3,10 @@ TARGET  =  gdb_monitor
 GDB_CONTRIB_DIR = $(call select_from_ports,gdb)/src/noux-pkg/gdb
 
 INC_DIR += $(GDB_CONTRIB_DIR)/include \
+           $(GDB_CONTRIB_DIR)/gdb \
            $(GDB_CONTRIB_DIR)/gdb/common \
            $(GDB_CONTRIB_DIR)/gdb/gdbserver \
+           $(GDB_CONTRIB_DIR)/gdb/gnulib/import \
            $(GDB_CONTRIB_DIR)/gdb/regformats \
            $(REP_DIR)/src/lib/gdbserver_libc_support \
            $(PRG_DIR)/gdbserver \
@@ -19,6 +21,7 @@ SRC_C   =  agent.c \
            common-utils.c \
            dll.c \
            event-loop.c \
+           filestuff.c \
            format.c \
            i386-low.c \
            i387-fp.c \
@@ -31,13 +34,16 @@ SRC_C   =  agent.c \
            server.c \
            signals.c \
            target.c \
+           tdesc.c \
            tracepoint.c \
            utils.c \
+           vec.c \
+           waitstatus.c \
            xml-utils.c
 
 SRC_C  +=  linux-low.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.3.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.7.1\"" -DREPORT_BUGS_TO="\"\""
 
 CC_OPT_linux-low += -Wno-unused-function
 
@@ -50,6 +56,7 @@ SRC_CC  =  genode-low.cc \
 
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/target
 vpath %.cc $(PRG_DIR)/gdbserver
 
 #
