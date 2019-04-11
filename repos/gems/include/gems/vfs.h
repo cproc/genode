@@ -532,7 +532,7 @@ class Genode::File_content
 };
 
 
-class Genode::Watcher
+class Genode::Watcher : Interface, Vfs::Vfs_watch_handle::Context
 {
 	private:
 
@@ -542,17 +542,14 @@ class Genode::Watcher
 		Watcher(Watcher const &);
 		Watcher &operator = (Watcher const &);
 
-		Vfs::Vfs_watch_handle mutable *_handle { nullptr };
+		Vfs::Vfs_watch_handle mutable *_handle = nullptr;
 
-		void _watch(Vfs::File_system &fs, Allocator &alloc, Directory::Path const path,
-		            Vfs::Watch_response_handler &handler)
+		void _watch(Vfs::File_system &fs, Allocator &alloc, Directory::Path const path)
 		{
 			Vfs::Directory_service::Watch_result res =
 				fs.watch(path.string(), &_handle, alloc);
 
-			if (res == Vfs::Directory_service::WATCH_OK)
-				_handle->handler(&handler);
-			else
+			if (res != Vfs::Directory_service::WATCH_OK)
 				error("failed to watch '", path, "'");
 		}
 
@@ -563,21 +560,21 @@ class Genode::Watcher
 
 	public:
 
-		Watcher(Directory const &dir, Directory::Path const &rel_path,
-		        Vfs::Watch_response_handler &handler)
+		Watcher(Directory const &dir, Directory::Path const &rel_path)
 		{
 			_watch(_mutable(dir)._fs, _mutable(dir)._alloc,
-			       Directory::join(dir._path, rel_path), handler);
+			       Directory::join(dir._path, rel_path));
+			_handle->context(this);
 		}
 
 		~Watcher() { _handle->fs().close(_handle); }
+
+		virtual void handle_watch_notification() { }
 };
 
 
 template <typename T>
-class Genode::Watch_handler : public Vfs::Watch_response_handler,
-                              private Watcher
-
+class Genode::Watch_handler : Watcher
 {
 	private:
 
@@ -589,10 +586,10 @@ class Genode::Watch_handler : public Vfs::Watch_response_handler,
 		Watch_handler(Directory &dir, Directory::Path const &rel_path,
 		              T &obj, void (T::*member)())
 		:
-			Watcher(dir, rel_path, *this), _obj(obj), _member(member)
+			Watcher(dir, rel_path), _obj(obj), _member(member)
 		{ }
 
-		void watch_response() override { (_obj.*_member)(); }
+		void handle_watch_notification() override { (_obj.*_member)(); }
 };
 
 #endif /* _INCLUDE__GEMS__VFS_H_ */
