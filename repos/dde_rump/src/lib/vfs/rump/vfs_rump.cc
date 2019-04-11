@@ -383,7 +383,7 @@ class Vfs::Rump_file_system : public File_system
 		{
 			for (Rump_watch_handle *h = _watchers.first(); h; h = h->next()) {
 				if (h->kqueue_check())
-					h->watch_response();
+					_env.watch_handler().handle_watch_response(h->context());
 			}
 		}
 
