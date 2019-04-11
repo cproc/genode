@@ -40,15 +40,9 @@ class Noux::Vfs_io_waiter
 		void wakeup() { _sem.up(); }
 };
 
-struct Noux::Vfs_handle_context : Vfs::Io_response_handler
+struct Noux::Vfs_handle_context : Vfs::Vfs_handle::Context
 {
 	Vfs_io_waiter vfs_io_waiter { };
-
-	void read_ready_response() override {
-		vfs_io_waiter.wakeup(); }
-
-	void io_progress_response() override {
-		vfs_io_waiter.wakeup(); }
 };
 
 struct Noux::Vfs_io_channel : Io_channel

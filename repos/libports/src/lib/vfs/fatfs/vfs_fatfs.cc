@@ -238,7 +238,7 @@ class Fatfs::File_system : public Vfs::File_system
 		void _notify(File &file)
 		{
 			for (Fatfs_file_watch_handle *h = file.watchers.first(); h; h = h->next())
-				h->watch_response();
+				_vfs_env.watch_handler().handle_watch_response(h->context());
 		}
 
 		/**
@@ -250,9 +250,10 @@ class Fatfs::File_system : public Vfs::File_system
 			Path parent(path);
 			parent.strip_last_element();
 
-			for (Fatfs_dir_watch_handle *h = _dir_watchers.first(); h; h = h->next())
+			for (Fatfs_dir_watch_handle *h = _dir_watchers.first(); h; h = h->next()) {
 				if (h->path == parent)
-					h->watch_response();
+					_vfs_env.watch_handler().handle_watch_response(h->context());
+			}
 		}
 
 		/**
@@ -292,7 +293,8 @@ class Fatfs::File_system : public Vfs::File_system
 			{
 				handle->file = nullptr;
 				file.watchers.remove(handle);
-				handle->watch_response();
+				if (auto *ctx = handle->context())
+					_vfs_env.watch_handler().handle_watch_response(ctx);
 			}
 			_close(file);
 		}
