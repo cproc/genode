@@ -220,7 +220,7 @@ install_config {
 	</start>
 
 	<start name="fs_report">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Report"/> </provides>
 		<config> <vfs> <fs/> </vfs> </config>
 		<route>
@@ -233,7 +233,7 @@ install_config {
 		<resource name="RAM" quantum="96M" constrain_phys="yes"/>
 		<binary name="init"/>
 		<route>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="ROM" label="config">
 				<child name="config_fs_rom" label="drivers"/> </service>
 			<service name="ROM" label_last="capslock"> <child name="report_rom"/> </service>
@@ -371,7 +371,7 @@ install_config {
 		<resource name="RAM" quantum="164M"/>
 		<provides> <service name="Nitpicker"/> </provides>
 		<route>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="ROM" label="config">
 				<child name="leitzentrale_config"/> </service>
 			<service name="ROM" label_prefix="report -> ">
@@ -442,7 +442,7 @@ install_config {
 				<child name="report_rom"/> </service>
 			<service name="Report"> <child name="fs_report"/> </service>
 			<service name="LOG" label="unlogged"> <parent/> </service>
-			<service name="LOG"> <child name="log"/> </service>
+			<!--<service name="LOG"> <child name="log"/> </service>-->
 			<service name="Rtc"> <child name="rtc_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
@@ -492,7 +492,7 @@ exec gzip -dc [genode_dir]/repos/gems/run/sculpt/machine.vdi.gz > [run_dir]/geno
 # Define 'VERSION' ROM module
 #
 proc sculpt_version { } {
-	return "19.02" }
+	return "19.04" }
 
 # write file with newline (for producing nice output when using 'cat /VERSION')
 set fd [open [run_dir]/genode/VERSION w]
