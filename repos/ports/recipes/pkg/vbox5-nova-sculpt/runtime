@@ -13,6 +13,8 @@
 		<rm/>
 		<rtc/>
 		<usb/>
+		<audio_in/>
+		<audio_out/>
 	</requires>
 
 	<content>
