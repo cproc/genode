@@ -22,7 +22,6 @@
 /* mem-break.c */
 extern "C" int breakpoint_len;
 extern "C" const unsigned char *breakpoint_data;
-extern "C" int set_gdb_breakpoint_at(long long where);
 
 /* genode-low.cc */
 extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);

@@ -19,18 +19,22 @@ SRC_C   =  agent.c \
            ax.c \
            buffer.c \
            common-utils.c \
+           debug.c \
            dll.c \
            event-loop.c \
            filestuff.c \
            format.c \
+           gdb_vecs.c \
            i386-low.c \
            i387-fp.c \
            inferiors.c \
            mem-break.c \
            notif.c \
+           print-utils.c \
            ptid.c \
            remote-utils.c \
            regcache.c \
+           rsp-low.c \
            server.c \
            signals.c \
            target.c \
@@ -41,9 +45,10 @@ SRC_C   =  agent.c \
            waitstatus.c \
            xml-utils.c
 
-SRC_C  +=  linux-low.c
+SRC_C  +=  linux-low.c \
+           linux-ptrace.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.7.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.8.2\"" -DREPORT_BUGS_TO="\"\""
 
 CC_OPT += -DHAVE_SYS_WAIT_H
 
@@ -58,6 +63,7 @@ SRC_CC  =  genode-low.cc \
 
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/target
 vpath %.cc $(PRG_DIR)/gdbserver
 
