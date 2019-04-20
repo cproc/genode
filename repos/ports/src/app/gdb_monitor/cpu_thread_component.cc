@@ -26,7 +26,7 @@ extern "C" const unsigned char *breakpoint_data;
 /* genode-low.cc */
 extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
 extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
-extern void genode_set_initial_breakpoint_at(long long addr);
+extern void genode_set_initial_breakpoint_at(unsigned long addr);
 
 
 static unsigned long new_lwpid = GENODE_MAIN_LWPID;

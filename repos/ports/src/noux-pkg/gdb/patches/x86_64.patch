@@ -11,10 +11,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 17 insertions(+)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index 523119d..e202c16 100644
+index 6d63036..38cdd62 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
-@@ -3159,6 +3159,11 @@ void _initialize_amd64_tdep (void);
+@@ -3120,6 +3120,11 @@ void _initialize_amd64_tdep (void);
  void
  _initialize_amd64_tdep (void)
  {
@@ -27,22 +27,22 @@ index 523119d..e202c16 100644
    initialize_tdesc_amd64_avx ();
    initialize_tdesc_amd64_mpx ();
 diff --git a/gdb/defs.h b/gdb/defs.h
-index b7e9ff4..c90f5ab 100644
+index 99db465..7da1c02 100644
 --- a/gdb/defs.h
 +++ b/gdb/defs.h
-@@ -589,6 +589,7 @@ enum gdb_osabi
-   GDB_OSABI_OPENVMS,
+@@ -563,6 +563,7 @@ enum gdb_osabi
    GDB_OSABI_LYNXOS178,
    GDB_OSABI_NEWLIB,
+   GDB_OSABI_SDE,
 +  GDB_OSABI_GENODE,
  
    GDB_OSABI_INVALID		/* keep this last */
  };
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index 45637f0..0023504 100644
+index 12ecac1..c467edb 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -8664,6 +8664,11 @@ is \"default\"."),
+@@ -8631,6 +8631,11 @@ is \"default\"."),
    gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_GO32,
  			  i386_go32_init_abi);
  
@@ -55,18 +55,18 @@ index 45637f0..0023504 100644
    i386_init_reggroups ();
  
 diff --git a/gdb/osabi.c b/gdb/osabi.c
-index 5b69eeb..2dfa22e 100644
+index 9d90c55..7f8f568 100644
 --- a/gdb/osabi.c
 +++ b/gdb/osabi.c
-@@ -74,6 +74,7 @@ static const char * const gdb_osabi_names[] =
-   "OpenVMS",
-   "LynxOS178",
-   "Newlib",
-+  "Genode",
+@@ -84,6 +84,7 @@ static const struct osabi_names gdb_osabi_names[] =
+   { "LynxOS178", NULL },
+   { "Newlib", NULL },
+   { "SDE", NULL },
++  { "Genode", NULL },
  
-   "<invalid>"
+   { "<invalid>", NULL }
  };
-@@ -542,6 +543,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
+@@ -563,6 +564,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
        bfd_map_over_sections (abfd,
  			     generic_elf_osabi_sniff_abi_tag_sections,
  			     &osabi);
