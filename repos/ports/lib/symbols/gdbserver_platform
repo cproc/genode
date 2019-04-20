@@ -60,14 +60,13 @@ amd64_emit_ne_goto T
 amd64_emit_ops D 296
 claim_trampoline_space U
 collect_register_by_name U
-current_inferior U
 current_insn_ptr U
 current_process U
+current_thread U
 debug_printf U
 debug_threads U
 emit_error U
 error U
-fatal U
 find_inferior U
 find_lwp_pid U
 for_each_inferior U
@@ -78,11 +77,6 @@ get_raw_reg_func_addr U
 get_thread_regcache U
 have_fast_tracepoint_trampoline_buffer U
 have_ptrace_getfpxregs B 4
-i386_dr_low_get_addr T
-i386_dr_low_get_control T
-i386_dr_low_get_status T
-i386_dr_low_set_addr T
-i386_dr_low_set_control T
 i386_emit_eq_goto T
 i386_emit_ge_goto T
 i386_emit_gt_goto T
@@ -90,11 +84,6 @@ i386_emit_le_goto T
 i386_emit_lt_goto T
 i386_emit_ne_goto T
 i386_emit_ops D 296
-i386_low_init_dregs U
-i386_low_insert_watchpoint U
-i386_low_remove_watchpoint U
-i386_low_stopped_by_watchpoint U
-i386_low_stopped_data_address U
 inferior_target_data U
 init_registers_amd64 T
 init_registers_amd64_avx T
@@ -128,6 +117,11 @@ the_low_target D 240
 the_target U
 warning U
 write_inferior_memory U
+x86_dr_insert_watchpoint U
+x86_dr_low D 48
+x86_dr_remove_watchpoint U
+x86_dr_stopped_data_address U
 x86_linux_regs_info T
+x86_low_init_dregs U
 xcalloc U
 xstrdup U

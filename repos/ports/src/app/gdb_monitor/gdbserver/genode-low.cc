@@ -296,7 +296,7 @@ extern "C" pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 				cc = read (remote_desc, &c, 1);
 
-				if (cc == 1 && c == '\003' && current_inferior != NULL) {
+				if (cc == 1 && c == '\003' && current_thread != NULL) {
 					/* this causes a SIGINT to be delivered to one of the threads */
 					(*the_target->request_interrupt)();
 					continue;
@@ -544,7 +544,7 @@ extern "C" int initial_breakpoint_handler(CORE_ADDR addr)
 }
 
 
-void genode_set_initial_breakpoint_at(CORE_ADDR addr)
+void genode_set_initial_breakpoint_at(unsigned long addr)
 {
 	set_breakpoint_at(addr, initial_breakpoint_handler);
 }

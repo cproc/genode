@@ -13,6 +13,8 @@ INC_DIR += $(REP_DIR)/src/lib/gdbserver_libc_support \
 
 SRC_CC += gdbserver_platform_helper.cc
 
+CC_OPT += -DGDBSERVER
+
 LIBS += libc
 
 # generated files
