@@ -53,7 +53,7 @@ foreach line [split $symbols "\n"] {
 	#
 	# Ignore undefined symbols
 	#
-	if {$type == "U"} { set keep 0 }
+	#if {$type == "U"} { set keep 0 }
 
 	#
 	# Check if the unmangled line contains a template-argument delimiter ('<')
