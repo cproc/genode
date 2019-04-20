@@ -244,8 +244,8 @@ if {![regexp {Breakpoint 4, test_thread_start} $output]} {
 send "info threads\n"
 run_genode_until {\(gdb\)} 20 $gdb_id
 
-if {![regexp {  4    Thread 3} $output] ||
-    ![regexp {\* 3    Thread 4          test_thread_start} $output] ||
+if {![regexp {\* 4    Thread 4          test_thread_start} $output] ||
+    ![regexp {  3    Thread 3} $output] ||
     ![regexp {  2    Thread 2} $output] ||
     ![regexp {  1    Thread 1} $output]} {
 	puts stderr "*** Error: Thread info is not as expected"

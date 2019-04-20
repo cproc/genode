@@ -15,17 +15,23 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
 LIBS    =  libc libc_pipe \
            gdbserver_platform gdbserver_libc_support
 
-SRC_C   =  agent.c \
+# libiberty
+SRC_C   = argv.c
+
+SRC_C  +=  agent.c \
            ax.c \
            buffer.c \
+           cleanups.c \
+           common-debug.c \
+           common-exceptions.c \
            common-utils.c \
            debug.c \
            dll.c \
+           errors.c \
            event-loop.c \
            filestuff.c \
            format.c \
            gdb_vecs.c \
-           i386-low.c \
            i387-fp.c \
            inferiors.c \
            mem-break.c \
@@ -37,18 +43,21 @@ SRC_C   =  agent.c \
            rsp-low.c \
            server.c \
            signals.c \
+           symbol.c \
            target.c \
            tdesc.c \
            tracepoint.c \
            utils.c \
            vec.c \
            waitstatus.c \
+           x86-dregs.c \
+           x86-low.c \
            xml-utils.c
 
 SRC_C  +=  linux-low.c \
            linux-ptrace.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.8.2\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.9.1\"" -DREPORT_BUGS_TO="\"\""
 
 CC_OPT += -DHAVE_SYS_WAIT_H
 
@@ -65,6 +74,7 @@ vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/target
+vpath %.c  $(GDB_CONTRIB_DIR)/libiberty
 vpath %.cc $(PRG_DIR)/gdbserver
 
 #
