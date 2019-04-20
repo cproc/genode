@@ -47,10 +47,8 @@ __cxa_throw U
 __dynamic_cast U
 __error U
 __gxx_personality_v0 U
-__stderrp U
 abort U
 agent_loaded_p U
-all_lwps U
 all_processes U
 all_threads U
 amd64_emit_eq_goto T
@@ -65,16 +63,14 @@ collect_register_by_name U
 current_inferior U
 current_insn_ptr U
 current_process U
+debug_printf U
 debug_threads U
-delete_gdb_breakpoint_at U
 emit_error U
 error U
 fatal U
 find_inferior U
-find_inferior_id U
 find_lwp_pid U
 for_each_inferior U
-fprintf U
 free U
 genode_fetch_register T
 genode_store_register T
@@ -107,6 +103,7 @@ init_registers_i386_avx T
 init_target_desc U
 initialize_low_arch T
 initialize_regsets_info U
+insert_memory_breakpoint U
 internal_error U
 linux_stop_lwp U
 paddress U
@@ -114,10 +111,11 @@ pid_to_ptid U
 ptid_get_lwp U
 ptid_get_pid U
 ptrace U
+raw_bkpt_type_to_target_hw_bp_type U
 regcache_release U
 register_size U
 relocate_instruction U
-set_gdb_breakpoint_at U
+remove_memory_breakpoint U
 sprintf U
 strtok U
 strtoul U
@@ -126,7 +124,7 @@ tdesc_amd64 B 8
 tdesc_amd64_avx B 8
 tdesc_i386 B 8
 tdesc_i386_avx B 8
-the_low_target D 232
+the_low_target D 240
 the_target U
 warning U
 write_inferior_memory U
