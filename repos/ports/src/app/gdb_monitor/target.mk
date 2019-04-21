@@ -32,10 +32,12 @@ SRC_C  +=  agent.c \
            filestuff.c \
            format.c \
            gdb_vecs.c \
+           hostio.c \
            i387-fp.c \
            inferiors.c \
            mem-break.c \
            notif.c \
+           posix-strerror.c \
            print-utils.c \
            ptid.c \
            remote-utils.c \
@@ -57,7 +59,7 @@ SRC_C  +=  agent.c \
 SRC_C  +=  linux-low.c \
            linux-ptrace.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.9.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.10.1\"" -DREPORT_BUGS_TO="\"\""
 
 CC_OPT += -DHAVE_SYS_WAIT_H
 
@@ -69,6 +71,8 @@ SRC_CC  =  genode-low.cc \
            region_map_component.cc \
            signal_handler_thread.cc \
            main.cc
+
+CC_OPT_genode-low += -fpermissive
 
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
