@@ -14,15 +14,11 @@
 
 /* GDB monitor includes */
 #include "cpu_thread_component.h"
+#include "genode-low.h"
 
 /* libc includes */
 #include <signal.h>
 #include <unistd.h>
-
-/* genode-low.cc */
-extern "C" int genode_read_memory(long long memaddr, unsigned char *myaddr, int len);
-extern "C" int genode_write_memory (long long memaddr, const unsigned char *myaddr, int len);
-extern void genode_set_initial_breakpoint_at(unsigned long addr);
 
 
 static unsigned long new_lwpid = GENODE_MAIN_LWPID;
