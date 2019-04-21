@@ -496,6 +496,10 @@ extern "C" int fork()
 	static Entrypoint signal_ep { *genode_env, SIGNAL_EP_STACK_SIZE,
 	                              "sig_handler", Affinity::Location() };
 
+	int breakpoint_len = 0;
+	unsigned char const *breakpoint_data =
+		the_target->sw_breakpoint_from_kind(0, &breakpoint_len);
+
 	App_child *child = new (alloc) App_child(*genode_env,
 	                                         alloc,
 	                                         filename.string(),
@@ -503,7 +507,9 @@ extern "C" int fork()
 	                                         cap_quota,
 	                                         signal_ep,
 	                                         target_node,
-	                                         _new_thread_pipe[1]);
+	                                         _new_thread_pipe[1],
+	                                         breakpoint_len,
+	                                         breakpoint_data);
 
 	_genode_child_resources = child->genode_child_resources();
 

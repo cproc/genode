@@ -274,7 +274,7 @@ puts ""
 send "c\n"
 run_genode_until {\(gdb\)} 20 $gdb_id
 
-if {![regexp {Program received signal SIGSEGV, Segmentation fault.} $output]} {
+if {![regexp {Thread 4 received signal SIGSEGV, Segmentation fault.} $output]} {
 	puts stderr "*** Error: Segmentation fault exception was not caught"
 	exit -1
 }

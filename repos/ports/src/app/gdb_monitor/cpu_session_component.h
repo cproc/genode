@@ -61,6 +61,8 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		Entrypoint                              &_signal_ep;
 
 		int const                                _new_thread_pipe_write_end;
+		int const                                _breakpoint_len;
+		unsigned char const                     *_breakpoint_data;
 
 		Append_list<Cpu_thread_component>        _thread_list;
 
@@ -84,7 +86,9 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		                      Entrypoint            &signal_ep,
 		                      const char            *args,
 		                      Affinity const        &affinity,
-		                      int const              new_thread_pipe_write_end);
+		                      int const              new_thread_pipe_write_end,
+		                      int const              breakpoint_len,
+		                      unsigned char const   *breakpoint_data);
 
 		/**
 		 * Destructor
@@ -141,6 +145,8 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 		Pd_session_capability    _core_pd;
 		Entrypoint              &_signal_ep;
 		int const                _new_thread_pipe_write_end;
+		int const                _breakpoint_len;
+		unsigned char const     *_breakpoint_data;
 		Genode_child_resources  *_genode_child_resources;
 
 
@@ -152,12 +158,16 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 		                  Pd_session_capability   core_pd,
 		                  Entrypoint             &signal_ep,
 		                  int                     new_thread_pipe_write_end,
+		                  int const               breakpoint_len,
+		                  unsigned char const    *breakpoint_data,
 		                  Genode_child_resources *genode_child_resources)
 		: _env(env), _ep(ep),
 		  _md_alloc(md_alloc),
 		  _core_pd(core_pd),
 		  _signal_ep(signal_ep),
 		  _new_thread_pipe_write_end(new_thread_pipe_write_end),
+		  _breakpoint_len(breakpoint_len),
+		  _breakpoint_data(breakpoint_data),
 		  _genode_child_resources(genode_child_resources)
 		  { }
 
@@ -176,7 +186,9 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 					                      _signal_ep,
 					                      args.string(),
 					                      affinity,
-					                      _new_thread_pipe_write_end);
+					                      _new_thread_pipe_write_end,
+					                      _breakpoint_len,
+					                      _breakpoint_data);
 			_genode_child_resources->cpu_session_component(cpu_session_component);
 			return *cpu_session_component;
 		}
