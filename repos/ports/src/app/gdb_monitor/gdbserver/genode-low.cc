@@ -408,6 +408,7 @@ extern "C" long ptrace(enum __ptrace_request request, pid_t pid, void *addr, voi
 		case PTRACE_SETREGS:    request_str = "PTRACE_SETREGS";    break;
 		case PTRACE_ATTACH:     request_str = "PTRACE_ATTACH";     break;
 		case PTRACE_DETACH:     request_str = "PTRACE_DETACH";     break;
+		case PTRACE_GETSIGINFO: request_str = "PTRACE_GETSIGINFO"; break;
 		case PTRACE_GETEVENTMSG:
 			/*
 			 * Only PTRACE_EVENT_CLONE is currently supported.
