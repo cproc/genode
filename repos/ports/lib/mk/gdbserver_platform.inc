@@ -13,6 +13,8 @@ INC_DIR += $(REP_DIR)/src/lib/gdbserver_libc_support \
 
 SRC_CC += gdbserver_platform_helper.cc
 
+CC_OPT_gdbserver_platform_helper += -fpermissive
+
 CC_OPT += -DGDBSERVER
 
 LIBS += libc
@@ -38,3 +40,4 @@ amd64-avx.c:
 
 vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat

@@ -4,7 +4,9 @@ SRC_C   = i386.c \
           i386-avx.c \
           amd64.c \
           amd64-avx.c \
-          linux-x86-low.c
+          linux-x86-low.c \
+          x86-linux.c \
+          x86-linux-dregs.c
 
 CC_OPT_linux-x86-low += -Wno-unused-function
 

@@ -289,6 +289,9 @@ if {![have_spec arm]} {
 	send "thread 2\n"
 	run_genode_until {\(gdb\)} 20 $gdb_id
 
+	send "set pagination off\n"
+	run_genode_until {\(gdb\)} 20 $gdb_id
+
 	send "bt\n"
 	run_genode_until {\(gdb\)} 20 $gdb_id
 
