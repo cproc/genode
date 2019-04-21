@@ -64,7 +64,7 @@ SRC_C  +=  agent.c \
 SRC_C  +=  linux-low.c \
            linux-ptrace.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.11.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.12.1\"" -DREPORT_BUGS_TO="\"\""
 
 CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE
 
