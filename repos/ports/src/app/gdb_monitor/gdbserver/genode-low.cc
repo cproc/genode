@@ -27,15 +27,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-extern "C" {
-#define private _private
 #include "genode-low.h"
 #include "server.h"
 #include "linux-low.h"
-#define _private private
 
-int linux_detach_one_lwp (struct inferior_list_entry *entry, void *args);
-}
+void linux_detach_one_lwp (struct lwp_info *lwp);
 
 static bool verbose = false;
 
@@ -248,7 +244,7 @@ static void genode_stop_thread(unsigned long lwpid)
 }
 
 
-extern "C" pid_t my_waitpid(pid_t pid, int *status, int flags)
+pid_t my_waitpid(pid_t pid, int *status, int flags)
 {
 	extern int remote_desc;
 
@@ -561,13 +557,14 @@ void genode_set_initial_breakpoint_at(unsigned long addr)
 
 void genode_remove_thread(unsigned long lwpid)
 {
-	int pid = GENODE_MAIN_LWPID;
-	linux_detach_one_lwp((struct inferior_list_entry *)
-		find_thread_ptid(ptid_build(GENODE_MAIN_LWPID, lwpid, 0)), &pid);
+	struct thread_info *thread_info =
+		find_thread_ptid(ptid_build(GENODE_MAIN_LWPID, lwpid, 0));
+	struct lwp_info *lwp = get_thread_lwp(thread_info);
+	linux_detach_one_lwp(lwp);
 }
 
 
-extern "C" void genode_stop_all_threads()
+void genode_stop_all_threads()
 {
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
 	csc.pause_all_threads();

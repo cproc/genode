@@ -6,6 +6,7 @@ SRC_C   = i386.c \
           x86-linux.c \
           x86-linux-dregs.c
 
-CC_OPT_linux-x86-low += -Wno-unused-function
+CC_OPT_linux-x86-low   += -fpermissive -Wno-unused-function
+CC_OPT_x86-linux-dregs += -fpermissive
 
 include $(REP_DIR)/lib/mk/gdbserver_platform.inc

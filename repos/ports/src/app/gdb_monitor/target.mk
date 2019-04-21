@@ -12,7 +12,7 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
            $(PRG_DIR)/gdbserver \
            $(PRG_DIR)
 
-LIBS    =  libc libc_pipe \
+LIBS    =  stdcxx libc libc_pipe \
            gdbserver_platform gdbserver_libc_support
 
 # libiberty
@@ -20,71 +20,76 @@ SRC_C   = argv.c \
           crc32.c
 
 # gnulib
-SRC_C  +=  rawmemchr.c \
-           strchrnul.c
+SRC_C  += rawmemchr.c \
+          strchrnul.c
 
-SRC_C  +=  agent.c \
-           ax.c \
-           buffer.c \
-           cleanups.c \
-           common-debug.c \
-           common-exceptions.c \
-           common-utils.c \
-           debug.c \
-           dll.c \
-           errors.c \
-           event-loop.c \
-           filestuff.c \
-           format.c \
-           gdb_vecs.c \
-           hostio.c \
-           i387-fp.c \
-           inferiors.c \
-           mem-break.c \
-           notif.c \
-           posix-strerror.c \
-           print-utils.c \
-           ptid.c \
-           remote-utils.c \
-           regcache.c \
-           rsp-low.c \
-           server.c \
-           signals.c \
-           symbol.c \
-           target.c \
-           tdesc.c \
-           tracepoint.c \
-           utils.c \
-           vec.c \
-           waitstatus.c \
-           x86-dregs.c \
-           x86-low.c \
-           xml-utils.c
+# common
+SRC_CC += agent.cc \
+          buffer.cc \
+          cleanups.cc \
+          common-debug.cc \
+          common-exceptions.cc \
+          common-utils.cc \
+          errors.cc \
+          filestuff.cc \
+          format.cc \
+          gdb_vecs.cc \
+          posix-strerror.cc \
+          print-utils.cc \
+          ptid.cc \
+          rsp-low.cc \
+          signals.cc \
+          vec.cc \
+          xml-utils.cc
 
-SRC_C  +=  linux-low.c \
-           linux-ptrace.c
+# gdbserver
+SRC_CC += ax.cc \
+          debug.cc \
+          dll.cc \
+          event-loop.cc \
+          hostio.cc \
+          i387-fp.cc \
+          inferiors.cc \
+          linux-low.cc \
+          mem-break.cc \
+          notif.cc \
+          regcache.cc \
+          remote-utils.cc \
+          server.cc \
+          symbol.cc \
+          target.cc \
+          tdesc.cc \
+          tracepoint.cc \
+          utils.cc \
+          x86-low.cc \
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.12.1\"" -DREPORT_BUGS_TO="\"\""
+# nat
+SRC_CC += linux-ptrace.cc \
+          x86-dregs.cc \
 
-CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE
+# target
+SRC_CC += waitstatus.cc
 
-CC_OPT_linux-low += -Wno-unused-function
+# genode
+SRC_CC += genode-low.cc \
+          cpu_session_component.cc \
+          cpu_thread_component.cc \
+          region_map_component.cc \
+          signal_handler_thread.cc \
+          main.cc
 
-SRC_CC  =  genode-low.cc \
-           cpu_session_component.cc \
-           cpu_thread_component.cc \
-           region_map_component.cc \
-           signal_handler_thread.cc \
-           main.cc
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"8.0.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE -DHAVE_TERMIOS
+CC_OPT_linux-low    += -fpermissive -Wno-unused-function
+CC_OPT_linux-ptrace += -fpermissive
+CC_OPT_genode-low   += -fpermissive
 
-CC_OPT_genode-low += -fpermissive
-
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gnulib/import
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/target
 vpath %.c  $(GDB_CONTRIB_DIR)/libiberty
+vpath %.cc $(GDB_CONTRIB_DIR)/gdb/common
+vpath %.cc $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.cc $(GDB_CONTRIB_DIR)/gdb/nat
+vpath %.cc $(GDB_CONTRIB_DIR)/gdb/target
 vpath %.cc $(PRG_DIR)/gdbserver
 
 #

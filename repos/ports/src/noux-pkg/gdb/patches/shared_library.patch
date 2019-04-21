@@ -11,10 +11,10 @@ Enable shared library support.
  4 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index 3bc91ae..546b7bf 100644
+index 9ff7dfc..1deef70 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
-@@ -54,6 +54,8 @@
+@@ -56,6 +56,8 @@
  #include "ax.h"
  #include "ax-gdb.h"
  
@@ -23,7 +23,7 @@ index 3bc91ae..546b7bf 100644
  /* Note that the AMD64 architecture was previously known as x86-64.
     The latter is (forever) engraved into the canonical system name as
     returned by config.guess, and used as the name for the AMD64 port
-@@ -3003,6 +3005,8 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
+@@ -3016,6 +3018,8 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
    static const char *const stap_register_indirection_suffixes[] = { ")",
  								    NULL };
  
@@ -33,19 +33,19 @@ index 3bc91ae..546b7bf 100644
       floating-point registers.  */
    tdep->sizeof_fpregset = I387_SIZEOF_FXSAVE;
 diff --git a/gdb/arm-tdep.c b/gdb/arm-tdep.c
-index b7b04c6..7f76370 100644
+index 970d19f..b8014d2 100644
 --- a/gdb/arm-tdep.c
 +++ b/gdb/arm-tdep.c
-@@ -67,6 +67,8 @@
- #include "features/arm-with-vfpv3.c"
- #include "features/arm-with-neon.c"
+@@ -73,6 +73,8 @@
+ #include "selftest.h"
+ #endif
  
 +#include "solib-svr4.h"
 +
  static int arm_debug;
  
  /* Macros for setting and testing a bit in a minimal symbol that marks
-@@ -9321,6 +9323,8 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+@@ -9360,6 +9362,8 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
    tdep = XCNEW (struct gdbarch_tdep);
    gdbarch = gdbarch_alloc (&info, tdep);
  
@@ -55,10 +55,10 @@ index b7b04c6..7f76370 100644
       These are gdbarch discriminators, like the OSABI.  */
    tdep->arm_abi = arm_abi;
 diff --git a/gdb/configure.tgt b/gdb/configure.tgt
-index 7f1aac3..b08cd76 100644
+index fdcb7b1..89016c0 100644
 --- a/gdb/configure.tgt
 +++ b/gdb/configure.tgt
-@@ -112,7 +112,7 @@ arm*-*-symbianelf*)
+@@ -120,7 +120,7 @@ arm*-*-symbianelf*)
  	;;
  arm*-*-*)
  	# Target: ARM embedded system
@@ -67,39 +67,33 @@ index 7f1aac3..b08cd76 100644
  	gdb_sim=../sim/arm/libsim.a
  	;;
  
-@@ -655,7 +655,7 @@ x86_64-*-dicos*)
- 	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o \
+@@ -673,8 +673,11 @@ x86_64-*-dicos*)
  			dicos-tdep.o i386-dicos-tdep.o amd64-dicos-tdep.o"
  	;;
--x86_64-*-elf* | x86_64-*-rtems*)
-+x86_64-*-rtems*)
- 	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o i386bsd-tdep.o"
- 	 ;;
- x86_64-*-linux*)
-@@ -689,6 +689,9 @@ x86_64-*-openbsd*)
- 			i387-tdep.o i386bsd-tdep.o i386obsd-tdep.o \
- 			obsd-tdep.o bsd-uthread.o solib-svr4.o"
- 	;;
-+x86_64-*-*)
+ x86_64-*-elf*)
+-	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o"
 +	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o solib-svr4.o"
-+	;;
- xtensa*-*-linux*)	gdb_target=linux
- 	# Target: GNU/Linux Xtensa
- 	gdb_target_obs="xtensa-tdep.o xtensa-config.o xtensa-linux-tdep.o \
+ 	;;
++x86_64-*-rtems*)
++	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o i386bsd-tdep.o"
++	 ;;
+ x86_64-*-linux*)
+ 	# Target: GNU/Linux x86-64
+ 	gdb_target_obs="amd64-tdep.o amd64-linux-tdep.o i386-tdep.o \
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index d8660ec..f2891f8 100644
+index fe68486..51e8c00 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -67,6 +67,8 @@
- #include "parser-defs.h"
+@@ -69,6 +69,8 @@
  #include <ctype.h>
+ #include <algorithm>
  
 +#include "solib-svr4.h"
 +
  /* Register names.  */
  
  static const char *i386_register_names[] =
-@@ -8323,6 +8325,8 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+@@ -8374,6 +8376,8 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
    tdep = XCNEW (struct gdbarch_tdep);
    gdbarch = gdbarch_alloc (&info, tdep);
  
