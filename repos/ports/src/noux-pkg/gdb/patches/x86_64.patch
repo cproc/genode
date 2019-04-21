@@ -11,10 +11,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 17 insertions(+)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index fd41db7..7ceac55 100644
+index 802ad56..3f63d8e 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
-@@ -3150,6 +3150,11 @@ void _initialize_amd64_tdep (void);
+@@ -3149,6 +3149,11 @@ void _initialize_amd64_tdep (void);
  void
  _initialize_amd64_tdep (void)
  {
@@ -27,10 +27,10 @@ index fd41db7..7ceac55 100644
    initialize_tdesc_amd64_avx ();
    initialize_tdesc_amd64_mpx ();
 diff --git a/gdb/defs.h b/gdb/defs.h
-index ccdab18..5f76756 100644
+index f6ffeac..7b9ad39 100644
 --- a/gdb/defs.h
 +++ b/gdb/defs.h
-@@ -567,6 +567,7 @@ enum gdb_osabi
+@@ -572,6 +572,7 @@ enum gdb_osabi
    GDB_OSABI_LYNXOS178,
    GDB_OSABI_NEWLIB,
    GDB_OSABI_SDE,
@@ -39,10 +39,10 @@ index ccdab18..5f76756 100644
    GDB_OSABI_INVALID		/* keep this last */
  };
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index f97551d..bd27fef 100644
+index fc9649a..065becd 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -8941,6 +8941,11 @@ Show Intel(R) Memory Protection Extensions specific variables."),
+@@ -8953,6 +8953,11 @@ Show Intel Memory Protection Extensions specific variables."),
    gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_GO32,
  			  i386_go32_init_abi);
  
@@ -55,7 +55,7 @@ index f97551d..bd27fef 100644
    i386_init_reggroups ();
  
 diff --git a/gdb/osabi.c b/gdb/osabi.c
-index 3581eb3..8874dee 100644
+index e8a77ab..46902aa 100644
 --- a/gdb/osabi.c
 +++ b/gdb/osabi.c
 @@ -84,6 +84,7 @@ static const struct osabi_names gdb_osabi_names[] =
@@ -66,7 +66,7 @@ index 3581eb3..8874dee 100644
  
    { "<invalid>", NULL }
  };
-@@ -561,6 +562,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
+@@ -559,6 +560,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
        bfd_map_over_sections (abfd,
  			     generic_elf_osabi_sniff_abi_tag_sections,
  			     &osabi);

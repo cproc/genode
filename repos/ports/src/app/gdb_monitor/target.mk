@@ -16,7 +16,12 @@ LIBS    =  libc libc_pipe \
            gdbserver_platform gdbserver_libc_support
 
 # libiberty
-SRC_C   = argv.c
+SRC_C   = argv.c \
+          crc32.c
+
+# gnulib
+SRC_C  +=  rawmemchr.c \
+           strchrnul.c
 
 SRC_C  +=  agent.c \
            ax.c \
@@ -59,9 +64,9 @@ SRC_C  +=  agent.c \
 SRC_C  +=  linux-low.c \
            linux-ptrace.c
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.10.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"7.11.1\"" -DREPORT_BUGS_TO="\"\""
 
-CC_OPT += -DHAVE_SYS_WAIT_H
+CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE
 
 CC_OPT_linux-low += -Wno-unused-function
 
@@ -76,6 +81,7 @@ CC_OPT_genode-low += -fpermissive
 
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gnulib/import
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/target
 vpath %.c  $(GDB_CONTRIB_DIR)/libiberty

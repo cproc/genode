@@ -1,9 +1,9 @@
 LICENSE   := GPLv3
-VERSION   := 7.10.1
+VERSION   := 7.11.1
 DOWNLOADS := gdb.archive
 
 URL(gdb)  := ftp://ftp.fu-berlin.de/gnu/gdb/gdb-$(VERSION).tar.xz
-SHA(gdb)  := 25c72f3d41c7c8554d61cacbeacd5f40993276d2ccdec43279ac546e3993d6d5
+SHA(gdb)  := e9216da4e3755e9f414c1aa0026b626251dfc57ffe572a266e98da4f6988fc70
 SIG(gdb)  := ${URL(gdb)}.sig
 KEY(gdb)  := GNU
 DIR(gdb)  := src/noux-pkg/gdb

@@ -16,6 +16,7 @@ SRC_CC += gdbserver_platform_helper.cc
 CC_OPT_gdbserver_platform_helper += -fpermissive
 
 CC_OPT += -DGDBSERVER
+CC_OPT += -DHAVE_DECL_PTRACE -DHAVE_SYS_PTRACE_H
 
 LIBS += libc
 
