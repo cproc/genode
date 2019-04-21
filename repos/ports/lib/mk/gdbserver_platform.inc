@@ -18,27 +18,27 @@ CC_OPT_gdbserver_platform_helper += -fpermissive
 CC_OPT += -DGDBSERVER
 CC_OPT += -DHAVE_DECL_PTRACE -DHAVE_SYS_PTRACE_H
 
-LIBS += libc
+LIBS += stdcxx libc
 
 # generated files
 
 REGFORMATS_DIR := $(abspath ${GDB_CONTRIB_DIR}/gdb/regformats)
 
-reg-arm.c:
+reg-arm.cc:
 	$(VERBOSE) cd $(dir $@) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/reg-arm.dat $(notdir $@)
 
-i386.c:
+i386.cc:
 	$(VERBOSE) cd $(dir $@) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/i386.dat $(notdir $@)
 
-i386-avx.c:
+i386-avx.cc:
 	$(VERBOSE) cd $(dir $@) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/i386-avx.dat $(notdir $@)
 
-amd64.c:
+amd64.cc:
 	$(VERBOSE) cd $(dir $@) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64.dat $(notdir $@)
 
-amd64-avx.c:
+amd64-avx.cc:
 	$(VERBOSE) cd $(dir $@) && $(SHELL) $(REGFORMATS_DIR)/regdat.sh $(REGFORMATS_DIR)/i386/amd64-avx.dat $(notdir $@)
 
 vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gdbserver
-vpath %.c  $(GDB_CONTRIB_DIR)/gdb/nat
+vpath %.cc  $(GDB_CONTRIB_DIR)/gdb/gdbserver
+vpath %.cc  $(GDB_CONTRIB_DIR)/gdb/nat
