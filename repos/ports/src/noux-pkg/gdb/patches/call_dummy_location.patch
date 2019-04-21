@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index bd27fef..390642a 100644
+index 065becd..134b7cf 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -8365,7 +8365,9 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+@@ -8375,7 +8375,9 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
    set_gdbarch_get_longjmp_target (gdbarch, i386_get_longjmp_target);
  
    /* Call dummy code.  */
