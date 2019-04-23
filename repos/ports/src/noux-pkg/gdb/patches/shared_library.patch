@@ -6,24 +6,24 @@ Enable shared library support.
 ---
  gdb/amd64-tdep.c  |    4 ++++
  gdb/arm-tdep.c    |    4 ++++
- gdb/configure.tgt |    7 +++++--
+ gdb/configure.tgt |    6 +++++-
  gdb/i386-tdep.c   |    4 ++++
- 4 files changed, 17 insertions(+), 2 deletions(-)
+ 4 files changed, 17 insertions(+), 1 deletion(-)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index 9ff7dfc..1deef70 100644
+index 7b2851f..88de241 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
-@@ -56,6 +56,8 @@
- #include "ax.h"
+@@ -48,6 +48,8 @@
  #include "ax-gdb.h"
+ #include "common/byte-vector.h"
  
 +#include "solib-svr4.h"
 +
  /* Note that the AMD64 architecture was previously known as x86-64.
     The latter is (forever) engraved into the canonical system name as
     returned by config.guess, and used as the name for the AMD64 port
-@@ -3016,6 +3018,8 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
+@@ -3046,6 +3048,8 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch,
    static const char *const stap_register_indirection_suffixes[] = { ")",
  								    NULL };
  
@@ -33,7 +33,7 @@ index 9ff7dfc..1deef70 100644
       floating-point registers.  */
    tdep->sizeof_fpregset = I387_SIZEOF_FXSAVE;
 diff --git a/gdb/arm-tdep.c b/gdb/arm-tdep.c
-index 970d19f..b8014d2 100644
+index bc83326..2573dd7 100644
 --- a/gdb/arm-tdep.c
 +++ b/gdb/arm-tdep.c
 @@ -73,6 +73,8 @@
@@ -45,7 +45,7 @@ index 970d19f..b8014d2 100644
  static int arm_debug;
  
  /* Macros for setting and testing a bit in a minimal symbol that marks
-@@ -9360,6 +9362,8 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+@@ -9300,6 +9302,8 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
    tdep = XCNEW (struct gdbarch_tdep);
    gdbarch = gdbarch_alloc (&info, tdep);
  
@@ -55,36 +55,35 @@ index 970d19f..b8014d2 100644
       These are gdbarch discriminators, like the OSABI.  */
    tdep->arm_abi = arm_abi;
 diff --git a/gdb/configure.tgt b/gdb/configure.tgt
-index fdcb7b1..89016c0 100644
+index fb8014a..ccf5653 100644
 --- a/gdb/configure.tgt
 +++ b/gdb/configure.tgt
-@@ -120,7 +120,7 @@ arm*-*-symbianelf*)
+@@ -178,6 +178,7 @@ arm*-*-symbianelf*)
  	;;
  arm*-*-*)
  	# Target: ARM embedded system
--	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o"
-+	gdb_target_obs="arm.o arm-get-next-pcs.o arm-tdep.o solib-svr4.o"
++	gdb_target_obs="solib-svr4.o"
  	gdb_sim=../sim/arm/libsim.a
  	;;
  
-@@ -673,8 +673,11 @@ x86_64-*-dicos*)
+@@ -705,8 +706,11 @@ x86_64-*-dicos*)
  			dicos-tdep.o i386-dicos-tdep.o amd64-dicos-tdep.o"
  	;;
  x86_64-*-elf*)
--	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o"
-+	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o solib-svr4.o"
+-	gdb_target_obs="${i386_tobjs}"
++	gdb_target_obs="${amd64_tobjs} ${i386_tobjs} solib-svr4.o"
  	;;
 +x86_64-*-rtems*)
 +	gdb_target_obs="amd64-tdep.o i386-tdep.o i387-tdep.o i386bsd-tdep.o"
 +	 ;;
  x86_64-*-linux*)
  	# Target: GNU/Linux x86-64
- 	gdb_target_obs="amd64-tdep.o amd64-linux-tdep.o i386-tdep.o \
+ 	gdb_target_obs="amd64-linux-tdep.o ${i386_tobjs}  \
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index fe68486..51e8c00 100644
+index 9ce329e..f2e59fc 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -69,6 +69,8 @@
+@@ -64,6 +64,8 @@
  #include <ctype.h>
  #include <algorithm>
  
@@ -93,7 +92,7 @@ index fe68486..51e8c00 100644
  /* Register names.  */
  
  static const char *i386_register_names[] =
-@@ -8374,6 +8376,8 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
+@@ -8369,6 +8371,8 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
    tdep = XCNEW (struct gdbarch_tdep);
    gdbarch = gdbarch_alloc (&info, tdep);
  

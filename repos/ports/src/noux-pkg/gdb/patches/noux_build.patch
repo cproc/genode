@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/gdb/configure b/gdb/configure
-index 9f05b4b..1e2412b 100755
+index 092893d..c242b67 100755
 --- a/gdb/configure
 +++ b/gdb/configure
-@@ -6504,11 +6504,11 @@ fi
+@@ -6519,11 +6519,11 @@ fi
  # configuration.
  gdb_host_obs=posix-hdep.o
  
@@ -28,7 +28,7 @@ index 9f05b4b..1e2412b 100755
  
  . $srcdir/configure.host
  
-@@ -13154,7 +13154,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
+@@ -13611,7 +13611,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
    return 0;
  }
  _ACEOF
@@ -38,7 +38,7 @@ index 9f05b4b..1e2412b 100755
  else
    gdb_cv_func_sigsetjmp=no
 diff --git a/sim/common/Make-common.in b/sim/common/Make-common.in
-index 9075b9c..cc8fc6c 100644
+index 1e61927..6263ece 100644
 --- a/sim/common/Make-common.in
 +++ b/sim/common/Make-common.in
 @@ -236,7 +236,7 @@ CSEARCH = -I. -I$(srcdir) -I../common -I$(srccom) \
