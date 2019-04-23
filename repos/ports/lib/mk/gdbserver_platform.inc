@@ -21,6 +21,4 @@ CC_OPT += -DHAVE_DECL_PTRACE -DHAVE_SYS_PTRACE_H
 LIBS += stdcxx libc
 
 vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform
-vpath %.cc  $(GDB_CONTRIB_DIR)/gdb/arch
-vpath %.cc  $(GDB_CONTRIB_DIR)/gdb/gdbserver
-vpath %.cc  $(GDB_CONTRIB_DIR)/gdb/nat
+vpath %.cc  $(GDB_CONTRIB_DIR)/gdb

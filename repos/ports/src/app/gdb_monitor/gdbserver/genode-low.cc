@@ -588,7 +588,7 @@ void genode_set_initial_breakpoint_at(unsigned long addr)
 void genode_remove_thread(unsigned long lwpid)
 {
 	struct thread_info *thread_info =
-		find_thread_ptid(ptid_build(GENODE_MAIN_LWPID, lwpid, 0));
+		find_thread_ptid(ptid_t(GENODE_MAIN_LWPID, lwpid, 0));
 	struct lwp_info *lwp = get_thread_lwp(thread_info);
 	linux_detach_one_lwp(lwp);
 }
