@@ -87,15 +87,17 @@ Cpu_thread_component::Cpu_thread_component(Cpu_session_component   &cpu_session_
                                            Cpu_session::Name const &name,
                                            Affinity::Location       affinity,
                                            Cpu_session::Weight      weight,
-                                           addr_t                   utcb)
+                                           addr_t                   utcb,
+                                           int const                new_thread_pipe_write_end)
 :
 	_cpu_session_component(cpu_session_component),
 	_parent_cpu_thread(
-	_cpu_session_component.parent_cpu_session().create_thread(pd,
-	                                                          name,
-	                                                          affinity,
-	                                                          weight,
-	                                                          utcb)),
+		_cpu_session_component.parent_cpu_session().create_thread(pd,
+		                                                          name,
+		                                                          affinity,
+		                                                          weight,
+		                                                          utcb)),
+	_new_thread_pipe_write_end(new_thread_pipe_write_end),
 	_exception_handler(_cpu_session_component.signal_ep(), *this,
 	                   &Cpu_thread_component::_handle_exception),
 	_sigstop_handler(_cpu_session_component.signal_ep(), *this,
@@ -199,6 +201,15 @@ int Cpu_thread_component::deliver_signal(int signo)
 	}
 
 	write(_pipefd[1], &signo, sizeof(signo));
+
+	/*
+	 * gdbserver might be blocking in 'waitpid()' without having
+	 * the new thread's pipe fd in its 'select' fd set yet. Writing
+	 * into the 'new thread pipe' here will unblock 'select' in this
+	 * case.
+	 */
+	if ((signo == SIGINFO) && (_lwpid != GENODE_MAIN_LWPID))
+		write(_new_thread_pipe_write_end, &_lwpid, sizeof(_lwpid));
 
 	return 0;
 }

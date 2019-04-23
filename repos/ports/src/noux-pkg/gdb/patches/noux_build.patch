@@ -10,10 +10,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/gdb/configure b/gdb/configure
-index 5ac0a23..9eefa01 100755
+index 9349917..d002f86 100755
 --- a/gdb/configure
 +++ b/gdb/configure
-@@ -5063,11 +5063,11 @@ fi
+@@ -5187,11 +5187,11 @@ fi
  # configuration.
  gdb_host_obs=posix-hdep.o
  
@@ -29,7 +29,7 @@ index 5ac0a23..9eefa01 100755
  
  . $srcdir/configure.host
  
-@@ -10477,7 +10477,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
+@@ -10805,7 +10805,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
    return 0;
  }
  _ACEOF
@@ -52,10 +52,10 @@ index 28055d2..031956f 100755
      ;;
  
 diff --git a/sim/common/Make-common.in b/sim/common/Make-common.in
-index af73c30..e089281 100644
+index d09d6b2..abbf00e 100644
 --- a/sim/common/Make-common.in
 +++ b/sim/common/Make-common.in
-@@ -248,7 +248,7 @@ CSEARCH = -I. -I$(srcdir) -I../common -I$(srccom) \
+@@ -249,7 +249,7 @@ CSEARCH = -I. -I$(srcdir) -I../common -I$(srccom) \
    -I../../bfd -I$(srcroot)/bfd \
    -I../../opcodes -I$(srcroot)/opcodes \
    @INCINTL@
