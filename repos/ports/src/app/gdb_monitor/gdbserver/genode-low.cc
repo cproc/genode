@@ -248,7 +248,7 @@ static void genode_stop_thread(unsigned long lwpid)
 }
 
 
-extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
+extern "C" pid_t my_waitpid(pid_t pid, int *status, int flags)
 {
 	extern int remote_desc;
 
@@ -368,9 +368,6 @@ extern "C" pid_t waitpid(pid_t pid, int *status, int flags)
 
 					if (verbose)
 						log("received SIGINFO for new lwpid ", lwpid);
-
-					if (lwpid != GENODE_MAIN_LWPID)
-						write(_new_thread_pipe[1], &lwpid, sizeof(lwpid));
 
 					/*
 					 * First signal of a new thread. On Genode originally a
@@ -505,7 +502,8 @@ extern "C" int fork()
 	                                         Ram_quota{ram_quota},
 	                                         cap_quota,
 	                                         signal_ep,
-	                                         target_node);
+	                                         target_node,
+	                                         _new_thread_pipe[1]);
 
 	_genode_child_resources = child->genode_child_resources();
 
@@ -609,10 +607,12 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 
 void genode_fetch_registers(struct regcache *regcache, int regno)
 {
+	const struct regs_info *regs_info = (*the_low_target.regs_info) ();
+
 	unsigned long reg_content = 0;
 
 	if (regno == -1) {
-		for (regno = 0; regno < the_low_target.num_regs; regno++) {
+		for (regno = 0; regno < regs_info->usrregs->num_regs; regno++) {
 			if (genode_fetch_register(regno, &reg_content) == 0)
 				supply_register(regcache, regno, &reg_content);
 			else
@@ -631,17 +631,21 @@ void genode_store_registers(struct regcache *regcache, int regno)
 {
 	if (verbose) log(__func__, ": regno=", regno);
 
+	const struct regs_info *regs_info = (*the_low_target.regs_info) ();
+
 	unsigned long reg_content = 0;
 
 	if (regno == -1) {
-		for (regno = 0; regno < the_low_target.num_regs; regno++) {
-			if ((Genode::size_t)register_size(regno) <= sizeof(reg_content)) {
+		for (regno = 0; regno < regs_info->usrregs->num_regs; regno++) {
+			if ((Genode::size_t)register_size(regcache->tdesc, regno) <=
+			    sizeof(reg_content)) {
 				collect_register(regcache, regno, &reg_content);
 				genode_store_register(regno, reg_content);
 			}
 		}
 	} else {
-		if ((Genode::size_t)register_size(regno) <= sizeof(reg_content)) {
+		if ((Genode::size_t)register_size(regcache->tdesc, regno) <=
+		    sizeof(reg_content)) {
 			collect_register(regcache, regno, &reg_content);
 			genode_store_register(regno, reg_content);
 		}
