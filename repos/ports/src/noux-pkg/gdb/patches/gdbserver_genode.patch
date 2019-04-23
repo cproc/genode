@@ -4,22 +4,27 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/common/common-defs.h          |    8 +-
- gdb/gdbserver/linux-aarch32-low.c |    4 +
- gdb/gdbserver/linux-arm-low.c     |    8 ++
- gdb/gdbserver/linux-low.c         |  177 ++++++++++++++++++++++++++++++++++++-
- gdb/gdbserver/linux-low.h         |    5 +
- gdb/gdbserver/linux-x86-low.c     |  130 ++++++++++++++++++++++++++-
- gdb/gdbserver/linux-x86-tdesc.h   |   22 +++++
- gdb/gdbserver/remote-utils.c      |   11 ++
- gdb/gdbserver/server.c            |   31 ++++++
- gdb/nat/gdb_ptrace.h              |    2 
- gdb/nat/linux-ptrace.c            |   14 +++
- gdb/nat/linux-ptrace.h            |    4 +
- 12 files changed, 398 insertions(+), 18 deletions(-)
+ gdb/common/common-defs.h                 |    8 +
+ gdb/common/gdb_tilde_expand.c            |   10 ++
+ gdb/common/pathstuff.c                   |    2 
+ gdb/gdbserver/linux-aarch32-low.c        |    4 +
+ gdb/gdbserver/linux-arm-low.c            |    8 +
+ gdb/gdbserver/linux-low.c                |  171 ++++++++++++++++++++++++++++++
+ gdb/gdbserver/linux-low.h                |    5 +
+ gdb/gdbserver/linux-x86-low.c            |  111 +++++++++++++++++++
+ gdb/gdbserver/linux-x86-tdesc-selftest.c |   31 +++++
+ gdb/gdbserver/linux-x86-tdesc.c          |    8 +
+ gdb/gdbserver/remote-utils.c             |   11 ++
+ gdb/gdbserver/server.c                   |   36 ++++++
+ gdb/gdbserver/server.h                   |    2 
+ gdb/nat/fork-inferior.c                  |    4 -
+ gdb/nat/gdb_ptrace.h                     |    2 
+ gdb/nat/linux-ptrace.c                   |   14 ++
+ gdb/nat/linux-ptrace.h                   |    4 +
+ 17 files changed, 416 insertions(+), 15 deletions(-)
 
 diff --git a/gdb/common/common-defs.h b/gdb/common/common-defs.h
-index af37111..7c2d23c 100644
+index 881a4ea..b1c1ee6 100644
 --- a/gdb/common/common-defs.h
 +++ b/gdb/common/common-defs.h
 @@ -22,7 +22,9 @@
@@ -54,8 +59,58 @@ index af37111..7c2d23c 100644
  #include "libiberty.h"
  #include "pathmax.h"
  #include "gdb/signals.h"
+diff --git a/gdb/common/gdb_tilde_expand.c b/gdb/common/gdb_tilde_expand.c
+index fcb9796..bd77a83 100644
+--- a/gdb/common/gdb_tilde_expand.c
++++ b/gdb/common/gdb_tilde_expand.c
+@@ -71,7 +71,12 @@ private:
+ std::string
+ gdb_tilde_expand (const char *dir)
+ {
++#ifdef __GENODE__
++  /* GLOB_TILDE_CHECK is not defined in Genode's libc */
++  gdb_glob glob (dir, GLOB_TILDE, NULL);
++#else
+   gdb_glob glob (dir, GLOB_TILDE_CHECK, NULL);
++#endif /* __GENODE__ */
+ 
+   gdb_assert (glob.pathc () > 0);
+   /* "glob" may return more than one match to the path provided by the
+@@ -86,7 +91,12 @@ gdb_tilde_expand (const char *dir)
+ gdb::unique_xmalloc_ptr<char>
+ gdb_tilde_expand_up (const char *dir)
+ {
++#ifdef __GENODE__
++  /* GLOB_TILDE_CHECK is not defined in Genode's libc */
++  gdb_glob glob (dir, GLOB_TILDE, NULL);
++#else
+   gdb_glob glob (dir, GLOB_TILDE_CHECK, NULL);
++#endif
+ 
+   gdb_assert (glob.pathc () > 0);
+   /* "glob" may return more than one match to the path provided by the
+diff --git a/gdb/common/pathstuff.c b/gdb/common/pathstuff.c
+index 8c4093f..db3c23d 100644
+--- a/gdb/common/pathstuff.c
++++ b/gdb/common/pathstuff.c
+@@ -55,6 +55,7 @@ gdb_realpath (const char *filename)
+    does not exist locally), we rely instead on GetFullPathName to
+    perform the canonicalization.  */
+ 
++#ifndef __GENODE__
+ #if defined (_WIN32)
+   {
+     char buf[MAX_PATH];
+@@ -75,6 +76,7 @@ gdb_realpath (const char *filename)
+       return gdb::unique_xmalloc_ptr<char> (rp);
+   }
+ #endif
++#endif /* __GENODE__ */
+ 
+   /* This system is a lost cause, just dup the buffer.  */
+   return gdb::unique_xmalloc_ptr<char> (xstrdup (filename));
 diff --git a/gdb/gdbserver/linux-aarch32-low.c b/gdb/gdbserver/linux-aarch32-low.c
-index 2b710ba..4344d3b 100644
+index 12c11a4..c42b5bb 100644
 --- a/gdb/gdbserver/linux-aarch32-low.c
 +++ b/gdb/gdbserver/linux-aarch32-low.c
 @@ -35,7 +35,11 @@
@@ -71,7 +126,7 @@ index 2b710ba..4344d3b 100644
  #if (defined __ARM_EABI__ || defined __aarch64__)
  static const unsigned long arm_breakpoint = arm_eabi_breakpoint;
 diff --git a/gdb/gdbserver/linux-arm-low.c b/gdb/gdbserver/linux-arm-low.c
-index fc2b348..6aa60f0 100644
+index 6c2dcea..b682f96 100644
 --- a/gdb/gdbserver/linux-arm-low.c
 +++ b/gdb/gdbserver/linux-arm-low.c
 @@ -30,6 +30,9 @@
@@ -84,7 +139,7 @@ index fc2b348..6aa60f0 100644
  #include <signal.h>
  #include <sys/syscall.h>
  
-@@ -866,6 +869,10 @@ arm_read_description (void)
+@@ -878,6 +881,10 @@ arm_read_description (void)
    /* Query hardware watchpoint/breakpoint capabilities.  */
    arm_linux_init_hwbp_cap (pid);
  
@@ -95,7 +150,7 @@ index fc2b348..6aa60f0 100644
    if (arm_get_hwcap (&arm_hwcap) == 0)
      return tdesc_arm;
  
-@@ -898,6 +905,7 @@ arm_read_description (void)
+@@ -910,6 +917,7 @@ arm_read_description (void)
  
        return result;
      }
@@ -104,7 +159,7 @@ index fc2b348..6aa60f0 100644
    /* The default configuration uses legacy FPA registers, probably
       simulated.  */
 diff --git a/gdb/gdbserver/linux-low.c b/gdb/gdbserver/linux-low.c
-index e27cbf8..5eb10b0 100644
+index cfb2b56..b6fe6bc 100644
 --- a/gdb/gdbserver/linux-low.c
 +++ b/gdb/gdbserver/linux-low.c
 @@ -27,6 +27,11 @@
@@ -119,7 +174,17 @@ index e27cbf8..5eb10b0 100644
  #include "nat/linux-ptrace.h"
  #include "nat/linux-procfs.h"
  #include "nat/linux-personality.h"
-@@ -706,7 +711,11 @@ handle_extended_wait (struct lwp_info **orig_event_lwp, int wstat)
+@@ -661,7 +666,9 @@ handle_extended_wait (struct lwp_info **orig_event_lwp, int wstat)
+ 	  new_lwp->status_pending = status;
+ 	}
+ 
++#ifndef __GENODE__
+       thread_db_notice_clone (event_thr, ptid);
++#endif /* __GENODE__ */
+ 
+       /* Don't report the event.  */
+       return 1;
+@@ -715,7 +722,11 @@ handle_extended_wait (struct lwp_info **orig_event_lwp, int wstat)
        /* Set the event status.  */
        event_lwp->waitstatus.kind = TARGET_WAITKIND_EXECD;
        event_lwp->waitstatus.value.execd_pathname
@@ -131,43 +196,18 @@ index e27cbf8..5eb10b0 100644
  
        /* Mark the exec status as pending.  */
        event_lwp->stopped = 1;
-@@ -955,9 +964,10 @@ linux_create_inferior (char *program, char **allargs)
-   struct lwp_info *new_lwp;
-   int pid;
+@@ -1000,8 +1011,10 @@ linux_create_inferior (const char *program,
    ptid_t ptid;
-+#ifndef __GENODE__
-   struct cleanup *restore_personality
-     = maybe_disable_address_space_randomization (disable_randomization);
--
-+#endif /* __GENODE__ */
- #if defined(__UCLIBC__) && defined(HAS_NOMMU)
-   pid = vfork ();
- #else
-@@ -987,9 +997,9 @@ linux_create_inferior (char *program, char **allargs)
- 	      /* Errors ignored.  */;
- 	    }
- 	}
--
-+#ifndef __GENODE__
-       restore_original_signals_state ();
--
-+#endif /* __GENODE__ */
-       execv (program, allargs);
-       if (errno == ENOENT)
- 	execvp (program, allargs);
-@@ -999,9 +1009,9 @@ linux_create_inferior (char *program, char **allargs)
-       fflush (stderr);
-       _exit (0177);
-     }
--
-+#ifndef __GENODE__
-   do_cleanups (restore_personality);
--
-+#endif /* __GENODE__ */
-   linux_add_process (pid, 0);
  
-   ptid = ptid_build (pid, pid, 0);
-@@ -1039,12 +1049,17 @@ linux_attach_lwp (ptid_t ptid)
+   {
++#ifndef __GENODE__
+     maybe_disable_address_space_randomization restore_personality
+       (disable_randomization);
++#endif /* __GENODE__ */
+     std::string str_program_args = stringify_argv (program_args);
+ 
+     pid = fork_inferior (program,
+@@ -1049,12 +1062,17 @@ linux_attach_lwp (ptid_t ptid)
    struct lwp_info *new_lwp;
    int lwpid = ptid_get_lwp (ptid);
  
@@ -185,7 +225,7 @@ index e27cbf8..5eb10b0 100644
    /* We need to wait for SIGSTOP before being able to make the next
       ptrace call on this LWP.  */
    new_lwp->must_set_ptrace_flags = 1;
-@@ -1111,6 +1126,7 @@ linux_attach_lwp (ptid_t ptid)
+@@ -1121,6 +1139,7 @@ linux_attach_lwp (ptid_t ptid)
       end of the list, and so the new thread has not yet reached
       wait_for_sigstop (but will).  */
    new_lwp->stop_expected = 1;
@@ -193,7 +233,7 @@ index e27cbf8..5eb10b0 100644
  
    return 0;
  }
-@@ -1181,6 +1197,7 @@ linux_attach (unsigned long pid)
+@@ -1191,6 +1210,7 @@ linux_attach (unsigned long pid)
  
    proc = linux_add_process (pid, 1);
  
@@ -201,7 +241,7 @@ index e27cbf8..5eb10b0 100644
    /* Don't ignore the initial SIGSTOP if we just attached to this
       process.  It will be collected by wait shortly.  */
    initial_thread = find_thread_ptid (ptid_build (pid, pid, 0));
-@@ -1228,6 +1245,7 @@ linux_attach (unsigned long pid)
+@@ -1238,6 +1258,7 @@ linux_attach (unsigned long pid)
        gdb_assert (proc->tdesc != NULL);
      }
  
@@ -209,7 +249,7 @@ index e27cbf8..5eb10b0 100644
    return 0;
  }
  
-@@ -1496,14 +1514,21 @@ get_detach_signal (struct thread_info *thread)
+@@ -1497,14 +1518,21 @@ get_detach_signal (struct thread_info *thread)
  
  /* Detach from LWP.  */
  
@@ -231,7 +271,7 @@ index e27cbf8..5eb10b0 100644
    if (lwp->stop_expected)
      {
        if (debug_threads)
-@@ -1513,7 +1538,9 @@ linux_detach_one_lwp (struct lwp_info *lwp)
+@@ -1514,7 +1542,9 @@ linux_detach_one_lwp (struct lwp_info *lwp)
        kill_lwp (lwpid_of (thread), SIGCONT);
        lwp->stop_expected = 0;
      }
@@ -241,7 +281,7 @@ index e27cbf8..5eb10b0 100644
    /* Pass on any pending signal for this thread.  */
    sig = get_detach_signal (thread);
  
-@@ -1576,6 +1603,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
+@@ -1577,6 +1607,7 @@ linux_detach_one_lwp (struct lwp_info *lwp)
  		    target_pid_to_str (ptid_of (thread)),
  		    strsignal (sig));
      }
@@ -249,23 +289,23 @@ index e27cbf8..5eb10b0 100644
  
    delete_lwp (lwp);
  }
-@@ -1931,6 +1959,7 @@ iterate_over_lwps (ptid_t filter,
+@@ -1864,6 +1895,7 @@ iterate_over_lwps (ptid_t filter,
  static void
  check_zombie_leaders (void)
  {
 +#ifndef __GENODE__
-   struct process_info *proc, *tmp;
- 
-   ALL_PROCESSES (proc, tmp)
-@@ -1988,6 +2017,7 @@ check_zombie_leaders (void)
- 	  delete_lwp (leader_lp);
- 	}
-     }
+   for_each_process ([] (process_info *proc) {
+     pid_t leader_pid = pid_of (proc);
+     struct lwp_info *leader_lp;
+@@ -1918,6 +1950,7 @@ check_zombie_leaders (void)
+ 	delete_lwp (leader_lp);
+       }
+     });
 +#endif /* __GENODE__ */
  }
  
- /* Callback for `find_inferior'.  Returns the first LWP that is not
-@@ -2788,11 +2818,13 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
+ /* Callback for `find_thread'.  Returns the first LWP that is not
+@@ -2718,11 +2751,13 @@ linux_wait_for_event_filtered (ptid_t wait_ptid, ptid_t filter_ptid,
  
        if (ret > 0)
  	{
@@ -279,7 +319,7 @@ index e27cbf8..5eb10b0 100644
  
  	  /* Filter all events.  IOW, leave all events pending.  We'll
  	     randomly select an event LWP out of all that have events
-@@ -3141,11 +3173,12 @@ linux_stabilize_threads (void)
+@@ -3024,11 +3059,12 @@ linux_stabilize_threads (void)
  static ptid_t
  ignore_event (struct target_waitstatus *ourstatus)
  {
@@ -293,7 +333,7 @@ index e27cbf8..5eb10b0 100644
    ourstatus->kind = TARGET_WAITKIND_IGNORE;
    return null_ptid;
  }
-@@ -3981,9 +4014,11 @@ linux_wait (ptid_t ptid,
+@@ -3863,9 +3899,11 @@ linux_wait (ptid_t ptid,
  {
    ptid_t event_ptid;
  
@@ -305,7 +345,7 @@ index e27cbf8..5eb10b0 100644
  
    do
      {
-@@ -3993,12 +4028,14 @@ linux_wait (ptid_t ptid,
+@@ -3875,12 +3913,14 @@ linux_wait (ptid_t ptid,
  	 && ptid_equal (event_ptid, null_ptid)
  	 && ourstatus->kind == TARGET_WAITKIND_IGNORE);
  
@@ -320,7 +360,7 @@ index e27cbf8..5eb10b0 100644
  
    return event_ptid;
  }
-@@ -4008,6 +4045,9 @@ linux_wait (ptid_t ptid,
+@@ -3890,6 +3930,9 @@ linux_wait (ptid_t ptid,
  static int
  kill_lwp (unsigned long lwpid, int signo)
  {
@@ -330,7 +370,7 @@ index e27cbf8..5eb10b0 100644
    int ret;
  
    errno = 0;
-@@ -4019,6 +4059,7 @@ kill_lwp (unsigned long lwpid, int signo)
+@@ -3901,6 +3944,7 @@ kill_lwp (unsigned long lwpid, int signo)
        perror_with_name (("tkill"));
      }
    return ret;
@@ -338,7 +378,7 @@ index e27cbf8..5eb10b0 100644
  }
  
  void
-@@ -4554,6 +4595,21 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
+@@ -4434,6 +4478,21 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
    regcache_invalidate_thread (thread);
    errno = 0;
    lwp->stepping = step;
@@ -360,7 +400,7 @@ index e27cbf8..5eb10b0 100644
    if (step)
      ptrace_request = PTRACE_SINGLESTEP;
    else if (gdb_catching_syscalls_p (lwp))
-@@ -4566,6 +4622,7 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
+@@ -4446,6 +4505,7 @@ linux_resume_one_lwp_throw (struct lwp_info *lwp,
  	  /* Coerce to a uintptr_t first to avoid potential gcc warning
  	     of coercing an 8 byte integer to a 4 byte pointer.  */
  	  (PTRACE_TYPE_ARG4) (uintptr_t) signal);
@@ -368,7 +408,7 @@ index e27cbf8..5eb10b0 100644
  
    current_thread = saved_thread;
    if (errno)
-@@ -4603,7 +4660,7 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
+@@ -4483,7 +4543,7 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
       (observed in Linux 3.18).  See also the note on ESRCH in the
       ptrace(2) man page.  Instead, check whether the LWP has any state
       other than ptrace-stopped.  */
@@ -377,7 +417,7 @@ index e27cbf8..5eb10b0 100644
    /* Don't assume anything if /proc/PID/status can't be read.  */
    if (linux_proc_pid_is_trace_stopped_nowarn (lwpid_of (thread)) == 0)
      {
-@@ -4611,6 +4668,7 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
+@@ -4491,6 +4551,7 @@ check_ptrace_stopped_lwp_gone (struct lwp_info *lp)
        lp->status_pending_p = 0;
        return 1;
      }
@@ -385,7 +425,7 @@ index e27cbf8..5eb10b0 100644
    return 0;
  }
  
-@@ -5498,6 +5556,7 @@ regsets_fetch_inferior_registers (struct regsets_info *regsets_info,
+@@ -5361,6 +5422,7 @@ regsets_fetch_inferior_registers (struct regsets_info *regsets_info,
  		 this process mode.  */
  	      disable_regset (regsets_info, regset);
  	    }
@@ -393,7 +433,7 @@ index e27cbf8..5eb10b0 100644
  	  else if (errno == ENODATA)
  	    {
  	      /* ENODATA may be returned if the regset is currently
-@@ -5510,6 +5569,7 @@ regsets_fetch_inferior_registers (struct regsets_info *regsets_info,
+@@ -5373,6 +5435,7 @@ regsets_fetch_inferior_registers (struct regsets_info *regsets_info,
  		 already gone, in which case we simply ignore attempts
  		 to read its registers.  */
  	    }
@@ -401,7 +441,7 @@ index e27cbf8..5eb10b0 100644
  	  else
  	    {
  	      char s[256];
-@@ -6700,6 +6760,13 @@ linux_read_loadmap (const char *annex, CORE_ADDR offset,
+@@ -6549,6 +6612,13 @@ linux_read_loadmap (const char *annex, CORE_ADDR offset,
  static void
  linux_process_qsupported (char **features, int count)
  {
@@ -415,7 +455,7 @@ index e27cbf8..5eb10b0 100644
    if (the_low_target.process_qsupported != NULL)
      the_low_target.process_qsupported (features, count);
  }
-@@ -6825,6 +6892,7 @@ linux_get_min_fast_tracepoint_insn_len (void)
+@@ -6674,6 +6744,7 @@ linux_get_min_fast_tracepoint_insn_len (void)
    return (*the_low_target.get_min_fast_tracepoint_insn_len) ();
  }
  
@@ -423,7 +463,7 @@ index e27cbf8..5eb10b0 100644
  /* Extract &phdr and num_phdr in the inferior.  Return 0 on success.  */
  
  static int
-@@ -7334,6 +7402,7 @@ linux_qxfer_libraries_svr4 (const char *annex, unsigned char *readbuf,
+@@ -7181,6 +7252,7 @@ linux_qxfer_libraries_svr4 (const char *annex, unsigned char *readbuf,
  
    return len;
  }
@@ -431,7 +471,7 @@ index e27cbf8..5eb10b0 100644
  
  #ifdef HAVE_LINUX_BTRACE
  
-@@ -7601,25 +7670,52 @@ static struct target_ops linux_target_ops = {
+@@ -7448,25 +7520,52 @@ static struct target_ops linux_target_ops = {
    linux_create_inferior,
    linux_post_create_inferior,
    linux_attach,
@@ -484,7 +524,7 @@ index e27cbf8..5eb10b0 100644
    linux_stopped_by_sw_breakpoint,
    linux_supports_stopped_by_sw_breakpoint,
    linux_stopped_by_hw_breakpoint,
-@@ -7627,6 +7723,15 @@ static struct target_ops linux_target_ops = {
+@@ -7474,6 +7573,15 @@ static struct target_ops linux_target_ops = {
    linux_supports_hardware_single_step,
    linux_stopped_by_watchpoint,
    linux_stopped_data_address,
@@ -500,7 +540,7 @@ index e27cbf8..5eb10b0 100644
  #if defined(__UCLIBC__) && defined(HAS_NOMMU)	      \
      && defined(PT_TEXT_ADDR) && defined(PT_DATA_ADDR) \
      && defined(PT_TEXT_END_ADDR)
-@@ -7639,6 +7744,7 @@ static struct target_ops linux_target_ops = {
+@@ -7486,6 +7594,7 @@ static struct target_ops linux_target_ops = {
  #else
    NULL,
  #endif
@@ -508,7 +548,7 @@ index e27cbf8..5eb10b0 100644
    linux_qxfer_spu,
    hostio_last_error_from_errno,
    linux_qxfer_osdata,
-@@ -7651,14 +7757,34 @@ static struct target_ops linux_target_ops = {
+@@ -7498,14 +7607,34 @@ static struct target_ops linux_target_ops = {
    linux_supports_vfork_events,
    linux_supports_exec_events,
    linux_handle_new_gdb_connection,
@@ -543,7 +583,7 @@ index e27cbf8..5eb10b0 100644
    linux_supports_tracepoints,
    linux_read_pc,
    linux_write_pc,
-@@ -7692,12 +7818,47 @@ static struct target_ops linux_target_ops = {
+@@ -7539,7 +7668,35 @@ static struct target_ops linux_target_ops = {
    linux_mntns_unlink,
    linux_mntns_readlink,
    linux_breakpoint_kind_from_pc,
@@ -579,19 +619,22 @@ index e27cbf8..5eb10b0 100644
    linux_proc_tid_get_name,
    linux_breakpoint_kind_from_current_state,
    linux_supports_software_single_step,
-   linux_supports_catch_syscall,
-   linux_get_ipa_tdesc_idx,
+@@ -7550,6 +7707,14 @@ static struct target_ops linux_target_ops = {
+ #else
+   NULL,
+ #endif
 +#else
 +  NULL,
 +  NULL,
 +  NULL,
 +  NULL,
++  NULL,
 +  NULL
-+#endif
++#endif /* __GENODE__ */
  };
  
  #ifdef HAVE_LINUX_REGSETS
-@@ -7719,7 +7880,9 @@ initialize_low (void)
+@@ -7571,7 +7736,9 @@ initialize_low (void)
    memset (&sigchld_action, 0, sizeof (sigchld_action));
    set_target_ops (&linux_target_ops);
  
@@ -602,7 +645,7 @@ index e27cbf8..5eb10b0 100644
    sigchld_action.sa_handler = sigchld_handler;
    sigemptyset (&sigchld_action.sa_mask);
 diff --git a/gdb/gdbserver/linux-low.h b/gdb/gdbserver/linux-low.h
-index 7dcbfcf..f48de66 100644
+index 79b3311..0b7f4ed 100644
 --- a/gdb/gdbserver/linux-low.h
 +++ b/gdb/gdbserver/linux-low.h
 @@ -17,11 +17,16 @@
@@ -623,7 +666,7 @@ index 7dcbfcf..f48de66 100644
  /* Included for ptrace type definitions.  */
  #include "nat/linux-ptrace.h"
 diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
-index b39026c..ee620cd 100644
+index 408b54f..797fe0d 100644
 --- a/gdb/gdbserver/linux-x86-low.c
 +++ b/gdb/gdbserver/linux-x86-low.c
 @@ -31,7 +31,9 @@
@@ -814,7 +857,7 @@ index b39026c..ee620cd 100644
      return 1;
  
    return 0;
-@@ -661,6 +727,7 @@ x86_debug_reg_state (pid_t pid)
+@@ -669,6 +735,7 @@ x86_debug_reg_state (pid_t pid)
     as debugging it with a 32-bit GDBSERVER, we do the 32-bit <-> 64-bit
     conversion in-place ourselves.  */
  
@@ -822,7 +865,7 @@ index b39026c..ee620cd 100644
  /* Convert a ptrace/host siginfo object, into/from the siginfo in the
     layout of the inferiors' architecture.  Returns true if any
     conversion was done; false otherwise.  If DIRECTION is 1, then copy
-@@ -687,6 +754,7 @@ x86_siginfo_fixup (siginfo_t *ptrace, gdb_byte *inf, int direction)
+@@ -695,6 +762,7 @@ x86_siginfo_fixup (siginfo_t *ptrace, gdb_byte *inf, int direction)
  
    return 0;
  }
@@ -830,32 +873,30 @@ index b39026c..ee620cd 100644
  
  static int use_xml;
  
-@@ -727,6 +795,15 @@ int have_ptrace_getfpxregs =
+@@ -735,6 +803,13 @@ int have_ptrace_getfpxregs =
  static const struct target_desc *
  x86_linux_read_description (void)
  {
 +#ifdef __GENODE__
 +#ifdef __x86_64__
-+  extern struct target_desc *tdesc_amd64;
-+  return tdesc_amd64;
++  return amd64_linux_read_description(X86_XSTATE_SSE_MASK, false);
 +#else
-+  extern struct target_desc *tdesc_i386;
-+  return tdesc_i386;
++  return i386_linux_read_description(X86_XSTATE_SSE);
 +#endif
 +#else
    unsigned int machine;
    int is_elf64;
    int xcr0_features;
-@@ -899,7 +976,7 @@ x86_linux_read_description (void)
-       else
- 	return tdesc_i386_linux;
+@@ -850,7 +925,7 @@ x86_linux_read_description (void)
+ 
+       return tdesc;
      }
 -
 +#endif /* __GENODE__ */
    gdb_assert_not_reached ("failed to return tdesc");
  }
  
-@@ -994,13 +1071,24 @@ static struct regsets_info x86_regsets_info =
+@@ -925,13 +1000,24 @@ static struct regsets_info x86_regsets_info =
    };
  
  #ifdef __x86_64__
@@ -880,39 +921,7 @@ index b39026c..ee620cd 100644
  static struct usrregs_info i386_linux_usrregs_info =
    {
      I386_NUM_REGS,
-@@ -2897,6 +2985,9 @@ x86_get_ipa_tdesc_idx (void)
-   const struct target_desc *tdesc = regcache->tdesc;
- 
- #ifdef __x86_64__
-+#ifdef __GENODE__
-+    return X86_TDESC_SSE;
-+#else
-   if (tdesc == tdesc_amd64_linux || tdesc == tdesc_amd64_linux_no_xml
-       || tdesc == tdesc_x32_linux)
-     return X86_TDESC_SSE;
-@@ -2910,8 +3001,12 @@ x86_get_ipa_tdesc_idx (void)
-     return X86_TDESC_AVX_MPX_AVX512_PKU;
-   if (tdesc == tdesc_amd64_avx_avx512_linux)
-     return X86_TDESC_AVX_AVX512;
-+#endif /* __GENODE__ */
- #endif
- 
-+#ifdef __GENODE__
-+    return X86_TDESC_SSE;
-+#else
-   if (tdesc == tdesc_i386_mmx_linux)
-     return X86_TDESC_MMX;
-   if (tdesc == tdesc_i386_linux || tdesc == tdesc_i386_linux_no_xml)
-@@ -2926,7 +3021,7 @@ x86_get_ipa_tdesc_idx (void)
-     return X86_TDESC_AVX_MPX_AVX512_PKU;
-   if (tdesc == tdesc_i386_avx_avx512_linux)
-     return X86_TDESC_AVX_AVX512;
--
-+#endif /* __GENODE__ */
-   return 0;
- }
- 
-@@ -2945,12 +3040,20 @@ struct linux_target_ops the_low_target =
+@@ -2852,12 +2938,20 @@ struct linux_target_ops the_low_target =
    NULL, /* breakpoint_kind_from_pc */
    x86_sw_breakpoint_from_kind,
    NULL,
@@ -933,7 +942,7 @@ index b39026c..ee620cd 100644
    x86_stopped_data_address,
    /* collect_ptrace_register/supply_ptrace_register are not needed in the
       native i386 case (no registers smaller than an xfer unit), and are not
-@@ -2958,11 +3061,20 @@ struct linux_target_ops the_low_target =
+@@ -2865,13 +2959,22 @@ struct linux_target_ops the_low_target =
    NULL,
    NULL,
    /* need to fix up i386 siginfo if host is amd64 */
@@ -943,7 +952,9 @@ index b39026c..ee620cd 100644
    x86_siginfo_fixup,
 +#endif
    x86_linux_new_process,
+   x86_linux_delete_process,
    x86_linux_new_thread,
+   x86_linux_delete_thread,
 +#ifndef __GENODE__
    x86_linux_new_fork,
    x86_linux_prepare_to_resume,
@@ -954,66 +965,13 @@ index b39026c..ee620cd 100644
    x86_linux_process_qsupported,
    x86_supports_tracepoints,
    x86_get_thread_area,
-@@ -2983,6 +3095,7 @@ initialize_low_arch (void)
- #ifdef __x86_64__
-   init_registers_amd64_linux ();
-   init_registers_amd64_avx_linux ();
-+#ifndef __GENODE__
-   init_registers_amd64_mpx_linux ();
-   init_registers_amd64_avx_mpx_linux ();
-   init_registers_amd64_avx_avx512_linux ();
-@@ -2995,18 +3108,25 @@ initialize_low_arch (void)
-   tdesc_amd64_linux_no_xml = XNEW (struct target_desc);
-   copy_target_description (tdesc_amd64_linux_no_xml, tdesc_amd64_linux);
-   tdesc_amd64_linux_no_xml->xmltarget = xmltarget_amd64_linux_no_xml;
-+#endif /* __GENODE__ */
- #endif
-   init_registers_i386_linux ();
-+#ifndef __GENODE__
-   init_registers_i386_mmx_linux ();
-+#endif
-   init_registers_i386_avx_linux ();
-+#ifndef __GENODE__
-   init_registers_i386_mpx_linux ();
-   init_registers_i386_avx_mpx_linux ();
-   init_registers_i386_avx_avx512_linux ();
-   init_registers_i386_avx_mpx_avx512_pku_linux ();
-+#endif
- 
-+#ifndef __GENODE__
-   tdesc_i386_linux_no_xml = XNEW (struct target_desc);
-   copy_target_description (tdesc_i386_linux_no_xml, tdesc_i386_linux);
-   tdesc_i386_linux_no_xml->xmltarget = xmltarget_i386_linux_no_xml;
-+#endif /* __GENODE__ */
- 
-   initialize_regsets_info (&x86_regsets_info);
- }
-diff --git a/gdb/gdbserver/linux-x86-tdesc.h b/gdb/gdbserver/linux-x86-tdesc.h
-index bbe4078..366dedd 100644
---- a/gdb/gdbserver/linux-x86-tdesc.h
-+++ b/gdb/gdbserver/linux-x86-tdesc.h
-@@ -33,6 +33,15 @@ enum x86_linux_tdesc {
- };
- 
- #ifdef __x86_64__
-+#ifdef __GENODE__
-+void init_registers_amd64 (void);
-+static inline void init_registers_amd64_linux(void) { init_registers_amd64(); }
-+extern const struct target_desc *tdesc_amd64_linux;
-+
-+void init_registers_amd64_avx (void);
-+static inline void init_registers_amd64_avx_linux(void) { init_registers_amd64_avx(); }
-+extern const struct target_desc *tdesc_amd64_avx_linux;
-+#else
- 
- #if defined __LP64__  || !defined IN_PROCESS_AGENT
- /* Defined in auto-generated file amd64-linux.c.  */
-@@ -74,8 +83,20 @@ void init_registers_x32_avx_avx512_linux (void);
- extern const struct target_desc *tdesc_x32_avx_avx512_linux;
- #endif
- 
-+#endif /* __GENODE__ */
- #endif
+diff --git a/gdb/gdbserver/linux-x86-tdesc-selftest.c b/gdb/gdbserver/linux-x86-tdesc-selftest.c
+index e840b77..c7d1e34 100644
+--- a/gdb/gdbserver/linux-x86-tdesc-selftest.c
++++ b/gdb/gdbserver/linux-x86-tdesc-selftest.c
+@@ -21,6 +21,17 @@
+ #include "common/selftest.h"
+ #include "x86-xstate.h"
  
 +#ifdef __GENODE__
 +/* Defined in auto-generated file i386.c.  */
@@ -1026,21 +984,109 @@ index bbe4078..366dedd 100644
 +extern const struct target_desc *tdesc_i386_avx_linux;
 +#else
 +
- #if defined __i386__ || !defined IN_PROCESS_AGENT
  /* Defined in auto-generated file i386-linux.c.  */
  void init_registers_i386_linux (void);
-@@ -105,3 +126,4 @@ extern const struct target_desc *tdesc_i386_avx_mpx_avx512_pku_linux;
+ extern const struct target_desc *tdesc_i386_linux;
+@@ -48,9 +59,20 @@ extern const struct target_desc *tdesc_i386_avx_mpx_avx512_pku_linux;
+ /* Defined in auto-generated file i386-mpx-linux.c.  */
  void init_registers_i386_mpx_linux (void);
  extern const struct target_desc *tdesc_i386_mpx_linux;
- #endif
 +#endif /* __GENODE__ */
+ 
+ #ifdef __x86_64__
+ 
++#ifdef __GENODE__
++void init_registers_amd64 (void);
++static inline void init_registers_amd64_linux(void) { init_registers_amd64(); }
++extern const struct target_desc *tdesc_amd64_linux;
++
++void init_registers_amd64_avx (void);
++static inline void init_registers_amd64_avx_linux(void) { init_registers_amd64_avx(); }
++extern const struct target_desc *tdesc_amd64_avx_linux;
++#else
++
+ /* Defined in auto-generated file amd64-linux.c.  */
+ void init_registers_amd64_linux (void);
+ extern const struct target_desc *tdesc_amd64_linux;
+@@ -87,6 +109,7 @@ extern const struct target_desc *tdesc_x32_avx_linux;
+ void init_registers_x32_avx_avx512_linux (void);
+ extern const struct target_desc *tdesc_x32_avx_avx512_linux;
+ 
++#endif /* __GENODE__ */
+ #endif
+ 
+ namespace selftests {
+@@ -157,27 +180,35 @@ void
+ initialize_low_tdesc ()
+ {
+   init_registers_i386_linux ();
++#ifndef __GENODE__
+   init_registers_i386_mmx_linux ();
++#endif /* __GENODE__ */
+   init_registers_i386_avx_linux ();
++#ifndef __GENODE
+   init_registers_i386_mpx_linux ();
+   init_registers_i386_avx_mpx_linux ();
+   init_registers_i386_avx_avx512_linux ();
+   init_registers_i386_avx_mpx_avx512_pku_linux ();
+ 
+   selftests::register_test ("i386-tdesc", selftests::tdesc::i386_tdesc_test);
++#endif /* __GENODE__ */
+ 
+ #ifdef __x86_64__
++#ifndef __GENODE__
+   init_registers_x32_linux ();
+   init_registers_x32_avx_linux ();
+   init_registers_x32_avx_avx512_linux ();
++#endif /* __GENODE__ */
+ 
+   init_registers_amd64_linux ();
+   init_registers_amd64_avx_linux ();
++#ifndef __GENODE__
+   init_registers_amd64_mpx_linux ();
+   init_registers_amd64_avx_mpx_linux ();
+   init_registers_amd64_avx_avx512_linux ();
+   init_registers_amd64_avx_mpx_avx512_pku_linux ();
+ 
+   selftests::register_test ("amd64-tdesc", selftests::tdesc::amd64_tdesc_test);
++#endif /* __GENODE__ */
+ #endif
+ }
+diff --git a/gdb/gdbserver/linux-x86-tdesc.c b/gdb/gdbserver/linux-x86-tdesc.c
+index 358659b..59a15dd 100644
+--- a/gdb/gdbserver/linux-x86-tdesc.c
++++ b/gdb/gdbserver/linux-x86-tdesc.c
+@@ -87,7 +87,11 @@ i386_linux_read_description (uint64_t xcr0)
+ 
+   if (*tdesc == NULL)
+     {
++#ifdef __GENODE__
++      *tdesc = i386_create_target_description (xcr0, false);
++#else
+       *tdesc = i386_create_target_description (xcr0, true);
++#endif /* __GENODE__ */
+ 
+       init_target_desc (*tdesc, i386_expedite_regs);
+     }
+@@ -118,7 +122,11 @@ amd64_linux_read_description (uint64_t xcr0, bool is_x32)
+ 
+   if (*tdesc == NULL)
+     {
++#ifdef __GENODE__
++      *tdesc = amd64_create_target_description (xcr0, is_x32, false);
++#else
+       *tdesc = amd64_create_target_description (xcr0, is_x32, true);
++#endif /* __GENODE__ */
+ 
+       init_target_desc (*tdesc, amd64_expedite_regs);
+     }
 diff --git a/gdb/gdbserver/remote-utils.c b/gdb/gdbserver/remote-utils.c
-index 25b7e41..fa178d2 100644
+index 3b5a459..50e4f79 100644
 --- a/gdb/gdbserver/remote-utils.c
 +++ b/gdb/gdbserver/remote-utils.c
-@@ -24,6 +24,12 @@
- #include "dll.h"
+@@ -27,6 +27,12 @@
  #include "rsp-low.h"
+ #include "gdbthread.h"
  #include <ctype.h>
 +
 +#ifdef __GENODE__
@@ -1051,7 +1097,7 @@ index 25b7e41..fa178d2 100644
  #if HAVE_SYS_IOCTL_H
  #include <sys/ioctl.h>
  #endif
-@@ -105,7 +111,10 @@ struct ui_file *gdb_stdlog;
+@@ -108,7 +114,10 @@ struct ui_file *gdb_stdlog;
  
  static int remote_is_stdio = 0;
  
@@ -1064,7 +1110,7 @@ index 25b7e41..fa178d2 100644
  
  /* FIXME headerize? */
 diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
-index 69fcab1..22a9640 100644
+index cb8cfe0..829c136 100644
 --- a/gdb/gdbserver/server.c
 +++ b/gdb/gdbserver/server.c
 @@ -28,6 +28,14 @@
@@ -1082,7 +1128,29 @@ index 69fcab1..22a9640 100644
  #include "gdb_vecs.h"
  #include "gdb_wait.h"
  #include "btrace-common.h"
-@@ -2991,11 +2999,11 @@ handle_v_requests (char *own_buf, int packet_len, int *new_packet_len)
+@@ -70,7 +78,11 @@ static gdb_environ our_environ;
+ 
+ /* We always try to start the inferior using a shell.  */
+ 
++#ifdef __GENODE__
++int startup_with_shell = 0;
++#else
+ int startup_with_shell = 1;
++#endif
+ 
+ /* The thread set with an `Hc' packet.  `Hc' is deprecated in favor of
+    `vCont'.  Note the multi-process extensions made `vCont' a
+@@ -1307,7 +1319,9 @@ handle_detach (char *own_buf)
+ 	     need to hang around doing nothing, until the child is
+ 	     gone.  */
+ 	  join_inferior (pid);
++#ifndef __GENODE__
+ 	  exit (0);
++#endif /* __GENODE__ */
+ 	}
+     }
+ }
+@@ -3163,11 +3177,11 @@ handle_v_requests (char *own_buf, int packet_len, int *new_packet_len)
  	  return;
  	}
      }
@@ -1096,17 +1164,17 @@ index 69fcab1..22a9640 100644
    if (startswith (own_buf, "vAttach;"))
      {
        if ((!extended_protocol || !multi_process) && target_running ())
-@@ -3633,7 +3641,9 @@ captured_main (int argc, char *argv[])
+@@ -3754,7 +3768,9 @@ captured_main (int argc, char *argv[])
       opened by remote_prepare.  */
    notice_open_fds ();
  
 +#ifndef __GENODE__
-   save_original_signals_state ();
+   save_original_signals_state (false);
 +#endif /* __GENODE__ */
  
    /* We need to know whether the remote connection is stdio before
       starting the inferior.  Inferiors created in this scenario have
-@@ -3822,7 +3832,11 @@ captured_main (int argc, char *argv[])
+@@ -3961,7 +3977,11 @@ captured_main (int argc, char *argv[])
  /* Main function.  */
  
  int
@@ -1118,27 +1186,18 @@ index 69fcab1..22a9640 100644
  {
  
    TRY
-@@ -3928,6 +3942,9 @@ process_serial_event (void)
+@@ -4063,6 +4083,10 @@ process_serial_event (void)
+     }
    response_needed = 1;
  
-   i = 0;
 +#ifdef __GENODE
 +  if (debug_threads) printf("GDB command = %s\n", own_buf);
 +#endif
-   ch = own_buf[i++];
++
+   char ch = own_buf[0];
    switch (ch)
      {
-@@ -4020,7 +4037,9 @@ process_serial_event (void)
- 		 need to hang around doing nothing, until the child is
- 		 gone.  */
- 	      join_inferior (pid);
-+#ifndef __GENODE__
- 	      exit (0);
-+#endif
- 	    }
- 	}
-       break;
-@@ -4266,7 +4285,11 @@ process_serial_event (void)
+@@ -4308,7 +4332,11 @@ process_serial_event (void)
  	  return 0;
  	}
        else
@@ -1150,7 +1209,7 @@ index 69fcab1..22a9640 100644
  
      case 'T':
        {
-@@ -4343,7 +4366,9 @@ process_serial_event (void)
+@@ -4383,7 +4411,9 @@ process_serial_event (void)
        own_buf[0] = '\0';
        break;
      }
@@ -1161,8 +1220,37 @@ index 69fcab1..22a9640 100644
    if (new_packet_len != -1)
      putpkt_binary (own_buf, new_packet_len);
    else
+diff --git a/gdb/gdbserver/server.h b/gdb/gdbserver/server.h
+index 5970431..d058bd1 100644
+--- a/gdb/gdbserver/server.h
++++ b/gdb/gdbserver/server.h
+@@ -62,7 +62,7 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+ #include "mem-break.h"
+ #include "gdbthread.h"
+ #include "inferiors.h"
+-#include "environ.h"
++#include "common/environ.h"
+ 
+ /* Target-specific functions */
+ 
+diff --git a/gdb/nat/fork-inferior.c b/gdb/nat/fork-inferior.c
+index 8b59387..0ad61ac 100644
+--- a/gdb/nat/fork-inferior.c
++++ b/gdb/nat/fork-inferior.c
+@@ -420,9 +420,9 @@ fork_inferior (const char *exec_file_arg, const std::string &allargs,
+         undebuggable.  Indeed, you probably got an error message
+         saying "not parent".  Sorry; you'll have to use print
+         statements!  */
+-
++#ifndef __GENODE__
+       restore_original_signals_state ();
+-
++#endif /* __GENODE__ */
+       /* There is no execlpe call, so we have to set the environment
+          for our child in the global variable.  If we've vforked, this
+          clobbers the parent, but environ is restored a few lines down
 diff --git a/gdb/nat/gdb_ptrace.h b/gdb/nat/gdb_ptrace.h
-index e889933..0be8fba 100644
+index bdd7621..45caf22 100644
 --- a/gdb/nat/gdb_ptrace.h
 +++ b/gdb/nat/gdb_ptrace.h
 @@ -129,6 +129,7 @@
@@ -1181,7 +1269,7 @@ index e889933..0be8fba 100644
  
  #endif /* gdb_ptrace.h */
 diff --git a/gdb/nat/linux-ptrace.c b/gdb/nat/linux-ptrace.c
-index 3265b16..464be24 100644
+index ac6ba72..06cae84 100644
 --- a/gdb/nat/linux-ptrace.c
 +++ b/gdb/nat/linux-ptrace.c
 @@ -39,6 +39,7 @@ static int supported_ptrace_options = -1;
@@ -1278,7 +1366,7 @@ index 3265b16..464be24 100644
  
  /* Extract extended ptrace event from wait status.  */
 diff --git a/gdb/nat/linux-ptrace.h b/gdb/nat/linux-ptrace.h
-index 5954945..5f9cc20 100644
+index 1f960ed..38658f0 100644
 --- a/gdb/nat/linux-ptrace.h
 +++ b/gdb/nat/linux-ptrace.h
 @@ -114,7 +114,11 @@ struct buffer;
