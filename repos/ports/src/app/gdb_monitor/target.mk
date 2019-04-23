@@ -17,11 +17,16 @@ LIBS    =  stdcxx libc libc_terminal libc_pipe \
 
 # libiberty
 SRC_C   = argv.c \
+          concat.c \
           crc32.c
 
 # gnulib
 SRC_C  += rawmemchr.c \
           strchrnul.c
+
+#arch
+SRC_CC += amd64.cc \
+          i386.cc
 
 # common
 SRC_CC += agent.cc \
@@ -30,10 +35,14 @@ SRC_CC += agent.cc \
           common-debug.cc \
           common-exceptions.cc \
           common-utils.cc \
+          environ.cc \
           errors.cc \
           filestuff.cc \
           format.cc \
+          gdb_tilde_expand.cc \
           gdb_vecs.cc \
+          job-control.cc \
+          pathstuff.cc \
           posix-strerror.cc \
           print-utils.cc \
           ptid.cc \
@@ -47,6 +56,7 @@ SRC_CC += ax.cc \
           debug.cc \
           dll.cc \
           event-loop.cc \
+          fork-child.cc \
           hostio.cc \
           i387-fp.cc \
           inferiors.cc \
@@ -64,7 +74,8 @@ SRC_CC += ax.cc \
           x86-low.cc \
 
 # nat
-SRC_CC += linux-ptrace.cc \
+SRC_CC += fork-inferior.cc \
+          linux-ptrace.cc \
           x86-dregs.cc \
 
 # target
@@ -78,7 +89,7 @@ SRC_CC += genode-low.cc \
           signal_handler_thread.cc \
           main.cc
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"8.0.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"8.1.1\"" -DREPORT_BUGS_TO="\"\""
 CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE -DHAVE_TERMIOS
 CC_OPT_linux-low    += -fpermissive -Wno-unused-function
 CC_OPT_linux-ptrace += -fpermissive
@@ -86,6 +97,7 @@ CC_OPT_genode-low   += -fpermissive
 
 vpath %.c  $(GDB_CONTRIB_DIR)/gdb/gnulib/import
 vpath %.c  $(GDB_CONTRIB_DIR)/libiberty
+vpath %.cc $(GDB_CONTRIB_DIR)/gdb/arch
 vpath %.cc $(GDB_CONTRIB_DIR)/gdb/common
 vpath %.cc $(GDB_CONTRIB_DIR)/gdb/gdbserver
 vpath %.cc $(GDB_CONTRIB_DIR)/gdb/nat

@@ -1,36 +1,58 @@
-gdb_x86_64.diff
+gdb_x86_64.patch
 
 From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/amd64-tdep.c |    5 +++++
+ gdb/amd64-tdep.c |   13 +++++++++++++
  gdb/defs.h       |    1 +
  gdb/i386-tdep.c  |    5 +++++
  gdb/osabi.c      |    6 ++++++
- 4 files changed, 17 insertions(+)
+ 4 files changed, 25 insertions(+)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index 1deef70..6284556 100644
+index 88de241..8ce6a34 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
-@@ -3246,6 +3246,11 @@ void _initialize_amd64_tdep (void);
+@@ -48,6 +48,7 @@
+ #include "ax-gdb.h"
+ #include "common/byte-vector.h"
+ 
++#include "osabi.h"
+ #include "solib-svr4.h"
+ 
+ /* Note that the AMD64 architecture was previously known as x86-64.
+@@ -3264,6 +3265,13 @@ amd64_target_description (uint64_t xcr0)
+   return *tdesc;
+ }
+ 
++static void
++amd64_genode_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
++{
++  amd64_init_abi (info, gdbarch,
++		  amd64_target_description (X86_XSTATE_SSE_MASK));
++}
++
  void
  _initialize_amd64_tdep (void)
  {
+@@ -3289,6 +3297,11 @@ _initialize_amd64_tdep (void)
+       selftests::record_xml_tdesc (a.xml, tdesc);
+     }
+ #endif /* GDB_SELF_TEST */
++
 +  /* Genode */
 +  gdbarch_register_osabi(bfd_arch_i386, bfd_mach_x86_64,
-+                         GDB_OSABI_GENODE, amd64_init_abi);
++                         GDB_OSABI_GENODE, amd64_genode_init_abi);
 +  /* /Genode */
-+
-   initialize_tdesc_amd64 ();
-   initialize_tdesc_amd64_avx ();
-   initialize_tdesc_amd64_mpx ();
+ }
+ 
+ 
 diff --git a/gdb/defs.h b/gdb/defs.h
-index a0b586f..5c66ee5 100644
+index 61be475..f3c8482 100644
 --- a/gdb/defs.h
 +++ b/gdb/defs.h
-@@ -604,6 +604,7 @@ enum gdb_osabi
+@@ -526,6 +526,7 @@ enum gdb_osabi
    GDB_OSABI_LYNXOS178,
    GDB_OSABI_NEWLIB,
    GDB_OSABI_SDE,
@@ -39,10 +61,10 @@ index a0b586f..5c66ee5 100644
    GDB_OSABI_INVALID		/* keep this last */
  };
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index 51e8c00..eb8cd72 100644
+index f2e59fc..91caa33 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -9055,6 +9055,11 @@ Show Intel Memory Protection Extensions specific variables."),
+@@ -9046,6 +9046,11 @@ Show Intel Memory Protection Extensions specific variables."),
    gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_SVR4,
  			  i386_svr4_init_abi);
  
@@ -55,7 +77,7 @@ index 51e8c00..eb8cd72 100644
    i386_init_reggroups ();
  
 diff --git a/gdb/osabi.c b/gdb/osabi.c
-index 84fa9c0..602d8b8 100644
+index 129164f..f698ca7 100644
 --- a/gdb/osabi.c
 +++ b/gdb/osabi.c
 @@ -79,6 +79,7 @@ static const struct osabi_names gdb_osabi_names[] =

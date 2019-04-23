@@ -189,13 +189,15 @@ int Cpu_thread_component::deliver_signal(int signo)
 			break;
 		case SIGINFO:
 			if (_verbose)
-				log("delivering initial SIGSTOP to thread ", _lwpid);
+				if (_lwpid != GENODE_MAIN_LWPID)
+					log("delivering initial SIGSTOP to thread ", _lwpid);
 			break;
 		default:
 			error("unexpected signal ", signo);
 	}
 
-	write(_pipefd[1], &signo, sizeof(signo));
+	if (!((signo == SIGINFO) && (_lwpid == GENODE_MAIN_LWPID)))
+		write(_pipefd[1], &signo, sizeof(signo));
 
 	/*
 	 * gdbserver might be blocking in 'waitpid()' without having
@@ -203,7 +205,7 @@ int Cpu_thread_component::deliver_signal(int signo)
 	 * into the 'new thread pipe' here will unblock 'select' in this
 	 * case.
 	 */
-	if ((signo == SIGINFO) && (_lwpid != GENODE_MAIN_LWPID))
+	if (signo == SIGINFO)
 		write(_new_thread_pipe_write_end, &_lwpid, sizeof(_lwpid));
 
 	return 0;

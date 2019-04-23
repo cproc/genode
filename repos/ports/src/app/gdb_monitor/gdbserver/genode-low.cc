@@ -37,14 +37,22 @@ static bool verbose = false;
 
 Genode::Env *genode_env;
 
+/*
+ * 'waitpid()' is implemented using 'select()'. When a new thread is created,
+ * 'select()' needs to unblock, so there is a dedicated pipe for that. The
+ * lwpid of the new thread needs to be read from the pipe in 'waitpid()', so
+ * that the next 'select()' call can block again. The lwpid needs to be stored
+ * in a variable until it is inquired later.
+ */
 static int _new_thread_pipe[2];
+static unsigned long _new_thread_lwpid;
 
 /*
  * When 'waitpid()' reports a SIGTRAP, this variable stores the lwpid of the
  * corresponding thread. This information is used in the initial breakpoint
  * handler to let the correct thread handle the event.
  */
-static unsigned long sigtrap_lwpid;
+static unsigned long _sigtrap_lwpid;
 
 using namespace Genode;
 using namespace Gdb_monitor;
@@ -304,13 +312,39 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 			} else if (FD_ISSET(_new_thread_pipe[0], &readset)) {
 
-				unsigned long lwpid = GENODE_MAIN_LWPID;
+				/*
+				 * Linux 'ptrace(2)' manual text related to the main thread:
+				 *
+				 * "If the PTRACE_O_TRACEEXEC option is not in effect, all
+				 *  successful calls to execve(2) by the traced process will
+				 *  cause it to be sent a SIGTRAP signal, giving the parent a
+				 *  chance to gain control before the new program begins
+				 *  execution."
+				 *
+                 * Linux 'ptrace' manual text related to other threads:
+                 *
+                 * "PTRACE_O_CLONE
+                 *  ...
+                 *  A waitpid(2) by the tracer will return a status value such
+                 *  that
+                 *
+                 *  status>>8 == (SIGTRAP | (PTRACE_EVENT_CLONE<<8))
+                 *
+                 *  The PID of the new process can be retrieved with
+                 *  PTRACE_GETEVENTMSG."
+                 */
 
-				genode_stop_thread(lwpid);
+				*status = W_STOPCODE(SIGTRAP);
 
-				*status = W_STOPCODE(SIGTRAP) | (PTRACE_EVENT_CLONE << 16);
+				read(_new_thread_pipe[0], &_new_thread_lwpid,
+				     sizeof(_new_thread_lwpid));
 
-				return lwpid;
+				if (_new_thread_lwpid != GENODE_MAIN_LWPID) {
+					*status |= (PTRACE_EVENT_CLONE << 16);
+					genode_stop_thread(GENODE_MAIN_LWPID);
+				}
+
+				return GENODE_MAIN_LWPID;
 
 			} else {
 
@@ -337,7 +371,7 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 				if (signal == SIGTRAP) {
 
-					sigtrap_lwpid = lwpid;
+					_sigtrap_lwpid = lwpid;
 
 				} else if (signal == SIGSTOP) {
 
@@ -408,10 +442,8 @@ extern "C" long ptrace(enum __ptrace_request request, pid_t pid, void *addr, voi
 		case PTRACE_GETEVENTMSG:
 			/*
 			 * Only PTRACE_EVENT_CLONE is currently supported.
-			 *
-			 * Read the lwpid of the new thread from the pipe.
 			 */
-			read(_new_thread_pipe[0], data, sizeof(unsigned long));
+			*(unsigned long*)data = _new_thread_lwpid;
 			return 0;
 		case PTRACE_GETREGSET: request_str = "PTRACE_GETREGSET";  break;
 	}
@@ -423,7 +455,7 @@ extern "C" long ptrace(enum __ptrace_request request, pid_t pid, void *addr, voi
 }
 
 
-extern "C" int fork()
+extern "C" int vfork()
 {
 	/* create the thread announcement pipe */
 
@@ -543,7 +575,7 @@ extern "C" int kill(pid_t pid, int sig)
 extern "C" int initial_breakpoint_handler(CORE_ADDR addr)
 {
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
-	return csc.handle_initial_breakpoint(sigtrap_lwpid);
+	return csc.handle_initial_breakpoint(_sigtrap_lwpid);
 }
 
 

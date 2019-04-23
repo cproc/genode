@@ -33,7 +33,7 @@ Thread_state get_current_thread_state()
 {
 	Cpu_session_component &csc = genode_child_resources()->cpu_session_component();
 
-	ptid_t ptid = ((struct inferior_list_entry*)current_thread)->id;
+	ptid_t ptid = current_thread->id;
 
 	Cpu_thread_client cpu_thread(csc.thread_cap(ptid.lwp()));
 
@@ -45,7 +45,7 @@ void set_current_thread_state(Thread_state thread_state)
 {
 	Cpu_session_component &csc = genode_child_resources()->cpu_session_component();
 
-	ptid_t ptid = ((struct inferior_list_entry*)current_thread)->id;
+	ptid_t ptid = current_thread->id;
 
 	Cpu_thread_client cpu_thread(csc.thread_cap(ptid.lwp()));
 
