@@ -1,16 +1,16 @@
 LICENSE   := GPLv3
-VERSION   := 8.1.1
+VERSION   := 8.2.1
 DOWNLOADS := gdb.archive
 
 URL(gdb)  := ftp://ftp.fu-berlin.de/gnu/gdb/gdb-$(VERSION).tar.xz
-SHA(gdb)  := 97dcc3169bd430270fc29adb65145846a58c1b55cdbb73382a4a89307bdad03c
+SHA(gdb)  := 0a6a432907a03c5c8eaad3c3cffd50c00a40c3a5e3c4039440624bae703f2202
 SIG(gdb)  := ${URL(gdb)}.sig
 KEY(gdb)  := GNU
 DIR(gdb)  := src/noux-pkg/gdb
 
-PATCHES   := $(addprefix ${DIR(gdb)}/patches/, \
+aPATCHES   := $(addprefix ${DIR(gdb)}/patches/, \
                          $(shell cat $(REP_DIR)/${DIR(gdb)}/patches/series))
-PATCH_OPT := -p1 -d ${DIR(gdb)}
+aPATCH_OPT := -p1 -d ${DIR(gdb)}
 
 default: symlinks
 
@@ -39,6 +39,7 @@ symlinks: $(DOWNLOADS)
 	$(VERBOSE)ln -s ptid.c              ${DIR(gdb)}/gdb/common/ptid.cc
 	$(VERBOSE)ln -s rsp-low.c           ${DIR(gdb)}/gdb/common/rsp-low.cc
 	$(VERBOSE)ln -s signals.c           ${DIR(gdb)}/gdb/common/signals.cc
+	$(VERBOSE)ln -s tdesc.c             ${DIR(gdb)}/gdb/common/tdesc.cc
 	$(VERBOSE)ln -s vec.c               ${DIR(gdb)}/gdb/common/vec.cc
 	$(VERBOSE)ln -s xml-utils.c         ${DIR(gdb)}/gdb/common/xml-utils.cc
 	$(VERBOSE)ln -s ax.c                ${DIR(gdb)}/gdb/gdbserver/ax.cc

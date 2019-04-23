@@ -1,11 +1,7 @@
 _Unwind_Resume U
-_Z10ptid_lwp_pRK6ptid_t U
-_Z11pid_to_ptidi U
 _Z11ptid_of_lwpP8lwp_info U
 _Z12debug_printfPKcz U
 _Z12find_lwp_pid6ptid_t U
-_Z12ptid_get_lwpRK6ptid_t U
-_Z12ptid_get_pidRK6ptid_t U
 _Z13all_processesB5cxx11 U
 _Z13register_sizePK11target_desci U
 _Z14agent_loaded_pv U
@@ -50,7 +46,7 @@ _Z19tdesc_create_vectorP13tdesc_featurePKcP10tdesc_typei U
 _Z19x86_debug_reg_statei T
 _Z19x86_linux_regs_infov T
 _Z20relocate_instructionPyy U
-_Z20tdesc_create_featureP11target_descPKcS2_ U
+_Z20tdesc_create_featureP11target_descPKc U
 _Z20x86_linux_new_threadP8lwp_info T
 _Z21cannot_fetch_registerPKc T
 _Z21cannot_store_registerPKcm T
@@ -88,7 +84,7 @@ _Z27x86_dr_stopped_data_addressP19x86_debug_reg_statePy U
 _Z27x86_linux_prepare_to_resumeP8lwp_info T
 _Z28amd64_linux_read_descriptionmb T
 _Z30i386_create_target_descriptionmb T
-_Z31amd64_create_target_descriptionmbb T
+_Z31amd64_create_target_descriptionmbbb T
 _Z31lwp_set_debug_registers_changedP8lwp_infoi T
 _Z32x86_linux_update_debug_registersP8lwp_info T
 _Z34raw_bkpt_type_to_target_hw_bp_type13raw_bkpt_type U
