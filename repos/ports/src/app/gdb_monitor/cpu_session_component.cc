@@ -254,7 +254,8 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 {
 	Cpu_thread_component *cpu_thread =
 		new (_md_alloc) Cpu_thread_component(*this, _core_pd, name,
-		                                     affinity, weight, utcb);
+		                                     affinity, weight, utcb,
+		                                     _new_thread_pipe_write_end);
 
 	_thread_list.append(cpu_thread);
 
@@ -309,13 +310,15 @@ Cpu_session_component::Cpu_session_component(Env &env,
                                              Pd_session_capability core_pd,
                                              Entrypoint &signal_ep,
                                              const char *args,
-                                             Affinity const &affinity)
+                                             Affinity const &affinity,
+                                             int const new_thread_pipe_write_end)
 : _env(env),
   _ep(ep),
   _md_alloc(md_alloc),
   _core_pd(core_pd),
   _parent_cpu_session(env.session<Cpu_session>(_id_space_element.id(), args, affinity)),
   _signal_ep(signal_ep),
+  _new_thread_pipe_write_end(new_thread_pipe_write_end),
   _native_cpu_cap(_setup_native_cpu())
 {
 	_ep.manage(this);

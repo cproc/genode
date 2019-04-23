@@ -36,6 +36,8 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 
 		Cpu_session_component &_cpu_session_component;
 		Cpu_thread_client      _parent_cpu_thread;
+		int const              _new_thread_pipe_write_end;
+
 		unsigned long          _lwpid { 0 };
 		addr_t                 _initial_ip { 0 };
 
@@ -72,7 +74,8 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 		                     Cpu_session::Name const &name,
 		                     Affinity::Location       affinity,
 		                     Cpu_session::Weight      weight,
-		                     addr_t                   utcb);
+		                     addr_t                   utcb,
+		                     int const                new_thread_pipe_write_end);
 
 		~Cpu_thread_component();
 
