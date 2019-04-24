@@ -517,7 +517,7 @@ extern "C" int select(int nfds, fd_set *readfds, fd_set *writefds,
 	} else {
 		sysio()->select_in.timeout.set_infinite();
 	}
-
+Genode::log("calling select()");
 	/*
 	 * Perform syscall
 	 */
@@ -527,7 +527,7 @@ extern "C" int select(int nfds, fd_set *readfds, fd_set *writefds,
 		}
 		return -1;
 	}
-
+Genode::log("select() returned");
 	/*
 	 * Unmarshal file selectors reported by the select syscall
 	 */

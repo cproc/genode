@@ -33,7 +33,7 @@
 
 void linux_detach_one_lwp (struct lwp_info *lwp);
 
-static bool verbose = false;
+static bool verbose = true;
 
 Genode::Env *genode_env;
 

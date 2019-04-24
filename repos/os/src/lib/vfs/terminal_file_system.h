@@ -57,12 +57,14 @@ class Vfs::Terminal_file_system : public Single_file_system
 			Read_result read(char *dst, file_size count,
 			                 file_size &out_count) override
 			{
+Genode::log("Terminal_vfs_handle::read()");
 				if (!terminal.avail()) {
 					blocked = true;
 					return READ_QUEUED;
 				}
 
 				out_count = terminal.read(dst, count);
+Genode::log("Terminal_vfs_handle::read(): out_count: ", out_count);
 				return READ_OK;
 			}
 
@@ -84,6 +86,7 @@ class Vfs::Terminal_file_system : public Single_file_system
 
 		void _handle_read_avail()
 		{
+Genode::log("Terminal_file_system::_handle_read_avail()");
 			_handle_registry.for_each([this] (Registered_handle &handle) {
 				if (handle.blocked) {
 					handle.blocked = false;

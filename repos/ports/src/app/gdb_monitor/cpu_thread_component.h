@@ -32,7 +32,7 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 {
 	private:
 
-		static constexpr bool  _verbose = false;
+		static constexpr bool  _verbose = true;
 
 		Cpu_session_component &_cpu_session_component;
 		Cpu_thread_client      _parent_cpu_thread;

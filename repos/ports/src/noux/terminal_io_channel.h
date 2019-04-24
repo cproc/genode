@@ -82,6 +82,7 @@ struct Noux::Terminal_io_channel : Io_channel
 
 	bool read(Sysio &sysio) override
 	{
+Genode::log("Terminal_io_channel::read()");
 		if (type != STDIN) {
 			error("attempt to read from terminal output channel");
 			return false;

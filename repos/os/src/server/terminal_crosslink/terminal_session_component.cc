@@ -104,7 +104,7 @@ size_t Terminal_crosslink::Session_component::_write(size_t num_bytes)
 
 	_cross_num_bytes_avail += num_bytes_written;
 	_partner.cross_write();
-
+Genode::log("_write(): ", num_bytes_written);
 	return num_bytes_written;
 }
 
