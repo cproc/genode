@@ -42,6 +42,7 @@ append build_components {
 	server/fs_rom
 	drivers/ahci
 	drivers/framebuffer
+	lib/ld
 }
 
 lappend_if [expr $use_rumpfs] build_components server/rump_fs
@@ -105,6 +106,7 @@ append config {
 		<provides><service name="Block"/></provides>
 		<config>
 			<policy label_prefix="part_block" device="0" writeable="yes"/>
+			<policy label_prefix="rump_fs" device="1" writeable="yes"/>
 		</config>
 	</start>
 	<start name="part_block" priority="-1">
@@ -150,7 +152,8 @@ append_if [expr $use_rumpfs] config {
 			<default-policy root="/" writeable="no"/>
 		</config>
 		<route>
-			<any-service><child name="part_block"/> <parent/><any-child/></any-service>
+			<!--<any-service><child name="part_block"/> <parent/><any-child/></any-service>-->
+			<any-service><child name="ahci_drv"/> <parent/><any-child/></any-service>
 		</route>
 	</start>}
 
@@ -376,6 +379,7 @@ append boot_modules {
 	libc_pipe.lib.so libc_terminal.lib.so
 	libiconv.lib.so stdcxx.lib.so
 	qemu-usb.lib.so
+	ld.lib.so
 }
 
 lappend_if [expr $use_rumpfs] boot_modules rump.lib.so
