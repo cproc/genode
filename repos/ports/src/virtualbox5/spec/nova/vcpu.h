@@ -124,6 +124,21 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<Genode::Thread>,
 			INTERRUPT_STATE_NONE  = 0U,
 		};
 
+		void _fpu_save()
+		{
+			fpu_save(reinterpret_cast<char *>(&_guest_fpu_state));
+		}
+
+		void _fpu_load()
+		{
+			fpu_load(reinterpret_cast<char *>(&_guest_fpu_state));
+		}
+
+		__attribute__((noreturn)) void _longjmp()
+		{
+			longjmp(_env, 1);
+		}
+
 		/*
 		 * 'longjmp()' restores some FPU registers saved by 'setjmp()',
 		 * so we need to save the guest FPU state before calling 'longjmp()'
@@ -281,6 +296,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<Genode::Thread>,
 				Nova::reply(_stack_reply);
 			}
 
+			_fpu_save();
+
 			enum { MAP_SIZE = 0x1000UL };
 
 			bool writeable = true;
@@ -298,7 +315,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<Genode::Thread>,
 
 				/* event re-injection is not handled yet for this case */
 				Assert(!(utcb->inj_info & IRQ_INJ_VALID_MASK));
-				_fpu_save_and_longjmp();
+				//_fpu_save_and_longjmp();
+				_longjmp();
 			}
 
 			/* fault region can be mapped - prepare utcb */
@@ -346,6 +364,8 @@ class Vcpu_handler : public Vmm::Vcpu_dispatcher<Genode::Thread>,
 					         Genode::Hex(flexpage.hotspot), " ",
 					         "guestf fault at ", Genode::Hex(guest_fault));
 			} while (res);
+
+			_fpu_load();
 
 			Nova::reply(_stack_reply);
 		}
