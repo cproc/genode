@@ -338,8 +338,7 @@ static void suspended_callback();
  * secondary stack for the application task. Context switching uses
  * setjmp/longjmp.
  */
-struct Libc::Kernel final : Vfs::Io_response_handler,
-                            Genode::Entrypoint::Io_progress_handler
+struct Libc::Kernel final : Genode::Entrypoint::Io_progress_handler
 {
 	private:
 
@@ -347,7 +346,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		Genode::Allocator   &_heap;
 
 		Env_implementation   _libc_env { _env, _heap };
-		Vfs_plugin           _vfs { _libc_env, _heap, *this };
+		Vfs_plugin           _vfs { _libc_env, _heap };
 
 		Genode::Reconstructible<Genode::Io_signal_handler<Kernel>> _resume_main_handler {
 			_env.ep(), *this, &Kernel::_resume_main };
@@ -356,9 +355,6 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		jmp_buf _user_context;
 		bool    _valid_user_context          = false;
 		bool    _dispatch_pending_io_signals = false;
-
-		/* io_progress_handler marker */
-		bool _io_ready { false };
 
 		Genode::Thread &_myself { *Genode::Thread::myself() };
 
@@ -767,42 +763,20 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 			}
 		}
 
-
-		/****************************************
-		 ** Vfs::Io_response_handler interface **
-		 ****************************************/
-
-		void read_ready_response() override {
-			_io_ready = true; }
-
-		void io_progress_response() override {
-			_io_ready = true; }
-
-
-		/**********************************************
-		 * Entrypoint::Io_progress_handler interface **
-		 **********************************************/
-
+		/**
+		 * Entrypoint::Io_progress_handler interface
+		 */
 		void handle_io_progress() override
 		{
-			/*
-			 * TODO: make VFS I/O completion checks during
-			 * kernel time to avoid flapping between stacks
-			 */
-
-			if (_io_ready) {
-				_io_ready = false;
-
-				/* some contexts may have been deblocked from select() */
-				if (libc_select_notify)
+			/* some contexts may have been deblocked from select() */
+			if (libc_select_notify)
 					libc_select_notify();
 
-				/*
-				 * resume all as any VFS context may have
-				 * been deblocked from blocking I/O
-				 */
-				Kernel::resume_all();
-			}
+			/*
+			 * resume all as any VFS context may have
+			 * been deblocked from blocking I/O
+			 */
+			Kernel::resume_all();
 		}
 };
 
