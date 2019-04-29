@@ -95,6 +95,9 @@ VBOX_CC_OPT += -DVBOX_WITHOUT_NS_ACCOUNTING
 
 CC_WARN += -Wno-trigraphs
 
+# disable C++17 warnings about 'register' keyword
+CC_CXX_WARN += -Wno-register
+
 CC_OPT += $(VBOX_CC_OPT)
 
 # VirtualBox expects wchar_t to be a 16-bit type. yasm does not understand this
