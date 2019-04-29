@@ -61,14 +61,15 @@ amd64_emit_ops D 296
 claim_trampoline_space U
 collect_register_by_name U
 current_insn_ptr U
+current_lwp_ptid U
 current_process U
 current_thread U
 debug_printf U
 debug_threads U
 emit_error U
-error U
 find_inferior U
 find_lwp_pid U
+find_process_pid U
 for_each_inferior U
 free U
 genode_fetch_register T
@@ -84,7 +85,6 @@ i386_emit_le_goto T
 i386_emit_lt_goto T
 i386_emit_ne_goto T
 i386_emit_ops D 296
-inferior_target_data U
 init_registers_amd64 T
 init_registers_amd64_avx T
 init_registers_i386 T
@@ -92,19 +92,27 @@ init_registers_i386_avx T
 init_target_desc U
 initialize_low_arch T
 initialize_regsets_info U
-insert_memory_breakpoint U
 internal_error U
+iterate_over_lwps U
 linux_stop_lwp U
+lwp_arch_private_info U
+lwp_debug_registers_changed T
+lwp_is_stopped U
+lwp_set_arch_private_info U
+lwp_set_debug_registers_changed T
+lwp_stop_reason U
 paddress U
+perror_with_name U
 pid_to_ptid U
 ptid_get_lwp U
 ptid_get_pid U
+ptid_lwp_p U
+ptid_of_lwp U
 ptrace U
 raw_bkpt_type_to_target_hw_bp_type U
 regcache_release U
 register_size U
 relocate_instruction U
-remove_memory_breakpoint U
 sprintf U
 strtok U
 strtoul U
@@ -113,15 +121,24 @@ tdesc_amd64 B 8
 tdesc_amd64_avx B 8
 tdesc_i386 B 8
 tdesc_i386_avx B 8
-the_low_target D 240
+the_low_target D 248
 the_target U
 warning U
 write_inferior_memory U
+x86_debug_reg_state T
 x86_dr_insert_watchpoint U
 x86_dr_low D 48
 x86_dr_remove_watchpoint U
 x86_dr_stopped_data_address U
+x86_linux_dr_get_addr T
+x86_linux_dr_get_control T
+x86_linux_dr_get_status T
+x86_linux_dr_set_addr T
+x86_linux_dr_set_control T
+x86_linux_new_thread T
+x86_linux_prepare_to_resume T
 x86_linux_regs_info T
+x86_linux_update_debug_registers T
 x86_low_init_dregs U
 xcalloc U
 xstrdup U
