@@ -10,7 +10,7 @@
     <MediaRegistry>
       <HardDisks>
         <HardDisk uuid="{2a248ff9-7ac9-4862-98f9-14e31968f23d}" location="/ubuntu_16_04_64.vdi" format="VDI" type="Immutable">
-          <HardDisk uuid="{78a3a6a1-ade6-41bf-8b29-ec7cf16de4bb}" location="/ram/overlay_ubuntu_16_04_64.vdi" format="VDI" autoReset="true"/>
+          <HardDisk uuid="{78a3a6a1-ade6-41bf-8b29-ec7cf16de4bb}" location="/ram/overlay_ubuntu_16_04_64.vdi" format="VDI" autoReset="false"/>
         </HardDisk>
       </HardDisks>
       <DVDImages/>
@@ -18,7 +18,7 @@
     </MediaRegistry>
     <ExtraData/>
     <Hardware version="2">
-      <CPU count="2" hotplug="false">
+      <CPU count="1" hotplug="false">
         <HardwareVirtEx enabled="true"/>
         <HardwareVirtExNestedPaging enabled="true"/>
         <HardwareVirtExVPID enabled="true"/>
