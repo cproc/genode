@@ -940,10 +940,10 @@ namespace std
 /* #undef _GLIBCXX_HAVE_NAN_H */
 
 /* Define if <math.h> defines obsolete isinf function. */
-#define _GLIBCXX_HAVE_OBSOLETE_ISINF 1
+/* #undef _GLIBCXX_HAVE_OBSOLETE_ISINF */
 
 /* Define if <math.h> defines obsolete isnan function. */
-#define _GLIBCXX_HAVE_OBSOLETE_ISNAN 1
+/* #undef _GLIBCXX_HAVE_OBSOLETE_ISNAN */
 
 /* Define if poll is available in <poll.h>. */
 #define _GLIBCXX_HAVE_POLL 1
