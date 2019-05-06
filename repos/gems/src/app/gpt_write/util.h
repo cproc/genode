@@ -92,9 +92,9 @@ namespace Util {
 		/* handle suffixes */
 		if (i > 0)
 			switch (s[i]) {
-				case 'G': res *= 1024;
-				case 'M': res *= 1024;
-				case 'K': res *= 1024; i++;
+				case 'G': res *= 1024;      [[fallthrough]];
+				case 'M': res *= 1024;      [[fallthrough]];
+				case 'K': res *= 1024; i++; [[fallthrough]];
 				default: break;
 			}
 
