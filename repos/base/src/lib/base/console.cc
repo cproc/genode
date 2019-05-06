@@ -224,7 +224,7 @@ void Console::vprintf(const char *format, va_list list)
 					break;
 				}
 
-				/* fall through */
+				[[fallthrough]];
 
 			case Format_command::PTR:
 

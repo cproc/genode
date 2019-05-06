@@ -835,6 +835,8 @@ class Lwip::Udp_socket_dir final :
 				});
 			}
 
+			[[fallthrough]];
+
 			case Lwip_file_handle::PEEK:
 				_packet_queue.head([&] (Packet const &pkt) {
 					out_count = pkt.peek(dst, count);
