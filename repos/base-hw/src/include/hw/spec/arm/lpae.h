@@ -434,7 +434,7 @@ class Hw::Level_x_translation_table :
 						E & table = alloc.construct<E>();
 						desc = Table_descriptor::create((void*)alloc.phys_addr(table));
 					}
-
+					[[fallthrough]];
 				case Descriptor::TABLE: /* table already available */
 					{
 						/* use allocator to retrieve virt address of table */
@@ -477,6 +477,7 @@ class Hw::Level_x_translation_table :
 						if (!table.empty()) break;
 						alloc.destruct<E>(table);
 					}
+					[[fallthrough]];
 				case Descriptor::BLOCK:
 				case Descriptor::INVALID:
 					desc = 0;
