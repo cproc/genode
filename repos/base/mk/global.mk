@@ -140,6 +140,11 @@ CC_WARN   ?= -Wall
 CC_WARN += -Wno-error=implicit-fallthrough
 
 #
+# XXX fix the warnings and remove this line
+#
+CC_WARN += -Wno-error=register
+
+#
 # Additional warnings for C++
 #
 CC_CXX_WARN_STRICT ?= -Wextra -Weffc++ -Werror -Wsuggest-override
