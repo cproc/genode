@@ -690,7 +690,7 @@ class Genode::String
 		/**
 		 * Copy constructor
 		 */
-		template <unsigned N>
+		template <size_t N>
 		String(String<N> const &other) : _len(min(other.length(), CAPACITY))
 		{
 			Genode::strncpy(_buf, other.string(), _len);
