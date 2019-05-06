@@ -90,6 +90,9 @@ CC_OPT += -D__intptr_t_defined
 
 CC_WARN += -Wno-deprecated-declarations
 
+# disable C++17 warnings about 'register' keyword
+CC_CXX_WARN += -Wno-register
+
 LIBS = stdcxx
 
 vpath % $(ICU_DIR)/source/common
