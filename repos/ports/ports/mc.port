@@ -1,0 +1,10 @@
+LICENSE   := GPLv3
+VERSION   := 4.8.20
+DOWNLOADS := mc.archive
+
+URL(mc) := http://ftp.midnight-commander.org/mc-$(VERSION).tar.xz
+SHA(mc) := 017ee7f4f8ae420a04f4d6fcebaabe5b494661075c75442c76e9c8b1923d501c
+DIR(mc) := src/noux-pkg/mc
+
+PATCHES   := src/noux-pkg/mc/configure.patch
+PATCH_OPT := -p1 -d src/noux-pkg/mc

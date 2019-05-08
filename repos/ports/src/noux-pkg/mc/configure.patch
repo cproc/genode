@@ -1,0 +1,27 @@
+configure.patch
+
+This patch is needed for ncurses detection.
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ configure |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index 2e891bb..5dfe2fd 100755
+--- a/configure
++++ b/configure
+@@ -17503,9 +17503,9 @@ for ac_lib in '' ncurses curses; do
+     ac_res=-l$ac_lib
+     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+   fi
+-  if ac_fn_c_try_link "$LINENO"; then :
++  #if ac_fn_c_try_link "$LINENO"; then :
+   ac_cv_search_has_colors=$ac_res
+-fi
++#fi
+ rm -f core conftest.err conftest.$ac_objext \
+     conftest$ac_exeext
+   if ${ac_cv_search_has_colors+:} false; then :
