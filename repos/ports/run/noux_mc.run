@@ -73,7 +73,7 @@ install_config {
 	</start>
 </config>}
 
-build { noux-pkg/mc }
-build_boot_image { glib.lib.so libiconv.lib.so mc.tar }
+build { noux-pkg/mc server/terminal noux }
+build_boot_image { glib.lib.so libiconv.lib.so libc_noux.lib.so mc.tar terminal noux }
 
 run_genode_until forever

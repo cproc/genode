@@ -1372,7 +1372,7 @@ namespace {
 				::termios *termios = (::termios *)argp;
 
 				termios->c_iflag = 0;
-				termios->c_oflag = 0;
+				termios->c_oflag = ONLCR;
 				termios->c_cflag = 0;
 				/*
 				 * Set 'ECHO' flag, needed by libreadline. Otherwise, echoing
@@ -1382,6 +1382,13 @@ namespace {
 				memset(termios->c_cc, _POSIX_VDISABLE, sizeof(termios->c_cc));
 				termios->c_ispeed = 0;
 				termios->c_ospeed = 0;
+
+Genode::log("TIOCGETA: iflag: ",  Genode::Hex(termios->c_iflag),
+                    ", oflag: ",  Genode::Hex(termios->c_oflag),
+                    ", cflag: ",  Genode::Hex(termios->c_cflag),
+                    ", lflag: ",  Genode::Hex(termios->c_lflag),
+                    ", ispeed: ", Genode::Hex(termios->c_ispeed),
+                    ", ospeed: ", Genode::Hex(termios->c_ospeed));
 
 				return 0;
 			}
@@ -1413,6 +1420,15 @@ namespace {
 				sysio()->ioctl_in.request = Vfs::File_io_service::IOCTL_OP_TIOCSETAW;
 				sysio()->ioctl_in.argp = argp ? *(int*)argp : 0;
 
+				::termios *termios = (::termios *)argp;
+
+Genode::log("TIOCSETAW: iflag: ",  Genode::Hex(termios->c_iflag),
+                     ", oflag: ",  Genode::Hex(termios->c_oflag),
+                     ", cflag: ",  Genode::Hex(termios->c_cflag),
+                     ", lflag: ",  Genode::Hex(termios->c_lflag),
+                     ", ispeed: ", Genode::Hex(termios->c_ispeed),
+                     ", ospeed: ", Genode::Hex(termios->c_ospeed));
+
 				break;
 			}
 
@@ -1437,7 +1453,13 @@ namespace {
 
 		case TIOCSETA:
 			{
-				/* not implemented but used by e.g. vim */
+				::termios *termios = (::termios *)argp;
+Genode::log("TIOCSETA: iflag: ",  Genode::Hex(termios->c_iflag),
+                    ", oflag: ",  Genode::Hex(termios->c_oflag),
+                    ", cflag: ",  Genode::Hex(termios->c_cflag),
+                    ", lflag: ",  Genode::Hex(termios->c_lflag),
+                    ", ispeed: ", Genode::Hex(termios->c_ispeed),
+                    ", ospeed: ", Genode::Hex(termios->c_ospeed));
 				break;
 			}
 
