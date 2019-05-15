@@ -132,7 +132,7 @@ endif
 # Default optimization and warning levels
 #
 CC_OLEVEL ?= -O2
-CC_WARN   ?= -Wall
+CC_WARN   ?= -Wall -Wno-error=implicit-fallthrough
 
 #
 # Additional warnings for C++
