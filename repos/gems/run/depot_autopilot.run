@@ -548,8 +548,8 @@ proc init_test_setting {} {
 		if {[archives_available [depot_user]/pkg/$test_pkg]} {
 			continue
 		}
-		set test_pkgs [lsearch -all -inline -not -exact \
-		                       $test_pkgs $test_pkg]
+#		set test_pkgs [lsearch -all -inline -not -exact \
+#		                       $test_pkgs $test_pkg]
 
 		puts stderr "Warning: remove test package of \"$test_pkg\" because of\
 		             missing archives"
