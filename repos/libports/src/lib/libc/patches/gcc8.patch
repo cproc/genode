@@ -1,0 +1,37 @@
+Fix compile errors with GCC 8.3.0
+
+diff --git a/src/lib/libc/sys/amd64/include/endian.h b/src/lib/libc/sys/amd64/include/endian.h
+index a9bdcb2..53ea2a8 100644
+--- src/lib/libc/sys/amd64/include/endian.h
++++ src/lib/libc/sys/amd64/include/endian.h
+@@ -70,7 +70,7 @@ extern "C" {
+ #if defined(__GNUCLIKE_ASM) && defined(__GNUCLIKE_BUILTIN_CONSTANT_P)
+ 
+ #define __byte_swap_int_var(x) \
+-__extension__ ({ register __uint32_t __X = (x); \
++__extension__ ({ __uint32_t __X = (x); \
+    __asm ("bswap %0" : "+r" (__X)); \
+    __X; })
+ 
+@@ -91,7 +91,7 @@ __extension__ ({ register __uint32_t __X = (x); \
+ #endif	/* __OPTIMIZE__ */
+ 
+ #define __byte_swap_long_var(x) \
+-__extension__ ({ register __uint64_t __X = (x); \
++__extension__ ({ __uint64_t __X = (x); \
+    __asm ("bswap %0" : "+r" (__X)); \
+    __X; })
+ 
+diff --git a/src/lib/libc/sys/i386/include/endian.h b/src/lib/libc/sys/i386/include/endian.h
+index 24f6667..f30c749 100644
+--- src/lib/libc/sys/i386/include/endian.h
++++ src/lib/libc/sys/i386/include/endian.h
+@@ -70,7 +70,7 @@ extern "C" {
+ #if defined(__GNUCLIKE_ASM) && defined(__GNUCLIKE_BUILTIN_CONSTANT_P)
+ 
+ #define __byte_swap_int_var(x) \
+-__extension__ ({ register __uint32_t __X = (x); \
++__extension__ ({ __uint32_t __X = (x); \
+    __asm ("bswap %0" : "+r" (__X)); \
+    __X; })
+ 
