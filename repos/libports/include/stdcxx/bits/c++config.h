@@ -714,7 +714,7 @@ namespace std
 /* #undef _GLIBCXX_HAVE_ENOSTR */
 
 /* Define if ENOTRECOVERABLE exists. */
-/* #undef _GLIBCXX_HAVE_ENOTRECOVERABLE */
+#define _GLIBCXX_HAVE_ENOTRECOVERABLE 1
 
 /* Define if ENOTSUP exists. */
 #define _GLIBCXX_HAVE_ENOTSUP 1
@@ -723,7 +723,7 @@ namespace std
 #define _GLIBCXX_HAVE_EOVERFLOW 1
 
 /* Define if EOWNERDEAD exists. */
-/* #undef _GLIBCXX_HAVE_EOWNERDEAD */
+#define _GLIBCXX_HAVE_EOWNERDEAD 1
 
 /* Define if EPERM exists. */
 #define _GLIBCXX_HAVE_EPERM 1
@@ -940,10 +940,10 @@ namespace std
 /* #undef _GLIBCXX_HAVE_NAN_H */
 
 /* Define if <math.h> defines obsolete isinf function. */
-#define _GLIBCXX_HAVE_OBSOLETE_ISINF 1
+/* #undef _GLIBCXX_HAVE_OBSOLETE_ISINF */
 
 /* Define if <math.h> defines obsolete isnan function. */
-#define _GLIBCXX_HAVE_OBSOLETE_ISNAN 1
+/* #undef _GLIBCXX_HAVE_OBSOLETE_ISNAN */
 
 /* Define if poll is available in <poll.h>. */
 #define _GLIBCXX_HAVE_POLL 1
@@ -1106,7 +1106,7 @@ namespace std
 /* #undef _GLIBCXX_HAVE_TLS */
 
 /* Define to 1 if you have the <uchar.h> header file. */
-/* #undef _GLIBCXX_HAVE_UCHAR_H */
+#define _GLIBCXX_HAVE_UCHAR_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define _GLIBCXX_HAVE_UNISTD_H 1
@@ -1404,7 +1404,7 @@ namespace std
 
 /* Define if C99 functions or macros in <wchar.h> should be imported in
    <cwchar> in namespace std for C++11. */
-/* #undef _GLIBCXX11_USE_C99_WCHAR */
+#define _GLIBCXX11_USE_C99_WCHAR 1
 
 /* Define if C99 functions in <complex.h> should be used in <complex> for
    C++98. Using compiler builtins for these functions requires corresponding
@@ -1488,7 +1488,7 @@ namespace std
 
 /* Define if C11 functions in <uchar.h> should be imported into namespace std
    in <cuchar>. */
-/* #undef _GLIBCXX_USE_C11_UCHAR_CXX11 */
+#define _GLIBCXX_USE_C11_UCHAR_CXX11 1
 
 /* Define if C99 functions or macros from <wchar.h>, <math.h>, <complex.h>,
    <stdio.h>, and <stdlib.h> can be used or exposed. */
@@ -1497,7 +1497,7 @@ namespace std
 /* Define if C99 functions in <complex.h> should be used in <tr1/complex>.
    Using compiler builtins for these functions requires corresponding C99
    library functions to be present. */
-/* #undef _GLIBCXX_USE_C99_COMPLEX_TR1 */
+#define _GLIBCXX_USE_C99_COMPLEX_TR1 1
 
 /* Define if C99 functions in <ctype.h> should be imported in <tr1/cctype> in
    namespace std::tr1. */
@@ -1513,11 +1513,11 @@ namespace std
 
 /* Define if wchar_t C99 functions in <inttypes.h> should be imported in
    <tr1/cinttypes> in namespace std::tr1. */
-/* #undef _GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1 */
+#define _GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1 1
 
 /* Define if C99 functions or macros in <math.h> should be imported in
    <tr1/cmath> in namespace std::tr1. */
-/* #undef _GLIBCXX_USE_C99_MATH_TR1 */
+#define _GLIBCXX_USE_C99_MATH_TR1 1
 
 /* Define if C99 types in <stdint.h> should be imported in <tr1/cstdint> in
    namespace std::tr1. */
@@ -1592,7 +1592,7 @@ namespace std
 /* #undef _GLIBCXX_USE_SENDFILE */
 
 /* Define if struct stat has timespec members. */
-/* #undef _GLIBCXX_USE_ST_MTIM */
+#define _GLIBCXX_USE_ST_MTIM 1
 
 /* Define if sysctl(), CTL_HW and HW_NCPU are available in <sys/sysctl.h>. */
 /* #undef _GLIBCXX_USE_SYSCTL_HW_NCPU */
@@ -1602,7 +1602,7 @@ namespace std
 
 /* Define if utimensat and UTIME_OMIT are available in <sys/stat.h> and
    AT_FDCWD in <fcntl.h>. */
-/* #undef _GLIBCXX_USE_UTIMENSAT */
+#define _GLIBCXX_USE_UTIMENSAT 1
 
 /* Define if code specialized for wchar_t should be used. */
 #define _GLIBCXX_USE_WCHAR_T 1
