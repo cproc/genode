@@ -39,5 +39,7 @@ vpath spec/64bit/memory_map.cc $(BASE_DIR)/../base-hw/src/lib/hw
 
 NR_OF_CPUS = 32
 
+CC_OPT += -mno-sse
+
 # include less specific configuration
 include $(BASE_DIR)/../base-hw/lib/mk/core-hw.inc
