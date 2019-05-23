@@ -318,6 +318,7 @@ namespace Libc_pipe {
 
 	bool Plugin::poll(Libc::File_descriptor &fdo, struct pollfd &pfd)
 	{
+Genode::log("Plugin::poll()");
 		if (fdo.plugin != this) return false;
 
 		enum {
@@ -430,6 +431,7 @@ namespace Libc_pipe {
 	ssize_t Plugin::write(Libc::File_descriptor *fdo, const void *buf,
 	                      ::size_t count)
 	{
+Genode::log("Plugin::write()");
 		if (!write_end(fdo)) {
 			Genode::error("cannot write into read end of pipe");
 			errno = EBADF;
@@ -447,11 +449,15 @@ namespace Libc_pipe {
 
 			if (context(fdo)->buffer()->avail_capacity() == 0) {
 
+				Genode::log("Plugin::write(): buffer is full");
+
 				if (context(fdo)->nonblock())
 					return num_bytes_written;
 
-				if (libc_select_notify)
+				if (libc_select_notify) {
+					Genode::log("Plugin::write(): calling libc_select_notify() 1");
 					libc_select_notify();
+				}
 			}
 
 			context(fdo)->write_avail_sem()->down();
@@ -460,8 +466,14 @@ namespace Libc_pipe {
 			num_bytes_written++;
 		}
 
-		if (libc_select_notify)
+		Genode::log("Plugin::write(): libc_select_notify: ", libc_select_notify);
+
+		if (libc_select_notify) {
+			Genode::log("Plugin::write(): calling libc_select_notify() 2");
 			libc_select_notify();
+		}
+
+		Genode::log("Plugin::write() finished");
 
 		return num_bytes_written;
 	}
