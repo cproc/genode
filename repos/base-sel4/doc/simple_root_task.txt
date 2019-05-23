@@ -73,7 +73,7 @@ at this point. As a first test, I am going to build the kernel for the pc99
 platform using the Genode tool chain. According to the README, the following
 command should work
 
-! make TOOLPREFIX=/usr/local/genode-gcc/bin/genode-x86- \
+! make TOOLPREFIX=/usr/local/genode/tool/current/bin/genode-x86- \
 !      ARCH=ia32 PLAT=pc99
 
 On the first attempt, the following error occurs:
@@ -110,7 +110,7 @@ nice. So I can leave the kernel-configuration magic out of the loop and just
 manually specify the config definitions at the build command line. After
 a few iterations, I came up with the following command-line arguments:
 
-! make TOOLPREFIX=/usr/local/genode-gcc/bin/genode-x86- \
+! make TOOLPREFIX=/usr/local/genode/tool/current/bin/genode-x86- \
 !      ARCH=ia32 PLAT=pc99 BUILD_VERBOSE=1 V=1 \
 !      LDFLAGS+=-Wl,-melf_i386 \
 !      LDFLAGS+=-nostdlib \
