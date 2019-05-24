@@ -65,7 +65,7 @@ install_config {
 			</fstab>
 			<start name="/bin/mc">
 				<arg value="mc"/>
-				<arg value="-a"/>
+				<!--<arg value="-a"/>-->
 				<env name="TERM" value="screen" />
 				<env name="HOME" value="/" />
 			</start>
