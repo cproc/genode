@@ -550,5 +550,5 @@ install: build_all
 	$(VERBOSE)$(SUDO) cp -a --remove-destination --no-target-directory $(LOCAL_INSTALL_LOCATION) $(INSTALL_LOCATION)
 	$(VERBOSE)$(LIB_GCC)
 ifeq ($(INSTALL_LOCATION),$(DEFAULT_INSTALL_LOCATION))
-	$(VERBOSE)$(SUDO) ln -sf $(TOOL_CHAIN_VERSION) $(dir $(INSTALL_LOCATION))/current
+	$(VERBOSE)$(SUDO) ln -snf $(TOOL_CHAIN_VERSION) $(dir $(INSTALL_LOCATION))/current
 endif
