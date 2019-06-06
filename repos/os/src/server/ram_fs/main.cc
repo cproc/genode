@@ -378,6 +378,7 @@ class Ram_fs::Session_component : public File_system::Session_rpc_object
 
 		Watch_handle watch(Path const &path) override
 		{
+Genode::log("watch()");
 			_assert_valid_path(path.string());
 
 			Node *node = _root.lookup(path.string() + 1);

@@ -3,7 +3,7 @@
 	<requires> <timer/> </requires>
 
 	<events>
-		<timeout meaning="failed" sec="20" />
+		<timeout meaning="failed" sec="200" />
 		<log     meaning="succeeded">&lt;config iteration="4" /></log>
 	</events>
 
@@ -45,6 +45,7 @@
 			<provides><service name="ROM"/></provides>
 			<config verbose="yes">
 				<rom name="dynamic_rom">
+					<sleep milliseconds="1000" />
 					<inline description="iteration 1">
 						<config iteration="1" />
 					</inline>

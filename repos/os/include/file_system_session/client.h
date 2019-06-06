@@ -83,6 +83,7 @@ class File_system::Session_client : public Genode::Rpc_client<Session>
 
 		Watch_handle watch(Path const &path) override
 		{
+Genode::log("watch(): ", path.string());
 			return call<Rpc_watch>(path);
 		}
 
