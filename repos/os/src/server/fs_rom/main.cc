@@ -135,15 +135,8 @@ class Fs_rom::Rom_session_component : public  Rpc_object<Rom_session>
 						_watching_file = at_the_file;
 						return;
 					}
-					catch (File_system::Lookup_failed) { Genode::warning("Lookup_failed"); }
-					catch (File_system::Unavailable) { Genode::warning("Unavailable"); }
-
-static int count = 0;
-if (++count == 6) {
-	Genode::log("delay");
-	for (volatile unsigned long i = 0; i < 1000000000; i++);
-	Genode::log("delay finished");
-}
+					catch (File_system::Lookup_failed) { }
+					catch (File_system::Unavailable) { }
 
 					if (watch_path == "/")
 						throw Watch_failed();
@@ -253,7 +246,7 @@ if (++count == 6) {
 		bool _try_read_dataspace(bool update_only)
 		{
 			using namespace File_system;
-Genode::log("_try_read_dataspace(): calling _open_watch_handle()");
+
 			try { _open_watch_handle(); }
 			catch (Watch_failed) { }
 
@@ -318,7 +311,6 @@ Genode::log("_try_read_dataspace(): calling _open_watch_handle()");
 			_file_path(file_path),
 			_file_ds(env.ram(), env.rm(), 0) /* realloc later */
 		{
-Genode::log("Rom_session_component(): calling _open_watch_handle()");
 			try { _open_watch_handle(); }
 			catch (Watch_failed) { }
 
@@ -328,7 +320,6 @@ Genode::log("Rom_session_component(): calling _open_watch_handle()");
 			 * the dataspace now will hopefully prevent any interaction with
 			 * the parent when the dataspace RPC method is called.
 			 */
-Genode::log("Rom_session_component(): calling _try_read_dataspace()");
 			_try_read_dataspace(UPDATE_OR_REPLACE);
 		}
 
@@ -346,7 +337,7 @@ Genode::log("Rom_session_component(): calling _try_read_dataspace()");
 		Rom_dataspace_capability dataspace() override
 		{
 			using namespace File_system;
-Genode::log("dataspace(): calling _try_read_dataspace()");
+
 			_try_read_dataspace(UPDATE_OR_REPLACE);
 
 			/* always serve a valid, even empty, dataspace */
@@ -363,7 +354,6 @@ Genode::log("dataspace(): calling _try_read_dataspace()");
 			_sigh = sigh;
 
 			if (_sigh.valid()) {
-Genode::log("sigh(): calling _open_watch_handle()");
 				try { _open_watch_handle(); }
 				catch (Watch_failed) { }
 			}
@@ -375,7 +365,6 @@ Genode::log("sigh(): calling _open_watch_handle()");
 		 * Update the current dataspace content
 		 */
 		bool update() override {
-			Genode::log("update(): calling _try_read_dataspace()");
 			return _try_read_dataspace(UPDATE_ONLY); }
 
 		/**
@@ -386,7 +375,6 @@ Genode::log("sigh(): calling _open_watch_handle()");
 			switch (packet.operation()) {
 
 			case File_system::Packet_descriptor::CONTENT_CHANGED:
-Genode::log("CONTENT_CHANGED");
 				if (!(packet.handle() == *_watch_handle))
 					return;
 

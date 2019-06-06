@@ -56,11 +56,8 @@ namespace File_system {
 
 			void notify_listeners()
 			{
-Genode::log("notify_listeners()");
-				for (Listener *curr = _listeners.first(); curr; curr = curr->next()) {
-					Genode::log("notify_listeners(): calling notify()");
+				for (Listener *curr = _listeners.first(); curr; curr = curr->next())
 					curr->notify(_curr_version);
-				}
 			}
 
 			void mark_as_updated()

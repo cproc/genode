@@ -55,7 +55,6 @@ class Ram_fs::Directory : public Node
 
 		void adopt_unsynchronized(Node *node) override
 		{
-Genode::log("Directory::adopt_unsynchronized()");
 			/*
 			 * XXX inc ref counter
 			 */
@@ -64,7 +63,6 @@ Genode::log("Directory::adopt_unsynchronized()");
 
 			mark_as_updated();
 			notify_listeners();
-Genode::log("Directory::adopt_unsynchronized() finished");
 		}
 
 		void discard(Node *node) override
