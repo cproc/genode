@@ -189,54 +189,32 @@ void Entrypoint::_process_incoming_signals()
 }
 
 
-bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
+bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const /*dont_block*/)
 {
-	if (!_rpc_ep->is_myself())
-		warning(__func__, " called from non-entrypoint thread \"",
-		       Thread::myself()->name(), "\"");
-
 	for (;;) {
 
 		try {
+
 			_signal_pending_lock.lock();
 
 			cmpxchg(&_signal_recipient, NONE, ENTRYPOINT);
+
 			Signal sig =_sig_rec->pending_signal();
+
 			cmpxchg(&_signal_recipient, ENTRYPOINT, NONE);
 
 			_signal_pending_lock.unlock();
 
 			_signal_pending_ack_lock.unlock();
 
-			/* defer application-level signals */
-			if (sig.context()->level() == Signal_context::Level::App) {
-				_defer_signal(sig);
-				continue;
-			}
-
-			_dispatch_signal(sig);
 			break;
 
 		} catch (Signal_receiver::Signal_not_pending) {
+
 			_signal_pending_lock.unlock();
-			if (dont_block) {
-				/* indicate that we leave wait_and_dispatch_one_io_signal */
-				cmpxchg(&_signal_recipient, ENTRYPOINT, NONE);
-				return false;
-			}
+
 			_sig_rec->block_for_signal();
 		}
-	}
-
-	_handle_io_progress();
-
-	/* initiate potential deferred-signal handling in entrypoint */
-	if (_deferred_signals.first()) {
-		/* construct the handler on demand (otherwise we break core) */
-		if (!_deferred_signal_handler.constructed())
-			_deferred_signal_handler.construct(*this, *this,
-			                                   &Entrypoint::_handle_deferred_signals);
-		Signal_transmitter(*_deferred_signal_handler).submit();
 	}
 
 	return true;
