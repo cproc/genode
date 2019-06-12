@@ -268,6 +268,7 @@ Signal Signal_receiver::pending_signal()
 	 * signal, we may have increased the semaphore already. In this case
 	 * the signal-causing context is absent from the list.
 	 */
+//Genode::log(Genode::Hex(((unsigned long)&result >> 20) & 0xf));
 	throw Signal_not_pending();
 }
 

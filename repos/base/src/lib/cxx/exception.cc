@@ -55,6 +55,10 @@ extern "C" int dl_iterate_phdr(int (*) (void *, unsigned long, void *), void *) 
  * Terminate handler
  */
 
+extern "C" void wait_for_continue();
+
+void debug_hook() { wait_for_continue(); }
+
 void terminate_handler()
 {
 	std::type_info *t = __cxxabiv1::__cxa_current_exception_type();
@@ -64,13 +68,14 @@ void terminate_handler()
 
 	char *demangled_name = __cxa_demangle(t->name(), nullptr, nullptr, nullptr);
 	if (demangled_name) {
-		Genode::error("Uncaught exception of type "
+		Genode::error(&t, ": Uncaught exception of type "
 		              "'", Genode::Cstring(demangled_name), "'");
 		free(demangled_name);
 	} else {
 		Genode::error("Uncaught exception of type '", t->name(), "' "
 		              "(use 'c++filt -t' to demangle)");
 	}
+	//debug_hook();
 }
 
 
