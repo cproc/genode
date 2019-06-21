@@ -19,9 +19,42 @@
 
 #include <lx_emul/extern_c_begin.h>
 
+#include <lx_emul/barrier.h>
 #include <lx_emul/compiler.h>
 #include <lx_emul/printf.h>
 #include <lx_emul/types.h>
+
+static inline void __read_once_size(const volatile void *p, void *res, int size)
+{
+	switch (size) {
+		case 1: *(__u8  *)res = *(volatile __u8  *)p; break;
+		case 2: *(__u16 *)res = *(volatile __u16 *)p; break;
+		case 4: *(__u32 *)res = *(volatile __u32 *)p; break;
+		case 8: *(__u64 *)res = *(volatile __u64 *)p; break;
+		default:
+			barrier();
+			__builtin_memcpy((void *)res, (const void *)p, size);
+			barrier();
+	}
+}
+
+#ifdef __cplusplus
+#define READ_ONCE(x) \
+({ \
+	barrier(); \
+	x; \
+})
+#else
+#define READ_ONCE(x) \
+({                                               \
+	union { typeof(x) __val; char __c[1]; } __u; \
+	__read_once_size(&(x), __u.__c, sizeof(x));  \
+	__u.__val;                                   \
+})
+#endif
+
+
+#include <lx_emul/list.h>
 
 void lx_backtrace(void);
 
@@ -58,8 +91,6 @@ typedef int clockid_t;
 
 enum { PAGE_SHIFT = 12 };
 enum { HZ = 100UL, };
-
-struct list_head;
 
 typedef __u16 __le16;
 typedef __u32 __le32;
@@ -129,7 +160,6 @@ enum {
 	__GFP_REPEAT = 0x00000400u,
 };
 
-#include <lx_emul/barrier.h>
 #include <uapi/linux/swab.h>
 #include <lx_emul/byteorder.h>
 #include <lx_emul/completion.h>
@@ -206,11 +236,6 @@ static inline s64 timespec64_to_ns(const struct timespec64 *ts)
 
 ktime_t ns_to_ktime(u64 ns);
 
-struct device_node
-{
-	const char * full_name;
-};
-
 struct device;
 struct device_driver;
 
@@ -220,6 +245,7 @@ struct bus_type
 	const struct attribute_group **dev_groups;
 
 	int (*match)(struct device *dev, struct device_driver *drv);
+	int (*uevent)(struct device *dev, struct kobj_uevent_env *env);
 	int (*probe)(struct device *dev);
 
 	const struct dev_pm_ops *pm;
@@ -252,9 +278,12 @@ struct attribute_group
 
 struct platform_device;
 
+struct kobject { int dummy; };
+
 struct device {
 	char name[32];
 	struct device * parent;
+	struct kobject kobj;
 	struct device_driver *driver;
 	void * platform_data;
 	void * driver_data;
@@ -263,7 +292,8 @@ struct device {
 	struct bus_type *bus;
 	struct class *class;
 	struct device_node *of_node;
-	struct platform_device * plat_dev;
+	struct fwnode_handle *fwnode;
+	struct platform_device *plat_dev;
 };
 
 struct platform_device {
@@ -358,6 +388,7 @@ struct net_device
 	netdev_features_t            features;
 	struct net_device_stats      stats;
 	netdev_features_t            hw_features;
+	int                          ifindex;
 	const struct net_device_ops *netdev_ops;
 	const struct ethtool_ops    *ethtool_ops;
 	const struct header_ops     *header_ops;
@@ -365,7 +396,10 @@ struct net_device
 	unsigned int                 priv_flags;
 	unsigned short               hard_header_len;
 	unsigned long                mtu;
+	unsigned int                 min_mtu;
+	unsigned long                max_mtu;
 	unsigned short               type;
+	unsigned char                min_header_len;
 	unsigned char                addr_len;
 	struct netdev_hw_addr_list   mc;
 	unsigned char               *dev_addr;
@@ -426,8 +460,6 @@ static inline int rcu_read_lock_held(void) { return 1; }
 static inline int rcu_read_lock_bh_held(void) { return 1; }
 
 unsigned int jiffies_to_usecs(const unsigned long j);
-
-struct rb_node {};
 
 #define __aligned(x) __attribute__((aligned(x)))
 
@@ -605,6 +637,9 @@ bool netif_queue_stopped(const struct net_device *dev);
 #define CONFIG_OF_MDIO  1
 #define CONFIG_PTP_1588_CLOCK 1
 
+#define CONFIG_DEBUG_LOCK_ALLOC 1
+#define CONFIG_PHYLIB 1
+
 void rtnl_lock(void);
 void rtnl_unlock(void);
 
@@ -617,26 +652,7 @@ void netif_tx_unlock_bh(struct net_device *dev);
 void napi_enable(struct napi_struct *n);
 void napi_disable(struct napi_struct *n);
 
-static inline void __read_once_size(const volatile void *p, void *res, int size)
-{
-	switch (size) {
-		case 1: *(__u8  *)res = *(volatile __u8  *)p; break;
-		case 2: *(__u16 *)res = *(volatile __u16 *)p; break;
-		case 4: *(__u32 *)res = *(volatile __u32 *)p; break;
-		case 8: *(__u64 *)res = *(volatile __u64 *)p; break;
-		default:
-			barrier();
-			__builtin_memcpy((void *)res, (const void *)p, size);
-			barrier();
-	}
-}
-
-#define READ_ONCE(x) \
-({                                               \
-	union { typeof(x) __val; char __c[1]; } __u; \
-	__read_once_size(&(x), __u.__c, sizeof(x));  \
-	__u.__val;                                   \
-})
+#define __randomize_layout
 
 extern unsigned long find_next_bit(const unsigned long *addr, unsigned long
                                    size, unsigned long offset);
@@ -710,6 +726,228 @@ int of_mdiobus_register(struct mii_bus *mdio, struct device_node *np);
 
 struct resource *platform_get_resource(struct platform_device *, unsigned, unsigned);
 
+/****************
+ ** linux/fs.h **
+ ****************/
+
+typedef struct {
+	size_t written;
+	size_t count;
+	union {
+		char __user *buf;
+		void *data;
+	} arg;
+	int error;
+} read_descriptor_t;
+
+/********************
+ ** linux/fwnode.h **
+ ********************/
+
+struct fwnode_handle { int dummy; };
+
+/*****************
+ ** linux/gfp.h **
+ *****************/
+
+extern void page_frag_free(void *addr);
+
+/***********************
+ ** linux/interrupt.h **
+ ***********************/
+
+#define IRQF_SHARED		0x00000080
+#define IRQF_ONESHOT		0x00002000
+
+/*********************
+ ** linux/lockdep.h **
+ *********************/
+
+struct lockdep_map { };
+
+/*****************************
+ ** linux/mod_devicetable.h **
+ *****************************/
+
+#define MDIO_NAME_SIZE		32
+
+/************************
+ ** linux/memcontrol.h **
+ ************************/
+
+#define mem_cgroup_sockets_enabled 0
+
+/****************
+ ** linux/of.h **
+ ****************/
+
+struct device_node
+{
+	const char * full_name;
+	struct fwnode_handle fwnode;
+};
+
+#define of_fwnode_handle(node)						\
+	({								\
+		typeof(node) __of_fwnode_handle_node = (node);		\
+									\
+		__of_fwnode_handle_node ?				\
+			&__of_fwnode_handle_node->fwnode : NULL;	\
+	})
+
+/**********************
+ ** linux/rcupdate.h **
+ **********************/
+
+#define rcu_assign_pointer(p, v) (p = v);
+
+/************************
+ ** linux/sched/user.h **
+ ************************/
+
+struct user_struct
+{
+	atomic_long_t locked_vm;
+};
+
+/******************
+ ** linux/sctp.h **
+ ******************/
+
+struct sctphdr
+{
+	unsigned unused;
+};
+
+
+struct kmem_cache *kmem_cache_create_usercopy(const char *name, size_t size, size_t align, slab_flags_t flags, size_t useroffset, size_t usersize, void (*ctor)(void *));
+
+/********************
+ ** linux/stddef.h **
+ ********************/
+
+#define sizeof_field(TYPE, MEMBER) sizeof((((TYPE *)0)->MEMBER))
+
+/*************************
+ ** linux/thread_info.h **
+ *************************/
+
+static inline void check_object_size(const void *ptr, unsigned long n,
+				                     bool to_user) { }
+
+extern void __bad_copy_from(void);
+extern void __bad_copy_to(void);
+
+static inline void copy_overflow(int size, unsigned long count)
+{
+	WARN(1, "Buffer overflow detected (%d < %lu)!\n", size, count);
+}
+
+static __always_inline bool
+check_copy_size(const void *addr, size_t bytes, bool is_source)
+{
+	int sz = __compiletime_object_size(addr);
+	if (unlikely(sz >= 0 && sz < bytes)) {
+		if (!__builtin_constant_p(bytes))
+			copy_overflow(sz, bytes);
+		else if (is_source)
+			__bad_copy_from();
+		else
+			__bad_copy_to();
+		return false;
+	}
+	check_object_size(addr, bytes, is_source);
+	return true;
+}
+
+/*****************
+ ** linux/uio.h **
+ *****************/
+
+struct kvec
+{
+	void  *iov_base;
+	size_t iov_len;
+};
+
+bool _copy_from_iter_full(void *addr, size_t bytes, struct iov_iter *i);
+
+static __always_inline __must_check
+bool copy_from_iter_full(void *addr, size_t bytes, struct iov_iter *i)
+{
+	if (unlikely(!check_copy_size(addr, bytes, false)))
+		return false;
+	else
+		return _copy_from_iter_full(addr, bytes, i);
+}
+
+bool csum_and_copy_from_iter_full(void *addr, size_t bytes, __wsum *csum, struct iov_iter *i);
+
+/********************
+ ** net/checksum.h **
+ ********************/
+
+static inline __wsum
+csum_block_sub(__wsum csum, __wsum csum2, int offset)
+{
+	return csum_block_add(csum, ~csum2, offset);
+}
+
+static inline __wsum csum_unfold(__sum16 n)
+{
+	return (__force __wsum)n;
+}
+
+/**************************
+ ** net/flow_dissector.h **
+ **************************/
+
+#define FLOW_DISSECTOR_F_PARSE_1ST_FRAG		BIT(0)
+
+/*********************
+ ** net/pkt_sched.h **
+ *********************/
+
+#define DEFAULT_TX_QUEUE_LEN	1000
+
+/*********************************
+ ** uapi/asm-generic/resource.h **
+ *********************************/
+
+# define RLIMIT_MEMLOCK		8	/* max locked-in-memory address space */
+
+/*****************************
+ ** uapi/linux/capability.h **
+ *****************************/
+
+#define CAP_IPC_LOCK         14
+
+/*************************
+ ** uapi/linux/kernel.h **
+ *************************/
+
+#define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+
+/******************************
+ ** uapi/linux/libc-compat.h **
+ ******************************/
+
+#define __UAPI_DEF_IF_IFMAP 1
+#define __UAPI_DEF_IF_IFNAMSIZ 1
+#define __UAPI_DEF_IF_IFREQ 1
+#define __UAPI_DEF_IF_NET_DEVICE_FLAGS 1
+
+/************************
+ ** uapi/linux/types.h **
+ ************************/
+ 
+typedef unsigned __poll_t;
+
+/************************/
+
+#define DECLARE_BITMAP(name,bits) \
+	unsigned long name[BITS_TO_LONGS(bits)]
+
 #include <uapi/linux/if_ether.h>
 #include <uapi/linux/if_packet.h>
 #include <uapi/linux/ethtool.h>
@@ -727,6 +965,7 @@ bool device_may_wakeup(struct device *dev);
 int enable_irq_wake(unsigned int irq);
 int disable_irq_wake(unsigned int irq);
 
+#if 0
 struct ethtool_ops {
 	int(*get_settings)(struct net_device *, struct ethtool_cmd *);
 	int(*set_settings)(struct net_device *, struct ethtool_cmd *);
@@ -749,8 +988,12 @@ struct ethtool_ops {
 			       const struct ethtool_tunable *, void *);
 	int(*set_tunable)(struct net_device *,
 			       const struct ethtool_tunable *, const void *);
+	int	(*get_link_ksettings)(struct net_device *,
+				      struct ethtool_link_ksettings *);
+	int	(*set_link_ksettings)(struct net_device *,
+				      const struct ethtool_link_ksettings *);
 };
-
+#endif
 u32 ethtool_op_get_link(struct net_device *);
 
 void *dma_alloc_coherent(struct device *, size_t, dma_addr_t *, gfp_t);
@@ -763,10 +1006,6 @@ int pinctrl_pm_select_default_state(struct device *dev);
 int pinctrl_pm_select_sleep_state(struct device *dev);
 
 void netif_tx_disable(struct net_device *dev);
-
-#include <lx_emul/list.h>
-
-#define rcu_assign_pointer(p, v) (p = v);
 
 #include <linux/rculist.h>
 
@@ -909,7 +1148,10 @@ struct file {
 	const struct cred * f_cred;
 };
 
-struct net;
+struct net
+{
+	struct user_namespace * user_ns;
+};
 
 struct percpu_counter {
 	s64 count;
@@ -975,9 +1217,6 @@ struct net *dev_net(const struct net_device *dev);
 
 #define read_pnet(pnet) (&init_net)
 
-#define DECLARE_BITMAP(name,bits) \
-	unsigned long name[BITS_TO_LONGS(bits)]
-
 void bitmap_fill(unsigned long *dst, int nbits);
 void bitmap_zero(unsigned long *dst, int nbits);
 
@@ -1041,7 +1280,12 @@ void page_counter_uncharge(struct page_counter *counter, unsigned long nr_pages)
 
 enum { UNDER_LIMIT, SOFT_LIMIT, OVER_LIMIT };
 
-struct inode {};
+struct inode
+{
+//umode_t       i_mode;
+	kuid_t        i_uid;
+//unsigned long i_ino;
+};
 
 struct vm_area_struct;
 
@@ -1170,7 +1414,10 @@ void sg_mark_end(struct scatterlist *sg);
 void sg_set_buf(struct scatterlist *, const void *, unsigned int);
 void sg_set_page(struct scatterlist *, struct page *, unsigned int, unsigned int);
 
-struct inet_skb_parm { };
+struct inet_skb_parm
+{
+	int iif;
+};
 
 enum {
 	IPPROTO_IP  = 0,
@@ -1374,10 +1621,6 @@ struct device_node *of_get_next_available_child(const struct device_node *node, 
 	for (child = of_get_next_available_child(parent, NULL); child != NULL; \
 	     child = of_get_next_available_child(parent, child))
 
-u32 mmd_eee_cap_to_ethtool_sup_t(u16 eee_cap);
-u32 mmd_eee_adv_to_ethtool_adv_t(u16 eee_adv);
-u16 ethtool_adv_to_mmd_eee_adv_t(u32 adv);
-
 int driver_register(struct device_driver *drv);
 void driver_unregister(struct device_driver *drv);
 
@@ -1483,6 +1726,7 @@ void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp);
 struct pm_qos_request {};
 
 #define dma_wmb() __asm__ __volatile__ ("dmb oshst" : : : "memory")
+
 #include <lx_emul/extern_c_end.h>
 
 #endif /* _SRC__DRIVERS__NIC__FEC__LX_EMUL_H_ */

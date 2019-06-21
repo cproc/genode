@@ -61,6 +61,17 @@ void eth_hw_addr_random(struct net_device *dev)
 	TRACE_AND_STOP;
 }
 
+void ethtool_convert_legacy_u32_to_link_mode(unsigned long *dst, u32 legacy_u32)
+{
+	TRACE_AND_STOP;
+}
+
+bool ethtool_convert_link_mode_to_legacy_u32(u32 *legacy_u32,
+                                             const unsigned long *src)
+{
+	TRACE_AND_STOP;
+}
+
 u32 ethtool_op_get_link(struct net_device * d)
 {
 	TRACE_AND_STOP;
@@ -89,10 +100,30 @@ void free_netdev(struct net_device * d)
 	TRACE_AND_STOP;
 }
 
+void free_uid(struct user_struct *dummy)
+{
+	TRACE_AND_STOP;
+}
+
 bool gfp_pfmemalloc_allowed(gfp_t g)
 {
 	TRACE_AND_STOP;
 	return -1;
+}
+
+bool gfpflags_allow_blocking(const gfp_t gfp_flags)
+{
+	TRACE_AND_STOP;
+}
+
+void imx6q_cpuidle_fec_irqs_unused(void)
+{
+	TRACE_AND_STOP;
+}
+
+void imx6q_cpuidle_fec_irqs_used(void)
+{
+	TRACE_AND_STOP;
 }
 
 int in_irq(void)
@@ -113,7 +144,59 @@ void *kmap_atomic(struct page *page)
 	return NULL;
 }
 
+const char *kobject_name(const struct kobject *kobj)
+{
+	TRACE_AND_STOP;
+}
+
 void kunmap_atomic(void *addr)
+{
+	TRACE_AND_STOP;
+}
+
+int mdio_device_bus_match(struct device *dev, struct device_driver *drv)
+{
+	TRACE_AND_STOP;
+}
+
+struct mdio_device *mdio_device_create(struct mii_bus *bus, int addr)
+{
+	TRACE_AND_STOP;
+}
+
+void mdio_device_free(struct mdio_device *mdiodev)
+{
+	TRACE_AND_STOP;
+}
+
+int mdio_device_register(struct mdio_device *mdiodev)
+{
+	TRACE_AND_STOP;
+}
+
+void mdio_device_reset(struct mdio_device *mdiodev, int value)
+{
+	TRACE_AND_STOP;
+}
+
+void mdiobus_setup_mdiodev_from_board_info(struct mii_bus *bus,
+                                           int (*cb)(struct mii_bus *bus,
+                                                     struct mdio_board_info *bi))
+{
+	TRACE_AND_STOP;
+}
+
+void might_sleep()
+{
+	TRACE_AND_STOP;
+}
+
+void mm_unaccount_pinned_pages(struct mmpin *mmp)
+{
+	TRACE_AND_STOP;
+}
+
+bool napi_complete_done(struct napi_struct *n, int work_done)
 {
 	TRACE_AND_STOP;
 }
@@ -158,16 +241,103 @@ struct timespec64 ns_to_timespec64(const s64 nsec)
 	return ret;
 }
 
+int of_device_uevent_modalias(struct device *dev, struct kobj_uevent_env *env)
+{
+	TRACE_AND_STOP;
+}
+
+int of_mdio_parse_addr(struct device *dev, const struct device_node *np)
+{
+	TRACE_AND_STOP;
+}
+
 struct device_node *of_node_get(struct device_node *node)
 {
 	TRACE_AND_STOP;
 	return NULL;
 }
 
+void of_phy_deregister_fixed_link(struct device_node *np)
+{
+	TRACE_AND_STOP;
+}
+
 int of_phy_register_fixed_link(struct device_node *np)
 {
 	TRACE_AND_STOP;
 	return -1;
+}
+
+bool of_property_read_bool(const struct device_node *np, const char *propname)
+{
+	TRACE_AND_STOP;
+	return false;
+}
+
+void *page_frag_alloc(struct page_frag_cache *nc, unsigned int fragsz, gfp_t gfp_mask)
+{
+	TRACE_AND_STOP;
+}
+
+void page_frag_free(void *addr)
+{
+	TRACE_AND_STOP;
+}
+
+const struct phy_setting *phy_lookup_setting(int speed, int duplex, const unsigned long *mask,
+                                             size_t maxbit, bool exact)
+{
+	TRACE_AND_STOP;
+}
+
+const char *phy_duplex_to_str(unsigned int duplex)
+{
+	TRACE_AND_STOP;
+}
+
+void phy_led_trigger_change_speed(struct phy_device *phy)
+{
+	TRACE_AND_STOP;
+}
+
+int phy_led_triggers_register(struct phy_device *phy)
+{
+	TRACE_AND_STOP;
+}
+
+void phy_led_triggers_unregister(struct phy_device *phy)
+{
+	TRACE_AND_STOP;
+}
+
+int phy_modify(struct phy_device *phydev, u32 regnum, u16 mask, u16 set)
+{
+	TRACE_AND_STOP;
+}
+
+int phy_read_mmd(struct phy_device *phydev, int devad, u32 regnum)
+{
+	TRACE_AND_STOP;
+}
+
+int phy_write_mmd(struct phy_device *phydev, int devad, u32 regnum, u16 val)
+{
+	TRACE_AND_STOP;
+}
+
+const char *phy_speed_to_str(int speed)
+{
+	TRACE_AND_STOP;
+}
+
+void pm_runtime_disable(struct device *dev)
+{
+	TRACE_AND_STOP;
+}
+
+int pm_runtime_put(struct device *dev)
+{
+	TRACE_AND_STOP;
 }
 
 void ptp_clock_event(struct ptp_clock *ptp, struct ptp_clock_event *event)
@@ -182,12 +352,6 @@ int ptp_clock_index(struct ptp_clock *ptp)
 }
 
 int ptp_clock_unregister(struct ptp_clock *ptp)
-{
-	TRACE_AND_STOP;
-	return -1;
-}
-
-int regulator_disable(struct regulator *r)
 {
 	TRACE_AND_STOP;
 	return -1;
@@ -214,6 +378,56 @@ void read_unlock_bh(rwlock_t * l)
 	TRACE_AND_STOP;
 }
 
+int regulator_disable(struct regulator *r)
+{
+	TRACE_AND_STOP;
+	return -1;
+}
+
+int request_threaded_irq(unsigned int irq, irq_handler_t handler,
+                         irq_handler_t thread_fn,
+                         unsigned long flags, const char *name, void *dev)
+{
+	TRACE_AND_STOP;
+}
+
+void secpath_reset(struct sk_buff *skb)
+{
+	TRACE_AND_STOP;
+}
+
+void sk_free(struct sock *sk)
+{
+	TRACE_AND_STOP;
+}
+
+void sock_efree(struct sk_buff *skb)
+{
+	TRACE_AND_STOP;
+}
+
+char *strncpy(char *dst, const char *src, size_t s)
+{
+	TRACE_AND_STOP;
+}
+
+int sysfs_create_link(struct kobject *kobj, struct kobject *target, const char *name)
+{
+	TRACE_AND_STOP;
+}
+
+int sysfs_create_link_nowarn(struct kobject *kobj,
+                             struct kobject *target,
+                             const char *name)
+{
+	TRACE_AND_STOP;
+}
+
+void sysfs_remove_link(struct kobject *kobj, const char *name)
+{
+	TRACE_AND_STOP;
+}
+
 unsigned int tcp_hdrlen(const struct sk_buff *skb)
 {
 	TRACE_AND_STOP;
@@ -224,6 +438,11 @@ u64 timecounter_cyc2time(struct timecounter *tc, cycle_t cycle_tstamp)
 {
 	TRACE_AND_STOP;
 	return -1;
+}
+
+void trace_mdio_access(void *dummy, ...)
+{
+	TRACE_AND_STOP;
 }
 
 void tso_build_data(struct sk_buff *skb, struct tso_t *tso, int size)

@@ -982,7 +982,7 @@ static int of_mdiobus_register_phy(Fec::Mdio::Phy & ph, struct mii_bus *mdio)
 	if (!phy || IS_ERR(phy)) return 1;
 
 	phy->irq         = ph.gpio_irq;
-	phy->dev.of_node = (device_node*) &ph;
+	phy->mdio.dev.of_node = (device_node*) &ph;
 
 	/* All data is now stored in the phy struct;
 	 * register it */
@@ -1167,6 +1167,13 @@ struct netdev_queue *netdev_get_tx_queue(const struct net_device *dev, unsigned 
 	return nullptr;
 }
 
+int of_machine_is_compatible(const char *compat)
+
+{
+	TRACE;
+	return 0;
+}
+
 bool of_phy_is_fixed_link(struct device_node *np)
 {
 	TRACE;
@@ -1185,10 +1192,23 @@ int pinctrl_pm_select_sleep_state(struct device *dev)
 	return -1;
 }
 
+int platform_get_irq_byname(struct platform_device *dev, const char *name)
+{
+	Genode::log(__func__, ": ", name);
+	TRACE;
+	return 0;
+}
+
 struct resource *platform_get_resource(struct platform_device * d, unsigned r1, unsigned r2)
 {
 	TRACE;
 	return nullptr;
+}
+
+int platform_irq_count(struct platform_device *dev)
+{
+	TRACE;
+	return 0; /* XXX: might be wrong */
 }
 
 void pm_runtime_enable(struct device *dev)
