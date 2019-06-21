@@ -36,7 +36,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/vfs_lwip \
                   [depot_user]/src/vfs
 
-build { test/lwip/http_srv }
+build { test/lwip/http_srv drivers/nic/fec }
 
 install_config {
 <config verbose="yes">
@@ -84,7 +84,7 @@ install_config {
 </config>
 }
 
-build_boot_image { test-lwip_httpsrv }
+build_boot_image { test-lwip_httpsrv fec_nic_drv }
 
 #
 # Qemu config
