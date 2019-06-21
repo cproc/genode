@@ -242,9 +242,7 @@ GCC_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG) \
 
 COMMON_CONFIG = $(CONFIG_QUIET) \
                 --prefix=$(LOCAL_INSTALL_LOCATION) \
-                --program-prefix=genode-$(PLATFORM)- \
-                --target=$(TARGET_NAME_$(PLATFORM)) \
-                --program-transform-name="s/$(TARGET_NAME_$(PLATFORM))/$(PLATFORM)/"
+                --target=$(TARGET_NAME_$(PLATFORM))
 
 BINUTILS_CONFIG += $(COMMON_CONFIG) --disable-werror
 
@@ -339,7 +337,7 @@ GDB_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-g
 ALI2DEP_BINARY              = $(BUILD_LOCATION)/ali2dep/ali2dep
 ALI2DEP_INSTALLED_BINARY    = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-ali2dep
 
-build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES) $(ALI2DEP_INSTALLED_BINARY)
+build_all: $(GCC_INSTALLED_BINARIES)
 
 GMP_CONTRIB_DIR = $(shell $(GENODE_DIR)/tool/ports/current gmp)/src/lib/gmp
 
