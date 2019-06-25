@@ -45,6 +45,9 @@
 	bic r0, r0, #2              /* clear A bit */
 	mcr p15, 0, r0, c1, c0, 0
 
+	/*adr r0, _start
+	add r0, r0, #2
+	ldr r0, [r0]*/
 
 	/*****************************************************
 	 ** Setup multiprocessor-aware kernel stack-pointer **
