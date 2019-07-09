@@ -162,13 +162,23 @@ proc run_boot_dir {binaries} {
 		# Generate pulsar config file
 		#
 		set fh [open "[run_dir]/config-52-54-00-12-34-56" "WRONLY CREAT TRUNC"]
-		puts $fh " exec /boot/bender"
+#		puts $fh " exec /boot/bender"
+#		if {[apply_microcode]} {
+#			puts $fh " load /boot/microcode serial"
+#			puts $fh " load /boot/micro.code micro.code"
+#		}
+#		puts $fh " load /boot/hypervisor iommu novpid [kernel_output]"
+#		puts $fh " load /boot/image.elf"
+
+		puts $fh " multiboot2 (tftp)[load_tftp_base_dir][load_tftp_offset_dir]/[run_dir]/boot/bender"
 		if {[apply_microcode]} {
-			puts $fh " load /boot/microcode serial"
-			puts $fh " load /boot/micro.code micro.code"
+			puts $fh " module2 (tftp)[load_tftp_base_dir][load_tftp_offset_dir]/[run_dir]/boot/microcode serial"
+			puts $fh " module2 (tftp)[load_tftp_base_dir][load_tftp_offset_dir]/[run_dir]/boot/micro.code micro.code"
 		}
-		puts $fh " load /boot/hypervisor iommu novpid [kernel_output]"
-		puts $fh " load /boot/image.elf"
+		puts $fh " module2 (tftp)[load_tftp_base_dir][load_tftp_offset_dir]/[run_dir]/boot/hypervisor hypervisor iommu novpid [kernel_output]"
+		puts $fh " module2 (tftp)[load_tftp_base_dir][load_tftp_offset_dir]/[run_dir]/boot/image.elf"
+		puts $fh " boot"
+
 		close $fh
 
 		generate_tftp_config
