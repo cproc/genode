@@ -520,7 +520,7 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 
 			Vfs::Vfs_handle *handle;
 			void const      *buf;
-			::size_t const   count;
+			::size_t         count;
 			Vfs::file_size  &out_count;
 			Result          &out_result;
 
@@ -533,16 +533,14 @@ ssize_t Libc::Vfs_plugin::write(Libc::File_descriptor *fd, const void *buf,
 
 			bool suspend() override
 			{
-				Vfs::file_size out = 0;
 				try {
-					out_result = VFS_THREAD_SAFE(handle->fs().write(handle, (char const *)buf+out_count,
-					                                                count - out_count, out));
+					out_result = VFS_THREAD_SAFE(handle->fs().write(handle, (char const *)buf,
+						                                              count, out_count));
+					retry = false;
 				} catch (Vfs::File_io_service::Insufficient_buffer) {
-					out_result = Result::WRITE_OK;
+					retry = true;
 				}
 
-				out_count += out;
-				retry = (out_result == Result::WRITE_OK) && (out_count < count);
 				return retry;
 			}
 		} check(handle, buf, count, out_count, out_result);

@@ -479,9 +479,9 @@ class Vfs::Lxip_data_file final : public Vfs::Lxip_file
 			return (_sock.ops->poll(&f, &_sock, nullptr) & (POLLIN_SET));
 		}
 
-		Lxip::ssize_t write(Lxip_vfs_file_handle &handle,
+		Lxip::ssize_t write(Lxip_vfs_file_handle &,
 		                    char const *src, Genode::size_t len,
-		                    file_size out_len) override
+		                    file_size /* ignored */) override
 		{
 			using namespace Linux;
 
@@ -494,13 +494,7 @@ class Vfs::Lxip_data_file final : public Vfs::Lxip_file
 
 			Lxip::ssize_t res = _sock.ops->sendmsg(&_sock, &msg, len);
 
-			if (res < 0) {
-				_write_err = res;
-			} else {
-				out_len = res;
-				if (size_t(res) < len)
-					handle.io_enqueue(_io_progress_waiters);
-			}
+			if (res < 0) _write_err = res;
 
 			return res;
 		}
@@ -1894,7 +1888,7 @@ class Vfs::Lxip_file_system : public Vfs::File_system,
 				static_cast<Vfs::Lxip_vfs_handle*>(vfs_handle);
 
 			try { return handle->write(src, count, out_count); }
-			catch (File::Would_block) { return WRITE_OK; }
+			catch (File::Would_block) { return WRITE_ERR_WOULD_BLOCK; }
 
 		}
 
