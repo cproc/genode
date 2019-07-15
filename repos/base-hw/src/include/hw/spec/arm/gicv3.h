@@ -46,7 +46,7 @@ class Hw::Pic
 			static constexpr unsigned nr_of_irq = 1024;
 
 			/**
-			 * Control register (non-secure access)
+			 * Control register (secure access)
 			 */
 			/* XXX: CAUTION this is different in EL3/EL2/EL1! */
 			struct Ctlr : Register<0x0, 32>
@@ -60,38 +60,38 @@ class Hw::Pic
 			struct Typer : Register<0x004, 32> {
 				struct It_lines_number : Bitfield<0,5> { }; };
 
-			struct Igroup0r : Register_array<0x80, 32, 32, 1> {
+			struct Igroup0r : Register_array<0x80, 32, 32*32, 1> {
 				struct Group1 : Bitfield<0, 1> { }; };
 
 			/**
 			 * Interrupt Set-Enable register
 			 */
-			struct Isenabler : Register_array<0x100, 32, 32, 1> {
+			struct Isenabler : Register_array<0x100, 32, 32*32, 1, true> {
 				struct Set_enable : Bitfield<0, 1> { }; };
 
 			/**
 			 * Interrupt clear enable registers
 			 */
-			struct Icenabler : Register_array<0x180, 32, 32, 1> {
+			struct Icenabler : Register_array<0x180, 32, 32*32, 1, true> {
 				struct Clear_enable : Bitfield<0, 1> { }; };
 
 			/**
 			 * Interrupt clear pending registers
 			 */
-			struct Icpendr : Register_array<0x280, 32, 32, 1> {
+			struct Icpendr : Register_array<0x280, 32, 32*32, 1, true> {
 				struct Clear_pending : Bitfield<0, 1> { }; };
 
 			/**
 			 * Interrupt priority level registers
 			 */
-			struct Ipriorityr : Register_array<0x400, 32, 255, 8> {
+			struct Ipriorityr : Register_array<0x400, 32, 255*4, 8> {
 				struct Priority : Bitfield<0, 8> { }; };
 
 
-			struct Icfgr : Register_array<0xc00, 32, 64, 2> {
+			struct Icfgr : Register_array<0xc00, 32, 64*16, 2> {
 				struct Edge_triggered : Bitfield<1, 1> { }; };
 
-			struct Irouter : Register_array<0x6000, 64, 988, 64, true> { };
+			struct Irouter : Register_array<0x6000, 64, 1020, 64, true> { };
 
 			void wait_for_rwp()
 			{
