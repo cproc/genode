@@ -1,0 +1,71 @@
+binutils_debug.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ bfd/elfnn-aarch64.c |    5 +++--
+ bfd/elfxx-x86.c     |    6 ++++++
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/bfd/elfnn-aarch64.c b/bfd/elfnn-aarch64.c
+index faa27611..12fe4112 100644
+--- a/bfd/elfnn-aarch64.c
++++ b/bfd/elfnn-aarch64.c
+@@ -7098,7 +7098,7 @@ elfNN_aarch64_adjust_dynamic_symbol (struct bfd_link_info *info,
+ {
+   struct elf_aarch64_link_hash_table *htab;
+   asection *s, *srel;
+-
++fprintf(stderr, "%s: %s\n", __func__, h->root.root.string);
+   /* If this is a function, put it in the procedure linkage table.  We
+      will fill in the contents of the procedure linkage table later,
+      when we know the address of the .got section.  */
+@@ -7125,7 +7125,7 @@ elfNN_aarch64_adjust_dynamic_symbol (struct bfd_link_info *info,
+     /* Otherwise, reset to -1.  */
+     h->plt.offset = (bfd_vma) - 1;
+ 
+-
++fprintf(stderr, "%s: is_weakalias: %u\n", __func__, h->is_weakalias);
+   /* If this is a weak symbol, and there is a real definition, the
+      processor independent code will have arranged for us to see the
+      real definition first, and we can just use the same value.  */
+@@ -7135,6 +7135,7 @@ elfNN_aarch64_adjust_dynamic_symbol (struct bfd_link_info *info,
+       BFD_ASSERT (def->root.type == bfd_link_hash_defined);
+       h->root.u.def.section = def->root.u.def.section;
+       h->root.u.def.value = def->root.u.def.value;
++fprintf(stderr, "%s: string: %s\n", __func__, def ? def->root.root.string : "111");
+       if (ELIMINATE_COPY_RELOCS || info->nocopyreloc)
+ 	h->non_got_ref = def->non_got_ref;
+       return TRUE;
+diff --git a/bfd/elfxx-x86.c b/bfd/elfxx-x86.c
+index d6b851ce..601189b2 100644
+--- a/bfd/elfxx-x86.c
++++ b/bfd/elfxx-x86.c
+@@ -1843,6 +1843,8 @@ _bfd_x86_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
+   const struct elf_backend_data *bed
+     = get_elf_backend_data (info->output_bfd);
+ 
++fprintf(stderr, "%s: %s\n", __func__, h->root.root.string);
++
+   /* STT_GNU_IFUNC symbol must go through PLT. */
+   if (h->type == STT_GNU_IFUNC)
+     {
+@@ -1923,6 +1925,8 @@ _bfd_x86_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
+ 
+   eh = (struct elf_x86_link_hash_entry *) h;
+ 
++fprintf(stderr, "%s: is_weakalias: %u\n", __func__, h->is_weakalias);
++
+   /* If this is a weak symbol, and there is a real definition, the
+      processor independent code will have arranged for us to see the
+      real definition first, and we can just use the same value.  */
+@@ -1932,6 +1936,8 @@ _bfd_x86_elf_adjust_dynamic_symbol (struct bfd_link_info *info,
+       BFD_ASSERT (def->root.type == bfd_link_hash_defined);
+       h->root.u.def.section = def->root.u.def.section;
+       h->root.u.def.value = def->root.u.def.value;
++fprintf(stderr, "%s: string: %s\n", __func__, def ? def->root.root.string : "111");
++
+       if (ELIMINATE_COPY_RELOCS
+ 	  || info->nocopyreloc
+ 	  || SYMBOL_NO_COPYRELOC (info, eh))
