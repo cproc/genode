@@ -1,4 +1,4 @@
-QT_DEFINES += -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DWTF_EXPORT_PRIVATE= -DJS_EXPORT_PRIVATE= -DENABLE_ASSEMBLER_WX_EXCLUSIVE=1 -DWTFReportAssertionFailure=qmlWTFReportAssertionFailure -DWTFReportBacktrace=qmlWTFReportBacktrace -DWTFInvokeCrashHook=qmlWTFInvokeCrashHook -DENABLE_LLINT=0 -DENABLE_DFG_JIT=0 -DENABLE_DFG_JIT_UTILITY_METHODS=1 -DENABLE_JIT_CONSTANT_BLINDING=0 -DBUILDING_QT__ -DWTF_USE_UDIS86=0 -DNDEBUG -DQT_NO_QML_DEBUGGER -DQT_BUILD_QML_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_NO_FOREACH -DQML_COMPILE_HASH=282d5530534c0297710759b81568cdb1c7c627c6 -DWTF_EXPORT_PRIVATE= -DJS_EXPORT_PRIVATE= -DENABLE_ASSEMBLER_WX_EXCLUSIVE=1 -DWTFReportAssertionFailure=qmlWTFReportAssertionFailure -DWTFReportBacktrace=qmlWTFReportBacktrace -DWTFInvokeCrashHook=qmlWTFInvokeCrashHook -DENABLE_LLINT=0 -DENABLE_DFG_JIT=0 -DENABLE_DFG_JIT_UTILITY_METHODS=1 -DENABLE_JIT_CONSTANT_BLINDING=0 -DBUILDING_QT__ -DWTF_USE_UDIS86=0 -DNDEBUG -DQT_NO_QML_DEBUGGER -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_BUILD_QML_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtdeclarative/src/qml \
@@ -19,10 +19,10 @@ QT_INCPATH += \
   qtdeclarative/src/qml/animations \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.8.0 \
-  qtdeclarative/include/QtQml/5.8.0/QtQml \
-  qtbase/include/QtCore/5.8.0 \
-  qtbase/include/QtCore/5.8.0/QtCore \
+  qtdeclarative/include/QtQml/5.9.8 \
+  qtdeclarative/include/QtQml/5.9.8/QtQml \
+  qtbase/include/QtCore/5.9.8 \
+  qtbase/include/QtCore/5.9.8/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
@@ -48,6 +48,7 @@ QT_SOURCES += \
   qv4jsir.cpp \
   qv4ssa.cpp \
   qqmlirbuilder.cpp \
+  qv4jssimplifier.cpp \
   qqmltypecompiler.cpp \
   qqmlpropertycachecreator.cpp \
   qqmlpropertyvalidator.cpp \
@@ -109,6 +110,7 @@ QT_SOURCES += \
   qv4numberobject.cpp \
   qv4object.cpp \
   qv4objectproto.cpp \
+  qv4qmlcontext.cpp \
   qv4regexpobject.cpp \
   qv4stringobject.cpp \
   qv4variantobject.cpp \
@@ -116,7 +118,6 @@ QT_SOURCES += \
   qv4regexp.cpp \
   qv4serialize.cpp \
   qv4script.cpp \
-  qv4executableallocator.cpp \
   qv4sequenceobject.cpp \
   qv4include.cpp \
   qv4qobjectwrapper.cpp \
@@ -127,6 +128,7 @@ QT_SOURCES += \
   qv4runtime.cpp \
   qv4string.cpp \
   qv4value.cpp \
+  qv4executableallocator.cpp \
   qqmlopenmetaobject.cpp \
   qqmlvmemetaobject.cpp \
   qqmlengine.cpp \
@@ -170,7 +172,6 @@ QT_SOURCES += \
   qqmlabstracturlinterceptor.cpp \
   qqmlapplicationengine.cpp \
   qqmllistwrapper.cpp \
-  qqmlcontextwrapper.cpp \
   qqmlvaluetypewrapper.cpp \
   qqmltypewrapper.cpp \
   qqmlfileselector.cpp \
@@ -199,46 +200,21 @@ QT_SOURCES += \
   qqmlmodelsmodule.cpp \
   qqmlmodelindexvaluetype.cpp \
   qqmlobjectmodel.cpp \
-  qqmltimer.cpp \
   qquickpackage.cpp \
   qquickworkerscript.cpp \
   qqmlinstantiator.cpp \
+  qqmltimer.cpp \
   moc_qqmlpropertymap.cpp \
   moc_qv4debugging_p.cpp \
-  moc_qv4include_p.cpp \
-  moc_qv4qobjectwrapper_p.cpp \
   moc_qv4profiling_p.cpp \
-  moc_qqmlglobal_p.cpp \
-  moc_qqmlcomponent.cpp \
-  moc_qqmlengine.cpp \
-  moc_qqmlcontext.cpp \
-  moc_qqmlvaluetype_p.cpp \
-  moc_qqmltypenotavailable_p.cpp \
-  moc_qqmlextensionplugin.cpp \
-  moc_qqmllocale_p.cpp \
   moc_qqmlcomponentattached_p.cpp \
-  moc_qqmlplatform_p.cpp \
-  moc_qqmlfileselector.cpp \
-  moc_qqmldelayedcallqueue_p.cpp \
-  moc_qqmlloggingcategory_p.cpp \
   moc_qqmldebugconnector_p.cpp \
   moc_qqmldebugservice_p.cpp \
   moc_qqmldebugserviceinterfaces_p.cpp \
   moc_qqmlabstractprofileradapter_p.cpp \
   moc_qqmlprofiler_p.cpp \
-  moc_qabstractanimationjob_p.cpp \
-  moc_qqmlbind_p.cpp \
-  moc_qqmlconnections_p.cpp \
-  moc_qqmldelegatemodel_p.cpp \
   moc_qqmldelegatemodel_p_p.cpp \
-  moc_qqmllistmodel_p.cpp \
-  moc_qqmllistmodel_p_p.cpp \
-  moc_qqmllistmodelworkeragent_p.cpp \
-  moc_qqmlmodelindexvaluetype_p.cpp \
-  moc_qqmlobjectmodel_p.cpp \
-  moc_qqmltimer_p.cpp \
-  moc_qquickpackage_p.cpp \
-  moc_qquickworkerscript_p.cpp
+  moc_qqmllistmodel_p_p.cpp
 
 QT_VPATH += \
   qtdeclarative/src/3rdparty/masm/assembler \
@@ -305,10 +281,10 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qqmllistmodelworkeragent_p.cpp \
   moc_qqmlmodelindexvaluetype_p.cpp \
   moc_qqmlobjectmodel_p.cpp \
-  moc_qqmltimer_p.cpp \
   moc_qquickpackage_p.cpp \
   moc_qquickworkerscript_p.cpp \
-  moc_qqmlinstantiator_p.cpp
+  moc_qqmlinstantiator_p.cpp \
+  moc_qqmltimer_p.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule
