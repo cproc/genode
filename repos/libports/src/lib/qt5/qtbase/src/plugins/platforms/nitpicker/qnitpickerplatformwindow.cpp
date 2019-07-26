@@ -490,27 +490,6 @@ QNitpickerPlatformWindow::~QNitpickerPlatformWindow()
 	_nitpicker_session_label_list.removeOne(_nitpicker_session_label);
 }
 
-QWindow *QNitpickerPlatformWindow::window() const
-{
-	if (qnpw_verbose)
-	    qDebug() << "QNitpickerPlatformWindow::window()";
-	return QPlatformWindow::window();
-}
-
-QPlatformWindow *QNitpickerPlatformWindow::parent() const
-{
-	if (qnpw_verbose)
-	    qDebug() << "QNitpickerPlatformWindow::parent()";
-	return QPlatformWindow::parent();
-}
-
-QPlatformScreen *QNitpickerPlatformWindow::screen() const
-{
-	if (qnpw_verbose)
-	    qDebug() << "QNitpickerPlatformWindow::screen()";
-	return QPlatformWindow::screen();
-}
-
 QSurfaceFormat QNitpickerPlatformWindow::format() const
 {
 	if (qnpw_verbose)
@@ -680,11 +659,11 @@ bool QNitpickerPlatformWindow::isActive() const
 	return QPlatformWindow::isActive();
 }
 
-bool QNitpickerPlatformWindow::isEmbedded(const QPlatformWindow *parentWindow) const
+bool QNitpickerPlatformWindow::isEmbedded() const
 {
 	if (qnpw_verbose)
 	    qDebug() << "QNitpickerPlatformWindow::isEmbedded()";
-	return QPlatformWindow::isEmbedded(parentWindow);
+	return QPlatformWindow::isEmbedded();
 }
 
 QPoint QNitpickerPlatformWindow::mapToGlobal(const QPoint &pos) const
