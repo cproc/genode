@@ -4,13 +4,29 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
+ .gitmodules                                        |    6 +++++
  .../Tools/qmake/mkspecs/features/configure.prf     |    1 -
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |   22 ++++++++++----------
  qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 +-
- 3 files changed, 12 insertions(+), 13 deletions(-)
+ 4 files changed, 17 insertions(+), 14 deletions(-)
 
+diff --git a/.gitmodules b/.gitmodules
+index f64970a..a842174 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -308,4 +308,8 @@
+ 	path = qtremoteobjects
+ 	url = ../qtremoteobjects.git
+ 	branch = 5.9.8
+-	status = preview
+\ No newline at end of file
++	status = preview
++[submodule "qtwebkit"]
++	depends = qtbase
++	path = qtwebkit
++	project = WebKit.pro
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 9eeac75..8e8259c 100644
+index 23d9904..6ea194f 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
