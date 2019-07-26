@@ -1,18 +1,21 @@
-QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DESKTOP -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_CORE_LIB
+QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_PINYIN -DHAVE_TCIME -DHAVE_TCIME_CANGJIE -DHAVE_TCIME_ZHUYIN -DHAVE_HANGUL -DHAVE_OPENWNN -DHAVE_LAYOUTS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.8.0 \
-  qtbase/include/QtGui/5.8.0/QtGui \
+  qtbase/include/QtGui/5.9.8 \
+  qtbase/include/QtGui/5.9.8/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.8.0 \
-  qtbase/include/QtCore/5.8.0/QtCore \
+  qtbase/include/QtCore/5.9.8 \
+  qtbase/include/QtCore/5.9.8/QtCore \
   qtbase/include/QtCore \
+  qtvirtualkeyboard/src/virtualkeyboard/3rdparty/pinyin/include \
+  qtvirtualkeyboard/src/virtualkeyboard/3rdparty/tcime \
+  qtvirtualkeyboard/src/virtualkeyboard/3rdparty/openwnn/wnnEngine/include \
   qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
@@ -24,6 +27,7 @@ QT_SOURCES += \
   shifthandler.cpp \
   plugin.cpp \
   inputmethod.cpp \
+  inputselectionhandle.cpp \
   selectionlistmodel.cpp \
   defaultinputmethod.cpp \
   abstractinputpanel.cpp \
@@ -32,9 +36,17 @@ QT_SOURCES += \
   settings.cpp \
   virtualkeyboardsettings.cpp \
   trace.cpp \
+  desktopinputselectioncontrol.cpp \
+  shadowinputcontext.cpp \
   desktopinputpanel.cpp \
   inputview.cpp \
   appinputpanel.cpp \
+  pinyininputmethod.cpp \
+  pinyindecoderservice.cpp \
+  tcinputmethod.cpp \
+  hangulinputmethod.cpp \
+  hangul.cpp \
+  openwnninputmethod.cpp \
   qrc_default_style.cpp \
   qrc_retro_style.cpp \
   qrc_content.cpp \
@@ -46,6 +58,7 @@ QT_SOURCES += \
   moc_inputengine.cpp \
   moc_shifthandler.cpp \
   moc_inputmethod.cpp \
+  moc_inputselectionhandle.cpp \
   moc_selectionlistmodel.cpp \
   moc_defaultinputmethod.cpp \
   moc_abstractinputpanel.cpp \
@@ -55,9 +68,16 @@ QT_SOURCES += \
   moc_virtualkeyboardsettings.cpp \
   moc_plugin.cpp \
   moc_trace.cpp \
+  moc_desktopinputselectioncontrol.cpp \
+  moc_shadowinputcontext.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
-  moc_appinputpanel.cpp
+  moc_appinputpanel.cpp \
+  moc_pinyininputmethod.cpp \
+  moc_pinyindecoderservice.cpp \
+  moc_tcinputmethod.cpp \
+  moc_hangulinputmethod.cpp \
+  moc_openwnninputmethod.cpp
 
 QT_VPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
@@ -76,6 +96,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_inputengine.cpp \
   moc_shifthandler.cpp \
   moc_inputmethod.cpp \
+  moc_inputselectionhandle.cpp \
   moc_selectionlistmodel.cpp \
   moc_defaultinputmethod.cpp \
   moc_abstractinputpanel.cpp \
@@ -85,9 +106,16 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_virtualkeyboardsettings.cpp \
   moc_plugin.cpp \
   moc_trace.cpp \
+  moc_desktopinputselectioncontrol.cpp \
+  moc_shadowinputcontext.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
-  moc_appinputpanel.cpp
+  moc_appinputpanel.cpp \
+  moc_pinyininputmethod.cpp \
+  moc_pinyindecoderservice.cpp \
+  moc_tcinputmethod.cpp \
+  moc_hangulinputmethod.cpp \
+  moc_openwnninputmethod.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule
