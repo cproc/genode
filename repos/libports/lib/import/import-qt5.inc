@@ -9,7 +9,7 @@ ifneq ($(INHIBIT_QT5),)
 REQUIRES += removal_of_INHIBIT_QT5_env_var
 endif
 
-QT_VERSION := 5.8.0
+QT_VERSION := 5.9.8
 
 # identify the qt5 repository by searching for a file that is unique for qt5
 QT5_REP_DIR := $(call select_from_repositories,lib/import/import-qt5.inc)

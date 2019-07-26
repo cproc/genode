@@ -1,0 +1,106 @@
+qtvirtualkeyboard_generated.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc |   90 +++++++++++++++++++++
+ 1 file changed, 90 insertions(+)
+ create mode 100644 qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
+
+diff --git a/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc b/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
+new file mode 100644
+index 000000000..ed70c7869
+--- /dev/null
++++ b/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
+@@ -0,0 +1,90 @@
++<RCC>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/en_GB">
++        <file alias="main.qml">content/layouts/en_GB/main.qml</file>
++        <file alias="dialpad.qml">content/layouts/en_GB/dialpad.qml</file>
++        <file alias="digits.qml">content/layouts/en_GB/digits.qml</file>
++        <file alias="handwriting.qml">content/layouts/en_GB/handwriting.qml</file>
++        <file alias="numbers.qml">content/layouts/en_GB/numbers.qml</file>
++        <file alias="symbols.qml">content/layouts/en_GB/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/ar_AR">
++        <file alias="digits.qml">content/layouts/ar_AR/digits.qml</file>
++        <file alias="main.qml">content/layouts/ar_AR/main.qml</file>
++        <file alias="numbers.qml">content/layouts/ar_AR/numbers.qml</file>
++        <file alias="symbols.qml">content/layouts/ar_AR/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/da_DK">
++        <file alias="main.qml">content/layouts/da_DK/main.qml</file>
++        <file alias="symbols.qml">content/layouts/da_DK/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/de_DE">
++        <file alias="main.qml">content/layouts/de_DE/main.qml</file>
++        <file alias="symbols.qml">content/layouts/de_DE/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/es_ES">
++        <file alias="main.qml">content/layouts/es_ES/main.qml</file>
++        <file alias="symbols.qml">content/layouts/es_ES/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/fa_FA">
++        <file alias="digits.qml">content/layouts/fa_FA/digits.qml</file>
++        <file alias="main.qml">content/layouts/fa_FA/main.qml</file>
++        <file alias="numbers.qml">content/layouts/fa_FA/numbers.qml</file>
++        <file alias="symbols.qml">content/layouts/fa_FA/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/fi_FI">
++        <file alias="main.qml">content/layouts/fi_FI/main.qml</file>
++        <file alias="symbols.qml">content/layouts/fi_FI/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/fr_FR">
++        <file alias="main.qml">content/layouts/fr_FR/main.qml</file>
++        <file alias="symbols.qml">content/layouts/fr_FR/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/hi_IN">
++        <file alias="main.qml">content/layouts/hi_IN/main.qml</file>
++        <file alias="symbols.qml">content/layouts/hi_IN/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/it_IT">
++        <file alias="main.qml">content/layouts/it_IT/main.qml</file>
++        <file alias="symbols.qml">content/layouts/it_IT/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/ja_JP">
++        <file alias="main.qml">content/layouts/ja_JP/main.qml</file>
++        <file alias="symbols.qml">content/layouts/ja_JP/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/ko_KR">
++        <file alias="main.qml">content/layouts/ko_KR/main.qml</file>
++        <file alias="symbols.qml">content/layouts/ko_KR/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/nb_NO">
++        <file alias="main.qml">content/layouts/nb_NO/main.qml</file>
++        <file alias="symbols.qml">content/layouts/nb_NO/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/pl_PL">
++        <file alias="main.qml">content/layouts/pl_PL/main.qml</file>
++        <file alias="symbols.qml">content/layouts/pl_PL/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/pt_PT">
++        <file alias="main.qml">content/layouts/pt_PT/main.qml</file>
++        <file alias="symbols.qml">content/layouts/pt_PT/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/ro_RO">
++        <file alias="main.qml">content/layouts/ro_RO/main.qml</file>
++        <file alias="symbols.qml">content/layouts/ro_RO/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/ru_RU">
++        <file alias="main.qml">content/layouts/ru_RU/main.qml</file>
++        <file alias="symbols.qml">content/layouts/ru_RU/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/sv_SE">
++        <file alias="main.qml">content/layouts/sv_SE/main.qml</file>
++        <file alias="symbols.qml">content/layouts/sv_SE/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/zh_CN">
++        <file alias="main.qml">content/layouts/zh_CN/main.qml</file>
++        <file alias="symbols.qml">content/layouts/zh_CN/symbols.qml</file>
++    </qresource>
++    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/zh_TW">
++        <file alias="main.qml">content/layouts/zh_TW/main.qml</file>
++        <file alias="symbols.qml">content/layouts/zh_TW/symbols.qml</file>
++    </qresource>
++</RCC>
