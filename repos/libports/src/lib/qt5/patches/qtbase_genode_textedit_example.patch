@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 11 insertions(+), 8 deletions(-)
 
 diff --git a/qtbase/examples/widgets/richtext/textedit/textedit.cpp b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-index dec0b0b..a91002c 100644
+index fe4ee4f499..ec99aece59 100644
 --- a/qtbase/examples/widgets/richtext/textedit/textedit.cpp
 +++ b/qtbase/examples/widgets/richtext/textedit/textedit.cpp
-@@ -430,7 +430,8 @@ void TextEdit::fileOpen()
+@@ -435,7 +435,8 @@ void TextEdit::fileOpen()
      QFileDialog fileDialog(this, tr("Open File..."));
      fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
      fileDialog.setFileMode(QFileDialog::ExistingFile);
@@ -22,7 +22,7 @@ index dec0b0b..a91002c 100644
      if (fileDialog.exec() != QDialog::Accepted)
          return;
      const QString fn = fileDialog.selectedFiles().first();
-@@ -447,7 +448,12 @@ bool TextEdit::fileSave()
+@@ -452,7 +453,12 @@ bool TextEdit::fileSave()
      if (fileName.startsWith(QStringLiteral(":/")))
          return fileSaveAs();
  
@@ -36,7 +36,7 @@ index dec0b0b..a91002c 100644
      bool success = writer.write(textEdit->document());
      if (success) {
          textEdit->document()->setModified(false);
-@@ -464,9 +470,10 @@ bool TextEdit::fileSaveAs()
+@@ -469,9 +475,10 @@ bool TextEdit::fileSaveAs()
      QFileDialog fileDialog(this, tr("Save as..."));
      fileDialog.setAcceptMode(QFileDialog::AcceptSave);
      QStringList mimeTypes;
@@ -50,7 +50,7 @@ index dec0b0b..a91002c 100644
          return false;
      const QString fn = fileDialog.selectedFiles().first();
 diff --git a/qtbase/examples/widgets/richtext/textedit/textedit.pro b/qtbase/examples/widgets/richtext/textedit/textedit.pro
-index c32bf68..704f738 100644
+index c32bf68f68..704f7388cb 100644
 --- a/qtbase/examples/widgets/richtext/textedit/textedit.pro
 +++ b/qtbase/examples/widgets/richtext/textedit/textedit.pro
 @@ -9,10 +9,6 @@ SOURCES         = textedit.cpp \
