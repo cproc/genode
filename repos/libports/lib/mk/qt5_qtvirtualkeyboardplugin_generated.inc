@@ -1,17 +1,17 @@
-QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DESKTOP -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_CORE_LIB
+QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_LAYOUTS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.8.0 \
-  qtbase/include/QtGui/5.8.0/QtGui \
+  qtbase/include/QtGui/5.9.8 \
+  qtbase/include/QtGui/5.9.8/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.8.0 \
-  qtbase/include/QtCore/5.8.0/QtCore \
+  qtbase/include/QtCore/5.9.8 \
+  qtbase/include/QtCore/5.9.8/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -24,6 +24,7 @@ QT_SOURCES += \
   shifthandler.cpp \
   plugin.cpp \
   inputmethod.cpp \
+  inputselectionhandle.cpp \
   selectionlistmodel.cpp \
   defaultinputmethod.cpp \
   abstractinputpanel.cpp \
@@ -32,6 +33,8 @@ QT_SOURCES += \
   settings.cpp \
   virtualkeyboardsettings.cpp \
   trace.cpp \
+  desktopinputselectioncontrol.cpp \
+  shadowinputcontext.cpp \
   desktopinputpanel.cpp \
   inputview.cpp \
   appinputpanel.cpp \
@@ -46,6 +49,7 @@ QT_SOURCES += \
   moc_inputengine.cpp \
   moc_shifthandler.cpp \
   moc_inputmethod.cpp \
+  moc_inputselectionhandle.cpp \
   moc_selectionlistmodel.cpp \
   moc_defaultinputmethod.cpp \
   moc_abstractinputpanel.cpp \
@@ -55,6 +59,8 @@ QT_SOURCES += \
   moc_virtualkeyboardsettings.cpp \
   moc_plugin.cpp \
   moc_trace.cpp \
+  moc_desktopinputselectioncontrol.cpp \
+  moc_shadowinputcontext.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
   moc_appinputpanel.cpp
@@ -76,6 +82,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_inputengine.cpp \
   moc_shifthandler.cpp \
   moc_inputmethod.cpp \
+  moc_inputselectionhandle.cpp \
   moc_selectionlistmodel.cpp \
   moc_defaultinputmethod.cpp \
   moc_abstractinputpanel.cpp \
@@ -85,6 +92,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_virtualkeyboardsettings.cpp \
   moc_plugin.cpp \
   moc_trace.cpp \
+  moc_desktopinputselectioncontrol.cpp \
+  moc_shadowinputcontext.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
   moc_appinputpanel.cpp
