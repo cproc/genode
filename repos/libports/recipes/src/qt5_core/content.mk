@@ -22,7 +22,7 @@ MIRROR_FROM_PORT_DIR := src/lib/qt5/qt5/qtbase/src/3rdparty/double-conversion \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/harfbuzz \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/md4 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/md5 \
-                        src/lib/qt5/qt5/qtbase/src/3rdparty/pcre \
+                        src/lib/qt5/qt5/qtbase/src/3rdparty/pcre2 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/rfc6234 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/sha1 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/sha3 \

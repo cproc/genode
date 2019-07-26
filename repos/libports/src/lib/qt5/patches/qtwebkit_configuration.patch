@@ -4,13 +4,28 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
+ .gitmodules                                        |    5 ++++-
  .../Tools/qmake/mkspecs/features/configure.prf     |    1 -
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |   22 ++++++++++----------
  qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 +-
- 3 files changed, 12 insertions(+), 13 deletions(-)
+ 4 files changed, 16 insertions(+), 14 deletions(-)
 
+diff --git a/.gitmodules b/.gitmodules
+index f64970a99d..f6dd69860a 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -308,4 +308,7 @@
+ 	path = qtremoteobjects
+ 	url = ../qtremoteobjects.git
+ 	branch = 5.9.8
+-	status = preview
+\ No newline at end of file
++	status = preview
++[submodule "qtwebkit"]
++	path = qtwebkit
++	project = WebKit.pro
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 9eeac75..8e8259c 100644
+index 23d99040b6..6ea194fc1f 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
@@ -22,7 +37,7 @@ index 9eeac75..8e8259c 100644
          $$WEBKIT_TOOLS_CONFIG
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 328a8be..096d8ef 100644
+index 328a8be7e7..096d8ef679 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -37,14 +37,14 @@ defineTest(detectFeatures) {
@@ -70,7 +85,7 @@ index 328a8be..096d8ef 100644
      # Support for Graphics Surface
      # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-index ba18b35..dd27a42 100644
+index ba18b354d4..dd27a421ca 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 @@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \

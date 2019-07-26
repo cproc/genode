@@ -1,18 +1,19 @@
 LICENSE := GPL
-VERSION := 5.8.0
+VERSION := 5.9.8
+QTWEBKIT_VERSION = 5.9.1
 
 QT5 := qt-everywhere-opensource-src-${VERSION}
-QT5_WEBKIT := qtwebkit-opensource-src-$(VERSION)
+QT5_WEBKIT := qtwebkit-opensource-src-$(QTWEBKIT_VERSION)
 QTSCRIPTCLASSIC := qtscriptclassic-1.0_1-opensource
 
 DOWNLOADS := ${QT5}.archive ${QT5_WEBKIT}.archive ${QTSCRIPTCLASSIC}.archive symbols.git
 
-URL(${QT5}) := https://download.qt.io/archive/qt/5.8/$(VERSION)/single/$(QT5).tar.xz
-SHA(${QT5}) := 0f4c54386d3dbac0606a936a7145cebb7b94b0ca2d29bc001ea49642984824b6
+URL(${QT5}) := https://download.qt.io/archive/qt/5.9/$(VERSION)/single/$(QT5).tar.xz
+SHA(${QT5}) := 86aca7dc37f161fc730a9d4f6bddf684962ca560327682e282ff61bf8b859c36
 DIR(${QT5}) := src/lib/qt5/qt5
 
-URL(${QT5_WEBKIT}) := https://download.qt.io/community_releases/5.8/$(VERSION)-final/${QT5_WEBKIT}.tar.xz
-SHA(${QT5_WEBKIT}) := 79ae8660086bf92ffb0008b17566270e6477c8fa0daf9bb3ac29404fb5911bec
+URL(${QT5_WEBKIT}) := https://download.qt.io/archive/qt/5.9/$(QTWEBKIT_VERSION)/submodules/${QT5_WEBKIT}.tar.xz
+SHA(${QT5_WEBKIT}) := 28a560becd800a4229bfac317c2e5407cd3cc95308bc4c3ca90dba2577b052cf
 DIR(${QT5_WEBKIT}) := src/lib/qt5/qt5/qtwebkit
 
 URL(${QTSCRIPTCLASSIC}) := https://genode.org/files/ports/${QTSCRIPTCLASSIC}.tar.gz
@@ -66,6 +67,19 @@ $(QMAKE): _patch
 	                             $(OUTPUT_FILTER)
 
 #
+# generate Makefile from 'qtbase.pro' file
+#
+# $(1): path of 'qtbase.pro' file
+#
+define generate_qtbase_makefile
+	$(VERBOSE)mkdir -p $(dir $@) && \
+	          cd $(dir $@) && \
+	          $(QMAKE) -o $@ $(1) -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource -confirm-license -prefix / $(OUTPUT_FILTER) && \
+	          sed -i 's/first: all/first:/g' $@
+endef
+
+
+#
 # generate Makefile from Qmake project file
 #
 # $(1): path of Qmake project file
@@ -73,14 +87,14 @@ $(QMAKE): _patch
 define generate_makefile
 	$(VERBOSE)mkdir -p $(dir $@) && \
 	          cd $(dir $@) && \
-	          $(QMAKE) -o $@ $(1) -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf -- -opensource $(OUTPUT_FILTER) && \
+	          $(QMAKE) -o $@ $(1) -qtconf $(BUILD_DIR)/qtbase/bin/qt.conf $(OUTPUT_FILTER) && \
 	          sed -i 's/first: all/first:/g' $@
 endef
 
 # qtbase
 
 $(BUILD_DIR)/qtbase/Makefile: $(QMAKE)
-	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/qtbase.pro)
+	$(call generate_qtbase_makefile, $(QT5_CONTRIB_DIR)/qtbase/qtbase.pro)
 
 $(BUILD_DIR)/qtbase/src/Makefile: $(BUILD_DIR)/qtbase/Makefile
 	$(call generate_makefile, $(QT5_CONTRIB_DIR)/qtbase/src/src.pro)
@@ -271,8 +285,6 @@ include/QtSql: $(BUILD_DIR)/qtbase/src/sql/Makefile
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
-	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/sql/qtsql-config.h $@/
-	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/sql/qtsql-config_p.h $@/$(VERSION)/QtSql/private/
 
 include/QtTest: $(BUILD_DIR)/qtbase/src/testlib/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@

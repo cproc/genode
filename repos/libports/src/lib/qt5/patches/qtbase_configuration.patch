@@ -4,42 +4,87 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qtbase/configure                            |    1 
+ qtbase/configure                            |   10 ++-
  qtbase/mkspecs/features/qt_build_config.prf |    2 -
+ qtbase/mkspecs/features/qt_configure.prf    |   24 ++++---
  qtbase/mkspecs/genode-g++/qmake.conf        |   10 +++
  qtbase/mkspecs/genode-g++/qplatformdefs.h   |   87 +++++++++++++++++++++++++++
  qtbase/src/corelib/global/global.pri        |   10 ++-
  qtbase/src/corelib/io/io.pri                |    2 -
- 6 files changed, 105 insertions(+), 7 deletions(-)
+ 7 files changed, 121 insertions(+), 24 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
 
 diff --git a/qtbase/configure b/qtbase/configure
-index bc18e61..a901fa0 100755
+index 08b49a8d12..94ba190740 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
-@@ -945,6 +945,7 @@ if [ -z "$PLATFORM" ]; then
-             - Also available for UnixWare: unixware-g++
-         "
-         ;;
-+
-      SCO_SV:*)
-         #PLATFORM=sco-g++
-         PLATFORM=sco-cc
+@@ -89,11 +89,11 @@ if [ x"$1" = x"-top-level" ]; then
+     relpathMangled=`dirname "$relpath"`
+     outpathPrefix=../
+     shift
+-else
+-    if [ -f ../.qmake.super ]; then
+-        echo >&2 "ERROR: You cannot configure qtbase separately within a top-level build."
+-        exit 1
+-    fi
++#else
++#    if [ -f ../.qmake.super ]; then
++#        echo >&2 "ERROR: You cannot configure qtbase separately within a top-level build."
++#        exit 1
++#    fi
+ fi
+ 
+ OPT_CMDLINE=  # expanded version for the script
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 3762c14..1596dd5 100644
+index 150d2b2cc3..be8f659684 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
-@@ -132,5 +132,5 @@ defineTest(qtConfig) {
+@@ -135,5 +135,5 @@ defineTest(qtConfig) {
          contains(QT.$${module}.disabled_features, $$1): \
              return(false)
      }
 -    error("Could not find feature $${1}.")
 +    #error("Could not find feature $${1}.")
  }
+diff --git a/qtbase/mkspecs/features/qt_configure.prf b/qtbase/mkspecs/features/qt_configure.prf
+index d5dcda22ac..e0327606b9 100644
+--- a/qtbase/mkspecs/features/qt_configure.prf
++++ b/qtbase/mkspecs/features/qt_configure.prf
+@@ -1888,18 +1888,18 @@ defineTest(qtConfProcessOutput) {
+ # tie it all together
+ #
+ 
+-!isEmpty(_QMAKE_SUPER_CACHE_):!equals(OUT_PWD, $$dirname(_QMAKE_SUPER_CACHE_)) {
+-    # sub-repo within a top-level build; no need to configure anything.
+-    !isEmpty(QMAKE_EXTRA_ARGS) {
+-        # sub-projects don't get the extra args passed down automatically,
+-        # so we can use their presence to detect misguided attempts to
+-        # configure the repositories separately.
+-        # caveat: a plain qmake call is indistinguishable from a recursion
+-        # (by design), so we cannot detect this case.
+-        error("You cannot configure $$TARGET separately within a top-level build.")
+-    }
+-    return()
+-}
++#!isEmpty(_QMAKE_SUPER_CACHE_):!equals(OUT_PWD, $$dirname(_QMAKE_SUPER_CACHE_)) {
++#    # sub-repo within a top-level build; no need to configure anything.
++#    !isEmpty(QMAKE_EXTRA_ARGS) {
++#        # sub-projects don't get the extra args passed down automatically,
++#        # so we can use their presence to detect misguided attempts to
++#        # configure the repositories separately.
++#        # caveat: a plain qmake call is indistinguishable from a recursion
++#        # (by design), so we cannot detect this case.
++#        error("You cannot configure $$TARGET separately within a top-level build.")
++#    }
++#    return()
++#}
+ 
+ config.$${TARGET}.dir = $$_PRO_FILE_PWD_
+ cfgs = $$TARGET
 diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
 new file mode 100644
-index 0000000..734ae5c
+index 0000000000..734ae5c1c6
 --- /dev/null
 +++ b/qtbase/mkspecs/genode-g++/qmake.conf
 @@ -0,0 +1,10 @@
@@ -55,7 +100,7 @@ index 0000000..734ae5c
 +load(qt_config)
 diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
 new file mode 100644
-index 0000000..5e5c341
+index 0000000000..5e5c34131d
 --- /dev/null
 +++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
 @@ -0,0 +1,87 @@
@@ -147,10 +192,10 @@ index 0000000..5e5c341
 +
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/global.pri b/qtbase/src/corelib/global/global.pri
-index f74662b..391df22 100644
+index eee01341a5..c720903066 100644
 --- a/qtbase/src/corelib/global/global.pri
 +++ b/qtbase/src/corelib/global/global.pri
-@@ -41,11 +41,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
+@@ -52,11 +52,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
  # qlogging.cpp uses backtrace(3), which is in a separate library on the BSDs.
  LIBS_PRIVATE += $$QMAKE_LIBS_EXECINFO
  
@@ -165,13 +210,13 @@ index f74662b..391df22 100644
 +#   DEFINES += ELF_INTERPRETER=\\\"$$system(LC_ALL=C readelf -l /bin/ls | perl -n -e \'$$prog\')\\\"
 +#}
  
- slog2 {
+ qtConfig(slog2): \
      LIBS_PRIVATE += -lslog2
 diff --git a/qtbase/src/corelib/io/io.pri b/qtbase/src/corelib/io/io.pri
-index 0414ae9..fdbd1af 100644
+index b2c531a8ad..bf45ef7c55 100644
 --- a/qtbase/src/corelib/io/io.pri
 +++ b/qtbase/src/corelib/io/io.pri
-@@ -166,7 +166,7 @@ win32 {
+@@ -179,7 +179,7 @@ win32 {
          } else {
              SOURCES += \
                  io/qstandardpaths_unix.cpp \

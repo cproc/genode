@@ -125,14 +125,14 @@ QT_INCPATH += \
   qtwebkit/Source/JavaScriptCore/ForwardingHeaders \
   qtwebkit/Source/JavaScriptCore/disassembler/udis86 \
   qtwebkit/Source/WTF \
-  qtbase/include/QtGui/5.8.0 \
-  qtbase/include/QtGui/5.8.0/QtGui \
+  qtbase/include/QtGui/5.9.8 \
+  qtbase/include/QtGui/5.9.8/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtbase/include/QtNetwork \
   qtbase/include/QtSql \
-  qtbase/include/QtCore/5.8.0 \
-  qtbase/include/QtCore/5.8.0/QtCore \
+  qtbase/include/QtCore/5.9.8 \
+  qtbase/include/QtCore/5.9.8/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
