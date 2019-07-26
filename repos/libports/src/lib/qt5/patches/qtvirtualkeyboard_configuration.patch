@@ -1,0 +1,42 @@
+qtvirtualkeyboard_configuration.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/virtualkeyboard/generateresource.pri       |    2 +-
+ .../src/virtualkeyboard/virtualkeyboard.pro        |    8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/qtvirtualkeyboard/src/virtualkeyboard/generateresource.pri b/qtvirtualkeyboard/src/virtualkeyboard/generateresource.pri
+index 967d90c50..3380a1b13 100644
+--- a/qtvirtualkeyboard/src/virtualkeyboard/generateresource.pri
++++ b/qtvirtualkeyboard/src/virtualkeyboard/generateresource.pri
+@@ -16,7 +16,7 @@ defineReplace(generate_resource) {
+         }
+         ABSOLUTE_PATH = $$absolute_path($$FILE)
+         ALIAS_NAME = $$basename(FILE)
+-        GENERATED_CONTENT += "        <file alias=\"$$ALIAS_NAME\">$$ABSOLUTE_PATH</file>"
++        GENERATED_CONTENT += "        <file alias=\"$$ALIAS_NAME\">$$RELATIVE_PATH</file>"
+     }
+     !isEmpty(RESOURCE_PREFIX): GENERATED_CONTENT += "    </qresource>"
+ 
+diff --git a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
+index ca84cd27d..2e087d1a1 100644
+--- a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
++++ b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
+@@ -214,10 +214,10 @@ OTHER_FILES += \
+     SOURCES += desktopinputpanel.cpp inputview.cpp
+     HEADERS += desktopinputpanel.h inputview.h
+     DEFINES += QT_VIRTUALKEYBOARD_DESKTOP
+-    !no-pkg-config:packagesExist(xcb) {
+-        PKGCONFIG += xcb xcb-xfixes
+-        DEFINES += QT_VIRTUALKEYBOARD_HAVE_XCB
+-    }
++#    !no-pkg-config:packagesExist(xcb) {
++#        PKGCONFIG += xcb xcb-xfixes
++#        DEFINES += QT_VIRTUALKEYBOARD_HAVE_XCB
++#    }
+ }
+ SOURCES += appinputpanel.cpp
+ HEADERS += appinputpanel.h
