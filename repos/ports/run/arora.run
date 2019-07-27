@@ -17,7 +17,7 @@ import_from_depot [depot_user]/src/arora \
                   [depot_user]/src/qt5_webkit \
                   [depot_user]/src/qt5_widgets \
                   [depot_user]/src/vfs_jitterentropy \
-                  [depot_user]/src/vfs_lxip
+                  [depot_user]/src/vfs_lwip
 
 #
 # Build
@@ -101,7 +101,7 @@ append config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs>
-				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+				<dir name="socket"> <lwip dhcp="yes"/> </dir>
 			</vfs>
 			<default-policy writeable="yes" root="/"/>
 		</config>
