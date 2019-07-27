@@ -17,7 +17,8 @@ import_from_depot [depot_user]/src/arora \
                   [depot_user]/src/qt5_webkit \
                   [depot_user]/src/qt5_widgets \
                   [depot_user]/src/vfs_jitterentropy \
-                  [depot_user]/src/vfs_lxip
+                  [depot_user]/src/vfs_lxip \
+                  [depot_user]/src/vfs_pipe
 
 #
 # Build
@@ -113,6 +114,7 @@ append config {
 		<config clipboard="yes">
 			<vfs>
 				<dir name="dev">
+					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<jitterentropy name="random"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
@@ -120,7 +122,7 @@ append config {
 				<fs/>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket"/>
 		</config>
 		<route>
 			<service name="Nitpicker"> <child name="wm"/> </service>
