@@ -52,6 +52,7 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev">
+					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
@@ -68,7 +69,7 @@ append config {
 				<tar name="qt5_qtvirtualkeyboardstylesplugin.tar"/>
 				<tar name="qt5_windowplugin.tar"/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc"/>
 		</config>
 		<route>
 			<service name="Nitpicker"> <child name="wm"/> </service>
