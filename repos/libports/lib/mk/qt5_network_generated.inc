@@ -5,14 +5,22 @@ QT_INCPATH += \
   qtbase/src/network/kernel \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtNetwork/5.9.8 \
-  qtbase/include/QtNetwork/5.9.8/QtNetwork \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtNetwork/5.10.1 \
+  qtbase/include/QtNetwork/5.10.1/QtNetwork \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
+  qhttpnetworkheader.cpp \
+  qhttpnetworkrequest.cpp \
+  qhttpnetworkreply.cpp \
+  qhttpnetworkconnection.cpp \
+  qhttpnetworkconnectionchannel.cpp \
+  qabstractprotocolhandler.cpp \
+  qhttpprotocolhandler.cpp \
+  qspdyprotocolhandler.cpp \
   qnetworkaccessauthenticationmanager.cpp \
   qnetworkaccessmanager.cpp \
   qnetworkaccesscache.cpp \
@@ -26,11 +34,16 @@ QT_SOURCES += \
   qnetworkreply.cpp \
   qnetworkreplyimpl.cpp \
   qnetworkreplydataimpl.cpp \
+  qnetworkreplyhttpimpl.cpp \
   qnetworkreplyfileimpl.cpp \
   qabstractnetworkcache.cpp \
+  qhttpthreaddelegate.cpp \
+  qhttpmultipart.cpp \
   qnetworkfile.cpp \
+  qhttp2protocolhandler.cpp \
   qhsts.cpp \
   qhstspolicy.cpp \
+  qhstsstore.cpp \
   qftp.cpp \
   qnetworkaccessftpbackend.cpp \
   qnetworkdiskcache.cpp \
@@ -41,18 +54,6 @@ QT_SOURCES += \
   http2frames.cpp \
   http2streams.cpp \
   http2protocol.cpp \
-  qabstractprotocolhandler.cpp \
-  qhttp2protocolhandler.cpp \
-  qhttpmultipart.cpp \
-  qhttpnetworkconnection.cpp \
-  qhttpnetworkconnectionchannel.cpp \
-  qhttpnetworkheader.cpp \
-  qhttpnetworkreply.cpp \
-  qhttpnetworkrequest.cpp \
-  qhttpprotocolhandler.cpp \
-  qhttpthreaddelegate.cpp \
-  qnetworkreplyhttpimpl.cpp \
-  qspdyprotocolhandler.cpp \
   qnetworksession.cpp \
   qnetworkconfigmanager.cpp \
   qnetworkconfiguration.cpp \
@@ -73,12 +74,12 @@ QT_SOURCES += \
   qnetworkinterface_unix.cpp \
   qnetworkproxy_generic.cpp \
   qabstractsocketengine.cpp \
+  qhttpsocketengine.cpp \
   qabstractsocket.cpp \
   qtcpsocket.cpp \
   qudpsocket.cpp \
   qtcpserver.cpp \
   qsocks5socketengine.cpp \
-  qhttpsocketengine.cpp \
   qnativesocketengine.cpp \
   qnativesocketengine_unix.cpp \
   qlocalsocket.cpp \
@@ -97,29 +98,31 @@ QT_SOURCES += \
   qsslsocket.cpp \
   qsslpresharedkeyauthenticator.cpp \
   qsslcertificateextension.cpp \
-  qsslcertificate_openssl.cpp \
-  qsslcontext_openssl.cpp \
+  qsslsocket_openssl_symbols.cpp \
   qssldiffiehellmanparameters_openssl.cpp \
+  qsslcertificate_openssl.cpp \
   qsslellipticcurve_openssl.cpp \
   qsslkey_openssl.cpp \
   qsslsocket_openssl.cpp \
-  qsslsocket_openssl_symbols.cpp \
+  qsslcontext_openssl.cpp \
+  qsslsocket_opensslpre11.cpp \
+  qsslcontext_opensslpre11.cpp \
+  moc_qhttpnetworkreply_p.cpp \
+  moc_qspdyprotocolhandler_p.cpp \
   moc_qnetworkaccesscache_p.cpp \
   moc_qnetworkaccessbackend_p.cpp \
   moc_qnetworkaccessdebugpipebackend_p.cpp \
   moc_qnetworkaccessfilebackend_p.cpp \
   moc_qnetworkcookiejar.cpp \
   moc_qnetworkreply.cpp \
+  moc_qnetworkreplyhttpimpl_p.cpp \
   moc_qabstractnetworkcache.cpp \
+  moc_qhttpthreaddelegate_p.cpp \
+  moc_qhttpmultipart.cpp \
   moc_qnetworkfile_p.cpp \
+  moc_qhttp2protocolhandler_p.cpp \
   moc_qnetworkaccessftpbackend_p.cpp \
   moc_qnetworkdiskcache.cpp \
-  moc_qhttp2protocolhandler_p.cpp \
-  moc_qhttpmultipart.cpp \
-  moc_qhttpnetworkreply_p.cpp \
-  moc_qhttpthreaddelegate_p.cpp \
-  moc_qnetworkreplyhttpimpl_p.cpp \
-  moc_qspdyprotocolhandler_p.cpp \
   moc_qnetworkconfigmanager_p.cpp \
   moc_qnetworksession_p.cpp \
   moc_qbearerplugin_p.cpp \
@@ -127,10 +130,10 @@ QT_SOURCES += \
   moc_qhostinfo_p.cpp \
   moc_qnetworkproxy.cpp \
   moc_qabstractsocketengine_p.cpp \
+  moc_qhttpsocketengine_p.cpp \
   moc_qtcpsocket.cpp \
   moc_qudpsocket.cpp \
   moc_qsocks5socketengine_p.cpp \
-  moc_qhttpsocketengine_p.cpp \
   moc_qnativesocketengine_p.cpp \
   moc_qsslsocket_openssl_p.cpp
 
@@ -149,6 +152,10 @@ QT_VPATH += \
 # extracted from 'compiler_moc_header_make_all' target
 
 COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
+  moc_qhttpnetworkreply_p.cpp \
+  moc_qhttpnetworkconnection_p.cpp \
+  moc_qhttpnetworkconnectionchannel_p.cpp \
+  moc_qspdyprotocolhandler_p.cpp \
   moc_qnetworkaccessmanager.cpp \
   moc_qnetworkaccesscache_p.cpp \
   moc_qnetworkaccessbackend_p.cpp \
@@ -158,20 +165,16 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qnetworkreply.cpp \
   moc_qnetworkreplyimpl_p.cpp \
   moc_qnetworkreplydataimpl_p.cpp \
+  moc_qnetworkreplyhttpimpl_p.cpp \
   moc_qnetworkreplyfileimpl_p.cpp \
   moc_qabstractnetworkcache.cpp \
+  moc_qhttpthreaddelegate_p.cpp \
+  moc_qhttpmultipart.cpp \
   moc_qnetworkfile_p.cpp \
+  moc_qhttp2protocolhandler_p.cpp \
   moc_qftp_p.cpp \
   moc_qnetworkaccessftpbackend_p.cpp \
   moc_qnetworkdiskcache.cpp \
-  moc_qhttp2protocolhandler_p.cpp \
-  moc_qhttpmultipart.cpp \
-  moc_qhttpnetworkconnection_p.cpp \
-  moc_qhttpnetworkconnectionchannel_p.cpp \
-  moc_qhttpnetworkreply_p.cpp \
-  moc_qhttpthreaddelegate_p.cpp \
-  moc_qnetworkreplyhttpimpl_p.cpp \
-  moc_qspdyprotocolhandler_p.cpp \
   moc_qnetworksession.cpp \
   moc_qnetworkconfigmanager.cpp \
   moc_qnetworkconfigmanager_p.cpp \
@@ -183,12 +186,12 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qhostinfo_p.cpp \
   moc_qnetworkproxy.cpp \
   moc_qabstractsocketengine_p.cpp \
+  moc_qhttpsocketengine_p.cpp \
   moc_qabstractsocket.cpp \
   moc_qtcpsocket.cpp \
   moc_qudpsocket.cpp \
   moc_qtcpserver.cpp \
   moc_qsocks5socketengine_p.cpp \
-  moc_qhttpsocketengine_p.cpp \
   moc_qnativesocketengine_p.cpp \
   moc_qlocalserver.cpp \
   moc_qlocalsocket.cpp \

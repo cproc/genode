@@ -1,18 +1,18 @@
-QT_DEFINES += -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_NO_FOREACH -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_URL_CAST_FROM_STRING -DQT_NO_INTEGER_EVENT_COORDINATES -DQT_NO_FOREACH -DQSG_SEPARATE_INDEX_BUFFER -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_BUILD_QUICK_LIB -DQT_BUILDING_QT -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtdeclarative/src/quick \
   qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.9.8 \
-  qtdeclarative/include/QtQuick/5.9.8/QtQuick \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
-  qtdeclarative/include/QtQml/5.9.8 \
-  qtdeclarative/include/QtQml/5.9.8/QtQml \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtdeclarative/include/QtQuick/5.10.1 \
+  qtdeclarative/include/QtQuick/5.10.1/QtQuick \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
+  qtdeclarative/include/QtQml/5.10.1 \
+  qtdeclarative/include/QtQml/5.10.1/QtQml \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
@@ -68,7 +68,6 @@ QT_SOURCES += \
   qsgsimpletexturenode.cpp \
   qsgtexture.cpp \
   qsgtextureprovider.cpp \
-  qsgdistancefieldutil.cpp \
   qsgflatcolormaterial.cpp \
   qsgsimplematerial.cpp \
   qsgtexturematerial.cpp \
@@ -121,6 +120,8 @@ QT_SOURCES += \
   qsgsoftwareadaptation.cpp \
   qsgsoftwarethreadedrenderloop.cpp \
   qsgsoftwarespritenode.cpp \
+  qsgtexturereader.cpp \
+  qsgpkmhandler.cpp \
   qquickevents.cpp \
   qquickanchors.cpp \
   qquickitem.cpp \
@@ -188,6 +189,15 @@ QT_SOURCES += \
   qquickcontext2dtile.cpp \
   qquickcontext2dtexture.cpp \
   qquickcontext2dcommandbuffer.cpp \
+  qquickdraghandler.cpp \
+  qquickhandlersmodule.cpp \
+  qquickmultipointhandler.cpp \
+  qquickpinchhandler.cpp \
+  qquickpointerdevicehandler.cpp \
+  qquickpointerhandler.cpp \
+  qquickpointhandler.cpp \
+  qquicksinglepointhandler.cpp \
+  qquicktaphandler.cpp \
   qquickdesignercustomobjectdata.cpp \
   qquickdesignersupport.cpp \
   qquickdesignersupportitems.cpp \
@@ -204,17 +214,28 @@ QT_SOURCES += \
   moc_qquicksmoothedanimation_p_p.cpp \
   moc_qquicktimeline_p_p.cpp \
   moc_qquickprofiler_p.cpp \
+  moc_qsgpkmhandler_p.cpp \
   moc_qquickevents_p_p.cpp \
   moc_qquickscalegrid_p_p.cpp \
-  moc_qquickflickable_p_p.cpp
+  moc_qquickflickable_p_p.cpp \
+  moc_qquickdraghandler_p.cpp \
+  moc_qquickmultipointhandler_p.cpp \
+  moc_qquickpinchhandler_p.cpp \
+  moc_qquickpointerdevicehandler_p.cpp \
+  moc_qquickpointerhandler_p.cpp \
+  moc_qquickpointhandler_p.cpp \
+  moc_qquicksinglepointhandler_p.cpp \
+  moc_qquicktaphandler_p.cpp
 
 QT_VPATH += \
   qtdeclarative/src/quick \
   qtdeclarative/src/quick/designer \
+  qtdeclarative/src/quick/handlers \
   qtdeclarative/src/quick/items \
   qtdeclarative/src/quick/items/context2d \
   qtdeclarative/src/quick/scenegraph \
   qtdeclarative/src/quick/scenegraph/adaptations/software \
+  qtdeclarative/src/quick/scenegraph/compressedtexture \
   qtdeclarative/src/quick/scenegraph/coreapi \
   qtdeclarative/src/quick/scenegraph/util \
   qtdeclarative/src/quick/util \
@@ -274,6 +295,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qsgsoftwarerenderloop_p.cpp \
   moc_qsgsoftwarelayer_p.cpp \
   moc_qsgsoftwarethreadedrenderloop_p.cpp \
+  moc_qsgpkmhandler_p.cpp \
   moc_qquickevents_p_p.cpp \
   moc_qquickanchors_p.cpp \
   moc_qquickaccessibleattached_p.cpp \
@@ -339,6 +361,14 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickcanvascontext_p.cpp \
   moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
+  moc_qquickdraghandler_p.cpp \
+  moc_qquickmultipointhandler_p.cpp \
+  moc_qquickpinchhandler_p.cpp \
+  moc_qquickpointerdevicehandler_p.cpp \
+  moc_qquickpointerhandler_p.cpp \
+  moc_qquickpointhandler_p.cpp \
+  moc_qquicksinglepointhandler_p.cpp \
+  moc_qquicktaphandler_p.cpp \
   moc_qquickdesignerwindowmanager_p.cpp \
   moc_qquickdesignercustomparserobject_p.cpp
 

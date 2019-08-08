@@ -4,14 +4,14 @@ QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -35,6 +35,8 @@ QT_SOURCES += \
   trace.cpp \
   desktopinputselectioncontrol.cpp \
   shadowinputcontext.cpp \
+  gesturerecognizer.cpp \
+  handwritinggesturerecognizer.cpp \
   desktopinputpanel.cpp \
   inputview.cpp \
   appinputpanel.cpp \
@@ -61,6 +63,8 @@ QT_SOURCES += \
   moc_trace.cpp \
   moc_desktopinputselectioncontrol.cpp \
   moc_shadowinputcontext.cpp \
+  moc_gesturerecognizer.cpp \
+  moc_handwritinggesturerecognizer.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
   moc_appinputpanel.cpp
@@ -94,6 +98,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_trace.cpp \
   moc_desktopinputselectioncontrol.cpp \
   moc_shadowinputcontext.cpp \
+  moc_gesturerecognizer.cpp \
+  moc_handwritinggesturerecognizer.cpp \
   moc_desktopinputpanel.cpp \
   moc_inputview.cpp \
   moc_appinputpanel.cpp
