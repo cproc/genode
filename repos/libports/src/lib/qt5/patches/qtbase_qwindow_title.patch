@@ -1,10 +1,17 @@
 qtbase_qwindow_title.patch
 
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/widgets/kernel/qwidgetwindow.cpp |    1 +
+ 1 file changed, 1 insertion(+)
+
 diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-index 310adc5e8d..b6680980ba 100644
+index 9f35a1464c..f491fb8b11 100644
 --- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
 +++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-@@ -129,6 +129,7 @@ QWidgetWindow::QWidgetWindow(QWidget *widget)
+@@ -150,6 +150,7 @@ QWidgetWindow::QWidgetWindow(QWidget *widget)
      : QWindow(*new QWidgetWindowPrivate(), 0)
      , m_widget(widget)
  {

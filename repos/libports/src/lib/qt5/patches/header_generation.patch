@@ -1,9 +1,18 @@
 header_generation.patch
 
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
 Avoid errors on header generation during port preparation.
+---
+ qtbase/configure                                   |   10 +++++-----
+ qtbase/mkspecs/features/qmake_use.prf              |    4 ++--
+ qtbase/mkspecs/features/qt.prf                     |    2 +-
+ qtbase/mkspecs/features/qt_configure.prf           |   16 ++++++++--------
+ .../Tools/qmake/mkspecs/features/default_pre.prf   |    8 ++++----
+ 5 files changed, 20 insertions(+), 20 deletions(-)
 
 diff --git a/qtbase/configure b/qtbase/configure
-index a88f289..3582699 100755
+index a88f2893d8..358269903a 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
 @@ -89,11 +89,11 @@ if [ x"$1" = x"-top-level" ]; then
@@ -24,7 +33,7 @@ index a88f289..3582699 100755
  
  OPT_CMDLINE=  # expanded version for the script
 diff --git a/qtbase/mkspecs/features/qmake_use.prf b/qtbase/mkspecs/features/qmake_use.prf
-index f81d1ce..8677926 100644
+index f81d1cece4..8677926ede 100644
 --- a/qtbase/mkspecs/features/qmake_use.prf
 +++ b/qtbase/mkspecs/features/qmake_use.prf
 @@ -5,8 +5,8 @@ for(ever) {
@@ -39,7 +48,7 @@ index f81d1ce..8677926 100644
          !contains(use, nolink) {
              QMAKE_LIBDIR += $$eval(QMAKE_LIBDIR_$$nu)
 diff --git a/qtbase/mkspecs/features/qt.prf b/qtbase/mkspecs/features/qt.prf
-index b57afcf..e7ce2a7 100644
+index b57afcf72d..e7ce2a72b8 100644
 --- a/qtbase/mkspecs/features/qt.prf
 +++ b/qtbase/mkspecs/features/qt.prf
 @@ -260,7 +260,7 @@ for(ever) {
@@ -52,7 +61,7 @@ index b57afcf..e7ce2a7 100644
      !isEmpty(var_sfx): break()
      var_sfx = _PRIVATE
 diff --git a/qtbase/mkspecs/features/qt_configure.prf b/qtbase/mkspecs/features/qt_configure.prf
-index d5dcda2..54dae15 100644
+index d5dcda22ac..54dae1502e 100644
 --- a/qtbase/mkspecs/features/qt_configure.prf
 +++ b/qtbase/mkspecs/features/qt_configure.prf
 @@ -1890,14 +1890,14 @@ defineTest(qtConfProcessOutput) {
@@ -79,7 +88,7 @@ index d5dcda2..54dae15 100644
  }
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/default_pre.prf b/qtwebkit/Tools/qmake/mkspecs/features/default_pre.prf
-index 5c36e93..5a52092 100644
+index 5c36e93131..5a520920df 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/default_pre.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/default_pre.prf
 @@ -67,10 +67,10 @@ else: PYTHON = python

@@ -110,7 +110,7 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 
 	    void setWindowFlags(Qt::WindowFlags flags) override;
 
-	    void setWindowState(Qt::WindowState state) override;
+	    void setWindowState(Qt::WindowStates state) override;
 
 	    WId winId() const override;
 
