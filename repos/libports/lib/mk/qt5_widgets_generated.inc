@@ -5,12 +5,12 @@ QT_INCPATH += \
   qtbase/src/widgets/dialogs \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.9.8 \
-  qtbase/include/QtWidgets/5.9.8/QtWidgets \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtWidgets/5.10.1 \
+  qtbase/include/QtWidgets/5.10.1/QtWidgets \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include/QtGui \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++

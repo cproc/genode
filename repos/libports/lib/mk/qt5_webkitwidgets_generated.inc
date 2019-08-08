@@ -140,12 +140,12 @@ QT_INCPATH += \
   qtbase/include/QtGui \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
-  qtbase/include/QtWidgets/5.9.8 \
-  qtbase/include/QtWidgets/5.9.8/QtWidgets \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtWidgets/5.10.1 \
+  qtbase/include/QtWidgets/5.10.1/QtWidgets \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include/QtPrintSupport \
   qtbase/include/QtOpenGL \
   qtbase/include/QtSql \
