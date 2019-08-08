@@ -4,14 +4,14 @@ QT_INCPATH += \
   qtsvg/src/svg \
   qtsvg/include \
   qtsvg/include/QtSvg \
-  qtsvg/include/QtSvg/5.9.8 \
-  qtsvg/include/QtSvg/5.9.8/QtSvg \
-  qtbase/include/QtWidgets/5.9.8 \
-  qtbase/include/QtWidgets/5.9.8/QtWidgets \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtsvg/include/QtSvg/5.10.1 \
+  qtsvg/include/QtSvg/5.10.1/QtSvg \
+  qtbase/include/QtWidgets/5.10.1 \
+  qtbase/include/QtWidgets/5.10.1/QtWidgets \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include \
   qtbase/include/QtWidgets \
   qtbase/include/QtGui \

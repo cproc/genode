@@ -11,13 +11,13 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  4 files changed, 17 insertions(+), 14 deletions(-)
 
 diff --git a/.gitmodules b/.gitmodules
-index f64970a..a842174 100644
+index b946078495..c8be19dce4 100644
 --- a/.gitmodules
 +++ b/.gitmodules
 @@ -308,4 +308,8 @@
- 	path = qtremoteobjects
- 	url = ../qtremoteobjects.git
- 	branch = 5.9.8
+ 	path = qtwebglplugin
+ 	url = ../qtwebglplugin.git
+ 	branch = 5.10.1
 -	status = preview
 \ No newline at end of file
 +	status = preview
@@ -26,7 +26,7 @@ index f64970a..a842174 100644
 +	path = qtwebkit
 +	project = WebKit.pro
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 23d9904..6ea194f 100644
+index 23d99040b6..6ea194fc1f 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
@@ -38,7 +38,7 @@ index 23d9904..6ea194f 100644
          $$WEBKIT_TOOLS_CONFIG
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 328a8be..096d8ef 100644
+index 328a8be7e7..096d8ef679 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -37,14 +37,14 @@ defineTest(detectFeatures) {
@@ -86,7 +86,7 @@ index 328a8be..096d8ef 100644
      # Support for Graphics Surface
      # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-index ba18b35..dd27a42 100644
+index ba18b354d4..dd27a421ca 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 @@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \

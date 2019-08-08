@@ -1,10 +1,10 @@
 LICENSE := GPL
-VERSION := 5.9.8
+VERSION := 5.10.1
 
-QT5 := qtbase-opensource-src-${VERSION}
+QT5 := qtbase-everywhere-src-${VERSION}
 
 DOWNLOADS := ${QT5}.archive
 
-URL(${QT5}) := https://download.qt.io/archive/qt/5.9/$(VERSION)/submodules/$(QT5).tar.xz
-SHA(${QT5}) := 9b9dec1f67df1f94bce2955c5604de992d529dde72050239154c56352da0907d
+URL(${QT5}) := https://download.qt.io/archive/qt/5.10/$(VERSION)/submodules/$(QT5).tar.xz
+SHA(${QT5}) := d8660e189caa5da5142d5894d328b61a4d3ee9750b76d61ad74e4eee8765a969
 DIR(${QT5}) := src/lib/qt5-host

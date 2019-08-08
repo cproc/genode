@@ -2,18 +2,18 @@ QT_DEFINES += -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LAR
 
 QT_INCPATH += \
   qtdeclarative/src/imports/layouts \
-  qtdeclarative/include/QtQuick/5.9.8 \
-  qtdeclarative/include/QtQuick/5.9.8/QtQuick \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
+  qtdeclarative/include/QtQuick/5.10.1 \
+  qtdeclarative/include/QtQuick/5.10.1/QtQuick \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
   qtbase/include \
   qtbase/include/QtGui \
-  qtdeclarative/include/QtQml/5.9.8 \
-  qtdeclarative/include/QtQml/5.9.8/QtQml \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtdeclarative/include/QtQml/5.10.1 \
+  qtdeclarative/include/QtQml/5.10.1/QtQml \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \

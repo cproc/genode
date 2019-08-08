@@ -4,20 +4,39 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
+ .gitmodules                                 |    7 --
  qtbase/mkspecs/features/qt_build_config.prf |    2 -
  qtbase/mkspecs/genode-g++/qmake.conf        |   10 +++
  qtbase/mkspecs/genode-g++/qplatformdefs.h   |   87 +++++++++++++++++++++++++++
  qtbase/src/corelib/global/global.pri        |   10 ++-
  qtbase/src/corelib/io/io.pri                |    2 -
- 5 files changed, 104 insertions(+), 7 deletions(-)
+ 6 files changed, 104 insertions(+), 14 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
 
+diff --git a/.gitmodules b/.gitmodules
+index 728f3dfe94..b946078495 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -123,13 +123,6 @@
+ 	url = ../qtconnectivity.git
+ 	branch = 5.10.1
+ 	status = addon
+-[submodule "qtwayland"]
+-	depends = qtbase
+-	recommends = qtdeclarative
+-	path = qtwayland
+-	url = ../qtwayland.git
+-	branch = 5.10.1
+-	status = addon
+ [submodule "qt3d"]
+ 	depends = qtbase
+ 	recommends = qtdeclarative qtimageformats qtgamepad
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 150d2b2..be8f659 100644
+index 76e1d15319..6f5d7c089d 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
-@@ -135,5 +135,5 @@ defineTest(qtConfig) {
+@@ -138,5 +138,5 @@ defineTest(qtConfig) {
          contains(QT.$${module}.disabled_features, $$1): \
              return(false)
      }
@@ -26,7 +45,7 @@ index 150d2b2..be8f659 100644
  }
 diff --git a/qtbase/mkspecs/genode-g++/qmake.conf b/qtbase/mkspecs/genode-g++/qmake.conf
 new file mode 100644
-index 0000000..734ae5c
+index 0000000000..734ae5c1c6
 --- /dev/null
 +++ b/qtbase/mkspecs/genode-g++/qmake.conf
 @@ -0,0 +1,10 @@
@@ -42,7 +61,7 @@ index 0000000..734ae5c
 +load(qt_config)
 diff --git a/qtbase/mkspecs/genode-g++/qplatformdefs.h b/qtbase/mkspecs/genode-g++/qplatformdefs.h
 new file mode 100644
-index 0000000..5e5c341
+index 0000000000..5e5c34131d
 --- /dev/null
 +++ b/qtbase/mkspecs/genode-g++/qplatformdefs.h
 @@ -0,0 +1,87 @@
@@ -134,10 +153,10 @@ index 0000000..5e5c341
 +
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/global.pri b/qtbase/src/corelib/global/global.pri
-index eee0134..c720903 100644
+index 0f8935d4b5..0338ef44c8 100644
 --- a/qtbase/src/corelib/global/global.pri
 +++ b/qtbase/src/corelib/global/global.pri
-@@ -52,11 +52,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
+@@ -56,11 +56,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
  # qlogging.cpp uses backtrace(3), which is in a separate library on the BSDs.
  LIBS_PRIVATE += $$QMAKE_LIBS_EXECINFO
  
@@ -152,13 +171,13 @@ index eee0134..c720903 100644
 +#   DEFINES += ELF_INTERPRETER=\\\"$$system(LC_ALL=C readelf -l /bin/ls | perl -n -e \'$$prog\')\\\"
 +#}
  
- qtConfig(slog2): \
-     LIBS_PRIVATE += -lslog2
+ linux:!static {
+     precompile_header {
 diff --git a/qtbase/src/corelib/io/io.pri b/qtbase/src/corelib/io/io.pri
-index b2c531a..bf45ef7 100644
+index 24f27f6b24..a12a959cf9 100644
 --- a/qtbase/src/corelib/io/io.pri
 +++ b/qtbase/src/corelib/io/io.pri
-@@ -179,7 +179,7 @@ win32 {
+@@ -177,7 +177,7 @@ win32 {
          } else {
              SOURCES += \
                  io/qstandardpaths_unix.cpp \
