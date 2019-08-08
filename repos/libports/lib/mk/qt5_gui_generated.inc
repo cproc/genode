@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.9.8 \
-  qtbase/include/QtGui/5.9.8/QtGui \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtGui/5.10.1 \
+  qtbase/include/QtGui/5.10.1/QtGui \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -175,6 +175,14 @@ QT_SOURCES += \
   qgridlayoutengine.cpp \
   qabstractlayoutstyleinfo.cpp \
   qlayoutpolicy.cpp \
+  qshaderformat.cpp \
+  qshadergenerator.cpp \
+  qshadergraph.cpp \
+  qshadergraphloader.cpp \
+  qshaderlanguage.cpp \
+  qshadernode.cpp \
+  qshadernodeport.cpp \
+  qshadernodesloader.cpp \
   qgenericmatrix.cpp \
   qmatrix4x4.cpp \
   qquaternion.cpp \
@@ -235,6 +243,7 @@ QT_SOURCES += \
   qimage_compat.cpp \
   qimage_sse2.cpp \
   qdrawhelper_sse2.cpp \
+  qrc_qpdf.cpp \
   moc_qgenericplugin.cpp \
   moc_qplatforminputcontext.cpp \
   moc_qplatforminputcontextplugin_p.cpp \
@@ -280,6 +289,7 @@ QT_SOURCES += \
   moc_qpdfwriter.cpp \
   moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
+  moc_qshaderlanguage_p.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \
   moc_qopengltexture.cpp \
@@ -357,6 +367,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qpdfwriter.cpp \
   moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
+  moc_qshaderlanguage_p.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \
   moc_qopenglvertexarrayobject.cpp \

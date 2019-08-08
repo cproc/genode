@@ -13,7 +13,6 @@ QT_SOURCES += \
   pcre2_context.c \
   pcre2_dfa_match.c \
   pcre2_error.c \
-  pcre2_extuni.c \
   pcre2_find_bracket.c \
   pcre2_jit_compile.c \
   pcre2_maketables.c \

@@ -567,7 +567,7 @@ void QNitpickerPlatformWindow::setWindowFlags(Qt::WindowFlags flags)
 	    qDebug() << "QNitpickerPlatformWindow::setWindowFlags() finished";
 }
 
-void QNitpickerPlatformWindow::setWindowState(Qt::WindowState state)
+void QNitpickerPlatformWindow::setWindowState(Qt::WindowStates state)
 {
 	if (qnpw_verbose)
 	    qDebug() << "QNitpickerPlatformWindow::setWindowState(" << state << ")";
