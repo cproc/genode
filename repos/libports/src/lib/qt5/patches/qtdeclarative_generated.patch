@@ -4,10 +4,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../QtQml/5.9.8/QtQml/private/qtqml-config_p.h     |    1 +
+ .../QtQml/5.10.1/QtQml/private/qtqml-config_p.h    |    1 +
  qtdeclarative/include/QtQml/QtQmlDepends           |    5 +++++
  qtdeclarative/include/QtQml/qtqml-config.h         |    1 +
- .../5.9.8/QtQuick/private/qtquick-config_p.h       |    1 +
+ .../5.10.1/QtQuick/private/qtquick-config_p.h      |    1 +
  qtdeclarative/include/QtQuick/QtQuickDepends       |    6 ++++++
  qtdeclarative/include/QtQuick/qtquick-config.h     |    1 +
  .../QtQuickParticles/QtQuickParticlesDepends       |    7 +++++++
@@ -18,10 +18,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtdeclarative/src/quick/qtquick-config.h           |    1 +
  qtdeclarative/src/quick/qtquick-config_p.h         |   14 ++++++++++++++
  13 files changed, 54 insertions(+)
- create mode 100644 qtdeclarative/include/QtQml/5.9.8/QtQml/private/qtqml-config_p.h
+ create mode 100644 qtdeclarative/include/QtQml/5.10.1/QtQml/private/qtqml-config_p.h
  create mode 100644 qtdeclarative/include/QtQml/QtQmlDepends
  create mode 100644 qtdeclarative/include/QtQml/qtqml-config.h
- create mode 100644 qtdeclarative/include/QtQuick/5.9.8/QtQuick/private/qtquick-config_p.h
+ create mode 100644 qtdeclarative/include/QtQuick/5.10.1/QtQuick/private/qtquick-config_p.h
  create mode 100644 qtdeclarative/include/QtQuick/QtQuickDepends
  create mode 100644 qtdeclarative/include/QtQuick/qtquick-config.h
  create mode 100644 qtdeclarative/include/QtQuickParticles/QtQuickParticlesDepends
@@ -32,11 +32,11 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  create mode 100644 qtdeclarative/src/quick/qtquick-config.h
  create mode 100644 qtdeclarative/src/quick/qtquick-config_p.h
 
-diff --git a/qtdeclarative/include/QtQml/5.9.8/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.9.8/QtQml/private/qtqml-config_p.h
+diff --git a/qtdeclarative/include/QtQml/5.10.1/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.10.1/QtQml/private/qtqml-config_p.h
 new file mode 100644
 index 0000000000..1fdbd71ef6
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.9.8/QtQml/private/qtqml-config_p.h
++++ b/qtdeclarative/include/QtQml/5.10.1/QtQml/private/qtqml-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qtqml-config_p.h"
 diff --git a/qtdeclarative/include/QtQml/QtQmlDepends b/qtdeclarative/include/QtQml/QtQmlDepends
@@ -57,11 +57,11 @@ index 0000000000..48fe1f23fd
 +++ b/qtdeclarative/include/QtQml/qtqml-config.h
 @@ -0,0 +1 @@
 +#include "../../src/qml/qtqml-config.h"
-diff --git a/qtdeclarative/include/QtQuick/5.9.8/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.9.8/QtQuick/private/qtquick-config_p.h
+diff --git a/qtdeclarative/include/QtQuick/5.10.1/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.10.1/QtQuick/private/qtquick-config_p.h
 new file mode 100644
 index 0000000000..fcdf4238fe
 --- /dev/null
-+++ b/qtdeclarative/include/QtQuick/5.9.8/QtQuick/private/qtquick-config_p.h
++++ b/qtdeclarative/include/QtQuick/5.10.1/QtQuick/private/qtquick-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/quick/qtquick-config_p.h"
 diff --git a/qtdeclarative/include/QtQuick/QtQuickDepends b/qtdeclarative/include/QtQuick/QtQuickDepends

@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index accf58d4f3..edbd6f78ea 100644
+index f19f134c53..a2797c1648 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 @@ -103,6 +103,10 @@
@@ -25,7 +25,7 @@ index accf58d4f3..edbd6f78ea 100644
  
  using namespace QV4;
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4global_p.h b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-index a3ef395076..79839f0506 100644
+index 5cddf2eaa6..c153395ab0 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 @@ -113,7 +113,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
@@ -38,10 +38,10 @@ index a3ef395076..79839f0506 100644
  #endif
  #endif
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-index 6e467a6d96..f34c9710b0 100644
+index b899e80470..80f829fd2a 100644
 --- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
 +++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-@@ -1852,6 +1852,9 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1876,6 +1876,9 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
          QLatin1String(".so"),
          QLatin1String(".bundle")
      };
