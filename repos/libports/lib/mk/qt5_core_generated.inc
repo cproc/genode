@@ -11,8 +11,8 @@ QT_INCPATH += \
   qtbase/src/3rdparty/forkfd \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.9.8 \
-  qtbase/include/QtCore/5.9.8/QtCore \
+  qtbase/include/QtCore/5.10.1 \
+  qtbase/include/QtCore/5.10.1/QtCore \
   qtbase/src/3rdparty/pcre2/src \
   qtbase/mkspecs/genode-g++
 
@@ -31,7 +31,9 @@ QT_SOURCES += \
   qfloat16.cpp \
   qoperatingsystemversion.cpp \
   qlogging.cpp \
+  qrandom.cpp \
   qhooks.cpp \
+  minimum-linux.S \
   qversiontagging.cpp \
   qatomic.cpp \
   qexception.cpp \
@@ -80,6 +82,7 @@ QT_SOURCES += \
   qstring.cpp \
   qstringbuilder.cpp \
   qstringlist.cpp \
+  qstringview.cpp \
   qtextboundaryfinder.cpp \
   qtimeline.cpp \
   qunicodetools.cpp \
@@ -245,7 +248,8 @@ QT_SOURCES += \
   qxmlstream.cpp \
   qxmlutils.cpp \
   qfloat16tables.cpp \
-  qrc_mimetypes.cpp
+  qrc_mimetypes.cpp \
+  moc_qmimetype.cpp
 
 QT_VPATH += \
   qtbase/src/3rdparty/double-conversion \
@@ -334,7 +338,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qhistorystate_p.cpp \
   moc_qabstracttransition.cpp \
   moc_qsignaltransition.cpp \
-  moc_qeventtransition.cpp
+  moc_qeventtransition.cpp \
+  moc_qmimetype.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule

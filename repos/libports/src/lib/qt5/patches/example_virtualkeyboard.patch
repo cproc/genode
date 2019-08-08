@@ -1,5 +1,12 @@
 example_virtualkeyboard.patch
 
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../examples/virtualkeyboard/basic/basic.pro       |   26 ++++++++++----------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
 diff --git a/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro b/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro
 index b91df554f6..452ef8b0f6 100644
 --- a/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro

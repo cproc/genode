@@ -4,23 +4,22 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc |   10 ++++++++++
- 1 file changed, 10 insertions(+)
+ qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc |    9 +++++++++
+ 1 file changed, 9 insertions(+)
  create mode 100644 qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
 
 diff --git a/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc b/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
 new file mode 100644
-index 000000000..6d9737f34
+index 0000000000..e144d02307
 --- /dev/null
 +++ b/qtvirtualkeyboard/src/virtualkeyboard/layouts.qrc
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,9 @@
 +<RCC>
 +    <qresource prefix="/QtQuick/VirtualKeyboard/content/layouts/en_GB">
-+        <file alias="main.qml">content/layouts/en_GB/main.qml</file>
 +        <file alias="dialpad.qml">content/layouts/en_GB/dialpad.qml</file>
 +        <file alias="digits.qml">content/layouts/en_GB/digits.qml</file>
-+        <file alias="handwriting.qml">content/layouts/en_GB/handwriting.qml</file>
 +        <file alias="numbers.qml">content/layouts/en_GB/numbers.qml</file>
++        <file alias="main.qml">content/layouts/en_GB/main.qml</file>
 +        <file alias="symbols.qml">content/layouts/en_GB/symbols.qml</file>
 +    </qresource>
 +</RCC>
