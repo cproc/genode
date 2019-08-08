@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-index 165dce04e9..310adc5e8d 100644
+index 34b12a74b2..9f35a1464c 100644
 --- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
 +++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-@@ -336,6 +336,9 @@ bool QWidgetWindow::event(QEvent *event)
+@@ -366,6 +366,9 @@ bool QWidgetWindow::event(QEvent *event)
          m_widget->repaint();
          return true;
  
@@ -23,7 +23,7 @@ index 165dce04e9..310adc5e8d 100644
          break;
      }
 diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
-index fdf2b5d321..05fb378402 100644
+index b6828a14ef..64995b762b 100644
 --- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
 +++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
 @@ -75,7 +75,8 @@ void QWidgetAnimator::abort(QWidget *w)
