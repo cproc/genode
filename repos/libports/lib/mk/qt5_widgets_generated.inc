@@ -5,12 +5,12 @@ QT_INCPATH += \
   qtbase/src/widgets/dialogs \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.10.1 \
-  qtbase/include/QtWidgets/5.10.1/QtWidgets \
-  qtbase/include/QtGui/5.10.1 \
-  qtbase/include/QtGui/5.10.1/QtGui \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtbase/include/QtWidgets/5.11.3 \
+  qtbase/include/QtWidgets/5.11.3/QtWidgets \
+  qtbase/include/QtGui/5.11.3 \
+  qtbase/include/QtGui/5.11.3/QtGui \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtbase/include/QtGui \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
@@ -44,7 +44,6 @@ QT_SOURCES += \
   qwhatsthis.cpp \
   qdrawutil.cpp \
   qstyle.cpp \
-  qstyleanimation.cpp \
   qstylefactory.cpp \
   qstyleoption.cpp \
   qstyleplugin.cpp \
@@ -55,16 +54,13 @@ QT_SOURCES += \
   qstylesheetstyle.cpp \
   qstylesheetstyle_default.cpp \
   qpixmapstyle.cpp \
+  qstyleanimation.cpp \
   qwindowsstyle.cpp \
   qfusionstyle.cpp \
   qframe.cpp \
-  qtoolbar.cpp \
-  qtoolbarlayout.cpp \
-  qtoolbarseparator.cpp \
   qabstractscrollarea.cpp \
   qfocusframe.cpp \
   qwidgetanimator.cpp \
-  qtoolbararealayout.cpp \
   qabstractbutton.cpp \
   qabstractslider.cpp \
   qbuttongroup.cpp \
@@ -112,6 +108,10 @@ QT_SOURCES += \
   qtextedit.cpp \
   qtextbrowser.cpp \
   qtabwidget.cpp \
+  qtoolbar.cpp \
+  qtoolbarlayout.cpp \
+  qtoolbararealayout.cpp \
+  qtoolbarseparator.cpp \
   qtoolbox.cpp \
   qtoolbutton.cpp \
   qtoolbarextension.cpp \
@@ -230,18 +230,15 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qopenglwidget.cpp \
   moc_qformlayout.cpp \
   moc_qstyle.cpp \
-  moc_qstyleanimation_p.cpp \
   moc_qstyleplugin.cpp \
   moc_qcommonstyle.cpp \
   moc_qproxystyle.cpp \
   moc_qstylesheetstyle_p.cpp \
   moc_qpixmapstyle_p.cpp \
+  moc_qstyleanimation_p.cpp \
   moc_qwindowsstyle_p.cpp \
   moc_qfusionstyle_p.cpp \
   moc_qframe.cpp \
-  moc_qtoolbar.cpp \
-  moc_qtoolbarlayout_p.cpp \
-  moc_qtoolbarseparator_p.cpp \
   moc_qabstractscrollarea.cpp \
   moc_qabstractscrollarea_p.cpp \
   moc_qfocusframe.cpp \
@@ -296,6 +293,9 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qtextedit.cpp \
   moc_qtextbrowser.cpp \
   moc_qtabwidget.cpp \
+  moc_qtoolbar.cpp \
+  moc_qtoolbarlayout_p.cpp \
+  moc_qtoolbarseparator_p.cpp \
   moc_qtoolbox.cpp \
   moc_qtoolbutton.cpp \
   moc_qtoolbarextension_p.cpp \
