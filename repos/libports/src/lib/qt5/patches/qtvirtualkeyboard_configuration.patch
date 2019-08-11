@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
-index 2b2f2aac0b..9e2526b1fb 100644
+index dabd7da2bb..52a4b7d2d7 100644
 --- a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
 +++ b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
-@@ -296,10 +296,10 @@ OTHER_FILES += \
+@@ -297,10 +297,10 @@ OTHER_FILES += \
      SOURCES += desktopinputpanel.cpp inputview.cpp
      HEADERS += desktopinputpanel.h inputview.h
      DEFINES += QT_VIRTUALKEYBOARD_DESKTOP

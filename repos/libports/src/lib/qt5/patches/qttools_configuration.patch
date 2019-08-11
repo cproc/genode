@@ -6,8 +6,8 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 ---
  qttools/src/designer/src/lib/lib.pro |    4 ++--
  qttools/src/designer/src/src.pro     |    2 --
- qttools/src/src.pro                  |    2 +-
- 3 files changed, 3 insertions(+), 5 deletions(-)
+ qttools/src/src.pro                  |    3 ++-
+ 3 files changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/qttools/src/designer/src/lib/lib.pro b/qttools/src/designer/src/lib/lib.pro
 index de0dc7389f..c2947821cf 100644
@@ -38,15 +38,16 @@ index 79e9e64ee8..bee94b6fd6 100644
      lib.depends = uiplugin
      components.depends = lib
 diff --git a/qttools/src/src.pro b/qttools/src/src.pro
-index 41064a5d53..3b3610ad5c 100644
+index 0783b7932f..52c89e8a84 100644
 --- a/qttools/src/src.pro
 +++ b/qttools/src/src.pro
-@@ -12,7 +12,7 @@ qtHaveModule(widgets) {
+@@ -12,7 +12,8 @@ qtHaveModule(widgets) {
      }
  }
  
 -SUBDIRS += linguist \
 +SUBDIRS += \
-     qdoc \
++    qdoc \
      qtattributionsscanner
  
+ qtConfig(library) {

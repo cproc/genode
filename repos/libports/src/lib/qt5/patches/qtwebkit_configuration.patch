@@ -4,23 +4,20 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .gitmodules                                        |    6 +++++
+ .gitmodules                                        |    4 ++++
  .../Tools/qmake/mkspecs/features/configure.prf     |    1 -
  qtwebkit/Tools/qmake/mkspecs/features/features.prf |   22 ++++++++++----------
  qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 +-
- 4 files changed, 17 insertions(+), 14 deletions(-)
+ 4 files changed, 16 insertions(+), 13 deletions(-)
 
 diff --git a/.gitmodules b/.gitmodules
-index b946078495..c8be19dce4 100644
+index 5fb4d64e8b..1d9ffee902 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -308,4 +308,8 @@
- 	path = qtwebglplugin
+@@ -302,3 +302,7 @@
  	url = ../qtwebglplugin.git
- 	branch = 5.10.1
--	status = preview
-\ No newline at end of file
-+	status = preview
+ 	branch = 5.11.3
+ 	status = preview
 +[submodule "qtwebkit"]
 +	depends = qtbase
 +	path = qtwebkit
