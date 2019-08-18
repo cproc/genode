@@ -7,14 +7,14 @@ QT_INCPATH += \
   qtbase/src/plugins/printsupport/cups \
   qtbase/include \
   qtbase/include/QtPrintSupport \
-  qtbase/include/QtPrintSupport/5.10.1 \
-  qtbase/include/QtPrintSupport/5.10.1/QtPrintSupport \
-  qtbase/include/QtWidgets/5.10.1 \
-  qtbase/include/QtWidgets/5.10.1/QtWidgets \
-  qtbase/include/QtGui/5.10.1 \
-  qtbase/include/QtGui/5.10.1/QtGui \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtbase/include/QtPrintSupport/5.11.3 \
+  qtbase/include/QtPrintSupport/5.11.3/QtPrintSupport \
+  qtbase/include/QtWidgets/5.11.3 \
+  qtbase/include/QtWidgets/5.11.3/QtWidgets \
+  qtbase/include/QtGui/5.11.3 \
+  qtbase/include/QtGui/5.11.3/QtGui \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtbase/include/QtWidgets \
   qtbase/include/QtGui \
   qtbase/include/QtCore \

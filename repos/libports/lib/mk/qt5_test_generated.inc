@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/testlib \
   qtbase/include \
   qtbase/include/QtTest \
-  qtbase/include/QtTest/5.10.1 \
-  qtbase/include/QtTest/5.10.1/QtTest \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtbase/include/QtTest/5.11.3 \
+  qtbase/include/QtTest/5.11.3/QtTest \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -36,7 +36,9 @@ QT_SOURCES += \
   qtestxunitstreamer.cpp \
   qxunittestlogger.cpp \
   qtestblacklist.cpp \
-  moc_qtesteventloop.cpp
+  qabstractitemmodeltester.cpp \
+  moc_qtesteventloop.cpp \
+  moc_qabstractitemmodeltester.cpp
 
 QT_VPATH += \
   qtbase/src/testlib \
@@ -48,7 +50,8 @@ QT_VPATH += \
 # extracted from 'compiler_moc_header_make_all' target
 
 COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
-  moc_qtesteventloop.cpp
+  moc_qtesteventloop.cpp \
+  moc_qabstractitemmodeltester.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule

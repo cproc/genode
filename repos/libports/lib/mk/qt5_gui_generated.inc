@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.10.1 \
-  qtbase/include/QtGui/5.10.1/QtGui \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtbase/include/QtGui/5.11.3 \
+  qtbase/include/QtGui/5.11.3/QtGui \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -19,7 +19,6 @@ QT_SOURCES += \
   qplatforminputcontextplugin.cpp \
   qplatforminputcontext.cpp \
   qplatformintegration.cpp \
-  qplatformdrag.cpp \
   qplatformscreen.cpp \
   qplatformintegrationfactory.cpp \
   qplatformintegrationplugin.cpp \
@@ -32,8 +31,6 @@ QT_SOURCES += \
   qplatformclipboard.cpp \
   qplatformnativeinterface.cpp \
   qsessionmanager.cpp \
-  qshapedpixmapdndwindow.cpp \
-  qsimpledrag.cpp \
   qsurfaceformat.cpp \
   qguiapplication.cpp \
   qwindow.cpp \
@@ -42,10 +39,9 @@ QT_SOURCES += \
   qsurface.cpp \
   qclipboard.cpp \
   qcursor.cpp \
-  qdrag.cpp \
-  qdnd.cpp \
   qevent.cpp \
   qinputmethod.cpp \
+  qinternalmimedata.cpp \
   qkeysequence.cpp \
   qkeymapper.cpp \
   qpalette.cpp \
@@ -67,6 +63,11 @@ QT_SOURCES += \
   qplatformgraphicsbufferhelper.cpp \
   qinputdevicemanager.cpp \
   qhighdpiscaling.cpp \
+  qdnd.cpp \
+  qdrag.cpp \
+  qplatformdrag.cpp \
+  qshapedpixmapdndwindow.cpp \
+  qsimpledrag.cpp \
   qplatformopenglcontext.cpp \
   qopenglcontext.cpp \
   qopenglwindow.cpp \
@@ -251,13 +252,11 @@ QT_SOURCES += \
   moc_qplatformthemeplugin.cpp \
   moc_qplatformnativeinterface.cpp \
   moc_qplatformmenu.cpp \
-  moc_qshapedpixmapdndwindow_p.cpp \
   moc_qsurfaceformat.cpp \
   moc_qoffscreensurface.cpp \
   moc_qclipboard.cpp \
-  moc_qdrag.cpp \
-  moc_qdnd_p.cpp \
   moc_qevent.cpp \
+  moc_qinternalmimedata_p.cpp \
   moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
   moc_qpalette.cpp \
@@ -271,6 +270,9 @@ QT_SOURCES += \
   moc_qrasterwindow.cpp \
   moc_qplatformgraphicsbuffer.cpp \
   moc_qinputdevicemanager_p.cpp \
+  moc_qdnd_p.cpp \
+  moc_qdrag.cpp \
+  moc_qshapedpixmapdndwindow_p.cpp \
   moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
@@ -320,16 +322,14 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qplatformthemeplugin.cpp \
   moc_qplatformnativeinterface.cpp \
   moc_qplatformmenu.cpp \
-  moc_qshapedpixmapdndwindow_p.cpp \
   moc_qsurfaceformat.cpp \
   moc_qguiapplication.cpp \
   moc_qwindow.cpp \
   moc_qoffscreensurface.cpp \
   moc_qclipboard.cpp \
-  moc_qdrag.cpp \
-  moc_qdnd_p.cpp \
   moc_qevent.cpp \
   moc_qinputmethod.cpp \
+  moc_qinternalmimedata_p.cpp \
   moc_qkeysequence.cpp \
   moc_qkeymapper_p.cpp \
   moc_qpalette.cpp \
@@ -344,6 +344,9 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qrasterwindow.cpp \
   moc_qplatformgraphicsbuffer.cpp \
   moc_qinputdevicemanager_p.cpp \
+  moc_qdnd_p.cpp \
+  moc_qdrag.cpp \
+  moc_qshapedpixmapdndwindow_p.cpp \
   moc_qopenglcontext.cpp \
   moc_qopenglwindow.cpp \
   moc_qimageiohandler.cpp \

@@ -10,10 +10,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index f19f134c53..a2797c1648 100644
+index 0ed0df89a9..b38e145383 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-@@ -103,6 +103,10 @@
+@@ -95,6 +95,10 @@
  #include <valgrind/memcheck.h>
  #endif
  
@@ -25,10 +25,10 @@ index f19f134c53..a2797c1648 100644
  
  using namespace QV4;
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4global_p.h b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-index 5cddf2eaa6..c153395ab0 100644
+index 1fa4bae049..ef8f88b08b 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-@@ -113,7 +113,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
+@@ -115,7 +115,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }
  
  // Black list some platforms
  #if defined(V4_ENABLE_JIT)
@@ -38,10 +38,10 @@ index 5cddf2eaa6..c153395ab0 100644
  #endif
  #endif
 diff --git a/qtdeclarative/src/qml/qml/qqmlimport.cpp b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-index b899e80470..80f829fd2a 100644
+index 80ebab5ca3..28f9bc7ed2 100644
 --- a/qtdeclarative/src/qml/qml/qqmlimport.cpp
 +++ b/qtdeclarative/src/qml/qml/qqmlimport.cpp
-@@ -1876,6 +1876,9 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
+@@ -1878,6 +1878,9 @@ QString QQmlImportDatabase::resolvePlugin(QQmlTypeLoader *typeLoader,
          QLatin1String(".so"),
          QLatin1String(".bundle")
      };

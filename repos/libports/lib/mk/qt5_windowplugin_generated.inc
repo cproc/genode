@@ -1,19 +1,19 @@
-QT_DEFINES += -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtdeclarative/src/imports/window \
-  qtdeclarative/include/QtQuick/5.10.1 \
-  qtdeclarative/include/QtQuick/5.10.1/QtQuick \
-  qtbase/include/QtGui/5.10.1 \
-  qtbase/include/QtGui/5.10.1/QtGui \
+  qtdeclarative/include/QtQuick/5.11.3 \
+  qtdeclarative/include/QtQuick/5.11.3/QtQuick \
+  qtbase/include/QtGui/5.11.3 \
+  qtbase/include/QtGui/5.11.3/QtGui \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
   qtbase/include \
   qtbase/include/QtGui \
-  qtdeclarative/include/QtQml/5.10.1 \
-  qtdeclarative/include/QtQml/5.10.1/QtQml \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtdeclarative/include/QtQml/5.11.3 \
+  qtdeclarative/include/QtQml/5.11.3/QtQml \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \

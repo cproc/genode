@@ -1,17 +1,17 @@
-QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_LAYOUTS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NO_QML_DEBUGGER -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_LAYOUTS -DQT_DEPRECATED_WARNINGS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.10.1 \
-  qtbase/include/QtGui/5.10.1/QtGui \
+  qtbase/include/QtGui/5.11.3 \
+  qtbase/include/QtGui/5.11.3/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.10.1 \
-  qtbase/include/QtCore/5.10.1/QtCore \
+  qtbase/include/QtCore/5.11.3 \
+  qtbase/include/QtCore/5.11.3/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

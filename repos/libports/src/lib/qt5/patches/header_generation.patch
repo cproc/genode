@@ -12,7 +12,7 @@ Avoid errors on header generation during port preparation.
  5 files changed, 20 insertions(+), 20 deletions(-)
 
 diff --git a/qtbase/configure b/qtbase/configure
-index a88f2893d8..358269903a 100755
+index d6da4dd847..042805c493 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
 @@ -89,11 +89,11 @@ if [ x"$1" = x"-top-level" ]; then
@@ -61,10 +61,10 @@ index b57afcf72d..e7ce2a72b8 100644
      !isEmpty(var_sfx): break()
      var_sfx = _PRIVATE
 diff --git a/qtbase/mkspecs/features/qt_configure.prf b/qtbase/mkspecs/features/qt_configure.prf
-index d5dcda22ac..54dae1502e 100644
+index 4039bba431..68bd3a47d8 100644
 --- a/qtbase/mkspecs/features/qt_configure.prf
 +++ b/qtbase/mkspecs/features/qt_configure.prf
-@@ -1890,14 +1890,14 @@ defineTest(qtConfProcessOutput) {
+@@ -1911,14 +1911,14 @@ defineTest(qtConfProcessOutput) {
  
  !isEmpty(_QMAKE_SUPER_CACHE_):!equals(OUT_PWD, $$dirname(_QMAKE_SUPER_CACHE_)) {
      # sub-repo within a top-level build; no need to configure anything.
