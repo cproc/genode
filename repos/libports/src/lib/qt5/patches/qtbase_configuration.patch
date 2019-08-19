@@ -4,39 +4,47 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .gitmodules                                 |    7 --
- qtbase/mkspecs/features/qt_build_config.prf |    2 -
- qtbase/mkspecs/genode-g++/qmake.conf        |   10 +++
- qtbase/mkspecs/genode-g++/qplatformdefs.h   |   87 +++++++++++++++++++++++++++
- qtbase/src/corelib/global/global.pri        |   10 ++-
- qtbase/src/corelib/io/io.pri                |    2 -
- 6 files changed, 104 insertions(+), 14 deletions(-)
+ .gitmodules                                  |    9 ---
+ qtbase/mkspecs/features/qt_build_config.prf  |    2 -
+ qtbase/mkspecs/genode-g++/qmake.conf         |   10 +++
+ qtbase/mkspecs/genode-g++/qplatformdefs.h    |   87 ++++++++++++++++++++++++++
+ qtbase/src/corelib/global/global.pri         |   10 +--
+ qtbase/src/corelib/io/io.pri                 |    2 -
+ qtbase/src/corelib/io/qfilesystemwatcher.cpp |    2 +
+ 7 files changed, 107 insertions(+), 15 deletions(-)
  create mode 100644 qtbase/mkspecs/genode-g++/qmake.conf
  create mode 100644 qtbase/mkspecs/genode-g++/qplatformdefs.h
 
 diff --git a/.gitmodules b/.gitmodules
-index 728f3dfe94..b946078495 100644
+index f99f482340..5fb4d64e8b 100644
 --- a/.gitmodules
 +++ b/.gitmodules
 @@ -123,13 +123,6 @@
  	url = ../qtconnectivity.git
- 	branch = 5.10.1
+ 	branch = 5.11.3
  	status = addon
 -[submodule "qtwayland"]
 -	depends = qtbase
 -	recommends = qtdeclarative
 -	path = qtwayland
 -	url = ../qtwayland.git
--	branch = 5.10.1
+-	branch = 5.11.3
 -	status = addon
  [submodule "qt3d"]
  	depends = qtbase
  	recommends = qtdeclarative qtimageformats qtgamepad
+@@ -308,4 +301,4 @@
+ 	path = qtwebglplugin
+ 	url = ../qtwebglplugin.git
+ 	branch = 5.11.3
+-	status = preview
+\ No newline at end of file
++	status = preview
 diff --git a/qtbase/mkspecs/features/qt_build_config.prf b/qtbase/mkspecs/features/qt_build_config.prf
-index 76e1d15319..6f5d7c089d 100644
+index 021036e4f9..af499c33b3 100644
 --- a/qtbase/mkspecs/features/qt_build_config.prf
 +++ b/qtbase/mkspecs/features/qt_build_config.prf
-@@ -138,5 +138,5 @@ defineTest(qtConfig) {
+@@ -140,5 +140,5 @@ defineTest(qtConfig) {
          contains(QT.$${module}.disabled_features, $$1): \
              return(false)
      }
@@ -153,10 +161,10 @@ index 0000000000..5e5c34131d
 +
 +#endif // QPLATFORMDEFS_H
 diff --git a/qtbase/src/corelib/global/global.pri b/qtbase/src/corelib/global/global.pri
-index 0f8935d4b5..0338ef44c8 100644
+index 2b4fd6d661..6cf31c82f7 100644
 --- a/qtbase/src/corelib/global/global.pri
 +++ b/qtbase/src/corelib/global/global.pri
-@@ -56,11 +56,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
+@@ -77,11 +77,11 @@ PRECOMPILED_HEADER = global/qt_pch.h
  # qlogging.cpp uses backtrace(3), which is in a separate library on the BSDs.
  LIBS_PRIVATE += $$QMAKE_LIBS_EXECINFO
  
@@ -174,15 +182,31 @@ index 0f8935d4b5..0338ef44c8 100644
  linux:!static {
      precompile_header {
 diff --git a/qtbase/src/corelib/io/io.pri b/qtbase/src/corelib/io/io.pri
-index 24f27f6b24..a12a959cf9 100644
+index c6a5407e51..0c742d3850 100644
 --- a/qtbase/src/corelib/io/io.pri
 +++ b/qtbase/src/corelib/io/io.pri
-@@ -177,7 +177,7 @@ win32 {
+@@ -187,7 +187,7 @@ win32 {
          } else {
              SOURCES += \
                  io/qstandardpaths_unix.cpp \
 -                io/qstorageinfo_unix.cpp
 +                io/qstorageinfo_stub.cpp
          }
+ }
  
-         linux|if(qnx:qtConfig(inotify)) {
+diff --git a/qtbase/src/corelib/io/qfilesystemwatcher.cpp b/qtbase/src/corelib/io/qfilesystemwatcher.cpp
+index f40e166d9f..26522bcebe 100644
+--- a/qtbase/src/corelib/io/qfilesystemwatcher.cpp
++++ b/qtbase/src/corelib/io/qfilesystemwatcher.cpp
+@@ -47,9 +47,11 @@
+ #include <qset.h>
+ #include <qtimer.h>
+ 
++#if !defined(QT_NO_INOTIFY)
+ #if defined(Q_OS_LINUX) || (defined(Q_OS_QNX) && !defined(QT_NO_INOTIFY))
+ #define USE_INOTIFY
+ #endif
++#endif
+ 
+ #include "qfilesystemwatcher_polling_p.h"
+ #if defined(Q_OS_WIN)
