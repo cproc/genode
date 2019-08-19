@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QT_VERSION=5.11.3
+QT_VERSION=5.12.4
 
 ./genode_qt5_configure
 

@@ -8,10 +8,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/qtdeclarative/tools/tools.pro b/qtdeclarative/tools/tools.pro
-index 856906cc53..4c0c078880 100644
+index d3ec380..d431ee8 100644
 --- a/qtdeclarative/tools/tools.pro
 +++ b/qtdeclarative/tools/tools.pro
-@@ -16,8 +16,7 @@ qtConfig(commandlineparser):qtConfig(xmlstreamwriter): SUBDIRS += qmlcachegen
+@@ -20,8 +20,7 @@ qtConfig(thread):!android|android_app {
      qtHaveModule(quick) {
          !static: {
              SUBDIRS += \

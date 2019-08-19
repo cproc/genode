@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 diff --git a/qtsvg/include/QtSvg/QtSvgDepends b/qtsvg/include/QtSvg/QtSvgDepends
 new file mode 100644
-index 0000000000..a4800e156c
+index 0000000..a4800e1
 --- /dev/null
 +++ b/qtsvg/include/QtSvg/QtSvgDepends
 @@ -0,0 +1,6 @@

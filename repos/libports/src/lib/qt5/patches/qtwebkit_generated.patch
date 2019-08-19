@@ -12,7 +12,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 diff --git a/qtwebkit/include/QtWebKit/QtWebKitDepends b/qtwebkit/include/QtWebKit/QtWebKitDepends
 new file mode 100644
-index 0000000000..bb9610bc6b
+index 0000000..bb9610b
 --- /dev/null
 +++ b/qtwebkit/include/QtWebKit/QtWebKitDepends
 @@ -0,0 +1,6 @@
@@ -24,7 +24,7 @@ index 0000000000..bb9610bc6b
 +#endif
 diff --git a/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsDepends b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsDepends
 new file mode 100644
-index 0000000000..9072063ddb
+index 0000000..9072063
 --- /dev/null
 +++ b/qtwebkit/include/QtWebKitWidgets/QtWebKitWidgetsDepends
 @@ -0,0 +1,8 @@

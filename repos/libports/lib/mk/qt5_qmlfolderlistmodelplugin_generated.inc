@@ -2,10 +2,10 @@ QT_DEFINES += -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LAR
 
 QT_INCPATH += \
   qtdeclarative/src/imports/folderlistmodel \
-  qtdeclarative/include/QtQml/5.11.3 \
-  qtdeclarative/include/QtQml/5.11.3/QtQml \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtdeclarative/include/QtQml/5.12.4 \
+  qtdeclarative/include/QtQml/5.12.4/QtQml \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
   qtbase/include \

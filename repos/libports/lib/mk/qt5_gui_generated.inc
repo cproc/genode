@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.11.3 \
-  qtbase/include/QtGui/5.11.3/QtGui \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtGui/5.12.4 \
+  qtbase/include/QtGui/5.12.4/QtGui \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -63,6 +63,7 @@ QT_SOURCES += \
   qplatformgraphicsbufferhelper.cpp \
   qinputdevicemanager.cpp \
   qhighdpiscaling.cpp \
+  qtestsupport_gui.cpp \
   qdnd.cpp \
   qdrag.cpp \
   qplatformdrag.cpp \
@@ -76,6 +77,7 @@ QT_SOURCES += \
   qimage_conversions.cpp \
   qimageiohandler.cpp \
   qimagereader.cpp \
+  qimagereaderwriterhelpers.cpp \
   qimagewriter.cpp \
   qpaintengine_pic.cpp \
   qpicture.cpp \
@@ -139,7 +141,6 @@ QT_SOURCES += \
   qcolorprofile.cpp \
   qcompositionfunctions.cpp \
   qcosmeticstroker.cpp \
-  qdrawhelper.cpp \
   qemulationpaintengine.cpp \
   qgrayraster.c \
   qimagescale.cpp \
@@ -184,6 +185,10 @@ QT_SOURCES += \
   qshadernode.cpp \
   qshadernodeport.cpp \
   qshadernodesloader.cpp \
+  qtexturefiledata.cpp \
+  qtexturefilereader.cpp \
+  qpkmhandler.cpp \
+  qktxhandler.cpp \
   qgenericmatrix.cpp \
   qmatrix4x4.cpp \
   qquaternion.cpp \
@@ -210,6 +215,7 @@ QT_SOURCES += \
   qopengltextureblitter.cpp \
   qopengltexture.cpp \
   qopengltexturehelper.cpp \
+  qopengltextureuploader.cpp \
   qopenglpixeltransferoptions.cpp \
   qopenglprogrambinarycache.cpp \
   qopenglfunctions_1_0.cpp \
@@ -242,9 +248,10 @@ QT_SOURCES += \
   qguivariantanimation.cpp \
   qstandarditemmodel.cpp \
   qimage_compat.cpp \
-  qimage_sse2.cpp \
+  qdrawhelper.cpp \
   qdrawhelper_sse2.cpp \
   qrc_qpdf.cpp \
+  qrc_qmake_webgradients.cpp \
   moc_qgenericplugin.cpp \
   moc_qplatforminputcontext.cpp \
   moc_qplatforminputcontextplugin_p.cpp \
@@ -254,6 +261,7 @@ QT_SOURCES += \
   moc_qplatformmenu.cpp \
   moc_qsurfaceformat.cpp \
   moc_qoffscreensurface.cpp \
+  moc_qsurface.cpp \
   moc_qclipboard.cpp \
   moc_qevent.cpp \
   moc_qinternalmimedata_p.cpp \
@@ -274,6 +282,7 @@ QT_SOURCES += \
   moc_qdrag.cpp \
   moc_qshapedpixmapdndwindow_p.cpp \
   moc_qopenglwindow.cpp \
+  moc_qimage.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
   moc_qiconengineplugin.cpp \
@@ -326,6 +335,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qguiapplication.cpp \
   moc_qwindow.cpp \
   moc_qoffscreensurface.cpp \
+  moc_qsurface.cpp \
   moc_qclipboard.cpp \
   moc_qevent.cpp \
   moc_qinputmethod.cpp \
@@ -349,6 +359,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qshapedpixmapdndwindow_p.cpp \
   moc_qopenglcontext.cpp \
   moc_qopenglwindow.cpp \
+  moc_qimage.cpp \
   moc_qimageiohandler.cpp \
   moc_qpictureformatplugin.cpp \
   moc_qiconengineplugin.cpp \

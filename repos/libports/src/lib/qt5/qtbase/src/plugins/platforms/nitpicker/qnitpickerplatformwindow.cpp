@@ -743,11 +743,11 @@ bool QNitpickerPlatformWindow::setWindowModified(bool modified)
 	return QPlatformWindow::setWindowModified(modified);
 }
 
-void QNitpickerPlatformWindow::windowEvent(QEvent *event)
+bool QNitpickerPlatformWindow::windowEvent(QEvent *event)
 {
 	if (qnpw_verbose)
 	    qDebug() << "QNitpickerPlatformWindow::windowEvent(" << event->type() << ")";
-	QPlatformWindow::windowEvent(event);
+	return QPlatformWindow::windowEvent(event);
 }
 
 bool QNitpickerPlatformWindow::startSystemResize(const QPoint &pos, Qt::Corner corner)
