@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/widgets/kernel/qwidgetwindow.cpp b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-index 34b12a74b2..9f35a1464c 100644
+index 1f3057b008..d5c9695930 100644
 --- a/qtbase/src/widgets/kernel/qwidgetwindow.cpp
 +++ b/qtbase/src/widgets/kernel/qwidgetwindow.cpp
-@@ -366,6 +366,9 @@ bool QWidgetWindow::event(QEvent *event)
+@@ -367,6 +367,9 @@ bool QWidgetWindow::event(QEvent *event)
          m_widget->repaint();
          return true;
  
@@ -23,10 +23,10 @@ index 34b12a74b2..9f35a1464c 100644
          break;
      }
 diff --git a/qtbase/src/widgets/widgets/qwidgetanimator.cpp b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
-index b6828a14ef..64995b762b 100644
+index b1e527e3b6..4efca0ab2e 100644
 --- a/qtbase/src/widgets/widgets/qwidgetanimator.cpp
 +++ b/qtbase/src/widgets/widgets/qwidgetanimator.cpp
-@@ -75,7 +75,8 @@ void QWidgetAnimator::abort(QWidget *w)
+@@ -77,7 +77,8 @@ void QWidgetAnimator::abort(QWidget *w)
  void QWidgetAnimator::animationFinished()
  {
      QPropertyAnimation *anim = qobject_cast<QPropertyAnimation*>(sender());
@@ -34,5 +34,5 @@ index b6828a14ef..64995b762b 100644
 +    if (anim)
 +    	abort(static_cast<QWidget*>(anim->targetObject()));
  }
- #endif //QT_NO_ANIMATION
+ #endif // animation
  
