@@ -1,5 +1,5 @@
 LICENSE := GPL
-VERSION := 5.10.1
+VERSION := 5.11.3
 QTWEBKIT_VERSION = 5.9.1
 
 QT5 := qt-everywhere-src-${VERSION}
@@ -8,8 +8,8 @@ QTSCRIPTCLASSIC := qtscriptclassic-1.0_1-opensource
 
 DOWNLOADS := ${QT5}.archive ${QT5_WEBKIT}.archive ${QTSCRIPTCLASSIC}.archive symbols.git
 
-URL(${QT5}) := https://download.qt.io/archive/qt/5.10/$(VERSION)/single/$(QT5).tar.xz
-SHA(${QT5}) := 05ffba7b811b854ed558abf2be2ddbd3bb6ddd0b60ea4b5da75d277ac15e740a
+URL(${QT5}) := https://download.qt.io/archive/qt/5.11/$(VERSION)/single/$(QT5).tar.xz
+SHA(${QT5}) := 859417642713cee2493ee3646a7fee782c9f1db39e41d7bb1322bba0c5f0ff4d
 DIR(${QT5}) := src/lib/qt5/qt5
 
 URL(${QT5_WEBKIT}) := https://download.qt.io/archive/qt/5.9/$(QTWEBKIT_VERSION)/submodules/${QT5_WEBKIT}.tar.xz
@@ -21,7 +21,7 @@ SHA(${QTSCRIPTCLASSIC}) := 6a4c4ada6f0064f6c5d7663602a37c99250ed6c7398b1775f95de
 DIR(${QTSCRIPTCLASSIC}) := src/lib/qt5/${QTSCRIPTCLASSIC}
 
 URL(symbols) := https://github.com/cproc/genode-symbols.git
-REV(symbols) := 62561a21de5336d30c06e9e94aa406d199e3809e
+REV(symbols) := 537c14798bebb002228c34c5682ac3d8c4d3626f
 DIR(symbols) := lib/symbols
 
 
@@ -214,33 +214,35 @@ $(BUILD_DIR)/qtwebkit/Source/Makefile.widgetsapi: $(BUILD_DIR)/qtwebkit/Makefile
 
 include/QtCore: $(BUILD_DIR)/qtbase/src/corelib/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/global/qconfig.h $@/
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/global/qconfig_p.h $@/$(VERSION)/QtCore/private/
 	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/qtcore-config.h $@/
 	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/corelib/qtcore-config_p.h $@/$(VERSION)/QtCore/private/
 
 include/QtEglSupport: $(BUILD_DIR)/qtbase/src/platformsupport/eglconvenience/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtEventDispatcherSupport: $(BUILD_DIR)/qtbase/src/platformsupport/eventdispatchers/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtFontDatabaseSupport: $(BUILD_DIR)/qtbase/src/platformsupport/fontdatabases/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtGui: $(BUILD_DIR)/qtbase/src/gui/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_qpa_headers $(OUTPUT_FILTER)
@@ -249,13 +251,13 @@ include/QtGui: $(BUILD_DIR)/qtbase/src/gui/Makefile
 
 include/QtInputSupport: $(BUILD_DIR)/qtbase/src/platformsupport/input/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtNetwork: $(BUILD_DIR)/qtbase/src/network/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/network/qtnetwork-config.h $@/
@@ -263,18 +265,18 @@ include/QtNetwork: $(BUILD_DIR)/qtbase/src/network/Makefile
 
 include/QtOpenGL: $(BUILD_DIR)/qtbase/src/opengl/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtPlatformHeaders: $(BUILD_DIR)/qtbase/src/platformheaders/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 
 include/QtPrintSupport: $(BUILD_DIR)/qtbase/src/printsupport/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_qpa_headers $(OUTPUT_FILTER)
@@ -283,19 +285,19 @@ include/QtPrintSupport: $(BUILD_DIR)/qtbase/src/printsupport/Makefile
 
 include/QtSql: $(BUILD_DIR)/qtbase/src/sql/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtTest: $(BUILD_DIR)/qtbase/src/testlib/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtWidgets: $(BUILD_DIR)/qtbase/src/widgets/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/widgets/qtwidgets-config.h $@/
@@ -303,7 +305,7 @@ include/QtWidgets: $(BUILD_DIR)/qtbase/src/widgets/Makefile
 
 include/QtXml: $(BUILD_DIR)/qtbase/src/xml/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtbase/src/xml/qtxml-config.h $@/
@@ -313,15 +315,19 @@ include/QtXml: $(BUILD_DIR)/qtbase/src/xml/Makefile
 
 include/QtQml: $(BUILD_DIR)/qtdeclarative/src/qml/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtdeclarative/src/qml/qtqml-config.h $@/
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtdeclarative/src/qml/qtqml-config_p.h $@/$(VERSION)/QtQml/private/
 
 include/QtQuick: $(BUILD_DIR)/qtdeclarative/src/quick/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtdeclarative/src/quick/qtquick-config.h $@/
+	$(VERBOSE)cp $(QT5_CONTRIB_DIR)/qtdeclarative/src/quick/qtquick-config_p.h $@/$(VERSION)/QtQuick/private/
 
 # qtscriptclassic
 
@@ -334,7 +340,7 @@ include/QtScript:
 
 include/QtSvg: $(BUILD_DIR)/qtsvg/src/svg/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
@@ -342,18 +348,18 @@ include/QtSvg: $(BUILD_DIR)/qtsvg/src/svg/Makefile
 
 include/QtDesigner: $(BUILD_DIR)/qttools/src/designer/src/lib/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtUiPlugin: $(BUILD_DIR)/qttools/src/designer/src/uiplugin/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 
 include/QtUiTools: $(BUILD_DIR)/qttools/src/designer/src/uitools/Makefile
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
@@ -361,13 +367,13 @@ include/QtUiTools: $(BUILD_DIR)/qttools/src/designer/src/uitools/Makefile
 
 include/QtWebKit: $(BUILD_DIR)/qtwebkit/Source/Makefile.api
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 
 include/QtWebKitWidgets: $(BUILD_DIR)/qtwebkit/Source/Makefile.widgetsapi
 	$(VERBOSE)$(MSG_GENERATE)$@
-	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_class_headers $(OUTPUT_FILTER)
+	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_gen_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_targ_headers $(OUTPUT_FILTER)
 	$(VERBOSE)make -f $< INSTALL_ROOT=$(CURDIR) install_private_headers $(OUTPUT_FILTER)
 

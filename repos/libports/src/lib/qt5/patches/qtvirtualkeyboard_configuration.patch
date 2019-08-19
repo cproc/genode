@@ -4,14 +4,28 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
+ qtvirtualkeyboard/src/config.pri                   |    2 +-
  .../src/virtualkeyboard/virtualkeyboard.pro        |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
+diff --git a/qtvirtualkeyboard/src/config.pri b/qtvirtualkeyboard/src/config.pri
+index 94ce1fa407..8225bf315e 100644
+--- a/qtvirtualkeyboard/src/config.pri
++++ b/qtvirtualkeyboard/src/config.pri
+@@ -21,7 +21,7 @@ disable-layouts {
+     tcime|zhuyin|cangjie: CONFIG += lang-zh_TW
+ 
+     # Use all languages by default
+-    !contains(CONFIG, lang-.*): CONFIG += lang-all
++    !contains(CONFIG, lang-.*): CONFIG += lang-en_GB
+ 
+     # Flag for activating all languages
+     lang-all: CONFIG += \
 diff --git a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
-index 2b2f2aac0b..9e2526b1fb 100644
+index dabd7da2bb..52a4b7d2d7 100644
 --- a/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
 +++ b/qtvirtualkeyboard/src/virtualkeyboard/virtualkeyboard.pro
-@@ -296,10 +296,10 @@ OTHER_FILES += \
+@@ -297,10 +297,10 @@ OTHER_FILES += \
      SOURCES += desktopinputpanel.cpp inputview.cpp
      HEADERS += desktopinputpanel.h inputview.h
      DEFINES += QT_VIRTUALKEYBOARD_DESKTOP

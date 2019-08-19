@@ -8,7 +8,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  1 file changed, 13 insertions(+), 13 deletions(-)
 
 diff --git a/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro b/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro
-index b91df554f6..452ef8b0f6 100644
+index 27ad414120..6383ffe59e 100644
 --- a/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro
 +++ b/qtvirtualkeyboard/examples/virtualkeyboard/basic/basic.pro
 @@ -3,10 +3,10 @@ TARGET = basic
@@ -26,8 +26,8 @@ index b91df554f6..452ef8b0f6 100644
  
  target.path = $$[QT_INSTALL_EXAMPLES]/virtualkeyboard/basic
  INSTALLS += target
-@@ -24,13 +24,13 @@ OTHER_FILES += \
-     content/TextBase.qml \
+@@ -22,13 +22,13 @@ OTHER_FILES += \
+     content/TextArea.qml \
      content/TextField.qml \
  
 -disable-xcb {
