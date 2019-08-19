@@ -40,7 +40,7 @@ CC_OPT += $(QT_DEFINES)
 #
 # Locations of moc, rcc, and uic binaries
 #
-QT5_HOST_TOOL_INSTALL_LOCATION ?= /usr/local/genode/tool/qt5
+QT5_HOST_TOOL_INSTALL_LOCATION ?= /home/chpro/opt/genode/tool/qt5
 MOC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/moc
 RCC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/rcc
 UIC                             = $(QT5_HOST_TOOL_INSTALL_LOCATION)/bin/uic
