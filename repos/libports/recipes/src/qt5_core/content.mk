@@ -30,6 +30,7 @@ MIRROR_FROM_PORT_DIR := src/lib/qt5/qt5/qtbase/src/3rdparty/double-conversion \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/rfc6234 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/sha1 \
                         src/lib/qt5/qt5/qtbase/src/3rdparty/sha3 \
+                        src/lib/qt5/qt5/qtbase/src/3rdparty/tinycbor \
                         src/lib/qt5/qt5/qtbase/src/corelib
 
 content: $(MIRROR_FROM_PORT_DIR)

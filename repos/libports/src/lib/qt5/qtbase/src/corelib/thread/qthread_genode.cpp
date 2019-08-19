@@ -105,7 +105,7 @@
 
 QT_BEGIN_NAMESPACE
 
-#ifndef QT_NO_THREAD
+#if QT_CONFIG(thread)
 
 #ifdef Q_OS_GENODE
 
@@ -313,7 +313,7 @@ extern "C" {
 typedef void*(*QtThreadCallback)(void*);
 }
 
-#endif // QT_NO_THREAD
+#endif // QT_CONFIG(thread)
 
 QAbstractEventDispatcher *QThreadPrivate::createEventDispatcher(QThreadData *data)
 {
@@ -338,7 +338,7 @@ QAbstractEventDispatcher *QThreadPrivate::createEventDispatcher(QThreadData *dat
 #endif
 }
 
-#ifndef QT_NO_THREAD
+#if QT_CONFIG(thread)
 
 #ifndef Q_OS_GENODE
 #if (defined(Q_OS_LINUX) || defined(Q_OS_MAC) || defined(Q_OS_QNX))
@@ -392,13 +392,7 @@ void *QThreadPrivate::start(void *arg)
             data->quitNow = thr->d_func()->exited;
         }
 
-        QAbstractEventDispatcher *eventDispatcher = data->eventDispatcher.load();
-        if (!eventDispatcher) {
-            eventDispatcher = createEventDispatcher(data);
-            data->eventDispatcher.storeRelease(eventDispatcher);
-        }
-
-        eventDispatcher->startingUp();
+        data->ensureEventDispatcher();
 
 #ifdef Q_OS_GENODE
     QThread::setTerminationEnabled(true);
@@ -593,6 +587,8 @@ void QThread::yieldCurrentThread()
 #endif /* Q_OS_GENODE */
 }
 
+#endif // QT_CONFIG(thread)
+
 static timespec makeTimespec(time_t secs, long nsecs)
 {
     struct timespec ts;
@@ -615,6 +611,8 @@ void QThread::usleep(unsigned long usecs)
 {
     qt_nanosleep(makeTimespec(usecs / 1000 / 1000, usecs % (1000*1000) * 1000));
 }
+
+#if QT_CONFIG(thread)
 
 #ifndef Q_OS_GENODE
 #ifdef QT_HAS_THREAD_PRIORITY_SCHEDULING
@@ -847,6 +845,12 @@ void QThread::start(Priority priority)
         }
     }
 
+#ifdef Q_OS_INTEGRITY
+    if (Q_LIKELY(objectName().isEmpty()))
+        pthread_attr_setthreadname(&attr, metaObject()->className());
+    else
+        pthread_attr_setthreadname(&attr, objectName().toLocal8Bit());
+#endif
     pthread_t threadId;
     int code = pthread_create(&threadId, &attr, QThreadPrivate::start, this);
     if (code == EPERM) {
@@ -1017,7 +1021,7 @@ void QThreadPrivate::setPriority(QThread::Priority threadPriority)
 #endif /* Q_OS_GENODE */
 }
 
-#endif // QT_NO_THREAD
+#endif // QT_CONFIG(thread)
 
 QT_END_NAMESPACE
 

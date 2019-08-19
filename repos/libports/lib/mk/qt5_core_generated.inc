@@ -6,13 +6,15 @@ QT_INCPATH += \
   qtbase/src/3rdparty/md5 \
   qtbase/src/3rdparty/md4 \
   qtbase/src/3rdparty/sha3 \
+  qtbase/src/3rdparty \
   qtbase/src/3rdparty/double-conversion/include \
   qtbase/src/3rdparty/double-conversion/include/double-conversion \
   qtbase/src/3rdparty/forkfd \
+  qtbase/src/3rdparty/tinycbor/src \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/src/3rdparty/pcre2/src \
   qtbase/mkspecs/genode-g++
 
@@ -24,6 +26,7 @@ QT_SOURCES += \
   qsequentialanimationgroup.cpp \
   qparallelanimationgroup.cpp \
   qpauseanimation.cpp \
+  qendian.cpp \
   qglobal.cpp \
   qlibraryinfo.cpp \
   qmalloc.cpp \
@@ -35,21 +38,21 @@ QT_SOURCES += \
   qhooks.cpp \
   minimum-linux.S \
   qversiontagging.cpp \
+  qrunnable.cpp \
+  qthread.cpp \
+  qthread_unix.cpp \
   qatomic.cpp \
   qmutex.cpp \
-  qreadwritelock.cpp \
-  qrunnable.cpp \
   qmutexpool.cpp \
+  qreadwritelock.cpp \
   qsemaphore.cpp \
-  qthread.cpp \
   qthreadpool.cpp \
   qthreadstorage.cpp \
+  qwaitcondition_unix.cpp \
   qexception.cpp \
   qfutureinterface.cpp \
   qfuturewatcher.cpp \
   qresultstore.cpp \
-  qthread_unix.cpp \
-  qwaitcondition_unix.cpp \
   qarraydata.cpp \
   qbitarray.cpp \
   qbytearray.cpp \
@@ -139,7 +142,6 @@ QT_SOURCES += \
   qurlidna.cpp \
   qurlquery.cpp \
   qurlrecode.cpp \
-  qsettings.cpp \
   qfsfileengine.cpp \
   qfsfileengine_iterator.cpp \
   qfilesystementry.cpp \
@@ -151,6 +153,7 @@ QT_SOURCES += \
   qfilesystemwatcher_polling.cpp \
   qprocess.cpp \
   qprocess_unix.cpp \
+  qsettings.cpp \
   qfsfileengine_unix.cpp \
   qfilesystemengine_unix.cpp \
   qlockfile_unix.cpp \
@@ -197,6 +200,7 @@ QT_SOURCES += \
   qpointer.cpp \
   qmath.cpp \
   qsystemerror.cpp \
+  qtestsupport_core.cpp \
   qcore_unix.cpp \
   qeventdispatcher_unix.cpp \
   qtimerinfo_unix.cpp \
@@ -220,8 +224,12 @@ QT_SOURCES += \
   qsjiscodec.cpp \
   qeuckrcodec.cpp \
   qbig5codec.cpp \
+  qcborstream.cpp \
+  qcbordiagnostic.cpp \
+  qcborvalue.cpp \
   qdatastream.cpp \
   qjson.cpp \
+  qjsoncbor.cpp \
   qjsondocument.cpp \
   qjsonobject.cpp \
   qjsonarray.cpp \
@@ -298,12 +306,12 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qtemporaryfile.cpp \
   moc_qsavefile.cpp \
   moc_qstandardpaths.cpp \
-  moc_qsettings.cpp \
   moc_qfileselector.cpp \
   moc_qfilesystemwatcher.cpp \
   moc_qfilesystemwatcher_p.cpp \
   moc_qfilesystemwatcher_polling_p.cpp \
   moc_qprocess.cpp \
+  moc_qsettings.cpp \
   moc_qabstractitemmodel.cpp \
   moc_qitemselectionmodel.cpp \
   moc_qabstractproxymodel.cpp \
@@ -326,13 +334,15 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qobjectcleanuphandler.cpp \
   moc_qsharedmemory.cpp \
   moc_qeventdispatcher_unix_p.cpp \
+  moc_qcborcommon.cpp \
+  moc_qcborvalue.cpp \
+  moc_qcborstream.cpp \
   moc_qtextstream_p.cpp \
   moc_qstatemachine.cpp \
   moc_qabstractstate.cpp \
   moc_qstate.cpp \
   moc_qfinalstate.cpp \
   moc_qhistorystate.cpp \
-  moc_qhistorystate_p.cpp \
   moc_qabstracttransition.cpp \
   moc_qsignaltransition.cpp \
   moc_qeventtransition.cpp \
@@ -343,5 +353,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
 
 COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qtimer.moc \
-  qstatemachine.moc
+  qstatemachine.moc \
+  qhistorystate.moc
 

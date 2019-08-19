@@ -5,12 +5,12 @@ QT_INCPATH += \
   qtbase/src/widgets/dialogs \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtWidgets/5.11.3 \
-  qtbase/include/QtWidgets/5.11.3/QtWidgets \
-  qtbase/include/QtGui/5.11.3 \
-  qtbase/include/QtGui/5.11.3/QtGui \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtWidgets/5.12.4 \
+  qtbase/include/QtWidgets/5.12.4/QtWidgets \
+  qtbase/include/QtGui/5.12.4 \
+  qtbase/include/QtGui/5.12.4/QtGui \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include/QtGui \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
@@ -39,6 +39,7 @@ QT_SOURCES += \
   qwidgetsvariant.cpp \
   qwidgetwindow.cpp \
   qwindowcontainer.cpp \
+  qtestsupport_widgets.cpp \
   qopenglwidget.cpp \
   qformlayout.cpp \
   qwhatsthis.cpp \
@@ -287,7 +288,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qstackedwidget.cpp \
   moc_qstatusbar.cpp \
   moc_qtabbar.cpp \
-  moc_qtabbar_p.cpp \
   moc_qplaintextedit.cpp \
   moc_qplaintextedit_p.cpp \
   moc_qtextedit.cpp \
@@ -373,6 +373,7 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qfontcombobox.moc \
   qmdisubwindow.moc \
   qmenu.moc \
+  qtabbar.moc \
   qtoolbox.moc \
   qcolordialog.moc \
   qfontdialog.moc \

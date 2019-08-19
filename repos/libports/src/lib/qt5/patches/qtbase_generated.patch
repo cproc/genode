@@ -4,83 +4,88 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../QtCore/5.11.3/QtCore/private/qconfig_p.h       |    1 
- .../QtCore/5.11.3/QtCore/private/qtcore-config_p.h |    1 
+ .../QtCore/5.12.4/QtCore/private/qconfig_p.h       |    1 
+ .../QtCore/5.12.4/QtCore/private/qtcore-config_p.h |    1 
  qtbase/include/QtCore/QtConfig                     |    1 
  qtbase/include/QtCore/QtCoreDepends                |    3 
  qtbase/include/QtCore/qconfig.h                    |    1 
  qtbase/include/QtCore/qtcore-config.h              |    1 
- .../QtGui/5.11.3/QtGui/private/qtgui-config_p.h    |    1 
- .../5.11.3/QtGui/private/qvulkanfunctions_p.h      |    1 
+ .../QtGui/5.12.4/QtGui/private/qtgui-config_p.h    |    1 
+ .../5.12.4/QtGui/private/qvulkanfunctions_p.h      |    1 
  qtbase/include/QtGui/QVulkanDeviceFunctions        |    1 
  qtbase/include/QtGui/QVulkanFunctions              |    1 
  qtbase/include/QtGui/QtGuiDepends                  |    4 
  qtbase/include/QtGui/qtgui-config.h                |    1 
  qtbase/include/QtGui/qvulkanfunctions.h            |    1 
- .../5.11.3/QtNetwork/private/qtnetwork-config_p.h  |    1 
+ .../5.12.4/QtNetwork/private/qtnetwork-config_p.h  |    1 
  qtbase/include/QtNetwork/QtNetworkDepends          |    4 
  qtbase/include/QtNetwork/qtnetwork-config.h        |    1 
  qtbase/include/QtOpenGL/QtOpenGLDepends            |    6 
  .../private/qtprintsupport-config_p.h              |    1 
  .../include/QtPrintSupport/QtPrintSupportDepends   |    6 
  .../include/QtPrintSupport/qtprintsupport-config.h |    1 
+ .../QtSql/5.12.4/QtSql/private/qtsql-config_p.h    |    1 
  qtbase/include/QtSql/QtSqlDepends                  |    4 
- .../5.11.3/QtTest/private/qttestlib-config_p.h     |    1 
+ qtbase/include/QtSql/qtsql-config.h                |    1 
+ .../5.12.4/QtTest/private/qttestlib-config_p.h     |    1 
  qtbase/include/QtTest/QtTestDepends                |    4 
  qtbase/include/QtTest/qttestlib-config.h           |    1 
- .../5.11.3/QtWidgets/private/qtwidgets-config_p.h  |    1 
+ .../5.12.4/QtWidgets/private/qtwidgets-config_p.h  |    1 
  qtbase/include/QtWidgets/QtWidgetsDepends          |    5 
  qtbase/include/QtWidgets/qtwidgets-config.h        |    1 
- .../QtXml/5.11.3/QtXml/private/qtxml-config_p.h    |    1 
+ .../QtXml/5.12.4/QtXml/private/qtxml-config_p.h    |    1 
  qtbase/include/QtXml/QtXmlDepends                  |    4 
  qtbase/include/QtXml/qtxml-config.h                |    1 
  qtbase/src/corelib/global/qconfig.cpp              |   65 
- qtbase/src/corelib/global/qconfig.h                |   29 
- qtbase/src/corelib/global/qconfig_p.h              |   22 
+ qtbase/src/corelib/global/qconfig.h                |   32 
+ qtbase/src/corelib/global/qconfig_p.h              |   23 
  qtbase/src/corelib/global/qfloat16tables.cpp       | 3222 ++++++++++++++++++++
  qtbase/src/corelib/qtcore-config.h                 |   42 
- qtbase/src/corelib/qtcore-config_p.h               |   29 
+ qtbase/src/corelib/qtcore-config_p.h               |   30 
  qtbase/src/corelib/qtcore_tracepoints_p.h          |    1 
- qtbase/src/gui/qtgui-config.h                      |   48 
- qtbase/src/gui/qtgui-config_p.h                    |   45 
+ qtbase/src/gui/qtgui-config.h                      |   49 
+ qtbase/src/gui/qtgui-config_p.h                    |   55 
  qtbase/src/gui/qtgui_tracepoints_p.h               |    1 
- qtbase/src/network/qtnetwork-config.h              |   18 
+ qtbase/src/network/qtnetwork-config.h              |   19 
  qtbase/src/network/qtnetwork-config_p.h            |    6 
  qtbase/src/printsupport/qtprintsupport-config.h    |    6 
  qtbase/src/printsupport/qtprintsupport-config_p.h  |    2 
  qtbase/src/widgets/qtwidgets-config.h              |   78 
  qtbase/src/widgets/qtwidgets-config_p.h            |    8 
+ qtbase/src/widgets/qtwidgets_tracepoints_p.h       |    1 
  qtbase/src/xml/qtxml-config.h                      |    1 
  qtbase/src/xml/qtxml-config_p.h                    |    0 
- 48 files changed, 3684 insertions(+)
- create mode 100644 qtbase/include/QtCore/5.11.3/QtCore/private/qconfig_p.h
- create mode 100644 qtbase/include/QtCore/5.11.3/QtCore/private/qtcore-config_p.h
+ 51 files changed, 3704 insertions(+)
+ create mode 100644 qtbase/include/QtCore/5.12.4/QtCore/private/qconfig_p.h
+ create mode 100644 qtbase/include/QtCore/5.12.4/QtCore/private/qtcore-config_p.h
  create mode 100644 qtbase/include/QtCore/QtConfig
  create mode 100644 qtbase/include/QtCore/QtCoreDepends
  create mode 100644 qtbase/include/QtCore/qconfig.h
  create mode 100644 qtbase/include/QtCore/qtcore-config.h
- create mode 100644 qtbase/include/QtGui/5.11.3/QtGui/private/qtgui-config_p.h
- create mode 100644 qtbase/include/QtGui/5.11.3/QtGui/private/qvulkanfunctions_p.h
+ create mode 100644 qtbase/include/QtGui/5.12.4/QtGui/private/qtgui-config_p.h
+ create mode 100644 qtbase/include/QtGui/5.12.4/QtGui/private/qvulkanfunctions_p.h
  create mode 100644 qtbase/include/QtGui/QVulkanDeviceFunctions
  create mode 100644 qtbase/include/QtGui/QVulkanFunctions
  create mode 100644 qtbase/include/QtGui/QtGuiDepends
  create mode 100644 qtbase/include/QtGui/qtgui-config.h
  create mode 100644 qtbase/include/QtGui/qvulkanfunctions.h
- create mode 100644 qtbase/include/QtNetwork/5.11.3/QtNetwork/private/qtnetwork-config_p.h
+ create mode 100644 qtbase/include/QtNetwork/5.12.4/QtNetwork/private/qtnetwork-config_p.h
  create mode 100644 qtbase/include/QtNetwork/QtNetworkDepends
  create mode 100644 qtbase/include/QtNetwork/qtnetwork-config.h
  create mode 100644 qtbase/include/QtOpenGL/QtOpenGLDepends
- create mode 100644 qtbase/include/QtPrintSupport/5.11.3/QtPrintSupport/private/qtprintsupport-config_p.h
+ create mode 100644 qtbase/include/QtPrintSupport/5.12.4/QtPrintSupport/private/qtprintsupport-config_p.h
  create mode 100644 qtbase/include/QtPrintSupport/QtPrintSupportDepends
  create mode 100644 qtbase/include/QtPrintSupport/qtprintsupport-config.h
+ create mode 100644 qtbase/include/QtSql/5.12.4/QtSql/private/qtsql-config_p.h
  create mode 100644 qtbase/include/QtSql/QtSqlDepends
- create mode 100644 qtbase/include/QtTest/5.11.3/QtTest/private/qttestlib-config_p.h
+ create mode 100644 qtbase/include/QtSql/qtsql-config.h
+ create mode 100644 qtbase/include/QtTest/5.12.4/QtTest/private/qttestlib-config_p.h
  create mode 100644 qtbase/include/QtTest/QtTestDepends
  create mode 100644 qtbase/include/QtTest/qttestlib-config.h
- create mode 100644 qtbase/include/QtWidgets/5.11.3/QtWidgets/private/qtwidgets-config_p.h
+ create mode 100644 qtbase/include/QtWidgets/5.12.4/QtWidgets/private/qtwidgets-config_p.h
  create mode 100644 qtbase/include/QtWidgets/QtWidgetsDepends
  create mode 100644 qtbase/include/QtWidgets/qtwidgets-config.h
- create mode 100644 qtbase/include/QtXml/5.11.3/QtXml/private/qtxml-config_p.h
+ create mode 100644 qtbase/include/QtXml/5.12.4/QtXml/private/qtxml-config_p.h
  create mode 100644 qtbase/include/QtXml/QtXmlDepends
  create mode 100644 qtbase/include/QtXml/qtxml-config.h
  create mode 100644 qtbase/src/corelib/global/qconfig.cpp
@@ -99,33 +104,34 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  create mode 100644 qtbase/src/printsupport/qtprintsupport-config_p.h
  create mode 100644 qtbase/src/widgets/qtwidgets-config.h
  create mode 100644 qtbase/src/widgets/qtwidgets-config_p.h
+ create mode 100644 qtbase/src/widgets/qtwidgets_tracepoints_p.h
  create mode 100644 qtbase/src/xml/qtxml-config.h
  create mode 100644 qtbase/src/xml/qtxml-config_p.h
 
-diff --git a/qtbase/include/QtCore/5.11.3/QtCore/private/qconfig_p.h b/qtbase/include/QtCore/5.11.3/QtCore/private/qconfig_p.h
+diff --git a/qtbase/include/QtCore/5.12.4/QtCore/private/qconfig_p.h b/qtbase/include/QtCore/5.12.4/QtCore/private/qconfig_p.h
 new file mode 100644
-index 0000000000..aedf7fabf4
+index 0000000..aedf7fa
 --- /dev/null
-+++ b/qtbase/include/QtCore/5.11.3/QtCore/private/qconfig_p.h
++++ b/qtbase/include/QtCore/5.12.4/QtCore/private/qconfig_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/corelib/global/qconfig_p.h"
-diff --git a/qtbase/include/QtCore/5.11.3/QtCore/private/qtcore-config_p.h b/qtbase/include/QtCore/5.11.3/QtCore/private/qtcore-config_p.h
+diff --git a/qtbase/include/QtCore/5.12.4/QtCore/private/qtcore-config_p.h b/qtbase/include/QtCore/5.12.4/QtCore/private/qtcore-config_p.h
 new file mode 100644
-index 0000000000..53f2212a20
+index 0000000..53f2212
 --- /dev/null
-+++ b/qtbase/include/QtCore/5.11.3/QtCore/private/qtcore-config_p.h
++++ b/qtbase/include/QtCore/5.12.4/QtCore/private/qtcore-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/corelib/qtcore-config_p.h"
 diff --git a/qtbase/include/QtCore/QtConfig b/qtbase/include/QtCore/QtConfig
 new file mode 100644
-index 0000000000..c73426316f
+index 0000000..c734263
 --- /dev/null
 +++ b/qtbase/include/QtCore/QtConfig
 @@ -0,0 +1 @@
 +#include "qconfig.h"
 diff --git a/qtbase/include/QtCore/QtCoreDepends b/qtbase/include/QtCore/QtCoreDepends
 new file mode 100644
-index 0000000000..a953540279
+index 0000000..a953540
 --- /dev/null
 +++ b/qtbase/include/QtCore/QtCoreDepends
 @@ -0,0 +1,3 @@
@@ -134,49 +140,49 @@ index 0000000000..a953540279
 +#endif
 diff --git a/qtbase/include/QtCore/qconfig.h b/qtbase/include/QtCore/qconfig.h
 new file mode 100644
-index 0000000000..aa8a3d6405
+index 0000000..aa8a3d6
 --- /dev/null
 +++ b/qtbase/include/QtCore/qconfig.h
 @@ -0,0 +1 @@
 +#include "../../src/corelib/global/qconfig.h"
 diff --git a/qtbase/include/QtCore/qtcore-config.h b/qtbase/include/QtCore/qtcore-config.h
 new file mode 100644
-index 0000000000..29ef59d6ff
+index 0000000..29ef59d
 --- /dev/null
 +++ b/qtbase/include/QtCore/qtcore-config.h
 @@ -0,0 +1 @@
 +#include "../../src/corelib/qtcore-config.h"
-diff --git a/qtbase/include/QtGui/5.11.3/QtGui/private/qtgui-config_p.h b/qtbase/include/QtGui/5.11.3/QtGui/private/qtgui-config_p.h
+diff --git a/qtbase/include/QtGui/5.12.4/QtGui/private/qtgui-config_p.h b/qtbase/include/QtGui/5.12.4/QtGui/private/qtgui-config_p.h
 new file mode 100644
-index 0000000000..fa5bd062c9
+index 0000000..fa5bd06
 --- /dev/null
-+++ b/qtbase/include/QtGui/5.11.3/QtGui/private/qtgui-config_p.h
++++ b/qtbase/include/QtGui/5.12.4/QtGui/private/qtgui-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/gui/qtgui-config_p.h"
-diff --git a/qtbase/include/QtGui/5.11.3/QtGui/private/qvulkanfunctions_p.h b/qtbase/include/QtGui/5.11.3/QtGui/private/qvulkanfunctions_p.h
+diff --git a/qtbase/include/QtGui/5.12.4/QtGui/private/qvulkanfunctions_p.h b/qtbase/include/QtGui/5.12.4/QtGui/private/qvulkanfunctions_p.h
 new file mode 100644
-index 0000000000..f2d2da003d
+index 0000000..f2d2da0
 --- /dev/null
-+++ b/qtbase/include/QtGui/5.11.3/QtGui/private/qvulkanfunctions_p.h
++++ b/qtbase/include/QtGui/5.12.4/QtGui/private/qvulkanfunctions_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/gui/vulkan/qvulkanfunctions_p.h"
 diff --git a/qtbase/include/QtGui/QVulkanDeviceFunctions b/qtbase/include/QtGui/QVulkanDeviceFunctions
 new file mode 100644
-index 0000000000..141a56177b
+index 0000000..141a561
 --- /dev/null
 +++ b/qtbase/include/QtGui/QVulkanDeviceFunctions
 @@ -0,0 +1 @@
 +#include "qvulkanfunctions.h"
 diff --git a/qtbase/include/QtGui/QVulkanFunctions b/qtbase/include/QtGui/QVulkanFunctions
 new file mode 100644
-index 0000000000..141a56177b
+index 0000000..141a561
 --- /dev/null
 +++ b/qtbase/include/QtGui/QVulkanFunctions
 @@ -0,0 +1 @@
 +#include "qvulkanfunctions.h"
 diff --git a/qtbase/include/QtGui/QtGuiDepends b/qtbase/include/QtGui/QtGuiDepends
 new file mode 100644
-index 0000000000..7611c06ee6
+index 0000000..7611c06
 --- /dev/null
 +++ b/qtbase/include/QtGui/QtGuiDepends
 @@ -0,0 +1,4 @@
@@ -186,28 +192,28 @@ index 0000000000..7611c06ee6
 +#endif
 diff --git a/qtbase/include/QtGui/qtgui-config.h b/qtbase/include/QtGui/qtgui-config.h
 new file mode 100644
-index 0000000000..81638f12cd
+index 0000000..81638f1
 --- /dev/null
 +++ b/qtbase/include/QtGui/qtgui-config.h
 @@ -0,0 +1 @@
 +#include "../../src/gui/qtgui-config.h"
 diff --git a/qtbase/include/QtGui/qvulkanfunctions.h b/qtbase/include/QtGui/qvulkanfunctions.h
 new file mode 100644
-index 0000000000..55d5babd48
+index 0000000..55d5bab
 --- /dev/null
 +++ b/qtbase/include/QtGui/qvulkanfunctions.h
 @@ -0,0 +1 @@
 +#include "../../src/gui/vulkan/qvulkanfunctions.h"
-diff --git a/qtbase/include/QtNetwork/5.11.3/QtNetwork/private/qtnetwork-config_p.h b/qtbase/include/QtNetwork/5.11.3/QtNetwork/private/qtnetwork-config_p.h
+diff --git a/qtbase/include/QtNetwork/5.12.4/QtNetwork/private/qtnetwork-config_p.h b/qtbase/include/QtNetwork/5.12.4/QtNetwork/private/qtnetwork-config_p.h
 new file mode 100644
-index 0000000000..cbf4749896
+index 0000000..cbf4749
 --- /dev/null
-+++ b/qtbase/include/QtNetwork/5.11.3/QtNetwork/private/qtnetwork-config_p.h
++++ b/qtbase/include/QtNetwork/5.12.4/QtNetwork/private/qtnetwork-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/network/qtnetwork-config_p.h"
 diff --git a/qtbase/include/QtNetwork/QtNetworkDepends b/qtbase/include/QtNetwork/QtNetworkDepends
 new file mode 100644
-index 0000000000..511727a26d
+index 0000000..511727a
 --- /dev/null
 +++ b/qtbase/include/QtNetwork/QtNetworkDepends
 @@ -0,0 +1,4 @@
@@ -217,14 +223,14 @@ index 0000000000..511727a26d
 +#endif
 diff --git a/qtbase/include/QtNetwork/qtnetwork-config.h b/qtbase/include/QtNetwork/qtnetwork-config.h
 new file mode 100644
-index 0000000000..c8cd7fbab8
+index 0000000..c8cd7fb
 --- /dev/null
 +++ b/qtbase/include/QtNetwork/qtnetwork-config.h
 @@ -0,0 +1 @@
 +#include "../../src/network/qtnetwork-config.h"
 diff --git a/qtbase/include/QtOpenGL/QtOpenGLDepends b/qtbase/include/QtOpenGL/QtOpenGLDepends
 new file mode 100644
-index 0000000000..d2d9d9f3a6
+index 0000000..d2d9d9f
 --- /dev/null
 +++ b/qtbase/include/QtOpenGL/QtOpenGLDepends
 @@ -0,0 +1,6 @@
@@ -234,16 +240,16 @@ index 0000000000..d2d9d9f3a6
 +#include <QtGui/QtGui>
 +#include <QtWidgets/QtWidgets>
 +#endif
-diff --git a/qtbase/include/QtPrintSupport/5.11.3/QtPrintSupport/private/qtprintsupport-config_p.h b/qtbase/include/QtPrintSupport/5.11.3/QtPrintSupport/private/qtprintsupport-config_p.h
+diff --git a/qtbase/include/QtPrintSupport/5.12.4/QtPrintSupport/private/qtprintsupport-config_p.h b/qtbase/include/QtPrintSupport/5.12.4/QtPrintSupport/private/qtprintsupport-config_p.h
 new file mode 100644
-index 0000000000..7833b122e1
+index 0000000..7833b12
 --- /dev/null
-+++ b/qtbase/include/QtPrintSupport/5.11.3/QtPrintSupport/private/qtprintsupport-config_p.h
++++ b/qtbase/include/QtPrintSupport/5.12.4/QtPrintSupport/private/qtprintsupport-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/printsupport/qtprintsupport-config_p.h"
 diff --git a/qtbase/include/QtPrintSupport/QtPrintSupportDepends b/qtbase/include/QtPrintSupport/QtPrintSupportDepends
 new file mode 100644
-index 0000000000..5894583ac6
+index 0000000..5894583
 --- /dev/null
 +++ b/qtbase/include/QtPrintSupport/QtPrintSupportDepends
 @@ -0,0 +1,6 @@
@@ -255,14 +261,21 @@ index 0000000000..5894583ac6
 +#endif
 diff --git a/qtbase/include/QtPrintSupport/qtprintsupport-config.h b/qtbase/include/QtPrintSupport/qtprintsupport-config.h
 new file mode 100644
-index 0000000000..747e599e10
+index 0000000..747e599
 --- /dev/null
 +++ b/qtbase/include/QtPrintSupport/qtprintsupport-config.h
 @@ -0,0 +1 @@
 +#include "../../src/printsupport/qtprintsupport-config.h"
+diff --git a/qtbase/include/QtSql/5.12.4/QtSql/private/qtsql-config_p.h b/qtbase/include/QtSql/5.12.4/QtSql/private/qtsql-config_p.h
+new file mode 100644
+index 0000000..ffef37b
+--- /dev/null
++++ b/qtbase/include/QtSql/5.12.4/QtSql/private/qtsql-config_p.h
+@@ -0,0 +1 @@
++#include "../../../../../src/sql/qtsql-config_p.h"
 diff --git a/qtbase/include/QtSql/QtSqlDepends b/qtbase/include/QtSql/QtSqlDepends
 new file mode 100644
-index 0000000000..bba20a6ad4
+index 0000000..bba20a6
 --- /dev/null
 +++ b/qtbase/include/QtSql/QtSqlDepends
 @@ -0,0 +1,4 @@
@@ -270,16 +283,23 @@ index 0000000000..bba20a6ad4
 +#ifdef __cplusplus /* create empty PCH in C mode */
 +#include <QtCore/QtCore>
 +#endif
-diff --git a/qtbase/include/QtTest/5.11.3/QtTest/private/qttestlib-config_p.h b/qtbase/include/QtTest/5.11.3/QtTest/private/qttestlib-config_p.h
+diff --git a/qtbase/include/QtSql/qtsql-config.h b/qtbase/include/QtSql/qtsql-config.h
 new file mode 100644
-index 0000000000..6e5b8991f2
+index 0000000..fa917d5
 --- /dev/null
-+++ b/qtbase/include/QtTest/5.11.3/QtTest/private/qttestlib-config_p.h
++++ b/qtbase/include/QtSql/qtsql-config.h
+@@ -0,0 +1 @@
++#include "../../src/sql/qtsql-config.h"
+diff --git a/qtbase/include/QtTest/5.12.4/QtTest/private/qttestlib-config_p.h b/qtbase/include/QtTest/5.12.4/QtTest/private/qttestlib-config_p.h
+new file mode 100644
+index 0000000..6e5b899
+--- /dev/null
++++ b/qtbase/include/QtTest/5.12.4/QtTest/private/qttestlib-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/testlib/qttestlib-config_p.h"
 diff --git a/qtbase/include/QtTest/QtTestDepends b/qtbase/include/QtTest/QtTestDepends
 new file mode 100644
-index 0000000000..64e448edb0
+index 0000000..64e448e
 --- /dev/null
 +++ b/qtbase/include/QtTest/QtTestDepends
 @@ -0,0 +1,4 @@
@@ -289,21 +309,21 @@ index 0000000000..64e448edb0
 +#endif
 diff --git a/qtbase/include/QtTest/qttestlib-config.h b/qtbase/include/QtTest/qttestlib-config.h
 new file mode 100644
-index 0000000000..ec1c9e6102
+index 0000000..ec1c9e6
 --- /dev/null
 +++ b/qtbase/include/QtTest/qttestlib-config.h
 @@ -0,0 +1 @@
 +#include "../../src/testlib/qttestlib-config.h"
-diff --git a/qtbase/include/QtWidgets/5.11.3/QtWidgets/private/qtwidgets-config_p.h b/qtbase/include/QtWidgets/5.11.3/QtWidgets/private/qtwidgets-config_p.h
+diff --git a/qtbase/include/QtWidgets/5.12.4/QtWidgets/private/qtwidgets-config_p.h b/qtbase/include/QtWidgets/5.12.4/QtWidgets/private/qtwidgets-config_p.h
 new file mode 100644
-index 0000000000..9a6332dbab
+index 0000000..9a6332d
 --- /dev/null
-+++ b/qtbase/include/QtWidgets/5.11.3/QtWidgets/private/qtwidgets-config_p.h
++++ b/qtbase/include/QtWidgets/5.12.4/QtWidgets/private/qtwidgets-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/widgets/qtwidgets-config_p.h"
 diff --git a/qtbase/include/QtWidgets/QtWidgetsDepends b/qtbase/include/QtWidgets/QtWidgetsDepends
 new file mode 100644
-index 0000000000..80cfcaf27b
+index 0000000..80cfcaf
 --- /dev/null
 +++ b/qtbase/include/QtWidgets/QtWidgetsDepends
 @@ -0,0 +1,5 @@
@@ -314,21 +334,21 @@ index 0000000000..80cfcaf27b
 +#endif
 diff --git a/qtbase/include/QtWidgets/qtwidgets-config.h b/qtbase/include/QtWidgets/qtwidgets-config.h
 new file mode 100644
-index 0000000000..09179b0ce5
+index 0000000..09179b0
 --- /dev/null
 +++ b/qtbase/include/QtWidgets/qtwidgets-config.h
 @@ -0,0 +1 @@
 +#include "../../src/widgets/qtwidgets-config.h"
-diff --git a/qtbase/include/QtXml/5.11.3/QtXml/private/qtxml-config_p.h b/qtbase/include/QtXml/5.11.3/QtXml/private/qtxml-config_p.h
+diff --git a/qtbase/include/QtXml/5.12.4/QtXml/private/qtxml-config_p.h b/qtbase/include/QtXml/5.12.4/QtXml/private/qtxml-config_p.h
 new file mode 100644
-index 0000000000..d567490f54
+index 0000000..d567490
 --- /dev/null
-+++ b/qtbase/include/QtXml/5.11.3/QtXml/private/qtxml-config_p.h
++++ b/qtbase/include/QtXml/5.12.4/QtXml/private/qtxml-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/xml/qtxml-config_p.h"
 diff --git a/qtbase/include/QtXml/QtXmlDepends b/qtbase/include/QtXml/QtXmlDepends
 new file mode 100644
-index 0000000000..9ce6bbb5ee
+index 0000000..9ce6bbb
 --- /dev/null
 +++ b/qtbase/include/QtXml/QtXmlDepends
 @@ -0,0 +1,4 @@
@@ -338,24 +358,24 @@ index 0000000000..9ce6bbb5ee
 +#endif
 diff --git a/qtbase/include/QtXml/qtxml-config.h b/qtbase/include/QtXml/qtxml-config.h
 new file mode 100644
-index 0000000000..602a1763c2
+index 0000000..602a176
 --- /dev/null
 +++ b/qtbase/include/QtXml/qtxml-config.h
 @@ -0,0 +1 @@
 +#include "../../src/xml/qtxml-config.h"
 diff --git a/qtbase/src/corelib/global/qconfig.cpp b/qtbase/src/corelib/global/qconfig.cpp
 new file mode 100644
-index 0000000000..03754095c4
+index 0000000..4eb4c3e
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig.cpp
 @@ -0,0 +1,65 @@
 +/* Installation date */
 +static const char qt_configure_installation     [12+11]  = "qt_instdate=2012-12-20";
 +/* Installation Info */
-+static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.11.3";
++static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.12.4";
 +#ifdef QT_BUILD_QMAKE
-+static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.11.3";
-+static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.11.3";
++static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.12.4";
++static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.12.4";
 +#endif
 +static const short qt_configure_str_offsets[] = {
 +    0,
@@ -416,10 +436,10 @@ index 0000000000..03754095c4
 +#endif
 diff --git a/qtbase/src/corelib/global/qconfig.h b/qtbase/src/corelib/global/qconfig.h
 new file mode 100644
-index 0000000000..0d44f80568
+index 0000000..638f0f2
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig.h
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,32 @@
 +#define QT_FEATURE_cross_compile -1
 +#define QT_FEATURE_framework -1
 +#define QT_FEATURE_shared 1
@@ -432,7 +452,10 @@ index 0000000000..0d44f80568
 +#define QT_FEATURE_build_all -1
 +#define QT_FEATURE_c__11 1
 +#define QT_FEATURE_c__14 1
-+#define QT_FEATURE_c__1z 1
++#define QT_FEATURE_c__1z -1
++#define QT_FEATURE_c99 1
++#define QT_FEATURE_c11 1
++#define QT_FEATURE_thread 1
 +#define QT_FEATURE_future 1
 +#define QT_FEATURE_concurrent 1
 +#define QT_NO_DBUS 
@@ -445,16 +468,16 @@ index 0000000000..0d44f80568
 +#define QT_COMPILER_SUPPORTS_SHA 1
 +#define QT_FEATURE_static -1
 +#define QT_COMPILER_SUPPORTS_SIMD_ALWAYS 1
-+#define QT_VERSION_STR "5.11.3"
++#define QT_VERSION_STR "5.12.4"
 +#define QT_VERSION_MAJOR 5
-+#define QT_VERSION_MINOR 11
-+#define QT_VERSION_PATCH 3
++#define QT_VERSION_MINOR 12
++#define QT_VERSION_PATCH 4
 diff --git a/qtbase/src/corelib/global/qconfig_p.h b/qtbase/src/corelib/global/qconfig_p.h
 new file mode 100644
-index 0000000000..3333ea581f
+index 0000000..b72e90e
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qconfig_p.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +#define QT_FEATURE_private_tests -1
 +#define QT_FEATURE_sse2 1
 +#define QT_FEATURE_alloca -1
@@ -464,6 +487,7 @@ index 0000000000..3333ea581f
 +#define QT_FEATURE_avx2 -1
 +#define QT_FEATURE_dbus -1
 +#define QT_FEATURE_dbus_linked -1
++#define QT_FEATURE_gc_binaries -1
 +#define QT_FEATURE_gui 1
 +#define QT_FEATURE_libudev -1
 +#define QT_FEATURE_network 1
@@ -479,7 +503,7 @@ index 0000000000..3333ea581f
 +#define QT_FEATURE_xml 1
 diff --git a/qtbase/src/corelib/global/qfloat16tables.cpp b/qtbase/src/corelib/global/qfloat16tables.cpp
 new file mode 100644
-index 0000000000..dd73a4727b
+index 0000000..dd73a47
 --- /dev/null
 +++ b/qtbase/src/corelib/global/qfloat16tables.cpp
 @@ -0,0 +1,3222 @@
@@ -3707,7 +3731,7 @@ index 0000000000..dd73a4727b
 +QT_END_NAMESPACE
 diff --git a/qtbase/src/corelib/qtcore-config.h b/qtbase/src/corelib/qtcore-config.h
 new file mode 100644
-index 0000000000..6f39529e6d
+index 0000000..6f39529
 --- /dev/null
 +++ b/qtbase/src/corelib/qtcore-config.h
 @@ -0,0 +1,42 @@
@@ -3755,10 +3779,10 @@ index 0000000000..6f39529e6d
 +#define QT_FEATURE_xmlstreamwriter 1
 diff --git a/qtbase/src/corelib/qtcore-config_p.h b/qtbase/src/corelib/qtcore-config_p.h
 new file mode 100644
-index 0000000000..3e18e1806f
+index 0000000..e469938
 --- /dev/null
 +++ b/qtbase/src/corelib/qtcore-config_p.h
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +#define QT_FEATURE_clock_gettime 1
 +#define QT_FEATURE_datetimeparser 1
 +#define QT_FEATURE_dlopen 1
@@ -3766,9 +3790,10 @@ index 0000000000..3e18e1806f
 +#define QT_FEATURE_etw -1
 +#define QT_FEATURE_futimens -1
 +#define QT_FEATURE_futimes -1
-+#define QT_FEATURE_getauxval 1
-+#define QT_FEATURE_getentropy 1
++#define QT_FEATURE_getauxval -1
++#define QT_FEATURE_getentropy -1
 +#define QT_FEATURE_glib -1
++#define QT_FEATURE_glibc 1
 +#define QT_FEATURE_gnu_libiconv -1
 +#define QT_FEATURE_iconv -1
 +#define QT_FEATURE_icu -1
@@ -3790,17 +3815,17 @@ index 0000000000..3e18e1806f
 +#define QT_FEATURE_system_pcre2 -1
 diff --git a/qtbase/src/corelib/qtcore_tracepoints_p.h b/qtbase/src/corelib/qtcore_tracepoints_p.h
 new file mode 100644
-index 0000000000..ff8d10144f
+index 0000000..ff8d101
 --- /dev/null
 +++ b/qtbase/src/corelib/qtcore_tracepoints_p.h
 @@ -0,0 +1 @@
 +#include <private/qtrace_p.h>
 diff --git a/qtbase/src/gui/qtgui-config.h b/qtbase/src/gui/qtgui-config.h
 new file mode 100644
-index 0000000000..272b1ad854
+index 0000000..7444e61
 --- /dev/null
 +++ b/qtbase/src/gui/qtgui-config.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +#define QT_FEATURE_accessibility -1
 +#define QT_NO_ACCESSIBILITY 
 +#define QT_NO_ACCESSIBILITY_ATSPI_BRIDGE 
@@ -3817,6 +3842,7 @@ index 0000000000..272b1ad854
 +#define QT_FEATURE_imageformat_xpm 1
 +#define QT_FEATURE_draganddrop 1
 +#define QT_FEATURE_opengl 1
++#define QT_NO_EGL 
 +#define QT_NO_FONTCONFIG 
 +#define QT_FEATURE_imageformatplugin 1
 +#define QT_NO_HARFBUZZ 
@@ -3851,20 +3877,27 @@ index 0000000000..272b1ad854
 +#define QT_FEATURE_wheelevent 1
 diff --git a/qtbase/src/gui/qtgui-config_p.h b/qtbase/src/gui/qtgui-config_p.h
 new file mode 100644
-index 0000000000..95c06ca735
+index 0000000..00840bf
 --- /dev/null
 +++ b/qtbase/src/gui/qtgui-config_p.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,55 @@
 +#define QT_FEATURE_accessibility_atspi_bridge -1
 +#define QT_FEATURE_angle_d3d11_qdtd -1
 +#define QT_FEATURE_direct2d -1
++#define QT_FEATURE_direct2d1_1 -1
++#define QT_FEATURE_dxgi -1
++#define QT_FEATURE_direct3d11 -1
++#define QT_FEATURE_direct3d11_1 -1
++#define QT_FEATURE_direct3d9 -1
 +#define QT_FEATURE_directfb -1
-+#define QT_FEATURE_egl 1
-+#define QT_FEATURE_egl_x11 1
-+#define QT_FEATURE_eglfs 1
++#define QT_FEATURE_drm_atomic 1
++#define QT_FEATURE_dxgi1_2 -1
++#define QT_FEATURE_dxguid -1
++#define QT_FEATURE_egl -1
++#define QT_FEATURE_egl_x11 -1
++#define QT_FEATURE_eglfs -1
 +#define QT_FEATURE_eglfs_brcm -1
-+#define QT_FEATURE_kms 1
-+#define QT_FEATURE_eglfs_egldevice 1
++#define QT_FEATURE_eglfs_egldevice -1
 +#define QT_FEATURE_eglfs_gbm -1
 +#define QT_FEATURE_eglfs_mali -1
 +#define QT_FEATURE_eglfs_openwfd -1
@@ -3872,6 +3905,7 @@ index 0000000000..95c06ca735
 +#define QT_FEATURE_eglfs_viv -1
 +#define QT_FEATURE_eglfs_viv_wl -1
 +#define QT_FEATURE_eglfs_vsp2 -1
++#define QT_FEATURE_eglfs_x11 -1
 +#define QT_FEATURE_evdev 1
 +#define QT_FEATURE_fontconfig -1
 +#define QT_FEATURE_freetype 1
@@ -3881,6 +3915,7 @@ index 0000000000..95c06ca735
 +#define QT_FEATURE_integrityfb -1
 +#define QT_FEATURE_integrityhid -1
 +#define QT_FEATURE_jpeg 1
++#define QT_FEATURE_kms 1
 +#define QT_FEATURE_libinput -1
 +#define QT_FEATURE_libinput_axis_api -1
 +#define QT_FEATURE_linuxfb 1
@@ -3898,33 +3933,35 @@ index 0000000000..95c06ca735
 +#define QT_FEATURE_tuiotouch 1
 +#define QT_FEATURE_vnc 1
 +#define QT_FEATURE_vsp2 -1
-+#define QT_FEATURE_xkbcommon_evdev -1
 +#define QT_FEATURE_xlib 1
++#define QT_FEATURE_xcb_xlib 1
++#define QT_FEATURE_xkbcommon 1
 diff --git a/qtbase/src/gui/qtgui_tracepoints_p.h b/qtbase/src/gui/qtgui_tracepoints_p.h
 new file mode 100644
-index 0000000000..ff8d10144f
+index 0000000..ff8d101
 --- /dev/null
 +++ b/qtbase/src/gui/qtgui_tracepoints_p.h
 @@ -0,0 +1 @@
 +#include <private/qtrace_p.h>
 diff --git a/qtbase/src/network/qtnetwork-config.h b/qtbase/src/network/qtnetwork-config.h
 new file mode 100644
-index 0000000000..61f207dda7
+index 0000000..e63f992
 --- /dev/null
 +++ b/qtbase/src/network/qtnetwork-config.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +#define QT_FEATURE_networkinterface -1
 +#define QT_NO_NETWORKINTERFACE 
 +#define QT_FEATURE_bearermanagement -1
 +#define QT_NO_BEARERMANAGEMENT 
 +#define QT_FEATURE_dnslookup 1
++#define QT_LINKED_OPENSSL true
++#define QT_FEATURE_dtls 1
 +#define QT_FEATURE_ftp 1
 +#define QT_FEATURE_http 1
 +#define QT_NO_IPV6IFNAME 
 +#define QT_FEATURE_localserver 1
 +#define QT_FEATURE_networkdiskcache 1
 +#define QT_FEATURE_networkproxy 1
-+#define QT_LINKED_OPENSSL true
 +#define QT_FEATURE_opensslv11 -1
 +#define QT_FEATURE_sctp -1
 +#define QT_NO_SCTP 
@@ -3933,19 +3970,19 @@ index 0000000000..61f207dda7
 +#define QT_FEATURE_udpsocket 1
 diff --git a/qtbase/src/network/qtnetwork-config_p.h b/qtbase/src/network/qtnetwork-config_p.h
 new file mode 100644
-index 0000000000..3b3fbb29f8
+index 0000000..ab87522
 --- /dev/null
 +++ b/qtbase/src/network/qtnetwork-config_p.h
 @@ -0,0 +1,6 @@
-+#define QT_FEATURE_libproxy -1
-+#define QT_FEATURE_linux_netlink 1
 +#define QT_FEATURE_securetransport -1
 +#define QT_FEATURE_openssl_linked 1
 +#define QT_FEATURE_openssl 1
++#define QT_FEATURE_libproxy -1
++#define QT_FEATURE_linux_netlink 1
 +#define QT_FEATURE_system_proxies -1
 diff --git a/qtbase/src/printsupport/qtprintsupport-config.h b/qtbase/src/printsupport/qtprintsupport-config.h
 new file mode 100644
-index 0000000000..d1f24cadcf
+index 0000000..d1f24ca
 --- /dev/null
 +++ b/qtbase/src/printsupport/qtprintsupport-config.h
 @@ -0,0 +1,6 @@
@@ -3957,7 +3994,7 @@ index 0000000000..d1f24cadcf
 +#define QT_FEATURE_printpreviewdialog 1
 diff --git a/qtbase/src/printsupport/qtprintsupport-config_p.h b/qtbase/src/printsupport/qtprintsupport-config_p.h
 new file mode 100644
-index 0000000000..dfe0a580f5
+index 0000000..dfe0a58
 --- /dev/null
 +++ b/qtbase/src/printsupport/qtprintsupport-config_p.h
 @@ -0,0 +1,2 @@
@@ -3965,7 +4002,7 @@ index 0000000000..dfe0a580f5
 +#define QT_FEATURE_cupsjobwidget -1
 diff --git a/qtbase/src/widgets/qtwidgets-config.h b/qtbase/src/widgets/qtwidgets-config.h
 new file mode 100644
-index 0000000000..3229c5626b
+index 0000000..3229c56
 --- /dev/null
 +++ b/qtbase/src/widgets/qtwidgets-config.h
 @@ -0,0 +1,78 @@
@@ -4049,7 +4086,7 @@ index 0000000000..3229c5626b
 +#define QT_FEATURE_wizard 1
 diff --git a/qtbase/src/widgets/qtwidgets-config_p.h b/qtbase/src/widgets/qtwidgets-config_p.h
 new file mode 100644
-index 0000000000..bfdd43bf1e
+index 0000000..bfdd43b
 --- /dev/null
 +++ b/qtbase/src/widgets/qtwidgets-config_p.h
 @@ -0,0 +1,8 @@
@@ -4061,13 +4098,20 @@ index 0000000000..bfdd43bf1e
 +#define QT_FEATURE_style_mac -1
 +#define QT_FEATURE_style_windows 1
 +#define QT_FEATURE_style_windowsvista -1
+diff --git a/qtbase/src/widgets/qtwidgets_tracepoints_p.h b/qtbase/src/widgets/qtwidgets_tracepoints_p.h
+new file mode 100644
+index 0000000..ff8d101
+--- /dev/null
++++ b/qtbase/src/widgets/qtwidgets_tracepoints_p.h
+@@ -0,0 +1 @@
++#include <private/qtrace_p.h>
 diff --git a/qtbase/src/xml/qtxml-config.h b/qtbase/src/xml/qtxml-config.h
 new file mode 100644
-index 0000000000..163246e184
+index 0000000..163246e
 --- /dev/null
 +++ b/qtbase/src/xml/qtxml-config.h
 @@ -0,0 +1 @@
 +#define QT_FEATURE_dom 1
 diff --git a/qtbase/src/xml/qtxml-config_p.h b/qtbase/src/xml/qtxml-config_p.h
 new file mode 100644
-index 0000000000..e69de29bb2
+index 0000000..e69de29
