@@ -154,7 +154,7 @@ class QNitpickerPlatformWindow : public QObject, public QPlatformWindow
 
 	    bool setWindowModified(bool modified) override;
 
-	    void windowEvent(QEvent *event) override;
+	    bool windowEvent(QEvent *event) override;
 
 	    bool startSystemResize(const QPoint &pos, Qt::Corner corner) override;
 

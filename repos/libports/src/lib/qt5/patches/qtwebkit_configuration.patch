@@ -4,28 +4,31 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .gitmodules                                        |    4 ++++
+ .gitmodules                                        |    6 ++++
  .../Tools/qmake/mkspecs/features/configure.prf     |    1 -
- qtwebkit/Tools/qmake/mkspecs/features/features.prf |   22 ++++++++++----------
- qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 +-
- qtwebkit/include/QtWebKit/headers.pri              |    4 ++--
- qtwebkit/include/QtWebKitWidgets/headers.pri       |    4 ++--
- 6 files changed, 20 insertions(+), 17 deletions(-)
+ qtwebkit/Tools/qmake/mkspecs/features/features.prf |   28 ++++++++++----------
+ qtwebkit/Tools/qmake/mkspecs/features/features.pri |    2 +
+ qtwebkit/include/QtWebKit/headers.pri              |    4 +--
+ qtwebkit/include/QtWebKitWidgets/headers.pri       |    4 +--
+ 6 files changed, 24 insertions(+), 21 deletions(-)
 
 diff --git a/.gitmodules b/.gitmodules
-index 5fb4d64e8b..1d9ffee902 100644
+index 5f854b4..98d8a1e 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -302,3 +302,7 @@
- 	url = ../qtwebglplugin.git
- 	branch = 5.11.3
- 	status = preview
+@@ -427,4 +427,8 @@
+ 	path = qtwebbrowser
+ 	url = ../../qt-apps/qtwebbrowser
+ 	branch = dev
+-	status = ignore
+\ No newline at end of file
++	status = ignore
 +[submodule "qtwebkit"]
 +	depends = qtbase
 +	path = qtwebkit
 +	project = WebKit.pro
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 23d99040b6..6ea194fc1f 100644
+index 23d9904..6ea194f 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
@@ -37,7 +40,7 @@ index 23d99040b6..6ea194fc1f 100644
          $$WEBKIT_TOOLS_CONFIG
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 328a8be7e7..096d8ef679 100644
+index 328a8be..91e2c07 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -37,14 +37,14 @@ defineTest(detectFeatures) {
@@ -62,6 +65,20 @@ index 328a8be7e7..096d8ef679 100644
  
      # We can't use Qt's 3rdparty sources for libjpeg and libpng outside of qtbase, but if Qt
      # is using the system libraries, use them to take advantage of the WebCore image decoders as well.
+@@ -56,10 +56,10 @@ defineTest(detectFeatures) {
+     else: CONFIGURE_WARNINGS += "Qt not configured to use system libpng, QImageDecoder will decode PNG images"
+ 
+     linux-* {
+-        config_libXcomposite: WEBKIT_CONFIG += have_xcomposite
+-        config_libXrender: WEBKIT_CONFIG += have_xrender
++        #config_libXcomposite: WEBKIT_CONFIG += have_xcomposite
++        #config_libXrender: WEBKIT_CONFIG += have_xrender
+ 
+-        config_glx:!qtConfig(opengles2): WEBKIT_CONFIG += have_glx
++        #config_glx:!qtConfig(opengles2): WEBKIT_CONFIG += have_glx
+ 
+         # We need fontconfig to set up the test fonts for DumpRenderTree and WebKitTestRunner.
+         config_fontconfig: WEBKIT_CONFIG += have_fontconfig
 @@ -109,9 +109,9 @@ defineTest(detectFeatures) {
          use?(gstreamer): WEBKIT_CONFIG += use_native_fullscreen_video
      }
@@ -85,7 +102,7 @@ index 328a8be7e7..096d8ef679 100644
      # Support for Graphics Surface
      # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-index ba18b354d4..dd27a421ca 100644
+index ba18b35..dd27a42 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 @@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \
@@ -98,7 +115,7 @@ index ba18b354d4..dd27a421ca 100644
      ENABLE_INPUT_TYPE_COLOR=1 \
      ENABLE_INPUT_TYPE_DATE=0 \
 diff --git a/qtwebkit/include/QtWebKit/headers.pri b/qtwebkit/include/QtWebKit/headers.pri
-index 6775f3a6de..8b4aff7af4 100644
+index 6775f3a..8b4aff7 100644
 --- a/qtwebkit/include/QtWebKit/headers.pri
 +++ b/qtwebkit/include/QtWebKit/headers.pri
 @@ -1,5 +1,5 @@
@@ -110,7 +127,7 @@ index 6775f3a6de..8b4aff7af4 100644
  SYNCQT.INJECTED_PRIVATE_HEADER_FILES = 
  SYNCQT.QPA_HEADER_FILES = 
 diff --git a/qtwebkit/include/QtWebKitWidgets/headers.pri b/qtwebkit/include/QtWebKitWidgets/headers.pri
-index 9d386e29b6..8d11b7909a 100644
+index 9d386e2..8d11b79 100644
 --- a/qtwebkit/include/QtWebKitWidgets/headers.pri
 +++ b/qtwebkit/include/QtWebKitWidgets/headers.pri
 @@ -1,5 +1,5 @@

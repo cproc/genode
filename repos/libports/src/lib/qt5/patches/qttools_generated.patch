@@ -10,7 +10,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 diff --git a/qttools/include/QtUiTools/QtUiToolsDepends b/qttools/include/QtUiTools/QtUiToolsDepends
 new file mode 100644
-index 0000000000..fc2ca80076
+index 0000000..fc2ca80
 --- /dev/null
 +++ b/qttools/include/QtUiTools/QtUiToolsDepends
 @@ -0,0 +1,6 @@

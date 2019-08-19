@@ -5,10 +5,10 @@ QT_INCPATH += \
   qtbase/src/network/kernel \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtNetwork/5.11.3 \
-  qtbase/include/QtNetwork/5.11.3/QtNetwork \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtNetwork/5.12.4 \
+  qtbase/include/QtNetwork/5.12.4/QtNetwork \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -89,6 +89,7 @@ QT_SOURCES += \
   qasn1element.cpp \
   qssl.cpp \
   qsslcertificate.cpp \
+  qsslcertificateextension.cpp \
   qsslconfiguration.cpp \
   qsslcipher.cpp \
   qssldiffiehellmanparameters.cpp \
@@ -97,7 +98,7 @@ QT_SOURCES += \
   qsslerror.cpp \
   qsslsocket.cpp \
   qsslpresharedkeyauthenticator.cpp \
-  qsslcertificateextension.cpp \
+  qdtls.cpp \
   qsslsocket_openssl_symbols.cpp \
   qssldiffiehellmanparameters_openssl.cpp \
   qsslcertificate_openssl.cpp \
@@ -105,8 +106,10 @@ QT_SOURCES += \
   qsslkey_openssl.cpp \
   qsslsocket_openssl.cpp \
   qsslcontext_openssl.cpp \
+  qdtls_openssl.cpp \
   qsslsocket_opensslpre11.cpp \
   qsslcontext_opensslpre11.cpp \
+  qpassworddigestor.cpp \
   moc_qnetworkaccesscache_p.cpp \
   moc_qnetworkaccessbackend_p.cpp \
   moc_qnetworkaccessdebugpipebackend_p.cpp \
@@ -135,7 +138,7 @@ QT_SOURCES += \
   moc_qsocks5socketengine_p.cpp \
   moc_qhttpsocketengine_p.cpp \
   moc_qnativesocketengine_p.cpp \
-  moc_qsslsocket_openssl_p.cpp
+  moc_qdtls.cpp
 
 QT_VPATH += \
   qtbase/src/network/access \
@@ -197,7 +200,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qlocalserver.cpp \
   moc_qlocalsocket.cpp \
   moc_qsslsocket.cpp \
-  moc_qsslsocket_openssl_p.cpp
+  moc_qdtls.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule

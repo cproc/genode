@@ -5,14 +5,14 @@ QT_INCPATH += \
   qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.11.3 \
-  qtdeclarative/include/QtQuick/5.11.3/QtQuick \
-  qtbase/include/QtGui/5.11.3 \
-  qtbase/include/QtGui/5.11.3/QtGui \
-  qtdeclarative/include/QtQml/5.11.3 \
-  qtdeclarative/include/QtQml/5.11.3/QtQml \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtdeclarative/include/QtQuick/5.12.4 \
+  qtdeclarative/include/QtQuick/5.12.4/QtQuick \
+  qtbase/include/QtGui/5.12.4 \
+  qtbase/include/QtGui/5.12.4/QtGui \
+  qtdeclarative/include/QtQml/5.12.4 \
+  qtdeclarative/include/QtQml/5.12.4/QtQml \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
@@ -99,8 +99,8 @@ QT_SOURCES += \
   qsgdefaultimagenode.cpp \
   qsgdefaultninepatchnode.cpp \
   qsgdefaultlayer.cpp \
-  qsgthreadedrenderloop.cpp \
   qsgwindowsrenderloop.cpp \
+  qsgthreadedrenderloop.cpp \
   qsgdefaultspritenode.cpp \
   qsgsoftwarecontext.cpp \
   qsgabstractsoftwarerenderer.cpp \
@@ -118,13 +118,11 @@ QT_SOURCES += \
   qsgsoftwarerenderloop.cpp \
   qsgsoftwarelayer.cpp \
   qsgsoftwareadaptation.cpp \
-  qsgsoftwarethreadedrenderloop.cpp \
   qsgsoftwarespritenode.cpp \
+  qsgsoftwarethreadedrenderloop.cpp \
   qsgtexturereader.cpp \
   qsgcompressedatlastexture.cpp \
   qsgcompressedtexture.cpp \
-  qsgpkmhandler.cpp \
-  qsgktxhandler.cpp \
   qquickevents.cpp \
   qquickanchors.cpp \
   qquickitem.cpp \
@@ -167,9 +165,11 @@ QT_SOURCES += \
   qquickitemgrabresult.cpp \
   qquickanimatedimage.cpp \
   qquickgridview.cpp \
+  qquickitemviewfxitem.cpp \
   qquickitemview.cpp \
   qquickitemviewtransition.cpp \
   qquicklistview.cpp \
+  qquicktableview.cpp \
   qquickpathview.cpp \
   qquickpositioners.cpp \
   qquickflipable.cpp \
@@ -193,7 +193,8 @@ QT_SOURCES += \
   qquickcontext2dtexture.cpp \
   qquickcontext2dcommandbuffer.cpp \
   qquickdraghandler.cpp \
-  qquickhandlersmodule.cpp \
+  qquickhandlerpoint.cpp \
+  qquickhoverhandler.cpp \
   qquickmultipointhandler.cpp \
   qquickpinchhandler.cpp \
   qquickpointerdevicehandler.cpp \
@@ -201,6 +202,7 @@ QT_SOURCES += \
   qquickpointhandler.cpp \
   qquicksinglepointhandler.cpp \
   qquicktaphandler.cpp \
+  qquickdragaxis.cpp \
   qquickdesignercustomobjectdata.cpp \
   qquickdesignersupport.cpp \
   qquickdesignersupportitems.cpp \
@@ -223,13 +225,16 @@ QT_SOURCES += \
   moc_qquickscalegrid_p_p.cpp \
   moc_qquickflickable_p_p.cpp \
   moc_qquickdraghandler_p.cpp \
+  moc_qquickhandlerpoint_p.cpp \
+  moc_qquickhoverhandler_p.cpp \
   moc_qquickmultipointhandler_p.cpp \
   moc_qquickpinchhandler_p.cpp \
   moc_qquickpointerdevicehandler_p.cpp \
   moc_qquickpointerhandler_p.cpp \
   moc_qquickpointhandler_p.cpp \
   moc_qquicksinglepointhandler_p.cpp \
-  moc_qquicktaphandler_p.cpp
+  moc_qquicktaphandler_p.cpp \
+  moc_qquickdragaxis_p.cpp
 
 QT_VPATH += \
   qtdeclarative/src/quick \
@@ -292,8 +297,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qsgrenderloop_p.cpp \
   moc_qsgdefaultrendercontext_p.cpp \
   moc_qsgdefaultlayer_p.cpp \
-  moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgwindowsrenderloop_p.cpp \
+  moc_qsgthreadedrenderloop_p.cpp \
   moc_qsgsoftwarecontext_p.cpp \
   moc_qsgsoftwarepixmaptexture_p.cpp \
   moc_qsgsoftwarerenderloop_p.cpp \
@@ -346,6 +351,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickitemview_p.cpp \
   moc_qquickitemviewtransition_p.cpp \
   moc_qquicklistview_p.cpp \
+  moc_qquicktableview_p.cpp \
   moc_qquickpathview_p.cpp \
   moc_qquickpositioners_p.cpp \
   moc_qquickflipable_p.cpp \
@@ -367,6 +373,8 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickcontext2d_p.cpp \
   moc_qquickcontext2dtexture_p.cpp \
   moc_qquickdraghandler_p.cpp \
+  moc_qquickhandlerpoint_p.cpp \
+  moc_qquickhoverhandler_p.cpp \
   moc_qquickmultipointhandler_p.cpp \
   moc_qquickpinchhandler_p.cpp \
   moc_qquickpointerdevicehandler_p.cpp \
@@ -374,6 +382,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquickpointhandler_p.cpp \
   moc_qquicksinglepointhandler_p.cpp \
   moc_qquicktaphandler_p.cpp \
+  moc_qquickdragaxis_p.cpp \
   moc_qquickdesignerwindowmanager_p.cpp \
   moc_qquickdesignercustomparserobject_p.cpp
 
