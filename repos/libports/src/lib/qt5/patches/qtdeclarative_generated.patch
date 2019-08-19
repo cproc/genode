@@ -36,14 +36,14 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 diff --git a/qtdeclarative/include/QtQml/5.11.3/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.11.3/QtQml/private/qtqml-config_p.h
 new file mode 100644
-index 0000000000..1fdbd71ef6
+index 0000000..1fdbd71
 --- /dev/null
 +++ b/qtdeclarative/include/QtQml/5.11.3/QtQml/private/qtqml-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qtqml-config_p.h"
 diff --git a/qtdeclarative/include/QtQml/QtQmlDepends b/qtdeclarative/include/QtQml/QtQmlDepends
 new file mode 100644
-index 0000000000..bdbffd6788
+index 0000000..bdbffd6
 --- /dev/null
 +++ b/qtdeclarative/include/QtQml/QtQmlDepends
 @@ -0,0 +1,5 @@
@@ -54,21 +54,21 @@ index 0000000000..bdbffd6788
 +#endif
 diff --git a/qtdeclarative/include/QtQml/qtqml-config.h b/qtdeclarative/include/QtQml/qtqml-config.h
 new file mode 100644
-index 0000000000..48fe1f23fd
+index 0000000..48fe1f2
 --- /dev/null
 +++ b/qtdeclarative/include/QtQml/qtqml-config.h
 @@ -0,0 +1 @@
 +#include "../../src/qml/qtqml-config.h"
 diff --git a/qtdeclarative/include/QtQuick/5.11.3/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.11.3/QtQuick/private/qtquick-config_p.h
 new file mode 100644
-index 0000000000..fcdf4238fe
+index 0000000..fcdf423
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuick/5.11.3/QtQuick/private/qtquick-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/quick/qtquick-config_p.h"
 diff --git a/qtdeclarative/include/QtQuick/QtQuickDepends b/qtdeclarative/include/QtQuick/QtQuickDepends
 new file mode 100644
-index 0000000000..d39ee685eb
+index 0000000..d39ee68
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuick/QtQuickDepends
 @@ -0,0 +1,6 @@
@@ -80,14 +80,14 @@ index 0000000000..d39ee685eb
 +#endif
 diff --git a/qtdeclarative/include/QtQuick/qtquick-config.h b/qtdeclarative/include/QtQuick/qtquick-config.h
 new file mode 100644
-index 0000000000..2ab295bbab
+index 0000000..2ab295b
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuick/qtquick-config.h
 @@ -0,0 +1 @@
 +#include "../../src/quick/qtquick-config.h"
 diff --git a/qtdeclarative/include/QtQuickParticles/QtQuickParticlesDepends b/qtdeclarative/include/QtQuickParticles/QtQuickParticlesDepends
 new file mode 100644
-index 0000000000..ae067700c0
+index 0000000..ae06770
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuickParticles/QtQuickParticlesDepends
 @@ -0,0 +1,7 @@
@@ -100,7 +100,7 @@ index 0000000000..ae067700c0
 +#endif
 diff --git a/qtdeclarative/include/QtQuickTest/QtQuickTestDepends b/qtdeclarative/include/QtQuickTest/QtQuickTestDepends
 new file mode 100644
-index 0000000000..a2d1dcf667
+index 0000000..a2d1dcf
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuickTest/QtQuickTestDepends
 @@ -0,0 +1,6 @@
@@ -112,7 +112,7 @@ index 0000000000..a2d1dcf667
 +#endif
 diff --git a/qtdeclarative/include/QtQuickWidgets/QtQuickWidgetsDepends b/qtdeclarative/include/QtQuickWidgets/QtQuickWidgetsDepends
 new file mode 100644
-index 0000000000..6b0980a9d9
+index 0000000..6b0980a
 --- /dev/null
 +++ b/qtdeclarative/include/QtQuickWidgets/QtQuickWidgetsDepends
 @@ -0,0 +1,8 @@
@@ -126,7 +126,7 @@ index 0000000000..6b0980a9d9
 +#endif
 diff --git a/qtdeclarative/src/qml/qml_compile_hash_p.h b/qtdeclarative/src/qml/qml_compile_hash_p.h
 new file mode 100644
-index 0000000000..9cfd9503c5
+index 0000000..9cfd950
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qml_compile_hash_p.h
 @@ -0,0 +1,3 @@
@@ -135,7 +135,7 @@ index 0000000000..9cfd9503c5
 +#define QML_COMPILE_HASH_LENGTH 40
 diff --git a/qtdeclarative/src/qml/qtqml-config.h b/qtdeclarative/src/qml/qtqml-config.h
 new file mode 100644
-index 0000000000..e04a385981
+index 0000000..e04a385
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qtqml-config.h
 @@ -0,0 +1,2 @@
@@ -143,7 +143,7 @@ index 0000000000..e04a385981
 +#define QT_FEATURE_qml_network 1
 diff --git a/qtdeclarative/src/qml/qtqml-config_p.h b/qtdeclarative/src/qml/qtqml-config_p.h
 new file mode 100644
-index 0000000000..8e42d9ef57
+index 0000000..8e42d9e
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qtqml-config_p.h
 @@ -0,0 +1,2 @@
@@ -151,14 +151,14 @@ index 0000000000..8e42d9ef57
 +#define QT_FEATURE_qml_profiler -1
 diff --git a/qtdeclarative/src/quick/qtquick-config.h b/qtdeclarative/src/quick/qtquick-config.h
 new file mode 100644
-index 0000000000..a224374ba6
+index 0000000..a224374
 --- /dev/null
 +++ b/qtdeclarative/src/quick/qtquick-config.h
 @@ -0,0 +1 @@
 +#define QT_FEATURE_d3d12 -1
 diff --git a/qtdeclarative/src/quick/qtquick-config_p.h b/qtdeclarative/src/quick/qtquick-config_p.h
 new file mode 100644
-index 0000000000..fcec68dccc
+index 0000000..fcec68d
 --- /dev/null
 +++ b/qtdeclarative/src/quick/qtquick-config_p.h
 @@ -0,0 +1,15 @@
