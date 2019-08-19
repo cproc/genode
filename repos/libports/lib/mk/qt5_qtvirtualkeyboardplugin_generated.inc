@@ -1,73 +1,79 @@
-QT_DEFINES += -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_LAYOUTS -DQT_DEPRECATED_WARNINGS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_PLUGIN -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
+QT_DEFINES += -DQVIRTUALKEYBOARD_LIBRARY -DQT_VIRTUALKEYBOARD_DEFAULT_STYLE=\"default\" -DQT_VIRTUALKEYBOARD_DEFAULT_LAYOUTS_DIR=\"qrc:/QtQuick/VirtualKeyboard/content/layouts\" -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_FROM_BYTEARRAY -DQT_VIRTUALKEYBOARD_DESKTOP -DHAVE_LAYOUTS -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT -DQT_BUILD_VIRTUALKEYBOARD_LIB -DQT_BUILDING_QT -DQT_MOC_COMPAT -DQT_USE_QSTRINGBUILDER -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x050000 -DQT_NO_EXCEPTIONS -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -DQT_NO_DEBUG -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 
 QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
+  qtvirtualkeyboard/include \
+  qtvirtualkeyboard/include/QtVirtualKeyboard \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.12.4 \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.12.4/QtVirtualKeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.11.3 \
-  qtbase/include/QtGui/5.11.3/QtGui \
+  qtbase/include/QtGui/5.12.4 \
+  qtbase/include/QtGui/5.12.4/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
 QT_SOURCES += \
   platforminputcontext.cpp \
-  inputcontext.cpp \
-  abstractinputmethod.cpp \
+  qvirtualkeyboardinputcontext.cpp \
+  qvirtualkeyboardinputcontext_p.cpp \
+  qvirtualkeyboardabstractinputmethod.cpp \
   plaininputmethod.cpp \
-  inputengine.cpp \
+  qvirtualkeyboardinputengine.cpp \
   shifthandler.cpp \
-  plugin.cpp \
   inputmethod.cpp \
   inputselectionhandle.cpp \
-  selectionlistmodel.cpp \
-  defaultinputmethod.cpp \
+  qvirtualkeyboardselectionlistmodel.cpp \
+  fallbackinputmethod.cpp \
   abstractinputpanel.cpp \
+  appinputpanel.cpp \
   enterkeyaction.cpp \
   enterkeyactionattachedtype.cpp \
   settings.cpp \
   virtualkeyboardsettings.cpp \
-  trace.cpp \
+  qvirtualkeyboardtrace.cpp \
   desktopinputselectioncontrol.cpp \
   shadowinputcontext.cpp \
   gesturerecognizer.cpp \
   handwritinggesturerecognizer.cpp \
+  qvirtualkeyboardextensionplugin.cpp \
   desktopinputpanel.cpp \
   inputview.cpp \
-  appinputpanel.cpp \
-  qrc_default_style.cpp \
-  qrc_retro_style.cpp \
-  qrc_content.cpp \
-  qrc_layouts.cpp \
-  moc_platforminputcontext.cpp \
-  moc_inputcontext.cpp \
-  moc_abstractinputmethod.cpp \
-  moc_plaininputmethod.cpp \
-  moc_inputengine.cpp \
-  moc_shifthandler.cpp \
-  moc_inputmethod.cpp \
-  moc_inputselectionhandle.cpp \
-  moc_selectionlistmodel.cpp \
-  moc_defaultinputmethod.cpp \
-  moc_abstractinputpanel.cpp \
-  moc_enterkeyaction.cpp \
-  moc_enterkeyactionattachedtype.cpp \
-  moc_settings.cpp \
-  moc_virtualkeyboardsettings.cpp \
-  moc_plugin.cpp \
-  moc_trace.cpp \
-  moc_desktopinputselectioncontrol.cpp \
-  moc_shadowinputcontext.cpp \
-  moc_gesturerecognizer.cpp \
-  moc_handwritinggesturerecognizer.cpp \
-  moc_desktopinputpanel.cpp \
-  moc_inputview.cpp \
-  moc_appinputpanel.cpp
+  qrc_virtualkeyboard_default_style.cpp \
+  qrc_virtualkeyboard_retro_style.cpp \
+  qrc_virtualkeyboard_content.cpp \
+  qrc_qmake_virtualkeyboard_layouts.cpp \
+  moc_platforminputcontext_p.cpp \
+  moc_qvirtualkeyboardinputcontext.cpp \
+  moc_qvirtualkeyboardinputcontext_p.cpp \
+  moc_qvirtualkeyboardabstractinputmethod.cpp \
+  moc_plaininputmethod_p.cpp \
+  moc_qvirtualkeyboardinputengine.cpp \
+  moc_shifthandler_p.cpp \
+  moc_inputmethod_p.cpp \
+  moc_inputselectionhandle_p.cpp \
+  moc_qvirtualkeyboardselectionlistmodel.cpp \
+  moc_fallbackinputmethod_p.cpp \
+  moc_abstractinputpanel_p.cpp \
+  moc_appinputpanel_p.cpp \
+  moc_enterkeyaction_p.cpp \
+  moc_enterkeyactionattachedtype_p.cpp \
+  moc_settings_p.cpp \
+  moc_virtualkeyboardsettings_p.cpp \
+  moc_qvirtualkeyboardtrace.cpp \
+  moc_desktopinputselectioncontrol_p.cpp \
+  moc_shadowinputcontext_p.cpp \
+  moc_gesturerecognizer_p.cpp \
+  moc_handwritinggesturerecognizer_p.cpp \
+  moc_qvirtualkeyboardextensionplugin.cpp \
+  moc_desktopinputpanel_p.cpp \
+  moc_inputview_p.cpp
 
 QT_VPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
@@ -79,30 +85,31 @@ QT_VPATH += \
 # extracted from 'compiler_moc_header_make_all' target
 
 COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
-  moc_platforminputcontext.cpp \
-  moc_inputcontext.cpp \
-  moc_abstractinputmethod.cpp \
-  moc_plaininputmethod.cpp \
-  moc_inputengine.cpp \
-  moc_shifthandler.cpp \
-  moc_inputmethod.cpp \
-  moc_inputselectionhandle.cpp \
-  moc_selectionlistmodel.cpp \
-  moc_defaultinputmethod.cpp \
-  moc_abstractinputpanel.cpp \
-  moc_enterkeyaction.cpp \
-  moc_enterkeyactionattachedtype.cpp \
-  moc_settings.cpp \
-  moc_virtualkeyboardsettings.cpp \
-  moc_plugin.cpp \
-  moc_trace.cpp \
-  moc_desktopinputselectioncontrol.cpp \
-  moc_shadowinputcontext.cpp \
-  moc_gesturerecognizer.cpp \
-  moc_handwritinggesturerecognizer.cpp \
-  moc_desktopinputpanel.cpp \
-  moc_inputview.cpp \
-  moc_appinputpanel.cpp
+  moc_platforminputcontext_p.cpp \
+  moc_qvirtualkeyboardinputcontext.cpp \
+  moc_qvirtualkeyboardinputcontext_p.cpp \
+  moc_qvirtualkeyboardabstractinputmethod.cpp \
+  moc_plaininputmethod_p.cpp \
+  moc_qvirtualkeyboardinputengine.cpp \
+  moc_shifthandler_p.cpp \
+  moc_inputmethod_p.cpp \
+  moc_inputselectionhandle_p.cpp \
+  moc_qvirtualkeyboardselectionlistmodel.cpp \
+  moc_fallbackinputmethod_p.cpp \
+  moc_abstractinputpanel_p.cpp \
+  moc_appinputpanel_p.cpp \
+  moc_enterkeyaction_p.cpp \
+  moc_enterkeyactionattachedtype_p.cpp \
+  moc_settings_p.cpp \
+  moc_virtualkeyboardsettings_p.cpp \
+  moc_qvirtualkeyboardtrace.cpp \
+  moc_desktopinputselectioncontrol_p.cpp \
+  moc_shadowinputcontext_p.cpp \
+  moc_gesturerecognizer_p.cpp \
+  moc_handwritinggesturerecognizer_p.cpp \
+  moc_qvirtualkeyboardextensionplugin.cpp \
+  moc_desktopinputpanel_p.cpp \
+  moc_inputview_p.cpp
 
 # source files generated from existing source files ('%.moc: %.cpp' rule in import-qt5.inc)
 # extracted from 'compiler_moc_source_make_all' rule

@@ -9,7 +9,7 @@ contains generated files.
  1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/qtbase/configure b/qtbase/configure
-index 2830a1b189..d6da4dd847 100755
+index ef7bad1..3bd39ed 100755
 --- a/qtbase/configure
 +++ b/qtbase/configure
 @@ -673,11 +673,11 @@ if [ "$OPT_SHADOW" = "maybe" ]; then

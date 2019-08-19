@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/testlib \
   qtbase/include \
   qtbase/include/QtTest \
-  qtbase/include/QtTest/5.11.3 \
-  qtbase/include/QtTest/5.11.3/QtTest \
-  qtbase/include/QtCore/5.11.3 \
-  qtbase/include/QtCore/5.11.3/QtCore \
+  qtbase/include/QtTest/5.12.4 \
+  qtbase/include/QtTest/5.12.4/QtTest \
+  qtbase/include/QtCore/5.12.4 \
+  qtbase/include/QtCore/5.12.4/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -36,6 +36,7 @@ QT_SOURCES += \
   qtestxunitstreamer.cpp \
   qxunittestlogger.cpp \
   qtestblacklist.cpp \
+  qtaptestlogger.cpp \
   qabstractitemmodeltester.cpp \
   moc_qtesteventloop.cpp \
   moc_qabstractitemmodeltester.cpp

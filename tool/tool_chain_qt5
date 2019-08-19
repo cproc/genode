@@ -36,7 +36,7 @@ MAKE_JOBS ?= 4
 
 GENODE_DIR       ?= $(realpath $(dir $(firstword $(MAKEFILE_LIST)))/..)
 CONTRIB_DIR       = $(shell $(GENODE_DIR)/tool/ports/current qt5-host)/src/lib/qt5-host
-BUILD_DIR         = $(GENODE_DIR)/build/tool/qt5-5.10.1
+BUILD_DIR         = $(GENODE_DIR)/build/tool/qt5-5.12.4
 INSTALL_LOCATION ?= /usr/local/genode/tool/qt5
 SUDO             ?= sudo
 

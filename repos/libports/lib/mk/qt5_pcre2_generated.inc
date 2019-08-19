@@ -22,6 +22,7 @@ QT_SOURCES += \
   pcre2_newline.c \
   pcre2_ord2utf.c \
   pcre2_pattern_info.c \
+  pcre2_script_run.c \
   pcre2_serialize.c \
   pcre2_string_utils.c \
   pcre2_study.c \

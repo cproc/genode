@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QT_VERSION=5.11.3
+QT_VERSION=5.12.4
 
 ./genode_qt5_configure
 
@@ -31,7 +31,8 @@ cd qtdeclarative/src/imports/window          && ../../../../create_generated_inc
 
 cd qtsvg/src/svg                             && ../../../create_generated_inc qt5_svg                         && cp qt5_svg_generated.inc ../../..                         && cd ../../..
 
-cd qtvirtualkeyboard/src/virtualkeyboard     && ../../../create_generated_inc qt5_qtvirtualkeyboardplugin && cp qt5_qtvirtualkeyboardplugin_generated.inc ../../..         && cd ../../..
+cd qtvirtualkeyboard/src/virtualkeyboard     && ../../../create_generated_inc qt5_qtvirtualkeyboardplugin       && cp qt5_qtvirtualkeyboardplugin_generated.inc ../../..       && cd ../../..
+cd qtvirtualkeyboard/src/styles              && ../../../create_generated_inc qt5_qtvirtualkeyboardstylesplugin && cp qt5_qtvirtualkeyboardstylesplugin_generated.inc ../../.. && cd ../../..
 
 # qtwebkit
 
