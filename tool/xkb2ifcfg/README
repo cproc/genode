@@ -1,0 +1,127 @@
+  XKB to Genode input_filter configuration
+
+  Christian Helmuth
+
+
+This tool generates Genode input_filter XML configuration files from
+X11 XKB configuration. It must be built and run on Linux with
+libxkbcommon development packages installed.
+
+For pragmatic (and realistic reasons) this tool assumes a standard
+105-keys PC keyboard. This assumption automatically includes US
+keyboards with 104 keys. The differences are:
+
+- PC105 has an additional 105th Less Then / Greater Then key <LSGT>
+  right of Left Shift <LFSH> as additional 105th key
+- PC105 has the Backslash key <BKSL> left of Return <RTRN>
+
+xkb2ifcfg supports Shift, AltGr, and Caps Lock modifiers, as well as
+localized dead-key/compose sequences. The tool does not support
+latched modifiers.
+
+
+Build
+=====
+
+Just execute 'make' and 'xkb2ifcfg' should be built.
+
+
+Usage
+=====
+
+! xkb2ifcfg <command> <layout> <variant> <locale>
+!
+! Commands
+!
+!   generate   generate input_filter config
+!   dump       dump raw XKB keymap
+!   info       simple per-key information
+!
+! Examples
+!
+!   xkb2ifcfg generate us ""         en_US.UTF-8 > en_US.chargen
+!   xkb2ifcfg info     de nodeadkeys de_DE.UTF-8 > de_DE.chargen
+
+All information is printed on standard output while diagnostic
+messages are written to standard error.
+
+Valid 'layout' and 'variant' options can be figured out from the
+LAYOUTS section in
+
+! man 7 xkeyboard-config
+
+'variant' strings are depicted in parentheses after the layout (e.g.,
+'us(euro)').
+
+The 'locale' option has the standard locale syntax (see
+/usr/share/i18n/locales).
+
+
+Open issues
+===========
+
+:tool:
+
+* robust error handling on missing locale etc. (Main initialization)
+
+:input_filter:
+
+* use "Unicode combining diacritical marks" U+0300..U+036F in
+  <chargen>
+* add <sequence> nodes to chargen with object/class (beside <key>
+  nodes)
+  <sequence first="..." second="..." third="..." fourth="..." code="..."/>
+* Cancellation Behavior
+  What should happen when a sequence is cancelled?  For example, consider
+  there are only the above sequences, and the input kesysms are
+  \<dead_acute\> \<b\>.  There are a few approaches:
+
+  Swallow the cancelling keysym; that is, no keysym is produced. This
+  is the approach taken by libX11.
+
+* check mod1=SHIFT mod2=CONTROL mod3=ALTGR mod4=CAPSLOCK
+* check KEY_KP5 must be KEY_UNKNOWN if numlock=off
+* check KEY_DELETE, which is in special.chargen but also generated
+* check de_CH: AltGr-E should produce EURO SYMBOL
+* check de_CH: AltGr-1 should produce brokenbar
+* document <map> <key code=""> unicode codepoint generator
+* deprecate <map> <key...b0="">
+* check for conflicting <key> mapping on Key_map::import_map()
+* qt5: unknown keycodes 26, 27, 41, 43, 39, ...
+* test pseudo mod2: LEFTCTRL RIGHTCTRL
+  * should work regardless of mod1 (which it already does - so don't
+    break it)
+* enhance input_filter test for layouts
+* include generated and tested example layouts
+  * en_us, de_de, ch_de (sg), ch_fr (sf), fr
+
+  xkb2ifcfg generate us ''          en_US.UTF-8
+  xkb2ifcfg generate de nodeadkeys  de_DE.UTF-8
+  xkb2ifcfg generate ch de          de_CH.UTF-8
+  xkb2ifcfg generate ch fr          fr_CH.UTF-8
+  xkb2ifcfg generate fr ''          fr_FR.UTF-8
+
+  xkb2ifcfg generate us euro        en_US.UTF-8
+  xkb2ifcfg generate gb ''          en_GB.UTF-8
+  xkb2ifcfg generate jp 'kana'      ja_JP.UTF-8
+
+
+* Xml_generator: xml.append() as last operation before node closure
+  breaks indentation (see <dummy/>)
+
+
+Generation of keyboard-layout PDFs (and other examples)
+=======================================================
+
+setxkbmap -print -rules evdev -model pc104 -layout us -variant ""           -option "" | xkbcomp -xkm - - | xkbprint -color -label name - - | ps2pdf - t.pdf
+setxkbmap -print -rules evdev -model pc105 -layout de -variant "nodeadkeys" -option "" | xkbcomp -xkm - - | xkbprint -color -label symbols - - | ps2pdf - t.pdf
+
+setxkbmap -print -model pc104 -option -layout us
+setxkbmap -print -model pc105 -option -layout de -variant nodeadkeys
+setxkbmap -print -model pc105 -option -layout ch -variant de_nodeadkeys
+setxkbmap -print -model pc105 -option -layout ch -variant fr_nodeadkeys
+
+setxkbmap -print -model pc105 -option -layout gb
+setxkbmap -print -model pc104 -option -layout us -variant euro
+setxkbmap -print -model pc104 -option -layout us -variant workman
+
