@@ -156,10 +156,10 @@ index 029357f..52086f2 100644
  linux:!static {
      precompile_header {
 diff --git a/qtbase/src/corelib/io/io.pri b/qtbase/src/corelib/io/io.pri
-index 086d642..d87b328 100644
+index 9b60447..fcda10c 100644
 --- a/qtbase/src/corelib/io/io.pri
 +++ b/qtbase/src/corelib/io/io.pri
-@@ -197,7 +197,7 @@ win32 {
+@@ -199,7 +199,7 @@ win32 {
          } else {
              SOURCES += \
                  io/qstandardpaths_unix.cpp \

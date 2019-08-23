@@ -10,10 +10,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-index b6000db..2f24c76 100644
+index f5c5c49..1d70dce 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
 +++ b/qtdeclarative/src/qml/jsruntime/qv4engine.cpp
-@@ -132,6 +132,10 @@
+@@ -133,6 +133,10 @@
  
  #endif // #ifndef V4_BOOTSTRAP
  
@@ -23,9 +23,9 @@ index b6000db..2f24c76 100644
 +
  QT_BEGIN_NAMESPACE
  
- using namespace QV4;
+ Q_LOGGING_CATEGORY(lcTracingAll, "qt.v4.tracing.all")
 diff --git a/qtdeclarative/src/qml/jsruntime/qv4global_p.h b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
-index 58bffdf..d7ae67d 100644
+index d47393b..f0123b3 100644
 --- a/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 +++ b/qtdeclarative/src/qml/jsruntime/qv4global_p.h
 @@ -116,7 +116,7 @@ inline double trunc(double d) { return d > 0 ? floor(d) : ceil(d); }

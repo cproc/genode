@@ -4,18 +4,18 @@ QT_INCPATH += \
   qtvirtualkeyboard/src/virtualkeyboard \
   qtvirtualkeyboard/include \
   qtvirtualkeyboard/include/QtVirtualKeyboard \
-  qtvirtualkeyboard/include/QtVirtualKeyboard/5.12.4 \
-  qtvirtualkeyboard/include/QtVirtualKeyboard/5.12.4/QtVirtualKeyboard \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.0 \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.0/QtVirtualKeyboard \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtbase/include/QtGui/5.12.4 \
-  qtbase/include/QtGui/5.12.4/QtGui \
+  qtbase/include/QtGui/5.13.0 \
+  qtbase/include/QtGui/5.13.0/QtGui \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

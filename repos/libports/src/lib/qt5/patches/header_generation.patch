@@ -58,7 +58,7 @@ index 64faa4f..78d7392 100644
          debug: \
              LIBS$${suffix} += $$eval(QMAKE_LIBS_$${nu}_DEBUG) $$eval(QMAKE_LIBS_$$nu)
 diff --git a/qtbase/mkspecs/features/qt.prf b/qtbase/mkspecs/features/qt.prf
-index 89f4946..f352737 100644
+index 3a71376..f8a4d07 100644
 --- a/qtbase/mkspecs/features/qt.prf
 +++ b/qtbase/mkspecs/features/qt.prf
 @@ -233,7 +233,7 @@ for(ever) {
@@ -71,10 +71,10 @@ index 89f4946..f352737 100644
      !isEmpty(var_sfx): break()
      var_sfx = _PRIVATE
 diff --git a/qtbase/mkspecs/features/qt_configure.prf b/qtbase/mkspecs/features/qt_configure.prf
-index 95e54d7..2cc9224 100644
+index 94eb012..ee42acc 100644
 --- a/qtbase/mkspecs/features/qt_configure.prf
 +++ b/qtbase/mkspecs/features/qt_configure.prf
-@@ -2248,14 +2248,14 @@ defineTest(qtConfProcessOutput) {
+@@ -2256,14 +2256,14 @@ defineTest(qtConfProcessOutput) {
  
  !isEmpty(_QMAKE_SUPER_CACHE_):!equals(OUT_PWD, $$dirname(_QMAKE_SUPER_CACHE_)) {
      # sub-repo within a top-level build; no need to configure anything.

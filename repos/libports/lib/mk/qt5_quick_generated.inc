@@ -5,14 +5,14 @@ QT_INCPATH += \
   qtdeclarative/src/quick \
   qtdeclarative/include \
   qtdeclarative/include/QtQuick \
-  qtdeclarative/include/QtQuick/5.12.4 \
-  qtdeclarative/include/QtQuick/5.12.4/QtQuick \
-  qtbase/include/QtGui/5.12.4 \
-  qtbase/include/QtGui/5.12.4/QtGui \
-  qtdeclarative/include/QtQml/5.12.4 \
-  qtdeclarative/include/QtQml/5.12.4/QtQml \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtdeclarative/include/QtQuick/5.13.0 \
+  qtdeclarative/include/QtQuick/5.13.0/QtQuick \
+  qtbase/include/QtGui/5.13.0 \
+  qtbase/include/QtGui/5.13.0/QtGui \
+  qtdeclarative/include/QtQml/5.13.0 \
+  qtdeclarative/include/QtQml/5.13.0/QtQml \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/include \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
@@ -222,6 +222,8 @@ QT_SOURCES += \
   moc_qsgcompressedatlastexture_p.cpp \
   moc_qsgcompressedtexture_p.cpp \
   moc_qquickevents_p_p.cpp \
+  moc_qquickimage_p.cpp \
+  moc_qquickimage_p_p.cpp \
   moc_qquickscalegrid_p_p.cpp \
   moc_qquickflickable_p_p.cpp \
   moc_qquickdraghandler_p.cpp \
@@ -325,6 +327,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qquicktextutil_p.cpp \
   moc_qquickimagebase_p.cpp \
   moc_qquickimage_p.cpp \
+  moc_qquickimage_p_p.cpp \
   moc_qquickborderimage_p.cpp \
   moc_qquickscalegrid_p_p.cpp \
   moc_qquickmousearea_p.cpp \
@@ -397,7 +400,6 @@ COMPILER_MOC_SOURCE_MAKE_ALL_FILES = \
   qsgthreadedrenderloop.moc \
   qsgsoftwarethreadedrenderloop.moc \
   qquickwindow.moc \
-  qquickimage.moc \
   qquickflipable.moc \
   qquickshadereffectsource.moc \
   qquickopenglshadereffectnode.moc \
