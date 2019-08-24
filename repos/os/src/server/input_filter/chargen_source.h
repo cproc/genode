@@ -474,24 +474,24 @@ class Input_filter::Chargen_source : public Source, Source::Sink
 
 					seq.append(codepoint);
 
-					struct Break_for_each { };
-					try {
-						_rules.for_each([&] (Rule const &rule) {
-							Rule::Match const match { rule.sequence.match(seq) };
-							switch (match) {
-							case Sequence::MISMATCH:
-								return;
-							case Sequence::UNFINISHED:
-								best_match = match;
-								result     = invalid;
-								return;
-							case Sequence::COMPLETED:
-								best_match = match;
-								result     = rule.code;
-								throw Break_for_each();
-							}
-						});
-					} catch (Break_for_each) { }
+					_rules.for_each([&] (Rule const &rule) {
+						/* early return if completed match was found already */
+						if (best_match == Sequence::COMPLETED) return;
+
+						Rule::Match const match { rule.sequence.match(seq) };
+						switch (match) {
+						case Sequence::MISMATCH:
+							return;
+						case Sequence::UNFINISHED:
+							best_match = match;
+							result     = invalid;
+							return;
+						case Sequence::COMPLETED:
+							best_match = match;
+							result     = rule.code;
+							return;
+						}
+					});
 
 					switch (best_match) {
 					case Sequence::MISMATCH:
