@@ -60,24 +60,7 @@ The 'locale' option has the standard locale syntax (see
 Open issues
 ===========
 
-:tool:
-
-* robust error handling on missing locale etc. (Main initialization)
-
 :input_filter:
-
-* use "Unicode combining diacritical marks" U+0300..U+036F in
-  <chargen>
-* add <sequence> nodes to chargen with object/class (beside <key>
-  nodes)
-  <sequence first="..." second="..." third="..." fourth="..." code="..."/>
-* Cancellation Behavior
-  What should happen when a sequence is cancelled?  For example, consider
-  there are only the above sequences, and the input kesysms are
-  \<dead_acute\> \<b\>.  There are a few approaches:
-
-  Swallow the cancelling keysym; that is, no keysym is produced. This
-  is the approach taken by libX11.
 
 * check mod1=SHIFT mod2=CONTROL mod3=ALTGR mod4=CAPSLOCK
 * check KEY_KP5 must be KEY_UNKNOWN if numlock=off
@@ -104,10 +87,6 @@ Open issues
   xkb2ifcfg generate us euro        en_US.UTF-8
   xkb2ifcfg generate gb ''          en_GB.UTF-8
   xkb2ifcfg generate jp 'kana'      ja_JP.UTF-8
-
-
-* Xml_generator: xml.append() as last operation before node closure
-  breaks indentation (see <dummy/>)
 
 
 Generation of keyboard-layout PDFs (and other examples)
