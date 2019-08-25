@@ -5,10 +5,10 @@ QT_INCPATH += \
   qtbase/src/network/kernel \
   qtbase/include \
   qtbase/include/QtNetwork \
-  qtbase/include/QtNetwork/5.12.4 \
-  qtbase/include/QtNetwork/5.12.4/QtNetwork \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtbase/include/QtNetwork/5.13.0 \
+  qtbase/include/QtNetwork/5.13.0/QtNetwork \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -98,6 +98,7 @@ QT_SOURCES += \
   qsslerror.cpp \
   qsslsocket.cpp \
   qsslpresharedkeyauthenticator.cpp \
+  qocspresponse.cpp \
   qdtls.cpp \
   qsslsocket_openssl_symbols.cpp \
   qssldiffiehellmanparameters_openssl.cpp \

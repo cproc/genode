@@ -4,12 +4,12 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- .../QtQml/5.12.4/QtQml/private/qqmljsgrammar_p.h   |    1 
- .../QtQml/5.12.4/QtQml/private/qqmljsparser_p.h    |    1 
- .../QtQml/5.12.4/QtQml/private/qtqml-config_p.h    |    1 
+ .../QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h   |    1 
+ .../QtQml/5.13.0/QtQml/private/qqmljsparser_p.h    |    1 
+ .../QtQml/5.13.0/QtQml/private/qtqml-config_p.h    |    1 
  qtdeclarative/include/QtQml/QtQmlDepends           |    5 
  qtdeclarative/include/QtQml/qtqml-config.h         |    1 
- .../5.12.4/QtQuick/private/qtquick-config_p.h      |    1 
+ .../5.13.0/QtQuick/private/qtquick-config_p.h      |    1 
  qtdeclarative/include/QtQuick/QtQuickDepends       |    6 
  qtdeclarative/include/QtQuick/qtquick-config.h     |    1 
  .../QtQuickParticles/QtQuickParticlesDepends       |    7 
@@ -19,20 +19,19 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  qtdeclarative/src/qml/qml_compile_hash_p.h         |    3 
  qtdeclarative/src/qml/qqmljsgrammar.cpp            | 1917 +++++++++++
  qtdeclarative/src/qml/qqmljsgrammar_p.h            |  222 +
- qtdeclarative/src/qml/qqmljsparser.cpp             | 3457 ++++++++++++++++++++
+ qtdeclarative/src/qml/qqmljsparser.cpp             | 3461 ++++++++++++++++++++
  qtdeclarative/src/qml/qqmljsparser_p.h             |  316 ++
  qtdeclarative/src/qml/qtqml-config.h               |    2 
- qtdeclarative/src/qml/qtqml-config_p.h             |   11 
- qtdeclarative/src/qml/qtqml_tracepoints_p.h        |    1 
+ qtdeclarative/src/qml/qtqml-config_p.h             |   12 
  qtdeclarative/src/quick/qtquick-config.h           |    1 
  qtdeclarative/src/quick/qtquick-config_p.h         |   16 
- 22 files changed, 5991 insertions(+)
- create mode 100644 qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsgrammar_p.h
- create mode 100644 qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsparser_p.h
- create mode 100644 qtdeclarative/include/QtQml/5.12.4/QtQml/private/qtqml-config_p.h
+ 21 files changed, 5995 insertions(+)
+ create mode 100644 qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h
+ create mode 100644 qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h
+ create mode 100644 qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h
  create mode 100644 qtdeclarative/include/QtQml/QtQmlDepends
  create mode 100644 qtdeclarative/include/QtQml/qtqml-config.h
- create mode 100644 qtdeclarative/include/QtQuick/5.12.4/QtQuick/private/qtquick-config_p.h
+ create mode 100644 qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h
  create mode 100644 qtdeclarative/include/QtQuick/QtQuickDepends
  create mode 100644 qtdeclarative/include/QtQuick/qtquick-config.h
  create mode 100644 qtdeclarative/include/QtQuickParticles/QtQuickParticlesDepends
@@ -46,29 +45,28 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  create mode 100644 qtdeclarative/src/qml/qqmljsparser_p.h
  create mode 100644 qtdeclarative/src/qml/qtqml-config.h
  create mode 100644 qtdeclarative/src/qml/qtqml-config_p.h
- create mode 100644 qtdeclarative/src/qml/qtqml_tracepoints_p.h
  create mode 100644 qtdeclarative/src/quick/qtquick-config.h
  create mode 100644 qtdeclarative/src/quick/qtquick-config_p.h
 
-diff --git a/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsgrammar_p.h b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsgrammar_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h
 new file mode 100644
 index 0000000..ab3ad73
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsgrammar_p.h
++++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qqmljsgrammar_p.h"
-diff --git a/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsparser_p.h b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsparser_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h
 new file mode 100644
 index 0000000..deb9e72
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qqmljsparser_p.h
++++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qqmljsparser_p.h"
-diff --git a/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qtqml-config_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h
 new file mode 100644
 index 0000000..1fdbd71
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.12.4/QtQml/private/qtqml-config_p.h
++++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qtqml-config_p.h"
 diff --git a/qtdeclarative/include/QtQml/QtQmlDepends b/qtdeclarative/include/QtQml/QtQmlDepends
@@ -89,11 +87,11 @@ index 0000000..48fe1f2
 +++ b/qtdeclarative/include/QtQml/qtqml-config.h
 @@ -0,0 +1 @@
 +#include "../../src/qml/qtqml-config.h"
-diff --git a/qtdeclarative/include/QtQuick/5.12.4/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.12.4/QtQuick/private/qtquick-config_p.h
+diff --git a/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h
 new file mode 100644
 index 0000000..fcdf423
 --- /dev/null
-+++ b/qtdeclarative/include/QtQuick/5.12.4/QtQuick/private/qtquick-config_p.h
++++ b/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/quick/qtquick-config_p.h"
 diff --git a/qtdeclarative/include/QtQuick/QtQuickDepends b/qtdeclarative/include/QtQuick/QtQuickDepends
@@ -169,12 +167,12 @@ index 0000000..6b0980a
 +#endif
 diff --git a/qtdeclarative/src/qml/qml_compile_hash_p.h b/qtdeclarative/src/qml/qml_compile_hash_p.h
 new file mode 100644
-index 0000000..cd99a8f
+index 0000000..55c2602
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qml_compile_hash_p.h
 @@ -0,0 +1,3 @@
 +// Generated file, DO NOT EDIT
-+#define QML_COMPILE_HASH "48b4df598c88782f031f3df62964e159feeb20fb"
++#define QML_COMPILE_HASH "ecc092fa5519e77a47ef560f0137b4cd5f417c5e"
 +#define QML_COMPILE_HASH_LENGTH 40
 diff --git a/qtdeclarative/src/qml/qqmljsgrammar.cpp b/qtdeclarative/src/qml/qqmljsgrammar.cpp
 new file mode 100644
@@ -2329,12 +2327,12 @@ index 0000000..04b6226
 +
 diff --git a/qtdeclarative/src/qml/qqmljsparser.cpp b/qtdeclarative/src/qml/qqmljsparser.cpp
 new file mode 100644
-index 0000000..1dd24d0
+index 0000000..b8fb2f5
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qqmljsparser.cpp
-@@ -0,0 +1,3457 @@
+@@ -0,0 +1,3461 @@
 +
-+#line 127 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 127 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +/****************************************************************************
 +**
 +** Copyright (C) 2016 The Qt Company Ltd.
@@ -2385,7 +2383,7 @@ index 0000000..1dd24d0
 +#include <string.h>
 +
 +
-+#line 467 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 467 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +
 +#include "qqmljsparser_p.h"
@@ -2408,7 +2406,7 @@ index 0000000..1dd24d0
 +
 +using namespace QQmlJS;
 +
-+QT_QML_BEGIN_NAMESPACE
++QT_BEGIN_NAMESPACE
 +
 +void Parser::reallocateStack()
 +{
@@ -2592,85 +2590,85 @@ index 0000000..1dd24d0
 +
 +          switch (r) {
 +
-+#line 679 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 679 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 0: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 687 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 687 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 1: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 695 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 695 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 2: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 703 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 703 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 3: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 711 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 711 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 4: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 719 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 719 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 5: {
 +        sym(1).Node = sym(2).Node;
 +        program = sym(1).Node;
 +    } break;
 +
-+#line 728 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 728 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 6: {
 +        sym(1).UiProgram = new (pool) AST::UiProgram(sym(1).UiHeaderItemList, sym(2).UiObjectMemberList->finish());
 +    } break;
 +
-+#line 736 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 736 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 8: {
 +        sym(1).Node = sym(1).UiHeaderItemList->finish();
 +    } break;
 +
-+#line 743 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 743 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 9: {
 +        sym(1).Node = new (pool) AST::UiHeaderItemList(sym(1).UiPragma);
 +    } break;
 +
-+#line 750 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 750 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 10: {
 +        sym(1).Node = new (pool) AST::UiHeaderItemList(sym(1).UiImport);
 +    } break;
 +
-+#line 757 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 757 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 11: {
 +        sym(1).Node = new (pool) AST::UiHeaderItemList(sym(1).UiHeaderItemList, sym(2).UiPragma);
 +    } break;
 +
-+#line 764 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 764 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 12: {
 +        sym(1).Node = new (pool) AST::UiHeaderItemList(sym(1).UiHeaderItemList, sym(2).UiImport);
 +    } break;
 +
-+#line 774 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 774 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 15: {
 +        AST::UiPragma *pragma = new (pool) AST::UiPragma(stringRef(2));
@@ -2679,20 +2677,20 @@ index 0000000..1dd24d0
 +        sym(1).Node = pragma;
 +    } break;
 +
-+#line 787 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 787 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 18: {
 +        sym(1).UiImport->semicolonToken = loc(2);
 +    } break;
 +
-+#line 795 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 795 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 20: {
 +        sym(1).UiImport->versionToken = loc(2);
 +        sym(1).UiImport->semicolonToken = loc(3);
 +    } break;
 +
-+#line 804 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 804 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 22: {
 +        sym(1).UiImport->versionToken = loc(2);
@@ -2702,7 +2700,7 @@ index 0000000..1dd24d0
 +        sym(1).UiImport->semicolonToken = loc(5);
 +    } break;
 +
-+#line 816 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 816 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 24: {
 +        sym(1).UiImport->asToken = loc(2);
@@ -2711,7 +2709,7 @@ index 0000000..1dd24d0
 +        sym(1).UiImport->semicolonToken = loc(4);
 +    } break;
 +
-+#line 826 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 826 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 25: {
 +        AST::UiImport *node = 0;
@@ -2736,38 +2734,38 @@ index 0000000..1dd24d0
 +        }
 +    } break;
 +
-+#line 852 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 852 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 26: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 859 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 859 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 27: {
 +        sym(1).Node = new (pool) AST::UiObjectMemberList(sym(1).UiObjectMember);
 +    } break;
 +
-+#line 866 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 866 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 28: {
 +        sym(1).Node = new (pool) AST::UiObjectMemberList(sym(1).UiObjectMember);
 +    } break;
 +
-+#line 873 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 873 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 29: {
 +        AST::UiObjectMemberList *node = new (pool) AST:: UiObjectMemberList(sym(1).UiObjectMemberList, sym(2).UiObjectMember);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 881 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 881 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 30: {
 +        sym(1).Node = new (pool) AST::UiArrayMemberList(sym(1).UiObjectMember);
 +    } break;
 +
-+#line 888 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 888 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 31: {
 +        AST::UiArrayMemberList *node = new (pool) AST::UiArrayMemberList(sym(1).UiArrayMemberList, sym(3).UiObjectMember);
@@ -2775,7 +2773,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 897 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 897 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 32: {
 +        AST::UiObjectInitializer *node = new (pool) AST::UiObjectInitializer((AST::UiObjectMemberList*)0);
@@ -2784,7 +2782,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 907 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 907 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 33: {
 +        AST::UiObjectInitializer *node = new (pool) AST::UiObjectInitializer(sym(2).UiObjectMemberList->finish());
@@ -2793,14 +2791,14 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 917 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 917 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 34: {
 +        AST::UiObjectDefinition *node = new (pool) AST::UiObjectDefinition(sym(1).UiQualifiedId, sym(2).UiObjectInitializer);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 927 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 927 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 36: {
 +        AST::UiArrayBinding *node = new (pool) AST::UiArrayBinding(sym(1).UiQualifiedId, sym(5).UiArrayMemberList->finish());
@@ -2810,7 +2808,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 938 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 938 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 37: {
 +        AST::UiObjectBinding *node = new (pool) AST::UiObjectBinding(
@@ -2819,7 +2817,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 948 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 948 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 38: {
 +        AST::UiObjectBinding *node = new (pool) AST::UiObjectBinding(
@@ -2829,9 +2827,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 960 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 960 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 39: Q_FALLTHROUGH(); 
-+#line 962 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 962 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 40: {
 +        AST::ObjectPattern *l = new (pool) AST::ObjectPattern(sym(3).PatternPropertyList->finish());
@@ -2841,33 +2839,33 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 974 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 974 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 41: Q_FALLTHROUGH(); 
-+#line 976 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 976 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 42: Q_FALLTHROUGH(); 
-+#line 978 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 978 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 43: {
 +        sym(1).Node = sym(3).Node;
 +    } break;
 +
-+#line 986 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 986 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 44: Q_FALLTHROUGH(); 
-+#line 988 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 988 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 45: Q_FALLTHROUGH(); 
-+#line 990 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 990 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 46: Q_FALLTHROUGH(); 
-+#line 992 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 992 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 47: Q_FALLTHROUGH(); 
-+#line 994 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 994 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 48: Q_FALLTHROUGH(); 
-+#line 996 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 996 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 49: {
 +        sym(1).Node = sym(2).Node;
 +    } break;
 +
-+#line 1003 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1003 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +case 50:
 +{
@@ -2876,11 +2874,11 @@ index 0000000..1dd24d0
 +    sym(1).Node = node;
 +    } break;
 +
-+#line 1013 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1013 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 51: Q_FALLTHROUGH(); 
-+#line 1015 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1015 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 52: Q_FALLTHROUGH(); 
-+#line 1017 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1017 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 53: {
 +        AST::UiQualifiedId *node = new (pool) AST::UiQualifiedId(stringRef(1));
@@ -2888,7 +2886,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1026 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1026 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 54: {
 +        AST::UiQualifiedId *node = new (pool) AST::UiQualifiedId(sym(1).UiQualifiedId, stringRef(3));
@@ -2896,19 +2894,19 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1035 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1035 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 55: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 1042 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1042 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 56: {
 +        sym(1).Node = sym(1).UiParameterList->finish();
 +    } break;
 +
-+#line 1049 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1049 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 57: {
 +        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiQualifiedId->finish(), stringRef(2));
@@ -2917,7 +2915,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1059 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1059 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 58: {
 +        AST::UiParameterList *node = new (pool) AST::UiParameterList(sym(1).UiParameterList, sym(3).UiQualifiedId->finish(), stringRef(4));
@@ -2927,7 +2925,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1071 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1071 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 60: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(nullptr, stringRef(2));
@@ -2940,7 +2938,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1086 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1086 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 62: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(nullptr, stringRef(2));
@@ -2952,7 +2950,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1100 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1100 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 64: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(4).UiQualifiedId->finish(), stringRef(6));
@@ -2965,7 +2963,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1115 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1115 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 66: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3));
@@ -2976,7 +2974,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1128 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1128 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 68: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(3).UiQualifiedId->finish(), stringRef(4));
@@ -2989,7 +2987,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1143 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1143 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 70: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(5).UiQualifiedId->finish(), stringRef(7));
@@ -3004,7 +3002,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1159 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1159 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 71: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3), sym(5).Statement);
@@ -3015,7 +3013,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1171 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1171 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 72: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(3).UiQualifiedId->finish(), stringRef(4), sym(6).Statement);
@@ -3028,7 +3026,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1185 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1185 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 73: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(3).UiQualifiedId->finish(), stringRef(4), sym(6).Statement);
@@ -3041,7 +3039,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1199 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1199 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 74: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(4).UiQualifiedId->finish(), stringRef(6));
@@ -3066,7 +3064,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1225 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1225 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 75: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(2).UiQualifiedId->finish(), stringRef(3));
@@ -3088,7 +3086,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1248 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1248 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 76: {
 +        AST::UiPublicMember *node = new (pool) AST::UiPublicMember(sym(3).UiQualifiedId->finish(), stringRef(4));
@@ -3112,19 +3110,19 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1273 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1273 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 77: {
 +        sym(1).Node = new (pool) AST::UiSourceElement(sym(1).Node);
 +    } break;
 +
-+#line 1280 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1280 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 78: {
 +        sym(1).Node = new (pool) AST::UiSourceElement(sym(1).Node);
 +    } break;
 +
-+#line 1287 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1287 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 79: {
 +      if (AST::ArrayMemberExpression *mem = AST::cast<AST::ArrayMemberExpression *>(sym(1).Expression)) {
@@ -3146,7 +3144,7 @@ index 0000000..1dd24d0
 +      }
 +    } break;
 +
-+#line 1310 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1310 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 80: {
 +        AST::UiEnumDeclaration *enumDeclaration = new (pool) AST::UiEnumDeclaration(stringRef(2), sym(4).UiEnumMemberList->finish());
@@ -3156,7 +3154,7 @@ index 0000000..1dd24d0
 +        break;
 +    }
 +
-+#line 1321 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1321 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 81: {
 +        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(stringRef(1));
@@ -3165,7 +3163,7 @@ index 0000000..1dd24d0
 +        break;
 +    }
 +
-+#line 1331 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1331 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 82: {
 +        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(stringRef(1), sym(3).dval);
@@ -3175,7 +3173,7 @@ index 0000000..1dd24d0
 +        break;
 +    }
 +
-+#line 1342 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1342 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 83: {
 +        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(sym(1).UiEnumMemberList, stringRef(3));
@@ -3184,7 +3182,7 @@ index 0000000..1dd24d0
 +        break;
 +    }
 +
-+#line 1352 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1352 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 84: {
 +        AST::UiEnumMemberList *node = new (pool) AST::UiEnumMemberList(sym(1).UiEnumMemberList, stringRef(3), sym(5).dval);
@@ -3194,7 +3192,7 @@ index 0000000..1dd24d0
 +        break;
 +    }
 +
-+#line 1392 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1392 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 107: {
 +        AST::ThisExpression *node = new (pool) AST::ThisExpression();
@@ -3202,7 +3200,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1401 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1401 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 108: {
 +        AST::IdentifierExpression *node = new (pool) AST::IdentifierExpression(stringRef(1));
@@ -3210,7 +3208,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1419 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1419 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 117: {
 +        if (coverExpressionType != CE_ParenthesizedExpression) {
@@ -3219,7 +3217,7 @@ index 0000000..1dd24d0
 +        }
 +    } break;
 +
-+#line 1430 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1430 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 118: {
 +        AST::NestedExpression *node = new (pool) AST::NestedExpression(sym(2).Expression);
@@ -3229,7 +3227,7 @@ index 0000000..1dd24d0
 +        coverExpressionType = CE_ParenthesizedExpression;
 +    } break;
 +
-+#line 1441 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1441 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 119: {
 +        sym(1).Node = nullptr;
@@ -3237,7 +3235,7 @@ index 0000000..1dd24d0
 +        coverExpressionType = CE_FormalParameterList;
 +    } break;
 +
-+#line 1450 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1450 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 120: {
 +        AST::FormalParameterList *node = (new (pool) AST::FormalParameterList(nullptr, sym(2).PatternElement))->finish(pool);
@@ -3246,7 +3244,7 @@ index 0000000..1dd24d0
 +        coverExpressionType = CE_FormalParameterList;
 +    } break;
 +
-+#line 1460 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1460 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 121: {
 +        AST::FormalParameterList *list = sym(2).Expression->reparseAsFormalParameterList(pool);
@@ -3262,7 +3260,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = list->finish(pool);
 +    } break;
 +
-+#line 1477 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1477 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 122: {
 +        AST::NullExpression *node = new (pool) AST::NullExpression();
@@ -3270,7 +3268,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1486 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1486 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 123: {
 +        AST::TrueLiteral *node = new (pool) AST::TrueLiteral();
@@ -3278,7 +3276,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1495 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1495 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 124: {
 +        AST::FalseLiteral *node = new (pool) AST::FalseLiteral();
@@ -3286,7 +3284,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1504 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1504 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 125: {
 +        AST::NumericLiteral *node = new (pool) AST::NumericLiteral(sym(1).dval);
@@ -3294,9 +3292,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1513 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1513 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 126: Q_FALLTHROUGH(); 
-+#line 1516 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1516 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 127: {
 +        AST::StringLiteral *node = new (pool) AST::StringLiteral(stringRef(1));
@@ -3304,7 +3302,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1528 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1528 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +{
 +    Lexer::RegExpBodyPrefix prefix;
@@ -3312,7 +3310,7 @@ index 0000000..1dd24d0
 +        prefix = Lexer::NoPrefix;
 +        goto scan_regexp;
 +
-+#line 1540 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1540 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 129:
 +        prefix = Lexer::EqualPrefix;
@@ -3334,7 +3332,7 @@ index 0000000..1dd24d0
 +    } break;
 +}
 +
-+#line 1564 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1564 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 130: {
 +        AST::PatternElementList *list = nullptr;
@@ -3346,7 +3344,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1577 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1577 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 131: {
 +        AST::ArrayPattern *node = new (pool) AST::ArrayPattern(sym(2).PatternElementList->finish());
@@ -3355,7 +3353,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1587 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1587 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 132: {
 +        auto *list = sym(2).PatternElementList;
@@ -3371,28 +3369,28 @@ index 0000000..1dd24d0
 +        Q_ASSERT(node->isValidArrayLiteral());
 +    } break;
 +
-+#line 1604 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1604 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 133: {
 +        AST::PatternElement *e = new (pool) AST::PatternElement(sym(1).Expression);
 +        sym(1).Node = new (pool) AST::PatternElementList(nullptr, e);
 +    } break;
 +
-+#line 1612 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1612 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 134: {
 +        AST::PatternElement *e = new (pool) AST::PatternElement(sym(2).Expression);
 +        sym(1).Node = new (pool) AST::PatternElementList(sym(1).Elision->finish(), e);
 +    } break;
 +
-+#line 1620 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1620 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 135: {
 +        AST::PatternElementList *node = new (pool) AST::PatternElementList(sym(1).Elision, sym(2).PatternElement);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1628 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1628 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 136: {
 +        AST::PatternElement *e = new (pool) AST::PatternElement(sym(4).Expression);
@@ -3400,14 +3398,14 @@ index 0000000..1dd24d0
 +        sym(1).Node = sym(1).PatternElementList->append(node);
 +    } break;
 +
-+#line 1637 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1637 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 137: {
 +        AST::PatternElementList *node = new (pool) AST::PatternElementList(sym(3).Elision, sym(4).PatternElement);
 +        sym(1).Node = sym(1).PatternElementList->append(node);
 +    } break;
 +
-+#line 1645 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1645 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 138: {
 +        AST::Elision *node = new (pool) AST::Elision();
@@ -3415,7 +3413,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1654 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1654 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 139: {
 +        AST::Elision *node = new (pool) AST::Elision(sym(1).Elision);
@@ -3423,26 +3421,26 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1663 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1663 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 140: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 1670 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1670 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 141: {
 +        sym(1).Node = sym(1).Elision->finish();
 +    } break;
 +
-+#line 1677 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1677 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 142: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(sym(2).Expression, AST::PatternElement::SpreadElement);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1685 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1685 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 143: {
 +        AST::ObjectPattern *node = new (pool) AST::ObjectPattern();
@@ -3451,7 +3449,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1695 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1695 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 144: {
 +        AST::ObjectPattern *node = new (pool) AST::ObjectPattern(sym(2).PatternPropertyList->finish());
@@ -3460,7 +3458,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1705 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1705 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 145: {
 +        AST::ObjectPattern *node = new (pool) AST::ObjectPattern(sym(2).PatternPropertyList->finish());
@@ -3469,24 +3467,24 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1716 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1716 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 146: Q_FALLTHROUGH(); 
-+#line 1718 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1718 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 147: {
 +      sym(1).Node = new (pool) AST::PatternPropertyList(sym(1).PatternProperty);
 +    } break;
 +
-+#line 1725 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1725 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 148: Q_FALLTHROUGH(); 
-+#line 1727 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1727 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 149: {
 +        AST::PatternPropertyList *node = new (pool) AST::PatternPropertyList(sym(1).PatternPropertyList, sym(3).PatternProperty);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1735 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1735 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 150: {
 +        AST::IdentifierPropertyName *name = new (pool) AST::IdentifierPropertyName(stringRef(1));
@@ -3498,7 +3496,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1751 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1751 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 152: {
 +        AST::IdentifierPropertyName *name = new (pool) AST::IdentifierPropertyName(stringRef(1));
@@ -3517,12 +3515,16 @@ index 0000000..1dd24d0
 +
 +    } break;
 +
-+#line 1771 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1771 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 153: Q_FALLTHROUGH(); 
-+#line 1773 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1773 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 154: {
 +        AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(1).PropertyName, sym(3).Expression);
++        if (auto *f = asAnonymousFunctionDefinition(sym(3).Expression)) {
++            if (!AST::cast<AST::ComputedPropertyName *>(sym(1).PropertyName))
++                f->name = driver->newStringRef(sym(1).PropertyName->asString());
++        }
 +        if (auto *c = asAnonymousClassDefinition(sym(3).Expression)) {
 +            if (!AST::cast<AST::ComputedPropertyName *>(sym(1).PropertyName))
 +                c->name = driver->newStringRef(sym(1).PropertyName->asString());
@@ -3531,7 +3533,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1791 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1795 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 158: {
 +        AST::IdentifierPropertyName *node = new (pool) AST::IdentifierPropertyName(stringRef(1));
@@ -3539,9 +3541,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1800 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1804 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 159: Q_FALLTHROUGH(); 
-+#line 1802 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1806 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 160: {
 +        AST::StringLiteralPropertyName *node = new (pool) AST::StringLiteralPropertyName(stringRef(1));
@@ -3549,9 +3551,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1811 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1815 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 161: Q_FALLTHROUGH(); 
-+#line 1813 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1817 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 162: {
 +        AST::NumericLiteralPropertyName *node = new (pool) AST::NumericLiteralPropertyName(sym(1).dval);
@@ -3559,7 +3561,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1864 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1868 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 203: {
 +        AST::ComputedPropertyName *node = new (pool) AST::ComputedPropertyName(sym(2).Expression);
@@ -3567,25 +3569,25 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1873 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1877 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 204: Q_FALLTHROUGH(); 
-+#line 1875 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1879 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +case 205: {
 +    sym(1) = sym(2);
 +} break;
 +
-+#line 1883 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1887 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 206: Q_FALLTHROUGH(); 
-+#line 1885 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1889 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 207: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 1895 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1899 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 210: Q_FALLTHROUGH(); 
-+#line 1898 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1902 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 211: {
 +        AST::TemplateLiteral *node = new (pool) AST::TemplateLiteral(stringRef(1), rawStringRef(1), nullptr);
@@ -3593,9 +3595,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1907 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1911 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 212: Q_FALLTHROUGH(); 
-+#line 1910 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1914 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 213: {
 +        AST::TemplateLiteral *node = new (pool) AST::TemplateLiteral(stringRef(1), rawStringRef(1), sym(2).Expression);
@@ -3604,7 +3606,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1923 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1927 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 215: {
 +        AST::SuperLiteral *node = new (pool) AST::SuperLiteral();
@@ -3612,9 +3614,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1933 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1937 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 216: Q_FALLTHROUGH(); 
-+#line 1935 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1939 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 217: {
 +        AST::ArrayMemberExpression *node = new (pool) AST::ArrayMemberExpression(sym(1).Expression, sym(3).Expression);
@@ -3623,7 +3625,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1947 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1951 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 218:
 +    {
 +        AST::IdentifierExpression *node = new (pool) AST::IdentifierExpression(stringRef(1));
@@ -3631,9 +3633,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } Q_FALLTHROUGH();
 +
-+#line 1955 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1959 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 219: Q_FALLTHROUGH(); 
-+#line 1957 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1961 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 220: {
 +        AST::FieldMemberExpression *node = new (pool) AST::FieldMemberExpression(sym(1).Expression, stringRef(3));
@@ -3642,7 +3644,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1969 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1973 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 222: {
 +        AST::NewMemberExpression *node = new (pool) AST::NewMemberExpression(sym(2).Expression, sym(4).ArgumentList);
@@ -3652,7 +3654,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1985 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1989 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 225: {
 +        AST::NewExpression *node = new (pool) AST::NewExpression(sym(2).Expression);
@@ -3660,16 +3662,16 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 1995 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1999 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 226: Q_FALLTHROUGH(); 
-+#line 1997 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2001 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 227: {
 +        AST::TaggedTemplate *node = new (pool) AST::TaggedTemplate(sym(1).Expression, sym(2).Template);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2005 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2009 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 228: {
 +        AST::CallExpression *node = new (pool) AST::CallExpression(sym(1).Expression, sym(3).ArgumentList);
@@ -3678,9 +3680,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2015 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2019 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 229: Q_FALLTHROUGH(); 
-+#line 2017 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2021 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 230: {
 +        AST::CallExpression *node = new (pool) AST::CallExpression(sym(1).Expression, sym(3).ArgumentList);
@@ -3689,7 +3691,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2027 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2031 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 231: {
 +        AST::ArrayMemberExpression *node = new (pool) AST::ArrayMemberExpression(sym(1).Expression, sym(3).Expression);
@@ -3698,7 +3700,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2037 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2041 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 232: {
 +        AST::FieldMemberExpression *node = new (pool) AST::FieldMemberExpression(sym(1).Expression, stringRef(3));
@@ -3707,27 +3709,27 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2047 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2051 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 233: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 2054 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2058 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 234: Q_FALLTHROUGH(); 
-+#line 2056 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2060 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 235: {
 +        sym(1).Node = sym(1).ArgumentList->finish();
 +    } break;
 +
-+#line 2063 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2067 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 236: {
 +        sym(1).Node = new (pool) AST::ArgumentList(sym(1).Expression);
 +    } break;
 +
-+#line 2070 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2074 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 237: {
 +        AST::ArgumentList *node = new (pool) AST::ArgumentList(sym(2).Expression);
@@ -3735,7 +3737,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2079 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2083 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 238: {
 +        AST::ArgumentList *node = new (pool) AST::ArgumentList(sym(1).ArgumentList, sym(3).Expression);
@@ -3743,7 +3745,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2088 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2092 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 239: {
 +        AST::ArgumentList *node = new (pool) AST::ArgumentList(sym(1).ArgumentList, sym(4).Expression);
@@ -3752,7 +3754,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2103 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2107 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 243: {
 +        AST::PostIncrementExpression *node = new (pool) AST::PostIncrementExpression(sym(1).Expression);
@@ -3760,7 +3762,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2112 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2116 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 244: {
 +        AST::PostDecrementExpression *node = new (pool) AST::PostDecrementExpression(sym(1).Expression);
@@ -3768,7 +3770,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2121 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2125 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 245: {
 +        AST::PreIncrementExpression *node = new (pool) AST::PreIncrementExpression(sym(2).Expression);
@@ -3776,7 +3778,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2130 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2134 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 246: {
 +        AST::PreDecrementExpression *node = new (pool) AST::PreDecrementExpression(sym(2).Expression);
@@ -3784,7 +3786,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2141 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2145 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 248: {
 +        AST::DeleteExpression *node = new (pool) AST::DeleteExpression(sym(2).Expression);
@@ -3792,7 +3794,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2150 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2154 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 249: {
 +        AST::VoidExpression *node = new (pool) AST::VoidExpression(sym(2).Expression);
@@ -3800,7 +3802,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2159 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2163 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 250: {
 +        AST::TypeOfExpression *node = new (pool) AST::TypeOfExpression(sym(2).Expression);
@@ -3808,7 +3810,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2168 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2172 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 251: {
 +        AST::UnaryPlusExpression *node = new (pool) AST::UnaryPlusExpression(sym(2).Expression);
@@ -3816,7 +3818,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2177 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2181 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 252: {
 +        AST::UnaryMinusExpression *node = new (pool) AST::UnaryMinusExpression(sym(2).Expression);
@@ -3824,7 +3826,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2186 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2190 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 253: {
 +        AST::TildeExpression *node = new (pool) AST::TildeExpression(sym(2).Expression);
@@ -3832,7 +3834,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2195 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2199 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 254: {
 +        AST::NotExpression *node = new (pool) AST::NotExpression(sym(2).Expression);
@@ -3840,7 +3842,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2206 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2210 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 256: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::Exp, sym(3).Expression);
@@ -3848,7 +3850,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2217 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2221 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 258: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, sym(2).ival, sym(3).Expression);
@@ -3856,25 +3858,25 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2226 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2230 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 259: {
 +        sym(1).ival = QSOperator::Mul;
 +    } break;
 +
-+#line 2233 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2237 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 260: {
 +        sym(1).ival = QSOperator::Div;
 +    } break;
 +
-+#line 2240 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2244 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 261: {
 +        sym(1).ival = QSOperator::Mod;
 +    } break;
 +
-+#line 2249 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2253 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 263: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::Add, sym(3).Expression);
@@ -3882,7 +3884,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2258 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2262 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 264: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::Sub, sym(3).Expression);
@@ -3890,7 +3892,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2269 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2273 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 266: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::LShift, sym(3).Expression);
@@ -3898,7 +3900,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2278 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2282 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 267: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::RShift, sym(3).Expression);
@@ -3906,7 +3908,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2287 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2291 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 268: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::URShift, sym(3).Expression);
@@ -3914,9 +3916,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2299 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2303 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 271: Q_FALLTHROUGH(); 
-+#line 2301 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2305 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 272: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, sym(2).ival, sym(3).Expression);
@@ -3924,37 +3926,37 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2310 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2314 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 273: {
 +        sym(1).ival = QSOperator::Lt;
 +    } break;
 +
-+#line 2316 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2320 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 274: {
 +        sym(1).ival = QSOperator::Gt;
 +    } break;
 +
-+#line 2322 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2326 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 275: {
 +        sym(1).ival = QSOperator::Le;
 +    } break;
 +
-+#line 2328 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2332 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 276: {
 +        sym(1).ival = QSOperator::Ge;
 +    } break;
 +
-+#line 2334 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2338 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 277: {
 +        sym(1).ival = QSOperator::InstanceOf;
 +    } break;
 +
-+#line 2341 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2345 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 278: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::In, sym(3).Expression);
@@ -3962,9 +3964,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2353 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2357 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 281: Q_FALLTHROUGH(); 
-+#line 2355 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2359 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 282: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, sym(2).ival, sym(3).Expression);
@@ -3972,33 +3974,33 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2364 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2368 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 283: {
 +        sym(1).ival = QSOperator::Equal;
 +    } break;
 +
-+#line 2370 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2374 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 284: {
 +        sym(1).ival = QSOperator::NotEqual;
 +    } break;
 +
-+#line 2376 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2380 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 285: {
 +        sym(1).ival = QSOperator::StrictEqual;
 +    } break;
 +
-+#line 2382 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2386 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 286: {
 +        sym(1).ival = QSOperator::StrictNotEqual;
 +    } break;
 +
-+#line 2393 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2397 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 289: Q_FALLTHROUGH(); 
-+#line 2395 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2399 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 290: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::BitAnd, sym(3).Expression);
@@ -4006,9 +4008,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2408 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2412 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 293: Q_FALLTHROUGH(); 
-+#line 2410 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2414 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 294: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::BitXor, sym(3).Expression);
@@ -4016,9 +4018,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2422 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2426 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 297: Q_FALLTHROUGH(); 
-+#line 2424 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2428 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 298: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::BitOr, sym(3).Expression);
@@ -4026,9 +4028,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2436 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2440 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 301: Q_FALLTHROUGH(); 
-+#line 2438 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2442 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 302: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::And, sym(3).Expression);
@@ -4036,9 +4038,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2450 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2454 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 305: Q_FALLTHROUGH(); 
-+#line 2452 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2456 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 306: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, QSOperator::Or, sym(3).Expression);
@@ -4046,9 +4048,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2465 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2469 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 309: Q_FALLTHROUGH(); 
-+#line 2467 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2471 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 310: {
 +        AST::ConditionalExpression *node = new (pool) AST::ConditionalExpression(sym(1).Expression, sym(3).Expression, sym(5).Expression);
@@ -4057,9 +4059,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2486 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2490 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 317: Q_FALLTHROUGH(); 
-+#line 2488 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2492 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 318: {
 +        // need to convert the LHS to an AssignmentPattern if it was an Array/ObjectLiteral
@@ -4086,9 +4088,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2516 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2520 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 319: Q_FALLTHROUGH(); 
-+#line 2518 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2522 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 320: {
 +        AST::BinaryExpression *node = new (pool) AST::BinaryExpression(sym(1).Expression, sym(2).ival, sym(3).Expression);
@@ -4096,81 +4098,81 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2527 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2531 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 321: {
 +        sym(1).ival = QSOperator::InplaceMul;
 +    } break;
 +
-+#line 2534 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2538 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 322: {
 +        sym(1).ival = QSOperator::InplaceExp;
 +    } break;
 +
-+#line 2541 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2545 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 323: {
 +        sym(1).ival = QSOperator::InplaceDiv;
 +    } break;
 +
-+#line 2548 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2552 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 324: {
 +        sym(1).ival = QSOperator::InplaceMod;
 +    } break;
 +
-+#line 2555 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2559 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 325: {
 +        sym(1).ival = QSOperator::InplaceAdd;
 +    } break;
 +
-+#line 2562 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2566 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 326: {
 +        sym(1).ival = QSOperator::InplaceSub;
 +    } break;
 +
-+#line 2569 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2573 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 327: {
 +        sym(1).ival = QSOperator::InplaceLeftShift;
 +    } break;
 +
-+#line 2576 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2580 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 328: {
 +        sym(1).ival = QSOperator::InplaceRightShift;
 +    } break;
 +
-+#line 2583 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2587 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 329: {
 +        sym(1).ival = QSOperator::InplaceURightShift;
 +    } break;
 +
-+#line 2590 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2594 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 330: {
 +        sym(1).ival = QSOperator::InplaceAnd;
 +    } break;
 +
-+#line 2597 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2601 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 331: {
 +        sym(1).ival = QSOperator::InplaceXor;
 +    } break;
 +
-+#line 2604 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2608 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 332: {
 +        sym(1).ival = QSOperator::InplaceOr;
 +    } break;
 +
-+#line 2614 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2618 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 335: Q_FALLTHROUGH(); 
-+#line 2616 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2620 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 336: {
 +          AST::Expression *node = new (pool) AST::Expression(sym(1).Expression, sym(3).Expression);
@@ -4178,51 +4180,51 @@ index 0000000..1dd24d0
 +          sym(1).Node = node;
 +    } break;
 +
-+#line 2625 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2629 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 337: Q_FALLTHROUGH(); 
-+#line 2627 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2631 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 338: {
 +      sym(1).Node = nullptr;
 +    } break;
 +
-+#line 2639 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2643 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 341: {
 +        sym(1).Node = sym(3).Node;
 +    } break;
 +
-+#line 2646 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2650 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 342: Q_FALLTHROUGH(); 
-+#line 2648 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2652 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 343: Q_FALLTHROUGH(); 
-+#line 2650 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2654 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 344: Q_FALLTHROUGH(); 
-+#line 2652 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2656 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 345: Q_FALLTHROUGH(); 
-+#line 2654 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2658 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 346: Q_FALLTHROUGH(); 
-+#line 2656 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2660 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 347: Q_FALLTHROUGH(); 
-+#line 2658 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2662 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 348: Q_FALLTHROUGH(); 
-+#line 2660 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2664 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 349: Q_FALLTHROUGH(); 
-+#line 2662 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2666 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 350: Q_FALLTHROUGH(); 
-+#line 2664 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2668 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 351: Q_FALLTHROUGH(); 
-+#line 2666 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2670 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 352: Q_FALLTHROUGH(); 
-+#line 2668 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2672 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 353: Q_FALLTHROUGH(); 
-+#line 2670 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2674 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 354: {
 +        sym(1).Node = sym(2).Node;
 +    } break;
 +
-+#line 2692 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2696 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 365: {
 +        AST::Block *node = new (pool) AST::Block(sym(2).StatementList);
@@ -4231,61 +4233,61 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2704 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2708 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 367: {
 +        sym(1).StatementList = sym(1).StatementList->append(sym(2).StatementList);
 +    } break;
 +
-+#line 2711 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2715 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 368: {
 +        sym(1).StatementList = new (pool) AST::StatementList(sym(1).Statement);
 +    } break;
 +
-+#line 2719 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2723 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 370: {
 +        sym(1).Node = new (pool) AST::StatementList(sym(3).FunctionDeclaration);
 +    } break;
 +
-+#line 2726 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2730 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 371: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 2733 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2737 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 372: {
 +        sym(1).Node = sym(1).StatementList->finish();
 +    } break;
 +
-+#line 2740 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2744 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 373: {
 +        sym(1).scope = AST::VariableScope::Let;
 +    } break;
 +
-+#line 2746 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2750 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 374: {
 +        sym(1).scope = AST::VariableScope::Const;
 +    } break;
 +
-+#line 2753 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2757 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 375: {
 +        sym(1).scope = AST::VariableScope::Var;
 +    } break;
 +
-+#line 2760 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2764 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 376: Q_FALLTHROUGH(); 
-+#line 2762 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2766 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 377: Q_FALLTHROUGH(); 
-+#line 2764 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2768 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 378: Q_FALLTHROUGH(); 
-+#line 2766 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2770 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 379: {
 +        AST::VariableStatement *node = new (pool) AST::VariableStatement(sym(2).VariableDeclarationList->finish(sym(1).scope));
@@ -4293,25 +4295,25 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2778 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2782 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 382: Q_FALLTHROUGH(); 
-+#line 2780 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2784 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 383: Q_FALLTHROUGH(); 
-+#line 2782 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2786 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 384: Q_FALLTHROUGH(); 
-+#line 2784 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2788 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 385: {
 +  sym(1).Node = new (pool) AST::VariableDeclarationList(sym(1).PatternElement);
 +    } break;
 +
-+#line 2791 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2795 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 386: Q_FALLTHROUGH(); 
-+#line 2793 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2797 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 387: Q_FALLTHROUGH(); 
-+#line 2795 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2799 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 388: Q_FALLTHROUGH(); 
-+#line 2797 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2801 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 389: {
 +        AST::VariableDeclarationList *node = new (pool) AST::VariableDeclarationList(sym(1).VariableDeclarationList, sym(3).PatternElement);
@@ -4319,13 +4321,13 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2806 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2810 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 390: Q_FALLTHROUGH(); 
-+#line 2808 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2812 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 391: Q_FALLTHROUGH(); 
-+#line 2810 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2814 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 392: Q_FALLTHROUGH(); 
-+#line 2812 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2816 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 393: {
 +        auto *node = new (pool) AST::PatternElement(stringRef(1), sym(2).Expression);
@@ -4338,13 +4340,13 @@ index 0000000..1dd24d0
 +            c->name = stringRef(1);
 +    } break;
 +
-+#line 2826 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2830 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 394: Q_FALLTHROUGH(); 
-+#line 2828 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2832 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 395: Q_FALLTHROUGH(); 
-+#line 2830 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2834 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 396: Q_FALLTHROUGH(); 
-+#line 2832 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2836 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 397: {
 +        auto *node = new (pool) AST::PatternElement(sym(1).Pattern, sym(2).Expression);
@@ -4352,7 +4354,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2841 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2845 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 398: {
 +        auto *node = new (pool) AST::ObjectPattern(sym(2).PatternPropertyList);
@@ -4362,7 +4364,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2852 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2856 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 399: {
 +        auto *node = new (pool) AST::ArrayPattern(sym(2).PatternElementList);
@@ -4372,21 +4374,21 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2863 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2867 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 400: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 2870 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2874 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 401: 
-+#line 2872 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2876 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 402: {
 +        sym(1).Node = sym(1).PatternPropertyList->finish();
 +    } break;
 +
-+#line 2879 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2883 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 403: {
 +        if (sym(1).Elision || sym(2).Node) {
@@ -4397,13 +4399,13 @@ index 0000000..1dd24d0
 +        }
 +    } break;
 +
-+#line 2891 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2895 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 404: {
 +        sym(1).Node = sym(1).PatternElementList->finish();
 +    } break;
 +
-+#line 2898 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2902 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 405: {
 +        if (sym(3).Elision || sym(4).Node) {
@@ -4414,31 +4416,31 @@ index 0000000..1dd24d0
 +        sym(1).Node = sym(1).PatternElementList->finish();
 +    } break;
 +
-+#line 2910 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2914 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 406: {
 +        sym(1).Node = new (pool) AST::PatternPropertyList(sym(1).PatternProperty);
 +    } break;
 +
-+#line 2917 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2921 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 407: {
 +        sym(1).Node = new (pool) AST::PatternPropertyList(sym(1).PatternPropertyList, sym(3).PatternProperty);
 +    } break;
 +
-+#line 2926 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2930 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 409: {
 +        sym(1).PatternElementList = sym(1).PatternElementList->append(sym(3).PatternElementList);
 +    } break;
 +
-+#line 2933 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2937 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 410: {
 +        sym(1).Node = new (pool) AST::PatternElementList(sym(1).Elision, sym(2).PatternElement);
 +    } break;
 +
-+#line 2941 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2945 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 411: {
 +        AST::StringLiteralPropertyName *name = new (pool) AST::StringLiteralPropertyName(stringRef(1));
@@ -4451,21 +4453,21 @@ index 0000000..1dd24d0
 +        sym(1).Node = new (pool) AST::PatternProperty(name, stringRef(1), sym(2).Expression);
 +    } break;
 +
-+#line 2955 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2959 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 412: {
 +        AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(1).PropertyName, stringRef(3), sym(4).Expression);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2963 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2967 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 413: {
 +        AST::PatternProperty *node = new (pool) AST::PatternProperty(sym(1).PropertyName, sym(3).Pattern, sym(4).Expression);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2971 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2975 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 414: {
 +      AST::PatternElement *node = new (pool) AST::PatternElement(stringRef(1), sym(2).Expression);
@@ -4478,14 +4480,14 @@ index 0000000..1dd24d0
 +      sym(1).Node = node;
 +    } break;
 +
-+#line 2985 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2989 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 415: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(sym(1).Pattern, sym(2).Expression);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 2993 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 2997 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 416: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(stringRef(2), nullptr, AST::PatternElement::RestElement);
@@ -4493,20 +4495,20 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3002 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3006 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 417: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(sym(2).Pattern, nullptr, AST::PatternElement::RestElement);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3010 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3014 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 418: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3020 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3024 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 420: {
 +        AST::EmptyStatement *node = new (pool) AST::EmptyStatement();
@@ -4514,7 +4516,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3035 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3039 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 421: {
 +        int token = lookaheadToken(lexer);
@@ -4524,7 +4526,7 @@ index 0000000..1dd24d0
 +            pushToken(T_FORCE_DECLARATION);
 +    } break;
 +
-+#line 3047 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3051 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 423: {
 +        AST::ExpressionStatement *node = new (pool) AST::ExpressionStatement(sym(1).Expression);
@@ -4532,7 +4534,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3056 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3060 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 424: {
 +        AST::IfStatement *node = new (pool) AST::IfStatement(sym(3).Expression, sym(5).Statement, sym(7).Statement);
@@ -4543,7 +4545,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3068 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3072 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 425: {
 +        AST::IfStatement *node = new (pool) AST::IfStatement(sym(3).Expression, sym(5).Statement);
@@ -4553,7 +4555,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3082 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3086 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 428: {
 +        AST::DoWhileStatement *node = new (pool) AST::DoWhileStatement(sym(2).Statement, sym(5).Expression);
@@ -4565,7 +4567,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3095 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3099 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 429: {
 +        AST::WhileStatement *node = new (pool) AST::WhileStatement(sym(3).Expression, sym(5).Statement);
@@ -4575,7 +4577,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3106 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3110 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 430: {
 +        AST::ForStatement *node = new (pool) AST::ForStatement(sym(3).Expression, sym(5).Expression, sym(7).Expression, sym(9).Statement);
@@ -4587,9 +4589,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3119 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3123 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 431: Q_FALLTHROUGH(); 
-+#line 3121 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3125 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 432: {
 +        // ### get rid of the static_cast!
@@ -4604,19 +4606,19 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3137 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3141 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 433: {
 +        sym(1).forEachType = AST::ForEachType::In;
 +    } break;
 +
-+#line 3144 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3148 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 434: {
 +        sym(1).forEachType = AST::ForEachType::Of;
 +    } break;
 +
-+#line 3151 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3155 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 435: {
 +        // need to convert the LHS to an AssignmentPattern if it was an Array/ObjectLiteral
@@ -4637,7 +4639,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3173 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3177 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 436: {
 +        AST::ForEachStatement *node = new (pool) AST::ForEachStatement(sym(3).PatternElement, sym(5).Expression, sym(7).Statement);
@@ -4649,9 +4651,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3186 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3190 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 437: Q_FALLTHROUGH(); 
-+#line 3188 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3192 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 438: {
 +        auto *node = new (pool) AST::PatternElement(stringRef(2), nullptr);
@@ -4661,9 +4663,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3199 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3203 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 439: Q_FALLTHROUGH(); 
-+#line 3201 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3205 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 440: {
 +        auto *node = new (pool) AST::PatternElement(sym(2).Pattern, nullptr);
@@ -4672,7 +4674,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3212 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3216 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 442: {
 +        AST::ContinueStatement *node = new (pool) AST::ContinueStatement();
@@ -4681,7 +4683,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3223 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3227 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 444: {
 +        AST::ContinueStatement *node = new (pool) AST::ContinueStatement(stringRef(2));
@@ -4691,7 +4693,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3235 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3239 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 446: {
 +        AST::BreakStatement *node = new (pool) AST::BreakStatement(QStringRef());
@@ -4700,7 +4702,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3246 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3250 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 448: {
 +        AST::BreakStatement *node = new (pool) AST::BreakStatement(stringRef(2));
@@ -4710,7 +4712,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3258 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3262 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 450: {
 +        if (!functionNestingLevel) {
@@ -4723,7 +4725,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3272 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3276 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 451: {
 +        AST::WithStatement *node = new (pool) AST::WithStatement(sym(3).Expression, sym(5).Statement);
@@ -4733,7 +4735,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3283 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3287 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 452: {
 +        AST::SwitchStatement *node = new (pool) AST::SwitchStatement(sym(3).Expression, sym(5).CaseBlock);
@@ -4743,7 +4745,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3294 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3298 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 453: {
 +        AST::CaseBlock *node = new (pool) AST::CaseBlock(sym(2).CaseClauses);
@@ -4752,7 +4754,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3304 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3308 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 454: {
 +        AST::CaseBlock *node = new (pool) AST::CaseBlock(sym(2).CaseClauses, sym(3).DefaultClause, sym(4).CaseClauses);
@@ -4761,31 +4763,31 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3314 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3318 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 455: {
 +        sym(1).Node = new (pool) AST::CaseClauses(sym(1).CaseClause);
 +    } break;
 +
-+#line 3321 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3325 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 456: {
 +        sym(1).Node = new (pool) AST::CaseClauses(sym(1).CaseClauses, sym(2).CaseClause);
 +    } break;
 +
-+#line 3328 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3332 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 457: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3335 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3339 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 458: {
 +        sym(1).Node = sym(1).CaseClauses->finish();
 +    } break;
 +
-+#line 3342 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3346 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 459: {
 +        AST::CaseClause *node = new (pool) AST::CaseClause(sym(2).Expression, sym(4).StatementList);
@@ -4794,7 +4796,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3352 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3356 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 460: {
 +        AST::DefaultClause *node = new (pool) AST::DefaultClause(sym(3).StatementList);
@@ -4803,7 +4805,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3362 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3366 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 461: {
 +        AST::LabelledStatement *node = new (pool) AST::LabelledStatement(stringRef(1), sym(3).Statement);
@@ -4812,14 +4814,14 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3374 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3378 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 463: {
 +        syntaxError(loc(3), "FunctionDeclarations are not allowed after a label.");
 +        return false;
 +    } break;
 +
-+#line 3383 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3387 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 465: {
 +        AST::ThrowStatement *node = new (pool) AST::ThrowStatement(sym(2).Expression);
@@ -4828,7 +4830,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3393 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3397 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 466: {
 +        AST::TryStatement *node = new (pool) AST::TryStatement(sym(2).Statement, sym(3).Catch);
@@ -4836,7 +4838,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3402 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3406 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 467: {
 +        AST::TryStatement *node = new (pool) AST::TryStatement(sym(2).Statement, sym(3).Finally);
@@ -4844,7 +4846,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3411 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3415 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 468: {
 +        AST::TryStatement *node = new (pool) AST::TryStatement(sym(2).Statement, sym(3).Catch, sym(4).Finally);
@@ -4852,7 +4854,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3420 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3424 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 469: {
 +        AST::Catch *node = new (pool) AST::Catch(sym(3).PatternElement, sym(5).Block);
@@ -4863,7 +4865,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3432 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3436 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 470: {
 +        AST::Finally *node = new (pool) AST::Finally(sym(2).Block);
@@ -4871,7 +4873,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3441 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3445 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 471: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(stringRef(1));
@@ -4880,7 +4882,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3451 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3455 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 472: {
 +        AST::PatternElement *node = new (pool) AST::PatternElement(sym(1).Pattern);
@@ -4888,7 +4890,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3461 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3465 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 474: {
 +        AST::DebuggerStatement *node = new (pool) AST::DebuggerStatement();
@@ -4897,7 +4899,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3478 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3482 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 476: {
 +        AST::FunctionDeclaration *node = new (pool) AST::FunctionDeclaration(stringRef(2), sym(4).FormalParameterList, sym(7).StatementList);
@@ -4910,7 +4912,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3494 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3498 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 478: {
 +        AST::FunctionDeclaration *node = new (pool) AST::FunctionDeclaration(QStringRef(), sym(3).FormalParameterList, sym(6).StatementList);
@@ -4922,7 +4924,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3507 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3511 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 479: {
 +        AST::FunctionExpression *node = new (pool) AST::FunctionExpression(stringRef(2), sym(4).FormalParameterList, sym(7).StatementList);
@@ -4936,7 +4938,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3522 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3526 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 480: {
 +        AST::FunctionExpression *node = new (pool) AST::FunctionExpression(QStringRef(), sym(3).FormalParameterList, sym(6).StatementList);
@@ -4948,63 +4950,63 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3537 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3541 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 482: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3544 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3548 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 483: {
 +        AST::FormalParameterList *node = (new (pool) AST::FormalParameterList(nullptr, sym(1).PatternElement))->finish(pool);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3552 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3556 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 484: 
-+#line 3554 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3558 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 485: {
 +        sym(1).Node = sym(1).FormalParameterList->finish(pool);
 +    } break;
 +
-+#line 3561 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3565 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 486: {
 +        AST::FormalParameterList *node = (new (pool) AST::FormalParameterList(sym(1).FormalParameterList, sym(3).PatternElement))->finish(pool);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3569 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3573 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 487: {
 +        AST::FormalParameterList *node = new (pool) AST::FormalParameterList(nullptr, sym(1).PatternElement);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3578 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3582 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 488: {
 +        AST::FormalParameterList *node = new (pool) AST::FormalParameterList(sym(1).FormalParameterList, sym(3).PatternElement);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3588 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3592 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 490: {
 +        ++functionNestingLevel;
 +    } break;
 +
-+#line 3595 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3599 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 491: {
 +        --functionNestingLevel;
 +    } break;
 +
-+#line 3605 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3609 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 493: Q_FALLTHROUGH(); 
-+#line 3607 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3611 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 494: {
 +        AST::ReturnStatement *ret = new (pool) AST::ReturnStatement(sym(4).Expression);
@@ -5019,9 +5021,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = f;
 +    } break;
 +
-+#line 3623 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3627 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 495: Q_FALLTHROUGH(); 
-+#line 3625 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3629 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 496: {
 +        AST::FunctionExpression *f = new (pool) AST::FunctionExpression(QStringRef(), sym(1).FormalParameterList, sym(6).StatementList);
@@ -5032,7 +5034,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = f;
 +    } break;
 +
-+#line 3637 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3641 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 497: {
 +        AST::PatternElement *e = new (pool) AST::PatternElement(stringRef(1), nullptr, AST::PatternElement::Binding);
@@ -5040,7 +5042,7 @@ index 0000000..1dd24d0
 +        sym(1).FormalParameterList = (new (pool) AST::FormalParameterList(nullptr, e))->finish(pool);
 +    } break;
 +
-+#line 3648 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3652 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 498: {
 +        if (coverExpressionType != CE_FormalParameterList) {
@@ -5054,14 +5056,14 @@ index 0000000..1dd24d0
 +        }
 +    } break;
 +
-+#line 3666 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3670 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 499: {
 +        if (lookaheadToken(lexer) == T_LBRACE)
 +            pushToken(T_FORCE_BLOCK);
 +    } break;
 +
-+#line 3674 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3678 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 500: {
 +        AST::FunctionExpression *f = new (pool) AST::FunctionExpression(stringRef(1), sym(3).FormalParameterList, sym(6).StatementList);
@@ -5075,7 +5077,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3689 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3693 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 501: {
 +        AST::FunctionExpression *f = new (pool) AST::FunctionExpression(stringRef(2), sym(4).FormalParameterList, sym(7).StatementList);
@@ -5090,7 +5092,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3706 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3710 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 502: {
 +        AST::FunctionExpression *f = new (pool) AST::FunctionExpression(stringRef(2), nullptr, sym(6).StatementList);
@@ -5104,7 +5106,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3721 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3725 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 503: {
 +        AST::FunctionExpression *f = new (pool) AST::FunctionExpression(stringRef(2), sym(4).FormalParameterList, sym(7).StatementList);
@@ -5118,27 +5120,27 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3737 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3741 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 504: {
 +        AST::FormalParameterList *node = (new (pool) AST::FormalParameterList(nullptr, sym(1).PatternElement))->finish(pool);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3745 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3749 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 505: {
 +        lexer->enterGeneratorBody();
 +    } break;
 +
-+#line 3752 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3756 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 506: {
 +        --functionNestingLevel;
 +        lexer->leaveGeneratorBody();
 +    } break;
 +
-+#line 3760 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3764 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 507: {
 +        AST::FunctionDeclaration *node = new (pool) AST::FunctionDeclaration(stringRef(3), sym(5).FormalParameterList, sym(8).StatementList);
@@ -5152,7 +5154,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3776 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3780 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 509: {
 +        AST::FunctionDeclaration *node = new (pool) AST::FunctionDeclaration(QStringRef(), sym(4).FormalParameterList, sym(7).StatementList);
@@ -5165,7 +5167,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3790 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3794 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 510: {
 +        AST::FunctionExpression *node = new (pool) AST::FunctionExpression(stringRef(3), sym(5).FormalParameterList, sym(8).StatementList);
@@ -5180,7 +5182,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3806 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3810 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 511: {
 +        AST::FunctionExpression *node = new (pool) AST::FunctionExpression(QStringRef(), sym(4).FormalParameterList, sym(7).StatementList);
@@ -5193,9 +5195,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3822 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3826 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 513: Q_FALLTHROUGH(); 
-+#line 3824 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3828 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 514: {
 +        AST::YieldExpression *node = new (pool) AST::YieldExpression();
@@ -5203,9 +5205,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3833 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3837 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 515: Q_FALLTHROUGH(); 
-+#line 3835 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3839 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 516: {
 +        AST::YieldExpression *node = new (pool) AST::YieldExpression(sym(3).Expression);
@@ -5214,9 +5216,9 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3845 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3849 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 517: Q_FALLTHROUGH(); 
-+#line 3847 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3851 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 518: {
 +        AST::YieldExpression *node = new (pool) AST::YieldExpression(sym(2).Expression);
@@ -5224,7 +5226,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3857 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3861 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 519: {
 +        AST::ClassDeclaration *node = new (pool) AST::ClassDeclaration(stringRef(2), sym(3).Expression, sym(5).ClassElementList);
@@ -5235,7 +5237,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3869 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3873 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 520: {
 +        AST::ClassExpression *node = new (pool) AST::ClassExpression(stringRef(2), sym(3).Expression, sym(5).ClassElementList);
@@ -5246,7 +5248,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3881 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3885 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 521: {
 +        AST::ClassDeclaration *node = new (pool) AST::ClassDeclaration(QStringRef(), sym(2).Expression, sym(4).ClassElementList);
@@ -5256,7 +5258,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3892 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3896 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 522: {
 +        AST::ClassExpression *node = new (pool) AST::ClassExpression(QStringRef(), sym(2).Expression, sym(4).ClassElementList);
@@ -5266,46 +5268,46 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3905 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3909 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 524: {
 +        lexer->setStaticIsKeyword(true);
 +    } break;
 +
-+#line 3912 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3916 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 525: 
-+#line 3914 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3918 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 526: {
 +        lexer->setStaticIsKeyword(false);
 +    } break;
 +
-+#line 3921 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3925 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 527: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3928 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3932 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 528: {
 +        sym(1).Node = sym(2).Node;
 +    } break;
 +
-+#line 3935 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3939 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 529: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3942 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3946 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 530: {
 +        if (sym(1).Node)
 +            sym(1).Node = sym(1).ClassElementList->finish();
 +    } break;
 +
-+#line 3952 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3956 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 532: {
 +        if (sym(1).Node) {
@@ -5316,14 +5318,14 @@ index 0000000..1dd24d0
 +        }
 +    } break;
 +
-+#line 3964 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3968 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 533: {
 +        AST::ClassElementList *node = new (pool) AST::ClassElementList(sym(1).PatternProperty, false);
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3972 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3976 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 534: {
 +        lexer->setStaticIsKeyword(true);
@@ -5331,60 +5333,60 @@ index 0000000..1dd24d0
 +        sym(1).Node = node;
 +    } break;
 +
-+#line 3981 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3985 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 535: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3990 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3994 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 536: {
 +        sym(1).Node = nullptr;
 +    } break;
 +
-+#line 3999 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4003 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 538: {
 +        sym(1).Node = new (pool) AST::Program(sym(1).StatementList->finish());
 +    } break;
 +
-+#line 4006 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4010 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +  case 539: {
 +        sym(1).Node = new (pool) AST::ESModule(sym(1).StatementList);
 +    } break;
 +
-+#line 4012 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4016 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 540: {
 +        sym(1).StatementList = sym(1).StatementList->finish();
 +    } break;
 +
-+#line 4019 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4023 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 541: {
 +        sym(1).StatementList = nullptr;
 +    } break;
 +
-+#line 4029 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4033 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 544: {
 +        sym(1).StatementList = sym(1).StatementList->append(sym(2).StatementList);
 +    } break;
 +
-+#line 4036 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4040 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 545:  Q_FALLTHROUGH(); 
-+#line 4038 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4042 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 546:  Q_FALLTHROUGH(); 
-+#line 4040 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4044 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 547:  Q_FALLTHROUGH(); 
-+#line 4042 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4046 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 548: {
 +        sym(1).StatementList = new (pool) AST::StatementList(sym(1).Node);
 +    } break;
 +
-+#line 4051 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4055 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 550: {
 +        auto decl = new (pool) AST::ImportDeclaration(sym(2).ImportClause, sym(3).FromClause);
@@ -5392,7 +5394,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = decl;
 +    } break;
 +
-+#line 4059 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4063 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 551: {
 +        auto decl = new (pool) AST::ImportDeclaration(stringRef(2));
@@ -5401,7 +5403,7 @@ index 0000000..1dd24d0
 +        sym(1).Node = decl;
 +    } break;
 +
-+#line 4069 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4073 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 552: {
 +        auto clause = new (pool) AST::ImportClause(stringRef(1));
@@ -5409,19 +5411,19 @@ index 0000000..1dd24d0
 +        sym(1).ImportClause = clause;
 +    } break;
 +
-+#line 4077 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4081 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 553: {
 +        sym(1).ImportClause = new (pool) AST::ImportClause(sym(1).NameSpaceImport);
 +    } break;
 +
-+#line 4083 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4087 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 554: {
 +        sym(1).ImportClause = new (pool) AST::ImportClause(sym(1).NamedImports);
 +    } break;
 +
-+#line 4089 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4093 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 555: {
 +        auto importClause = new (pool) AST::ImportClause(stringRef(1), sym(3).NameSpaceImport);
@@ -5429,7 +5431,7 @@ index 0000000..1dd24d0
 +        sym(1).ImportClause = importClause;
 +    } break;
 +
-+#line 4097 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4101 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 556: {
 +        auto importClause = new (pool) AST::ImportClause(stringRef(1), sym(3).NamedImports);
@@ -5437,7 +5439,7 @@ index 0000000..1dd24d0
 +        sym(1).ImportClause = importClause;
 +    } break;
 +
-+#line 4108 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4112 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 558: {
 +        auto import = new (pool) AST::NameSpaceImport(stringRef(3));
@@ -5446,7 +5448,7 @@ index 0000000..1dd24d0
 +        sym(1).NameSpaceImport = import;
 +    } break;
 +
-+#line 4118 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4122 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 559: {
 +        auto namedImports = new (pool) AST::NamedImports();
@@ -5455,7 +5457,7 @@ index 0000000..1dd24d0
 +        sym(1).NamedImports = namedImports;
 +    } break;
 +
-+#line 4127 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4131 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 560: {
 +        auto namedImports = new (pool) AST::NamedImports(sym(2).ImportsList->finish());
@@ -5464,7 +5466,7 @@ index 0000000..1dd24d0
 +        sym(1).NamedImports = namedImports;
 +    } break;
 +
-+#line 4136 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4140 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 561: {
 +        auto namedImports = new (pool) AST::NamedImports(sym(2).ImportsList->finish());
@@ -5473,7 +5475,7 @@ index 0000000..1dd24d0
 +        sym(1).NamedImports = namedImports;
 +    } break;
 +
-+#line 4146 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4150 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 562: {
 +        auto clause = new (pool) AST::FromClause(stringRef(2));
@@ -5482,7 +5484,7 @@ index 0000000..1dd24d0
 +        sym(1).FromClause = clause;
 +    } break;
 +
-+#line 4156 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4160 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 563: {
 +        auto importsList = new (pool) AST::ImportsList(sym(1).ImportSpecifier);
@@ -5490,7 +5492,7 @@ index 0000000..1dd24d0
 +        sym(1).ImportsList = importsList;
 +    } break;
 +
-+#line 4164 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4168 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 564: {
 +        auto importsList = new (pool) AST::ImportsList(sym(1).ImportsList, sym(3).ImportSpecifier);
@@ -5498,7 +5500,7 @@ index 0000000..1dd24d0
 +        sym(1).ImportsList = importsList;
 +    } break;
 +
-+#line 4173 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4177 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 565: {
 +        auto importSpecifier = new (pool) AST::ImportSpecifier(stringRef(1));
@@ -5506,7 +5508,7 @@ index 0000000..1dd24d0
 +        sym(1).ImportSpecifier = importSpecifier;
 +    } break;
 +
-+#line 4181 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4185 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 566: {
 +    auto importSpecifier = new (pool) AST::ImportSpecifier(stringRef(1), stringRef(3));
@@ -5515,7 +5517,7 @@ index 0000000..1dd24d0
 +    sym(1).ImportSpecifier = importSpecifier;
 +    } break;
 +
-+#line 4198 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4202 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 569: {
 +        int token = lookaheadToken(lexer);
@@ -5523,7 +5525,7 @@ index 0000000..1dd24d0
 +            pushToken(T_FORCE_DECLARATION);
 +    } break;
 +
-+#line 4207 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4211 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 570: {
 +        auto exportDeclaration = new (pool) AST::ExportDeclaration(sym(3).FromClause);
@@ -5531,7 +5533,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4215 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4219 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 571: {
 +        auto exportDeclaration = new (pool) AST::ExportDeclaration(sym(2).ExportClause, sym(3).FromClause);
@@ -5539,7 +5541,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4223 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4227 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 572: {
 +        auto exportDeclaration = new (pool) AST::ExportDeclaration(sym(2).ExportClause);
@@ -5547,9 +5549,9 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4231 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4235 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 + case 573:  Q_FALLTHROUGH(); 
-+#line 4233 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4237 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 574: {
 +        auto exportDeclaration = new (pool) AST::ExportDeclaration(/*exportDefault=*/false, sym(2).Node);
@@ -5557,7 +5559,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4241 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4245 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 575: {
 +        if (auto *f = AST::cast<AST::FunctionDeclaration*>(sym(5).Node)) {
@@ -5568,7 +5570,7 @@ index 0000000..1dd24d0
 +        }
 +    } Q_FALLTHROUGH();
 +
-+#line 4252 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4256 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 576: {
 +        // Emulate 15.2.3.11
@@ -5584,7 +5586,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4268 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4272 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 577: {
 +        // if lhs is an identifier expression and rhs is an anonymous function expression, we need to assign the name of lhs to the function
@@ -5600,7 +5602,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportDeclaration = exportDeclaration;
 +    } break;
 +
-+#line 4285 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4289 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 578: {
 +        auto exportClause = new (pool) AST::ExportClause();
@@ -5609,7 +5611,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportClause = exportClause;
 +    } break;
 +
-+#line 4294 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4298 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 579: {
 +        auto exportClause = new (pool) AST::ExportClause(sym(2).ExportsList->finish());
@@ -5618,7 +5620,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportClause = exportClause;
 +    } break;
 +
-+#line 4303 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4307 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 580: {
 +        auto exportClause = new (pool) AST::ExportClause(sym(2).ExportsList->finish());
@@ -5627,19 +5629,19 @@ index 0000000..1dd24d0
 +        sym(1).ExportClause = exportClause;
 +    } break;
 +
-+#line 4313 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4317 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 581: {
 +        sym(1).ExportsList = new (pool) AST::ExportsList(sym(1).ExportSpecifier);
 +    } break;
 +
-+#line 4319 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4323 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 582: {
 +        sym(1).ExportsList = new (pool) AST::ExportsList(sym(1).ExportsList, sym(3).ExportSpecifier);
 +    } break;
 +
-+#line 4326 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4330 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 583: {
 +        auto exportSpecifier = new (pool) AST::ExportSpecifier(stringRef(1));
@@ -5647,7 +5649,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportSpecifier = exportSpecifier;
 +    } break;
 +
-+#line 4334 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4338 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    case 584: {
 +        auto exportSpecifier = new (pool) AST::ExportSpecifier(stringRef(1), stringRef(3));
@@ -5656,7 +5658,7 @@ index 0000000..1dd24d0
 +        sym(1).ExportSpecifier = exportSpecifier;
 +    } break;
 +
-+#line 4345 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4349 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +    // ------------ end of switch statement
 +            } // switch
@@ -5787,17 +5789,17 @@ index 0000000..1dd24d0
 +    return false;
 +}
 +
-+QT_QML_END_NAMESPACE
++QT_END_NAMESPACE
 +
 +
 diff --git a/qtdeclarative/src/qml/qqmljsparser_p.h b/qtdeclarative/src/qml/qqmljsparser_p.h
 new file mode 100644
-index 0000000..0270ecf
+index 0000000..f52734a
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qqmljsparser_p.h
 @@ -0,0 +1,316 @@
 +
-+#line 178 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 178 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +/****************************************************************************
 +**
 +** Copyright (C) 2016 The Qt Company Ltd.
@@ -5872,7 +5874,7 @@ index 0000000..0270ecf
 +#include <QtCore/qlist.h>
 +#include <QtCore/qstring.h>
 +
-+QT_QML_BEGIN_NAMESPACE
++QT_BEGIN_NAMESPACE
 +
 +namespace QQmlJS {
 +
@@ -6085,29 +6087,29 @@ index 0000000..0270ecf
 +
 +
 +
-+#line 1525 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1525 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +#define J_SCRIPT_REGEXPLITERAL_RULE1 128
 +
-+#line 1537 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 1537 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +#define J_SCRIPT_REGEXPLITERAL_RULE2 129
 +
-+#line 3032 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3036 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +#define J_SCRIPT_EXPRESSIONSTATEMENTLOOKAHEAD_RULE 421
 +
-+#line 3663 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 3667 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +#define J_SCRIPT_CONCISEBODYLOOKAHEAD_RULE 499
 +
-+#line 4195 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4199 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
 +#define J_SCRIPT_EXPORTDECLARATIONLOOKAHEAD_RULE 569
 +
-+#line 4479 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.12.4/qtdeclarative/src/qml/parser/qqmljs.g"
++#line 4483 "/home/chpro/projects/genode/src/genode_qt5/contrib/qt-everywhere-src-5.13.0/qtdeclarative/src/qml/parser/qqmljs.g"
 +
-+QT_QML_END_NAMESPACE
++QT_END_NAMESPACE
 +
 +
 +
@@ -6122,10 +6124,10 @@ index 0000000..e04a385
 +#define QT_FEATURE_qml_network 1
 diff --git a/qtdeclarative/src/qml/qtqml-config_p.h b/qtdeclarative/src/qml/qtqml-config_p.h
 new file mode 100644
-index 0000000..0aae3b5
+index 0000000..190ec50
 --- /dev/null
 +++ b/qtdeclarative/src/qml/qtqml-config_p.h
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,12 @@
 +#define QT_FEATURE_cxx14_make_unique 1
 +#define QT_FEATURE_qml_animation 1
 +#define QT_FEATURE_qml_delegate_model 1
@@ -6135,15 +6137,9 @@ index 0000000..0aae3b5
 +#define QT_FEATURE_qml_preview -1
 +#define QT_FEATURE_qml_profiler -1
 +#define QT_FEATURE_qml_sequence_object 1
++#define QT_FEATURE_qml_tracing -1
 +#define QT_FEATURE_qml_worker_script 1
 +#define QT_FEATURE_qml_xml_http_request 1
-diff --git a/qtdeclarative/src/qml/qtqml_tracepoints_p.h b/qtdeclarative/src/qml/qtqml_tracepoints_p.h
-new file mode 100644
-index 0000000..ff8d101
---- /dev/null
-+++ b/qtdeclarative/src/qml/qtqml_tracepoints_p.h
-@@ -0,0 +1 @@
-+#include <private/qtrace_p.h>
 diff --git a/qtdeclarative/src/quick/qtquick-config.h b/qtdeclarative/src/quick/qtquick-config.h
 new file mode 100644
 index 0000000..a224374

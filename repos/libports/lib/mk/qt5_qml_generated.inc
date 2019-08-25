@@ -7,6 +7,7 @@ QT_INCPATH += \
   qtdeclarative/src/qml/jsruntime \
   qtdeclarative/src/qml/jit \
   qtdeclarative/src/qml/debugger \
+  qtdeclarative/src/qml/qmldirparser \
   qtdeclarative/src/qml/animations \
   qtdeclarative/src/3rdparty/masm/jit \
   qtdeclarative/src/3rdparty/masm/assembler \
@@ -20,10 +21,10 @@ QT_INCPATH += \
   qtdeclarative/src/3rdparty/masm/disassembler/udis86 \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.12.4 \
-  qtdeclarative/include/QtQml/5.12.4/QtQml \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtdeclarative/include/QtQml/5.13.0 \
+  qtdeclarative/include/QtQml/5.13.0/QtQml \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
@@ -118,6 +119,7 @@ QT_SOURCES += \
   qv4string.cpp \
   qv4value.cpp \
   qv4executableallocator.cpp \
+  qv4functiontable_unix.cpp \
   qv4jithelpers.cpp \
   qv4baselinejit.cpp \
   qv4baselineassembler.cpp \
@@ -141,7 +143,6 @@ QT_SOURCES += \
   qqmlparserstatus.cpp \
   qqmltypeloader.cpp \
   qqmlinfo.cpp \
-  qqmlerror.cpp \
   qqmlvaluetype.cpp \
   qqmlcleanup.cpp \
   qqmlpropertycache.cpp \
@@ -167,7 +168,6 @@ QT_SOURCES += \
   qqmltypewrapper.cpp \
   qqmlfileselector.cpp \
   qqmlobjectcreator.cpp \
-  qqmldirparser.cpp \
   qqmldelayedcallqueue.cpp \
   qqmlloggingcategory.cpp \
   qqmlxmlhttprequest.cpp \
@@ -179,6 +179,8 @@ QT_SOURCES += \
   qv4domerrors.cpp \
   qv4sqlerrors.cpp \
   qqmlbuiltinfunctions.cpp \
+  qqmldirparser.cpp \
+  qqmlerror.cpp \
   qabstractanimationjob.cpp \
   qanimationgroupjob.cpp \
   qsequentialanimationgroupjob.cpp \
@@ -256,6 +258,7 @@ QT_VPATH += \
   qtdeclarative/src/qml/qml \
   qtdeclarative/src/qml/qml/ftw \
   qtdeclarative/src/qml/qml/v8 \
+  qtdeclarative/src/qml/qmldirparser \
   qtdeclarative/src/qml/types \
   qtdeclarative/src/qml/util \
 

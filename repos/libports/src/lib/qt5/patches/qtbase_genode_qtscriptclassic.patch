@@ -9,10 +9,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/qtbase/src/corelib/global/qglobal.h b/qtbase/src/corelib/global/qglobal.h
-index ccab228..4725bee 100644
+index 223ebbc..965e6d0 100644
 --- a/qtbase/src/corelib/global/qglobal.h
 +++ b/qtbase/src/corelib/global/qglobal.h
-@@ -915,13 +915,17 @@ inline void qSwap(T &value1, T &value2)
+@@ -923,13 +923,17 @@ inline void qSwap(T &value1, T &value2)
      swap(value1, value2);
  }
  

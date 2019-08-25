@@ -37,7 +37,7 @@ Genode-specific adaptations
  30 files changed, 194 insertions(+), 15 deletions(-)
 
 diff --git a/qtbase/src/corelib/codecs/qtextcodec.cpp b/qtbase/src/corelib/codecs/qtextcodec.cpp
-index eb05446..be63b4e 100644
+index ffd8a2c..d40873a 100644
 --- a/qtbase/src/corelib/codecs/qtextcodec.cpp
 +++ b/qtbase/src/corelib/codecs/qtextcodec.cpp
 @@ -208,7 +208,11 @@ static QTextCodec *setupLocaleMapper()
@@ -68,25 +68,25 @@ index 345ab9e..ab6c275 100644
  #         define Q_COMPILER_REF_QUALIFIERS
  #      endif
 diff --git a/qtbase/src/corelib/global/qconfig.cpp b/qtbase/src/corelib/global/qconfig.cpp
-index 4eb4c3e..09b8a8e 100644
+index a123483..09b8a8e 100644
 --- a/qtbase/src/corelib/global/qconfig.cpp
 +++ b/qtbase/src/corelib/global/qconfig.cpp
 @@ -1,10 +1,10 @@
  /* Installation date */
  static const char qt_configure_installation     [12+11]  = "qt_instdate=2012-12-20";
  /* Installation Info */
--static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.12.4";
+-static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.13.0";
 +static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/qt";
  #ifdef QT_BUILD_QMAKE
--static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.12.4";
--static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.12.4";
+-static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.13.0";
+-static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.13.0";
 +static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=";
 +static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=";
  #endif
  static const short qt_configure_str_offsets[] = {
      0,
 diff --git a/qtbase/src/corelib/global/qsystemdetection.h b/qtbase/src/corelib/global/qsystemdetection.h
-index a2e51fa..3c8cf76 100644
+index aabe46f..e262f2f 100644
 --- a/qtbase/src/corelib/global/qsystemdetection.h
 +++ b/qtbase/src/corelib/global/qsystemdetection.h
 @@ -47,6 +47,7 @@
@@ -122,20 +122,20 @@ index b5e524b..221c6a9 100644
      Q_CORE_EXPORT extern const char sym ## _ ## m ## _ ## n = 0; \
      asm(".symver " QT_STRINGIFY(sym) "_" QT_STRINGIFY(m) "_" QT_STRINGIFY(n) ", " \
 diff --git a/qtbase/src/corelib/io/qresource.cpp b/qtbase/src/corelib/io/qresource.cpp
-index 564a3e5..1f22b01 100644
+index e7d739b..225cda6 100644
 --- a/qtbase/src/corelib/io/qresource.cpp
 +++ b/qtbase/src/corelib/io/qresource.cpp
-@@ -951,7 +951,7 @@ public:
-     }
- };
- 
--#if defined(Q_OS_UNIX) && !defined (Q_OS_NACL) && !defined(Q_OS_INTEGRITY)
-+#if defined(Q_OS_UNIX) && !defined (Q_OS_NACL) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
- #define QT_USE_MMAP
+@@ -68,7 +68,7 @@
+ # include "private/qcore_unix_p.h"
  #endif
  
+-#if defined(Q_OS_UNIX) && !defined(Q_OS_NACL) && !defined(Q_OS_INTEGRITY)
++#if defined(Q_OS_UNIX) && !defined(Q_OS_NACL) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
+ #  define QT_USE_MMAP
+ #  include <sys/mman.h>
+ #endif
 diff --git a/qtbase/src/corelib/kernel/qcoreapplication.cpp b/qtbase/src/corelib/kernel/qcoreapplication.cpp
-index 8652c45..6a096dd 100644
+index 5c0bf93..254a4ae 100644
 --- a/qtbase/src/corelib/kernel/qcoreapplication.cpp
 +++ b/qtbase/src/corelib/kernel/qcoreapplication.cpp
 @@ -612,7 +612,7 @@ void QCoreApplicationPrivate::initLocale()
@@ -148,7 +148,7 @@ index 8652c45..6a096dd 100644
  #endif
  }
 diff --git a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
-index 535f86f..2093fbc 100644
+index df0cac0..d349ff1 100644
 --- a/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
 +++ b/qtbase/src/corelib/kernel/qeventdispatcher_unix.cpp
 @@ -73,6 +73,11 @@
@@ -173,10 +173,10 @@ index 535f86f..2093fbc 100644
  #  ifndef QT_NO_EVENTFD
          if (fds[1] == -1) {
 diff --git a/qtbase/src/corelib/kernel/qobject.h b/qtbase/src/corelib/kernel/qobject.h
-index aac9bcd..9d189c1 100644
+index 63c5a9a..817d26b 100644
 --- a/qtbase/src/corelib/kernel/qobject.h
 +++ b/qtbase/src/corelib/kernel/qobject.h
-@@ -411,7 +411,7 @@ public:
+@@ -414,7 +414,7 @@ public:
          { return const_cast<QObject *>(this)->qt_metacast(classname) != nullptr; }
  
  public Q_SLOTS:
@@ -186,7 +186,7 @@ index aac9bcd..9d189c1 100644
  protected:
      QObject *sender() const;
 diff --git a/qtbase/src/corelib/kernel/qtranslator.cpp b/qtbase/src/corelib/kernel/qtranslator.cpp
-index 63aeed0..5775852 100644
+index dc0ab9f..a69e088 100644
 --- a/qtbase/src/corelib/kernel/qtranslator.cpp
 +++ b/qtbase/src/corelib/kernel/qtranslator.cpp
 @@ -58,7 +58,7 @@
@@ -197,7 +197,7 @@ index 63aeed0..5775852 100644
 +#if defined(Q_OS_UNIX) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_GENODE)
  #define QT_USE_MMAP
  #include "private/qcore_unix_p.h"
- #endif
+ // for mmap
 diff --git a/qtbase/src/corelib/thread/qthread.cpp b/qtbase/src/corelib/thread/qthread.cpp
 index 9f60de1..38bdb38 100644
 --- a/qtbase/src/corelib/thread/qthread.cpp
@@ -214,7 +214,7 @@ index 9f60de1..38bdb38 100644
  // a pthread on INTEGRITY is too small so we have to increase the default size
  // to 128K.
 diff --git a/qtbase/src/corelib/thread/qthread_p.h b/qtbase/src/corelib/thread/qthread_p.h
-index 7d9442a..d8d24dc 100644
+index 57e6c99..fd038ec 100644
 --- a/qtbase/src/corelib/thread/qthread_p.h
 +++ b/qtbase/src/corelib/thread/qthread_p.h
 @@ -53,6 +53,10 @@
@@ -288,10 +288,10 @@ index 7d9442a..d8d24dc 100644
  
      static void *start(void *arg);
 diff --git a/qtbase/src/corelib/tools/qdatetime.cpp b/qtbase/src/corelib/tools/qdatetime.cpp
-index 3cba786..648847f 100644
+index 511dbf0..f1a7216 100644
 --- a/qtbase/src/corelib/tools/qdatetime.cpp
 +++ b/qtbase/src/corelib/tools/qdatetime.cpp
-@@ -2204,6 +2204,9 @@ static int qt_timezone()
+@@ -2197,6 +2197,9 @@ static int qt_timezone()
          long offset;
          _get_timezone(&offset);
          return offset;
@@ -302,7 +302,7 @@ index 3cba786..648847f 100644
          time_t clock = time(NULL);
          struct tm t;
 diff --git a/qtbase/src/gui/image/qxpmhandler.cpp b/qtbase/src/gui/image/qxpmhandler.cpp
-index 17272ff..df503d9 100644
+index a32dfda..6f27cd2 100644
 --- a/qtbase/src/gui/image/qxpmhandler.cpp
 +++ b/qtbase/src/gui/image/qxpmhandler.cpp
 @@ -845,8 +845,16 @@ static bool read_xpm_header(
@@ -323,7 +323,7 @@ index 17272ff..df503d9 100644
  
      if (*w <= 0 || *w > 32767 || *h <= 0 || *h > 32767 || *ncols <= 0 || *ncols > (64 * 64 * 64 * 64) || *cpp <= 0 || *cpp > 15)
 diff --git a/qtbase/src/gui/painting/qbrush.cpp b/qtbase/src/gui/painting/qbrush.cpp
-index d071f66..486701a 100644
+index f56be55..5998aa0 100644
 --- a/qtbase/src/gui/painting/qbrush.cpp
 +++ b/qtbase/src/gui/painting/qbrush.cpp
 @@ -1402,7 +1402,12 @@ QGradient::QGradient(Preset preset)
@@ -398,10 +398,10 @@ index 60353cb..5ecd1b7 100644
  
      if (operation() == QNetworkAccessManager::GetOperation) {
 diff --git a/qtbase/src/network/kernel/qhostinfo.cpp b/qtbase/src/network/kernel/qhostinfo.cpp
-index 4d451df..5548939 100644
+index 4b5acc1..1cb4e75 100644
 --- a/qtbase/src/network/kernel/qhostinfo.cpp
 +++ b/qtbase/src/network/kernel/qhostinfo.cpp
-@@ -737,7 +737,12 @@ QHostInfoLookupManager::QHostInfoLookupManager() : mutex(QMutex::Recursive), was
+@@ -728,7 +728,12 @@ QHostInfoLookupManager::QHostInfoLookupManager() : mutex(QMutex::Recursive), was
      moveToThread(QCoreApplicationPrivate::mainThread());
  #if QT_CONFIG(thread)
      connect(QCoreApplication::instance(), SIGNAL(destroyed()), SLOT(waitForThreadPoolDone()), Qt::DirectConnection);
@@ -490,7 +490,7 @@ index e038352..94ed684 100644
  
  QT_END_NAMESPACE
 diff --git a/qtbase/src/network/ssl/qsslconfiguration_p.h b/qtbase/src/network/ssl/qsslconfiguration_p.h
-index 6c23165..30ae19c 100644
+index 83126bb..7cd978b 100644
 --- a/qtbase/src/network/ssl/qsslconfiguration_p.h
 +++ b/qtbase/src/network/ssl/qsslconfiguration_p.h
 @@ -85,7 +85,16 @@ public:
@@ -511,7 +511,7 @@ index 6c23165..30ae19c 100644
            allowRootCertOnDemandLoading(true),
            peerSessionShared(false),
 diff --git a/qtbase/src/network/ssl/qsslsocket_opensslpre11.cpp b/qtbase/src/network/ssl/qsslsocket_opensslpre11.cpp
-index bc4fd9d..13e0855 100644
+index f5aab82..f84baaa 100644
 --- a/qtbase/src/network/ssl/qsslsocket_opensslpre11.cpp
 +++ b/qtbase/src/network/ssl/qsslsocket_opensslpre11.cpp
 @@ -221,7 +221,10 @@ bool QSslSocketPrivate::ensureLibraryLoaded()
@@ -556,7 +556,7 @@ index 17bf0fb..2908374 100644
  
  const QEvdevKeyboardMap::Composing QEvdevKeyboardHandler::s_keycompose_default[] = {
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
-index ad134a8..63d4ca1 100644
+index 666613f..e99bf58 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler.cpp
 @@ -55,7 +55,9 @@
@@ -628,7 +628,7 @@ index ad134a8..63d4ca1 100644
  
  bool QEvdevKeyboardHandler::loadKeymap(const QString &file)
 diff --git a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
-index 5498a3e..2133dcd 100644
+index 21e6d05..b3f18b0 100644
 --- a/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
 +++ b/qtbase/src/platformsupport/input/evdevkeyboard/qevdevkeyboardhandler_p.h
 @@ -189,7 +189,10 @@ public:
@@ -643,10 +643,10 @@ index 5498a3e..2133dcd 100644
  
      void switchLang();
 diff --git a/qtbase/src/testlib/qtestcase.cpp b/qtbase/src/testlib/qtestcase.cpp
-index 0c935a1..7b7b7a0 100644
+index 1f69429..938990f 100644
 --- a/qtbase/src/testlib/qtestcase.cpp
 +++ b/qtbase/src/testlib/qtestcase.cpp
-@@ -1545,7 +1545,7 @@ FatalSignalHandler::FatalSignalHandler()
+@@ -1554,7 +1554,7 @@ FatalSignalHandler::FatalSignalHandler()
  
  // tvOS/watchOS both define SA_ONSTACK (in sys/signal.h) but mark sigaltstack() as
  // unavailable (__WATCHOS_PROHIBITED __TVOS_PROHIBITED in signal.h)
@@ -656,10 +656,10 @@ index 0c935a1..7b7b7a0 100644
      // This is necessary if SIGSEGV is to catch a stack overflow
  #  if defined(Q_CC_GNU) && defined(Q_OF_ELF)
 diff --git a/qtbase/src/widgets/dialogs/qfiledialog.cpp b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-index eb3479b..6bf774c 100644
+index f772eb1..9844056 100644
 --- a/qtbase/src/widgets/dialogs/qfiledialog.cpp
 +++ b/qtbase/src/widgets/dialogs/qfiledialog.cpp
-@@ -1134,7 +1134,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path)
+@@ -1146,7 +1146,7 @@ Q_AUTOTEST_EXPORT QString qt_tildeExpansion(const QString &path)
          const QString homePath = QDir::homePath();
  #else
          const QByteArray userName = path.midRef(1, separatorPosition - 1).toLocal8Bit();

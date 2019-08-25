@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/gui \
   qtbase/include \
   qtbase/include/QtGui \
-  qtbase/include/QtGui/5.12.4 \
-  qtbase/include/QtGui/5.12.4/QtGui \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtbase/include/QtGui/5.13.0 \
+  qtbase/include/QtGui/5.13.0/QtGui \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
@@ -189,6 +189,7 @@ QT_SOURCES += \
   qtexturefilereader.cpp \
   qpkmhandler.cpp \
   qktxhandler.cpp \
+  qastchandler.cpp \
   qgenericmatrix.cpp \
   qmatrix4x4.cpp \
   qquaternion.cpp \
@@ -300,6 +301,7 @@ QT_SOURCES += \
   moc_qpdfwriter.cpp \
   moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
+  moc_qlayoutpolicy_p.cpp \
   moc_qshaderlanguage_p.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \
@@ -381,6 +383,7 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qpdfwriter.cpp \
   moc_qplatformbackingstore.cpp \
   moc_qvalidator.cpp \
+  moc_qlayoutpolicy_p.cpp \
   moc_qshaderlanguage_p.cpp \
   moc_qopenglshaderprogram.cpp \
   moc_qopenglengineshadermanager_p.cpp \

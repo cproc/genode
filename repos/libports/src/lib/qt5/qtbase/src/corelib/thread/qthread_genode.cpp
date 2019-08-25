@@ -519,6 +519,11 @@ Qt::HANDLE QThread::currentThreadId() Q_DECL_NOTHROW
 // LSB doesn't define _SC_NPROCESSORS_ONLN.
 #  define _SC_NPROCESSORS_ONLN 84
 #endif
+
+#ifdef Q_OS_WASM
+int QThreadPrivate::idealThreadCount = 1;
+#endif
+
 #endif /* Q_OS_GENODE */
 
 int QThread::idealThreadCount() Q_DECL_NOTHROW
@@ -569,6 +574,8 @@ int QThread::idealThreadCount() Q_DECL_NOTHROW
     // as of aug 2008 VxWorks < 6.6 only supports one single core CPU
     cores = 1;
 #  endif
+#elif defined(Q_OS_WASM)
+    cores = QThreadPrivate::idealThreadCount;
 #elif defined(Q_OS_GENODE)
 	cores = 1;
 #else

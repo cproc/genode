@@ -13,16 +13,16 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  6 files changed, 24 insertions(+), 21 deletions(-)
 
 diff --git a/.gitmodules b/.gitmodules
-index 5f854b4..98d8a1e 100644
+index 008555c..0cea9ba 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -427,4 +427,8 @@
- 	path = qtwebbrowser
- 	url = ../../qt-apps/qtwebbrowser
- 	branch = dev
--	status = ignore
+@@ -385,4 +385,8 @@
+ 	path = qtcoap
+ 	url = ../qtcoap.git
+ 	branch = 5.13.0
+-	status = preview
 \ No newline at end of file
-+	status = ignore
++	status = preview
 +[submodule "qtwebkit"]
 +	depends = qtbase
 +	path = qtwebkit

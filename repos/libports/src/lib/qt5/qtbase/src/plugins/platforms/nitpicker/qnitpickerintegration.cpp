@@ -76,7 +76,7 @@ QAbstractEventDispatcher *QNitpickerIntegration::createEventDispatcher() const
 
 void QNitpickerIntegration::initialize()
 {
-    screenAdded(_nitpicker_screen);
+    QWindowSystemInterface::handleScreenAdded(_nitpicker_screen);
 
     QString icStr = QPlatformInputContextFactory::requested();
     if (icStr.isNull())

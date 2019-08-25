@@ -13,8 +13,8 @@ QT_INCPATH += \
   qtbase/src/3rdparty/tinycbor/src \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.12.4 \
-  qtbase/include/QtCore/5.12.4/QtCore \
+  qtbase/include/QtCore/5.13.0 \
+  qtbase/include/QtCore/5.13.0/QtCore \
   qtbase/src/3rdparty/pcre2/src \
   qtbase/mkspecs/genode-g++
 
@@ -164,8 +164,10 @@ QT_SOURCES += \
   qabstractitemmodel.cpp \
   qitemselectionmodel.cpp \
   qabstractproxymodel.cpp \
+  qconcatenatetablesproxymodel.cpp \
   qidentityproxymodel.cpp \
   qsortfilterproxymodel.cpp \
+  qtransposeproxymodel.cpp \
   qstringlistmodel.cpp \
   qfactoryinterface.cpp \
   qpluginloader.cpp \
@@ -256,6 +258,7 @@ QT_SOURCES += \
   qmimeprovider.cpp \
   qfloat16tables.cpp \
   qrc_mimetypes.cpp \
+  moc_qtransposeproxymodel.cpp \
   moc_qmimetype.cpp
 
 QT_VPATH += \
@@ -315,8 +318,10 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES = \
   moc_qabstractitemmodel.cpp \
   moc_qitemselectionmodel.cpp \
   moc_qabstractproxymodel.cpp \
+  moc_qconcatenatetablesproxymodel.cpp \
   moc_qidentityproxymodel.cpp \
   moc_qsortfilterproxymodel.cpp \
+  moc_qtransposeproxymodel.cpp \
   moc_qstringlistmodel.cpp \
   moc_qpluginloader.cpp \
   moc_qfactoryloader_p.cpp \
