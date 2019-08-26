@@ -468,6 +468,13 @@ struct Main::Sequence
 				xkb_keysym_t result = xkb_compose_state_get_one_sym(_state);
 				unsigned     utf32  = xkb_keysym_to_utf32(result);
 
+				if (utf32 == 0) {
+					::fprintf(stderr, "skipping sequence");
+					for (Keysym k : seq) fprintf(stderr, " U+%05x", k.utf32);
+					::fprintf(stderr, " generating U+%04x\n", utf32);
+					break;
+				}
+
 				_xml.node("sequence", [&] ()
 				{
 					try {
