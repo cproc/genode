@@ -775,6 +775,9 @@ extern "C" int execve(char const *filename, char *const argv[],
 }
 
 
+extern "C" int _execve(char const *, char *const[], char *const[]) __attribute__((alias("execve")));
+
+
 int getrusage(int who, struct rusage *usage)
 {
 	if (verbose)
