@@ -106,10 +106,12 @@ sub nodes:
 
   Each '<map>' may contain any number of '<key>' subnodes. Each '<key>'
   must have the key name as 'name' attribute. The to-be-emitted character
-  is defined by the attributes 'ascii', 'char', or 'b0/b1/b2/b3'. The
-  'ascii' attribute accepts an integer value between 0 and 127, the
-  'char' attribute accepts a single ASCII character, the 'b0/b1/b2/b3'
-  attributes define the individual bytes of an UTF-8 character.
+  is defined by the attributes 'ascii', 'char', 'code', or 'b0/b1/b2/b3'.
+
+  :'ascii': accepts an integer value between 0 and 127
+  :'char': accepts a single ASCII character
+  :'code': defines the Unicode codepoint as integer value
+  :'b0'/'b1'/'b2'/'b3': define the individual bytes of an UTF-8 character
 
 :<sequence first="..." second="..." third="..." fourth="..." code="..."/>:
 
