@@ -468,9 +468,9 @@ namespace Libc_pipe {
 		return num_bytes_written;
 	}
 }
-
-
+extern "C" void wait_for_continue();
 void __attribute__((constructor)) init_libc_pipe()
 {
 	static Libc_pipe::Plugin plugin;
+	wait_for_continue();
 }

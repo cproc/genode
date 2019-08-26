@@ -2,7 +2,7 @@ source ${genode_dir}/repos/libports/run/qt5_common.inc
 
 set feature(Nic) 1
 
-import_from_depot [depot_user]/src/arora \
+import_from_depot \
                   [depot_user]/src/icu \
                   [depot_user]/src/libcrypto \
                   [depot_user]/src/libssl \
@@ -14,7 +14,6 @@ import_from_depot [depot_user]/src/arora \
                   [depot_user]/src/qt5_scriptclassic \
                   [depot_user]/src/qt5_sql \
                   [depot_user]/src/qt5_ui_tools \
-                  [depot_user]/src/qt5_webkit \
                   [depot_user]/src/qt5_widgets \
                   [depot_user]/src/vfs_jitterentropy \
                   [depot_user]/src/vfs_lxip
@@ -32,6 +31,8 @@ append build_components {
 	server/nit_fb
 	app/launchpad
 	test/nitpicker
+	lib/ld
+	app/arora
 }
 
 build $build_components
@@ -151,6 +152,18 @@ append boot_modules {
 	launchpad
 	testnit
 	nitpicker_plugin.tar
+	ld.lib.so
+	arora
+	qt5_angle.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_jscore.lib.so
+	qt5_webcore.lib.so
+	qt5_webkit.lib.so
+	qt5_webkitwidgets.lib.so
+	qt5_wtf.lib.so
+	libc.lib.so
+	vfs.lib.so
 }
 
 build_boot_image $boot_modules
