@@ -466,11 +466,23 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 */
 		void reset_malloc_heap() override;
 
-		Env_implementation   _libc_env { _env, _heap };
-		Vfs_plugin           _vfs { _libc_env, _heap, *this };
+		Env_implementation _libc_env { _env, _heap };
 
 		bool  const _cloned = _libc_env.libc_config().attribute_value("cloned", false);
 		pid_t const _pid    = _libc_env.libc_config().attribute_value("pid", 0U);
+
+		void _init_malloc_heap()
+		{
+			if (_cloned)
+				return;
+
+			_malloc_heap.construct(*_malloc_ram, _env.rm());
+			init_malloc(*_malloc_heap);
+		}
+
+		bool const _malloc_heap_initialized = (_init_malloc_heap(), true);
+
+		Vfs_plugin _vfs { _libc_env, _heap, *this };
 
 		Genode::Reconstructible<Genode::Io_signal_handler<Kernel>> _resume_main_handler {
 			_env.ep(), *this, &Kernel::_resume_main };
@@ -707,13 +719,8 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		{
 			_env.ep().register_io_progress_handler(*this);
 
-			if (_cloned) {
+			if (_cloned)
 				_clone_state_from_parent();
-
-			} else {
-				_malloc_heap.construct(*_malloc_ram, _env.rm());
-				init_malloc(*_malloc_heap);
-			}
 
 			Libc::init_fork(_env, _libc_env, _heap, *_malloc_heap, _pid);
 			Libc::init_execve(_env, _heap, _user_stack, *this);
