@@ -388,7 +388,7 @@ void QNitpickerPlatformWindow::_adjust_and_set_geometry(const QRect &rect)
 		adjusted_rect.moveTo(0, 0);
 
 	QPlatformWindow::setGeometry(adjusted_rect);
-
+Genode::log("_adjust_and_set_geometry(): ", adjusted_rect.width(), ", ", adjusted_rect.height());
 	Framebuffer::Mode mode(adjusted_rect.width(), adjusted_rect.height(),
 	                       Framebuffer::Mode::RGB565);
 	_nitpicker_session.buffer(mode, false);

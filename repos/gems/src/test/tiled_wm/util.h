@@ -86,7 +86,7 @@ static inline QApplication & qt5_initialization(Libc::Env &env)
 	char const *argv[] = { "qt5_app", 0 };
 	int argc = sizeof(argv)/sizeof(*argv);
 
-	static QApplication app(argc, (char**)argv);
+	QApplication *app = new QApplication(argc, (char**)argv);
 
 	QFile file(":style.qss");
 	if (!file.open(QFile::ReadOnly)) {
@@ -96,9 +96,9 @@ static inline QApplication & qt5_initialization(Libc::Env &env)
 		qApp->setStyleSheet(QLatin1String(file.readAll()));
 	}
 
-	app.connect(&app, SIGNAL(lastWindowClosed()), SLOT(quit()));
+	app->connect(app, SIGNAL(lastWindowClosed()), SLOT(quit()));
 
-	return app;
+	return *app;
 }
 
 

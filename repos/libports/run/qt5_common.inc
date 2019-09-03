@@ -141,7 +141,7 @@ proc qt5_start_nodes { feature_arg } {
 				<service name="Report"/>
 				<service name="ROM"/>
 			</provides>
-			<config verbose="no">
+			<config verbose="yes">
 				<policy label="layouter -> focus_request"     report="wm -> focus_request"/>
 				<policy label="decorator -> pointer"          report="wm -> pointer"/>
 				<policy label="layouter -> window_list"       report="wm -> window_list"/>

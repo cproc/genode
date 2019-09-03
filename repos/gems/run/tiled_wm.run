@@ -63,7 +63,7 @@ append config {
 		<binary name="report_rom"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
-		<config verbose="no">
+		<config verbose="yes">
 			<policy label="test-tiled_wm-panel -> apps"              report="test-tiled_wm-manager -> apps"/>
 			<policy label="test-tiled_wm-panel -> overlay"           report="test-tiled_wm-manager -> overlay"/>
 			<policy label="test-tiled_wm-manager -> content_request" report="test-tiled_wm-panel -> content_request"/>
@@ -117,6 +117,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+
 	<start name="test-tiled_wm-panel" caps="250">
 		<resource name="RAM" quantum="32M"/>
 		<config>
@@ -141,6 +142,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+
 	<start name="test-tiled_wm-overlay" caps="250">
 		<resource name="RAM" quantum="32M"/>
 		<config>
@@ -161,6 +163,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+<!--
 	<start name="test-tiled_wm-app-1" caps="250">
 		<binary name="test-tiled_wm-app"/>
 		<resource name="RAM" quantum="32M"/>
@@ -182,6 +185,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+-->
 	<start name="test-tiled_wm-app-2" caps="250">
 		<binary name="test-tiled_wm-app"/>
 		<resource name="RAM" quantum="32M"/>
@@ -203,6 +207,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+<!--
 	<start name="textedit" caps="250">
 		<resource name="RAM" quantum="70M"/>
 		<config>
@@ -223,6 +228,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+-->
 </config>
 }
 
@@ -232,6 +238,7 @@ append build_components [qt5_build_components feature]
 
 # for debugging only
 #append build_components { app/window_layouter app/themed_decorator }
+append build_components { lib/ld test/tiled_wm }
 
 build $build_components
 
@@ -239,6 +246,28 @@ append boot_modules [qt5_boot_modules feature]
 
 # for debugging only
 #append boot_modules { window_layouter themed_decorator }
+append boot_modules {
+	test-tiled_wm-app
+	ld.lib.so
+	egl.lib.so
+	expat.lib.so
+	libc.lib.so
+	vfs.lib.so
+	glapi.lib.so
+	libm.lib.so
+	mesa.lib.so
+	stdcxx.lib.so
+	freetype.lib.so
+	jpeg.lib.so
+	libc_pipe.lib.so
+	libpng.lib.so
+	zlib.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_qjpeg.lib.so
+	qt5_qpa_nitpicker.lib.so
+	qt5_widgets.lib.so
+}
 
 build_boot_image $boot_modules
 

@@ -30,9 +30,10 @@ struct Main
 	}
 };
 
-
+extern "C" void wait_for_continue();
 void Libc::Component::construct(Libc::Env &env)
 {
+//wait_for_continue();
 	Libc::with_libc([&] {
 
 		static Main main { env };

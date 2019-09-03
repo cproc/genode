@@ -42,14 +42,19 @@ struct Main
 	}
 };
 
-
+extern "C" void wait_for_continue();
 void Libc::Component::construct(Libc::Env &env)
 {
+//wait_for_continue();
 	Libc::with_libc([&] {
 
 		static Main main { env };
 
-		exit(main.app.exec());
+		//exit(main.app.exec());
+Genode::log("calling main.app.exec()");
+		int res = main.app.exec();
+Genode::log("main.app.exec() returned");
+		exit(res);
 	});
 }
 
