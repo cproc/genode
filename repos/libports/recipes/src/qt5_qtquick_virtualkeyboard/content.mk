@@ -1,10 +1,13 @@
 MIRROR_FROM_REP_DIR := lib/mk/qt5_qtvirtualkeyboardplugin.mk \
                        lib/mk/qt5_qtvirtualkeyboardplugin_generated.inc \
+                       lib/mk/qt5_qtvirtualkeyboardsettingsplugin.mk \
+                       lib/mk/qt5_qtvirtualkeyboardsettingsplugin_generated.inc \
                        lib/mk/qt5_qtvirtualkeyboardstylesplugin.mk \
                        lib/mk/qt5_qtvirtualkeyboardstylesplugin_generated.inc \
                        lib/mk/qt5.inc \
 
 content: $(MIRROR_FROM_REP_DIR) src/lib/qt5_qtvirtualkeyboardplugin/target.mk \
+                                src/lib/qt5_qtvirtualkeyboardsettingsplugin/target.mk \
                                 src/lib/qt5_qtvirtualkeyboardstylesplugin/target.mk
 
 $(MIRROR_FROM_REP_DIR):
@@ -14,6 +17,10 @@ src/lib/qt5_qtvirtualkeyboardplugin/target.mk:
 	mkdir -p $(dir $@)
 	echo "LIBS = qt5_qtvirtualkeyboardplugin" > $@
 
+src/lib/qt5_qtvirtualkeyboardsettingsplugin/target.mk:
+	mkdir -p $(dir $@)
+	echo "LIBS = qt5_qtvirtualkeyboardsettingsplugin" > $@
+
 src/lib/qt5_qtvirtualkeyboardstylesplugin/target.mk:
 	mkdir -p $(dir $@)
 	echo "LIBS = qt5_qtvirtualkeyboardstylesplugin" > $@
@@ -21,6 +28,7 @@ src/lib/qt5_qtvirtualkeyboardstylesplugin/target.mk:
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/qt5)
 
 MIRROR_FROM_PORT_DIR := src/lib/qt5/qt5/qtvirtualkeyboard/src/plugin \
+                        src/lib/qt5/qt5/qtvirtualkeyboard/src/settings \
                         src/lib/qt5/qt5/qtvirtualkeyboard/src/styles
 
 content: $(MIRROR_FROM_PORT_DIR)
