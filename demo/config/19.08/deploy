@@ -1,0 +1,134 @@
+<config arch="x86_64">	
+
+	<common_routes>
+		<service name="ROM" label_last="ld.lib.so">  <parent/> </service>
+		<service name="ROM" label_last="vfs.lib.so"> <parent/> </service>
+		<service name="ROM" label_last="init">       <parent/> </service>
+		<service name="CPU">   <parent/> </service>
+		<service name="PD">    <parent/> </service>
+		<service name="LOG">   <parent/> </service>
+		<service name="Timer"> <parent/> </service>
+	</common_routes>
+
+	<start name="vbox5-nova-sculpt" pkg="cproc_demo/pkg/vbox5-nova-sculpt/2019-08-27">
+		<route>
+			<service name="File_system" label="vm">
+				<child name="vm_fs"/>
+			</service>
+			<service name="File_system" label="shared">
+				<child name="shared_fs"/>
+			</service>
+			<service name="Nitpicker">
+				<child name="wm"/>
+			</service>
+			<service name="Nic">
+				<child name="nic_router"/>
+			</service>
+			<service name="ROM" label="capslock">
+				<parent label="capslock"/>
+			</service>
+			<service name="ROM" label="platform_info">
+				<parent label="platform_info"/>
+			</service>
+			<service name="Report" label="shape">
+				<child name="wm"/>
+			</service>
+			<service name="Report" label="clipboard">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="clipboard">
+				<child name="wm"/>
+			</service>
+			<service name="RM">
+				<parent/>
+			</service>
+			<service name="Rtc">
+				<parent/>
+			</service>
+			<service name="ROM" label="usb_devices">
+				<child name="usb_devices_rom"/>
+			</service>
+			<service name="Usb">
+				<parent/>
+			</service>
+		</route>
+	</start>
+	<start name="themed_decorator" pkg="cproc_demo/pkg/themed_decorator/2019-08-27">
+		<route>
+			<service name="ROM" label="window_layout">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="pointer">
+				<child name="wm"/>
+			</service>
+			<service name="Report">
+				<child name="wm"/>
+			</service>
+			<service name="Nitpicker">
+				<child name="wm"/>
+			</service>
+		</route>
+		<config>
+			<vfs>
+				<dir name="theme">
+					<inline name="metadata">
+						<theme>
+							<aura  top="0" bottom="0" left="0" right="0"/>
+							<decor top="0" bottom="0" left="0" right="0"/>
+						</theme>
+					</inline>
+				</dir>
+			</vfs>
+			<libc/>
+			<default-policy/>
+		</config>
+	</start>
+	<start name="window_layouter" pkg="cproc_demo/pkg/window_layouter/2019-08-27">
+		<route>
+			<service name="Nitpicker">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="window_list">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="focus_request">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="hover">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="decorator_margins">
+				<child name="wm"/>
+			</service>
+			<service name="Report">
+				<child name="wm"/>
+			</service>
+			<service name="File_system" label="recall">
+				<child name="recall_fs"/>
+			</service>
+		</route>
+	</start>
+	<start name="recall_fs"/>
+	<start name="wm" pkg="cproc_demo/pkg/wm/2019-08-27">
+		<route>
+			<service name="Nitpicker" label="focus">
+				<parent label="focus"/>
+			</service>
+			<service name="Nitpicker">
+				<parent/>
+			</service>
+			<service name="Report" label_last="shape">
+				<parent/>
+			</service>
+			<service name="Report" label_last="clipboard">
+				<parent/>
+			</service>
+			<service name="ROM" label_last="clipboard">
+				<parent/>
+			</service>
+		</route>
+	</start>
+	<start name="usb_devices_rom"/>
+	<start name="vm_fs"/>
+	<start name="shared_fs"/>
+</config>
