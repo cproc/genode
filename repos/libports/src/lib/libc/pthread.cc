@@ -376,44 +376,61 @@ extern "C" {
 		{
 			if (mutexattr.type == PTHREAD_MUTEX_RECURSIVE) {
 
-				Lock::Guard lock_guard(owner_and_counter_lock);
+				{
+					Lock::Guard lock_guard(owner_and_counter_lock);
 
-				if (lock_count == 0) {
-					owner = pthread_self();
-					lock_count++;
-					mutex_lock.lock();
-					return 0;
+					if (!owner) {
+						owner = pthread_self();
+						lock_count++;
+						mutex_lock.lock();
+						return 0;
+					}
+
+					/* the mutex is already locked */
+
+					if (pthread_self() == owner) {
+						lock_count++;
+						return 0;
+					}
 				}
 
-				/* the mutex is already locked */
-				if (pthread_self() == owner) {
-					lock_count++;
-					return 0;
-				} else {
-					mutex_lock.lock();
-					return 0;
-				}
+				mutex_lock.lock();
+				return 0;
 			}
 
 			if (mutexattr.type == PTHREAD_MUTEX_ERRORCHECK) {
 
+				{
+					Lock::Guard lock_guard(owner_and_counter_lock);
+
+					if (!owner) {
+						owner = pthread_self();
+						mutex_lock.lock();
+						return 0;
+					}
+
+					/* the mutex is already locked */
+
+					if (pthread_self() == owner)
+						return EDEADLK;
+				}
+
+				mutex_lock.lock();
+				return 0;
+			}
+
+			/* PTHREAD_MUTEX_NORMAL or PTHREAD_MUTEX_DEFAULT */
+
+			{
 				Lock::Guard lock_guard(owner_and_counter_lock);
 
-				if (lock_count == 0) {
+				if (!owner) {
 					owner = pthread_self();
 					mutex_lock.lock();
 					return 0;
 				}
-
-				/* the mutex is already locked */
-				if (pthread_self() != owner) {
-					mutex_lock.lock();
-					return 0;
-				} else
-					return EDEADLK;
 			}
 
-			/* PTHREAD_MUTEX_NORMAL or PTHREAD_MUTEX_DEFAULT */
 			mutex_lock.lock();
 			return 0;
 		}
@@ -422,48 +439,57 @@ extern "C" {
 		{
 			if (mutexattr.type == PTHREAD_MUTEX_RECURSIVE) {
 
-				Lock::Guard lock_guard(owner_and_counter_lock);
+				{
+					Lock::Guard lock_guard(owner_and_counter_lock);
 
-				if (lock_count == 0) {
-					owner = pthread_self();
-					lock_count++;
-					mutex_lock.lock();
-					return 0;
+					if (!owner) {
+						owner = pthread_self();
+						lock_count++;
+						mutex_lock.lock();
+						return 0;
+					}
+
+					/* the mutex is already locked */
+
+					if (pthread_self() == owner) {
+						lock_count++;
+						return 0;
+					}
 				}
 
-				/* the mutex is already locked */
-				if (pthread_self() == owner) {
-					lock_count++;
-					return 0;
-				} else {
-					return EBUSY;
-				}
+				return EBUSY;
 			}
 
 			if (mutexattr.type == PTHREAD_MUTEX_ERRORCHECK) {
 
+				{
+					Lock::Guard lock_guard(owner_and_counter_lock);
+
+					if (!owner) {
+						owner = pthread_self();
+						mutex_lock.lock();
+						return 0;
+					}
+
+					/* the mutex is already locked */
+
+					if (pthread_self() == owner)
+						return EDEADLK;
+				}
+
+				return EBUSY;
+			}
+
+			/* PTHREAD_MUTEX_NORMAL or PTHREAD_MUTEX_DEFAULT */
+
+			{
 				Lock::Guard lock_guard(owner_and_counter_lock);
 
-				if (lock_count == 0) {
+				if (!owner) {
 					owner = pthread_self();
 					mutex_lock.lock();
 					return 0;
 				}
-
-				/* the mutex is already locked */
-				if (pthread_self() != owner) {
-					return EBUSY;
-				} else
-					return EDEADLK;
-			}
-
-			/* PTHREAD_MUTEX_NORMAL or PTHREAD_MUTEX_DEFAULT */
-			Lock::Guard lock_guard(owner_and_counter_lock);
-
-			if (lock_count == 0) {
-				owner = pthread_self();
-				mutex_lock.lock();
-				return 0;
 			}
 
 			return EBUSY;
@@ -471,10 +497,9 @@ extern "C" {
 
 		int unlock()
 		{
+			Lock::Guard lock_guard(owner_and_counter_lock);
 
 			if (mutexattr.type == PTHREAD_MUTEX_RECURSIVE) {
-
-				Lock::Guard lock_guard(owner_and_counter_lock);
 
 				if (pthread_self() != owner)
 					return EPERM;
@@ -491,8 +516,6 @@ extern "C" {
 
 			if (mutexattr.type == PTHREAD_MUTEX_ERRORCHECK) {
 
-				Lock::Guard lock_guard(owner_and_counter_lock);
-
 				if (pthread_self() != owner)
 					return EPERM;
 
@@ -502,6 +525,8 @@ extern "C" {
 			}
 
 			/* PTHREAD_MUTEX_NORMAL or PTHREAD_MUTEX_DEFAULT */
+
+			owner = 0;
 			mutex_lock.unlock();
 			return 0;
 		}
@@ -578,9 +603,7 @@ extern "C" {
 		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
 			pthread_mutex_init(mutex, 0);
 
-		(*mutex)->lock();
-
-		return 0;
+		return (*mutex)->lock();
 	}
 
 
@@ -604,9 +627,7 @@ extern "C" {
 		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
 			pthread_mutex_init(mutex, 0);
 
-		(*mutex)->unlock();
-
-		return 0;
+		return (*mutex)->unlock();
 	}
 
 
