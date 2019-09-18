@@ -1,5 +1,9 @@
 <index>
 
+  <index name="System">
+    <pkg path="acpica" info="ACPI driver - battery information and system shutdown/reset"/>
+  </index>
+
   <index name="GUI">
     <pkg path="sticks_blue_backdrop" info="default desktop background"/>
     <pkg path="themed_wm"            info="ready-to-use window manager"/>
