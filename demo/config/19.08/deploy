@@ -1,4 +1,4 @@
-<config arch="x86_64">	
+<config arch="x86_64">
 
 	<common_routes>
 		<service name="ROM" label_last="ld.lib.so">  <parent/> </service>
@@ -131,4 +131,39 @@
 	<start name="usb_devices_rom"/>
 	<start name="vm_fs"/>
 	<start name="shared_fs"/>
+	<start name="vbox_shutdown" pkg="cproc_demo/pkg/vbox_shutdown/2019-09-19">
+		<route>
+			<service name="File_system" label="system reports">
+				<parent label="report"/>
+			</service>
+			<service name="File_system" label="system config">
+				<parent label="config"/>
+			</service>
+		</route>
+	</start>
+	<start name="acpica" pkg="alex-ab/pkg/acpica/2019-04-03">
+		<route>
+			<service name="IO_MEM">
+				<parent/>
+			</service>
+			<service name="IO_PORT">
+				<parent/>
+			</service>
+			<service name="IRQ">
+				<parent/>
+			</service>
+			<service name="Platform">
+				<parent label="acpica"/>
+			</service>
+			<service name="ROM" label="platform_info">
+				<parent label="platform_info"/>
+			</service>
+			<service name="ROM" label="system">
+				<parent label="config -> system"/>
+			</service>
+			<service name="Report">
+				<parent/>
+			</service>
+		</route>
+	</start>
 </config>
