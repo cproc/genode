@@ -1,0 +1,60 @@
+<runtime ram="8M" caps="400" binary="init">
+
+	<requires>
+		<file_system label="system reports" writeable="no"/>
+		<file_system label="system config" writeable="yes"/>
+	</requires>
+
+	<content>
+		<rom label="fs_report"/>
+		<rom label="fs_rom"/>
+		<rom label="ld.lib.so"/>
+		<rom label="vbox_shutdown"/>
+	</content>
+
+	<config>
+
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="File_system"/>
+		</parent-provides>
+
+		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
+
+		<default caps="100"/>
+
+		<start name="fs_rom">
+			<resource name="RAM" quantum="3M"/>
+			<provides> <service name="ROM"/> </provides>
+			<route>
+				<service name="File_system"> <parent label="system reports"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="fs_report">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> </provides>
+			<config> <vfs> <fs/> </vfs> </config>
+			<route>
+				<service name="File_system"> <parent label="system config"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="vbox_shutdown">
+			<resource name="RAM" quantum="2M"/>
+			<route>
+				<service name="Report" label="system"> <child name="fs_report" label="system"/> </service>
+				<service name="ROM" label="runtime/state"> <child name="fs_rom"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+	</config>
+
+</runtime>

@@ -15,9 +15,10 @@
   </index>
 
   <index name="Tools">
-    <pkg path="noux-system"  info="command-line interface to the system"/>
-    <pkg path="qt5_textedit" info="Qt5-based text editor"/>
-    <pkg path="report_dump"  info="save periodic snapshots of the report fs"/>
+    <pkg path="noux-system"    info="command-line interface to the system"/>
+    <pkg path="qt5_textedit"   info="Qt5-based text editor"/>
+    <pkg path="report_dump"    info="save periodic snapshots of the report fs"/>
+    <pkg path="vbox_shutdown"  info="shut down PC on VirtualBox exit"/>
   </index>
 
   <index name="Demos">
