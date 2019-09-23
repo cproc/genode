@@ -9,7 +9,6 @@
 		<service name="LOG">   <parent/> </service>
 		<service name="Timer"> <parent/> </service>
 	</common_routes>
-
 	<start name="vbox5-nova-sculpt" pkg="cproc_demo/pkg/vbox5-nova-sculpt/2019-08-27">
 		<route>
 			<service name="File_system" label="vm">
@@ -131,16 +130,7 @@
 	<start name="usb_devices_rom"/>
 	<start name="vm_fs"/>
 	<start name="shared_fs"/>
-	<start name="vbox_shutdown" pkg="cproc_demo/pkg/vbox_shutdown/2019-09-19">
-		<route>
-			<service name="File_system" label="system reports">
-				<parent label="report"/>
-			</service>
-			<service name="File_system" label="system config">
-				<parent label="config"/>
-			</service>
-		</route>
-	</start>
+
 	<start name="acpica" pkg="alex-ab/pkg/acpica/2019-04-03">
 		<route>
 			<service name="IO_MEM">
@@ -163,6 +153,19 @@
 			</service>
 			<service name="Report">
 				<parent/>
+			</service>
+		</route>
+	</start>
+	<start name="vbox_shutdown" pkg="cproc_demo/pkg/vbox_shutdown/2019-09-23">
+		<route>
+			<service name="File_system" label="system reports">
+				<parent label="report"/>
+			</service>
+			<service name="File_system" label="system config">
+				<parent label="config"/>
+			</service>
+			<service name="Nitpicker">
+				<parent label="backdrop"/>
 			</service>
 		</route>
 	</start>

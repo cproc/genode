@@ -1,3 +1,7 @@
+_/pkg/backdrop
+_/raw/vbox_shutdown
 _/src/fs_report
 _/src/fs_rom
+_/src/init
+_/src/report_rom
 _/src/vbox_shutdown

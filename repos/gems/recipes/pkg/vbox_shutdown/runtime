@@ -1,15 +1,26 @@
-<runtime ram="8M" caps="400" binary="init">
+<runtime ram="32M" caps="1000" binary="init">
 
 	<requires>
 		<file_system label="system reports" writeable="no"/>
 		<file_system label="system config" writeable="yes"/>
+		<nitpicker/>
+		<timer/>
 	</requires>
 
 	<content>
+		<rom label="backdrop"/>
 		<rom label="fs_report"/>
 		<rom label="fs_rom"/>
+		<rom label="init"/>
 		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="report_rom"/>
+		<rom label="shutdown.png"/>
 		<rom label="vbox_shutdown"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="zlib.lib.so"/>
 	</content>
 
 	<config>
@@ -21,11 +32,31 @@
 			<service name="CPU"/>
 			<service name="LOG"/>
 			<service name="File_system"/>
+			<service name="Nitpicker"/>
+			<service name="Timer"/>
 		</parent-provides>
 
 		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
 
 		<default caps="100"/>
+
+		<start name="report_rom">
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config verbose="yes">
+				<policy label="backdrop -> config" report="vbox_shutdown -> backdrop_init_config"/>
+			</config>
+		</start>
+
+		<start name="backdrop" caps="200">
+			<binary name="init"/>
+			<resource name="RAM" quantum="16M"/>
+			<route>
+				<service name="ROM" label="config"> <child name="report_rom"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+
+		</start>
 
 		<start name="fs_rom">
 			<resource name="RAM" quantum="3M"/>
@@ -50,6 +81,7 @@
 			<resource name="RAM" quantum="2M"/>
 			<route>
 				<service name="Report" label="system"> <child name="fs_report" label="system"/> </service>
+				<service name="Report" label="backdrop_init_config"> <child name="report_rom"/> </service>
 				<service name="ROM" label="runtime/state"> <child name="fs_rom"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
