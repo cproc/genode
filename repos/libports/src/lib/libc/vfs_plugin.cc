@@ -425,7 +425,20 @@ int Libc::Vfs_plugin::close(File_descriptor *fd)
 int Libc::Vfs_plugin::dup2(File_descriptor *fd,
                            File_descriptor *new_fd)
 {
-	new_fd->context = fd->context;
+	Vfs::Vfs_handle *handle = nullptr;
+
+	typedef Vfs::Directory_service::Open_result Result;
+
+	if (VFS_THREAD_SAFE(_root_dir.open(fd->fd_path, fd->flags, &handle, _alloc))
+	    != Result::OPEN_OK) {
+
+		warning("dup2 failed for path ", fd->fd_path);
+		return Errno(EBADF);
+	}
+
+	handle->seek(vfs_handle(fd)->seek());
+	new_fd->context = vfs_context(handle);
+
 	return new_fd->libc_fd;
 }
 
