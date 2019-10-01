@@ -165,7 +165,7 @@
 				<parent label="config"/>
 			</service>
 			<service name="Nitpicker">
-				<parent label="backdrop"/>
+				<child name="wm"/>
 			</service>
 		</route>
 	</start>

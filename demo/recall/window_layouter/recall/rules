@@ -2,5 +2,6 @@
 		<screen name="screen"/>
 
 	<assign label="vbox5-nova-sculpt -> " target="screen" xpos="0" ypos="0" width="1920" height="1080"/>
+	<assign label="vbox_shutdown -> backdrop -> backdrop -> backdrop" target="screen" xpos="0" ypos="0" width="1920" height="1080"/>
 	<assign label_prefix="" target="screen" xpos="any" ypos="any"/>
 </rules>
