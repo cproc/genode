@@ -20,6 +20,7 @@
  ***********************/
 
 enum {
+	WQ_UNBOUND		 = 1 << 1,
 	WQ_FREEZABLE     = 1 << 2,
 	WQ_MEM_RECLAIM   = 1 << 3,
 	WQ_HIGHPRI       = 1 << 4,

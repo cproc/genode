@@ -181,12 +181,12 @@ struct sync_file *sync_file_create(struct dma_fence *);
 #define PAGE_SIZE 4096UL
 #if 0
 #define PAGE_MASK (~(PAGE_SIZE-1))
-
+#endif
 
 enum {
 	PAGE_SHIFT = 12,
 };
-#endif
+
 struct page
 {
 	atomic_t   _count;
@@ -284,7 +284,9 @@ static inline void __read_once_size(const volatile void *p, void *res, int size)
 #include <lx_emul/kernel.h>
 
 #define SIZE_MAX (~(size_t)0)
+#endif
 #define U64_MAX  ((u64)~0ULL)
+#if 0
 #define U16_MAX  ((u16)~0U)
 
 extern long simple_strtol(const char *,char **,unsigned int);
@@ -720,12 +722,12 @@ struct page * pfn_to_page(dma_addr_t);
  *********************/
 
 #define page_cache_release(page) put_page(page)
-
+#endif
 struct address_space {
 	unsigned long flags;
 	struct page * my_page;
 };
-
+#if 0
 gfp_t mapping_gfp_mask(struct address_space * mapping);
 void mapping_set_gfp_mask(struct address_space *m, gfp_t mask);
 
@@ -868,9 +870,9 @@ pgprot_t vm_get_page_prot(unsigned long vm_flags);
 
 void *kvmalloc(size_t, gfp_t);
 void *kvmalloc_array(size_t, size_t, gfp_t);
-
+#endif
 void unmap_mapping_range(struct address_space *, loff_t const, loff_t const, int);
-
+#if 0
 unsigned long vma_pages(struct vm_area_struct *);
 
 #include <asm/agp.h>
@@ -1269,7 +1271,7 @@ struct lock_class_key { int dummy; };
 
 #define dev_err_ratelimited(dev, fmt, ...)                              \
 	dev_err(dev, fmt, ##__VA_ARGS__)
-
+#endif
 struct device_driver
 {
 	int dummy;
@@ -1280,7 +1282,7 @@ struct device_driver
 	const struct acpi_device_id *acpi_match_table;
 	const struct dev_pm_ops *pm;
 };
-
+#if 0
 int driver_register(struct device_driver *drv);
 void driver_unregister(struct device_driver *drv);
 
@@ -1312,8 +1314,11 @@ void dev_pm_set_driver_flags(struct device *, u32);
 struct acpi_device;
 
 struct acpi_dev_node { struct acpi_device *companion; };
+#endif
 
+void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp);
 
+#if 0
 /*********************
  ** acpi/acpi_bus.h **
  *********************/
@@ -1746,7 +1751,7 @@ void memunmap(void *addr);
 
 #include <asm-generic/ioctl.h>
 
-
+#endif
 /****************
  ** linux/fs.h **
  ****************/
@@ -1763,15 +1768,15 @@ struct file
 	struct address_space *f_mapping;
 	void                 *private_data;
 };
-#endif
+
 struct poll_table_struct;
 #if 0
 typedef struct poll_table_struct poll_table;
 
 struct inode;
 struct inode_operations { void (*truncate) (struct inode *); };
-
-/* i915_drv.c */
+#endif
+/* drm_gem_cma_helper.h */
 struct file_operations {
 	struct module *owner;
 	loff_t (*llseek) (struct file *, loff_t, int);
@@ -1783,13 +1788,13 @@ struct file_operations {
 	int (*open) (struct inode *, struct file *);
 	int (*release) (struct inode *, struct file *);
 };
-
+#if 0
 enum { PROT_READ  = 0x1, PROT_WRITE = 0x2 };
 
 enum { MAP_SHARED = 0x1 };
-
+#endif
 loff_t noop_llseek(struct file *file, loff_t offset, int whence);
-
+#if 0
 struct inode *file_inode(struct file *f);
 
 unsigned long invalidate_mapping_pages(struct address_space *mapping,
@@ -2324,16 +2329,16 @@ struct timespec64 {
 	long     tv_nsec; /* nanoseconds */
 };
 
-
+#endif
 /********************
  ** linux/rwlock.h **
  ********************/
 
 typedef unsigned long rwlock_t;
-
 void rwlock_init(rwlock_t *);
 void read_lock(rwlock_t *);
 void read_unlock(rwlock_t *);
+#if 0
 void write_lock(rwlock_t *);
 void write_unlock(rwlock_t *);
 
@@ -2696,8 +2701,9 @@ int generic_handle_irq(unsigned int);
 #define CONFIG_DRM_LOAD_EDID_FIRMWARE          0
 #define CONFIG_ARCH_HAS_SG_CHAIN               1
 #define CONFIG_X86                             1
-
-
+#endif
+#define CONFIG_MMU                             1
+#if 0
 /**************************
  ** Dummy trace funtions **
  **************************/
@@ -2813,6 +2819,17 @@ void disable_irq(unsigned int);
 
 #include <linux/math64.h>
 #endif
+
+/*****************************
+ ** linux/platform_device.h **
+ *****************************/
+
+struct platform_device {
+	//const char * name;
+	struct device dev;
+	//const struct platform_device_id * id_entry;
+};
+
 #include <lx_emul/extern_c_end.h>
 
 #endif /* _LX_EMUL_H_ */

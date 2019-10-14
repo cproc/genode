@@ -57,9 +57,9 @@
 #include <lx_emul/impl/timer.h>
 #include <lx_emul/impl/completion.h>
 #include <lx_emul/impl/wait.h>
-
+#endif
 static struct drm_device * lx_drm_device = nullptr;
-
+#if 0
 struct irq_chip dummy_irq_chip;
 
 enum { MAX_BRIGHTNESS = 100U }; /* we prefer percentage */
@@ -163,11 +163,11 @@ Framebuffer::Driver::_preferred_mode(drm_connector *connector,
 
 void Framebuffer::Driver::finish_initialization()
 {
-#if 0
 	if (!lx_drm_device) {
 		Genode::error("no drm device");
 		return;
 	}
+#if 0
 	lx_c_set_driver(lx_drm_device, (void*)this);
 
 	generate_report();
