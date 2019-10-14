@@ -37,6 +37,8 @@
 //extern "C" int module_i915_init();  /* i915_drv.c */
 //extern "C" void radix_tree_init(); /* called by start_kernel(void) normally */
 extern "C" void drm_connector_ida_init(); /* called by drm_core_init(void) normally */
+extern "C" int module_imx_drm_pdrv_init();
+
 
 static void run_linux(void * m);
 
@@ -63,6 +65,8 @@ struct Main
 
 //		LX_MUTEX_INIT(bridge_lock);
 //		LX_MUTEX_INIT(core_lock);
+
+		LX_MUTEX_INIT(component_mutex);
 
 		/* init singleton Lx::Scheduler */
 		Lx::scheduler(&env);
@@ -131,6 +135,9 @@ static void run_linux(void * m)
 	postcore_i2c_init();
 	module_i915_init();
 #endif
+
+	module_imx_drm_pdrv_init();
+
 	main->root.session.driver().finish_initialization();
 	main->announce();
 #if 0

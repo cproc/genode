@@ -18,14 +18,29 @@
 #include <lx_emul.h>
 #include <lx_emul_c.h>
 
+/* DRM-specific includes */
 #include <lx_emul/extern_c_begin.h>
+#include <drm/drmP.h>
+#include "drm_crtc_internal.h"
 #include <lx_emul/extern_c_end.h>
 
+#include <lx_kit/scheduler.h> /* dependency of lx_emul/impl/completion.h */
+
+#include <lx_emul/impl/completion.h>
 #include <lx_emul/impl/gfp.h>
+#include <lx_emul/impl/mutex.h>
 #include <lx_emul/impl/slab.h>
+#include <lx_emul/impl/spinlock.h>
+#include <lx_emul/impl/timer.h>
 #include <lx_emul/impl/work.h>
 
 #include <lx_kit/malloc.h>
+
+int platform_driver_register(struct platform_driver * drv)
+{
+	Genode::error("*** platform_driver_register()");
+	return -1;
+}
 
 #if 0
 /* Genode includes */
@@ -57,9 +72,9 @@
 #include <lx_emul/impl/timer.h>
 #include <lx_emul/impl/completion.h>
 #include <lx_emul/impl/wait.h>
-
+#endif
 static struct drm_device * lx_drm_device = nullptr;
-
+#if 0
 struct irq_chip dummy_irq_chip;
 
 enum { MAX_BRIGHTNESS = 100U }; /* we prefer percentage */
@@ -163,11 +178,11 @@ Framebuffer::Driver::_preferred_mode(drm_connector *connector,
 
 void Framebuffer::Driver::finish_initialization()
 {
-#if 0
 	if (!lx_drm_device) {
 		Genode::error("no drm device");
 		return;
 	}
+#if 0
 	lx_c_set_driver(lx_drm_device, (void*)this);
 
 	generate_report();
@@ -330,10 +345,11 @@ void Framebuffer::Driver::generate_report()
 		Genode::warning("Failed to generate report");
 	}
 }
-
+#endif
 
 extern "C" {
 
+#if 0
 /**********************
  ** Global variables **
  **********************/
@@ -344,10 +360,15 @@ struct boot_cpu_data boot_cpu_data =
 {
 	.x86_clflush_size = (sizeof(void*) == 8) ? 64 : 32,
 };
+#endif
 
+/****************************
+ ** kernel/printk/printk.c **
+ ****************************/
+ 
 int oops_in_progress;
 
-
+#if 0
 /********************
  ** linux/string.h **
  ********************/
@@ -358,12 +379,12 @@ char *strcpy(char *to, const char *from)
 	for (; (*to = *from); ++from, ++to);
 	return(save);
 }
-
+#endif
 char *strncpy(char *dst, const char* src, size_t n)
 {
 	return Genode::strncpy(dst, src, n);
 }
-
+#if 0
 int strncmp(const char *cs, const char *ct, size_t count)
 {
 	return Genode::strcmp(cs, ct, count);
@@ -872,12 +893,19 @@ int bus_for_each_drv(struct bus_type *bus, struct device_driver *start,
 	TRACE;
 	return fn(i2c_device_driver, data);
 }
+#endif
+
+void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp)
+{
+	if (size > 2048) Genode::warning("devm_kzalloc ", size);
+	return Lx::Malloc::mem().alloc(size);
+}
 
 
 /***********************
  ** linux/workqueue.h **
  ***********************/
-#endif
+
 struct workqueue_struct *system_wq = nullptr;
 #if 0
 struct workqueue_struct *system_long_wq = nullptr;
@@ -892,12 +920,12 @@ struct workqueue_struct *alloc_workqueue(const char *fmt, unsigned int flags,
 
 	return wq;
 }
-#if 0
+
 struct workqueue_struct *alloc_ordered_workqueue(char const *fmt , unsigned int flags, ...)
 {
 	return alloc_workqueue(fmt, flags, 1);
 }
-
+#if 0
 bool flush_work(struct work_struct *work)
 {
 	TRACE_AND_STOP;
@@ -922,7 +950,7 @@ void schedule(void)
 {
 	TRACE_AND_STOP;
 }
-
+#endif
 void flush_workqueue(struct workqueue_struct *wq)
 {
 	Lx::Task *current = Lx::scheduler().current();
@@ -938,7 +966,7 @@ void flush_workqueue(struct workqueue_struct *wq)
 	Lx::scheduler().current()->block_and_schedule();
 }
 
-
+#if 0
 /***************
  ** Execution **
  ***************/
@@ -1022,6 +1050,36 @@ unsigned long round_jiffies_up(unsigned long j)
 {
 	return _round_jiffies(j, true);
 }
+#endif
+
+struct callback_timer {
+	void (*function)(unsigned long);
+	unsigned long data;
+};
+
+/*
+ * For compatibility with 4.4.3 drivers, the argument of this callback function
+ * is the 'data' member of the 'timer_list' object, which normally points to
+ * the 'timer_list' object itself when initialized with 'timer_setup()', but
+ * here it was overridden in 'setup_timer()' to point to the 'callback_timer'
+ * object instead.
+ */
+static void timer_callback(struct timer_list *t)
+{
+	struct callback_timer * tc = (struct callback_timer *)t;
+	tc->function(tc->data);
+}
+
+extern "C" void setup_timer(struct timer_list *timer, void (*function)(unsigned long),
+                            unsigned long data)
+{
+	callback_timer * tc = new (Lx::Malloc::mem()) callback_timer;
+	tc->function = function;
+	tc->data     = data;
+
+	timer_setup(timer, timer_callback, 0u);
+	timer->data = (unsigned long)tc;
+}
 
 
 /************************
@@ -1029,7 +1087,7 @@ unsigned long round_jiffies_up(unsigned long j)
  ************************/
 
 unsigned int drm_debug = 0x0;
-
+#if 0
 int drm_dev_init(struct drm_device *dev, struct drm_driver *driver,
                  struct device *parent)
 {
@@ -1067,7 +1125,7 @@ void drm_send_event_locked(struct drm_device *dev, struct drm_pending_event *e)
 		TRACE_AND_STOP;
 	}
 }
-
+#endif
 static void drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int type)
 {
 	struct drm_minor *new_minor = (struct drm_minor*)
@@ -1077,7 +1135,6 @@ static void drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int 
 	new_minor->dev = dev;
 	*minor = new_minor;
 }
-
 
 int drm_dev_register(struct drm_device *dev, unsigned long flags)
 {
@@ -1107,7 +1164,7 @@ int drm_dev_register(struct drm_device *dev, unsigned long flags)
 	return 0;
 }
 
-
+#if 0
 int request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags,
                 const char *name, void *dev)
 {
@@ -1165,7 +1222,7 @@ void pci_unmap_rom(struct pci_dev *pdev, void __iomem *rom) {
 	BUG_ON(!video_rom.constructed());
 	video_rom.destruct();
 }
-
+#endif
 
 /******************
  ** linux/kref.h **
@@ -1196,7 +1253,7 @@ int kref_put(struct kref *kref, void (*release) (struct kref *kref))
 	}
 	return 0;
 }
-
+#if 0
 int kref_put_mutex(struct kref *kref, void (*release)(struct kref *kref), struct mutex *lock)
 {
 	if (kref_put(kref, release)) {
@@ -1205,7 +1262,7 @@ int kref_put_mutex(struct kref *kref, void (*release)(struct kref *kref), struct
 	}
 	return 0;
 }
-
+#endif
 int kref_get_unless_zero(struct kref *kref)
 {
 	if (!kref->refcount.counter)
@@ -1226,7 +1283,7 @@ unsigned int kref_read(const struct kref *kref)
 	TRACE;
 	return atomic_read(&kref->refcount);
 }
-
+#if 0
 bool refcount_dec_and_test(atomic_t *a)
 {
 	if ((unsigned)a->counter == UINT_MAX)
@@ -1288,7 +1345,7 @@ int acpi_lid_notifier_register(struct notifier_block *nb)
 	TRACE;
 	return 0;
 }
-
+#endif
 int drm_sysfs_connector_add(struct drm_connector *connector)
 {
 	TRACE;
@@ -1306,12 +1363,7 @@ void drm_sysfs_connector_remove(struct drm_connector *connector)
 	DRM_DEBUG("removing \"%s\" from sysfs\n", connector->name);
 	drm_sysfs_hotplug_event(connector->dev);
 }
-
-void assert_spin_locked(spinlock_t *lock)
-{
-	TRACE;
-}
-
+#if 0
 void spin_lock_irq(spinlock_t *lock)
 {
 	TRACE;
@@ -1573,7 +1625,7 @@ int acpi_video_register(void)
 	TRACE;
 	return 0;
 }
-
+#endif
 void ww_mutex_init(struct ww_mutex *lock, struct ww_class *ww_class)
 {
 	lock->ctx = NULL;
@@ -1605,17 +1657,17 @@ void ww_mutex_unlock(struct ww_mutex *lock)
 	lock->ctx = NULL;
 	lock->locked = false;
 }
-
+#if 0
 bool ww_mutex_is_locked(struct ww_mutex *lock)
 {
 	return lock->locked;
 }
-
+#endif
 void ww_acquire_fini(struct ww_acquire_ctx *ctx)
 {
 	TRACE;
 }
-
+#if 0
 void local_irq_disable()
 {
 	TRACE;
@@ -1631,9 +1683,11 @@ bool preemptible()
 	TRACE_AND_STOP;
 	return false;
 }
-
+#endif
 void drm_sysfs_hotplug_event(struct drm_device *dev)
 {
+	Genode::log("*** drm_sysfs_hotplug_event()");
+#if 0
 	Framebuffer::Driver * driver = (Framebuffer::Driver*)
 		lx_c_get_driver(lx_drm_device);
 
@@ -1642,8 +1696,9 @@ void drm_sysfs_hotplug_event(struct drm_device *dev)
 		driver->generate_report();
 		driver->trigger_reconfiguration();
 	}
+#endif
 }
-
+#if 0
 void intel_audio_codec_enable(struct intel_encoder *encoder)
 {
 	TRACE;
@@ -1842,7 +1897,7 @@ unsigned int irq_create_mapping(struct irq_domain *, irq_hw_number_t)
 {
 	TRACE_AND_STOP;
 }
-
+#endif
 void drm_printk(const char *level, unsigned int category, const char *format,
                 ...)
 {
@@ -1863,7 +1918,7 @@ void drm_printk(const char *level, unsigned int category, const char *format,
 
 	va_end(args);
 }
-
+#if 0
 void __drm_printfn_debug(struct drm_printer *p, struct va_format *vaf)
 {
 	pr_debug("%s %pV", p->prefix, vaf);
@@ -2011,6 +2066,6 @@ int acpi_reconfig_notifier_register(struct notifier_block *nb)
 	Genode::warning(__func__, " called");
 	return 0;
 }
+#endif
 
 } /* extern "C" */
-#endif

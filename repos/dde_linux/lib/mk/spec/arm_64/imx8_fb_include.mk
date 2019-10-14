@@ -13,8 +13,8 @@ LX_EMUL_H      := $(REP_DIR)/src/drivers/framebuffer/imx8/include/lx_emul.h
 # Determine the header files included by the contrib code. For each
 # of these header files we create a symlink to 'lx_emul.h'.
 #
-SCAN_DIRS := $(addprefix $(LX_CONTRIB_DIR)/include/, asm-generic drm linux uapi) \
-             $(addprefix $(LX_CONTRIB_DIR)/, drivers)
+SCAN_DIRS := $(addprefix $(LX_CONTRIB_DIR)/include/, asm-generic drm linux uapi video) \
+             $(addprefix $(LX_CONTRIB_DIR)/, drivers lib)
 GEN_INCLUDES := $(shell grep -rIh "^\#include .*" $(SCAN_DIRS) |\
                         sed "s/^\#include [^<\"]*[<\"]\([^>\"]*\)[>\"].*/\1/" |\
                         sort | uniq)

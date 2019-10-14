@@ -16,7 +16,7 @@
 #else
 #define TRACE do { ; } while (0)
 #endif
-#if 0
+
 #define TRACE_AND_STOP \
 	do { \
 		lx_printf("%s not implemented\n", __func__); \
@@ -30,11 +30,10 @@
 			BUG(); \
 		} \
 	} while (0)
-#endif
+
 #include <lx_emul/extern_c_begin.h>
-#if 0
+
 struct drm_device;
-#endif
 struct drm_framebuffer;
 #if 0
 struct drm_display_mode;
@@ -55,7 +54,9 @@ void   lx_c_allocate_framebuffer(struct drm_device *,
 void   lx_c_set_mode(struct drm_device *, struct drm_connector *,
                      struct drm_framebuffer *, struct drm_display_mode *);
 void   lx_c_set_driver(struct drm_device *, void *);
+#endif
 void * lx_c_get_driver(struct drm_device *);
+#if 0
 void   lx_c_set_brightness(struct drm_connector *, unsigned, unsigned);
 unsigned lx_c_get_brightness(struct drm_connector * const, unsigned);
 #endif
