@@ -72,6 +72,7 @@ struct tasklet_struct         /* dependency of lx_kit/work.h */
 #include <lx_emul/gfp.h>
 #include <lx_emul/module.h>
 #include <lx_emul/pm.h>
+#include <lx_emul/scatterlist.h>
 #include <lx_emul/string.h>
 
 LX_MUTEX_INIT_DECLARE(component_mutex);
@@ -813,22 +814,22 @@ struct mm_struct { struct rw_semaphore mmap_sem; };
  **********************/
 
 struct shrinker { int DUMMY; };
-
+#endif
 /****************
  ** linux/mm.h **
  ****************/
 
 enum {
-	VM_FAULT_OOM    = 0x001,
-	VM_FAULT_SIGBUS = 0x002,
-	VM_FAULT_NOPAGE = 0x100,
+	//VM_FAULT_OOM    = 0x001,
+	//VM_FAULT_SIGBUS = 0x002,
+	//VM_FAULT_NOPAGE = 0x100,
 	VM_PFNMAP       = 0x00000400,
-	VM_IO           = 0x00004000,
-	VM_DONTEXPAND   = 0x00040000,
-	VM_NORESERVE    = 0x00200000,
-	VM_DONTDUMP     = 0x04000000,
+	//VM_IO           = 0x00004000,
+	//VM_DONTEXPAND   = 0x00040000,
+	//VM_NORESERVE    = 0x00200000,
+	//VM_DONTDUMP     = 0x04000000,
 };
-
+#if 0
 enum { FAULT_FLAG_WRITE = 0x1 };
 
 enum { DEFAULT_SEEKS = 2 };
@@ -850,7 +851,7 @@ void put_page(struct page *page);
 
 extern unsigned long totalram_pages;
 
-
+#endif
 struct vm_area_struct;
 
 struct vm_operations_struct {
@@ -858,7 +859,7 @@ struct vm_operations_struct {
 	void (*close)(struct vm_area_struct * area);
 	int (*fault)(struct vm_fault *vmf);
 };
-
+#if 0
 struct file;
 
 extern unsigned long vm_mmap(struct file *, unsigned long,

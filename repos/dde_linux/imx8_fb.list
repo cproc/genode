@@ -25,6 +25,7 @@ linux-x.x.x/drivers/gpu/drm/drm_encoder.c
 #linux-x.x.x/drivers/gpu/drm/drm_fourcc.c
 linux-x.x.x/drivers/gpu/drm/drm_framebuffer.c
 #linux-x.x.x/drivers/gpu/drm/drm_gem.c
+linux-x.x.x/drivers/gpu/drm/drm_gem_cma_helper.c
 linux-x.x.x/drivers/gpu/drm/drm_internal.h
 #linux-x.x.x/drivers/gpu/drm/drm_irq.c
 #linux-x.x.x/drivers/gpu/drm/drm_mm.c
