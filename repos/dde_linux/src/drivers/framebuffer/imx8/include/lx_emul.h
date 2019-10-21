@@ -78,13 +78,12 @@ struct tasklet_struct         /* dependency of lx_kit/work.h */
 LX_MUTEX_INIT_DECLARE(component_mutex);
 #define component_mutex LX_MUTEX(component_mutex)
 
-#if 0
 /*****************
  ** asm/param.h **
  *****************/
 
-#define DEBUG_LINUX_PRINTK 0
-
+#define DEBUG_LINUX_PRINTK 1
+#if 0
 #include <lx_emul/compiler.h>
 #include <lx_emul/printf.h>
 #include <lx_emul/bug.h>
@@ -1270,6 +1269,7 @@ struct dev_archdata
 struct fwnode_handle { int dummy; };
 
 struct device {
+	const char               *name;
 	struct device            *parent;
 	struct kobject            kobj;
 	u64                       _dma_mask_buf;
@@ -1319,16 +1319,18 @@ struct lock_class_key { int dummy; };
 #endif
 struct device_driver
 {
-	int dummy;
+//	int dummy;
 	char const      *name;
 	struct bus_type *bus;
-	struct module   *owner;
-	const struct of_device_id*of_match_table;
-	const struct acpi_device_id *acpi_match_table;
+//	struct module   *owner;
+	const struct of_device_id *of_match_table;
+//	const struct acpi_device_id *acpi_match_table;
 	const struct dev_pm_ops *pm;
+	int            (*probe)  (struct device *dev);
 };
-#if 0
+
 int driver_register(struct device_driver *drv);
+#if 0
 void driver_unregister(struct device_driver *drv);
 
 void *dev_get_drvdata(const struct device *dev);
@@ -1342,6 +1344,9 @@ struct device *get_device(struct device *dev);
 void put_device(struct device *dev);
 
 int device_for_each_child(struct device *dev, void *data, int (*fn)(struct device *dev, void *data));
+#endif
+int  device_add(struct device *dev);
+#if 0
 int device_register(struct device *dev);
 void device_unregister(struct device *dev);
 #endif
@@ -2101,8 +2106,9 @@ int of_property_match_string(const struct device_node *, const char *,
                              const char *);
 int of_property_read_u32_index(const struct device_node *, const char *, u32,
                                u32 *);
-
-
+#endif
+struct device_node *of_parse_phandle(const struct device_node *np, const char *phandle_name, int index);
+#if 0
 /***********************
  ** linux/of_device.h **
  ***********************/
@@ -2893,10 +2899,14 @@ void disable_irq(unsigned int);
  *****************************/
 
 struct platform_device {
-	//const char * name;
-	struct device dev;
+	char          *name;
+	int            id;
+	struct device  dev;
 	//const struct platform_device_id * id_entry;
 };
+
+struct platform_device *platform_device_alloc(const char *name, int id);
+int platform_device_register(struct platform_device *);
 
 struct platform_driver {
 	int (*probe)(struct platform_device *);

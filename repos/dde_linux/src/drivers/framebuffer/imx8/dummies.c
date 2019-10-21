@@ -81,12 +81,13 @@ struct device_node *of_get_parent(const struct device_node *node)
 	return NULL;
 }
 
+#if 0
 struct device_node *of_parse_phandle(const struct device_node *np, const char *phandle_name, int index)
 {
 	TRACE_AND_STOP;
 	return NULL;
 }
-
+#endif
 
 /**************************
  ** drivers/of/dynamic.c **

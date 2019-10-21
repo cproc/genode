@@ -36,11 +36,198 @@
 
 #include <lx_kit/malloc.h>
 
+
+/********************
+ ** linux/device.h **
+ ********************/
+
+/**
+ * Simple driver management class
+ */
+class Driver : public Genode::List<Driver>::Element
+{
+	private:
+
+		struct device_driver *_drv; /* Linux driver */
+
+	public:
+
+		Driver(struct device_driver *drv) : _drv(drv)
+		{
+			list()->insert(this);
+		}
+
+		/**
+		 * List of all currently registered drivers
+		 */
+		static Genode::List<Driver> *list()
+		{
+			static Genode::List<Driver> _list;
+			return &_list;
+		}
+
+		/**
+		 * Match device and drivers
+		 */
+		bool match(struct device *dev)
+		{
+Genode::log("match()");
+			/*
+			 *  Don't try if buses don't match, since drivers often use 'container_of'
+			 *  which might cast the device to non-matching type
+			 */
+			if (_drv->bus != dev->bus) {
+				Genode::log("match(): bus mismatch");
+				return false;
+			}
+
+			Genode::log("match(): bus->match: ", _drv->bus->match);
+
+			return _drv->bus->match ? _drv->bus->match(dev, _drv) : true;
+		}
+
+		/**
+		 * Probe device with driver
+		 */
+		int probe(struct device *dev)
+		{
+			dev->driver = _drv;
+
+			if (dev->bus->probe)
+				return dev->bus->probe(dev);
+			else if (_drv->probe)
+				return _drv->probe(dev);
+
+			return 0;
+		}
+};
+
+
+int driver_register(struct device_driver *drv)
+{
+	new (Lx::Malloc::mem()) Driver(drv);
+	return 0;
+}
+
+
+int device_add(struct device *dev)
+{
+lx_printf("*** device_add(): %s, %p\n", dev->name, __builtin_return_address(0));
+	if (dev->driver)
+		return 0;
+
+	/* foreach driver match and probe device */
+	for (Driver *driver = Driver::list()->first(); driver; driver = driver->next())
+		if (driver->match(dev)) {
+			int ret = driver->probe(dev);
+
+			if (!ret) return 0;
+		}
+
+	return 0;
+}
+
+
+/*****************************
+ ** linux/platform_device.h **
+ *****************************/
+
+static int platform_match(struct device *dev, struct device_driver *drv)
+{
+Genode::log("platform_match()");
+	if (!dev->name) {
+		Genode::log("platform_match(): !dev->name");
+		return 0;
+	}
+
+	lx_printf("MATCH %s %s\n", dev->name, drv->name);
+	return (Genode::strcmp(dev->name, drv->name) == 0);
+}
+
+
+#define to_platform_driver(drv) (container_of((drv), struct platform_driver, \
+                                 driver))
+
+#define to_platform_device(x) container_of((x), struct platform_device, dev)
+
+
+static int platform_drv_probe(struct device *_dev)
+{
+	struct platform_driver *drv = to_platform_driver(_dev->driver);
+	struct platform_device *dev = to_platform_device(_dev);
+Genode::log("platform_drv_probe()");
+	return drv->probe(dev);
+}
+
+
+struct bus_type platform_bus_type = {
+	.name  = "platform",
+};
+
+
 int platform_driver_register(struct platform_driver * drv)
 {
-	Genode::error("*** platform_driver_register()");
-	return -1;
+	lx_printf("platform_driver_register: %s\n", drv->driver.name);
+
+	/* init platform_bus_type */
+	platform_bus_type.match = platform_match;
+	platform_bus_type.probe = platform_drv_probe;
+
+	drv->driver.bus = &platform_bus_type;
+	if (drv->probe)
+		drv->driver.probe = platform_drv_probe;
+
+	printk("Register: %s\n", drv->driver.name);
+	return driver_register(&drv->driver);
 }
+
+
+int platform_device_register(struct platform_device *pdev)
+{
+	pdev->dev.bus  = &platform_bus_type;
+	pdev->dev.name = pdev->name;
+	/*Set parent to ourselfs */
+	if (!pdev->dev.parent)
+		pdev->dev.parent = &pdev->dev;
+	device_add(&pdev->dev);
+	return 0;
+}
+
+
+struct platform_device *platform_device_alloc(const char *name, int id)
+{
+	platform_device *pdev = (platform_device *)kzalloc(sizeof(struct platform_device), GFP_KERNEL);
+
+	if (!pdev)
+		return 0;
+
+	int len    = strlen(name);
+	pdev->name = (char *)kzalloc(len + 1, GFP_KERNEL);
+
+	if (!pdev->name) {
+		kfree(pdev);
+		return 0;
+	}
+
+	memcpy(pdev->name, name, len);
+	pdev->name[len] = 0;
+	pdev->id = id;
+	pdev->dev.dma_mask = (u64*)kzalloc(sizeof(u64),  GFP_KERNEL);
+
+	return pdev;
+}
+
+
+/***************
+ ** os/base.c **
+ ***************/
+
+struct device_node *of_parse_phandle(const struct device_node *np, const char *phandle_name, int index)
+{
+	lx_printf("of_parse_phandle(): %s\n", phandle_name);
+	return NULL;
+}
+
 
 #if 0
 /* Genode includes */
@@ -417,12 +604,12 @@ void *memchr_inv(const void *s, int cc, size_t n)
 
 	return NULL;
 }
-
+#endif
 size_t strlen(const char *s)
 {
 	return Genode::strlen(s);
 }
-
+#if 0
 long simple_strtol(const char *cp, char **endp, unsigned int base)
 {
 	unsigned long result = 0;

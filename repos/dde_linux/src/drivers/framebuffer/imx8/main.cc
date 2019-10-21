@@ -138,6 +138,17 @@ static void run_linux(void * m)
 
 	module_imx_drm_pdrv_init();
 
+	/**
+	 * This device is originally created with the name 'display-subsystem'
+	 * via 'of_platform_bus_create()'. Here it is called 'imx-drm' to match
+	 * the driver name.
+	 */
+
+	struct platform_device *display_subsystem_device =
+		platform_device_alloc("imx-drm", 0);
+
+	platform_device_register(display_subsystem_device);
+
 	main->root.session.driver().finish_initialization();
 	main->announce();
 #if 0
