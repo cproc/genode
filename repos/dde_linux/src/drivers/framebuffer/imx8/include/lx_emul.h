@@ -1270,6 +1270,7 @@ struct dev_archdata
 struct fwnode_handle { int dummy; };
 
 struct device {
+	char name[32];
 	struct device            *parent;
 	struct kobject            kobj;
 	u64                       _dma_mask_buf;

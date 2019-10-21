@@ -36,10 +36,43 @@
 
 #include <lx_kit/malloc.h>
 
+
+/********************
+ ** linux/device.h **
+ ********************/
+
+static int platform_match(struct device *dev, struct device_driver *drv)
+{
+	if (!dev->name)
+		return 0;
+
+	printk("MATCH %s %s\n", dev->name, drv->name);
+	return (Genode::strcmp(dev->name, drv->name) == 0);
+}
+
+
+struct bus_type platform_bus_type = {
+	.name  = "platform",
+};
+
+
 int platform_driver_register(struct platform_driver * drv)
 {
-	Genode::error("*** platform_driver_register()");
-	return -1;
+	lx_printf("platform_driver_register: %s\n", drv->driver.name);
+
+	/* init plarform_bus_type */
+	platform_bus_type.match = platform_match;
+#if 0
+	platform_bus_type.probe = platform_drv_probe;
+
+	drv->driver.bus = &platform_bus_type;
+	if (drv->probe)
+		drv->driver.probe = platform_drv_probe;
+
+	printk("Register: %s\n", drv->driver.name);
+	return driver_register(&drv->driver);
+#endif
+	return 0;
 }
 
 #if 0
