@@ -704,6 +704,7 @@ int driver_register(struct device_driver *drv)
 
 int device_add(struct device *dev)
 {
+lx_printf("*** device_add(): %s, %p\n", dev_name(dev), __builtin_return_address(0));
 	if (dev->driver)
 		return 0;
 
