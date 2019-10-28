@@ -48,9 +48,10 @@ struct lx_c_fb_config {
 	unsigned long            size;
 	struct drm_framebuffer * lx_fb;
 };
-#if 0
+
 void   lx_c_allocate_framebuffer(struct drm_device *,
                                  struct lx_c_fb_config *);
+#if 0
 void   lx_c_set_mode(struct drm_device *, struct drm_connector *,
                      struct drm_framebuffer *, struct drm_display_mode *);
 void   lx_c_set_driver(struct drm_device *, void *);

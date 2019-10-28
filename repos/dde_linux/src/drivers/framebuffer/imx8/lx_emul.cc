@@ -462,6 +462,7 @@ void Framebuffer::Driver::update_mode()
 
 	Configuration old = _config;
 	_config = Configuration();
+Genode::log("update_mode()");
 #if 0
 	lx_for_each_connector(lx_drm_device, [&] (drm_connector *c) {
 		unsigned brightness;
@@ -470,14 +471,14 @@ void Framebuffer::Driver::update_mode()
 		if (mode->hdisplay > _config._lx.width)  _config._lx.width  = mode->hdisplay;
 		if (mode->vdisplay > _config._lx.height) _config._lx.height = mode->vdisplay;
 	});
-
+#endif
 	lx_c_allocate_framebuffer(lx_drm_device, &_config._lx);
 
 	if (!_config._lx.lx_fb) {
 		Genode::error("updating framebuffer failed");
 		return;
 	}
-
+#if 0
 	{
 		Drm_guard guard(lx_drm_device);
 		lx_for_each_connector(lx_drm_device, [&] (drm_connector *c) {

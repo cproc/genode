@@ -25,43 +25,62 @@ extern struct drm_framebuffer *
 lx_c_intel_framebuffer_create(struct drm_device *dev,
                          struct drm_mode_fb_cmd2 *mode_cmd,
                          struct drm_i915_gem_object *obj);
+#endif
 
 void lx_c_allocate_framebuffer(struct drm_device * dev,
                                struct lx_c_fb_config *c)
 {
-	struct drm_i915_private *dev_priv = dev->dev_private;
-	struct drm_mode_fb_cmd2 * r;
-	struct drm_i915_gem_object * obj = NULL;
+	/* from drm_fbdev_cma_create() */
 
-	mutex_lock(&dev->struct_mutex);
+	struct drm_gem_cma_object *obj;
 
-	/* for linear buffers the pitch needs to be 64 byte aligned */
 	c->pitch = roundup(c->width * c->bpp, 64);
 	c->size  = roundup(c->pitch * c->height, PAGE_SIZE);
 
-	obj = i915_gem_object_create_stolen(dev_priv, c->size);
+	obj = drm_gem_cma_create(dev, c->size);
 
 	if (obj == NULL)
-		obj = i915_gem_object_create(dev_priv, c->size);
+		return;
+
+	//c->addr = obj->vaddr;
+
+	//c->lx_fb = 
+
+#if 0
+	struct drm_i915_private *dev_priv = dev->dev_private; /* intelfb_create() */
+	struct drm_mode_fb_cmd2 * r;                          /* intelfb_alloc()  */
+	struct drm_i915_gem_object * obj = NULL;              /* intelfb_alloc()  */
+
+	mutex_lock(&dev->struct_mutex);                       /* intelfb_create() */
+
+	/* for linear buffers the pitch needs to be 64 byte aligned */
+	c->pitch = roundup(c->width * c->bpp, 64);            /* intelfb_alloc() */
+	c->size  = roundup(c->pitch * c->height, PAGE_SIZE);  /* intelfb_alloc() */
+
+	obj = i915_gem_object_create_stolen(dev_priv, c->size); /* intelfb_alloc() */
+
+	if (obj == NULL)
+		obj = i915_gem_object_create(dev_priv, c->size);    /* intelfb_alloc() */
 
 	if (obj == NULL) goto out2;
 
-	r = (struct drm_mode_fb_cmd2*) kzalloc(sizeof(struct drm_mode_fb_cmd2), 0);
-	if (!r) goto err2;
-	r->width        = c->width;
-	r->height       = c->height;
-	r->pixel_format = DRM_FORMAT_RGB565;
-	r->pitches[0]   = c->pitch;
-	c->lx_fb = intel_framebuffer_create(obj, r);
-	if (IS_ERR(c->lx_fb)) goto err2;
+	r = (struct drm_mode_fb_cmd2*) kzalloc(sizeof(struct drm_mode_fb_cmd2), 0); /* intelfb_alloc() */
+	if (!r) goto err2;                                                          /* intelfb_alloc() */ 
+
+	r->width        = c->width;                   /* intelfb_alloc() */
+	r->height       = c->height;                  /* intelfb_alloc() */
+	r->pixel_format = DRM_FORMAT_RGB565;          /* intelfb_alloc() */
+	r->pitches[0]   = c->pitch;                   /* intelfb_alloc() */
+	c->lx_fb = intel_framebuffer_create(obj, r);  /* intelfb_alloc() */
+	if (IS_ERR(c->lx_fb)) goto err2;              /* intelfb_alloc() */
 
 	/* XXX rotation info missing */
-	struct i915_vma * vma = intel_pin_and_fence_fb_obj(c->lx_fb, DRM_MODE_ROTATE_0);
-	if (IS_ERR(vma))
-		goto err1;
+	struct i915_vma * vma = intel_pin_and_fence_fb_obj(c->lx_fb, DRM_MODE_ROTATE_0); /* intelfb_create() */
+	if (IS_ERR(vma))                                                                 /* intelfb_create() */
+		goto err1;                                                                   /* intelfb_create() */
 
-	c->addr = ioremap_wc(dev_priv->ggtt.gmadr.start + i915_ggtt_offset(vma),
-	                     c->size);
+	c->addr = ioremap_wc(dev_priv->ggtt.gmadr.start + i915_ggtt_offset(vma),         /* intelfb_create() */
+	                     c->size);                                                   /* intelfb_create() */
 
 	memset_io(c->addr, 0, c->size);
 
@@ -80,8 +99,10 @@ out1:
 	kfree(r);
 out2:
 	mutex_unlock(&dev->struct_mutex);
+#endif
 }
 
+#if 0
 void lx_c_set_mode(struct drm_device * dev, struct drm_connector * connector,
                    struct drm_framebuffer *fb, struct drm_display_mode *mode)
 {
