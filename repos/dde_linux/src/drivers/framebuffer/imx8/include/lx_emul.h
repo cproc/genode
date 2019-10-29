@@ -55,6 +55,8 @@ typedef int clockid_t;        /* dependency of lx_emul/timer.h */
  ** linux/interrupt.h **
  ***********************/
 
+#define IRQF_TRIGGER_RISING	0x00000001
+
 struct tasklet_struct         /* dependency of lx_kit/work.h */
 {
 	unsigned long state;
@@ -289,6 +291,8 @@ static inline void __read_once_size(const volatile void *p, void *res, int size)
 #if 0
 #include <lx_emul/kernel.h>
 #endif
+
+#define ULLONG_MAX	(~0ULL)
 #define SIZE_MAX (~(size_t)0)
 
 #define U64_MAX  ((u64)~0ULL)

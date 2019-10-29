@@ -59,7 +59,7 @@ linux-x.x.x/include/asm-generic/bitops/non-atomic.h
 #linux-x.x.x/include/asm-generic/ioctl.h
 #linux-x.x.x/include/drm/drm_agpsupport.h
 linux-x.x.x/include/drm/drm_atomic.h
-#linux-x.x.x/include/drm/drm_atomic_helper.h
+linux-x.x.x/include/drm/drm_atomic_helper.h
 #linux-x.x.x/include/drm/drm_auth.h
 #linux-x.x.x/include/drm/drm_blend.h
 linux-x.x.x/include/drm/drm_bridge.h
@@ -172,8 +172,8 @@ linux-x.x.x/include/uapi/drm/drm_mode.h
 #linux-x.x.x/include/uapi/linux/pci_regs.h
 #linux-x.x.x/include/uapi/linux/ptp_clock.h
 #linux-x.x.x/include/uapi/linux/swab.h
-#linux-x.x.x/include/video/display_timing.h
-#linux-x.x.x/include/video/videomode.h
+linux-x.x.x/include/video/display_timing.h
+linux-x.x.x/include/video/videomode.h
 linux-x.x.x/include/video/imx-dcss.h
 #linux-x.x.x/lib/div64.c
 linux-x.x.x/lib/idr.c

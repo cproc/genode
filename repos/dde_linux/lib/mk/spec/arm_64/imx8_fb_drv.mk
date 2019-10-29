@@ -11,6 +11,7 @@ SRC_C   :=
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/base/*.c))
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/gpu/drm/*.c))
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/gpu/drm/imx/*.c))
+SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/gpu/drm/imx/dcss/*.c))
 #SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/video/*.c))
 #SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/drivers/video/fbdev/core/*.c))
 SRC_C   += $(notdir $(wildcard $(LX_CONTRIB_DIR)/lib/*.c))
@@ -36,6 +37,7 @@ vpath %.c $(LX_CONTRIB_DIR)/drivers/base
 #vpath %.c $(LX_CONTRIB_DIR)/drivers/i2c/algos
 vpath %.c $(LX_CONTRIB_DIR)/drivers/gpu/drm
 vpath %.c $(LX_CONTRIB_DIR)/drivers/gpu/drm/imx
+vpath %.c $(LX_CONTRIB_DIR)/drivers/gpu/drm/imx/dcss
 #vpath %.c $(LX_CONTRIB_DIR)/drivers/video
 #vpath %.c $(LX_CONTRIB_DIR)/drivers/video/fbdev/core
 vpath %.c $(LX_CONTRIB_DIR)/lib

@@ -14,6 +14,7 @@ INC_DIR += $(SRC_DIR)/include \
            $(REP_DIR)/src/include \
            $(ARCH_SRC_INC_DIR) \
            $(LX_CONTRIB_DIR)/drivers/gpu/drm \
+           $(LX_CONTRIB_DIR)/drivers/gpu/drm/imx \
            $(LX_CONTRIB_DIR)/include \
            $(LX_CONTRIB_DIR)/include/uapi \
            $(LIB_CACHE_DIR)/imx8_fb_include/include/include/include
