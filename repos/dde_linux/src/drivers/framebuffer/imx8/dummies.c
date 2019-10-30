@@ -143,6 +143,17 @@ struct device_node *of_graph_get_port_by_id(struct device_node *parent, u32 id)
 }
 
 
+/*************************
+ ** kernel/irq/manage.c **
+ *************************/
+
+int disable_irq_nosync(unsigned int irq)
+{
+	TRACE_AND_STOP;
+	return 0;
+}
+
+
 /******************
  ** lib/devres.c **
  ******************/
@@ -182,6 +193,16 @@ int clk_prepare_enable(struct clk *clk)
 }
 
 
+/************************
+ ** linux/completion.h **
+ ************************/
+
+void reinit_completion(struct completion *x)
+{
+	TRACE_AND_STOP;
+}
+
+
 /********************
  ** linux/device.h **
  ********************/
@@ -198,6 +219,25 @@ int dev_set_drvdata(struct device *dev, void *data)
 	return -1;
 }
 #endif
+
+
+/************************
+ ** linux/pm_runtime.h **
+ ************************/
+
+int pm_runtime_get_sync(struct device *dev)
+{
+	TRACE_AND_STOP;
+	return 0;
+}
+
+int pm_runtime_put_sync(struct device *dev)
+{
+	TRACE_AND_STOP;
+	return 0;
+}
+
+
 /**********************
  ** linux/spinlock.h **
  **********************/
@@ -1402,14 +1442,14 @@ int is_vmalloc_addr(const void *x)
 	TRACE_AND_STOP;
 	return 0;
 }
-
+#endif
 void drm_dev_printk(const struct device *dev, const char *level,
                     unsigned int category, const char *function_name,
                     const char *prefix, const char *format, ...)
 {
 	TRACE_AND_STOP;
 }
-
+#if 0
 void drm_dev_unregister(struct drm_device *dev)
 {
 	TRACE_AND_STOP;
@@ -1502,12 +1542,12 @@ unsigned int work_busy(struct work_struct *w)
 	TRACE_AND_STOP;
 	return 0;
 }
-
+#endif
 void enable_irq(unsigned int irq)
 {
 	TRACE_AND_STOP;
 }
-#endif
+
 void disable_irq(unsigned int irq)
 {
 	TRACE_AND_STOP;

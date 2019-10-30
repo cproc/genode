@@ -75,6 +75,7 @@ int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler
 #include <lx_emul/mutex.h>    /* dependency of lx_emul/kobject.h */
 #include <lx_emul/kobject.h>
 #include <lx_emul/spinlock.h>
+#include <lx_emul/completion.h>
 #include <lx_emul/errno.h>
 #include <lx_emul/barrier.h>
 #include <lx_emul/bug.h>
@@ -1140,6 +1141,7 @@ void dma_buf_put(struct dma_buf *);
 
 struct dma_buf {
 	size_t size;
+	void *priv;
 };
 
 struct dma_buf_attachment {
@@ -2821,6 +2823,8 @@ int generic_handle_irq(unsigned int);
 #endif
 #define CONFIG_MMU                             1
 #define CONFIG_OF                              1
+#define CONFIG_VIDEOMODE_HELPERS               1
+
 #if 0
 /**************************
  ** Dummy trace funtions **

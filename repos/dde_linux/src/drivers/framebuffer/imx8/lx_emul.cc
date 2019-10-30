@@ -33,6 +33,7 @@
 #include <lx_emul/impl/gfp.h>
 #include <lx_emul/impl/kernel.h>
 #include <lx_emul/impl/mutex.h>
+#include <lx_emul/impl/sched.h>
 #include <lx_emul/impl/slab.h>
 #include <lx_emul/impl/spinlock.h>
 #include <lx_emul/impl/timer.h>
@@ -1262,9 +1263,9 @@ bool in_atomic()
 {
 	return false;
 }
-
+#endif
 static bool irq_state_disabled = false;
-
+#if 0
 void local_bh_enable(void)
 {
 	TRACE;
@@ -1674,7 +1675,7 @@ void drm_sysfs_connector_remove(struct drm_connector *connector)
 	DRM_DEBUG("removing \"%s\" from sysfs\n", connector->name);
 	drm_sysfs_hotplug_event(connector->dev);
 }
-#if 0
+
 void spin_lock_irq(spinlock_t *lock)
 {
 	TRACE;
@@ -1686,7 +1687,7 @@ void spin_unlock_irq(spinlock_t *lock)
 	TRACE;
 	irq_state_disabled = false;
 }
-
+#if 0
 void spin_lock_irqsave_nested(spinlock_t *lock, unsigned flags, int subclass)
 {
 	TRACE;
@@ -2268,13 +2269,12 @@ void __add_wait_queue_entry_tail(struct wait_queue_head *wq_head, struct wait_qu
 {
 	TRACE_AND_STOP;
 }
-
+#endif
 static void _completion_timeout(struct timer_list *list)
 {
 	struct process_timer *timeout = from_timer(timeout, list, timer);
 	timeout->task.unblock();
 }
-
 
 long __wait_completion(struct completion *work, unsigned long timeout)
 {
@@ -2306,7 +2306,7 @@ long __wait_completion(struct completion *work, unsigned long timeout)
 
 	return (j  || j == jiffies) ? 1 : j - jiffies;
 }
-
+#if 0
 size_t strnlen(const char *s, size_t maxlen)
 {
 	size_t c;

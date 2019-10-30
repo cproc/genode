@@ -139,7 +139,7 @@ static void run_linux(void * m)
 
 	module_imx_drm_pdrv_init();
 	module_dcss_driver_init();
-	//module_dcss_crtc_driver_init();
+	module_dcss_crtc_driver_init();
 
 	/**
 	 * This device is originally created with the name 'display-subsystem'

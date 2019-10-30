@@ -7,7 +7,7 @@ linux-x.x.x/drivers/base/component.c
 #linux-x.x.x/drivers/dma-buf/dma-fence-array.c
 #linux-x.x.x/drivers/dma-buf/dma-fence.c
 #linux-x.x.x/drivers/gpu/drm/drm_atomic.c
-#linux-x.x.x/drivers/gpu/drm/drm_atomic_helper.c
+linux-x.x.x/drivers/gpu/drm/drm_atomic_helper.c
 #linux-x.x.x/drivers/gpu/drm/drm_blend.c
 #linux-x.x.x/drivers/gpu/drm/drm_bridge.c
 #linux-x.x.x/drivers/gpu/drm/drm_cache.c
@@ -31,7 +31,7 @@ linux-x.x.x/drivers/gpu/drm/drm_internal.h
 linux-x.x.x/drivers/gpu/drm/drm_mm.c
 linux-x.x.x/drivers/gpu/drm/drm_mode_config.c
 linux-x.x.x/drivers/gpu/drm/drm_mode_object.c
-#linux-x.x.x/drivers/gpu/drm/drm_modes.c
+linux-x.x.x/drivers/gpu/drm/drm_modes.c
 linux-x.x.x/drivers/gpu/drm/drm_modeset_helper.c
 linux-x.x.x/drivers/gpu/drm/drm_modeset_lock.c
 linux-x.x.x/drivers/gpu/drm/drm_plane.c
@@ -46,6 +46,7 @@ linux-x.x.x/drivers/gpu/drm/imx/imx-drm-core.c
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-crtc.c
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-kms.h
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-plane.h
+linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-plane.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-common.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-blkctl.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-ctxld.c
