@@ -2158,13 +2158,15 @@ struct device_node *of_get_parent(const struct device_node *node);
 struct device_node *of_parse_phandle(const struct device_node *np,
                                      const char *phandle_name, int index);
 
-#if 0
+
 /***********************
  ** linux/of_device.h **
  ***********************/
 
-int of_driver_match_device(struct device *dev, const struct device_driver *drv);
+const void *of_device_get_match_data(const struct device *dev);
 
+#if 0
+int of_driver_match_device(struct device *dev, const struct device_driver *drv);
 
 /******************
  ** linux/acpi.h **
@@ -2958,9 +2960,11 @@ void disable_irq(unsigned int);
  *****************************/
 
 struct platform_device {
-	char          *name;
-	int            id;
-	struct device  dev;
+	char            *name;
+	int              id;
+	struct device    dev;
+	u32              num_resources;
+	struct resource *resource;
 	//const struct platform_device_id * id_entry;
 };
 
@@ -2974,6 +2978,9 @@ static inline void *platform_get_drvdata(const struct platform_device *pdev)
 {
 	return pdev->dev.driver_data;
 }
+
+struct resource *platform_get_resource(struct platform_device *pdev,
+                                       unsigned int type, unsigned int num);
 
 static inline void platform_set_drvdata(struct platform_device *pdev,
 					void *data)

@@ -82,13 +82,6 @@ int platform_get_irq_byname(struct platform_device *dev, const char *name)
 	return -1;
 }
 
-struct resource *platform_get_resource(struct platform_device * d, unsigned r1, unsigned r2)
-{
-	TRACE_AND_STOP;
-	return NULL;
-}
-
-
 /***********************
  ** drivers/clk/clk.c **
  ***********************/
@@ -183,17 +176,6 @@ void drm_fbdev_cma_hotplug_event(struct drm_fbdev_cma *fbdev_cma)
  ***********************/
 
 const void *of_get_property(const struct device_node *node, const char *name, int *lenp)
-{
-	TRACE_AND_STOP;
-	return NULL;
-}
-
-
-/*************************
- ** drivers/of/device.c **
- *************************/
-
-const void *of_device_get_match_data(const struct device *dev)
 {
 	TRACE_AND_STOP;
 	return NULL;

@@ -148,8 +148,24 @@ int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler
 
 
 /*****************************
- ** linux/platform_device.h **
+ ** drivers/base/platform.c **
  *****************************/
+
+struct resource *platform_get_resource(struct platform_device *dev,
+                                       unsigned int type, unsigned int num)
+{
+	lx_printf("platform_get_resource(): %s\n", dev->name);
+#if 0
+	for (unsigned int i = 0; i < dev->num_resources; i++) {
+		struct resource *r = &dev->resource[i];
+
+		if ((type & r->flags) && num-- == 0)
+			return r;
+	}
+#endif
+	return NULL;
+}
+
 
 static int platform_match(struct device *dev, struct device_driver *drv)
 {
@@ -240,9 +256,9 @@ struct platform_device *platform_device_alloc(const char *name, int id)
 }
 
 
-/***************
- ** os/base.c **
- ***************/
+/***********************
+ ** drivers/of/base.c **
+ ***********************/
 
 int of_device_is_compatible(const struct device_node *device,
                             const char *compat)
@@ -280,8 +296,25 @@ struct device_node *of_parse_phandle(const struct device_node *np, const char *p
 
 	lx_printf("of_parse_phandle(): %s\n", phandle_name);
 
-	if (Genode::strcmp(phandle_name, "ports", strlen("ports")) == 0)
+	if (Genode::strcmp(phandle_name, "ports", strlen(phandle_name)) == 0)
 		return &ports_device_node;
+
+	return NULL;
+}
+
+
+/*************************
+ ** drivers/of/device.c **
+ *************************/
+
+extern struct dcss_devtype dcss_type_imx8m; 
+
+const void *of_device_get_match_data(const struct device *dev)
+{
+	lx_printf("of_device_get_match_data(): %s\n", dev->name);
+
+	if (Genode::strcmp(dev->name, "dcss-core", strlen(dev->name)) == 0)
+		return &dcss_type_imx8m;
 
 	return NULL;
 }
