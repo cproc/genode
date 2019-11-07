@@ -361,10 +361,10 @@ enum { SPRINTF_STR_LEN = 64 };
 
 extern int panic_timeout;
 extern struct atomic_notifier_head panic_notifier_list;
-
+#endif
 /* linux/i2c.h */
 #define __deprecated
-
+#if 0
 #define rounddown(x, y) (                               \
 		{                                               \
 		typeof(x) __x = (x);                            \
@@ -501,13 +501,14 @@ static inline int mutex_lock_interruptible(struct mutex *lock) {
 void mutex_lock_nest_lock(struct mutex *, struct mutex *);
 
 void might_lock(struct mutex *);
-
+#endif
 
 /*********************
  ** linux/rtmutex.h **
  *********************/
 
 #define rt_mutex            mutex
+#if 0
 #define rt_mutex_init(m)    mutex_init(m)
 #define rt_mutex_lock(m)    mutex_lock(m)
 #define rt_mutex_trylock(m) mutex_trylock(m)

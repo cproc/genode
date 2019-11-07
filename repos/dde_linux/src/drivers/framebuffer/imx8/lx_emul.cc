@@ -193,29 +193,6 @@ lx_printf("platform_device_register(): %s\n", pdev->name);
 		pdev->dev.parent = &pdev->dev;
 	device_add(&pdev->dev);
 
-#if 0
-	if (Genode::strcmp(pdev->name, "imx-dcss-crtc", strlen(pdev->name)) == 0) {
-
-		/*
-		 * This platform device is created by driver code, so we add the
-		 * resources here.
-		 */
-
-		static resource imx_dcss_crtc_resources[] = 	{
-			{ 0x32e00000, 0x32efffff, "dcss",       IORESOURCE_MEM },
-			{          3,          3, "dpr_dc_ch0", IORESOURCE_IRQ },
-			{          4,          4, "dpr_dc_ch1", IORESOURCE_IRQ },
-			{          5,          5, "dpr_dc_ch2", IORESOURCE_IRQ },
-			{          6,          6, "ctx_ld",     IORESOURCE_IRQ },
-			{          8,          8, "ctxld_kick", IORESOURCE_IRQ },
-			{         16,         16, "dtrc_ch1",   IORESOURCE_IRQ },
-			{         17,         17, "dtrc_ch2",   IORESOURCE_IRQ },
-		};
-
-		pdev->num_resources = 0;
-		pdev->resource = imx_dcss_crtc_resources;
-	}
-#endif
 	return 0;
 }
 

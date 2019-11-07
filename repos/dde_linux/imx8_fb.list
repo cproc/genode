@@ -49,6 +49,12 @@ linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-crtc.c
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-kms.h
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-plane.h
 linux-x.x.x/drivers/gpu/drm/imx/dcss/dcss-plane.c
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-dp.h
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-hdcp-private.h
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-hdcp.h
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-hdmi.h
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-hdp.c
+linux-x.x.x/drivers/gpu/drm/imx/hdp/imx-hdp.h
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-common.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-blkctl.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-ctxld.c
@@ -63,12 +69,14 @@ linux-x.x.x/drivers/gpu/imx/dcss/dcss-rdsrc.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-scaler.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-ss.c
 linux-x.x.x/drivers/gpu/imx/dcss/dcss-wrscl.c
-
 #linux-x.x.x/drivers/i2c/algos/i2c-algo-bit.c
 #linux-x.x.x/drivers/i2c/i2c-boardinfo.c
 #linux-x.x.x/drivers/i2c/i2c-core-base.c
 #linux-x.x.x/drivers/i2c/i2c-core.h
 #linux-x.x.x/drivers/i2c/i2c-core-smbus.c
+linux-x.x.x/drivers/mxc/hdp/API_DPTX.h
+linux-x.x.x/drivers/mxc/hdp/all.h
+linux-x.x.x/drivers/mxc/hdp/util.h
 #linux-x.x.x/drivers/video/hdmi.c
 linux-x.x.x/include/asm-generic/atomic64.h
 linux-x.x.x/include/asm-generic/bitops/__ffs.h
@@ -94,7 +102,7 @@ linux-x.x.x/include/drm/drm_debugfs_crc.h
 linux-x.x.x/include/drm/drm_device.h
 #linux-x.x.x/include/drm/drm_displayid.h
 #linux-x.x.x/include/drm/drm_dp_dual_mode_helper.h
-#linux-x.x.x/include/drm/drm_dp_helper.h
+linux-x.x.x/include/drm/drm_dp_helper.h
 #linux-x.x.x/include/drm/drm_dp_mst_helper.h
 linux-x.x.x/include/drm/drm_drv.h
 linux-x.x.x/include/drm/drm_edid.h
@@ -147,7 +155,7 @@ linux-x.x.x/include/linux/fb.h
 #linux-x.x.x/include/linux/gpio/consumer.h
 linux-x.x.x/include/linux/hdmi.h
 #linux-x.x.x/include/linux/i2c-algo-bit.h
-#linux-x.x.x/include/linux/i2c.h
+linux-x.x.x/include/linux/i2c.h
 linux-x.x.x/include/linux/idr.h
 #linux-x.x.x/include/linux/if_ether.h
 linux-x.x.x/include/linux/interval_tree_generic.h
