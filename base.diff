@@ -1,0 +1,436 @@
+base.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ drivers/base/component.c                           |  531 ++
+ drivers/base/devres.c                              | 1053 ++++
+ drivers/dma-buf/dma-fence.c                        |  577 ++
+ drivers/gpu/drm/drm_atomic.c                       | 2404 +++++++++
+ drivers/gpu/drm/drm_atomic_helper.c                | 3647 ++++++++++++++
+ drivers/gpu/drm/drm_blend.c                        |  407 ++
+ drivers/gpu/drm/drm_bridge.c                       |  387 +
+ drivers/gpu/drm/drm_connector.c                    | 1696 ++++++
+ drivers/gpu/drm/drm_crtc.c                         |  743 +++
+ drivers/gpu/drm/drm_crtc_helper_internal.h         |   77 
+ drivers/gpu/drm/drm_crtc_internal.h                |  219 +
+ drivers/gpu/drm/drm_dp_helper.c                    | 1295 +++++
+ drivers/gpu/drm/drm_edid.c                         | 5230 ++++++++++++++++++++
+ drivers/gpu/drm/drm_encoder.c                      |  242 +
+ drivers/gpu/drm/drm_fourcc.c                       |  351 +
+ drivers/gpu/drm/drm_framebuffer.c                  |  969 ++++
+ drivers/gpu/drm/drm_gem.c                          | 1045 ++++
+ drivers/gpu/drm/drm_gem_cma_helper.c               |  566 ++
+ drivers/gpu/drm/drm_gem_framebuffer_helper.c       |  283 +
+ drivers/gpu/drm/drm_internal.h                     |  175 +
+ drivers/gpu/drm/drm_mm.c                           |  951 ++++
+ drivers/gpu/drm/drm_mode_config.c                  |  479 ++
+ drivers/gpu/drm/drm_mode_object.c                  |  528 ++
+ drivers/gpu/drm/drm_modes.c                        | 1665 ++++++
+ drivers/gpu/drm/drm_modeset_helper.c               |  234 +
+ drivers/gpu/drm/drm_modeset_lock.c                 |  412 ++
+ drivers/gpu/drm/drm_of.c                           |  287 +
+ drivers/gpu/drm/drm_plane.c                        | 1095 ++++
+ drivers/gpu/drm/drm_probe_helper.c                 |  813 +++
+ drivers/gpu/drm/drm_property.c                     |  921 ++++
+ drivers/gpu/drm/drm_rect.c                         |  429 ++
+ drivers/gpu/drm/drm_vblank.c                       | 1630 ++++++
+ drivers/gpu/drm/drm_vma_manager.c                  |  396 ++
+ drivers/gpu/drm/imx/dcss/dcss-crtc.c               |  531 ++
+ drivers/gpu/drm/imx/dcss/dcss-crtc.h               |   12 
+ drivers/gpu/drm/imx/dcss/dcss-kms.c                |  208 +
+ drivers/gpu/drm/imx/dcss/dcss-kms.h                |   20 
+ drivers/gpu/drm/imx/dcss/dcss-plane.c              |  716 +++
+ drivers/gpu/drm/imx/dcss/dcss-plane.h              |   28 
+ drivers/gpu/drm/imx/hdp/API_AFE_mcu1_dp.c          |  434 ++
+ drivers/gpu/drm/imx/hdp/API_AFE_mcu1_dp.h          |  168 +
+ drivers/gpu/drm/imx/hdp/API_AFE_mcu2_dp.c          |  711 +++
+ drivers/gpu/drm/imx/hdp/API_AFE_mcu2_dp.h          |  195 +
+ .../drm/imx/hdp/API_AFE_ss28fdsoi_kiran_hdmitx.c   |  550 ++
+ .../drm/imx/hdp/API_AFE_ss28fdsoi_kiran_hdmitx.h   |   56 
+ drivers/gpu/drm/imx/hdp/API_AFE_t28hpc_hdmitx.c    |  781 +++
+ drivers/gpu/drm/imx/hdp/API_AFE_t28hpc_hdmitx.h    |   60 
+ drivers/gpu/drm/imx/hdp/imx-arc.c                  |  103 
+ drivers/gpu/drm/imx/hdp/imx-dp.c                   |  661 +++
+ drivers/gpu/drm/imx/hdp/imx-dp.h                   |   33 
+ drivers/gpu/drm/imx/hdp/imx-hdcp-private.h         |   25 
+ drivers/gpu/drm/imx/hdp/imx-hdcp.c                 |  689 +++
+ drivers/gpu/drm/imx/hdp/imx-hdcp.h                 |   26 
+ drivers/gpu/drm/imx/hdp/imx-hdmi.c                 |  534 ++
+ drivers/gpu/drm/imx/hdp/imx-hdmi.h                 |   35 
+ drivers/gpu/drm/imx/hdp/imx-hdp.c                  | 1729 +++++++
+ drivers/gpu/drm/imx/hdp/imx-hdp.h                  |  273 +
+ drivers/gpu/drm/imx/hdp/ss28fdsoi_hdmitx_table.c   |  113 
+ drivers/gpu/drm/imx/hdp/ss28fdsoi_hdmitx_table.h   |  104 
+ drivers/gpu/drm/imx/hdp/t28hpc_hdmitx_table.c      |  202 +
+ drivers/gpu/drm/imx/hdp/t28hpc_hdmitx_table.h      |  156 +
+ drivers/gpu/drm/imx/imx-drm-core.c                 |  523 ++
+ drivers/gpu/drm/imx/imx-drm.h                      |   62 
+ drivers/gpu/imx/dcss/dcss-blkctl.c                 |  143 +
+ drivers/gpu/imx/dcss/dcss-common.c                 |  729 +++
+ drivers/gpu/imx/dcss/dcss-ctxld.c                  |  517 ++
+ drivers/gpu/imx/dcss/dcss-dec400d.c                |  321 +
+ drivers/gpu/imx/dcss/dcss-dpr.c                    |  771 +++
+ drivers/gpu/imx/dcss/dcss-dtg.c                    |  771 +++
+ drivers/gpu/imx/dcss/dcss-dtrc.c                   |  612 ++
+ drivers/gpu/imx/dcss/dcss-hdr10-tables.h           | 1541 ++++++
+ drivers/gpu/imx/dcss/dcss-hdr10.c                  |  655 +++
+ drivers/gpu/imx/dcss/dcss-prv.h                    |  199 +
+ drivers/gpu/imx/dcss/dcss-rdsrc.c                  |  155 +
+ drivers/gpu/imx/dcss/dcss-scaler.c                 |  996 ++++
+ drivers/gpu/imx/dcss/dcss-ss.c                     |  227 +
+ drivers/gpu/imx/dcss/dcss-wrscl.c                  |  189 +
+ drivers/i2c/i2c-boardinfo.c                        |  113 
+ drivers/i2c/i2c-core-base.c                        | 2249 +++++++++
+ drivers/i2c/i2c-core.h                             |   62 
+ drivers/irqchip/irq-imx-irqsteer.c                 |  337 +
+ drivers/mxc/hdp-cec/imx-hdp-cec.h                  |  346 +
+ drivers/mxc/hdp/API_AFE.c                          |  188 +
+ drivers/mxc/hdp/API_AFE.h                          |  111 
+ drivers/mxc/hdp/API_DPTX.c                         | 1060 ++++
+ drivers/mxc/hdp/API_DPTX.h                         |  540 ++
+ drivers/mxc/hdp/API_General.c                      |  518 ++
+ drivers/mxc/hdp/API_General.h                      |  248 +
+ drivers/mxc/hdp/API_HDCP.c                         |  447 ++
+ drivers/mxc/hdp/API_HDCP.h                         |  263 +
+ drivers/mxc/hdp/API_HDMITX.c                       |  494 ++
+ drivers/mxc/hdp/API_HDMITX.h                       |  165 +
+ drivers/mxc/hdp/API_Infoframe.c                    |  166 +
+ drivers/mxc/hdp/API_Infoframe.h                    |   64 
+ drivers/mxc/hdp/address.h                          |  109 
+ drivers/mxc/hdp/all.h                              |   64 
+ drivers/mxc/hdp/apb_cfg.h                          |  185 +
+ drivers/mxc/hdp/dptx_framer.h                      |  372 +
+ drivers/mxc/hdp/dptx_stream.h                      |  208 +
+ drivers/mxc/hdp/general_handler.h                  |  160 +
+ drivers/mxc/hdp/hdcp.h                             |   52 
+ drivers/mxc/hdp/hdcp2.h                            |  289 +
+ drivers/mxc/hdp/hdcp_tran.h                        |  258 +
+ drivers/mxc/hdp/hdmi.h                             |  122 
+ drivers/mxc/hdp/mailBox.h                          |  116 
+ drivers/mxc/hdp/mhl_hdtx_top.h                     |  220 +
+ drivers/mxc/hdp/opcodes.h                          |  117 
+ drivers/mxc/hdp/source_car.h                       |  173 +
+ drivers/mxc/hdp/source_phy.h                       |  180 +
+ drivers/mxc/hdp/source_pif.h                       |  170 +
+ drivers/mxc/hdp/source_vif.h                       |   93 
+ drivers/mxc/hdp/util.c                             |  360 +
+ drivers/mxc/hdp/util.h                             |  396 ++
+ drivers/video/hdmi.c                               | 1397 +++++
+ include/asm-generic/atomic64.h                     |   67 
+ include/asm-generic/bitops/__ffs.h                 |   44 
+ include/asm-generic/bitops/__fls.h                 |   44 
+ include/asm-generic/bitops/ffs.h                   |   42 
+ include/asm-generic/bitops/fls.h                   |   42 
+ include/asm-generic/bitops/fls64.h                 |   37 
+ include/asm-generic/bitops/non-atomic.h            |  109 
+ include/drm/drmP.h                                 |  351 +
+ include/drm/drm_atomic.h                           |  898 +++
+ include/drm/drm_atomic_helper.h                    |  258 +
+ include/drm/drm_auth.h                             |  106 
+ include/drm/drm_blend.h                            |   52 
+ include/drm/drm_bridge.h                           |  276 +
+ include/drm/drm_connector.h                        | 1122 ++++
+ include/drm/drm_crtc.h                             |  965 ++++
+ include/drm/drm_crtc_helper.h                      |   82 
+ include/drm/drm_debugfs_crc.h                      |   73 
+ include/drm/drm_device.h                           |  199 +
+ include/drm/drm_displayid.h                        |   93 
+ include/drm/drm_dp_helper.h                        | 1204 +++++
+ include/drm/drm_drv.h                              |  640 ++
+ include/drm/drm_edid.h                             |  493 ++
+ include/drm/drm_encoder.h                          |  251 +
+ include/drm/drm_fb_cma_helper.h                    |   59 
+ include/drm/drm_fb_helper.h                        |  523 ++
+ include/drm/drm_file.h                             |  381 +
+ include/drm/drm_fourcc.h                           |   73 
+ include/drm/drm_framebuffer.h                      |  310 +
+ include/drm/drm_gem.h                              |  311 +
+ include/drm/drm_gem_cma_helper.h                   |  108 
+ include/drm/drm_gem_framebuffer_helper.h           |   37 
+ include/drm/drm_hashtab.h                          |   79 
+ include/drm/drm_hdcp.h                             |  253 +
+ include/drm/drm_ioctl.h                            |  189 +
+ include/drm/drm_mm.h                               |  517 ++
+ include/drm/drm_mode_config.h                      |  804 +++
+ include/drm/drm_mode_object.h                      |  159 +
+ include/drm/drm_modes.h                            |  524 ++
+ include/drm/drm_modeset_helper.h                   |   40 
+ include/drm/drm_modeset_helper_vtables.h           | 1229 +++++
+ include/drm/drm_modeset_lock.h                     |  129 
+ include/drm/drm_of.h                               |  104 
+ include/drm/drm_panel.h                            |  206 +
+ include/drm/drm_plane.h                            |  639 ++
+ include/drm/drm_plane_helper.h                     |   83 
+ include/drm/drm_prime.h                            |   89 
+ include/drm/drm_print.h                            |  131 +
+ include/drm/drm_property.h                         |  323 +
+ include/drm/drm_rect.h                             |  201 +
+ include/drm/drm_vblank.h                           |  180 +
+ include/drm/drm_vma_manager.h                      |  233 +
+ include/linux/busfreq-imx.h                        |   77 
+ include/linux/component.h                          |   49 
+ include/linux/dma-fence.h                          |  497 ++
+ include/linux/fb.h                                 |  830 +++
+ include/linux/hdmi.h                               |  359 +
+ include/linux/i2c.h                                |  852 +++
+ include/linux/idr.h                                |  279 +
+ include/linux/interval_tree.h                      |   30 
+ include/linux/interval_tree_generic.h              |  217 +
+ include/linux/irqchip/chained_irq.h                |   52 
+ include/linux/irqdomain.h                          |  574 ++
+ include/linux/irqhandler.h                         |   15 
+ include/linux/list.h                               |  790 +++
+ include/linux/list_sort.h                          |   12 
+ include/linux/log2.h                               |  210 +
+ include/linux/math64.h                             |  260 +
+ include/linux/mod_devicetable.h                    |  691 +++
+ include/linux/of_graph.h                           |  124 
+ include/linux/pm_runtime.h                         |  279 +
+ include/linux/pm_wakeirq.h                         |   51 
+ include/linux/radix-tree.h                         |  634 ++
+ include/linux/ratelimit.h                          |  113 
+ include/linux/rbtree.h                             |  149 +
+ include/linux/rbtree_augmented.h                   |  291 +
+ include/linux/sort.h                               |   11 
+ include/linux/vga_switcheroo.h                     |  202 +
+ include/soc/imx8/sc/ipc.h                          |   71 
+ include/soc/imx8/sc/scfw.h                         |   34 
+ include/soc/imx8/sc/sci.h                          |   42 
+ include/soc/imx8/sc/types.h                        |  886 +++
+ include/soc/imx8/soc.h                             |   33 
+ include/uapi/drm/drm.h                             |  960 ++++
+ include/uapi/drm/drm_fourcc.h                      |  458 ++
+ include/uapi/drm/drm_mode.h                        |  887 +++
+ include/uapi/linux/byteorder/little_endian.h       |  106 
+ include/uapi/linux/cec.h                           | 1075 ++++
+ include/uapi/linux/fb.h                            |  403 ++
+ include/uapi/linux/i2c.h                           |  155 +
+ include/uapi/linux/media-bus-format.h              |  159 +
+ include/uapi/linux/swab.h                          |  295 +
+ include/video/display_timing.h                     |  106 
+ include/video/imx-dcss.h                           |  190 +
+ include/video/of_videomode.h                       |   18 
+ include/video/videomode.h                          |   58 
+ include/video/viv-metadata.h                       |  116 
+ lib/idr.c                                          |  492 ++
+ lib/list_sort.c                                    |  145 +
+ lib/radix-tree.c                                   | 2299 +++++++++
+ lib/rbtree.c                                       |  666 +++
+ 214 files changed, 94377 insertions(+)
+ create mode 100644 drivers/base/component.c
+ create mode 100644 drivers/base/devres.c
+ create mode 100644 drivers/dma-buf/dma-fence.c
+ create mode 100644 drivers/gpu/drm/drm_atomic.c
+ create mode 100644 drivers/gpu/drm/drm_atomic_helper.c
+ create mode 100644 drivers/gpu/drm/drm_blend.c
+ create mode 100644 drivers/gpu/drm/drm_bridge.c
+ create mode 100644 drivers/gpu/drm/drm_connector.c
+ create mode 100644 drivers/gpu/drm/drm_crtc.c
+ create mode 100644 drivers/gpu/drm/drm_crtc_helper_internal.h
+ create mode 100644 drivers/gpu/drm/drm_crtc_internal.h
+ create mode 100644 drivers/gpu/drm/drm_dp_helper.c
+ create mode 100644 drivers/gpu/drm/drm_edid.c
+ create mode 100644 drivers/gpu/drm/drm_encoder.c
+ create mode 100644 drivers/gpu/drm/drm_fourcc.c
+ create mode 100644 drivers/gpu/drm/drm_framebuffer.c
+ create mode 100644 drivers/gpu/drm/drm_gem.c
+ create mode 100644 drivers/gpu/drm/drm_gem_cma_helper.c
+ create mode 100644 drivers/gpu/drm/drm_gem_framebuffer_helper.c
+ create mode 100644 drivers/gpu/drm/drm_internal.h
+ create mode 100644 drivers/gpu/drm/drm_mm.c
+ create mode 100644 drivers/gpu/drm/drm_mode_config.c
+ create mode 100644 drivers/gpu/drm/drm_mode_object.c
+ create mode 100644 drivers/gpu/drm/drm_modes.c
+ create mode 100644 drivers/gpu/drm/drm_modeset_helper.c
+ create mode 100644 drivers/gpu/drm/drm_modeset_lock.c
+ create mode 100644 drivers/gpu/drm/drm_of.c
+ create mode 100644 drivers/gpu/drm/drm_plane.c
+ create mode 100644 drivers/gpu/drm/drm_probe_helper.c
+ create mode 100644 drivers/gpu/drm/drm_property.c
+ create mode 100644 drivers/gpu/drm/drm_rect.c
+ create mode 100644 drivers/gpu/drm/drm_vblank.c
+ create mode 100644 drivers/gpu/drm/drm_vma_manager.c
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-crtc.c
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-crtc.h
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-kms.c
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-kms.h
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-plane.c
+ create mode 100644 drivers/gpu/drm/imx/dcss/dcss-plane.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_mcu1_dp.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_mcu1_dp.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_mcu2_dp.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_mcu2_dp.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_ss28fdsoi_kiran_hdmitx.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_ss28fdsoi_kiran_hdmitx.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_t28hpc_hdmitx.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/API_AFE_t28hpc_hdmitx.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-arc.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-dp.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-dp.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdcp-private.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdcp.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdcp.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdmi.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdmi.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdp.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/imx-hdp.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/ss28fdsoi_hdmitx_table.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/ss28fdsoi_hdmitx_table.h
+ create mode 100644 drivers/gpu/drm/imx/hdp/t28hpc_hdmitx_table.c
+ create mode 100644 drivers/gpu/drm/imx/hdp/t28hpc_hdmitx_table.h
+ create mode 100644 drivers/gpu/drm/imx/imx-drm-core.c
+ create mode 100644 drivers/gpu/drm/imx/imx-drm.h
+ create mode 100644 drivers/gpu/imx/dcss/dcss-blkctl.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-common.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-ctxld.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-dec400d.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-dpr.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-dtg.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-dtrc.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-hdr10-tables.h
+ create mode 100644 drivers/gpu/imx/dcss/dcss-hdr10.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-prv.h
+ create mode 100644 drivers/gpu/imx/dcss/dcss-rdsrc.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-scaler.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-ss.c
+ create mode 100644 drivers/gpu/imx/dcss/dcss-wrscl.c
+ create mode 100644 drivers/i2c/i2c-boardinfo.c
+ create mode 100644 drivers/i2c/i2c-core-base.c
+ create mode 100644 drivers/i2c/i2c-core.h
+ create mode 100644 drivers/irqchip/irq-imx-irqsteer.c
+ create mode 100644 drivers/mxc/hdp-cec/imx-hdp-cec.h
+ create mode 100644 drivers/mxc/hdp/API_AFE.c
+ create mode 100644 drivers/mxc/hdp/API_AFE.h
+ create mode 100644 drivers/mxc/hdp/API_DPTX.c
+ create mode 100644 drivers/mxc/hdp/API_DPTX.h
+ create mode 100644 drivers/mxc/hdp/API_General.c
+ create mode 100644 drivers/mxc/hdp/API_General.h
+ create mode 100644 drivers/mxc/hdp/API_HDCP.c
+ create mode 100644 drivers/mxc/hdp/API_HDCP.h
+ create mode 100644 drivers/mxc/hdp/API_HDMITX.c
+ create mode 100644 drivers/mxc/hdp/API_HDMITX.h
+ create mode 100644 drivers/mxc/hdp/API_Infoframe.c
+ create mode 100644 drivers/mxc/hdp/API_Infoframe.h
+ create mode 100644 drivers/mxc/hdp/address.h
+ create mode 100644 drivers/mxc/hdp/all.h
+ create mode 100644 drivers/mxc/hdp/apb_cfg.h
+ create mode 100644 drivers/mxc/hdp/dptx_framer.h
+ create mode 100644 drivers/mxc/hdp/dptx_stream.h
+ create mode 100644 drivers/mxc/hdp/general_handler.h
+ create mode 100644 drivers/mxc/hdp/hdcp.h
+ create mode 100644 drivers/mxc/hdp/hdcp2.h
+ create mode 100644 drivers/mxc/hdp/hdcp_tran.h
+ create mode 100644 drivers/mxc/hdp/hdmi.h
+ create mode 100644 drivers/mxc/hdp/mailBox.h
+ create mode 100644 drivers/mxc/hdp/mhl_hdtx_top.h
+ create mode 100644 drivers/mxc/hdp/opcodes.h
+ create mode 100644 drivers/mxc/hdp/source_car.h
+ create mode 100644 drivers/mxc/hdp/source_phy.h
+ create mode 100644 drivers/mxc/hdp/source_pif.h
+ create mode 100644 drivers/mxc/hdp/source_vif.h
+ create mode 100644 drivers/mxc/hdp/util.c
+ create mode 100644 drivers/mxc/hdp/util.h
+ create mode 100644 drivers/video/hdmi.c
+ create mode 100644 include/asm-generic/atomic64.h
+ create mode 100644 include/asm-generic/bitops/__ffs.h
+ create mode 100644 include/asm-generic/bitops/__fls.h
+ create mode 100644 include/asm-generic/bitops/ffs.h
+ create mode 100644 include/asm-generic/bitops/fls.h
+ create mode 100644 include/asm-generic/bitops/fls64.h
+ create mode 100644 include/asm-generic/bitops/non-atomic.h
+ create mode 100644 include/drm/drmP.h
+ create mode 100644 include/drm/drm_atomic.h
+ create mode 100644 include/drm/drm_atomic_helper.h
+ create mode 100644 include/drm/drm_auth.h
+ create mode 100644 include/drm/drm_blend.h
+ create mode 100644 include/drm/drm_bridge.h
+ create mode 100644 include/drm/drm_connector.h
+ create mode 100644 include/drm/drm_crtc.h
+ create mode 100644 include/drm/drm_crtc_helper.h
+ create mode 100644 include/drm/drm_debugfs_crc.h
+ create mode 100644 include/drm/drm_device.h
+ create mode 100644 include/drm/drm_displayid.h
+ create mode 100644 include/drm/drm_dp_helper.h
+ create mode 100644 include/drm/drm_drv.h
+ create mode 100644 include/drm/drm_edid.h
+ create mode 100644 include/drm/drm_encoder.h
+ create mode 100644 include/drm/drm_fb_cma_helper.h
+ create mode 100644 include/drm/drm_fb_helper.h
+ create mode 100644 include/drm/drm_file.h
+ create mode 100644 include/drm/drm_fourcc.h
+ create mode 100644 include/drm/drm_framebuffer.h
+ create mode 100644 include/drm/drm_gem.h
+ create mode 100644 include/drm/drm_gem_cma_helper.h
+ create mode 100644 include/drm/drm_gem_framebuffer_helper.h
+ create mode 100644 include/drm/drm_hashtab.h
+ create mode 100644 include/drm/drm_hdcp.h
+ create mode 100644 include/drm/drm_ioctl.h
+ create mode 100644 include/drm/drm_mm.h
+ create mode 100644 include/drm/drm_mode_config.h
+ create mode 100644 include/drm/drm_mode_object.h
+ create mode 100644 include/drm/drm_modes.h
+ create mode 100644 include/drm/drm_modeset_helper.h
+ create mode 100644 include/drm/drm_modeset_helper_vtables.h
+ create mode 100644 include/drm/drm_modeset_lock.h
+ create mode 100644 include/drm/drm_of.h
+ create mode 100644 include/drm/drm_panel.h
+ create mode 100644 include/drm/drm_plane.h
+ create mode 100644 include/drm/drm_plane_helper.h
+ create mode 100644 include/drm/drm_prime.h
+ create mode 100644 include/drm/drm_print.h
+ create mode 100644 include/drm/drm_property.h
+ create mode 100644 include/drm/drm_rect.h
+ create mode 100644 include/drm/drm_vblank.h
+ create mode 100644 include/drm/drm_vma_manager.h
+ create mode 100644 include/linux/busfreq-imx.h
+ create mode 100644 include/linux/component.h
+ create mode 100644 include/linux/dma-fence.h
+ create mode 100644 include/linux/fb.h
+ create mode 100644 include/linux/hdmi.h
+ create mode 100644 include/linux/i2c.h
+ create mode 100644 include/linux/idr.h
+ create mode 100644 include/linux/interval_tree.h
+ create mode 100644 include/linux/interval_tree_generic.h
+ create mode 100644 include/linux/irqchip/chained_irq.h
+ create mode 100644 include/linux/irqdomain.h
+ create mode 100644 include/linux/irqhandler.h
+ create mode 100644 include/linux/list.h
+ create mode 100644 include/linux/list_sort.h
+ create mode 100644 include/linux/log2.h
+ create mode 100644 include/linux/math64.h
+ create mode 100644 include/linux/mod_devicetable.h
+ create mode 100644 include/linux/of_graph.h
+ create mode 100644 include/linux/pm_runtime.h
+ create mode 100644 include/linux/pm_wakeirq.h
+ create mode 100644 include/linux/radix-tree.h
+ create mode 100644 include/linux/ratelimit.h
+ create mode 100644 include/linux/rbtree.h
+ create mode 100644 include/linux/rbtree_augmented.h
+ create mode 100644 include/linux/sort.h
+ create mode 100644 include/linux/vga_switcheroo.h
+ create mode 100644 include/soc/imx8/sc/ipc.h
+ create mode 100644 include/soc/imx8/sc/scfw.h
+ create mode 100644 include/soc/imx8/sc/sci.h
+ create mode 100644 include/soc/imx8/sc/types.h
+ create mode 100644 include/soc/imx8/soc.h
+ create mode 100644 include/uapi/drm/drm.h
+ create mode 100644 include/uapi/drm/drm_fourcc.h
+ create mode 100644 include/uapi/drm/drm_mode.h
+ create mode 100644 include/uapi/linux/byteorder/little_endian.h
+ create mode 100644 include/uapi/linux/cec.h
+ create mode 100644 include/uapi/linux/fb.h
+ create mode 100644 include/uapi/linux/i2c.h
+ create mode 100644 include/uapi/linux/media-bus-format.h
+ create mode 100644 include/uapi/linux/swab.h
+ create mode 100644 include/video/display_timing.h
+ create mode 100644 include/video/imx-dcss.h
+ create mode 100644 include/video/of_videomode.h
+ create mode 100644 include/video/videomode.h
+ create mode 100644 include/video/viv-metadata.h
+ create mode 100644 lib/idr.c
+ create mode 100644 lib/list_sort.c
+ create mode 100644 lib/radix-tree.c
+ create mode 100644 lib/rbtree.c
+

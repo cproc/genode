@@ -1,0 +1,68 @@
+commit d75a274be1414f5f232dfd1e5e8690a846e7d8a1
+Author: Christian Prochaska <christian.prochaska@genode-labs.com>
+Date:   Tue Oct 29 17:50:55 2019 +0100
+
+    imx8_fb_drm.patch
+
+diff --git a/drivers/gpu/drm/drm_connector.c b/drivers/gpu/drm/drm_connector.c
+index 0986447..d54c1cd 100644
+--- a/drivers/gpu/drm/drm_connector.c
++++ b/drivers/gpu/drm/drm_connector.c
+@@ -525,7 +525,9 @@ void drm_connector_list_iter_begin(struct drm_device *dev,
+ {
+ 	iter->dev = dev;
+ 	iter->conn = NULL;
++#ifdef CONFIG_LOCKDEP
+ 	lock_acquire_shared_recursive(&connector_list_iter_dep_map, 0, 1, NULL, _RET_IP_);
++#endif
+ }
+ EXPORT_SYMBOL(drm_connector_list_iter_begin);
+ 
+@@ -581,7 +583,9 @@ void drm_connector_list_iter_end(struct drm_connector_list_iter *iter)
+ 	iter->dev = NULL;
+ 	if (iter->conn)
+ 		drm_connector_put(iter->conn);
++#ifdef CONFIG_LOCKDEP
+ 	lock_release(&connector_list_iter_dep_map, 0, _RET_IP_);
++#endif
+ }
+ EXPORT_SYMBOL(drm_connector_list_iter_end);
+ 
+diff --git a/drivers/irqchip/irq-imx-irqsteer.c b/drivers/irqchip/irq-imx-irqsteer.c
+index e26d242..1b2334b 100644
+--- a/drivers/irqchip/irq-imx-irqsteer.c
++++ b/drivers/irqchip/irq-imx-irqsteer.c
+@@ -13,6 +13,7 @@
+ #include <linux/irq.h>
+ #include <linux/irqchip/chained_irq.h>
+ #include <linux/irqdomain.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/of_platform.h>
+ #include <linux/spinlock.h>
+ #include <linux/pm_runtime.h>
+diff --git a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+index 6f1410b..c874409 100644
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -345,7 +345,7 @@ struct edid *drm_load_edid_firmware(struct drm_connector *connector);
+ static inline struct edid *
+ drm_load_edid_firmware(struct drm_connector *connector)
+ {
+-	return ERR_PTR(-ENOENT);
++	return (struct edid *)ERR_PTR(-ENOENT);
+ }
+ #endif
+ 
+diff --git a/include/drm/drm_mm.h b/include/drm/drm_mm.h
+index 8d10fc9..452977c 100644
+--- a/include/drm/drm_mm.h
++++ b/include/drm/drm_mm.h
+@@ -423,7 +423,7 @@ static inline int drm_mm_insert_node(struct drm_mm *mm,
+ 				     struct drm_mm_node *node,
+ 				     u64 size)
+ {
+-	return drm_mm_insert_node_generic(mm, node, size, 0, 0, 0);
++	return drm_mm_insert_node_generic(mm, node, size, 0, 0, DRM_MM_INSERT_BEST);
+ }
+ 
+ void drm_mm_remove_node(struct drm_mm_node *node);

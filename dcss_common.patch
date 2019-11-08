@@ -1,0 +1,15 @@
+dcss_common.patch
+
+diff --git a/drivers/gpu/imx/dcss/dcss-common.c b/drivers/gpu/imx/dcss/dcss-common.c
+index 8f292db..5e0bd81 100644
+--- a/drivers/gpu/imx/dcss/dcss-common.c
++++ b/drivers/gpu/imx/dcss/dcss-common.c
+@@ -44,7 +44,7 @@ struct dcss_devtype {
+ 	u32 pll_base;
+ };
+ 
+-static struct dcss_devtype dcss_type_imx8m = {
++/*static*/ struct dcss_devtype dcss_type_imx8m = {
+ 	.name = "DCSS_imx8m",
+ 	.blkctl_ofs = 0x2F000,
+ 	.ctxld_ofs = 0x23000,
