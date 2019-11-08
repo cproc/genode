@@ -1,0 +1,1046 @@
+commit 62036664034702510ce91ad17ca4574c8b657819
+Author: Christian Prochaska <christian.prochaska@genode-labs.com>
+Date:   Wed Oct 30 17:16:29 2019 +0100
+
+    debug.diff
+
+diff --git a/.gitignore b/.gitignore
+index 52c51cf..173d84c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1 +1,2 @@
+ patches-master
++*.swp
+diff --git a/drivers/base/component.c b/drivers/base/component.c
+index 4eb062f..f825417 100644
+--- a/drivers/base/component.c
++++ b/drivers/base/component.c
+@@ -309,7 +309,7 @@ int component_master_add_with_match(struct device *dev,
+ {
+ 	struct master *master;
+ 	int ret;
+-
++lx_printf("component_master_add_with_match(): match->num: %zu\n", match->num);
+ 	/* Reallocate the match array for its true size */
+ 	ret = component_match_realloc(dev, match, match->num);
+ 	if (ret)
+@@ -448,18 +448,25 @@ int component_bind_all(struct device *master_dev, void *data)
+ 	WARN_ON(!mutex_is_locked(&component_mutex));
+ 
+ 	master = __master_find(master_dev, NULL);
+-printk("*** component_bind_all(): master: %p\n", master);
++
++printk("component_bind_all(): master: %p\n", master);
+ 	if (!master)
+ 		return -EINVAL;
+ 
+ 	/* Bind components in match order */
+-	for (i = 0; i < master->match->num; i++)
++	for (i = 0; i < master->match->num; i++) {
++		lx_printf("component_bind_all(): %zu, device: %s, duplicate: %u\n",
++		          i,
++		          master->match->compare[i].component->dev->name,
++		          master->match->compare[i].duplicate);
+ 		if (!master->match->compare[i].duplicate) {
+ 			c = master->match->compare[i].component;
++			lx_printf("component_bind_all(): trying to bind %s\n", c->dev->name);
+ 			ret = component_bind(c, master, data);
+ 			if (ret)
+ 				break;
+ 		}
++	}
+ 
+ 	if (ret != 0) {
+ 		for (; i--; )
+@@ -468,7 +475,7 @@ printk("*** component_bind_all(): master: %p\n", master);
+ 				component_unbind(c, master, data);
+ 			}
+ 	}
+-printk("*** component_bind_all() finished\n");
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(component_bind_all);
+diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
+index 1ad2b23..c863e8b 100644
+--- a/drivers/gpu/drm/drm_atomic_helper.c
++++ b/drivers/gpu/drm/drm_atomic_helper.c
+@@ -27,6 +27,7 @@
+ 
+ #include <drm/drmP.h>
+ #include <drm/drm_atomic.h>
++#include <drm/drm_blend.h>
+ #include <drm/drm_plane_helper.h>
+ #include <drm/drm_crtc_helper.h>
+ #include <drm/drm_atomic_helper.h>
+@@ -810,7 +811,7 @@ disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
+ 	struct drm_crtc *crtc;
+ 	struct drm_crtc_state *old_crtc_state, *new_crtc_state;
+ 	int i;
+-
++lx_printf("*** disable_outputs()\n");
+ 	for_each_oldnew_connector_in_state(old_state, connector, old_conn_state, new_conn_state, i) {
+ 		const struct drm_encoder_helper_funcs *funcs;
+ 		struct drm_encoder *encoder;
+@@ -838,26 +839,35 @@ disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
+ 
+ 		DRM_DEBUG_ATOMIC("disabling [ENCODER:%d:%s]\n",
+ 				 encoder->base.id, encoder->name);
++lx_printf("*** disable_outputs() 1.1\n");
+ 
+ 		/*
+ 		 * Each encoder has at most one connector (since we always steal
+ 		 * it away), so we won't call disable hooks twice.
+ 		 */
+ 		drm_bridge_disable(encoder->bridge);
++lx_printf("*** disable_outputs() 1.2\n");
+ 
+ 		/* Right function depends upon target state. */
+ 		if (funcs) {
+-			if (new_conn_state->crtc && funcs->prepare)
++			if (new_conn_state->crtc && funcs->prepare) {
++lx_printf("*** disable_outputs() 1.2.1\n");
+ 				funcs->prepare(encoder);
+-			else if (funcs->disable)
++			} else if (funcs->disable) {
++lx_printf("*** disable_outputs() 1.2.2: %p\n", funcs->disable);
+ 				funcs->disable(encoder);
+-			else if (funcs->dpms)
++			} else if (funcs->dpms) {
++lx_printf("*** disable_outputs() 1.2.3\n");
+ 				funcs->dpms(encoder, DRM_MODE_DPMS_OFF);
++			}
+ 		}
++lx_printf("*** disable_outputs() 1.3\n");
+ 
+ 		drm_bridge_post_disable(encoder->bridge);
+ 	}
+ 
++lx_printf("*** disable_outputs() 2\n");
++
+ 	for_each_oldnew_crtc_in_state(old_state, crtc, old_crtc_state, new_crtc_state, i) {
+ 		const struct drm_crtc_helper_funcs *funcs;
+ 
+@@ -884,6 +894,7 @@ disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
+ 		else
+ 			funcs->dpms(crtc, DRM_MODE_DPMS_OFF);
+ 	}
++lx_printf("*** disable_outputs() finished\n");
+ }
+ 
+ /**
+@@ -1042,11 +1053,13 @@ crtc_set_mode(struct drm_device *dev, struct drm_atomic_state *old_state)
+ void drm_atomic_helper_commit_modeset_disables(struct drm_device *dev,
+ 					       struct drm_atomic_state *old_state)
+ {
++lx_printf("*** drm_atomic_helper_commit_modeset_disables()\n");
+ 	disable_outputs(dev, old_state);
+ 
+ 	drm_atomic_helper_update_legacy_modeset_state(dev, old_state);
+ 
+ 	crtc_set_mode(dev, old_state);
++lx_printf("*** drm_atomic_helper_commit_modeset_disables() finished\n");
+ }
+ EXPORT_SYMBOL(drm_atomic_helper_commit_modeset_disables);
+ 
+@@ -1275,7 +1288,7 @@ void drm_atomic_helper_wait_for_flip_done(struct drm_device *dev,
+ 
+ 		ret = wait_for_completion_timeout(&commit->flip_done, 10 * HZ);
+ 		if (ret == 0)
+-			DRM_ERROR("[CRTC:%d:%s] flip_done timed out\n",
++			DRM_ERROR("[CRTC:%d:%s] flip_done timed out 1\n",
+ 				  crtc->base.id, crtc->name);
+ 	}
+ }
+@@ -1501,7 +1514,7 @@ int drm_atomic_helper_commit(struct drm_device *dev,
+ 			     bool nonblock)
+ {
+ 	int ret;
+-
++lx_printf("*** drm_atomic_helper_commit(): %u\n", nonblock);
+ 	if (state->async_update) {
+ 		ret = drm_atomic_helper_prepare_planes(dev, state);
+ 		if (ret)
+@@ -1718,8 +1731,10 @@ int drm_atomic_helper_setup_commit(struct drm_atomic_state *state,
+ 	struct drm_crtc_state *old_crtc_state, *new_crtc_state;
+ 	struct drm_crtc_commit *commit;
+ 	int i, ret;
+-
++lx_printf("*** drm_atomic_helper_setup_commit()\n");
+ 	for_each_oldnew_crtc_in_state(state, crtc, old_crtc_state, new_crtc_state, i) {
++lx_printf("*** drm_atomic_helper_setup_commit(): for\n");
++
+ 		commit = kzalloc(sizeof(*commit), GFP_KERNEL);
+ 		if (!commit)
+ 			return -ENOMEM;
+@@ -1736,17 +1751,20 @@ int drm_atomic_helper_setup_commit(struct drm_atomic_state *state,
+ 		ret = stall_checks(crtc, nonblock);
+ 		if (ret)
+ 			return ret;
++lx_printf("*** drm_atomic_helper_setup_commit(): 1\n");
+ 
+ 		/* Drivers only send out events when at least either current or
+ 		 * new CRTC state is active. Complete right away if everything
+ 		 * stays off. */
+ 		if (!old_crtc_state->active && !new_crtc_state->active) {
++lx_printf("*** drm_atomic_helper_setup_commit(): 2\n");
+ 			complete_all(&commit->flip_done);
+ 			continue;
+ 		}
+ 
+ 		/* Legacy cursor updates are fully unsynced. */
+ 		if (state->legacy_cursor_update) {
++lx_printf("*** drm_atomic_helper_setup_commit(): 3\n");
+ 			complete_all(&commit->flip_done);
+ 			continue;
+ 		}
+@@ -1764,6 +1782,7 @@ int drm_atomic_helper_setup_commit(struct drm_atomic_state *state,
+ 		new_crtc_state->event->base.completion_release = release_crtc_commit;
+ 		drm_crtc_commit_get(commit);
+ 	}
++lx_printf("*** drm_atomic_helper_setup_commit() finished\n");
+ 
+ 	return 0;
+ }
+@@ -1826,7 +1845,7 @@ void drm_atomic_helper_wait_for_dependencies(struct drm_atomic_state *old_state)
+ 		ret = wait_for_completion_timeout(&commit->flip_done,
+ 						  10*HZ);
+ 		if (ret == 0)
+-			DRM_ERROR("[CRTC:%d:%s] flip_done timed out\n",
++			DRM_ERROR("[CRTC:%d:%s] flip_done timed out 2\n",
+ 				  crtc->base.id, crtc->name);
+ 
+ 		drm_crtc_commit_put(commit);
+@@ -1886,20 +1905,24 @@ void drm_atomic_helper_commit_cleanup_done(struct drm_atomic_state *old_state)
+ 	struct drm_crtc_commit *commit;
+ 	int i;
+ 	long ret;
+-
++lx_printf("*** drm_atomic_helper_commit_cleanup_done(): %p\n", __builtin_return_address(0));
+ 	for_each_new_crtc_in_state(old_state, crtc, new_crtc_state, i) {
++lx_printf("*** drm_atomic_helper_commit_cleanup_done(): for\n");
++
+ 		commit = old_state->crtcs[i].commit;
+ 		if (WARN_ON(!commit))
+ 			continue;
+ 
+ 		complete_all(&commit->cleanup_done);
+ 		WARN_ON(!try_wait_for_completion(&commit->hw_done));
++lx_printf("*** drm_atomic_helper_commit_cleanup_done(): calling try_wait_for_completion()\n");
+ 
+ 		/* commit_list borrows our reference, need to remove before we
+ 		 * clean up our drm_atomic_state. But only after it actually
+ 		 * completed, otherwise subsequent commits won't stall properly. */
+ 		if (try_wait_for_completion(&commit->flip_done))
+ 			goto del_commit;
++lx_printf("*** drm_atomic_helper_commit_cleanup_done(): calling wait_for_completion()\n");
+ 
+ 		/* We must wait for the vblank event to signal our completion
+ 		 * before releasing our reference, since the vblank work does
+@@ -1907,7 +1930,7 @@ void drm_atomic_helper_commit_cleanup_done(struct drm_atomic_state *old_state)
+ 		ret = wait_for_completion_timeout(&commit->flip_done,
+ 						  10*HZ);
+ 		if (ret == 0)
+-			DRM_ERROR("[CRTC:%d:%s] flip_done timed out\n",
++			DRM_ERROR("[CRTC:%d:%s] flip_done timed out 3\n",
+ 				  crtc->base.id, crtc->name);
+ 
+ del_commit:
+diff --git a/drivers/gpu/drm/drm_fourcc.c b/drivers/gpu/drm/drm_fourcc.c
+index f92f18c..676b63b 100644
+--- a/drivers/gpu/drm/drm_fourcc.c
++++ b/drivers/gpu/drm/drm_fourcc.c
+@@ -221,10 +221,10 @@ drm_get_format_info(struct drm_device *dev,
+ 		    const struct drm_mode_fb_cmd2 *mode_cmd)
+ {
+ 	const struct drm_format_info *info = NULL;
+-
++#if 0 /* XXX: dev->mode_config.funcs is set by dcss_crtc_bind() */
+ 	if (dev->mode_config.funcs->get_format_info)
+ 		info = dev->mode_config.funcs->get_format_info(mode_cmd);
+-
++#endif
+ 	if (!info)
+ 		info = drm_format_info(mode_cmd->pixel_format);
+ 
+diff --git a/drivers/gpu/drm/drm_mm.c b/drivers/gpu/drm/drm_mm.c
+index 1acf3b1..7fd72a0 100644
+--- a/drivers/gpu/drm/drm_mm.c
++++ b/drivers/gpu/drm/drm_mm.c
+@@ -48,6 +48,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/export.h>
+ #include <linux/interval_tree_generic.h>
++#include <linux/math64.h>
+ 
+ /**
+  * DOC: Overview
+diff --git a/drivers/gpu/drm/drm_modeset_helper.c b/drivers/gpu/drm/drm_modeset_helper.c
+index f1c24ab..c667447 100644
+--- a/drivers/gpu/drm/drm_modeset_helper.c
++++ b/drivers/gpu/drm/drm_modeset_helper.c
+@@ -21,9 +21,15 @@
+  */
+ 
+ #include <drm/drm_atomic_helper.h>
++#include <drm/drm_connector.h>
+ #include <drm/drm_crtc_helper.h>
++#include <drm/drm_device.h>
+ #include <drm/drm_fb_helper.h>
++#include <drm/drm_fourcc.h>
++#include <drm/drm_framebuffer.h>
+ #include <drm/drm_modeset_helper.h>
++#include <drm/drm_rect.h>
++#include <drm/drm_plane.h>
+ #include <drm/drm_plane_helper.h>
+ 
+ /**
+diff --git a/drivers/gpu/drm/drm_modeset_lock.c b/drivers/gpu/drm/drm_modeset_lock.c
+index 56b9f9b..2658c63 100644
+--- a/drivers/gpu/drm/drm_modeset_lock.c
++++ b/drivers/gpu/drm/drm_modeset_lock.c
+@@ -84,13 +84,16 @@ static DEFINE_WW_CLASS(crtc_ww_class);
+  */
+ void drm_modeset_lock_all(struct drm_device *dev)
+ {
++lx_printf("drm_modeset_lock_all(): %p\n", __builtin_return_address(0));
+ 	struct drm_mode_config *config = &dev->mode_config;
+ 	struct drm_modeset_acquire_ctx *ctx;
+ 	int ret;
+ 
+ 	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL | __GFP_NOFAIL);
+-	if (WARN_ON(!ctx))
++	if (WARN_ON(!ctx)) {
++lx_printf("drm_modeset_lock_all(): r1\n");
+ 		return;
++	}
+ 
+ 	mutex_lock(&config->mutex);
+ 
+@@ -106,6 +109,7 @@ retry:
+ 
+ 		drm_modeset_acquire_fini(ctx);
+ 		kfree(ctx);
++lx_printf("drm_modeset_lock_all(): r2\n");
+ 		return;
+ 	}
+ 
+@@ -118,6 +122,7 @@ retry:
+ 	config->acquire_ctx = ctx;
+ 
+ 	drm_warn_on_modeset_not_all_locked(dev);
++lx_printf("drm_modeset_lock_all() finished\n");
+ }
+ EXPORT_SYMBOL(drm_modeset_lock_all);
+ 
+diff --git a/drivers/gpu/drm/drm_of.c b/drivers/gpu/drm/drm_of.c
+index 6105404..4f8b733 100644
+--- a/drivers/gpu/drm/drm_of.c
++++ b/drivers/gpu/drm/drm_of.c
+@@ -112,6 +112,8 @@ int drm_of_component_probe_with_match(struct device *dev,
+ 	struct device_node *ep, *port, *remote;
+ 	int i;
+ 
++printk("drm_of_component_probe_with_match(): %s\n", dev->of_node->name);
++
+ 	if (!dev->of_node)
+ 		return -EINVAL;
+ 
+@@ -123,12 +125,12 @@ int drm_of_component_probe_with_match(struct device *dev,
+ 		port = of_parse_phandle(dev->of_node, "ports", i);
+ 		if (!port)
+ 			break;
+-
++printk("drm_of_component_probe_with_match(): port: %s, port->parent: %s\n", port->name, port->parent->name);
+ 		if (!of_device_is_available(port->parent)) {
+ 			of_node_put(port);
+ 			continue;
+ 		}
+-
++lx_printf("drm_of_component_probe_with_match(): adding match: %s\n", port->name);
+ 		drm_of_component_match_add(dev, &match, compare_of, port);
+ 		of_node_put(port);
+ 	}
+@@ -155,9 +157,11 @@ int drm_of_component_probe_with_match(struct device *dev,
+ 			of_node_put(port);
+ 			continue;
+ 		}
+-
++lx_printf("drm_of_component_probe_with_match(): calling for_each_child_of_node()\n");
+ 		for_each_child_of_node(port, ep) {
++lx_printf("drm_of_component_probe_with_match(): for_each_child_of_node()\n");
+ 			remote = of_graph_get_remote_port_parent(ep);
++lx_printf("drm_of_component_probe_with_match(): remote: %s, remote->parent: %s\n", remote->name, remote->parent->name);
+ 			if (!remote || !of_device_is_available(remote)) {
+ 				of_node_put(remote);
+ 				continue;
+@@ -167,7 +171,7 @@ int drm_of_component_probe_with_match(struct device *dev,
+ 				of_node_put(remote);
+ 				continue;
+ 			}
+-
++lx_printf("drm_of_component_probe_with_match(): adding match 2: %s\n", remote->name);
+ 			drm_of_component_match_add(dev, &match, compare_of,
+ 						   remote);
+ 			of_node_put(remote);
+diff --git a/drivers/gpu/drm/drm_probe_helper.c b/drivers/gpu/drm/drm_probe_helper.c
+index 3bd4312..356a4bf 100644
+--- a/drivers/gpu/drm/drm_probe_helper.c
++++ b/drivers/gpu/drm/drm_probe_helper.c
+@@ -39,6 +39,7 @@
+ #include <drm/drm_fb_helper.h>
+ #include <drm/drm_edid.h>
+ #include <drm/drm_modeset_helper_vtables.h>
++#include <drm/drm_encoder.h>
+ 
+ #include "drm_crtc_helper_internal.h"
+ 
+@@ -780,13 +781,19 @@ bool drm_helper_hpd_irq_event(struct drm_device *dev)
+ 	struct drm_connector_list_iter conn_iter;
+ 	enum drm_connector_status old_status;
+ 	bool changed = false;
+-
++lx_printf("*** drm_helper_hpd_irq_event()\n");
+ 	if (!dev->mode_config.poll_enabled)
+ 		return false;
++lx_printf("*** drm_helper_hpd_irq_event() 1\n");
+ 
+ 	mutex_lock(&dev->mode_config.mutex);
++lx_printf("*** drm_helper_hpd_irq_event() 2\n");
++
+ 	drm_connector_list_iter_begin(dev, &conn_iter);
++lx_printf("*** drm_helper_hpd_irq_event() 3\n");
++
+ 	drm_for_each_connector_iter(connector, &conn_iter) {
++lx_printf("*** drm_helper_hpd_irq_event() 4\n");
+ 		/* Only handle HPD capable connectors. */
+ 		if (!(connector->polled & DRM_CONNECTOR_POLL_HPD))
+ 			continue;
+@@ -807,6 +814,7 @@ bool drm_helper_hpd_irq_event(struct drm_device *dev)
+ 
+ 	if (changed)
+ 		drm_kms_helper_hotplug_event(dev);
++lx_printf("*** drm_helper_hpd_irq_event() finished\n");
+ 
+ 	return changed;
+ }
+diff --git a/drivers/gpu/drm/drm_vblank.c b/drivers/gpu/drm/drm_vblank.c
+index c2f23a6..f1bc5df 100644
+--- a/drivers/gpu/drm/drm_vblank.c
++++ b/drivers/gpu/drm/drm_vblank.c
+@@ -27,6 +27,7 @@
+ #include <drm/drm_vblank.h>
+ #include <drm/drmP.h>
+ #include <linux/export.h>
++#include <linux/math64.h>
+ 
+ #include "drm_trace.h"
+ #include "drm_internal.h"
+diff --git a/drivers/gpu/drm/imx/dcss/dcss-crtc.c b/drivers/gpu/drm/imx/dcss/dcss-crtc.c
+index b8ccf2e..2003251 100644
+--- a/drivers/gpu/drm/imx/dcss/dcss-crtc.c
++++ b/drivers/gpu/drm/imx/dcss/dcss-crtc.c
+@@ -353,6 +353,7 @@ static const struct drm_crtc_helper_funcs dcss_helper_funcs = {
+ 
+ static irqreturn_t dcss_crtc_irq_handler(int irq, void *dev_id)
+ {
++//lx_printf("*** dcss_crtc_irq_handler()\n");
+ 	struct dcss_crtc *dcss_crtc = dev_id;
+ 	struct dcss_soc *dcss = dev_get_drvdata(dcss_crtc->dev->parent);
+ 
+@@ -363,8 +364,10 @@ static irqreturn_t dcss_crtc_irq_handler(int irq, void *dev_id)
+ 
+ 	complete(&dcss_crtc->en_completion);
+ 
+-	if (dcss_ctxld_is_flushed(dcss))
++	if (dcss_ctxld_is_flushed(dcss)) {
++//lx_printf("*** dcss_crtc_irq_handler(): calling drm_crtc_handle_vblank()\n");
+ 		drm_crtc_handle_vblank(&dcss_crtc->base);
++	}
+ 
+ 	dcss_vblank_irq_clear(dcss);
+ 
+@@ -469,7 +472,7 @@ static int dcss_crtc_bind(struct device *dev, struct device *master,
+ 	struct drm_device *drm = data;
+ 	struct dcss_crtc *crtc;
+ 	int ret;
+-
++lx_printf("### dcss_crtc_bind(): dev: %s, master: %s\n", dev_name(dev), dev_name(master));
+ 	crtc = devm_kzalloc(dev, sizeof(*crtc), GFP_KERNEL);
+ 	if (!crtc)
+ 		return -ENOMEM;
+@@ -501,13 +504,17 @@ static const struct component_ops dcss_crtc_ops = {
+ static int dcss_crtc_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+-
++lx_printf("### dcss_crtc_probe()\n");
+ 	if (!dev->platform_data) {
+ 		dev_err(dev, "no platform data\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	return component_add(dev, &dcss_crtc_ops);
++	int ret = component_add(dev, &dcss_crtc_ops);
++
++lx_printf("dcss_crtc_probe() finished\n");
++
++	return ret;
+ }
+ 
+ static int dcss_crtc_remove(struct platform_device *pdev)
+diff --git a/drivers/gpu/drm/imx/dcss/dcss-kms.c b/drivers/gpu/drm/imx/dcss/dcss-kms.c
+index 40cd4e1..2507929 100644
+--- a/drivers/gpu/drm/imx/dcss/dcss-kms.c
++++ b/drivers/gpu/drm/imx/dcss/dcss-kms.c
+@@ -87,7 +87,7 @@ static void dcss_drm_atomic_commit_tail(struct dcss_drm_commit *commit)
+ 	struct drm_atomic_state *state = commit->state;
+ 	struct drm_device *dev = commit->dev;
+ 	struct imx_drm_device *imxdrm = dev->dev_private;
+-
++lx_printf("*** dcss_drm_atomic_commit_tail(): %p\n", __builtin_return_address(0));
+ 	drm_atomic_helper_wait_for_fences(dev, state, false);
+ 
+ 	drm_atomic_helper_wait_for_dependencies(state);
+@@ -117,6 +117,7 @@ static void dcss_drm_atomic_commit_tail(struct dcss_drm_commit *commit)
+ 	spin_unlock(&imxdrm->commit.wait.lock);
+ 
+ 	kfree(commit);
++lx_printf("*** dcss_drm_atomic_commit_tail() finished\n");
+ }
+ 
+ static void dcss_commit_work(struct work_struct *work)
+diff --git a/drivers/gpu/drm/imx/hdp/imx-hdcp.c b/drivers/gpu/drm/imx/hdp/imx-hdcp.c
+index 4f10737..de7060d 100644
+--- a/drivers/gpu/drm/imx/hdp/imx-hdcp.c
++++ b/drivers/gpu/drm/imx/hdp/imx-hdcp.c
+@@ -527,6 +527,12 @@ int imx_hdcp_init(struct imx_hdp *hdp, struct device_node *of_node)
+ 	int ret;
+ 	const char *compat;
+ 	u32 temp;
++	
++	/*
++	 * 'imx_hdcp_disable()' is called regardless of -EPERM early return
++	 * and needs an initialized mutex on Genode
++	 */
++	mutex_init(&hdp->hdcp.mutex);
+ 
+ 	ret = of_property_read_string(of_node, "compatible", &compat);
+ 	if (ret) {
+@@ -561,7 +567,7 @@ int imx_hdcp_init(struct imx_hdp *hdp, struct device_node *of_node)
+ 		return ret;
+ 
+ 	/*connector->hdcp_shim = hdcp_shim;*/
+-	mutex_init(&hdp->hdcp.mutex);
++	/*mutex_init(&hdp->hdcp.mutex);*/
+ 	INIT_DELAYED_WORK(&hdp->hdcp.check_work, imx_hdcp_check_work);
+ 	INIT_WORK(&hdp->hdcp.prop_work, imx_hdcp_prop_work);
+ 	return 0;
+@@ -589,14 +595,23 @@ out:
+ int imx_hdcp_disable(struct imx_hdp *hdp)
+ {
+ 	int ret = 0;
+-
++lx_printf("*** imx_hdcp_disable(): %p\n", &hdp->hdcp.mutex);
+ 	mutex_lock(&hdp->hdcp.mutex);
++lx_printf("*** imx_hdcp_disable() 1\n");
++
+ 	if (hdp->hdcp.value != DRM_MODE_CONTENT_PROTECTION_UNDESIRED) {
+ 		hdp->hdcp.value = DRM_MODE_CONTENT_PROTECTION_UNDESIRED;
++lx_printf("*** imx_hdcp_disable() 2\n");
++
+ 		ret = _imx_hdcp_disable(hdp);
+ 	}
++lx_printf("*** imx_hdcp_disable() 3\n");
++
+ 	mutex_unlock(&hdp->hdcp.mutex);
++lx_printf("*** imx_hdcp_disable() 4\n");
++
+ 	cancel_delayed_work_sync(&hdp->hdcp.check_work);
++lx_printf("*** imx_hdcp_disable() finished\n");
+ 
+ 	return ret;
+ }
+diff --git a/drivers/gpu/drm/imx/hdp/imx-hdp.c b/drivers/gpu/drm/imx/hdp/imx-hdp.c
+index bcfad52..a32e65e 100644
+--- a/drivers/gpu/drm/imx/hdp/imx-hdp.c
++++ b/drivers/gpu/drm/imx/hdp/imx-hdp.c
+@@ -833,7 +833,7 @@ imx_hdp_connector_detect(struct drm_connector *connector, bool force)
+ 						struct imx_hdp, connector);
+ 	int ret;
+ 	u8 hpd = 0xf;
+-
++lx_printf("imx_hdp_connector_detect()\n");
+ 	ret = imx_hdp_call(hdp, get_hpd_state, &hdp->state, &hpd);
+ 	if (ret > 0)
+ 		return connector_status_unknown;
+@@ -929,12 +929,12 @@ imx_hdp_connector_mode_valid(struct drm_connector *connector,
+ 		if (mode->clock > 297000)
+ 			return MODE_CLOCK_HIGH;
+ 	}
+-
++#if 0
+ 	/* For iMX8QM A0 Max support video mode is 4kp30 */
+ 	if (cpu_is_imx8qm() && (imx8_get_soc_revision() < B0_SILICON_ID))
+ 		if (mode->clock > 297000)
+ 			return MODE_CLOCK_HIGH;
+-
++#endif
+ 	/* MAX support pixel clock rate 594MHz */
+ 	if (mode->clock > 594000)
+ 		return MODE_CLOCK_HIGH;
+@@ -1050,12 +1050,18 @@ static const struct drm_bridge_funcs imx_hdp_bridge_funcs = {
+ 
+ static void imx_hdp_imx_encoder_disable(struct drm_encoder *encoder)
+ {
++lx_printf("*** imx_hdp_imx_encoder_disable()\n");
++
+ 	struct imx_hdp *hdp = container_of(encoder, struct imx_hdp, encoder);
+ 
+ 	imx_hdcp_disable(hdp);
++lx_printf("*** imx_hdp_imx_encoder_disable() 1\n");
+ 
+ 	imx_hdp_call(hdp, pixel_link_sync_ctrl_disable, &hdp->state);
++lx_printf("*** imx_hdp_imx_encoder_disable() 2\n");
++
+ 	imx_hdp_call(hdp, pixel_link_invalidate, &hdp->state);
++lx_printf("*** imx_hdp_imx_encoder_disable() finished\n");
+ }
+ 
+ static void imx_hdp_imx_encoder_enable(struct drm_encoder *encoder)
+@@ -1387,13 +1393,17 @@ MODULE_DEVICE_TABLE(of, imx_hdp_dt_ids);
+ 
+ static void hotplug_work_func(struct work_struct *work)
+ {
++lx_printf("*** hotplug_work_func()\n");
+ 	struct imx_hdp *hdp = container_of(work,
+ 					   struct imx_hdp,
+ 					   hotplug_work.work);
+ 	struct drm_connector *connector = &hdp->connector;
++lx_printf("*** hotplug_work_func() 1\n");
+ 
+ 	drm_helper_hpd_irq_event(connector->dev);
+ 
++lx_printf("*** hotplug_work_func() 2\n");
++
+ 	if (connector->status == connector_status_connected) {
+ 		/* Cable Connected */
+ 		/* For HDMI2.0 SCDC should setup again.
+@@ -1408,17 +1418,18 @@ static void hotplug_work_func(struct work_struct *work)
+ 		DRM_INFO("HDMI/DP Cable Plug Out\n");
+ 		enable_irq(hdp->irq[HPD_IRQ_IN]);
+ 	}
++lx_printf("*** hotplug_work_func() finished\n");
+ }
+ 
+ static irqreturn_t imx_hdp_irq_thread(int irq, void *data)
+ {
+ 	struct imx_hdp *hdp = data;
+-
++lx_printf("*** imx_hdp_irq_thread(): %d\n", irq);
+ 	disable_irq_nosync(irq);
+ 
+ 	mod_delayed_work(system_wq, &hdp->hotplug_work,
+ 			msecs_to_jiffies(HOTPLUG_DEBOUNCE_MS));
+-
++lx_printf("*** imx_hdp_irq_thread() finished\n");
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -1438,6 +1449,8 @@ static int imx_hdp_imx_bind(struct device *dev, struct device *master,
+ 	u8 hpd;
+ 	int ret;
+ 
++lx_printf("### imx_hdp_imx_bind(): dev: %s, master: %s\n", dev_name(dev), dev_name(master));
++
+ 	if (!pdev->dev.of_node)
+ 		return -ENODEV;
+ 
+@@ -1490,11 +1503,11 @@ static int imx_hdp_imx_bind(struct device *dev, struct device *master,
+ 				      "fsl,use_digpll_pclock");
+ 
+ 	hdp->no_edid = of_property_read_bool(pdev->dev.of_node, "fsl,no_edid");
+-
++#if 0
+ 	/* EDID function is not supported by iMX8QM A0 */
+ 	if (cpu_is_imx8qm() && (imx8_get_soc_revision() < B0_SILICON_ID))
+ 		hdp->no_edid = true;
+-
++#endif
+ 	if (devtype->connector_type == DRM_MODE_CONNECTOR_DisplayPort) {
+ 		hdp->is_dp = true;
+ 		hdp->is_edp = of_property_read_bool(pdev->dev.of_node, "fsl,edp");
+@@ -1702,7 +1715,10 @@ static const struct component_ops imx_hdp_imx_ops = {
+ 
+ static int imx_hdp_imx_probe(struct platform_device *pdev)
+ {
+-	return component_add(&pdev->dev, &imx_hdp_imx_ops);
++	lx_printf("### imx_hdp_imx_probe()\n");
++	int res = component_add(&pdev->dev, &imx_hdp_imx_ops);
++	lx_printf("imx_hdp_imx_probe() finished\n");
++	return res;
+ }
+ 
+ static int imx_hdp_imx_remove(struct platform_device *pdev)
+diff --git a/drivers/gpu/drm/imx/hdp/imx-hdp.h b/drivers/gpu/drm/imx/hdp/imx-hdp.h
+index 613bd7b..8a516d1 100644
+--- a/drivers/gpu/drm/imx/hdp/imx-hdp.h
++++ b/drivers/gpu/drm/imx/hdp/imx-hdp.h
+@@ -25,6 +25,8 @@
+ #include <drm/drm_atomic.h>
+ #include <soc/imx8/sc/sci.h>
+ #include <soc/imx8/sc/scfw.h>
++#include <soc/imx8/sc/types.h>
++
+ 
+ #include <drm/drm_dp_helper.h>
+ #include "../../../../mxc/hdp/all.h"
+diff --git a/drivers/gpu/drm/imx/imx-drm-core.c b/drivers/gpu/drm/imx/imx-drm-core.c
+index 76b782c..7927255 100644
+--- a/drivers/gpu/drm/imx/imx-drm-core.c
++++ b/drivers/gpu/drm/imx/imx-drm-core.c
+@@ -16,6 +16,7 @@
+ #include <linux/component.h>
+ #include <linux/device.h>
+ #include <linux/module.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/platform_device.h>
+ #include <drm/drmP.h>
+ #include <drm/drm_atomic.h>
+@@ -23,6 +24,7 @@
+ #include <drm/drm_fb_helper.h>
+ #include <drm/drm_crtc_helper.h>
+ #include <drm/drm_gem_cma_helper.h>
++#include <drm/drm_encoder.h>
+ #include <drm/drm_fb_cma_helper.h>
+ #include <drm/drm_plane_helper.h>
+ #include <drm/drm_of.h>
+@@ -43,7 +45,9 @@ static void imx_drm_driver_lastclose(struct drm_device *drm)
+ {
+ 	struct imx_drm_device *imxdrm = drm->dev_private;
+ 
++#if IS_ENABLED(CONFIG_DRM_FBDEV_EMULATION)
+ 	drm_fbdev_cma_restore_mode(imxdrm->fbhelper);
++#endif
+ }
+ 
+ DEFINE_DRM_GEM_CMA_FOPS(imx_drm_driver_fops);
+@@ -120,6 +124,19 @@ static int compare_of(struct device *dev, void *data)
+ {
+ 	struct device_node *np = data;
+ 
++	lx_printf("compare_of(): %s, %s, %p, %p\n", dev->driver->name, np->name, dev->of_node, data);
++
++	if ((strncmp(dev->driver->name, "imx-dcss-crtc", strlen(dev->driver->name)) == 0) &&
++	    (strncmp(np->name, "port", strlen(np->name)) == 0))
++		return 1;
++
++	if ((strncmp(dev->driver->name, "i.mx8-hdp", strlen(dev->driver->name)) == 0) &&
++	    (strncmp(np->name, "hdmi", strlen(np->name)) == 0))
++		return 1;
++
++	return 0;
++
++#if 0
+ 	/* Special case for DI, dev->of_node may not be set yet */
+ 	if (strcmp(dev->driver->name, "imx-ipuv3-crtc") == 0) {
+ 		struct ipu_client_platformdata *pdata = dev->platform_data;
+@@ -161,6 +178,7 @@ static int compare_of(struct device *dev, void *data)
+ 	}
+ 
+ 	return dev->of_node == np;
++#endif
+ }
+ 
+ static const char *const imx_drm_dpu_comp_parents[] = {
+@@ -202,12 +220,14 @@ static bool imx_drm_parent_is_compatible(struct device *dev,
+ 
+ static inline bool has_dpu(struct device *dev)
+ {
++lx_printf("has_dpu()\n");
+ 	return imx_drm_parent_is_compatible(dev, imx_drm_dpu_comp_parents,
+ 					ARRAY_SIZE(imx_drm_dpu_comp_parents));
+ }
+ 
+ static inline bool has_dcss(struct device *dev)
+ {
++lx_printf("has_dcss()\n");
+ 	return imx_drm_parent_is_compatible(dev, imx_drm_dcss_comp_parents,
+ 					ARRAY_SIZE(imx_drm_dcss_comp_parents));
+ }
+@@ -416,8 +436,10 @@ static void imx_drm_unbind(struct device *dev)
+ 
+ 	drm_kms_helper_poll_fini(drm);
+ 
++#if IS_ENABLED(CONFIG_DRM_FBDEV_EMULATION)
+ 	if (imxdrm->fbhelper)
+ 		drm_fbdev_cma_fini(imxdrm->fbhelper);
++#endif
+ 
+ 	drm_mode_config_cleanup(drm);
+ 
+@@ -442,7 +464,7 @@ static int imx_drm_platform_probe(struct platform_device *pdev)
+ {
+ 	struct component_match *match = NULL;
+ 	int ret;
+-printk("*** imx_drm_platform_probe(): %p\n", __builtin_return_address(0));
++lx_printf("### imx_drm_platform_probe()\n");
+ 	if (has_dpu(&pdev->dev))
+ 		add_dpu_bliteng_components(&pdev->dev, &match);
+ 
+@@ -451,6 +473,7 @@ printk("*** imx_drm_platform_probe(): %p\n", __builtin_return_address(0));
+ 
+ 	if (!ret)
+ 		ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
++lx_printf("imx_drm_platform_probe() finished\n");
+ 
+ 	return ret;
+ }
+diff --git a/drivers/gpu/imx/dcss/dcss-blkctl.c b/drivers/gpu/imx/dcss/dcss-blkctl.c
+index 2f13b33..6dd6e1c 100644
+--- a/drivers/gpu/imx/dcss/dcss-blkctl.c
++++ b/drivers/gpu/imx/dcss/dcss-blkctl.c
+@@ -115,10 +115,10 @@ int dcss_blkctl_init(struct dcss_soc *dcss, unsigned long blkctl_base)
+ 	disp_dev = of_get_property(node, "disp-dev", &len);
+ 	if (!disp_dev || !strncmp(disp_dev, "hdmi_disp", 9))
+ 		blkctl->hdmi_output = true;
+-
++#if 0
+ 	if (imx8_get_soc_revision() >= B0_SILICON_ID)
+ 		blkctl->clk_setting = HDMI_MIPI_CLK_SEL;
+-
++#endif
+ 	dcss_blkctl_cfg(dcss);
+ 
+ 	return 0;
+diff --git a/drivers/gpu/imx/dcss/dcss-common.c b/drivers/gpu/imx/dcss/dcss-common.c
+index 8f292db..5e0bd81 100644
+--- a/drivers/gpu/imx/dcss/dcss-common.c
++++ b/drivers/gpu/imx/dcss/dcss-common.c
+@@ -44,7 +44,7 @@ struct dcss_devtype {
+ 	u32 pll_base;
+ };
+ 
+-static struct dcss_devtype dcss_type_imx8m = {
++/*static*/ struct dcss_devtype dcss_type_imx8m = {
+ 	.name = "DCSS_imx8m",
+ 	.blkctl_ofs = 0x2F000,
+ 	.ctxld_ofs = 0x23000,
+@@ -568,7 +568,7 @@ static int dcss_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	struct dcss_soc *dcss;
+ 	const struct dcss_devtype *devtype;
+-
++lx_printf("### dcss_probe()\n");
+ 	devtype = of_device_get_match_data(&pdev->dev);
+ 	if (!devtype) {
+ 		dev_err(&pdev->dev, "no device match found\n");
+@@ -610,7 +610,11 @@ static int dcss_probe(struct platform_device *pdev)
+ 
+ 	dcss_bus_freq(dcss, true);
+ 
+-	return dcss_add_client_devices(dcss);
++	ret = dcss_add_client_devices(dcss);
++
++lx_printf("dcss_probe() finished\n");
++
++	return ret;
+ }
+ 
+ static int dcss_remove(struct platform_device *pdev)
+diff --git a/drivers/gpu/imx/dcss/dcss-ctxld.c b/drivers/gpu/imx/dcss/dcss-ctxld.c
+index 377a102..f98946d 100644
+--- a/drivers/gpu/imx/dcss/dcss-ctxld.c
++++ b/drivers/gpu/imx/dcss/dcss-ctxld.c
+@@ -138,11 +138,12 @@ static irqreturn_t dcss_ctxld_irq_handler(int irq, void *data)
+ {
+ 	struct dcss_ctxld_priv *priv = data;
+ 	u32 irq_status;
+-
++//lx_printf("*** dcss_ctxld_irq_handler(): %d\n", irq);
+ 	irq_status = dcss_readl(priv->ctxld_reg + DCSS_CTXLD_CONTROL_STATUS);
+ 
+ 	if (irq_status & CTXLD_IRQ_COMPLETION &&
+ 	    !(irq_status & CTXLD_ENABLE) && priv->in_use) {
++//lx_printf("*** dcss_ctxld_irq_handler(): !in_use\n");
+ 		priv->in_use = false;
+ 
+ 		dcss_trace_module(TRACE_CTXLD,
+@@ -251,7 +252,7 @@ int dcss_ctxld_init(struct dcss_soc *dcss, unsigned long ctxld_base)
+ {
+ 	struct dcss_ctxld_priv *priv;
+ 	int ret;
+-
++lx_printf("*** dcss_ctxld_init()\n");
+ 	priv = devm_kzalloc(dcss->dev, sizeof(struct dcss_ctxld_priv),
+ 			    GFP_KERNEL);
+ 	if (!priv)
+@@ -275,10 +276,11 @@ int dcss_ctxld_init(struct dcss_soc *dcss, unsigned long ctxld_base)
+ 	}
+ 
+ 	ret = dcss_ctxld_irq_config(priv);
+-	if (!ret)
++	if (ret)
+ 		return ret;
+ 
+ 	dcss_ctxld_hw_cfg(dcss);
++lx_printf("*** dcss_ctxld_init() finished\n");
+ 
+ 	return 0;
+ }
+@@ -347,7 +349,7 @@ static int __dcss_ctxld_enable(struct dcss_ctxld_priv *ctxld)
+ 	 * in the modules' settings take place there.
+ 	 */
+ 	ctxld->current_ctx ^= 1;
+-
++lx_printf("*** __dcss_ctxld_enable(): %d\n", ctxld->current_ctx);
+ 	ctxld->ctx_size[ctxld->current_ctx][CTX_DB] = 0;
+ 	ctxld->ctx_size[ctxld->current_ctx][CTX_SB_HP] = 0;
+ 	ctxld->ctx_size[ctxld->current_ctx][CTX_SB_LP] = 0;
+@@ -384,6 +386,7 @@ void dcss_ctxld_kick(struct dcss_soc *dcss)
+ 	dcss_trace_module(TRACE_CTXLD, TRACE_KICK);
+ 
+ 	spin_lock_irqsave(&ctxld->lock, flags);
++//lx_printf("*** dcss_ctxld_kick(): %d, %d, %d\n", ctxld->current_ctx, ctxld->armed, ctxld->in_use);
+ 	if (ctxld->armed && !ctxld->in_use) {
+ 		ctxld->armed = false;
+ 		__dcss_ctxld_enable(dcss->ctxld_priv);
+@@ -425,7 +428,12 @@ void dcss_ctxld_write(struct dcss_soc *dcss, u32 ctx_id, u32 val, u32 reg_ofs)
+ bool dcss_ctxld_is_flushed(struct dcss_soc *dcss)
+ {
+ 	struct dcss_ctxld_priv *ctxld = dcss->ctxld_priv;
+-
++#if 0
++lx_printf("dcss_ctxld_is_flushed(): %d, %d, %d\n",
++          ctxld->ctx_size[ctxld->current_ctx][CTX_DB],
++          ctxld->ctx_size[ctxld->current_ctx][CTX_SB_HP],
++          ctxld->ctx_size[ctxld->current_ctx][CTX_SB_LP]);
++#endif
+ 	return ctxld->ctx_size[ctxld->current_ctx][CTX_DB] == 0 &&
+ 		ctxld->ctx_size[ctxld->current_ctx][CTX_SB_HP] == 0 &&
+ 		ctxld->ctx_size[ctxld->current_ctx][CTX_SB_LP] == 0;
+@@ -435,7 +443,7 @@ EXPORT_SYMBOL(dcss_ctxld_is_flushed);
+ int dcss_ctxld_resume(struct dcss_soc *dcss)
+ {
+ 	struct dcss_ctxld_priv *ctxld = dcss->ctxld_priv;
+-
++lx_printf("*** dcss_ctxld_resume()\n");
+ 	dcss_ctxld_hw_cfg(dcss);
+ 
+ 	if (!ctxld->irq_en) {
+@@ -452,6 +460,7 @@ int dcss_ctxld_suspend(struct dcss_soc *dcss)
+ 	struct dcss_ctxld_priv *ctxld = dcss->ctxld_priv;
+ 	int wait_time_ms = 0;
+ 	unsigned long flags;
++lx_printf("*** dcss_ctxld_suspend()\n");
+ 
+ 	dcss_ctxld_kick(dcss);
+ 
+diff --git a/drivers/gpu/imx/dcss/dcss-dtg.c b/drivers/gpu/imx/dcss/dcss-dtg.c
+index 0bcf18f..fe4f02e 100644
+--- a/drivers/gpu/imx/dcss/dcss-dtg.c
++++ b/drivers/gpu/imx/dcss/dcss-dtg.c
+@@ -194,7 +194,7 @@ static irqreturn_t dcss_dtg_irq_handler(int irq, void *data)
+ {
+ 	struct dcss_dtg_priv *dtg = data;
+ 	u32 status;
+-
++//lx_printf("*** dcss_dtg_irq_handler()\n");
+ 	status = dcss_readl(dtg->base_reg + DCSS_DTG_INT_STATUS);
+ 
+ 	if (!(status & LINE0_IRQ))
+diff --git a/drivers/gpu/imx/dcss/dcss-scaler.c b/drivers/gpu/imx/dcss/dcss-scaler.c
+index 051bc4b..fc7b2e3 100644
+--- a/drivers/gpu/imx/dcss/dcss-scaler.c
++++ b/drivers/gpu/imx/dcss/dcss-scaler.c
+@@ -332,7 +332,7 @@ static int dcss_scaler_ch_init_all(struct dcss_soc *dcss,
+ 
+ 		ch->base_ofs = scaler_base + i * 0x400;
+ 
+-		ch->base_reg = devm_ioremap(dcss->dev, ch->base_ofs, SZ_4K);
++		ch->base_reg = devm_ioremap(dcss->dev, ch->base_ofs, 0x400);
+ 		if (!ch->base_reg) {
+ 			dev_err(dcss->dev, "scaler: unable to remap ch base\n");
+ 			return -ENOMEM;
+diff --git a/drivers/irqchip/irq-imx-irqsteer.c b/drivers/irqchip/irq-imx-irqsteer.c
+index 1b2334b..608983c 100644
+--- a/drivers/irqchip/irq-imx-irqsteer.c
++++ b/drivers/irqchip/irq-imx-irqsteer.c
+@@ -46,7 +46,7 @@ static void imx_irqsteer_irq_unmask(struct irq_data *d)
+ 	struct irqsteer_irqchip_data *irqsteer_data = d->chip_data;
+ 	void __iomem *reg;
+ 	u32 val, idx;
+-
++lx_printf("*** imx_irqsteer_irq_unmask(): %d\n", d->hwirq);
+ 	spin_lock(&irqsteer_data->lock);
+ 	idx = irqsteer_data->endian ?
+ 		(irqsteer_data->channum - d->hwirq / 32 - 1) : d->hwirq / 32;
+@@ -164,7 +164,7 @@ static int imx_irqsteer_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	int channum, endian;
+ 	int ret;
+-
++lx_printf("### imx_irqsteer_probe()\n");
+ 	ret = of_property_read_u32(np, "nxp,irqsteer_chans", &channum);
+ 	if (ret)
+ 		channum = 1;
+@@ -197,6 +197,7 @@ static int imx_irqsteer_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	irqsteer_data->irq = platform_get_irq(pdev, 0);
++lx_printf("*** imx_irqsteer_probe(): irq: %d\n", irqsteer_data->irq);
+ 	if (irqsteer_data->irq <= 0) {
+ 		dev_err(&pdev->dev, "failed to get irq\n");
+ 		return -ENODEV;
+@@ -215,6 +216,8 @@ static int imx_irqsteer_probe(struct platform_device *pdev)
+ 	irqsteer_data->inited = false;
+ 	spin_lock_init(&irqsteer_data->lock);
+ 
++lx_printf("*** imx_irqsteer_probe(): calling irq_domain_add_linear()\n");
++
+ 	irqsteer_data->domain = irq_domain_add_linear(np,
+ 						 irqsteer_data->channum * 32,
+ 						 &imx_irqsteer_domain_ops,
+diff --git a/include/linux/fb.h b/include/linux/fb.h
+index bc24e48..5cc1e2a 100644
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -461,6 +461,16 @@ struct fb_tile_ops {
+    output like oopses */
+ #define FBINFO_CAN_FORCE_OUTPUT     0x200000
+ 
++struct aperture {
++	resource_size_t base;
++	resource_size_t size;
++};
++
++struct apertures_struct {
++	unsigned int count;
++	struct aperture ranges[0];
++};
++
+ struct fb_info {
+ 	atomic_t count;
+ 	int node;
+@@ -514,19 +524,13 @@ struct fb_info {
+ 	/* we need the PCI or similar aperture base/size not
+ 	   smem_start/size as smem_start may just be an object
+ 	   allocated inside the aperture so may not actually overlap */
+-	struct apertures_struct {
+-		unsigned int count;
+-		struct aperture {
+-			resource_size_t base;
+-			resource_size_t size;
+-		} ranges[0];
+-	} *apertures;
++	struct apertures_struct *apertures;
+ 
+ 	bool skip_vt_switch; /* no VT switch on suspend/resume required */
+ };
+ 
+ static inline struct apertures_struct *alloc_apertures(unsigned int max_num) {
+-	struct apertures_struct *a = kzalloc(sizeof(struct apertures_struct)
++	struct apertures_struct *a = (struct apertures_struct*)kzalloc(sizeof(struct apertures_struct)
+ 			+ max_num * sizeof(struct aperture), GFP_KERNEL);
+ 	if (!a)
+ 		return NULL;
