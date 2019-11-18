@@ -3,7 +3,7 @@ VERSION     := 2
 DOWNLOADS   := dwc_otg.git usb.archive intel_fb.archive lxip.archive \
                wifi.archive fec.archive libnl.archive wpa_supplicant.git \
                fw.archive usb_host.archive dwc_otg_host.git usb_hid.archive \
-               usb_net.archive
+               usb_net.archive imx8_fb.git
 
 #
 # Tools
@@ -117,6 +117,14 @@ TAR_OPT(fec) := --strip-components=1  --files-from - < <(sed 's/-x.x.x/-$(VERSIO
 HASH_INPUT   += $(REP_DIR)/fec.list
 
 #
+# i.MX8 Framebuffer driver
+#
+SRC_DIR_IMX8_FB  := src/drivers/framebuffer/imx8
+URL(imx8_fb)     := https://github.com/Freescale/linux-fslc.git
+REV(imx8_fb)     := 4.14-2.0.x-imx
+DIR(imx8_fb)     := $(SRC_DIR_IMX8_FB)
+
+#
 # libnl sources
 #
 URL(libnl) := https://github.com/thom311/libnl/releases/download/libnl3_2_25/libnl-3.2.25.tar.gz
@@ -151,6 +159,7 @@ PATCHES += $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/usb*.patc
 PATCHES += $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/intel*.patch)))
 PATCHES += $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/fec_*.patch)))
 PATCHES += $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/usb_hid*.patch)))
+PATCHES += $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/imx8_fb*.patch)))
 
 #IP stack
 LXIP_OPT = -p1 -d$(SRC_DIR_LXIP)
