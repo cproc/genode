@@ -1346,7 +1346,11 @@ struct dev_archdata
 	struct dma_map_ops *dma_ops;
 };
 
-struct fwnode_handle { int dummy; };
+struct fwnode_operations { int dummy; };
+
+struct fwnode_handle {
+	const struct fwnode_operations *ops;
+};
 
 struct device {
 	const char               *name;
@@ -2081,6 +2085,8 @@ int stop_machine(cpu_stop_fn_t, void *, const struct cpumask *);
  *******************/
 struct rcu_head { int dummy; };
 
+typedef unsigned long irq_hw_number_t;
+
 #if 0
 /*************************
  ** asm/special_insns.h **
@@ -2311,10 +2317,11 @@ struct property {
 };
 
 struct device_node {
-	const char         *name;
-	const char         *full_name;
-	struct property    *properties;
-	struct device_node *parent;
+	const char           *name;
+	const char           *full_name;
+	struct fwnode_handle  fwnode;
+	struct property      *properties;
+	struct device_node   *parent;
 };
 
 int of_device_is_compatible(const struct device_node *device,
@@ -2329,6 +2336,18 @@ bool of_property_read_bool(const struct device_node *np, const char *propname);
 int of_property_read_string(const struct device_node *np, const char *propname,
                             const char **out_string);
 int of_property_read_u32(const struct device_node *np, const char *propname, u32 *out_value);
+
+bool is_of_node(const struct fwnode_handle *fwnode);
+
+#define to_of_node(__fwnode)						\
+	({								\
+		typeof(__fwnode) __to_of_node_fwnode = (__fwnode);	\
+									\
+		is_of_node(__to_of_node_fwnode) ?			\
+			container_of(__to_of_node_fwnode,		\
+				     struct device_node, fwnode) :	\
+			NULL;						\
+	})
 
 
 /***********************
@@ -2975,12 +2994,10 @@ enum { O_CLOEXEC = 0xbadaffe };
 #if 0
 int get_unused_fd_flags(unsigned);
 #endif
-
+#if 0
 /***********************
  ** linux/irqdomain.h **
  ***********************/
-
-typedef unsigned long irq_hw_number_t;
 
 struct irq_domain {
 //	struct list_head link;
@@ -3020,7 +3037,7 @@ struct irq_domain_ops {
 int irq_domain_xlate_twocell(struct irq_domain *d, struct device_node *ctrlr,
 			const u32 *intspec, unsigned int intsize,
 			irq_hw_number_t *out_hwirq, unsigned int *out_type);
-
+#endif
 #if 0
 unsigned int irq_find_mapping(struct irq_domain *, irq_hw_number_t);
 unsigned int irq_create_mapping(struct irq_domain *, irq_hw_number_t);
@@ -3070,6 +3087,7 @@ int generic_handle_irq(unsigned int);
 #define CONFIG_ARCH_HAS_SG_CHAIN               1
 #define CONFIG_X86                             1
 #endif
+#define CONFIG_IRQ_DOMAIN                      1
 #define CONFIG_MMU                             1
 #define CONFIG_OF                              1
 #define CONFIG_VIDEOMODE_HELPERS               1

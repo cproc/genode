@@ -584,6 +584,24 @@ int devm_request_threaded_irq(struct device *dev, unsigned int irq,
 }
 
 
+/****************************
+ ** kernel/irq/irqdomain.c **
+ ****************************/
+
+struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
+				    irq_hw_number_t hwirq_max, int direct_max,
+				    const struct irq_domain_ops *ops,
+				    void *host_data)
+{
+	//TRACE_AND_STOP;
+	struct irq_domain *domain;
+	domain = kzalloc_node(sizeof(*domain) + (sizeof(unsigned int) * size),
+	                      GFP_KERNEL, of_node_to_nid(of_node));
+
+	return domain;
+}
+
+
 /******************
  ** lib/devres.c **
  ******************/

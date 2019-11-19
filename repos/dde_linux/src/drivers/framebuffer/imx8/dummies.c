@@ -386,6 +386,17 @@ struct irq_domain *irq_domain_add_linear(struct device_node *of_node,
 }
 
 
+/****************
+ ** linux/of.h **
+ ****************/
+
+bool is_of_node(const struct fwnode_handle *fwnode)
+{
+	TRACE_AND_STOP;
+	return false;
+}
+
+
 /************************
  ** linux/pm_runtime.h **
  ************************/
