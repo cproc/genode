@@ -240,17 +240,10 @@ void irq_chip_eoi_parent(struct irq_data *data)
 	TRACE_AND_STOP;
 }
 
-void irq_set_chained_handler_and_data(unsigned int irq,
-                                      irq_flow_handler_t handle,
-                                      void *data)
-{
-	TRACE_AND_STOP;
-}
-
 int irq_set_chip_data(unsigned int irq, void *data)
 {
-	TRACE_AND_STOP;
-	return -1;
+	TRACE;
+	return 0;
 }
 
 
@@ -284,7 +277,7 @@ int irq_domain_xlate_twocell(struct irq_domain *d, struct device_node *ctrlr,
 
 int disable_irq_nosync(unsigned int irq)
 {
-	TRACE_AND_STOP;
+	TRACE;
 	return 0;
 }
 
@@ -372,17 +365,14 @@ void *irq_desc_get_handler_data(struct irq_desc *desc)
 }
 
 
-/***********************
- ** linux/irqdomain.h **
- ***********************/
+/****************
+ ** linux/of.h **
+ ****************/
 
-struct irq_domain *irq_domain_add_linear(struct device_node *of_node,
-                                         unsigned int size,
-                                         const struct irq_domain_ops *ops,
-                                         void *host_data)
+bool is_of_node(const struct fwnode_handle *fwnode)
 {
 	TRACE_AND_STOP;
-	return NULL;
+	return false;
 }
 
 
@@ -1685,19 +1675,7 @@ unsigned int work_busy(struct work_struct *w)
 	TRACE_AND_STOP;
 	return 0;
 }
-#endif
-void enable_irq(unsigned int irq)
-{
-	/* XXX */
-	TRACE;
-}
 
-void disable_irq(unsigned int irq)
-{
-	/* XXX */
-	TRACE;
-}
-#if 0
 unsigned raw_read_seqcount(const seqcount_t *s)
 {
 	TRACE_AND_STOP;

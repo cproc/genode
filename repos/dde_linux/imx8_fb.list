@@ -207,6 +207,7 @@ linux-x.x.x/include/linux/idr.h
 linux-x.x.x/include/linux/interval_tree_generic.h
 linux-x.x.x/include/linux/interval_tree.h
 #linux-x.x.x/include/linux/io-mapping.h
+linux-x.x.x/include/linux/irqdomain.h
 linux-x.x.x/include/linux/irqhandler.h
 linux-x.x.x/include/linux/list.h
 #linux-x.x.x/include/linux/list_nulls.h

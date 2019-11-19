@@ -1346,7 +1346,11 @@ struct dev_archdata
 	struct dma_map_ops *dma_ops;
 };
 
-struct fwnode_handle { int dummy; };
+struct fwnode_operations { int dummy; };
+
+struct fwnode_handle {
+	const struct fwnode_operations *ops;
+};
 
 struct device {
 	const char               *name;
@@ -1855,29 +1859,40 @@ struct irq_chip {
 
 struct irq_data {
 	unsigned long		hwirq;
-
 	void			*chip_data;
 };
 
 void irq_chip_eoi_parent(struct irq_data *data);
 
-struct irq_desc;
+struct irq_common_data {
+	void *handler_data;
+};
+
+struct irq_desc {
+	struct irq_common_data	irq_common_data;
+	irq_flow_handler_t	handle_irq;
+};
 
 void handle_level_irq(struct irq_desc *desc);
 
 #if 0
 void irqd_set_trigger_type(struct irq_data *, u32);
+#endif
 void irq_set_chip_and_handler(unsigned int, struct irq_chip *,
                               irq_flow_handler_t);
-#endif
-void handle_simple_irq(struct irq_desc *);
 
 extern struct irq_chip dummy_irq_chip;
 
+void handle_simple_irq(struct irq_desc *);
 
 enum {
 	IRQ_NOAUTOEN		= (1 << 12),
 };
+
+void irq_set_chained_handler_and_data(unsigned int irq,
+                                      irq_flow_handler_t handle,
+                                      void *data);
+
 
 /************************
  ** linux/capability.h **
@@ -2080,6 +2095,8 @@ int stop_machine(cpu_stop_fn_t, void *, const struct cpumask *);
  ** linux/types.h **
  *******************/
 struct rcu_head { int dummy; };
+
+typedef unsigned long irq_hw_number_t;
 
 #if 0
 /*************************
@@ -2311,10 +2328,11 @@ struct property {
 };
 
 struct device_node {
-	const char         *name;
-	const char         *full_name;
-	struct property    *properties;
-	struct device_node *parent;
+	const char           *name;
+	const char           *full_name;
+	struct fwnode_handle  fwnode;
+	struct property      *properties;
+	struct device_node   *parent;
 };
 
 int of_device_is_compatible(const struct device_node *device,
@@ -2329,6 +2347,18 @@ bool of_property_read_bool(const struct device_node *np, const char *propname);
 int of_property_read_string(const struct device_node *np, const char *propname,
                             const char **out_string);
 int of_property_read_u32(const struct device_node *np, const char *propname, u32 *out_value);
+
+bool is_of_node(const struct fwnode_handle *fwnode);
+
+#define to_of_node(__fwnode)						\
+	({								\
+		typeof(__fwnode) __to_of_node_fwnode = (__fwnode);	\
+									\
+		is_of_node(__to_of_node_fwnode) ?			\
+			container_of(__to_of_node_fwnode,		\
+				     struct device_node, fwnode) :	\
+			NULL;						\
+	})
 
 
 /***********************
@@ -2975,12 +3005,10 @@ enum { O_CLOEXEC = 0xbadaffe };
 #if 0
 int get_unused_fd_flags(unsigned);
 #endif
-
+#if 0
 /***********************
  ** linux/irqdomain.h **
  ***********************/
-
-typedef unsigned long irq_hw_number_t;
 
 struct irq_domain {
 //	struct list_head link;
@@ -3020,7 +3048,7 @@ struct irq_domain_ops {
 int irq_domain_xlate_twocell(struct irq_domain *d, struct device_node *ctrlr,
 			const u32 *intspec, unsigned int intsize,
 			irq_hw_number_t *out_hwirq, unsigned int *out_type);
-
+#endif
 #if 0
 unsigned int irq_find_mapping(struct irq_domain *, irq_hw_number_t);
 unsigned int irq_create_mapping(struct irq_domain *, irq_hw_number_t);
@@ -3031,7 +3059,6 @@ struct irq_domain *irq_domain_create_linear(struct fwnode_handle *,
                                             unsigned int,
                                             const struct irq_domain_ops *,
                                             void *);
-#endif
 
 /*********************
  ** linux/irqdesc.h **
@@ -3041,7 +3068,6 @@ struct irq_desc {
 	int dummy;
 };
 
-#if 0
 int generic_handle_irq(unsigned int);
 
 
@@ -3070,6 +3096,7 @@ int generic_handle_irq(unsigned int);
 #define CONFIG_ARCH_HAS_SG_CHAIN               1
 #define CONFIG_X86                             1
 #endif
+#define CONFIG_IRQ_DOMAIN                      1
 #define CONFIG_MMU                             1
 #define CONFIG_OF                              1
 #define CONFIG_VIDEOMODE_HELPERS               1
@@ -3188,10 +3215,12 @@ void tasklet_kill(struct tasklet_struct *);
 void tasklet_init(struct tasklet_struct *, void (*)(unsigned long), unsigned long);
 void tasklet_enable(struct tasklet_struct *);
 void tasklet_disable(struct tasklet_struct *);
+#endif
 
 void enable_irq(unsigned int);
 void disable_irq(unsigned int);
 
+#if 0
 #include <linux/math64.h>
 #endif
 

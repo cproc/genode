@@ -569,6 +569,34 @@ bool cpu_is_imx8mq(void)
 }
 
 
+/***********************
+ ** kernel/irq/chip.c **
+ ***********************/
+
+static struct irq_chip *irqsteer_chip = nullptr;
+
+static struct irq_desc irqsteer_irq_desc;
+
+static irqreturn_t irqsteer_irq_handler(int irq, void *data)
+{
+	Genode::log("imxsteer_irq_handler()");
+	// XXX: call irqsteer_flow_handler
+}
+
+void irq_set_chained_handler_and_data(unsigned int irq,
+                                      irq_flow_handler_t handle,
+                                      void *data)
+{
+	Genode::log("*** irq_set_chained_handler_and_data(): ", irq);
+
+	irqsteer_irq_desc.irq_common_data.handler_data = data;
+	irqsteer_irq_desc.handle_irq = handle;
+
+	Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
+    	                       irqsteer_irq_handler, nullptr, nullptr);
+}
+
+
 /*************************
  ** kernel/irq/devres.c **
  *************************/
@@ -578,9 +606,68 @@ int devm_request_threaded_irq(struct device *dev, unsigned int irq,
 			      unsigned long irqflags, const char *devname,
 			      void *dev_id)
 {
-	Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
-	                           handler, dev_id, thread_fn);
+Genode::log("devm_request_threaded_irq(): ", irq, ", handler: ", (void*)handler, ", thread_fn: ", (void*)thread_fn);
+
+	/* ignore irqsteer IRQs for now */
+
+	if (irq > 31)
+		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
+	    	                       handler, dev_id, thread_fn);
+
 	return 0;
+}
+
+
+/****************************
+ ** kernel/irq/irqdomain.c **
+ ****************************/
+
+struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
+				    irq_hw_number_t hwirq_max, int direct_max,
+				    const struct irq_domain_ops *ops,
+				    void *host_data)
+{
+	Genode::log("__irq_domain_add()");
+
+	static struct irq_domain domain;
+
+	{
+		/* trigger a call of 'irq_set_chip_and_handler()' to get access to the irq_chip struct */
+		static bool mapped = false;
+		if (!mapped) {
+			mapped = true;
+			ops->map(&domain, 0, 0);
+		}
+	}
+
+	return &domain;
+}
+
+
+/*************************
+ ** kernel/irq/manage.c **
+ *************************/
+
+void enable_irq(unsigned int irq)
+{
+	lx_printf("*** enable_irq(): %d\n", irq);
+	if (irq < 32) {
+
+		if (!irqsteer_chip)
+			panic("'irqsteer_chip' uninitialized");
+
+		struct irq_data irq_data {
+			.hwirq = irq,
+			.chip_data = irqsteer_irq_desc.irq_common_data.handler_data,
+		};
+
+		irqsteer_chip->irq_unmask(&irq_data);
+	}
+}
+
+void disable_irq(unsigned int irq)
+{
+	lx_printf("*** disable_irq(): %d\n", irq);
 }
 
 
@@ -746,8 +833,23 @@ void *dma_alloc_wc(struct device *dev, size_t size,
 
 int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long irqflags, const char *devname, void *dev_id)
 {
-	Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq), handler, dev_id);
+	/* ignore irqsteer IRQs for now */
+
+	if (irq > 31)
+		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq), handler, dev_id);
+
 	return 0;
+}
+
+
+/*****************
+ ** linux/irq.h **
+ *****************/
+
+void irq_set_chip_and_handler(unsigned int irq, struct irq_chip *chip,
+                              irq_flow_handler_t)
+{
+	irqsteer_chip = chip;
 }
 
 
@@ -2710,13 +2812,13 @@ void irqd_set_trigger_type(struct irq_data *, u32)
 {
 	TRACE_AND_STOP;
 }
-#endif
+
 void irq_set_chip_and_handler(unsigned int, struct irq_chip *,
                               irq_flow_handler_t)
 {
 	TRACE_AND_STOP;
 }
-#if 0
+
 void handle_simple_irq(struct irq_desc *)
 {
 	TRACE_AND_STOP;
