@@ -75,7 +75,7 @@ lx_printf("c->width: %d, c->height: %d, c->bpp: %d, c->pitch: %d, c->size: %d\n"
 
 	c->lx_fb = fb;
 
-	memset_io(c->addr, 0, c->size);
+	memset_io(c->addr, 0xff, c->size);
 
 	return;
 

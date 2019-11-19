@@ -244,7 +244,7 @@ void irq_set_chained_handler_and_data(unsigned int irq,
                                       irq_flow_handler_t handle,
                                       void *data)
 {
-	TRACE_AND_STOP;
+	TRACE;
 }
 
 int irq_set_chip_data(unsigned int irq, void *data)
@@ -383,6 +383,17 @@ struct irq_domain *irq_domain_add_linear(struct device_node *of_node,
 {
 	TRACE_AND_STOP;
 	return NULL;
+}
+
+
+/****************
+ ** linux/of.h **
+ ****************/
+
+bool is_of_node(const struct fwnode_handle *fwnode)
+{
+	TRACE_AND_STOP;
+	return false;
 }
 
 
@@ -1690,12 +1701,14 @@ void enable_irq(unsigned int irq)
 {
 	/* XXX */
 	TRACE;
+	lx_printf("*** enable_irq(): %d\n", irq);
 }
 
 void disable_irq(unsigned int irq)
 {
 	/* XXX */
 	TRACE;
+	lx_printf("*** disable_irq(): %d\n", irq);
 }
 #if 0
 unsigned raw_read_seqcount(const seqcount_t *s)

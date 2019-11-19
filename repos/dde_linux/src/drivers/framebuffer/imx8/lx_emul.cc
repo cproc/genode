@@ -578,9 +578,32 @@ int devm_request_threaded_irq(struct device *dev, unsigned int irq,
 			      unsigned long irqflags, const char *devname,
 			      void *dev_id)
 {
-	Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
-	                           handler, dev_id, thread_fn);
+Genode::log("devm_request_threaded_irq(): ", irq, ", handler: ", (void*)handler);
+
+	/* ignore irqsteer IRQs for now */
+
+	if (irq > 32) {
+		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
+	    	                       handler, dev_id, thread_fn);
+	}
+
 	return 0;
+}
+
+
+/****************************
+ ** kernel/irq/irqdomain.c **
+ ****************************/
+
+struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
+				    irq_hw_number_t hwirq_max, int direct_max,
+				    const struct irq_domain_ops *ops,
+				    void *host_data)
+{
+	Genode::log("__irq_domain_add()");
+
+	static struct irq_domain domain;
+	return &domain;
 }
 
 

@@ -69,6 +69,11 @@ class Lx_kit::Irq : public Lx::Irq
 
 				bool handle()
 				{
+					if (!_handler) {
+						/* on Linux, having no handler implies IRQ_WAKE_THREAD */
+						_thread_fn(0, _dev);
+					}
+
 					switch (_handler(0, _dev)) {
 					case IRQ_WAKE_THREAD:
 						_thread_fn(0, _dev);
@@ -144,12 +149,16 @@ class Lx_kit::Irq : public Lx::Irq
 				 */
 				void handle_irq()
 				{
+					Genode::log("*** handle_irq()");
 					/* report IRQ to all clients */
 					for (Handler *h = _handler.first(); h; h = h->next()) {
+						Genode::log("handle_irq(): calling handler ", h);
 						h->handle();
+						Genode::log("handle_irq(): handler returned");
 					}
 
 					_irq_sess.ack_irq();
+					Genode::log("*** handle_irq() finished");
 				}
 
 				/**

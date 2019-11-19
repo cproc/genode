@@ -155,7 +155,7 @@ static void run_linux(void * m)
 	
 	static resource imx_irqsteer_resources[] = 	{
 		{ 0x32e2d000, 0x32e2dfff, "imx-irqsteer", IORESOURCE_MEM },
-		{         18,         18, "imx-irqsteer", IORESOURCE_IRQ },
+		{         18+32,         18+32, "imx-irqsteer", IORESOURCE_IRQ },
 	};
 
 	imx_irqsteer_pdev->num_resources = 2;
@@ -215,8 +215,8 @@ static void run_linux(void * m)
 		{ 0x32c00000, 0x32cfffff, "hdp_ctrl",  IORESOURCE_MEM },
 		{ 0x32e40000, 0x32e7ffff, "hdp_crs",   IORESOURCE_MEM },
 		{ 0x32e2f000, 0x32e2f00f, "hdp_reset", IORESOURCE_MEM },
-		{         16,         16, "plug_in",   IORESOURCE_IRQ },
-		{         25,         25, "plug_out",  IORESOURCE_IRQ },
+		{         16+32,         16+32, "plug_in",   IORESOURCE_IRQ },
+		{         25+32,         25+32, "plug_out",  IORESOURCE_IRQ },
 	};
 
 	hdp_pdev->num_resources = 5;
