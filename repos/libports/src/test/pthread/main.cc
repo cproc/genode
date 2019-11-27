@@ -542,6 +542,153 @@ static void test_lock_and_sleep()
 }
 
 
+struct Cond
+{
+	pthread_cond_t _cond;
+
+	Cond() { pthread_cond_init(&_cond, nullptr); }
+
+	~Cond() { pthread_cond_destroy(&_cond); }
+
+	pthread_cond_t * cond() { return &_cond; }
+};
+
+
+struct Test_cond
+{
+	Mutex<PTHREAD_MUTEX_NORMAL> _mutex;
+	Cond                        _cond;
+
+	enum State {
+		PING, PONG, SHUTDOWN, END
+	} _shared_state { State::PING };
+
+	static void *signaller_fn(void *arg)
+	{
+		((Test_cond *)arg)->signaller();
+		return nullptr;
+	}
+
+	void signaller()
+	{
+		printf("signaller: started\n");
+
+		unsigned num_events = 0;
+		bool test_done = false;
+		while (!test_done) {
+//			usleep(50*1000);
+			pthread_mutex_lock(_mutex.mutex());
+
+			switch (_shared_state) {
+			case State::PING:
+				_shared_state = State::PONG;
+				++num_events;
+				pthread_cond_signal(_cond.cond());
+				break;
+			case State::PONG:
+				_shared_state = State::PING;
+				++num_events;
+				pthread_cond_signal(_cond.cond());
+				break;
+			case State::SHUTDOWN:
+				printf("signaller: shutting down\n");
+				_shared_state = State::END;
+				++num_events;
+				pthread_cond_signal(_cond.cond());
+				test_done = true;
+				break;
+			case State::END:
+				break;
+			}
+
+			pthread_mutex_unlock(_mutex.mutex());
+		}
+
+		printf("signaller: finished after %u state changes\n", num_events);
+	}
+
+	static void *waiter_fn(void *arg)
+	{
+		((Test_cond *)arg)->waiter();
+		return nullptr;
+	}
+
+	void waiter()
+	{
+		printf("waiter: started\n");
+
+		unsigned pings = 0, pongs = 0;
+		bool test_done = false;
+		while (!test_done) {
+//			usleep(5*1000);
+			pthread_mutex_lock(_mutex.mutex());
+
+			auto handle_state = [&] {
+				unsigned const num_events = pings + pongs;
+				if (num_events == 10000) {
+					printf("waiter: request shutdown\n");
+					_shared_state = SHUTDOWN;
+				} else if (num_events % 5 == 0) {
+					pthread_cond_wait(_cond.cond(), _mutex.mutex());
+				}
+			};
+
+			switch (_shared_state) {
+			case State::PING:
+				++pings;
+				handle_state();
+				break;
+			case State::PONG:
+				++pongs;
+				handle_state();
+				break;
+			case State::SHUTDOWN:
+				break;
+			case State::END:
+				test_done = true;
+				break;
+			}
+
+			pthread_mutex_unlock(_mutex.mutex());
+		}
+
+		printf("waiter: finished (pings=%u, pongs=%u)\n", pings, pongs);
+	}
+
+	Test_cond()
+	{
+		pthread_t signaller_id;
+		if (pthread_create(&signaller_id, 0, signaller_fn, this) != 0) {
+			printf("error: pthread_create() failed\n");
+			exit(-1);
+		}
+		pthread_t waiter1_id;
+		if (pthread_create(&waiter1_id, 0, waiter_fn, this) != 0) {
+			printf("error: pthread_create() failed\n");
+			exit(-1);
+		}
+		pthread_t waiter2_id;
+		if (pthread_create(&waiter2_id, 0, waiter_fn, this) != 0) {
+			printf("error: pthread_create() failed\n");
+			exit(-1);
+		}
+
+		waiter();
+		pthread_join(signaller_id, nullptr);
+		pthread_join(waiter1_id, nullptr);
+		pthread_join(waiter2_id, nullptr);
+	}
+};
+
+
+static void test_cond()
+{
+	printf("main thread: test condition variables\n");
+
+	{ Test_cond test; }
+}
+
+
 static void test_interplay()
 {
 	enum { NUM_THREADS = 2 };
@@ -630,11 +777,12 @@ int main(int argc, char **argv)
 	if (!pthread_main)
 		exit(-1);
 
-	test_interplay();
-	test_self_destruct();
-	test_mutex();
-	test_mutex_stress();
-	test_lock_and_sleep();
+//	test_interplay();
+//	test_self_destruct();
+//	test_mutex();
+//	test_mutex_stress();
+//	test_lock_and_sleep();
+	test_cond();
 
 	printf("--- returning from main ---\n");
 	return 0;

@@ -37,9 +37,6 @@ using namespace Libc;
 #define USE_MONITOR 1
 
 
-static Genode::Env *_env_ptr;  /* solely needed to spawn the timeout thread for the
-                                  timed semaphore */
-
 static Thread *_main_thread_ptr;
 
 static Suspend *_suspend_ptr;
@@ -47,25 +44,12 @@ static Monitor *_monitor_ptr;
 static Resume  *_resume_ptr;
 
 
-void Libc::init_pthread_support(Genode::Env &env, Suspend &suspend,
-                                Monitor &monitor, Resume &resume)
+void Libc::init_pthread_support(Suspend &suspend, Monitor &monitor, Resume &resume)
 {
-	_env_ptr         = &env;
 	_main_thread_ptr = Thread::myself();
 	_suspend_ptr     = &suspend;
 	_monitor_ptr     = &monitor;
 	_resume_ptr      = &resume;
-}
-
-
-static Libc::Timeout_entrypoint &_global_timeout_ep()
-{
-	class Missing_call_of_init_pthread_support { };
-	if (!_env_ptr)
-		throw Missing_call_of_init_pthread_support();
-
-	static Timeout_entrypoint timeout_ep { *_env_ptr };
-	return timeout_ep;
 }
 
 
@@ -557,6 +541,96 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 };
 
 
+/*************************
+ ** Condition variables **
+ *************************/
+
+struct pthread_cond
+{
+	unsigned _age { 0 };
+	Lock     _data_mutex;
+
+	struct Missing_call_of_init_pthread_support : Exception { };
+
+	void _suspend(Suspend_functor &func)
+	{
+		if (!_suspend_ptr)
+			throw Missing_call_of_init_pthread_support();
+		_suspend_ptr->suspend(func);
+	}
+
+	void _resume_all()
+	{
+		if (!_resume_ptr)
+			throw Missing_call_of_init_pthread_support();
+		_resume_ptr->resume_all();
+	}
+
+	pthread_cond() { }
+
+	unsigned age()
+	{
+		Lock::Guard lock_guard(_data_mutex);
+		return _age;
+	}
+
+	int wait(pthread_mutex &mutex)
+	{
+		/* TODO check mutex owner */
+
+		/*
+		 * We release 'mutex' not until suspend() in the functor is called.
+		 * This ensures the thread is woken up by resume_all() because it
+		 * already entered the Pthread pool.
+		 */
+		struct Wait_for_cond : Suspend_functor
+		{
+			bool retry { false };
+
+			pthread_cond  &_cond;
+			pthread_mutex &_mutex;
+			bool           _release_mutex { true };
+			unsigned const _age { _cond._age };
+
+			Wait_for_cond(pthread_cond &cond, pthread_mutex &mutex)
+			: _cond(cond), _mutex(mutex) { }
+
+			bool suspend() override
+			{
+				if (_release_mutex) {
+					_mutex.unlock();
+					_release_mutex = false;
+				}
+
+				if (_age != _cond.age()) {
+					_mutex.lock();
+					retry = false;
+				} else {
+					retry = true;
+				}
+
+				return retry;
+			}
+		} wait_for_cond(*this, mutex);
+
+		do { _suspend(wait_for_cond); } while (wait_for_cond.retry);
+
+		return 0;
+	}
+
+	int broadcast()
+	{
+		{
+			Lock::Guard lock_guard(_data_mutex);
+			++_age;
+		}
+		_resume_all();
+
+		return 0;
+	}
+};
+
+
 extern "C" {
 
 	/* Thread */
@@ -769,7 +843,6 @@ extern "C" {
 		if (!mutex)
 			return EINVAL;
 
-
 		Libc::Allocator alloc { };
 
 		pthread_mutextype const type = (!attr || !*attr)
@@ -837,25 +910,7 @@ extern "C" {
 	}
 
 
-	/* Condition variable */
-
-
-	/*
-	 * Implementation based on
-	 * http://web.archive.org/web/20010914175514/http://www-classic.be.com/aboutbe/benewsletter/volume_III/Issue40.html#Workshop
-	 */
-
-	struct pthread_cond
-	{
-		int num_waiters;
-		int num_signallers;
-		Lock counter_lock;
-		Timed_semaphore signal_sem { _global_timeout_ep() };
-		Semaphore handshake_sem;
-
-		pthread_cond() : num_waiters(0), num_signallers(0) { }
-	};
-
+	/* Condition variables */
 
 	int pthread_condattr_init(pthread_condattr_t *attr)
 	{
@@ -891,16 +946,12 @@ extern "C" {
 	}
 
 
-	static int cond_init(pthread_cond_t *__restrict cond,
-	                     const pthread_condattr_t *__restrict attr)
+	static int cond_init(pthread_cond_t *__restrict cond)
 	{
-		static Lock cond_init_lock { };
-
 		if (!cond)
 			return EINVAL;
 
 		try {
-			Lock::Guard g(cond_init_lock);
 			Libc::Allocator alloc { };
 			*cond = new (alloc) pthread_cond;
 			return 0;
@@ -909,9 +960,9 @@ extern "C" {
 
 
 	int pthread_cond_init(pthread_cond_t *__restrict cond,
-	                      const pthread_condattr_t *__restrict attr)
+	                      pthread_condattr_t const *__restrict)
 	{
-		return cond_init(cond, attr);
+		return cond_init(cond);
 	}
 
 
@@ -922,12 +973,13 @@ extern "C" {
 
 		Libc::Allocator alloc { };
 		destroy(alloc, *cond);
-		*cond = 0;
+		*cond = nullptr;
 
 		return 0;
 	}
 
 
+#if 0
 	static uint64_t timeout_ms(struct timespec currtime,
 	                           struct timespec abstimeout)
 	{
@@ -967,19 +1019,21 @@ extern "C" {
 
 		return diff_ms;
 	}
+#endif
 
 
 	int pthread_cond_timedwait(pthread_cond_t *__restrict cond,
 	                           pthread_mutex_t *__restrict mutex,
 	                           const struct timespec *__restrict abstime)
 	{
+#if 0
 		int result = 0;
 
 		if (!cond)
 			return EINVAL;
 
 		if (*cond == PTHREAD_COND_INITIALIZER)
-			cond_init(cond, NULL);
+			cond_init(cond, );
 
 		pthread_cond *c = *cond;
 
@@ -1020,60 +1074,51 @@ extern "C" {
 		pthread_mutex_lock(mutex);
 
 		return result;
+#else
+		/* TODO */
+		return EINVAL;
+#endif
 	}
 
 
 	int pthread_cond_wait(pthread_cond_t *__restrict cond,
 	                      pthread_mutex_t *__restrict mutex)
 	{
-		return pthread_cond_timedwait(cond, mutex, 0);
-	}
-
-
-	int pthread_cond_signal(pthread_cond_t *cond)
-	{
-		if (!cond || !*cond)
+		if (!cond || !mutex || !*mutex)
 			return EINVAL;
 
-		pthread_cond *c = *cond;
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			cond_init(cond);
 
-		c->counter_lock.lock();
-		if (c->num_waiters > c->num_signallers) {
-		  ++c->num_signallers;
-		  c->signal_sem.up();
-		  c->counter_lock.unlock();
-		  c->handshake_sem.down();
-		} else
-		  c->counter_lock.unlock();
-
-	   return 0;
+		return (*cond)->wait(**mutex);
 	}
 
 
 	int pthread_cond_broadcast(pthread_cond_t *cond)
 	{
-		if (!cond || !*cond)
+		if (!cond)
 			return EINVAL;
 
-		pthread_cond *c = *cond;
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			cond_init(cond);
 
-		c->counter_lock.lock();
-		if (c->num_waiters > c->num_signallers) {
-			int still_waiting = c->num_waiters - c->num_signallers;
-			c->num_signallers = c->num_waiters;
-			for (int i = 0; i < still_waiting; i++)
-				c->signal_sem.up();
-			c->counter_lock.unlock();
-			for (int i = 0; i < still_waiting; i++)
-				c->handshake_sem.down();
-		} else
-			c->counter_lock.unlock();
-
-		return 0;
+		return (*cond)->broadcast();
 	}
 
-	/* TLS */
 
+	int pthread_cond_signal(pthread_cond_t *cond)
+	{
+		if (!cond)
+			return EINVAL;
+
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			cond_init(cond);
+
+		return (*cond)->broadcast();
+	}
+
+
+	/* TLS */
 
 	struct Key_element : List<Key_element>::Element
 	{

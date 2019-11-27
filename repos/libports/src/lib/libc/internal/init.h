@@ -105,10 +105,9 @@ namespace Libc {
 	void init_socket_fs(Suspend &);
 
 	/**
-	 * Allow thread.cc to access the 'Genode::Env' (needed for the
-	 * implementation of condition variables with timeout)
+	 * Pthread support
 	 */
-	void init_pthread_support(Genode::Env &env, Suspend &, Monitor &, Resume &);
+	void init_pthread_support(Suspend &, Monitor &, Resume &);
 
 	struct Config_accessor : Interface
 	{

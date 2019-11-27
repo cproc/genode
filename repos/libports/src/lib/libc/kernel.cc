@@ -376,7 +376,7 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 {
 	atexit(close_file_descriptors_on_exit);
 
-	init_pthread_support(env, *this, *this, *this);
+	init_pthread_support(*this, *this, *this);
 
 	_env.ep().register_io_progress_handler(*this);
 

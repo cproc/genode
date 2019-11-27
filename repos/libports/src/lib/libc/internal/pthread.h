@@ -243,5 +243,4 @@ struct pthread : Libc::Pthread
 	using Libc::Pthread::Pthread;
 };
 
-
 #endif /* _LIBC__INTERNAL__PTHREAD_H_ */
