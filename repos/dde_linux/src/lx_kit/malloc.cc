@@ -42,7 +42,7 @@ class Lx_kit::Slab_backend_alloc : public Lx::Slab_backend_alloc,
 
 		enum {
 			VM_SIZE    = 64 * 1024 * 1024,       /* size of VM region to reserve */
-			P_BLOCK_SIZE  = 2 * 1024 * 1024,     /* 2 MB physical contiguous */
+			P_BLOCK_SIZE  = 8 * 1024 * 1024,     /* 2 MB physical contiguous */
 			V_BLOCK_SIZE  = P_BLOCK_SIZE * 2,    /* 2 MB virtual used, 2 MB virtual left free to avoid that Allocator_avl merges virtual contiguous regions which are physically non-contiguous */
 			ELEMENTS   = VM_SIZE / V_BLOCK_SIZE, /* MAX number of dataspaces in VM */
 		};
