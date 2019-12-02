@@ -68,6 +68,7 @@ Irq_session_component::Irq_session_component(Range_allocator &irq_alloc,
   _irq_alloc(irq_alloc),
   _kobj(), _is_msi(false), _address(0), _value(0)
 {
+Genode::log("*** Irq_session_component(): ", _irq_number);
 	const long mmconf =
 		Arg_string::find_arg(args, "device_config_phys").long_value(0);
 
