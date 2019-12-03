@@ -60,24 +60,26 @@ class Lx_kit::Irq : public Lx::Irq
 				void          *_dev;       /* Linux device */
 				irq_handler_t  _handler;   /* Linux handler */
 				irq_handler_t  _thread_fn; /* Linux thread function */
+				int            _irq_num;   /* Linux IRQ number */
 
 			public:
 
 				Handler(void *dev, irq_handler_t handler,
-				        irq_handler_t thread_fn)
-				: _dev(dev), _handler(handler), _thread_fn(thread_fn) { }
+				        irq_handler_t thread_fn, int irq_num)
+				: _dev(dev), _handler(handler), _thread_fn(thread_fn),
+				  _irq_num(irq_num) { }
 
 				bool handle()
 				{
 					if (!_handler) {
 						/* on Linux, having no handler implies IRQ_WAKE_THREAD */
-						_thread_fn(0, _dev);
+						_thread_fn(_irq_num, _dev);
 						return true;
 					}
 
-					switch (_handler(0, _dev)) {
+					switch (_handler(_irq_num, _dev)) {
 					case IRQ_WAKE_THREAD:
-						_thread_fn(0, _dev);
+						_thread_fn(_irq_num, _dev);
 					case IRQ_HANDLED:
 						return true;
 					case IRQ_NONE:
@@ -150,16 +152,11 @@ class Lx_kit::Irq : public Lx::Irq
 				 */
 				void handle_irq()
 				{
-					//Genode::log("*** handle_irq()");
 					/* report IRQ to all clients */
-					for (Handler *h = _handler.first(); h; h = h->next()) {
-						//Genode::log("handle_irq(): calling handler ", h);
+					for (Handler *h = _handler.first(); h; h = h->next())
 						h->handle();
-						//Genode::log("handle_irq(): handler returned");
-					}
 
 					_irq_sess.ack_irq();
-					//Genode::log("*** handle_irq() finished");
 				}
 
 				/**
@@ -221,7 +218,7 @@ class Lx_kit::Irq : public Lx::Irq
 
 			/* register Linux handler */
 			Handler *h = new (&_handler_alloc)
-			                   Handler(dev_id, handler, thread_fn);
+			                   Handler(dev_id, handler, thread_fn, dev.irq_num);
 			ctx->add_handler(h);
 		}
 

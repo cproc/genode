@@ -260,17 +260,6 @@ int irq_domain_xlate_twocell(struct irq_domain *d, struct device_node *ctrlr,
 }
 
 
-/*************************
- ** kernel/irq/manage.c **
- *************************/
-
-int disable_irq_nosync(unsigned int irq)
-{
-	TRACE;
-	return 0;
-}
-
-
 /******************
  ** lib/string.c **
  ******************/

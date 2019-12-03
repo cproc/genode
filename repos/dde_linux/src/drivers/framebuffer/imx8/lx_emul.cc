@@ -715,6 +715,12 @@ void disable_irq(unsigned int irq)
 	}
 }
 
+int disable_irq_nosync(unsigned int irq)
+{
+	disable_irq(irq);
+	return 0;
+}
+
 
 /******************
  ** lib/devres.c **

@@ -3231,6 +3231,7 @@ void tasklet_disable(struct tasklet_struct *);
 
 void enable_irq(unsigned int);
 void disable_irq(unsigned int);
+int disable_irq_nosync(unsigned int);
 
 #if 0
 #include <linux/math64.h>
