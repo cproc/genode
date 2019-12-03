@@ -1623,6 +1623,8 @@ static inline int dma_set_coherent_mask(struct device *dev, u64 mask)
 
 void *dma_alloc_wc(struct device *dev, size_t size,
                    dma_addr_t *dma_addr, gfp_t gfp);
+void dma_free_wc(struct device *dev, size_t size,
+                 void *cpu_addr, dma_addr_t dma_addr);
 
 void *dmam_alloc_coherent(struct device *dev, size_t size, dma_addr_t *dma_handle, gfp_t gfp);
 
@@ -3231,6 +3233,7 @@ void tasklet_disable(struct tasklet_struct *);
 
 void enable_irq(unsigned int);
 void disable_irq(unsigned int);
+int disable_irq_nosync(unsigned int);
 
 #if 0
 #include <linux/math64.h>

@@ -594,7 +594,7 @@ void irq_set_chained_handler_and_data(unsigned int irq,
 	irqsteer_irq_desc.handle_irq = handle;
 
 	Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
-    	                       irqsteer_irq_handler, nullptr, nullptr);
+	                           irq, irqsteer_irq_handler, nullptr, nullptr);
 }
 
 
@@ -613,7 +613,7 @@ Genode::log("devm_request_threaded_irq(): ", irq, ", handler: ", (void*)handler,
 
 	if (irq > 31)
 		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
-	    	                       handler, dev_id, thread_fn);
+		                           irq, handler, dev_id, thread_fn);
 
 	return 0;
 }
@@ -694,7 +694,10 @@ void enable_irq(unsigned int irq)
 		};
 
 		irqsteer_chip->irq_unmask(&irq_data);
+		return;
 	}
+
+	Lx::Irq::irq().enable_irq(irq);
 }
 
 void disable_irq(unsigned int irq)
@@ -712,7 +715,16 @@ void disable_irq(unsigned int irq)
 		};
 
 		irqsteer_chip->irq_mask(&irq_data);
+		return;
 	}
+
+	Lx::Irq::irq().disable_irq(irq);
+}
+
+int disable_irq_nosync(unsigned int irq)
+{
+	disable_irq(irq);
+	return 0;
 }
 
 
@@ -858,27 +870,41 @@ lx_printf("device_add(): %s, %p\n", dev->name, __builtin_return_address(0));
  ** linux/dma-mapping.h **
  *************************/
 
+struct Dma_wc_dataspace : Genode::Attached_ram_dataspace,
+                          Genode::List<Dma_wc_dataspace>::Element
+{
+	Dma_wc_dataspace(size_t size)
+	: Genode::Attached_ram_dataspace(Lx_kit::env().ram(),
+	                                 Lx_kit::env().rm(),
+	                                 size,
+	                                 Genode::Cache_attribute::WRITE_COMBINED) { }
+};
+
+static Genode::List<Dma_wc_dataspace> _dma_wc_ds_list;
+
 void *dma_alloc_wc(struct device *dev, size_t size,
                    dma_addr_t *dma_addr, gfp_t gfp)
 {
-	static bool called = false;
+	Dma_wc_dataspace *dma_wc_ds = new (Lx::Malloc::mem()) Dma_wc_dataspace(size);
 
-	if (called) {
-		Genode::error(__func__, "() called more than once, which is currently not implemented");
-		Genode::sleep_forever();
+	_dma_wc_ds_list.insert(dma_wc_ds);
+
+	*dma_addr = Genode::Dataspace_client(dma_wc_ds->cap()).phys_addr();
+	return dma_wc_ds->local_addr<void>();
+}
+
+void dma_free_wc(struct device *dev, size_t size,
+                 void *cpu_addr, dma_addr_t dma_addr)
+{
+	for (Dma_wc_dataspace *ds = _dma_wc_ds_list.first(); ds; ds = ds->next()) {
+		if (ds->local_addr<void>() == cpu_addr) {
+			_dma_wc_ds_list.remove(ds);
+			destroy(Lx::Malloc::mem(), ds);
+			return;
+		}
 	}
 
-	called = true;
-
-	static Genode::Attached_ram_dataspace _ram_ds {
-		Lx_kit::env().ram(),
-		Lx_kit::env().rm(),
-		size,
-		Genode::Cache_attribute::WRITE_COMBINED
-	};
-
-	*dma_addr = Genode::Dataspace_client(_ram_ds.cap()).phys_addr();
-	return _ram_ds.local_addr<void>();
+	Genode::error("dma_free_wc(): unknown address");
 }
 
 
@@ -897,7 +923,8 @@ int devm_request_irq(struct device *dev, unsigned int irq,
 		irqsteer_dev_id[irq] = dev_id;
 		enable_irq(irq);
 	} else
-		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq), handler, dev_id);
+		Lx::Irq::irq().request_irq(Platform::Device::create(Lx_kit::env().env(), irq),
+		                           irq, handler, dev_id);
 
 	return 0;
 }
@@ -1152,9 +1179,9 @@ void Framebuffer::Driver::finish_initialization()
 		Genode::error("no drm device");
 		return;
 	}
-#if 0
+
 	lx_c_set_driver(lx_drm_device, (void*)this);
-#endif
+
 	generate_report();
 
 	_session.config_changed();
@@ -1194,7 +1221,7 @@ void Framebuffer::Driver::update_mode()
 	Configuration old = _config;
 	_config = Configuration();
 Genode::log("update_mode()");
-#if 1
+
 	lx_for_each_connector(lx_drm_device, [&] (drm_connector *c) {
 Genode::log("update_mode(): lx_for_each_connector()");
 		unsigned brightness;
@@ -1206,7 +1233,7 @@ Genode::log("update_mode(): mode: ", mode);
 		if (mode->vdisplay > _config._lx.height) _config._lx.height = mode->vdisplay;
 
 	});
-#endif
+
 	lx_c_allocate_framebuffer(lx_drm_device, &_config._lx);
 
 	if (!_config._lx.lx_fb) {
@@ -1232,15 +1259,19 @@ Genode::log("update_mode(): mode: ", mode);
 
 Genode::log("update_mode(): check");
 
-#if 0
+#if 1
 	/* force virtual framebuffer size if requested */
 	if (int w = _session.force_width_from_config())
 		_config._lx.width = min(_config._lx.width, w);
 	if (int h = _session.force_height_from_config())
 		_config._lx.height = min(_config._lx.height, h);
 
-	if (old._lx.addr)  Lx::iounmap(old._lx.addr);
+Genode::log("update_mode(): check 2");
+
+	//if (old._lx.addr)  Lx::iounmap(old._lx.addr);
 	if (old._lx.lx_fb) {
+Genode::log("update_mode(): check 3");
+
 		if (drm_framebuffer_read_refcount(old._lx.lx_fb) > 1) {
 			/*
 			 * If one sees this message, we are going to leak a lot of
@@ -1250,7 +1281,9 @@ Genode::log("update_mode(): check");
 			Genode::warning("framebuffer refcount ",
 			                drm_framebuffer_read_refcount(old._lx.lx_fb));
 		}
+Genode::log("update_mode(): check 4");
 		drm_framebuffer_remove(old._lx.lx_fb);
+Genode::log("update_mode(): check 5");
 	}
 #endif
 }
@@ -2688,10 +2721,11 @@ bool preemptible()
 	return false;
 }
 #endif
+
 void drm_sysfs_hotplug_event(struct drm_device *dev)
 {
 	Genode::log("*** drm_sysfs_hotplug_event(): ", __builtin_return_address(0));
-#if 0
+
 	Framebuffer::Driver * driver = (Framebuffer::Driver*)
 		lx_c_get_driver(lx_drm_device);
 
@@ -2700,8 +2734,8 @@ void drm_sysfs_hotplug_event(struct drm_device *dev)
 		driver->generate_report();
 		driver->trigger_reconfiguration();
 	}
-#endif
 }
+
 #if 0
 void intel_audio_codec_enable(struct intel_encoder *encoder)
 {

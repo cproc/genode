@@ -260,17 +260,6 @@ int irq_domain_xlate_twocell(struct irq_domain *d, struct device_node *ctrlr,
 }
 
 
-/*************************
- ** kernel/irq/manage.c **
- *************************/
-
-int disable_irq_nosync(unsigned int irq)
-{
-	TRACE;
-	return 0;
-}
-
-
 /******************
  ** lib/string.c **
  ******************/
@@ -372,12 +361,6 @@ ktime_t ktime_get_real(void)
 /*************************
  ** linux/dma-mapping.h **
  *************************/
-
-void dma_free_wc(struct device *dev, size_t size,
-                 void *cpu_addr, dma_addr_t dma_addr)
-{
-	TRACE_AND_STOP;
-}
 
 int
 dma_get_sgtable_attrs(struct device *dev, struct sg_table *sgt, void *cpu_addr,

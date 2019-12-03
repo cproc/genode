@@ -84,7 +84,7 @@ class Framebuffer::Driver
 		void update_mode();
 
 		void generate_report();
-#if 0
+
 		/**
 		 * Register signal handler used for config updates
 		 *
@@ -107,7 +107,6 @@ class Framebuffer::Driver
 			else
 				Genode::warning("config signal handler unexpectedly undefined");
 		}
-#endif
 };
 
 
@@ -153,7 +152,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Session>
 		}
 
 		Genode::Xml_node config() { return _config.xml(); }
-#if 0
+
 		int force_width_from_config()
 		{
 			return _config.xml().attribute_value<unsigned>("force_width", 0);
@@ -163,7 +162,6 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Session>
 		{
 			return _config.xml().attribute_value<unsigned>("force_height", 0);
 		}
-#endif
 
 		/***********************************
 		 ** Framebuffer session interface **

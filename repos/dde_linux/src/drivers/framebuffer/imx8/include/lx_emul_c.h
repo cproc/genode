@@ -53,10 +53,10 @@ void   lx_c_allocate_framebuffer(struct drm_device *,
 
 void   lx_c_set_mode(struct drm_device *, struct drm_connector *,
                      struct drm_framebuffer *, struct drm_display_mode *);
-#if 0
+
 void   lx_c_set_driver(struct drm_device *, void *);
-#endif
 void * lx_c_get_driver(struct drm_device *);
+
 #if 0
 void   lx_c_set_brightness(struct drm_connector *, unsigned, unsigned);
 unsigned lx_c_get_brightness(struct drm_connector * const, unsigned);

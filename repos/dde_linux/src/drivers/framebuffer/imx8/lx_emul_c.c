@@ -29,7 +29,9 @@ lx_c_intel_framebuffer_create(struct drm_device *dev,
 
 #include <drm/drm_encoder.h>
 #include <drm/drm_gem_cma_helper.h>
+#include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_modeset_helper.h>
+#include <imx/imx-drm.h>
 
 void lx_c_allocate_framebuffer(struct drm_device * dev,
                                struct lx_c_fb_config *c)
@@ -62,21 +64,25 @@ lx_printf("c->width: %d, c->height: %d, c->bpp: %d, c->pitch: %d, c->size: %d\n"
 	mode_cmd.width = c->width;
 	mode_cmd.height = c->height;
 	mode_cmd.pitches[0] = c->pitch;
-	mode_cmd.pixel_format = /*DRM_FORMAT_RGB565*/DRM_FORMAT_XRGB8888;
+	mode_cmd.pixel_format = DRM_FORMAT_XRGB8888;
 
 	drm_helper_mode_fill_fb_struct(dev, fb, &mode_cmd);
 
 	fb->obj[0] = &obj->base;
 
-	if (drm_framebuffer_init(dev, fb, NULL) != 0) {
+	static const struct drm_framebuffer_funcs drm_fb_cma_funcs = {
+		.destroy = drm_gem_fb_destroy,
+	};
+
+	if (drm_framebuffer_init(dev, fb, &drm_fb_cma_funcs) != 0) {
 		kfree(fb);
 		goto err;
 	}
 
 	c->lx_fb = fb;
-lx_printf("calling memset_io(): addr: %p, size: %zu\n", c->addr, c->size);
-	memset_io(c->addr, 0xff, c->size);
-lx_printf("2\n");
+
+	memset_io(c->addr, 0, c->size);
+
 	return;
 
 err:
@@ -216,22 +222,19 @@ lx_printf("lx_c_set_mode(): check 4\n");
 		lx_printf("Error: set config failed ret=%d refcnt before=%u after=%u\n",
 		          ret, ref_cnt_before, drm_framebuffer_read_refcount(fb));
 }
-#if 0
+
 void lx_c_set_driver(struct drm_device * dev, void * driver)
 {
-	struct drm_i915_private *dev_priv = dev->dev_private;
-	ASSERT(!dev_priv->audio_component);
-	dev_priv->audio_component = (struct i915_audio_component *) driver;
+	struct imx_drm_device *dev_priv = dev->dev_private;
+	ASSERT(!dev_priv->fbhelper);
+	dev_priv->fbhelper = (struct drm_fbdev_cma *) driver;
 }
-#endif
+
 
 void* lx_c_get_driver(struct drm_device * dev)
 {
-	TRACE_AND_STOP;
-#if 0
-	struct drm_i915_private *dev_priv = dev->dev_private;
-	return (void*) dev_priv->audio_component;
-#endif
+	struct imx_drm_device *dev_priv = dev->dev_private;
+	return (void*) dev_priv->fbhelper;
 }
 
 #if 0

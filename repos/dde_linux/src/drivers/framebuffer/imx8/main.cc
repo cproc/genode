@@ -94,12 +94,11 @@ struct Main
 	}
 
 	void announce() { env.parent().announce(ep.manage(root)); }
-#if 0
+
 	Lx::Task &linux_task() { return *linux; }
-#endif
 };
 
-#if 0
+
 struct Policy_agent
 {
 	Main &main;
@@ -123,7 +122,7 @@ struct Policy_agent
 	Policy_agent(Main &m)
 	: main(m), handler(main.ep, *this, &Policy_agent::handle) {}
 };
-#endif
+
 
 static void run_linux(void * m)
 {
@@ -258,15 +257,15 @@ static void run_linux(void * m)
 
 	main->root.session.driver().finish_initialization();
 	main->announce();
-#if 0
+
 	Policy_agent pa(*main);
 	main->root.session.driver().config_sigh(pa.handler);
 	main->config.sigh(pa.handler);
-#endif
+
 	while (1) {
 		Lx::scheduler().current()->block_and_schedule();
-//		while (pa.pending())
-//			main->root.session.config_changed();
+		while (pa.pending())
+			main->root.session.config_changed();
 	}
 }
 
