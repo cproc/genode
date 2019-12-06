@@ -76,6 +76,9 @@ struct Genode::Pd_session_client : Rpc_client<Pd_session>
 	Ram_dataspace_capability alloc(size_t size,
 	                               Cache_attribute cached = CACHED) override
 	{
+		static unsigned long total = 0;
+		total += size;
+		Genode::log("alloc(): ", size, " (", total, "), ", __builtin_return_address(0));
 		return call<Rpc_alloc>(size, cached);
 	}
 
