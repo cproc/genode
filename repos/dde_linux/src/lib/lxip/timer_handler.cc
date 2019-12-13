@@ -17,7 +17,6 @@
 #include <base/env.h>
 #include <base/log.h>
 #include <base/tslab.h>
-#include <lxip/lxip.h>
 #include <timer_session/connection.h>
 #include <util/reconstructible.h>
 
@@ -176,7 +175,6 @@ class Lx::Timer
 		 */
 		void _handle_timers(Genode::Duration dur)
 		{
-			Genode::Lock::Guard g { Lxip::lock() };
 			_upate_jiffies(dur);
 
 			while (Lx::Timer::Context *ctx = _list.first()) {

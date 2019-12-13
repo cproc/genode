@@ -15,7 +15,6 @@
 
 /* Genode includes */
 #include <base/log.h>
-#include <lxip/lxip.h>
 #include <nic/packet_allocator.h>
 #include <nic_session/connection.h>
 
@@ -64,7 +63,6 @@ class Nic_client
 		 */
 		void _packet_avail()
 		{
-			Genode::Lock::Guard g { Lxip::lock() };
 			Lx::timer_update_jiffies();
 
 			/* process a batch of only MAX_PACKETS in one run */

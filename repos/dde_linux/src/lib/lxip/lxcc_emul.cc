@@ -31,9 +31,6 @@
 /* Lx_kit */
 #include <lx_kit/env.h>
 
-/* lxip */
-#include <lxip/lxip.h>
-
 /*********************************
  ** Lx::Backend_alloc interface **
  *********************************/
@@ -644,15 +641,4 @@ bool mod_delayed_work(struct workqueue_struct *wq, struct delayed_work *dwork,
 int schedule_delayed_work(struct delayed_work *dwork, unsigned long delay)
 {
 	return mod_delayed_work(0, dwork, delay);
-}
-
-
-/*****************
- ** lxip/lxip.h **
- *****************/
-
-Genode::Lock &Lxip::lock()
-{
-	static Genode::Lock _lxip_lock;
-	return _lxip_lock;
 }
