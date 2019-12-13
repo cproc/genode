@@ -17,5 +17,5 @@
 
 extern "C" int *__error(void)
 {
-	return &pthread_self()->errno;
+	return &pthread_self()->thread_local_errno;
 }
