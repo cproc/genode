@@ -581,7 +581,7 @@ pgprot_t pgprot_writecombine(pgprot_t prot)
 
 void print_hex_dump(const char *level, const char *prefix_str, int prefix_type, int rowsize, int groupsize, const void *buf, size_t len, bool ascii)
 {
-	TRACE_AND_STOP;
+	TRACE;
 }
 
 int PTR_ERR_OR_ZERO(__force const void *ptr)
