@@ -30,8 +30,11 @@
 #include <internal/init.h>
 #include <internal/suspend.h>
 #include <internal/resume.h>
+#include <internal/monitor.h>
 
 using namespace Libc;
+
+#define USE_MONITOR 1
 
 
 static Genode::Env *_env_ptr;  /* solely needed to spawn the timeout thread for the
@@ -40,14 +43,17 @@ static Genode::Env *_env_ptr;  /* solely needed to spawn the timeout thread for 
 static Thread *_main_thread_ptr;
 
 static Suspend *_suspend_ptr;
+static Monitor *_monitor_ptr;
 static Resume  *_resume_ptr;
 
 
-void Libc::init_pthread_support(Genode::Env &env, Suspend &suspend, Resume &resume)
+void Libc::init_pthread_support(Genode::Env &env, Suspend &suspend,
+                                Monitor &monitor, Resume &resume)
 {
 	_env_ptr         = &env;
 	_main_thread_ptr = Thread::myself();
 	_suspend_ptr     = &suspend;
+	_monitor_ptr     = &monitor;
 	_resume_ptr      = &resume;
 }
 
@@ -199,7 +205,8 @@ struct pthread_mutex_attr { pthread_mutextype type; };
  */
 struct pthread_mutex
 {
-	pthread_t _owner { nullptr };
+	pthread_t _owner      { nullptr };
+	unsigned  _applicants { 0 };
 	Lock      _data_mutex;
 
 	struct Missing_call_of_init_pthread_support : Exception { };
@@ -218,6 +225,23 @@ struct pthread_mutex
 		_resume_ptr->resume_all();
 	}
 
+	struct Applicant
+	{
+		pthread_mutex &m;
+
+		Applicant(pthread_mutex &m) : m(m)
+		{
+			Lock::Guard lock_guard(m._data_mutex);
+			++m._applicants;
+		}
+
+		~Applicant()
+		{
+			Lock::Guard lock_guard(m._data_mutex);
+			--m._applicants;
+		}
+	};
+
 	pthread_mutex() { }
 
 	virtual ~pthread_mutex() { }
@@ -235,8 +259,35 @@ struct pthread_mutex
 
 struct Libc::Pthread_mutex_normal : pthread_mutex
 {
+	int _try_lock(pthread_t thread)
+	{
+		Lock::Guard lock_guard(_data_mutex);
+
+		if (!_owner) {
+			_owner = thread;
+			return 0;
+		}
+
+		return EBUSY;
+	}
+
 	int lock() override final
 	{
+#if USE_MONITOR
+		pthread_t const myself = pthread_self();
+
+		/* fast path without lock contention */
+		if (_try_lock(myself) == 0)
+			return 0;
+
+		{
+			Applicant guard { *this };
+
+			if (!_monitor_ptr)
+				throw Missing_call_of_init_pthread_support();
+			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
+		}
+#else
 		struct Try_lock : Suspend_functor
 		{
 			bool retry { false }; /* have to try after resume */
@@ -253,20 +304,14 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 		} try_lock(*this);
 
 		do { _suspend(try_lock); } while (try_lock.retry);
+#endif
 
 		return 0;
 	}
 
 	int trylock() override final
 	{
-		Lock::Guard lock_guard(_data_mutex);
-
-		if (!_owner) {
-			_owner = pthread_self();
-			return 0;
-		}
-
-		return EBUSY;
+		return _try_lock(pthread_self());
 	}
 
 	int unlock() override final
@@ -277,7 +322,15 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 			return EPERM;
 
 		_owner = nullptr;
+
+#if USE_MONITOR
+		if (!_monitor_ptr)
+			throw Missing_call_of_init_pthread_support();
+		if (_applicants)
+			_monitor_ptr->charge_monitors();
+#else
 		_resume_all();
+#endif
 
 		return 0;
 	}
@@ -286,8 +339,45 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 {
+	enum Try_lock_result { SUCCESS, BUSY, DEADLOCK };
+
+	Try_lock_result _try_lock(pthread_t thread)
+	{
+		Lock::Guard lock_guard(_data_mutex);
+
+		if (!_owner) {
+			_owner = thread;
+			return SUCCESS;
+		}
+
+		return _owner == thread ? DEADLOCK : BUSY;
+	}
+
 	int lock() override final
 	{
+#if USE_MONITOR
+		pthread_t const myself = pthread_self();
+
+		/* fast path without lock contention */
+		switch (_try_lock(myself)) {
+		case SUCCESS:  return 0;
+		case DEADLOCK: return EDEADLK;
+		case BUSY: [[fallthrough]];
+		}
+
+		{
+			Applicant guard { *this };
+
+			if (!_monitor_ptr)
+				throw Missing_call_of_init_pthread_support();
+			_monitor_ptr->monitor([&] {
+				/* DEADLOCK already handled above - just check for SUCCESS */
+				return _try_lock(myself) == SUCCESS;
+			});
+		}
+
+		return 0;
+#else
 		/*
 		 * We can't use trylock() as it returns EBUSY also for the
 		 * EDEADLK case.
@@ -323,15 +413,15 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 		do { _suspend(try_lock); } while (try_lock.retry);
 
 		return try_lock.result;
+#endif
 	}
 
 	int trylock() override final
 	{
-		Lock::Guard lock_guard(_data_mutex);
-
-		if (!_owner) {
-			_owner = pthread_self();
-			return 0;
+		switch (_try_lock(pthread_self())) {
+		case SUCCESS:  return 0;
+		case DEADLOCK: return EDEADLK;
+		case BUSY:     return EBUSY;
 		}
 
 		return EBUSY;
@@ -345,7 +435,15 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 			return EPERM;
 
 		_owner = nullptr;
+
+#if USE_MONITOR
+		if (!_monitor_ptr)
+			throw Missing_call_of_init_pthread_support();
+		if (_applicants)
+			_monitor_ptr->charge_monitors();
+#else
 		_resume_all();
+#endif
 
 		return 0;
 	}
@@ -356,8 +454,39 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 {
 	unsigned _nesting_level { 0 };
 
+	int _try_lock(pthread_t thread)
+	{
+		Lock::Guard lock_guard(_data_mutex);
+
+		if (!_owner) {
+			_owner         = thread;
+			_nesting_level = 1;
+			return 0;
+		} else if (_owner == thread) {
+			++_nesting_level;
+			return 0;
+		}
+
+		return EBUSY;
+	}
+
 	int lock() override final
 	{
+#if USE_MONITOR
+		pthread_t const myself = pthread_self();
+
+		/* fast path without lock contention */
+		if (_try_lock(myself) == 0)
+			return 0;
+
+		{
+			Applicant guard { *this };
+
+			if (!_monitor_ptr)
+				throw Missing_call_of_init_pthread_support();
+			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
+		}
+#else
 		struct Try_lock : Suspend_functor
 		{
 			bool retry { false }; /* have to try after resume */
@@ -374,24 +503,14 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 		} try_lock(*this);
 
 		do { _suspend(try_lock); } while (try_lock.retry);
+#endif
 
 		return 0;
 	}
 
 	int trylock() override final
 	{
-		Lock::Guard lock_guard(_data_mutex);
-
-		if (!_owner) {
-			_owner         = pthread_self();
-			_nesting_level = 1;
-			return 0;
-		} else if (_owner == pthread_self()) {
-			++_nesting_level;
-			return 0;
-		}
-
-		return EBUSY;
+		return _try_lock(pthread_self());
 	}
 
 	int unlock() override final
@@ -404,7 +523,14 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 		--_nesting_level;
 		if (_nesting_level == 0) {
 			_owner = nullptr;
+#if USE_MONITOR
+			if (!_monitor_ptr)
+				throw Missing_call_of_init_pthread_support();
+			if (_applicants)
+				_monitor_ptr->charge_monitors();
+#else
 			_resume_all();
+#endif
 		}
 
 		return 0;
