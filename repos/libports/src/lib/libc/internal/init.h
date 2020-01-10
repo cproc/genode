@@ -30,6 +30,7 @@ namespace Libc {
 
 	struct Resume;
 	struct Suspend;
+	struct Monitor;
 	struct Select;
 	struct Current_time;
 	struct Clone_connection;
@@ -107,7 +108,7 @@ namespace Libc {
 	 * Allow thread.cc to access the 'Genode::Env' (needed for the
 	 * implementation of condition variables with timeout)
 	 */
-	void init_pthread_support(Genode::Env &env, Suspend &, Resume &);
+	void init_pthread_support(Genode::Env &env, Suspend &, Monitor &, Resume &);
 
 	struct Config_accessor : Interface
 	{
