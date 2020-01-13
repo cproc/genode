@@ -27,13 +27,20 @@
 /* PCG includes */
 #include <pcg_variants.h>
 
-enum { NUM_TEST_INTS = 1<<20, BULK_ITERATIONS = 2 };
+enum {
+	NUM_TEST_INTS = 1<<20,
+	DATA_SIZE = NUM_TEST_INTS * sizeof(uint32_t),
+	BULK_ITERATIONS = 2
+};
 
-static uint32_t data[NUM_TEST_INTS];
 
-int test_send(char const *host)
+void *test_send(void *arg)
 {
+	char const *host = (char const*)arg;
+
 	usleep(1000000);
+
+	uint32_t *data = calloc(1, DATA_SIZE);
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -59,7 +66,7 @@ int test_send(char const *host)
 		for (size_t i = 0; i < NUM_TEST_INTS; ++i)
 			data[i] = pcg32_random_r(&rng);
 
-		size_t total = sizeof(data);
+		size_t total = DATA_SIZE;
 		size_t offset = 0;
 
 		char *buf = (char *)data;
@@ -80,8 +87,10 @@ int test_send(char const *host)
 	return 0;
 }
 
-int test_recv()
+void *test_recv(void *arg)
 {
+	uint32_t *data = calloc(1, DATA_SIZE);
+
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
 		perror("`socket` failed");
@@ -121,7 +130,7 @@ int test_recv()
 		pcg32_random_t rng = PCG32_INITIALIZER;
 		for (int j = 0; j < BULK_ITERATIONS; ++j) {
 
-			size_t total = sizeof(data);
+			size_t total = DATA_SIZE;
 			size_t offset = 0;
 			char *buf = (char *)data;
 			while (offset < total) {
@@ -154,12 +163,22 @@ int main(int argc, char **argv)
 		return ~0;
 	}
 	if (argc < 2) {
-		if (strcmp(argv[0], "recv") == 0)
-			return test_recv();
+		if (strcmp(argv[0], "recv") == 0) {
+			pthread_t t;
+			pthread_create(&t, 0, test_recv, NULL);
+			int ret = 0;
+			pthread_join(t, &ret);
+			return ret;
+		}
 	}
 	if (argc < 3) {
-		if (strcmp(argv[0], "send") == 0)
-			return test_send(argv[1]);
+		if (strcmp(argv[0], "send") == 0) {
+			pthread_t t;
+			pthread_create(&t, 0, test_send, argv[1]);
+			int ret = 0;
+			pthread_join(t, &ret);
+			return ret;
+		}
 	}
 
 	fprintf(stderr, "\"%s\" not a valid test\n", argv[0]);
