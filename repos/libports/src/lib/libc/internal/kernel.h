@@ -482,17 +482,20 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 */
 		void monitor(Function &fn) override
 		{
+Genode::log("Libc::Kernel::monitor()");
 			if (_main_context()) {
+Genode::log("Libc::Kernel::monitor(): main context");
 				struct Check : Suspend_functor {
 					Function &fn;
 
-					bool suspend() override { return !fn.execute(); }
+					bool suspend() override { bool res = !fn.execute(); Genode::log("res: ", res); return res; }
 
 					Check(Function &fn) : fn(fn) { }
 				} check { fn };
 
 				_suspend_main(check, 0);
 			} else {
+Genode::log("Libc::Kernel::monitor(): not main context");
 				_monitors.monitor(fn);
 			}
 		}

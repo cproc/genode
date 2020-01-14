@@ -265,9 +265,10 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 		if (!_owner) {
 			_owner = thread;
+Genode::log("Libc::Pthread_mutex_normal::_try_lock(): return 0");
 			return 0;
 		}
-
+Genode::log("Libc::Pthread_mutex_normal::_try_lock(): return EBUSY");
 		return EBUSY;
 	}
 
@@ -276,16 +277,24 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 #if USE_MONITOR
 		pthread_t const myself = pthread_self();
 
+Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself);
+
 		/* fast path without lock contention */
-		if (_try_lock(myself) == 0)
+		if (_try_lock(myself) == 0) {
+Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": fast path");
 			return 0;
+		}
 
 		{
 			Applicant guard { *this };
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
+
+Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": calling monitor()");
+
 			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
+			/* XXX: does not block until _try_lock() succeeds? */
 		}
 #else
 		struct Try_lock : Suspend_functor
@@ -306,6 +315,8 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 		do { _suspend(try_lock); } while (try_lock.retry);
 #endif
 
+Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": finished");
+
 		return 0;
 	}
 
@@ -318,8 +329,12 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		Lock::Guard lock_guard(_data_mutex);
 
-		if (_owner != pthread_self())
+		Genode::log(this, ": Pthread_mutex_normal::unlock(): _owner: ", _owner, ", self: ", pthread_self());
+
+		if (_owner != pthread_self()) {
+			Genode::error(this, ": Pthread_mutex_normal::unlock() _owner: ", _owner, ", self: ", pthread_self());
 			return EPERM;
+		}
 
 		_owner = nullptr;
 

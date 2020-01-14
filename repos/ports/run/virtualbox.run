@@ -2,7 +2,7 @@ set use_net 1
 set use_ps2 [have_spec ps2]
 set use_usb 0
 set use_serial 1
-set use_top 1
+set use_top 0
 
 set use_vbox5_nova 1
 
