@@ -16,6 +16,7 @@
 #include <base/log.h>
 #include <base/semaphore.h>
 #include <semaphore.h>
+#include <pthread.h>
 
 /* libc includes */
 #include <libc/allocator.h>
@@ -105,7 +106,13 @@ extern "C" {
 
 	int sem_wait(sem_t *sem)
 	{
+		pthread_t const myself = pthread_self();
+
+		Genode::log("sem_wait(): myself: ", myself);
+
 		(*sem)->down();
+		Genode::log("sem_wait() finished: myself: ", myself);
+
 		return 0;
 	}
 

@@ -232,7 +232,7 @@ HRESULT setupmachine(Genode::Env &env)
 	rc = genode_check_memory_config(machine, required_memory_fb);
 	if (FAILED(rc))
 		return rc;
-
+RTLogPrintf("setupmachine(): %p\n", __builtin_return_address(0));
 	return rc;
 }
 
@@ -295,4 +295,5 @@ void Libc::Component::construct(Libc::Env &env)
 			throw -2;
 		}
 	});
+	Genode::log("*** Libc::Component::construct() finished");
 }

@@ -109,7 +109,11 @@ void Libc::Pthread::join(void **retval)
 		_suspend_ptr->suspend(check);
 	} while (check.retry);
 
+pthread_t const myself = pthread_self();
+
+Genode::log("Libc::Pthread::join(): calling _join_lock.lock(): myself: ", myself);
 	_join_lock.lock();
+Genode::log("Libc::Pthread::join(): _join_lock.lock(): returned, myself: ", myself);
 
 	if (retval)
 		*retval = _retval;
@@ -263,11 +267,14 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		Lock::Guard lock_guard(_data_mutex);
 
+		pthread_t const myself = pthread_self();
+
 		if (!_owner) {
 			_owner = thread;
+Genode::log(this, ": Libc::Pthread_mutex_normal::_try_lock(): ", thread, "/", myself, ", return 0");
 			return 0;
 		}
-
+Genode::log(this, ": Libc::Pthread_mutex_normal::_try_lock(): ", thread, "/", myself, ", return EBUSY");
 		return EBUSY;
 	}
 
@@ -276,15 +283,22 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 #if USE_MONITOR
 		pthread_t const myself = pthread_self();
 
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself);
+
 		/* fast path without lock contention */
-		if (_try_lock(myself) == 0)
+		if (_try_lock(myself) == 0) {
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": fast path");
 			return 0;
+		}
 
 		{
 			Applicant guard { *this };
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
+
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": calling monitor()");
+
 			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
 		}
 #else
@@ -306,6 +320,8 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 		do { _suspend(try_lock); } while (try_lock.retry);
 #endif
 
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": finished");
+
 		return 0;
 	}
 
@@ -318,16 +334,23 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		Lock::Guard lock_guard(_data_mutex);
 
-		if (_owner != pthread_self())
+		Genode::log(this, ": Pthread_mutex_normal::unlock(): _owner: ", _owner, ", self: ", pthread_self());
+
+		if (_owner != pthread_self()) {
+			Genode::error(this, ": Pthread_mutex_normal::unlock() _owner: ", _owner, ", self: ", pthread_self());
 			return EPERM;
+		}
 
 		_owner = nullptr;
 
 #if USE_MONITOR
 		if (!_monitor_ptr)
 			throw Missing_call_of_init_pthread_support();
-		if (_applicants)
+		Genode::log(this, ": Pthread_mutex_normal::unlock(): _applicants: ", _applicants);
+		if (_applicants) {
+			//Genode::log(this, ": Pthread_mutex_normal::unlock(): calling charge_monitors()");
 			_monitor_ptr->charge_monitors();
+		}
 #else
 		_resume_all();
 #endif
@@ -355,7 +378,7 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 
 	int lock() override final
 	{
-#if USE_MONITOR
+#if USE_MONITOR && 0
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
@@ -436,7 +459,7 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 
 		_owner = nullptr;
 
-#if USE_MONITOR
+#if USE_MONITOR && 0
 		if (!_monitor_ptr)
 			throw Missing_call_of_init_pthread_support();
 		if (_applicants)
@@ -472,7 +495,7 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 
 	int lock() override final
 	{
-#if USE_MONITOR
+#if USE_MONITOR && 0
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
@@ -523,7 +546,7 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 		--_nesting_level;
 		if (_nesting_level == 0) {
 			_owner = nullptr;
-#if USE_MONITOR
+#if USE_MONITOR && 0
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
 			if (_applicants)
@@ -954,6 +977,10 @@ extern "C" {
 	                           pthread_mutex_t *__restrict mutex,
 	                           const struct timespec *__restrict abstime)
 	{
+		pthread_t const myself = pthread_self();
+
+		Genode::log("pthread_cond_timed_wait(): myself: ", myself);
+
 		int result = 0;
 
 		if (!cond)
@@ -999,6 +1026,8 @@ extern "C" {
 		c->counter_lock.unlock();
 
 		pthread_mutex_lock(mutex);
+
+		Genode::log("pthread_cond_timed_wait() finished: myself: ", myself);
 
 		return result;
 	}

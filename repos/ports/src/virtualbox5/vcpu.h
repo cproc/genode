@@ -150,9 +150,10 @@ class Vcpu_handler : public Genode::List<Vcpu_handler>::Element
 
 			/* wake up vcpu ep handler */
 			_sem_handler.up();
-
+RTLogPrintf("1");
 			/* wait for next exit */
 			_lock_emt.lock();
+RTLogPrintf("2");
 
 			/* next time run - recall() may change this */
 			_next_state = RUN;

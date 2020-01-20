@@ -35,6 +35,8 @@ static void millisleep(Genode::uint64_t timeout_ms)
 {
 	Genode::uint64_t remaining_ms = timeout_ms;
 
+	Genode::log("millisleep(): ", remaining_ms, ", ret: ", __builtin_return_address(0));
+
 	struct Missing_call_of_init_sleep : Exception { };
 	if (!_suspend_ptr)
 		throw Missing_call_of_init_sleep();
@@ -45,8 +47,10 @@ static void millisleep(Genode::uint64_t timeout_ms)
 
 	} check;
 
-	while (remaining_ms > 0)
+	while (remaining_ms > 0) {
 		remaining_ms = _suspend_ptr->suspend(check, remaining_ms);
+		Genode::log("millisleep(): ", remaining_ms);
+	}
 }
 
 
