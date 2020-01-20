@@ -75,12 +75,13 @@ struct Libc::Monitor::Job
 	Lock _blockade { Lock::LOCKED };
 
 	Job(Monitor::Function &fn) : fn(fn) { }
+	virtual ~Job() { }
 
-	void wait_for_completion() { _blockade.lock(); }
-	void complete()            { _blockade.unlock(); }
+	virtual void wait_for_completion() { _blockade.lock(); }
+	virtual void complete()            { _blockade.unlock(); }
 };
 
-struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
+struct Libc::Monitor::Pool : Registry<Job>
 {
 	private:
 
@@ -92,9 +93,9 @@ struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
 		/**
 		 * Blocks until monitored execution succeeds
 		 */
-		void monitor(Function &fn)
+		void monitor(Job &job)
 		{
-			Registered_no_delete<Monitor::Job> job { *this, fn };
+			Registry<Job>::Element element { *this, job };
 
 			_execution_pending = true;
 
@@ -115,7 +116,7 @@ struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
 			{
 				Lock::Guard guard { _mutex };
 
-				if (!_execution_pending) return;
+				//if (!_execution_pending) return;
 
 				_execution_pending = false;
 			}
