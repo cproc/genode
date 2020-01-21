@@ -46,7 +46,6 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 	}
 
 	Lock::Guard thread_list_lock_guard(_thread_list_lock);
-	_incr_weight(weight.value);
 
 	/*
 	 * Create thread associated with its protection domain
@@ -71,6 +70,8 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 	catch (Native_capability::Reference_count_overflow) { throw Thread_creation_failed(); }
 
 	thread->session_exception_sigh(_exception_sigh);
+
+	_incr_weight(weight.value);
 
 	_thread_list.insert(thread);
 
