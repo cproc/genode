@@ -32,7 +32,7 @@ extern "C" {
 	 * This class is named 'struct sem' because the 'sem_t' type is
 	 * defined as 'struct sem*' in 'semaphore.h'
 	 */
-	struct sem : Genode::Semaphore
+	struct sem : Semaphore
 	{
 		sem(int value) : Semaphore(value) { }
 	};
