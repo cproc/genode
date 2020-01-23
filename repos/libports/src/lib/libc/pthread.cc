@@ -109,7 +109,11 @@ void Libc::Pthread::join(void **retval)
 		_suspend_ptr->suspend(check);
 	} while (check.retry);
 
+pthread_t const myself = pthread_self();
+
+Genode::log("Libc::Pthread::join(): calling _join_lock.lock(): myself: ", myself);
 	_join_lock.lock();
+Genode::log("Libc::Pthread::join(): _join_lock.lock(): returned, myself: ", myself);
 
 	if (retval)
 		*retval = _retval;
@@ -264,11 +268,14 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		Lock::Guard lock_guard(_data_mutex);
 
+		pthread_t const myself = pthread_self();
+
 		if (!_owner) {
 			_owner = thread;
+Genode::log(this, ": Libc::Pthread_mutex_normal::_try_lock(): ", thread, "/", myself, ", return 0");
 			return 0;
 		}
-
+Genode::log(this, ": Libc::Pthread_mutex_normal::_try_lock(): ", thread, "/", myself, ", return EBUSY");
 		return EBUSY;
 	}
 
@@ -279,15 +286,21 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 		pthread_t const myself = pthread_self();
 
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself);
+
 		/* fast path without lock contention */
-		if (_try_lock(myself) == 0)
+		if (_try_lock(myself) == 0) {
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": fast path");
 			return 0;
+		}
 
 		{
 			Applicant guard { *this };
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
+
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": calling monitor()");
 
 			_monitor_ptr->monitor(_monitor_mutex,
 			                      [&] { return _try_lock(myself) == 0; });
@@ -311,6 +324,8 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 		do { _suspend(try_lock); } while (try_lock.retry);
 #endif
 
+//Genode::log(this, ": Pthread_mutex_normal::lock(): myself: ", myself, ": finished");
+
 		return 0;
 	}
 
@@ -326,16 +341,23 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 #endif
 		Lock::Guard lock_guard(_data_mutex);
 
-		if (_owner != pthread_self())
+		Genode::log(this, ": Pthread_mutex_normal::unlock(): _owner: ", _owner, ", self: ", pthread_self());
+
+		if (_owner != pthread_self()) {
+			Genode::error(this, ": Pthread_mutex_normal::unlock() _owner: ", _owner, ", self: ", pthread_self());
 			return EPERM;
+		}
 
 		_owner = nullptr;
 
 #if USE_MONITOR
 		if (!_monitor_ptr)
 			throw Missing_call_of_init_pthread_support();
-		if (_applicants)
+		Genode::log(this, ": Pthread_mutex_normal::unlock(): _applicants: ", _applicants);
+		if (_applicants) {
+			//Genode::log(this, ": Pthread_mutex_normal::unlock(): calling charge_monitors()");
 			_monitor_ptr->charge_monitors();
+		}
 #else
 		_resume_all();
 #endif
@@ -471,12 +493,16 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 	{
 		Lock::Guard lock_guard(_data_mutex);
 
+		pthread_t const myself = pthread_self();
+
 		if (!_owner) {
 			_owner         = thread;
 			_nesting_level = 1;
+Genode::log(this, ": Libc::Pthread_mutex_recursive::_try_lock(): thread: ", thread, ", myself: ", myself, ", return 0, _nesting: ", _nesting_level);
 			return 0;
 		} else if (_owner == thread) {
 			++_nesting_level;
+Genode::log(this, ": Libc::Pthread_mutex_recursive::_try_lock(): ", thread, "/", myself, ", return 0, _nesting: ", _nesting_level);
 			return 0;
 		}
 
@@ -489,6 +515,8 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 		Lock::Guard monitor_guard(_monitor_mutex);
 
 		pthread_t const myself = pthread_self();
+
+Genode::log(this, ": Libc::Pthread_mutex_recursive::lock(): myself: ", myself);
 
 		/* fast path without lock contention */
 		if (_try_lock(myself) == 0)
@@ -540,11 +568,14 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 			return EPERM;
 
 		--_nesting_level;
+		Genode::log(this, ": Pthread_mutex_recursive::unlock(): _owner: ", _owner, ", self: ", pthread_self(), ", nesting: ", _nesting_level);
+
 		if (_nesting_level == 0) {
 			_owner = nullptr;
 #if USE_MONITOR
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
+Genode::log(this, ": Pthread_mutex_recursive::unlock(): _applicants: ", _applicants);
 			if (_applicants)
 				_monitor_ptr->charge_monitors();
 #else
@@ -973,6 +1004,10 @@ extern "C" {
 	                           pthread_mutex_t *__restrict mutex,
 	                           const struct timespec *__restrict abstime)
 	{
+		pthread_t const myself = pthread_self();
+
+		Genode::log("pthread_cond_timed_wait(): myself: ", myself);
+
 		int result = 0;
 
 		if (!cond)
@@ -1018,6 +1053,8 @@ extern "C" {
 		c->counter_lock.unlock();
 
 		pthread_mutex_lock(mutex);
+
+		Genode::log("pthread_cond_timed_wait() finished: myself: ", myself);
 
 		return result;
 	}

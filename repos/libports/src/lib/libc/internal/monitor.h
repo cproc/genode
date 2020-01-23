@@ -115,6 +115,7 @@ struct Libc::Monitor::Pool
 
 		void execute_monitors()
 		{
+Genode::log("execute_monitors()");
 			{
 				Lock::Guard guard { _mutex };
 
@@ -123,11 +124,18 @@ struct Libc::Monitor::Pool
 				_execution_pending = false;
 			}
 
-			_jobs.for_each([&] (Job &job) {
+			/*
+			 * XXX: if the thread of a completed job is not scheduled
+			 *      early enough, the job stays in the registry and
+			 *      its function is executed again during the next
+			 *      'execute_monitors()' call.
+			 */
+			 _jobs.for_each([&] (Job &job) {
 				if (job.fn.execute()) {
 					job.complete();
 				}
 			});
+Genode::log("execute_monitors() finished");
 		}
 };
 
