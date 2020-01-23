@@ -273,11 +273,12 @@ class Vcpu_handler_vmx : public Vcpu_handler
 				/* looks complicated in original R0 code -> emulate instead */
 				return VINF_EM_RAW_EMULATE_INSTR;
 			default:
+#if 0
 				if (exit_reason != VMX_EXIT_EPT_VIOLATION &&
 				    exit_reason != VMX_EXIT_CPUID)
 					Genode::log("leave exit_reason=", exit_reason, " - "
 					            "optimize ?");
-
+#endif
 				return VINF_EM_RAW_EMULATE_INSTR;
 			}
 		}
