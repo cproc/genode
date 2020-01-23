@@ -463,8 +463,8 @@ static void test_mutex_stress()
 {
 	printf("main thread: stressing mutexes\n");
 
-	{ Test_mutex_stress<PTHREAD_MUTEX_NORMAL>     test_normal; }
-	{ Test_mutex_stress<PTHREAD_MUTEX_ERRORCHECK> test_errorcheck; }
+	//{ Test_mutex_stress<PTHREAD_MUTEX_NORMAL>     test_normal; }
+	//{ Test_mutex_stress<PTHREAD_MUTEX_ERRORCHECK> test_errorcheck; }
 	{ Test_mutex_stress<PTHREAD_MUTEX_RECURSIVE>  test_recursive; }
 
 	printf("main thread: mutex stress testing done\n");
@@ -630,11 +630,11 @@ int main(int argc, char **argv)
 	if (!pthread_main)
 		exit(-1);
 
-	test_interplay();
-	test_self_destruct();
-	test_mutex();
+	//test_interplay();
+	//test_self_destruct();
+	//test_mutex();
 	test_mutex_stress();
-	test_lock_and_sleep();
+	//test_lock_and_sleep();
 
 	printf("--- returning from main ---\n");
 	return 0;
