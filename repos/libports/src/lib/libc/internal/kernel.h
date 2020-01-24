@@ -225,7 +225,10 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		Reconstructible<Io_signal_handler<Kernel>> _execute_monitors {
 			_env.ep(), *this, &Kernel::_monitors_handler };
 
-		void _monitors_handler() { }
+		void _monitors_handler()
+		{
+			_monitors.execute_monitors();
+		}
 
 		Constructible<Clone_connection> _clone_connection { };
 
@@ -391,8 +394,6 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 						_switch_to_user();
 				}
 
-				_monitors.execute_monitors();
-
 				if (_dispatch_pending_io_signals) {
 					/* dispatch pending signals but don't block */
 					while (_env.ep().dispatch_pending_io_signal()) ;
@@ -480,20 +481,48 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		/**
 		 * Monitor interface
 		 */
-		void monitor(Function &fn) override
+		void monitor(Genode::Lock &mutex, Function &fn) override
 		{
 			if (_main_context()) {
-				struct Check : Suspend_functor {
-					Function &fn;
 
-					bool suspend() override { return !fn.execute(); }
+				struct Job : Monitor::Job
+				{
+					Kernel &_kernel;
 
-					Check(Function &fn) : fn(fn) { }
-				} check { fn };
+					struct Check : Suspend_functor
+					{
+						bool &completed;
 
-				_suspend_main(check, 0);
+						Check(bool &completed) : completed(completed) { }
+
+						bool suspend() override
+						{
+							return !completed;
+						}
+					} check { completed };
+
+					Job(Monitor::Function &fn, Kernel &kernel)
+					: Monitor::Job(fn), _kernel(kernel) { }
+
+					void wait_for_completion() override
+					{
+						do {
+							_kernel._suspend_main(check, 0);
+						} while (!completed);
+					}
+
+					void complete() override
+					{
+						completed = true;
+						_kernel._resume_main();
+					}
+				} job { fn, *this };
+
+				_monitors.monitor(mutex, job);
+
 			} else {
-				_monitors.monitor(fn);
+				Monitor::Job job { fn };
+				_monitors.monitor(mutex, job);
 			}
 		}
 

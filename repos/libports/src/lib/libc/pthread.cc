@@ -208,6 +208,7 @@ struct pthread_mutex
 	pthread_t _owner      { nullptr };
 	unsigned  _applicants { 0 };
 	Lock      _data_mutex;
+	Lock      _monitor_mutex;
 
 	struct Missing_call_of_init_pthread_support : Exception { };
 
@@ -274,6 +275,8 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	int lock() override final
 	{
 #if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
@@ -285,7 +288,9 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
-			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
+
+			_monitor_ptr->monitor(_monitor_mutex,
+			                      [&] { return _try_lock(myself) == 0; });
 		}
 #else
 		struct Try_lock : Suspend_functor
@@ -316,6 +321,9 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 	int unlock() override final
 	{
+#if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+#endif
 		Lock::Guard lock_guard(_data_mutex);
 
 		if (_owner != pthread_self())
@@ -356,6 +364,8 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 	int lock() override final
 	{
 #if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
@@ -370,7 +380,7 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
-			_monitor_ptr->monitor([&] {
+			_monitor_ptr->monitor(_monitor_mutex, [&] {
 				/* DEADLOCK already handled above - just check for SUCCESS */
 				return _try_lock(myself) == SUCCESS;
 			});
@@ -429,6 +439,9 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 
 	int unlock() override final
 	{
+#if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+#endif
 		Lock::Guard lock_guard(_data_mutex);
 
 		if (_owner != pthread_self())
@@ -473,6 +486,8 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 	int lock() override final
 	{
 #if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
@@ -484,7 +499,8 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
-			_monitor_ptr->monitor([&] { return _try_lock(myself) == 0; });
+			_monitor_ptr->monitor(_monitor_mutex,
+			                      [&] { return _try_lock(myself) == 0; });
 		}
 #else
 		struct Try_lock : Suspend_functor
@@ -515,6 +531,9 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 
 	int unlock() override final
 	{
+#if USE_MONITOR
+		Lock::Guard monitor_guard(_monitor_mutex);
+#endif
 		Lock::Guard lock_guard(_data_mutex);
 
 		if (_owner != pthread_self())

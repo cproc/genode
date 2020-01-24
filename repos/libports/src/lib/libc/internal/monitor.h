@@ -47,7 +47,7 @@ struct Libc::Monitor : Interface
 	};
 
 	template <typename FN>
-	void monitor(FN const &&fn)
+	void monitor(Genode::Lock &mutex, FN const &&fn)
 	{
 		struct _Function : Function
 		{
@@ -56,13 +56,13 @@ struct Libc::Monitor : Interface
 			_Function(FN const &fn) : fn(fn) { }
 		} function { fn };
 
-		monitor(function);
+		monitor(mutex, function);
 	}
 
 	/**
 	 * Blocks until monitored execution succeeds
 	 */
-	virtual void monitor(Function &) = 0;
+	virtual void monitor(Genode::Lock &mutex, Function &) = 0;
 //	virtual void monitor(Function &, Function &) = 0;
 
 	virtual void charge_monitors() = 0;
@@ -71,18 +71,27 @@ struct Libc::Monitor : Interface
 struct Libc::Monitor::Job
 {
 	Monitor::Function &fn;
+	bool completed { false };
 
 	Lock _blockade { Lock::LOCKED };
 
 	Job(Monitor::Function &fn) : fn(fn) { }
+	virtual ~Job() { }
 
-	void wait_for_completion() { _blockade.lock(); }
-	void complete()            { _blockade.unlock(); }
+	virtual void wait_for_completion() { _blockade.lock(); }
+
+	virtual void complete()
+	{
+		completed = true;
+		_blockade.unlock();
+	}
 };
 
-struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
+struct Libc::Monitor::Pool
 {
 	private:
+
+		Registry<Job> _jobs;
 
 		Lock _mutex;
 		bool _execution_pending { false };
@@ -92,11 +101,11 @@ struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
 		/**
 		 * Blocks until monitored execution succeeds
 		 */
-		void monitor(Function &fn)
+		void monitor(Genode::Lock &mutex, Job &job)
 		{
-			Registered_no_delete<Monitor::Job> job { *this, fn };
+			Registry<Job>::Element element { _jobs, job };
 
-			_execution_pending = true;
+			mutex.unlock();
 
 			job.wait_for_completion();
 		}
@@ -120,8 +129,8 @@ struct Libc::Monitor::Pool : Registry<Registered_no_delete<Job>>
 				_execution_pending = false;
 			}
 
-			for_each([&] (Job &job) {
-				if (job.fn.execute()) {
+			_jobs.for_each([&] (Job &job) {
+				if (!job.completed && job.fn.execute()) {
 					job.complete();
 				}
 			});
