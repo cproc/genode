@@ -227,6 +227,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 		void _monitors_handler()
 		{
+			Genode::log("_monitors_handler()");
 			_monitors.execute_monitors();
 		}
 
@@ -308,12 +309,18 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 			if (timeout_ms > 0)
 				_main_timeout.timeout(timeout_ms);
 
+//Genode::log("_suspend_main(): calling _setjmp(_user_context)");
+
 			if (!_setjmp(_user_context)) {
 				_valid_user_context = true;
+//Genode::log("_suspend_main(): calling _switch_to_kernel()");
 				_switch_to_kernel();
+//Genode::log("_suspend_main(): _switch_to_kernel() returned");
 			} else {
+//Genode::log("_suspend_main(): _setjmp(_user_context) returned");
 				_valid_user_context = false;
 				_signal.execute_signal_handlers();
+//Genode::log("_suspend_main(): execute_signal_handlers() returned");
 			}
 
 			/*
@@ -393,18 +400,28 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 					if (!_kernel_routine)
 						_switch_to_user();
 				}
+//Genode::log("Libc::Kernel::run(): calling execute_monitors()");
+//				_monitors.execute_monitors();
 
 				if (_dispatch_pending_io_signals) {
 					/* dispatch pending signals but don't block */
 					while (_env.ep().dispatch_pending_io_signal()) ;
 				} else {
+Genode::log("Libc::Kernel::run(): calling wait_and_dispatch_one_io_signal()");
 					/* block for signals */
 					_env.ep().wait_and_dispatch_one_io_signal();
+Genode::log("Libc::Kernel::run(): wait_and_dispatch_one_io_signal() returned");
+Genode::log("Libc::Kernel::run(): _resume_main_once: ", _resume_main_once,
+            ", _suspend_scheduled: ", _suspend_scheduled);
 				}
 
-				if (!_kernel_routine && _resume_main_once && !_setjmp(_kernel_context))
+				if (!_kernel_routine && _resume_main_once && !_setjmp(_kernel_context)) {
+Genode::log("Libc::Kernel::run(): calling _switch_to_user() 3");
 					_switch_to_user();
+				}
 			}
+
+			//Genode::log("Libc::Kernel::run(): left while loop");
 
 			_suspend_scheduled = false;
 		}
@@ -431,6 +448,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 */
 		void resume_all() override
 		{
+//Genode::log("resume_all()");
 			if (_app_returned) {
 				if (_scheduled_select_handler)
 					_scheduled_select_handler->dispatch_select();
@@ -449,6 +467,8 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 */
 		uint64_t suspend(Suspend_functor &check, uint64_t timeout_ms) override
 		{
+if (_main_context())
+	Genode::log("suspend(): ", __builtin_return_address(0));
 			if (timeout_ms > 0
 			 && timeout_ms > _timer_accessor.timer().max_timeout()) {
 				warning("libc: limiting exceeding timeout of ",
@@ -528,8 +548,11 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 		void charge_monitors() override
 		{
-			if (_monitors.charge_monitors())
+Genode::log("charge_monitors()");
+			if (_monitors.charge_monitors()) {
+Genode::log("charge_monitors(): submit");
 				Signal_transmitter(*_execute_monitors).submit();
+			}
 		}
 
 		/**
