@@ -34,9 +34,13 @@
 
 static bool use_priorities()
 {
+#if 1
 	Genode::Attached_rom_dataspace const platform(genode_env(), "platform_info");
 	Genode::Xml_node const kernel = platform.xml().sub_node("kernel");
 	return kernel.attribute_value("name", Genode::String<16>("unknown")) == "nova";
+#else
+	return false;
+#endif
 }
 
 static long prio_class(RTTHREADTYPE const type)

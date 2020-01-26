@@ -295,4 +295,5 @@ void Libc::Component::construct(Libc::Env &env)
 			throw -2;
 		}
 	});
+	Genode::log("*** Libc::Component::construct() finished");
 }
