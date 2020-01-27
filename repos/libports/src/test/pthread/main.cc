@@ -203,10 +203,14 @@ static void *thread_mutex_func(void *arg)
 	}
 
 	/* wake up main thread */
+	printf("thread: calling sem_post(test_thread_ready_sem)\n");
 	sem_post(&test_mutex_data->test_thread_ready_sem);
+	printf("thread: sem_post(test_thread_ready_sem) returned\n");
 
 	/* wait for main thread - it should have the mutex locked */
+	printf("thread: calling sem_wait(main_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data->main_thread_ready_sem);
+	printf("thread: sem_wait(main_thread_ready_sem) returned\n");
 
 	/* test unlocking mutex which is locked by main thread - should fail */
 
@@ -216,10 +220,14 @@ static void *thread_mutex_func(void *arg)
 	}
 
 	/* wake up main thread */
+	printf("thread: calling sem_post(test_thread_ready_sem)\n");
 	sem_post(&test_mutex_data->test_thread_ready_sem);
+	printf("thread: sem_post(test_thread_ready_sem) returned\n");
 
 	/* wait for main thread */
+	printf("thread: calling sem_wait(main_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data->main_thread_ready_sem);
+	printf("thread: sem_wait(main_thread_ready_sem) returned\n");
 
 	/***************************
 	 ** test errorcheck mutex **
@@ -261,10 +269,14 @@ static void *thread_mutex_func(void *arg)
 	}
 
 	/* wake up main thread */
+	printf("thread: calling sem_post(test_thread_ready_sem)\n");
 	sem_post(&test_mutex_data->test_thread_ready_sem);
+	printf("thread: sem_post(test_thread_ready_sem) returned\n");
 
 	/* wait for main thread - it should have the mutex locked */
+	printf("thread: calling sem_wait(main_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data->main_thread_ready_sem);
+	printf("thread: sem_wait(main_thread_ready_sem) returned\n");
 
 	/* test unlocking mutex which is locked by main thread */
 
@@ -274,7 +286,9 @@ static void *thread_mutex_func(void *arg)
 	}
 
 	/* wake up main thread */
+	printf("thread: calling sem_post(test_thread_ready_sem)\n");
 	sem_post(&test_mutex_data->test_thread_ready_sem);
+	printf("thread: sem_post(test_thread_ready_sem) returned\n");
 
 	return nullptr;
 }
@@ -293,7 +307,9 @@ static void test_mutex()
 	}
 
 	/* wait for test thread - recursive mutex should be unlocked */
+	printf("main: calling sem_wait(test_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data.test_thread_ready_sem);
+	printf("main: sem_wait(test_thread_ready_sem) returned\n");
 
 	/* lock the recursive mutex and let the test thread attempt to unlock it */
 
@@ -303,10 +319,14 @@ static void test_mutex()
 	}
 
 	/* wake up test thread */
+	printf("main: calling sem_post(main_thread_ready_sem)\n");
 	sem_post(&test_mutex_data.main_thread_ready_sem);
+	printf("main: sem_post(main_thread_ready_sem) returned\n");
 
 	/* wait for test thread - recursive mutex should still be locked */
+	printf("main: calling sem_wait(test_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data.test_thread_ready_sem);
+	printf("main: sem_wait(test_thread_ready_sem) returned\n");
 
 	/* unlock the recursive mutex - should succeed */
 
@@ -316,10 +336,14 @@ static void test_mutex()
 	}
 
 	/* wake up test thread */
+	printf("main: calling sem_post(main_thread_ready_sem)\n");
 	sem_post(&test_mutex_data.main_thread_ready_sem);
+	printf("main: sem_post(main_thread_ready_sem) returned\n");
 
 	/* wait for test thread - errorcheck mutex should be unlocked */
+	printf("main: calling sem_wait(test_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data.test_thread_ready_sem);
+	printf("main: sem_wait(test_thread_ready_sem) returned\n");
 
 	/* lock the errorcheck mutex and let the test thread attempt to unlock it */
 
@@ -329,10 +353,14 @@ static void test_mutex()
 	}
 
 	/* wake up test thread */
+	printf("main: calling sem_post(main_thread_ready_sem)\n");
 	sem_post(&test_mutex_data.main_thread_ready_sem);
+	printf("main: sem_post(main_thread_ready_sem) returned\n");
 
 	/* wait for test thread - errorcheck mutex should still be locked */
+	printf("main: calling sem_wait(test_thread_ready_sem)\n");
 	sem_wait(&test_mutex_data.test_thread_ready_sem);
+	printf("main: sem_wait(test_thread_ready_sem) returned\n");
 
 	/* unlock the errorcheck mutex - should succeed */
 

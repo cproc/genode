@@ -68,11 +68,15 @@ extern "C" {
 		{
 			Lock::Guard lock_guard(_data_mutex);
 			
+pthread_t const myself = pthread_self();
+
 			if (_count > 0) {
 				_count--;
+Genode::log(this, ": trydown(): success, myself: ", myself, ", count: ", _count);
 				return 0;
 			}
 
+Genode::log(this, ": trydown(): EBUSY, myself: ", myself, ", count: ", _count);
 			return EBUSY;
 		}
 
@@ -107,6 +111,10 @@ extern "C" {
 
 			if (!_monitor_ptr)
 				throw Missing_call_of_init_pthread_support();
+
+			pthread_t const myself = pthread_self();
+
+Genode::log(this, ": up(): myself: ", myself, ", count: ", _count, ", applicants: ", _applicants);
 
 			if (_applicants)
 				_monitor_ptr->charge_monitors();
