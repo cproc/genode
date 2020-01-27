@@ -22,6 +22,7 @@
 /* libc includes */
 #include <errno.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdlib.h> /* malloc, free */
 
 /* libc-internal includes */
@@ -42,9 +43,10 @@ static Genode::Env *_env_ptr;  /* solely needed to spawn the timeout thread for 
 
 static Thread *_main_thread_ptr;
 
-static Suspend *_suspend_ptr;
-static Monitor *_monitor_ptr;
-static Resume  *_resume_ptr;
+ /* XXX static? but also needed by semaphore */
+Suspend *_suspend_ptr;
+Monitor *_monitor_ptr;
+Resume  *_resume_ptr;
 
 
 void Libc::init_pthread_support(Genode::Env &env, Suspend &suspend,
@@ -852,10 +854,18 @@ extern "C" {
 		int num_waiters;
 		int num_signallers;
 		Lock counter_lock;
-		Timed_semaphore signal_sem { _global_timeout_ep() };
+		sem_t signal_sem;
 		Semaphore handshake_sem;
 
-		pthread_cond() : num_waiters(0), num_signallers(0) { }
+		pthread_cond() : num_waiters(0), num_signallers(0)
+		{
+			sem_init(&signal_sem, 0, 0); 	
+		}
+
+		~pthread_cond()
+		{
+			sem_destroy(&signal_sem);
+		}
 	};
 
 
@@ -930,47 +940,6 @@ extern "C" {
 	}
 
 
-	static uint64_t timeout_ms(struct timespec currtime,
-	                           struct timespec abstimeout)
-	{
-		enum { S_IN_MS = 1000, S_IN_NS = 1000 * 1000 * 1000 };
-
-		if (currtime.tv_nsec >= S_IN_NS) {
-			currtime.tv_sec  += currtime.tv_nsec / S_IN_NS;
-			currtime.tv_nsec  = currtime.tv_nsec % S_IN_NS;
-		}
-		if (abstimeout.tv_nsec >= S_IN_NS) {
-			abstimeout.tv_sec  += abstimeout.tv_nsec / S_IN_NS;
-			abstimeout.tv_nsec  = abstimeout.tv_nsec % S_IN_NS;
-		}
-
-		/* check whether absolute timeout is in the past */
-		if (currtime.tv_sec > abstimeout.tv_sec)
-			return 0;
-
-		uint64_t diff_ms = (abstimeout.tv_sec - currtime.tv_sec) * S_IN_MS;
-		uint64_t diff_ns = 0;
-
-		if (abstimeout.tv_nsec >= currtime.tv_nsec)
-			diff_ns = abstimeout.tv_nsec - currtime.tv_nsec;
-		else {
-			/* check whether absolute timeout is in the past */
-			if (diff_ms == 0)
-				return 0;
-			diff_ns  = S_IN_NS - currtime.tv_nsec + abstimeout.tv_nsec;
-			diff_ms -= S_IN_MS;
-		}
-
-		diff_ms += diff_ns / 1000 / 1000;
-
-		/* if there is any diff then let the timeout be at least 1 MS */
-		if (diff_ms == 0 && diff_ns != 0)
-			return 1;
-
-		return diff_ms;
-	}
-
-
 	int pthread_cond_timedwait(pthread_cond_t *__restrict cond,
 	                           pthread_mutex_t *__restrict mutex,
 	                           const struct timespec *__restrict abstime)
@@ -991,28 +960,18 @@ extern "C" {
 
 		pthread_mutex_unlock(mutex);
 
-		if (!abstime)
-			c->signal_sem.down();
-		else {
-			struct timespec currtime;
-			clock_gettime(CLOCK_REALTIME, &currtime);
-
-			Alarm::Time timeout = timeout_ms(currtime, *abstime);
-
-			try {
-				c->signal_sem.down(timeout);
-			} catch (Timeout_exception) {
-				result = ETIMEDOUT;
-			} catch (Nonblocking_exception) {
-				errno  = ETIMEDOUT;
-				result = ETIMEDOUT;
-			}
+		if (!abstime) {
+			if (sem_wait(&c->signal_sem) == -1)
+				result = errno;
+		} else {
+			if (sem_timedwait(&c->signal_sem, abstime) == -1)
+				result = errno;
 		}
 
 		c->counter_lock.lock();
 		if (c->num_signallers > 0) {
 			if (result == ETIMEDOUT) /* timeout occured */
-				c->signal_sem.down();
+				sem_wait(&c->signal_sem);
 			c->handshake_sem.up();
 			--c->num_signallers;
 		}
@@ -1042,7 +1001,7 @@ extern "C" {
 		c->counter_lock.lock();
 		if (c->num_waiters > c->num_signallers) {
 		  ++c->num_signallers;
-		  c->signal_sem.up();
+		  sem_post(&c->signal_sem);
 		  c->counter_lock.unlock();
 		  c->handshake_sem.down();
 		} else
@@ -1064,7 +1023,7 @@ extern "C" {
 			int still_waiting = c->num_waiters - c->num_signallers;
 			c->num_signallers = c->num_waiters;
 			for (int i = 0; i < still_waiting; i++)
-				c->signal_sem.up();
+				sem_post(&c->signal_sem);
 			c->counter_lock.unlock();
 			for (int i = 0; i < still_waiting; i++)
 				c->handshake_sem.down();
