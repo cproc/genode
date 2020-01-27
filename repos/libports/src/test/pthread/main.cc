@@ -22,6 +22,7 @@
 
 /* Genode includes */
 #include <base/log.h>
+#include <base/sleep.h>
 #include <base/thread.h>
 
 
@@ -49,10 +50,14 @@ static void *thread_func(void *arg)
 
 	sem_post(&thread_args->thread_finished_sem);
 
-	/* sleep forever */
-	sem_t sleep_sem;
-	sem_init(&sleep_sem, 0, 0);
-	sem_wait(&sleep_sem);
+	/*
+	 * sleep forever
+	 *
+	 * The thread is going to be cancelled, but cancellation points are
+	 * not implemented yet in most blocking libc functions, so
+	 * Genode::sleep_forever() is called here for now.
+	 */
+	Genode::sleep_forever();
 
 	return 0;
 }
