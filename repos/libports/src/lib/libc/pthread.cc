@@ -43,7 +43,7 @@ static Genode::Env *_env_ptr;  /* solely needed to spawn the timeout thread for 
 static Thread *_main_thread_ptr;
 
 static Suspend *_suspend_ptr;
-static Monitor *_monitor_ptr;
+Monitor *_monitor_ptr; /* XXX static? but also needed by semaphore */
 static Resume  *_resume_ptr;
 
 

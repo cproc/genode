@@ -16,15 +16,19 @@
 #include <base/log.h>
 #include <base/semaphore.h>
 #include <semaphore.h>
-
-/* libc includes */
 #include <libc/allocator.h>
 
+/* libc includes */
+#include <errno.h>
+#include <pthread.h> // XXX: only for debugging
+
 /* libc-internal includes */
+#include <internal/monitor.h>
 #include <internal/types.h>
 
 using namespace Libc;
 
+extern Monitor *_monitor_ptr; /* XXX */
 
 extern "C" {
 
@@ -32,9 +36,88 @@ extern "C" {
 	 * This class is named 'struct sem' because the 'sem_t' type is
 	 * defined as 'struct sem*' in 'semaphore.h'
 	 */
-	struct sem : Genode::Semaphore
+	struct sem
 	{
-		sem(int value) : Semaphore(value) { }
+		int      _count;
+		unsigned _applicants { 0 };
+		Lock     _data_mutex;
+		Lock     _monitor_mutex;
+
+		struct Missing_call_of_init_pthread_support : Exception { };
+
+		struct Applicant
+		{
+			sem &s;
+
+			Applicant(sem &s) : s(s)
+			{
+				Lock::Guard lock_guard(s._data_mutex);
+				++s._applicants;
+			}
+
+			~Applicant()
+			{
+				Lock::Guard lock_guard(s._data_mutex);
+				--s._applicants;
+			}
+		};
+
+		sem(int value) : _count(value) { }
+
+		int trydown()
+		{
+			Lock::Guard lock_guard(_data_mutex);
+			
+			if (_count > 0) {
+				_count--;
+				return 0;
+			}
+
+			return EBUSY;
+		}
+
+		int down()
+		{
+			Lock::Guard lock_guard(_monitor_mutex);
+
+			/* fast path without contention */
+			if (trydown() == 0)
+				return 0;
+
+			{
+				Applicant guard { *this };
+
+				if (!_monitor_ptr)
+					throw Missing_call_of_init_pthread_support();
+
+				_monitor_ptr->monitor(_monitor_mutex,
+				                      [&] { return trydown() == 0; });
+			}
+	
+			return 0;
+		}
+
+		int up()
+		{
+			Lock::Guard monitor_guard(_monitor_mutex);
+
+			Lock::Guard lock_guard(_data_mutex);
+
+			_count++;
+
+			if (!_monitor_ptr)
+				throw Missing_call_of_init_pthread_support();
+
+			if (_applicants)
+				_monitor_ptr->charge_monitors();
+
+			return 0;
+		}
+
+		int count()
+		{
+			return _count;
+		}
 	};
 
 
@@ -55,7 +138,7 @@ extern "C" {
 
 	int sem_getvalue(sem_t * __restrict sem, int * __restrict sval)
 	{
-		*sval = (*sem)->cnt();
+		*sval = (*sem)->count();
 		return 0;
 	}
 
@@ -77,8 +160,7 @@ extern "C" {
 
 	int sem_post(sem_t *sem)
 	{
-		(*sem)->up();
-		return 0;
+		return (*sem)->up();
 	}
 
 
@@ -89,10 +171,9 @@ extern "C" {
 	}
 
 
-	int sem_trywait(sem_t *)
+	int sem_trywait(sem_t *sem)
 	{
-		warning(__func__, " not implemented");
-		return -1;
+		return (*sem)->trydown();
 	}
 
 
@@ -105,8 +186,7 @@ extern "C" {
 
 	int sem_wait(sem_t *sem)
 	{
-		(*sem)->down();
-		return 0;
+		return (*sem)->down();
 	}
 
 }
