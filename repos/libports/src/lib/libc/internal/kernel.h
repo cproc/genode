@@ -39,6 +39,7 @@
 #include <internal/kernel_timer_accessor.h>
 #include <internal/watch.h>
 #include <internal/signal.h>
+#include <internal/monitor.h>
 
 namespace Libc { class Kernel; }
 
@@ -58,6 +59,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
                             Reset_malloc_heap,
                             Resume,
                             Suspend,
+                            Monitor,
                             Select,
                             Kernel_routine_scheduler,
                             Current_time,
@@ -217,6 +219,13 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		Main_timeout _main_timeout { _timer_accessor, *this };
 
 		Pthread_pool _pthreads { _timer_accessor };
+
+		Monitor::Pool _monitors { };
+
+		Reconstructible<Io_signal_handler<Kernel>> _execute_monitors {
+			_env.ep(), *this, &Kernel::_monitors_handler };
+
+		void _monitors_handler() { }
 
 		Constructible<Clone_connection> _clone_connection { };
 
@@ -382,6 +391,8 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 						_switch_to_user();
 				}
 
+				_monitors.execute_monitors();
+
 				if (_dispatch_pending_io_signals) {
 					/* dispatch pending signals but don't block */
 					while (_env.ep().dispatch_pending_io_signal()) ;
@@ -464,6 +475,32 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 				_dispatch_pending_io_signals = false;
 				_signal.execute_signal_handlers();
 			}
+		}
+
+		/**
+		 * Monitor interface
+		 */
+		void monitor(Function &fn) override
+		{
+			if (_main_context()) {
+				struct Check : Suspend_functor {
+					Function &fn;
+
+					bool suspend() override { return !fn.execute(); }
+
+					Check(Function &fn) : fn(fn) { }
+				} check { fn };
+
+				_suspend_main(check, 0);
+			} else {
+				_monitors.monitor(fn);
+			}
+		}
+
+		void charge_monitors() override
+		{
+			if (_monitors.charge_monitors())
+				Signal_transmitter(*_execute_monitors).submit();
 		}
 
 		/**
