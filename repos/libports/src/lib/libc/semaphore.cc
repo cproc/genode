@@ -113,13 +113,11 @@ extern "C" {
 		{
 #if USE_MONITOR
 			Lock::Guard lock_guard(_monitor_mutex);
-#endif
 
 			/* fast path without contention */
 			if (trydown() == 0)
 				return 0;
 
-#if USE_MONITOR
 			{
 				Applicant guard { *this };
 
@@ -154,6 +152,7 @@ extern "C" {
 		int down_timed(uint64_t relative_timeout_ms)
 		{
 #if USE_MONITOR
+#error implementation missing
 #else
 			struct Try_down : Suspend_functor
 			{
@@ -172,13 +171,13 @@ extern "C" {
 
 			do {
 				relative_timeout_ms = _suspend(try_down, relative_timeout_ms);
-			} while (relative_timeout_ms && try_down.retry);
+			} while (try_down.retry && relative_timeout_ms);
 
-			if (relative_timeout_ms == 0)
-				return ETIMEDOUT;
+			if (!try_down.retry)
+				return 0;
+
+			return ETIMEDOUT;
 #endif
-
-			return 0;
 		}
 
 		int up()
