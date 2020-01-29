@@ -279,13 +279,15 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	int lock() override final
 	{
 #if USE_MONITOR
-		Lock::Guard monitor_guard(_monitor_mutex);
+		_monitor_mutex.lock(); /* unlocked in monitor() or in fast path */
 
 		pthread_t const myself = pthread_self();
 
 		/* fast path without lock contention */
-		if (_try_lock(myself) == 0)
+		if (_try_lock(myself) == 0) {
+			_monitor_mutex.unlock();
 			return 0;
+		}
 
 		{
 			Applicant guard { *this };
@@ -851,20 +853,24 @@ extern "C" {
 
 	struct pthread_cond
 	{
-		int num_waiters;
-		int num_signallers;
-		Lock counter_lock;
-		sem_t signal_sem;
-		Semaphore handshake_sem;
+		int             num_waiters;
+		int             num_signallers;
+		pthread_mutex_t counter_mutex;
+		sem_t           signal_sem;
+		sem_t           handshake_sem;
 
 		pthread_cond() : num_waiters(0), num_signallers(0)
 		{
-			sem_init(&signal_sem, 0, 0); 	
+			pthread_mutex_init(&counter_mutex, nullptr);
+			sem_init(&signal_sem, 0, 0);
+			sem_init(&handshake_sem, 0, 0);
 		}
 
 		~pthread_cond()
 		{
+			sem_destroy(&handshake_sem);
 			sem_destroy(&signal_sem);
+			pthread_mutex_destroy(&counter_mutex);
 		}
 	};
 
@@ -954,9 +960,9 @@ extern "C" {
 
 		pthread_cond *c = *cond;
 
-		c->counter_lock.lock();
+		pthread_mutex_lock(&c->counter_mutex);
 		c->num_waiters++;
-		c->counter_lock.unlock();
+		pthread_mutex_unlock(&c->counter_mutex);
 
 		pthread_mutex_unlock(mutex);
 
@@ -968,15 +974,15 @@ extern "C" {
 				result = errno;
 		}
 
-		c->counter_lock.lock();
+		pthread_mutex_lock(&c->counter_mutex);
 		if (c->num_signallers > 0) {
 			if (result == ETIMEDOUT) /* timeout occured */
 				sem_wait(&c->signal_sem);
-			c->handshake_sem.up();
+			sem_post(&c->handshake_sem);
 			--c->num_signallers;
 		}
 		c->num_waiters--;
-		c->counter_lock.unlock();
+		pthread_mutex_unlock(&c->counter_mutex);
 
 		pthread_mutex_lock(mutex);
 
@@ -987,7 +993,7 @@ extern "C" {
 	int pthread_cond_wait(pthread_cond_t *__restrict cond,
 	                      pthread_mutex_t *__restrict mutex)
 	{
-		return pthread_cond_timedwait(cond, mutex, 0);
+		return pthread_cond_timedwait(cond, mutex, nullptr);
 	}
 
 
@@ -998,16 +1004,16 @@ extern "C" {
 
 		pthread_cond *c = *cond;
 
-		c->counter_lock.lock();
+		pthread_mutex_lock(&c->counter_mutex);
 		if (c->num_waiters > c->num_signallers) {
-		  ++c->num_signallers;
-		  sem_post(&c->signal_sem);
-		  c->counter_lock.unlock();
-		  c->handshake_sem.down();
+			++c->num_signallers;
+			sem_post(&c->signal_sem);
+			pthread_mutex_unlock(&c->counter_mutex);
+			sem_wait(&c->handshake_sem);
 		} else
-		  c->counter_lock.unlock();
+			pthread_mutex_unlock(&c->counter_mutex);
 
-	   return 0;
+		return 0;
 	}
 
 
@@ -1018,17 +1024,17 @@ extern "C" {
 
 		pthread_cond *c = *cond;
 
-		c->counter_lock.lock();
+		pthread_mutex_lock(&c->counter_mutex);
 		if (c->num_waiters > c->num_signallers) {
 			int still_waiting = c->num_waiters - c->num_signallers;
 			c->num_signallers = c->num_waiters;
 			for (int i = 0; i < still_waiting; i++)
 				sem_post(&c->signal_sem);
-			c->counter_lock.unlock();
+			pthread_mutex_unlock(&c->counter_mutex);
 			for (int i = 0; i < still_waiting; i++)
-				c->handshake_sem.down();
+				sem_wait(&c->handshake_sem);
 		} else
-			c->counter_lock.unlock();
+			pthread_mutex_unlock(&c->counter_mutex);
 
 		return 0;
 	}
