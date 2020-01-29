@@ -180,8 +180,6 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 	public:
 
-		int thread_local_errno = 0;
-
 		/**
 		 * Constructor for threads created via 'pthread_create'
 		 */
