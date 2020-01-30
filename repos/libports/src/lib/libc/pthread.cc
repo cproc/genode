@@ -580,6 +580,19 @@ extern "C" {
 	}
 
 
+	void __pthread_cleanup_push_imp(void (*routine)(void*), void *arg,
+	                                struct _pthread_cleanup_info *)
+	{
+		warning(__func__, " not implemented yet");
+	}
+
+
+	void __pthread_cleanup_pop_imp(int execute)
+	{
+		warning(__func__, " not implemented yet");
+	}
+
+
 	/* Mutex */
 
 	int pthread_mutexattr_init(pthread_mutexattr_t *attr)
