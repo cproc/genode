@@ -397,7 +397,7 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 	}
 };
 
-
+extern "C" void wait_for_continue();
 struct Libc::Pthread_mutex_recursive : pthread_mutex
 {
 	unsigned _nesting_level { 0 };
@@ -548,6 +548,7 @@ extern "C" {
 		if (!_pthread_main_np()) {
 			error("pthread_self() called from alien thread named ",
 			      "'", Thread::myself()->name().string(), "'");
+			wait_for_continue();
 			return nullptr;
 		}
 
