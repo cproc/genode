@@ -45,7 +45,7 @@ class QGenodeClipboard : public QPlatformClipboard
 
 	public:
 
-		QGenodeClipboard(Genode::Env &env, Genode::Entrypoint &sig_ep);
+		QGenodeClipboard(Genode::Env &env);
 		~QGenodeClipboard();
 		QMimeData *mimeData(QClipboard::Mode mode = QClipboard::Clipboard);
 		void setMimeData(QMimeData *data, QClipboard::Mode mode = QClipboard::Clipboard);
