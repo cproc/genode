@@ -16,6 +16,7 @@ if {[have_spec odroid_xu]} {
 }
 
 append build_components [qt5_build_components feature]
+append build_components { app/qt5/examples/textedit lib/ld }
 
 build $build_components
 
@@ -70,6 +71,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+<!--
 	<start name="textedit2" caps="300">
 		<binary name="textedit" />
 		<resource name="RAM" quantum="70M"/>
@@ -91,6 +93,7 @@ append config {
 			<any-service> <parent /> <any-child/> </any-service>
 		</route>
 	</start>
+-->
 </config>
 }
 
@@ -101,6 +104,7 @@ install_config $config
 #
 
 append boot_modules [qt5_boot_modules feature]
+append boot_modules { textedit qt5_core.lib.so qt5_gui.lib.so qt5_widgets.lib.so ld.lib.so libc.lib.so libm.lib.so qt5_qpa_nitpicker.lib.so }
 
 build_boot_image $boot_modules
 
