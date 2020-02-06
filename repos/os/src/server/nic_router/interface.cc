@@ -791,7 +791,6 @@ void Interface::_domain_broadcast(Ethernet_frame &eth,
                                   Domain         &local_domain)
 {
 	eth.src(_router_mac);
-	eth.dst(Ethernet_frame::broadcast());
 	local_domain.interfaces().for_each([&] (Interface &interface) {
 		if (&interface != this) {
 			interface.send(eth, size_guard);
