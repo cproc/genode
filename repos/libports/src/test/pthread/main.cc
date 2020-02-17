@@ -527,7 +527,7 @@ struct Test_mutex_stress
 		{
 			sem_wait(&_startup_sem);
 
-			enum { ROUNDS = 800 };
+			enum { ROUNDS = 10000 };
 
 			for (unsigned i = 0; i < ROUNDS; ++i) {
 				_lock();

@@ -522,7 +522,10 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 					void complete() override
 					{
 						_completed = true;
-						_kernel._resume_main();
+						if (_kernel._main_context())
+							_kernel._resume_main();
+						else
+							Signal_transmitter(*_kernel._resume_main_handler).submit();
 					}
 				} job { fn, *this, _timer_accessor, timeout_ms };
 
@@ -539,8 +542,24 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 		void _charge_monitors() override
 		{
-			if (_monitors.charge_monitors())
+			if (_monitors.charge_monitors()) {
+				{
+					static Lock          mutex;
+					static unsigned long charge_count = 0;
+
+					Lock::Guard mutex_guard(mutex);
+
+#if 0
+					if (++charge_count % 10000 == 0)
+						error("charge_count = ", charge_count);
+#endif
+				}
+#if 1
+				_monitors_handler();
+#else
 				Signal_transmitter(*_execute_monitors).submit();
+#endif
+			}
 		}
 
 		/**

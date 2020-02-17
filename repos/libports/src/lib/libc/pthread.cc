@@ -3,7 +3,6 @@
  * \author Christian Prochaska
  * \author Christian Helmuth
  * \date   2012-03-12
- *
  */
 
 /*
@@ -307,6 +306,8 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 
 	int unlock() override final
 	{
+bool charge = false;
+{
 		Lock::Guard monitor_guard(_monitor_mutex);
 		Lock::Guard lock_guard(_data_mutex);
 
@@ -316,7 +317,11 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 		_owner = nullptr;
 
 		if (_applicants)
+charge = true;
+}
+if (charge) {
 			_monitor().charge_monitors();
+}
 
 		return 0;
 	}
@@ -382,6 +387,8 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 
 	int unlock() override final
 	{
+bool charge = false;
+{
 		Lock::Guard monitor_guard(_monitor_mutex);
 		Lock::Guard lock_guard(_data_mutex);
 
@@ -391,7 +398,11 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 		_owner = nullptr;
 
 		if (_applicants)
+charge = true;
+}
+if (charge) {
 			_monitor().charge_monitors();
+}
 
 		return 0;
 	}
@@ -450,6 +461,8 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 
 	int unlock() override final
 	{
+bool charge = false;
+{
 		Lock::Guard monitor_guard(_monitor_mutex);
 		Lock::Guard lock_guard(_data_mutex);
 
@@ -460,6 +473,10 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 		if (_nesting_level == 0) {
 			_owner = nullptr;
 			if (_applicants)
+charge = true;
+}
+}
+if (charge) {
 				_monitor().charge_monitors();
 		}
 

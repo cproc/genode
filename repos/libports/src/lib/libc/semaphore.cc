@@ -143,13 +143,19 @@ extern "C" {
 
 		int up()
 		{
+bool charge = false;
+{
 			Lock::Guard monitor_guard(_monitor_mutex);
 			Lock::Guard lock_guard(_data_mutex);
 
 			_count++;
 
 			if (_applicants)
+charge = true;
+}
+if (charge) {
 				_monitor().charge_monitors();
+}
 
 			return 0;
 		}
