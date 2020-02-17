@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<VirtualBox xmlns="http://www.virtualbox.org/" version="1.14-freebsd">
+  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="ubuntu_16_04_64" OSType="Ubuntu_64" snapshotFolder="Snapshots" lastStateChange="2018-01-23T18:40:00Z">
+    <MediaRegistry>
+      <HardDisks>
+        <HardDisk uuid="{6d639109-201c-4ee8-a2f9-00fae32b6b7a}" location="/vm/debian/debian.vdi" format="VDI" type="Immutable">
+          <HardDisk uuid="{3d9a9193-0fe7-4f8c-8e1b-065dbf514c82}" location="/ram/overlay_debian.vdi" format="VDI" autoReset="true"/>
+        </HardDisk>
+      </HardDisks>
+    </MediaRegistry>
+    <Hardware>
+      <CPU count="4">
+        <PAE enabled="true"/>
+        <LongMode enabled="true"/>
+        <HardwareVirtExLargePages enabled="false"/>
+      </CPU>
+      <Memory RAMSize="1024"/>
+      <HID Pointing="USBTablet"/>
+      <Display VRAMSize="20"/>
+      <RemoteDisplay enabled="false"/>
+      <BIOS>
+        <IOAPIC enabled="true"/>
+      </BIOS>
+      <USB>
+        <Controllers>
+          <Controller name="OHCI" type="OHCI"/>
+        </Controllers>
+      </USB>
+      <Network>
+        <Adapter slot="0" enabled="true" MACAddress="0800271D7901" cable="true" type="82540EM">
+          <BridgedInterface/>
+        </Adapter>
+      </Network>
+      <UART>
+        <Port slot="0" enabled="true" IOBase="0x3f8" IRQ="4" path="/dev/terminal" hostMode="HostDevice"/>
+        <Port slot="1" enabled="false" IOBase="0x2f8" IRQ="3" hostMode="Disconnected"/>
+      </UART>
+      <LPT>
+        <Port slot="0" enabled="false" IOBase="0x378" IRQ="7"/>
+        <Port slot="1" enabled="false" IOBase="0x378" IRQ="7"/>
+      </LPT>
+      <AudioAdapter controller="HDA" driver="OSS" enabled="false"/>
+      <RTC localOrUTC="UTC"/>
+      <SharedFolders/>
+      <Clipboard mode="Disabled"/>
+    </Hardware>
+    <StorageControllers>
+      <StorageController name="SATA" type="AHCI" PortCount="2" useHostIOCache="true" Bootable="true">
+        <AttachedDevice type="HardDisk" port="0" device="0">
+          <Image uuid="{3d9a9193-0fe7-4f8c-8e1b-065dbf514c82}"/>
+        </AttachedDevice>
+      </StorageController>
+    </StorageControllers>
+  </Machine>
+</VirtualBox>

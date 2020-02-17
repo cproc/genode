@@ -30,6 +30,7 @@ set build_components {
 	drivers/audio
 	server/report_rom
 	server/dynamic_rom
+	server/log_terminal
 }
 
 set boot_modules {
@@ -38,6 +39,7 @@ set boot_modules {
 	audio_drv
 	report_rom
 	dynamic_rom
+	log_terminal
 }
 
 set virtualbox5_binary "virtualbox5"
@@ -212,6 +214,15 @@ append config_of_app {
 		</route>
 	</start>}
 
+append config_of_app {
+	<start name="log_terminal" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Terminal"/>
+		</provides>
+	</start>
+}
+
 for { set i 1} { $i <= $use_vms } { incr i} {
 	append config_of_app "
 	<start name=\"vbox${i}\" priority=\"-2\" caps=\"800\">"
@@ -232,7 +243,7 @@ for { set i 1} { $i <= $use_vms } { incr i} {
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 			<vfs>
 				<dir name="dev">
-					<log/> <rtc/>}
+					<log/> <rtc/> <terminal/> }
 
 	append_if [expr !$use_rumpfs] config_of_app {
 					<block name="sda3" label="raw" block_buffer_count="128" />}
@@ -291,6 +302,22 @@ build_boot_image $boot_modules
 
 set wait_timeout 70
 if {[have_spec foc]} { set wait_timeout 120 }
+
+##########
+
+run_genode_until {\[init -\> log_terminal] start} 300
+set t1  [clock milliseconds]
+
+run_genode_until {\[init -\> log_terminal] stop} 300 [output_spawn_id]
+set t2  [clock milliseconds]
+
+set result [expr { 1024000 / ($t2 - $t1) }]
+
+puts "result: $result MiB/s"
+
+exit 0
+
+##########
 
 run_genode_until {\[init -\> vbox.*].*Guest Additions capability report:.*seamless: no, hostWindowMapping: no, graphics: no} $wait_timeout
 
