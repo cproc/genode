@@ -96,8 +96,10 @@ append config {
 		<provides><service name="Block"/></provides>
 		<config>
 			<policy label_prefix="part_block" device="0" writeable="yes"/>
+			<policy label_prefix="rump_fs" device="1" writeable="yes"/>
 		</config>
 	</start>
+<!--
 	<start name="part_block" priority="-1">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Block"/></provides>
@@ -111,7 +113,7 @@ append_if [expr !$use_rumpfs] config {
 			<policy label_prefix="vbox1 -> raw" partition="3" writeable="yes"/>}
 append config {
 		</config>
-	</start>}
+	</start>-->}
 
 append_if [have_spec nova] config {
 	<start name="log_kernel">
@@ -145,7 +147,8 @@ append_if [expr $use_rumpfs] config {
 			<default-policy root="/" writeable="no"/>
 		</config>
 		<route>
-			<any-service><child name="part_block"/> <parent/><any-child/></any-service>
+			<any-service><child name="ahci_drv"/> <parent/><any-child/></any-service>
+			<!--<any-service><child name="part_block"/> <parent/><any-child/></any-service>-->
 		</route>
 	</start>}
 
