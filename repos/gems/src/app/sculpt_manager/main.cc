@@ -1311,11 +1311,11 @@ void Sculpt::Main::_handle_window_layout()
 		_window_list.xml().for_each_sub_node("window", [&] (Xml_node win) {
 			Label const label = win.attribute_value("label", Label());
 
-			if (label == inspect_label)
+			if (label == inspect_label && _selected_tab == Panel_dialog::Tab::INSPECT)
 				xml.node("window", [&] () {
 					xml.attribute("id", win.attribute_value("id", 0UL)); });
 
-			if (label == editor_view_label)
+			if (label == editor_view_label && _selected_tab == Panel_dialog::Tab::FILES)
 				xml.node("window", [&] () {
 					xml.attribute("id", win.attribute_value("id", 0UL)); });
 		});
