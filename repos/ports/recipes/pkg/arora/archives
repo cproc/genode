@@ -28,4 +28,4 @@ _/src/qt5_ui_tools
 _/src/qt5_webkit
 _/src/qt5_widgets
 _/src/vfs_jitterentropy
-_/src/vfs_lxip
+_/src/vfs_lwip

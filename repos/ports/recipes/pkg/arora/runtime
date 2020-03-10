@@ -41,7 +41,6 @@
 		<rom label="icu.lib.so"/>
 		<rom label="libcrypto.lib.so"/>
 		<rom label="libssl.lib.so"/>
-		<rom label="lxip.lib.so"/>
 		<rom label="qt5_angle.lib.so"/>
 		<rom label="qt5_jscore.lib.so"/>
 		<rom label="qt5_network.lib.so"/>
@@ -58,7 +57,7 @@
 		<rom label="qt5_widgets.lib.so"/>
 		<rom label="qt5_wtf.lib.so"/>
 		<rom label="vfs_jitterentropy.lib.so"/>
-		<rom label="vfs_lxip.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
 
 	</content>
 
