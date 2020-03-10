@@ -3,8 +3,10 @@
 	<requires>
 		<nic/>
 		<nitpicker/>
+		<report label="arora -> clipboard"/>
 		<report label="arora -> shape"/>
 		<rm/>
+		<rom label="arora -> clipboard"/>
 		<rtc/>
 		<timer/>
 	</requires>
