@@ -21,10 +21,10 @@ QT_INCPATH += \
   qtdeclarative/src/3rdparty/masm/disassembler/udis86 \
   qtdeclarative/include \
   qtdeclarative/include/QtQml \
-  qtdeclarative/include/QtQml/5.13.0 \
-  qtdeclarative/include/QtQml/5.13.0/QtQml \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtdeclarative/include/QtQml/5.13.2 \
+  qtdeclarative/include/QtQml/5.13.2/QtQml \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/include \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
