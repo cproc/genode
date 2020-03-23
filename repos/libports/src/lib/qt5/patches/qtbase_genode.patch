@@ -41,11 +41,11 @@ index a123483..09b8a8e 100644
  /* Installation date */
  static const char qt_configure_installation     [12+11]  = "qt_instdate=2012-12-20";
  /* Installation Info */
--static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.13.0";
+-static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/usr/local/Qt-5.13.2";
 +static const char qt_configure_prefix_path_str  [12+256] = "qt_prfxpath=/qt";
  #ifdef QT_BUILD_QMAKE
--static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.13.0";
--static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.13.0";
+-static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=/usr/local/Qt-5.13.2";
+-static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=/usr/local/Qt-5.13.2";
 +static const char qt_configure_ext_prefix_path_str   [12+256] = "qt_epfxpath=";
 +static const char qt_configure_host_prefix_path_str  [12+256] = "qt_hpfxpath=";
  #endif
