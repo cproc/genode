@@ -49,7 +49,7 @@ index aaca428..38558c2 100644
  }
  
 +/**
-+ * moc 5.13.0 generates '#include <memory>' in SharedTimerQt.moc, which
++ * moc 5.13.2 generates '#include <memory>' in SharedTimerQt.moc, which
 + * triggers compile errors when included within the namespace
 + */
 +#include "SharedTimerQt.moc"

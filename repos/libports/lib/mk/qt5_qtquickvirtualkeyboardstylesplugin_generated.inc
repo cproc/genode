@@ -2,8 +2,8 @@ QT_DEFINES += -DQT_NO_CAST_TO_ASCII -DQT_ASCII_CAST_WARNINGS -DQT_NO_CAST_FROM_A
 
 QT_INCPATH += \
   qtvirtualkeyboard/src/styles \
-  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.0 \
-  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.0/QtVirtualKeyboard \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.2 \
+  qtvirtualkeyboard/include/QtVirtualKeyboard/5.13.2/QtVirtualKeyboard \
   qtvirtualkeyboard/include \
   qtvirtualkeyboard/include/QtVirtualKeyboard \
   qtdeclarative/include \
@@ -12,13 +12,13 @@ QT_INCPATH += \
   qtsvg/include/QtSvg \
   qtbase/include \
   qtbase/include/QtWidgets \
-  qtbase/include/QtGui/5.13.0 \
-  qtbase/include/QtGui/5.13.0/QtGui \
+  qtbase/include/QtGui/5.13.2 \
+  qtbase/include/QtGui/5.13.2/QtGui \
   qtbase/include/QtGui \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
