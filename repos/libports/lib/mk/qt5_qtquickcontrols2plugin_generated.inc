@@ -9,20 +9,20 @@ QT_INCPATH += \
   qtdeclarative/include/QtQml \
   qtbase/include/QtNetwork \
   qtbase/include/QtCore \
-  qtdeclarative/include/QtQuick/5.13.0 \
-  qtdeclarative/include/QtQuick/5.13.0/QtQuick \
-  qtbase/include/QtGui/5.13.0 \
-  qtbase/include/QtGui/5.13.0/QtGui \
-  qtdeclarative/include/QtQml/5.13.0 \
-  qtdeclarative/include/QtQml/5.13.0/QtQml \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
-  qtquickcontrols2/include/QtQuickTemplates2/5.13.0 \
-  qtquickcontrols2/include/QtQuickTemplates2/5.13.0/QtQuickTemplates2 \
+  qtdeclarative/include/QtQuick/5.13.2 \
+  qtdeclarative/include/QtQuick/5.13.2/QtQuick \
+  qtbase/include/QtGui/5.13.2 \
+  qtbase/include/QtGui/5.13.2/QtGui \
+  qtdeclarative/include/QtQml/5.13.2 \
+  qtdeclarative/include/QtQml/5.13.2/QtQml \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
+  qtquickcontrols2/include/QtQuickTemplates2/5.13.2 \
+  qtquickcontrols2/include/QtQuickTemplates2/5.13.2/QtQuickTemplates2 \
   qtquickcontrols2/include \
   qtquickcontrols2/include/QtQuickTemplates2 \
-  qtquickcontrols2/include/QtQuickControls2/5.13.0 \
-  qtquickcontrols2/include/QtQuickControls2/5.13.0/QtQuickControls2 \
+  qtquickcontrols2/include/QtQuickControls2/5.13.2 \
+  qtquickcontrols2/include/QtQuickControls2/5.13.2/QtQuickControls2 \
   qtquickcontrols2/include/QtQuickControls2 \
   qtbase/mkspecs/genode-g++
 
