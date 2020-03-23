@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/testlib \
   qtbase/include \
   qtbase/include/QtTest \
-  qtbase/include/QtTest/5.13.0 \
-  qtbase/include/QtTest/5.13.0/QtTest \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtbase/include/QtTest/5.13.2 \
+  qtbase/include/QtTest/5.13.2/QtTest \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

@@ -13,8 +13,8 @@ QT_INCPATH += \
   qtbase/src/3rdparty/tinycbor/src \
   qtbase/include \
   qtbase/include/QtCore \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/src/3rdparty/pcre2/src \
   qtbase/mkspecs/genode-g++
 
@@ -258,7 +258,6 @@ QT_SOURCES += \
   qmimeprovider.cpp \
   qfloat16tables.cpp \
   qrc_mimetypes.cpp \
-  moc_qtransposeproxymodel.cpp \
   moc_qmimetype.cpp
 
 QT_VPATH += \
