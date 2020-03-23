@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/xml \
   qtbase/include \
   qtbase/include/QtXml \
-  qtbase/include/QtXml/5.13.0 \
-  qtbase/include/QtXml/5.13.0/QtXml \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtbase/include/QtXml/5.13.2 \
+  qtbase/include/QtXml/5.13.2/QtXml \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 

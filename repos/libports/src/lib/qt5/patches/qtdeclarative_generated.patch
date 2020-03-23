@@ -1,24 +1,24 @@
 qtdeclarative_generated.patch
 
-diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsgrammar_p.h b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsgrammar_p.h
 new file mode 100644
 index 0000000..ab3ad73
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsgrammar_p.h
++++ b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsgrammar_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qqmljsgrammar_p.h"
-diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsparser_p.h b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsparser_p.h
 new file mode 100644
 index 0000000..deb9e72
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qqmljsparser_p.h
++++ b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qqmljsparser_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qqmljsparser_p.h"
-diff --git a/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h
+diff --git a/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qtqml-config_p.h b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qtqml-config_p.h
 new file mode 100644
 index 0000000..1fdbd71
 --- /dev/null
-+++ b/qtdeclarative/include/QtQml/5.13.0/QtQml/private/qtqml-config_p.h
++++ b/qtdeclarative/include/QtQml/5.13.2/QtQml/private/qtqml-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/qml/qtqml-config_p.h"
 diff --git a/qtdeclarative/include/QtQml/QtQmlDepends b/qtdeclarative/include/QtQml/QtQmlDepends
@@ -39,11 +39,11 @@ index 0000000..48fe1f2
 +++ b/qtdeclarative/include/QtQml/qtqml-config.h
 @@ -0,0 +1 @@
 +#include "../../src/qml/qtqml-config.h"
-diff --git a/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h
+diff --git a/qtdeclarative/include/QtQuick/5.13.2/QtQuick/private/qtquick-config_p.h b/qtdeclarative/include/QtQuick/5.13.2/QtQuick/private/qtquick-config_p.h
 new file mode 100644
 index 0000000..fcdf423
 --- /dev/null
-+++ b/qtdeclarative/include/QtQuick/5.13.0/QtQuick/private/qtquick-config_p.h
++++ b/qtdeclarative/include/QtQuick/5.13.2/QtQuick/private/qtquick-config_p.h
 @@ -0,0 +1 @@
 +#include "../../../../../src/quick/qtquick-config_p.h"
 diff --git a/qtdeclarative/include/QtQuick/QtQuickDepends b/qtdeclarative/include/QtQuick/QtQuickDepends

@@ -4,10 +4,10 @@ QT_INCPATH += \
   qtbase/src/sql \
   qtbase/include \
   qtbase/include/QtSql \
-  qtbase/include/QtSql/5.13.0 \
-  qtbase/include/QtSql/5.13.0/QtSql \
-  qtbase/include/QtCore/5.13.0 \
-  qtbase/include/QtCore/5.13.0/QtCore \
+  qtbase/include/QtSql/5.13.2 \
+  qtbase/include/QtSql/5.13.2/QtSql \
+  qtbase/include/QtCore/5.13.2 \
+  qtbase/include/QtCore/5.13.2/QtCore \
   qtbase/include/QtCore \
   qtbase/mkspecs/genode-g++
 
