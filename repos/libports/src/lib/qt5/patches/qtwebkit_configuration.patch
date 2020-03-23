@@ -1,13 +1,13 @@
 qtwebkit_configuration.patch
 
 diff --git a/.gitmodules b/.gitmodules
-index 008555c..0cea9ba 100644
+index df68e9db8..808774680 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -385,4 +385,8 @@
- 	path = qtcoap
- 	url = ../qtcoap.git
- 	branch = 5.13.0
+@@ -311,4 +311,8 @@
+ 	path = qtlottie
+ 	url = ../qtlottie.git
+ 	branch = 5.13.2
 -	status = preview
 \ No newline at end of file
 +	status = preview
@@ -16,7 +16,7 @@ index 008555c..0cea9ba 100644
 +	path = qtwebkit
 +	project = WebKit.pro
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
-index 23d9904..6ea194f 100644
+index 23d99040b..6ea194fc1 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/configure.prf
 @@ -49,7 +49,6 @@ defineTest(runConfigure) {
@@ -28,7 +28,7 @@ index 23d9904..6ea194f 100644
          $$WEBKIT_TOOLS_CONFIG
  
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.prf b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
-index 328a8be..91e2c07 100644
+index 328a8be7e..91e2c0783 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.prf
 @@ -37,14 +37,14 @@ defineTest(detectFeatures) {
@@ -90,7 +90,7 @@ index 328a8be..91e2c07 100644
      # Support for Graphics Surface
      # GraphicsSurface requires GraphicsContext3D and hence use_3d_graphics
 diff --git a/qtwebkit/Tools/qmake/mkspecs/features/features.pri b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
-index ba18b35..dd27a42 100644
+index ba18b354d..dd27a421c 100644
 --- a/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 +++ b/qtwebkit/Tools/qmake/mkspecs/features/features.pri
 @@ -59,7 +59,7 @@ FEATURE_DEFAULTS = \
@@ -103,7 +103,7 @@ index ba18b35..dd27a42 100644
      ENABLE_INPUT_TYPE_COLOR=1 \
      ENABLE_INPUT_TYPE_DATE=0 \
 diff --git a/qtwebkit/include/QtWebKit/headers.pri b/qtwebkit/include/QtWebKit/headers.pri
-index 6775f3a..8b4aff7 100644
+index 6775f3a6d..8b4aff7af 100644
 --- a/qtwebkit/include/QtWebKit/headers.pri
 +++ b/qtwebkit/include/QtWebKit/headers.pri
 @@ -1,5 +1,5 @@
@@ -115,7 +115,7 @@ index 6775f3a..8b4aff7 100644
  SYNCQT.INJECTED_PRIVATE_HEADER_FILES = 
  SYNCQT.QPA_HEADER_FILES = 
 diff --git a/qtwebkit/include/QtWebKitWidgets/headers.pri b/qtwebkit/include/QtWebKitWidgets/headers.pri
-index 9d386e2..8d11b79 100644
+index 9d386e29b..8d11b7909 100644
 --- a/qtwebkit/include/QtWebKitWidgets/headers.pri
 +++ b/qtwebkit/include/QtWebKitWidgets/headers.pri
 @@ -1,5 +1,5 @@
