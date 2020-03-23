@@ -1,5 +1,5 @@
 LICENSE := GPL
-VERSION := 5.13.0
+VERSION := 5.13.2
 QTWEBKIT_VERSION = 5.9.1
 
 QT5 := qt-everywhere-src-${VERSION}
@@ -9,7 +9,7 @@ QTSCRIPTCLASSIC := qtscriptclassic-1.0_1-opensource
 DOWNLOADS := ${QT5}.archive ${QT5_WEBKIT}.archive ${QTSCRIPTCLASSIC}.archive symbols.git
 
 URL(${QT5}) := https://download.qt.io/archive/qt/5.13/$(VERSION)/single/$(QT5).tar.xz
-SHA(${QT5}) := 2cba31e410e169bd5cdae159f839640e672532a4687ea0f265f686421e0e86d6
+SHA(${QT5}) := 55e8273536be41f4f63064a79e552a22133848bb419400b6fa8e9fc0dc05de08
 DIR(${QT5}) := src/lib/qt5/qt5
 
 URL(${QT5_WEBKIT}) := https://download.qt.io/archive/qt/5.9/$(QTWEBKIT_VERSION)/submodules/${QT5_WEBKIT}.tar.xz
