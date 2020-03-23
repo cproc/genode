@@ -7,7 +7,7 @@
 #   QtGui
 #   QtSql
 
-../qt-everywhere-src-5.13.0/configure \
+../qt-everywhere-src-5.13.2/configure \
     -opensource \
     -confirm-license \
     -no-separate-debug-info \
