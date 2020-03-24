@@ -29,8 +29,15 @@ void Libc::Component::construct(Libc::Env &env)
 
 		initialize_qt_gui(env);
 
-		int argc = 1;
-		char const *argv[] = { "qt5_app", 0 };
+		int argc = 7;
+		char const *argv[] = { "qt5_app",
+		                       "--single-process",
+		                       "--disable-gpu",
+		                       "--enable-logging",
+		                       "--log-level=0",
+		                       "--v=3",
+		                       "--no-sandbox",
+		                       0 };
 
 		exit(main(argc, argv));
 	});

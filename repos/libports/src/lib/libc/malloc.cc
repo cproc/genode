@@ -22,6 +22,7 @@
 
 /* libc includes */
 extern "C" {
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 }
@@ -263,6 +264,14 @@ extern "C" void *realloc(void *ptr, size_t size)
 	return mallocator->realloc(ptr, size);
 }
 
+extern "C" void wait_for_continue();
+extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+	Genode::log("posix_memalign(): alignment: ", alignment);
+	wait_for_continue();
+	*memptr = malloc(size);
+	return 0;
+}
 
 static Genode::Constructible<Malloc> &constructible_malloc()
 {

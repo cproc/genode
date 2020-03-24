@@ -57,6 +57,7 @@ append config {
 				<dir name="dev">
 					<log/>
 					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
 				<dir name="socket"> <lwip dhcp="yes"/> </dir>
@@ -115,6 +116,9 @@ append boot_modules {
 	libssl.lib.so
 	vfs_jitterentropy.lib.so
 	vfs_lwip.lib.so
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
 }
 
 build_boot_image $boot_modules
