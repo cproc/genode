@@ -1,0 +1,12 @@
+libQt5Core
+libQt5Gui
+libQt5Network
+libQt5PrintSupport
+libQt5Qml
+libQt5Quick
+libQt5QuickWidgets
+libQt5Sql
+libQt5Svg
+libQt5Test
+libQt5Widgets
+libqgenode
