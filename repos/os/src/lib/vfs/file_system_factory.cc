@@ -25,6 +25,7 @@
 #include <ram_file_system.h>
 #include <rom_file_system.h>
 #include <rtc_file_system.h>
+#include <shm_file_system.h>
 #include <symlink_file_system.h>
 #include <tar_file_system.h>
 #include <terminal_file_system.h>
@@ -230,5 +231,6 @@ Vfs::Global_file_system_factory::Global_file_system_factory(Genode::Allocator &a
 	_add_builtin_fs<Vfs::Inline_file_system>();
 	_add_builtin_fs<Vfs::Rtc_file_system>();
 	_add_builtin_fs<Vfs::Ram_file_system>();
+	_add_builtin_fs<Vfs::Shm_file_system>();
 	_add_builtin_fs<Vfs::Symlink_file_system>();
 }
