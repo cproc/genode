@@ -957,8 +957,11 @@ extern "C" {
 
 	int pthread_cond_destroy(pthread_cond_t *cond)
 	{
-		if (!cond || !*cond)
+		if (!cond)
 			return EINVAL;
+
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			return 0;
 
 		Libc::Allocator alloc { };
 		destroy(alloc, *cond);
@@ -1030,8 +1033,11 @@ extern "C" {
 
 	int pthread_cond_signal(pthread_cond_t *cond)
 	{
-		if (!cond || !*cond)
+		if (!cond)
 			return EINVAL;
+
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			cond_init(cond, NULL);
 
 		pthread_cond *c = *cond;
 
@@ -1053,8 +1059,11 @@ extern "C" {
 
 	int pthread_cond_broadcast(pthread_cond_t *cond)
 	{
-		if (!cond || !*cond)
+		if (!cond)
 			return EINVAL;
+
+		if (*cond == PTHREAD_COND_INITIALIZER)
+			cond_init(cond, NULL);
 
 		pthread_cond *c = *cond;
 
