@@ -204,6 +204,7 @@ static void resolve_symlinks_except_last_element(char const *path, Absolute_path
 
 extern "C" int access(const char *path, int amode)
 {
+Genode::log("access(", Genode::Cstring(path), ")");
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
@@ -403,7 +404,14 @@ Genode::warning("mmap(): addr: ", addr,
                 ", offset: ", offset,
                 ", length: ", length);
 	/* handle requests for anonymous memory */
-	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
+	if ((flags & MAP_ANONYMOUS) || (flags & MAP_ANON)) {
+
+		if (addr && (flags & MAP_FIXED)) {
+			Genode::error("mmap anonymous memory at fixed address not supported yet");
+			errno = EINVAL;
+			return MAP_FAILED;
+		}
+
 		bool const executable = prot & PROT_EXEC;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
@@ -483,6 +491,7 @@ __SYS_(int, msync, (void *start, ::size_t len, int flags),
 
 __SYS_(int, open, (const char *pathname, int flags, ...),
 {
+Genode::log("open(", Genode::Cstring(pathname), ")");
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
@@ -491,6 +500,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	try {
 		resolve_symlinks_except_last_element(pathname, resolved_path);
 	} catch (Symlink_resolve_error) {
+Genode::warning("open(", Genode::Cstring(pathname), "): -1");
 		return -1;
 	}
 
@@ -500,10 +510,14 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 			resolve_symlinks(resolved_path.base(), resolved_path);
 		} catch (Symlink_resolve_error) {
 			if (errno == ENOENT) {
-				if (!(flags & O_CREAT))
+				if (!(flags & O_CREAT)) {
+Genode::warning("open(", Genode::Cstring(pathname), "): -1");
 					return -1;
-			} else
+				}
+			} else {
+Genode::warning("open(", Genode::Cstring(pathname), "): -1");
 				return -1;
+			}
 		}
 	}
 
@@ -520,6 +534,8 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 		return -1;
 	}
 	new_fdo->path(resolved_path.base());
+
+Genode::log("open(", Genode::Cstring(pathname), "): ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 })
@@ -644,6 +660,7 @@ extern "C" int rmdir(const char *path)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
+Genode::log("stat(", Genode::Cstring(path), ")");
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);

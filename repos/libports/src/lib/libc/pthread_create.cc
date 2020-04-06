@@ -74,12 +74,14 @@ int Libc::pthread_create(pthread_t *thread, Thread &t)
 	return 0;
 }
 
-
+extern "C" void wait_for_continue();
 extern "C"
 {
 	int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                   void *(*start_routine) (void *), void *arg)
 	{
+Genode::log("pthread_create()");
+//wait_for_continue();
 		size_t const stack_size = (attr && *attr && (*attr)->stack_size)
 		                        ? (*attr)->stack_size
 		                        : Libc::Component::stack_size();
