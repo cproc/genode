@@ -57,9 +57,12 @@ append config {
 				<dir name="dev">
 					<log/>
 					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
+				<dir name="shm"> <shm/> </dir>
 				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+				<dir name="tmp"> <ram/> </dir>
 				<tar name="qt5_dejavusans.tar"/>
 				<tar name="qt5_qtquick2.tar"/>
 				<tar name="qt5_qtquick2plugin.tar" />
@@ -67,6 +70,8 @@ append config {
 				<tar name="qt5_windowplugin.tar" />
 				<tar name="qt5_qtwebengine.tar" />
 				<tar name="qt5_qtwebengineplugin.tar" />
+				<inline name="test.html">test</inline>
+				<ram/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" pid="1"/>
 		</config>
@@ -99,6 +104,10 @@ append boot_modules {
 	Qt5Qml.lib.so
 	Qt5Network.lib.so
 	qt5_component.lib.so
+	qt5_qpa_nitpicker.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_network.lib.so
 	qt5_qml.lib.so
 	qt5_quick.lib.so
 	qt5_qtquick2.tar
@@ -110,11 +119,14 @@ append boot_modules {
 	qt5_qtwebengine.tar
 	qt5_qtwebengineplugin.tar
 	qt5_qtwebengineplugin.lib.so
-	qt5_network.lib.so
 	libcrypto.lib.so
 	libssl.lib.so
+	vfs.lib.so
 	vfs_jitterentropy.lib.so
 	vfs_lwip.lib.so
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
 }
 
 build_boot_image $boot_modules

@@ -92,7 +92,7 @@ struct Vfs_ram::Watch_handle final : public  Vfs_watch_handle,
 	: Vfs_watch_handle(fs, alloc), node(node) { }
 };
 
-
+extern "C" void wait_for_continue();
 class Vfs_ram::Node : private Genode::Avl_node<Node>, private Genode::Lock
 {
 	private:
@@ -245,9 +245,15 @@ class Vfs_ram::Node : private Genode::Avl_node<Node>, private Genode::Lock
 		{
 			Node &node;
 
-			Guard(Node *guard_node) : node(*guard_node) { node.lock(); }
+			Guard(Node *guard_node) : node(*guard_node)
+			{
+				node.lock();
+			}
 
-			~Guard() { node.unlock(); }
+			~Guard()
+			{
+				node.unlock();
+			}
 		};
 };
 
@@ -608,6 +614,8 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		                 Vfs_handle **handle,
 		                 Allocator   &alloc) override
 		{
+Genode::warning(&path, ": Vfs::Ram_file_system::open(): path: ", Genode::Cstring(path),
+                ", mode: ", Genode::Hex(mode));
 			using namespace Vfs_ram;
 
 			File *file;
@@ -628,16 +636,19 @@ class Vfs::Ram_file_system : public Vfs::File_system
 				catch (Out_of_memory) { return OPEN_ERR_NO_SPACE; }
 				parent->adopt(file);
 				parent->notify();
+Genode::warning(&path, ": Vfs::Ram_file_system::open(): new file created: ", file);
 			} else {
 				Node *node = lookup(path);
 				if (!node) return OPEN_ERR_UNACCESSIBLE;
 
 				file = dynamic_cast<File *>(node);
 				if (!file) return OPEN_ERR_UNACCESSIBLE;
+Genode::warning(&path, ": Vfs::Ram_file_system::open(): file found: ", file);
 			}
 
 			try {
 				*handle = new (alloc) Io_handle(*this, alloc, mode, *file);
+Genode::warning(&path, ": Vfs::Ram_file_system::open(): *handle: ", *handle);
 				return OPEN_OK;
 			} catch (Genode::Out_of_ram) {
 				if (create) {
@@ -896,7 +907,7 @@ class Vfs::Ram_file_system : public Vfs::File_system
 		Dataspace_capability dataspace(char const *path) override
 		{
 			using namespace Vfs_ram;
-
+Genode::warning(&path, ": Vfs::Ram_file_sustem::dataspace(): ", Genode::Cstring(path));
 			Ram_dataspace_capability ds_cap;
 
 			Node *node = lookup(path);
@@ -985,17 +996,23 @@ class Vfs::Ram_file_system : public Vfs::File_system
 			out_count = 0;
 
 			Vfs_ram::Io_handle const *handle =
-				static_cast<Vfs_ram::Io_handle *>(vfs_handle);
-
+				dynamic_cast<Vfs_ram::Io_handle *>(vfs_handle);
+Genode::warning(&handle, ": Vfs::Ram_file_system::complete_read(): handle: ", handle);
+Genode::warning(&handle, ": Vfs::Ram_file_system::complete_read(): node: ", &handle->node);
 			Vfs_ram::Node::Guard guard(&handle->node);
 
-			return handle->node.complete_read(dst, count, handle->seek(), out_count);
+Genode::warning(&handle, ": Vfs::Ram_file_system::complete_read(): calling node.complete_read()");
+			Read_result res = handle->node.complete_read(dst, count, handle->seek(), out_count);
+Genode::warning(&handle, ": Vfs::Ram_file_system::complete_read(): node.complete_read() returned");
+
+			return res;
 		}
 
 		bool read_ready(Vfs_handle *) override { return true; }
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
 		{
+Genode::warning(&vfs_handle, ": Vfs::Ram_file_system::ftruncate(): len: ", len);
 			if ((vfs_handle->status_flags() & OPEN_MODE_ACCMODE) ==  OPEN_MODE_RDONLY)
 				return FTRUNCATE_ERR_NO_PERM;
 
@@ -1006,6 +1023,7 @@ class Vfs::Ram_file_system : public Vfs::File_system
 
 			try { handle->node.truncate(len); }
 			catch (Vfs_ram::Out_of_memory) { return FTRUNCATE_ERR_NO_SPACE; }
+Genode::warning(&vfs_handle, ": Vfs::Ram_file_system::ftruncate() finished");
 			return FTRUNCATE_OK;
 		}
 
