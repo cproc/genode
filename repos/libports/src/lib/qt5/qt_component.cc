@@ -22,16 +22,26 @@ extern "C" int main(int argc, char const **argv);
 
 void initialize_qt_gui(Genode::Env &env) __attribute__((weak));
 void initialize_qt_gui(Genode::Env &) { }
-
+extern "C" void wait_for_continue();
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
 
 		initialize_qt_gui(env);
 
-		int argc = 1;
-		char const *argv[] = { "qt5_app", 0 };
-
-		exit(main(argc, argv));
+		int argc = 7;
+		char const *argv[] = { "qt5_app",
+		                       "--single-process",
+		                       "--disable-gpu",
+		                       "--enable-logging",
+		                       "--log-level=0",
+		                       "--v=1",
+		                       "--no-sandbox",
+		                       0 };
+wait_for_continue();
+		int exit_code = main(argc, argv);
+Genode::error("main() returned");
+wait_for_continue();
+		exit(exit_code);
 	});
 }
