@@ -812,7 +812,7 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-Genode::warning("Vfs_plugin::read(): count: ", count);
+Genode::warning(&fd, ": Vfs_plugin::read(): count: ", count);
 	dispatch_pending_io_signals();
 
 	if ((fd->flags & O_ACCMODE) == O_WRONLY) {
@@ -903,7 +903,7 @@ Genode::warning("Vfs_plugin::read(): count: ", count);
 	}
 
 	VFS_THREAD_SAFE(handle->advance_seek(out_count));
-Genode::warning("Vfs_plugin::read(): out_count: ", out_count);
+Genode::warning(&fd, ": Vfs_plugin::read(): out_count: ", out_count);
 
 	return out_count;
 }
@@ -1558,7 +1558,7 @@ int Libc::Vfs_plugin::rename(char const *from_path, char const *to_path)
 void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags,
                              File_descriptor *fd, ::off_t offset)
 {
-Genode::warning("Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
+Genode::warning(&length, ": Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
                 ", offset: ", offset, ", length: ", length);
 #if 0
 	if (prot != PROT_READ && !(prot == (PROT_READ | PROT_WRITE) && flags == MAP_PRIVATE)) {
@@ -1594,9 +1594,9 @@ Genode::warning("Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
 		char *read_addr = (char *)addr;
 
 		while (read_remain > 0) {
-Genode::warning("Vfs_plugin::mmap(): calling pread()");
+Genode::warning(&length, ": Vfs_plugin::mmap(): calling pread()");
 			ssize_t length_read = ::pread(fd->libc_fd, read_addr, read_remain, read_offset);
-Genode::warning("Vfs_plugin::mmap(): pread() returned");
+Genode::warning(&length, ": Vfs_plugin::mmap(): pread() returned");
 			if (length_read < 0) { /* error */
 				error("mmap could not obtain file content");
 				::munmap(addr, length);
@@ -1624,7 +1624,7 @@ Genode::warning("Vfs_plugin::mmap(): pread() returned");
 
 		addr = _rm->attach(ds_cap, length, offset);
 	}
-Genode::warning("Vfs_plugin::mmap(): ", addr);
+Genode::warning(&length, ": Vfs_plugin::mmap(): ", addr);
 	return addr;
 }
 

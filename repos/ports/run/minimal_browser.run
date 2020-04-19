@@ -50,16 +50,33 @@ append config [qt5_start_nodes feature]
 
 append config {
 
-	<start name="minimal" caps="2000">
+
+	<start name="vfs" caps="250">
+		<resource name="RAM" quantum="256M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs> <lwip dhcp="yes"/> </vfs>
+			<default-policy writeable="yes" root="/"/>
+		</config>
+	</start>
+
+
+	<start name="minimal" caps="10000">
 		<resource name="RAM" quantum="2G"/>
 		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<log/>
 					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
-				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+				<dir name="shm"> <shm/> </dir>
+				<dir name="socket">
+					<!--<lwip dhcp="yes"/>-->
+					<fs/>
+				</dir>
+				<dir name="tmp"> <ram/> </dir>
 				<tar name="qt5_dejavusans.tar"/>
 				<tar name="qt5_qtquick2.tar"/>
 				<tar name="qt5_qtquick2plugin.tar" />
@@ -67,6 +84,10 @@ append config {
 				<tar name="qt5_windowplugin.tar" />
 				<tar name="qt5_qtwebengine.tar" />
 				<tar name="qt5_qtwebengineplugin.tar" />
+				<tar name="qt5_qtquick_controls.tar" />
+				<tar name="qt5_qtquickcontrolsplugin.tar" />
+				<inline name="test.html">test</inline>
+				<ram/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" pid="1"/>
 		</config>
@@ -98,9 +119,13 @@ append boot_modules {
 	Qt5Core.lib.so
 	Qt5Qml.lib.so
 	Qt5Network.lib.so
+	Qt5Widgets.lib.so
 	qt5_component.lib.so
+	qt5_qpa_nitpicker.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_network.lib.so
 	qt5_qml.lib.so
-	qt5_quick.lib.so
 	qt5_qtquick2.tar
 	qt5_qtquick2plugin.tar
 	qt5_qtquick2plugin.lib.so
@@ -110,11 +135,20 @@ append boot_modules {
 	qt5_qtwebengine.tar
 	qt5_qtwebengineplugin.tar
 	qt5_qtwebengineplugin.lib.so
-	qt5_network.lib.so
+	qt5_qtquick_controls.tar
+	qt5_qtquickcontrolsplugin.tar
+	qt5_qtquickcontrolsplugin.lib.so
 	libcrypto.lib.so
 	libssl.lib.so
+	vfs.lib.so
 	vfs_jitterentropy.lib.so
 	vfs_lwip.lib.so
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	vfs_lxip.lib.so
+	lxip.lib.so
+	vfs
 }
 
 build_boot_image $boot_modules
