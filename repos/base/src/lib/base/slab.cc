@@ -376,7 +376,7 @@ bool Slab::alloc(size_t size, void **out_addr)
 	return true;
 }
 
-
+extern "C" void wait_for_continue();
 void Slab::_free(void *addr)
 {
 	Entry *e = addr ? Entry::slab_entry(addr) : nullptr;
@@ -394,7 +394,8 @@ void Slab::_free(void *addr)
 	Block &block = e->block;
 
 	if (!e->used()) {
-		error("slab address ", addr, " freed which is unused");
+		error(&e, ": slab address ", addr, " freed which is unused");
+		//wait_for_continue();
 		return;
 	}
 
