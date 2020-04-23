@@ -234,6 +234,7 @@ extern "C" int chdir(const char *path)
  */
 __SYS_(int, close, (int libc_fd),
 {
+Genode::warning(&libc_fd, ": close(): fd: ", libc_fd, ", ret: ", __builtin_return_address(0));
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 
 	if (!fd)
@@ -493,7 +494,7 @@ __SYS_(int, msync, (void *start, ::size_t len, int flags),
 	return ret;
 })
 
-
+extern "C" void wait_for_continue();
 __SYS_(int, open, (const char *pathname, int flags, ...),
 {
 Genode::warning(&flags, ": open(", Genode::Cstring(pathname), ")");
@@ -505,7 +506,7 @@ Genode::warning(&flags, ": open(", Genode::Cstring(pathname), ")");
 	try {
 		resolve_symlinks_except_last_element(pathname, resolved_path);
 	} catch (Symlink_resolve_error) {
-Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): Symlink_resolve_error");
 		return -1;
 	}
 
@@ -516,11 +517,11 @@ Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
 		} catch (Symlink_resolve_error) {
 			if (errno == ENOENT) {
 				if (!(flags & O_CREAT)) {
-Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): Symlink_resolve_error 2");
 					return -1;
 				}
 			} else {
-Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): Symlink_resolve_error 3");
 				return -1;
 			}
 		}
@@ -535,7 +536,8 @@ Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
 
 	new_fdo = plugin->open(resolved_path.base(), flags);
 	if (!new_fdo) {
-		error("plugin()->open(\"", pathname, "\") failed");
+		error(&flags, ": plugin()->open(\"", pathname, "\") failed");
+		wait_for_continue();
 		return -1;
 	}
 	new_fdo->path(resolved_path.base());
@@ -612,7 +614,7 @@ extern "C" int pipe2(int pipefd[2], int flags)
 
 
 __SYS_(ssize_t, read, (int libc_fd, void *buf, ::size_t count), {
-Genode::warning(&libc_fd, ": read(): fd: ", libc_fd);
+Genode::warning(&libc_fd, ": read(): fd: ", libc_fd, ", ret: ", __builtin_return_address(0));
 	FD_FUNC_WRAPPER(read, libc_fd, buf, count); })
 
 

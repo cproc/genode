@@ -321,6 +321,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 		switch (VFS_THREAD_SAFE(_root_fs.open(path, flags, &handle, _alloc))) {
 
 		case Result::OPEN_OK:
+Genode::warning(&path, ": Vfs_plugin::open(): ", Genode::Cstring(path), ": handle: ", handle);
 			break;
 
 		case Result::OPEN_ERR_UNACCESSIBLE:
@@ -812,7 +813,6 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
-Genode::warning(&fd, ": Vfs_plugin::read(): count: ", count);
 	dispatch_pending_io_signals();
 
 	if ((fd->flags & O_ACCMODE) == O_WRONLY) {
@@ -828,6 +828,8 @@ Genode::warning(&fd, ": Vfs_plugin::read(): count: ", count);
 
 	if (fd->flags & O_NONBLOCK && !read_ready(fd))
 		return Errno(EAGAIN);
+
+Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", handle: ", handle, ", count: ", count);
 
 	{
 		struct Check : Suspend_functor
@@ -903,7 +905,7 @@ Genode::warning(&fd, ": Vfs_plugin::read(): count: ", count);
 	}
 
 	VFS_THREAD_SAFE(handle->advance_seek(out_count));
-Genode::warning(&fd, ": Vfs_plugin::read(): out_count: ", out_count);
+Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", handle: ", handle, ", out_count: ", out_count);
 
 	return out_count;
 }

@@ -98,7 +98,7 @@ namespace Libc { namespace Socket_fs {
 
 using namespace Libc::Socket_fs;
 
-
+extern "C" void wait_for_continue();
 struct Libc::Socket_fs::Context : Plugin_context
 {
 	private:
@@ -250,6 +250,8 @@ struct Libc::Socket_fs::Context : Plugin_context
 
 			if (connect_status_len <= 0) {
 				error("socket_fs: reading from the connect file failed");
+				error(&connect_status_len, ": wait_for_continue()");
+				wait_for_continue();
 				return -1;
 			}
 
@@ -421,6 +423,8 @@ static Host_string host_string(sockaddr_in const &addr)
 
 static sockaddr_in sockaddr_in_struct(Host_string const &host, Port_string const &port)
 {
+int dummy;
+Genode::warning(&dummy, ": sockaddr_in_struct()");
 	addrinfo hints;
 	addrinfo *info = nullptr;
 
@@ -433,6 +437,7 @@ static sockaddr_in sockaddr_in_struct(Host_string const &host, Port_string const
 	sockaddr_in addr = *(sockaddr_in*)info->ai_addr;
 
 	freeaddrinfo(info);
+Genode::warning(&dummy, ": sockaddr_in_struct() finished");
 
 	return addr;
 }
@@ -574,7 +579,8 @@ extern "C" int socket_fs_accept(int libc_fd, sockaddr *addr, socklen_t *addrlen)
 		int ret = read_sockaddr_in(func, (sockaddr_in *)addr, addrlen);
 		if (ret == -1) return ret;
 	}
-
+int dummy;
+Genode::warning(&dummy, ": socket_fs_accept(): fd: ", accept_fd->libc_fd);
 	return accept_fd->libc_fd;
 }
 
@@ -752,6 +758,7 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 	/* TODO ECONNREFUSED */
 
 	try {
+Genode::warning(&fd, ": do_recvfrom(): fd: ", fd->libc_fd, ", ret: ", __builtin_return_address(0));
 		lseek(context->data_fd(), 0, 0);
 		ssize_t out_len = read(context->data_fd(), buf, len);
 		return out_len;
@@ -764,6 +771,7 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 extern "C" ssize_t socket_fs_recvfrom(int libc_fd, void *buf, ::size_t len, int flags,
                                       sockaddr *src_addr, socklen_t *src_addrlen)
 {
+Genode::warning(&libc_fd, ": socket_fs_recvfrom(): fd: ", libc_fd, ", ret: ", __builtin_return_address(0));
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	if (!fd) return Errno(EBADF);
 
@@ -773,6 +781,7 @@ extern "C" ssize_t socket_fs_recvfrom(int libc_fd, void *buf, ::size_t len, int 
 
 extern "C" ssize_t socket_fs_recv(int libc_fd, void *buf, ::size_t len, int flags)
 {
+Genode::warning(&libc_fd, ": socket_fs_recv(): fd: ", libc_fd, ", ret: ", __builtin_return_address(0));
 	/* identical to recvfrom() with a NULL src_addr argument */
 	return socket_fs_recvfrom(libc_fd, buf, len, flags, nullptr, nullptr);
 }
@@ -999,6 +1008,8 @@ extern "C" int socket_fs_socket(int domain, int type, int protocol)
 	} catch (New_socket_failed) { return Errno(EACCES); }
 
 	File_descriptor *fd = file_descriptor_allocator()->alloc(&plugin(), context);
+int dummy;
+Genode::warning(&dummy, ": socket_fs_socket(): fd: ", fd->libc_fd);
 
 	return fd->libc_fd;
 }
@@ -1006,6 +1017,8 @@ extern "C" int socket_fs_socket(int domain, int type, int protocol)
 
 static int read_ifaddr_file(sockaddr_in &sockaddr, Socket_fs::Absolute_path const &path)
 {
+int dummy;
+Genode::warning(&dummy, ": read_ifaddr_file()\n");
 	Host_string address;
 	Port_string service;
 	*service.base() = '0';
@@ -1020,7 +1033,7 @@ static int read_ifaddr_file(sockaddr_in &sockaddr, Socket_fs::Absolute_path cons
 
 	try { sockaddr = sockaddr_in_struct(address, service); }
 	catch (...) { return -1; }
-
+Genode::warning(&dummy, ": read_ifaddr_file() finished\n");
 	return 0;
 }
 
@@ -1214,6 +1227,7 @@ int Socket_fs::Plugin::select(int nfds,
 
 int Socket_fs::Plugin::close(File_descriptor *fd)
 {
+Genode::warning(&fd, ": Socket_fs::Plugin::close(): ", fd->libc_fd);
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(EBADF);
 
