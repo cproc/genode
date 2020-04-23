@@ -104,7 +104,7 @@ class Window_layouter::Assign : public List_model<Assign>::Element
 			if (!_pos_defined)
 				return target_geometry;
 
-			Point const any_pos(150*win_id % 800, 30 + (100*win_id % 500));
+			Point const any_pos(0*win_id % 800, 0 + (0*win_id % 500));
 
 			Point const pos(_xpos_any ? any_pos.x() : _pos.x(),
 			                _ypos_any ? any_pos.y() : _pos.y());
