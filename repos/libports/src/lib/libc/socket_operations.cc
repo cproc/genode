@@ -128,6 +128,7 @@ extern "C" int listen(int libc_fd, int backlog)
 __SYS_(ssize_t, recvfrom, (int libc_fd, void *buf, ::size_t len, int flags,
                            sockaddr *src_addr, socklen_t *src_addrlen),
 {
+Genode::warning(&libc_fd, ": recvfrom(): fd: ", libc_fd, ", len: ", len);
 	if (*config_socket())
 		return socket_fs_recvfrom(libc_fd, buf, len, flags, src_addr, src_addrlen);
 
@@ -137,6 +138,7 @@ __SYS_(ssize_t, recvfrom, (int libc_fd, void *buf, ::size_t len, int flags,
 
 __SYS_(ssize_t, recv, (int libc_fd, void *buf, ::size_t len, int flags),
 {
+Genode::warning(&libc_fd, ": recv(): fd: ", libc_fd, ", len: ", len);
 	if (*config_socket())
 		return socket_fs_recv(libc_fd, buf, len, flags);
 
@@ -212,8 +214,10 @@ extern "C" int shutdown(int libc_fd, int how)
 
 __SYS_(int, socket, (int domain, int type, int protocol),
 {
-	if (*config_socket())
+Genode::warning(&domain, ": socket()");
+	if (*config_socket()) {
 		return socket_fs_socket(domain, type, protocol);
+	}
 
 	Plugin *plugin;
 	File_descriptor *new_fdo;
@@ -230,7 +234,7 @@ __SYS_(int, socket, (int domain, int type, int protocol),
 		error("plugin()->socket() failed");
 		return -1;
 	}
-Genode::warning(&domain, ": socket(): ", new_fdo->libc_fd);
+
 	return new_fdo->libc_fd;
 })
 
