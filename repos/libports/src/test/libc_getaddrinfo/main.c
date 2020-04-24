@@ -12,52 +12,61 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <ifaddrs.h>
+#include <pthread.h>
 
-int main(int argc, char **argv)
+
+static int argc;
+static char **argv;
+
+
+static void test_getnameinfo()
 {
-	{
-		struct ifaddrs *addrs = NULL;
+	struct ifaddrs *addrs = NULL;
 
-		if (getifaddrs(&addrs)) {
-			printf("Check getifaddrs failed\n");
-			return ~0;
-		}
-
-		char ip_addr[NI_MAXHOST],
-		     netmask[NI_MAXHOST],
-		     broadcast[NI_MAXHOST],
-		     sbuf[NI_MAXSERV];
-
-		if (getnameinfo(addrs->ifa_addr, addrs->ifa_addr->sa_len,
-		                ip_addr, sizeof(ip_addr), sbuf, sizeof(sbuf),
-		                NI_NUMERICHOST | NI_NUMERICSERV))
-		{
-			printf("could not get address from getifaddrs\n");
-			return ~0;
-		}
-
-		if (getnameinfo(addrs->ifa_netmask, addrs->ifa_netmask->sa_len,
-		                netmask, sizeof(netmask), sbuf, sizeof(sbuf),
-		                NI_NUMERICHOST | NI_NUMERICSERV))
-		{
-			printf("could not get netmask from getifaddrs\n");
-		}
-
-		if (getnameinfo(addrs->ifa_broadaddr, addrs->ifa_broadaddr->sa_len,
-		                broadcast, sizeof(broadcast), sbuf, sizeof(sbuf),
-		                NI_NUMERICHOST | NI_NUMERICSERV))
-		{
-			printf("could not get broadcast from getifaddrs\n");
-		}
-
-		freeifaddrs(addrs);
-		printf("getifaddrs ip_addr=%s, netmask=%s broadcast=%s\n", ip_addr, netmask, broadcast);
+	if (getifaddrs(&addrs)) {
+		printf("Check getifaddrs failed\n");
+		exit(~0);
 	}
 
+	char ip_addr[NI_MAXHOST],
+		 netmask[NI_MAXHOST],
+		 broadcast[NI_MAXHOST],
+		 sbuf[NI_MAXSERV];
+
+	if (getnameinfo(addrs->ifa_addr, addrs->ifa_addr->sa_len,
+		            ip_addr, sizeof(ip_addr), sbuf, sizeof(sbuf),
+		            NI_NUMERICHOST | NI_NUMERICSERV))
+	{
+		printf("could not get address from getifaddrs\n");
+		exit(~0);
+	}
+
+	if (getnameinfo(addrs->ifa_netmask, addrs->ifa_netmask->sa_len,
+		            netmask, sizeof(netmask), sbuf, sizeof(sbuf),
+		            NI_NUMERICHOST | NI_NUMERICSERV))
+	{
+		printf("could not get netmask from getifaddrs\n");
+	}
+
+	if (getnameinfo(addrs->ifa_broadaddr, addrs->ifa_broadaddr->sa_len,
+		            broadcast, sizeof(broadcast), sbuf, sizeof(sbuf),
+		            NI_NUMERICHOST | NI_NUMERICSERV))
+	{
+		printf("could not get broadcast from getifaddrs\n");
+	}
+
+	freeifaddrs(addrs);
+	printf("getifaddrs ip_addr=%s, netmask=%s broadcast=%s\n", ip_addr, netmask, broadcast);
+}
+
+
+static void test_getaddrinfo()
+{
 	struct addrinfo hints;
 	char ipstr[INET6_ADDRSTRLEN];
 
@@ -98,6 +107,35 @@ int main(int argc, char **argv)
 
 		freeaddrinfo(info);
 	}
+}
+
+
+void *test_getaddrinfo_func(void *arg)
+{
+	for (int i = 0; i < 100; i++)
+		test_getaddrinfo();
+
+	return NULL;
+}
+
+
+int main(int main_argc, char **main_argv)
+{
+	argc = main_argc;
+	argv = main_argv;
+
+	//test_getnameinfo();
+	//test_getaddrinfo();
+
+	enum { NUM_THREADS = 2 };
+
+	pthread_t threads[NUM_THREADS];
+
+	for (int i = 0; i < NUM_THREADS; i++)
+		pthread_create(&threads[i], NULL, test_getaddrinfo_func, NULL);
+
+	for (int i = 0; i < NUM_THREADS; i++)
+		pthread_join(threads[i], NULL);
 
 	return 0;
 }
