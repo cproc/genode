@@ -88,4 +88,7 @@ extern "C"
 		                            pthread_name().string(), nullptr,
 		                            Genode::Affinity::Location());
 	}
+
+	typeof(pthread_create) _pthread_create
+		__attribute__((alias("pthread_create")));
 }
