@@ -159,7 +159,7 @@ class Vfs::Fs_file_system : public File_system
 
 				read_ready_state  = Handle_state::Read_ready_state::IDLE;
 				queued_read_state = Handle_state::Queued_state::QUEUED;
-
+Genode::warning(&count, ": *** _queue_read(): handle: ", packet.handle());
 				/* pass packet to server side */
 				source.submit_packet(packet);
 
@@ -245,6 +245,7 @@ class Vfs::Fs_file_system : public File_system
 					       ::File_system::Packet_descriptor::SYNC, 0);
 
 				queued_sync_state = Handle_state::Queued_state::QUEUED;
+Genode::warning(&packet, ": *** queue_sync(): handle: ", packet.handle());
 
 				/* pass packet to server side */
 				source.submit_packet(packet);
@@ -288,6 +289,7 @@ class Vfs::Fs_file_system : public File_system
 					                    file_handle(),
 					                    Packet_descriptor::WRITE_TIMESTAMP,
 					                    ::File_system::Timestamp { .value = time.value });
+Genode::warning(&p, ": *** update_modification_timestamp(): handle: ", p.handle());
 
 					/* pass packet to server side */
 					source.submit_packet(p);
@@ -457,6 +459,7 @@ class Vfs::Fs_file_system : public File_system
 
 			/* wait until packet was acknowledged */
 			handle.queued_read_state = Handle_state::Queued_state::QUEUED;
+Genode::warning(&count, ": *** _read(): handle: ", packet_in.handle());
 
 			/* pass packet to server side */
 			source.submit_packet(packet_in);
@@ -521,6 +524,7 @@ class Vfs::Fs_file_system : public File_system
 				                            seek_offset);
 
 				memcpy(source.packet_content(packet_in), buf, count);
+Genode::warning(&count, ": *** _write(): handle: ", packet_in.handle());
 
 				/* pass packet to server side */
 				source.submit_packet(packet_in);
@@ -549,7 +553,7 @@ class Vfs::Fs_file_system : public File_system
 			while (source.ack_avail()) {
 
 				Packet_descriptor const packet = source.get_acked_packet();
-
+Genode::warning(&packet, ": *** _handle_ack(): operation: ", (int)packet.operation(), ", handle: ", packet.handle());
 				Handle_space::Id const id(packet.handle());
 
 				auto handle_read = [&] (Fs_vfs_handle &handle) {
@@ -602,7 +606,7 @@ class Vfs::Fs_file_system : public File_system
 					}
 				}
 				catch (Handle_space::Unknown_id) {
-					Genode::warning("ack for unknown File_system handle ", id); }
+					Genode::error("ack for unknown File_system handle ", id); }
 
 				if (packet.operation() == Packet_descriptor::WRITE) {
 					Mutex::Guard guard(_mutex);
@@ -1044,6 +1048,7 @@ Genode::warning(&path, ": Fs_file_system::open(): ", Genode::Cstring(path), ": "
 			                         0, 0);
 
 			handle->read_ready_state = Handle_state::Read_ready_state::PENDING;
+Genode::warning(&vfs_handle, ": *** notify_read_ready(): handle: ", packet.handle());
 
 			source.submit_packet(packet);
 
