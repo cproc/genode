@@ -285,7 +285,10 @@ class Vfs_server::Io_node : public Vfs_server::Node,
 
 		void _acknowledge_as_failure()
 		{
-			_packet             = Packet_descriptor();
+			/*
+			 * Keep '_packet' intact to allow the client to correlate
+			 * the packet.
+			 */
 			_payload_ptr        = Payload_ptr { nullptr };
 			_packet_in_progress = false;
 			_acked_packet_valid = true;
