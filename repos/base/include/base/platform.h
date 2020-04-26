@@ -12,11 +12,9 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#ifndef _INCLUDE__PLATFORM_H_
+#define _INCLUDE__PLATFORM_H_
 
-/* base-internal includes */
-#include <base/platform.h>
+void binary_ready_hook_for_platform();
 
-void binary_ready_hook_for_platform()
-{
-}
-
+#endif /* _INCLUDE__PLATFORM_H_ */
