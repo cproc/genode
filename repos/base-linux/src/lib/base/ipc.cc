@@ -370,10 +370,11 @@ void Genode::ipc_reply(Native_capability caller, Rpc_exception_code exc,
 }
 
 
-Rpc_request Genode::ipc_reply_wait(Reply_capability const &last_caller,
-                                   Rpc_exception_code      exc,
-                                   Msgbuf_base            &reply_msg,
-                                   Msgbuf_base            &request_msg)
+Rpc_request Genode::ipc_reply_wait(Reply_capability         const &last_caller,
+                                   Rpc_exception_code              exc,
+                                   Msgbuf_base                    &reply_msg,
+                                   Msgbuf_base                    &request_msg,
+                                   Rpc_entrypoint::Native_context &)
 {
 	/* when first called, there was no request yet */
 	if (last_caller.valid() && exc.value != Rpc_exception_code::INVALID_OBJECT)
@@ -422,7 +423,9 @@ Rpc_request Genode::ipc_reply_wait(Reply_capability const &last_caller,
 }
 
 
-Ipc_server::Ipc_server()
+Ipc_server::Ipc_server(Rpc_entrypoint::Native_context& native_context)
+:
+	_native_context(native_context)
 {
 	/*
 	 * If 'thread' is 0, the constructor was called by the main thread. By
