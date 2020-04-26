@@ -191,6 +191,7 @@ class Vfs_server::Session_component : private Session_resources,
 
 				auto consume_and_ack_invalid_packet = [&] ()
 				{
+Genode::error("consume_and_ack_invalid_packet()");
 					drop_packet_from_submit_queue();
 					packet.succeeded(false);
 					_stream.acknowledge_packet(packet);
