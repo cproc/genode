@@ -1,0 +1,45 @@
+build "core init server/vfs test/libc_read_dev_zero"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="128"/>
+
+	<start name="vfs">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs> <zero/> </vfs>
+			<default-policy root="/" writeable="no"/>
+		</config>
+	</start>
+
+	<start name="test-libc_read_dev_zero">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<vfs> <dir name="dev"> <log/> <fs/> </dir> </vfs>
+			<libc stdout="/dev/log" stderr="/dev/log"/>
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init vfs test-libc_read_dev_zero
+	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so posix.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until "child .* exited with exit value 0.*\n" 20
