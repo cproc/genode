@@ -274,7 +274,6 @@ class Vfs_server::Io_node : public Vfs_server::Node,
 			 * Keep '_packet' and '_payload_ptr' intact to allow for the
 			 * conversion of directory entries in 'Directory::execute_job'.
 			 */
-
 			_packet_in_progress = false;
 			_acked_packet_valid = true;
 			_acked_packet       = _packet;
