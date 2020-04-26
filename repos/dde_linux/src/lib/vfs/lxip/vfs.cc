@@ -319,7 +319,10 @@ struct Vfs::Lxip_vfs_file_handle final : Vfs::Lxip_vfs_handle
 	{
 		if (!file) return Read_result::READ_ERR_INVALID;
 		Lxip::ssize_t res = file->read(*this, dst, count, seek());
-		if (res < 0) return Read_result::READ_ERR_IO;
+		if (res < 0) {
+			Genode::error("read(): ", res);
+			return Read_result::READ_ERR_IO;
+		}
 		out_count = res;
 		return Read_result::READ_OK;
 	}
