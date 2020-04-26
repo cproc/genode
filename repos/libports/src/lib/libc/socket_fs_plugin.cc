@@ -746,6 +746,10 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 	if (!buf)     return Errno(EFAULT);
 	if (!len)     return Errno(EINVAL);
 
+	if (flags != 0)
+		Genode::warning(__func__, ": flags (", Genode::Hex(flags),
+		                ") are not handled at this time");
+
 	if (src_addr) {
 		Socket_fs::Remote_functor func(*context, context->fd_flags() & O_NONBLOCK);
 		int const res = read_sockaddr_in(func, (sockaddr_in *)src_addr, src_addrlen);
@@ -758,7 +762,7 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 	int data_fd = flags & MSG_PEEK ? context->peek_fd() : context->data_fd();
 
 	try {
-Genode::warning(&fd, ": do_recvfrom(): fd: ", fd->libc_fd);
+Genode::warning(&fd, ": do_recvfrom(): fd: ", fd->libc_fd, ", len: ", len);
 		lseek(data_fd, 0, 0);
 		ssize_t out_len = read(data_fd, buf, len);
 		return out_len;
@@ -1094,7 +1098,9 @@ int Socket_fs::Plugin::fcntl(File_descriptor *fd, int cmd, long arg)
 
 ssize_t Socket_fs::Plugin::read(File_descriptor *fd, void *buf, ::size_t count)
 {
+Genode::warning(&fd, ": Socket_fs::Plugin::read(): fd: ", fd->libc_fd, ", count: ", count);
 	ssize_t const ret = do_recvfrom(fd, buf, count, 0, nullptr, nullptr);
+Genode::warning(&fd, ": Socket_fs::Plugin::read(): fd: ", fd->libc_fd, ", out_count: ", ret);
 	if (ret != -1) return ret;
 
 	/* TODO map recvfrom errno to write errno */
@@ -1106,7 +1112,7 @@ ssize_t Socket_fs::Plugin::read(File_descriptor *fd, void *buf, ::size_t count)
 
 ssize_t Socket_fs::Plugin::write(File_descriptor *fd, const void *buf, ::size_t count)
 {
-
+Genode::warning(&fd, ": Socket_fs::Plugin::write(): fd: ", fd->libc_fd);
 	ssize_t const ret = do_sendto(fd, buf, count, 0, nullptr, 0);
 	if (ret != -1) return ret;
 
