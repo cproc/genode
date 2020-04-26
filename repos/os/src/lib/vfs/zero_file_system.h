@@ -38,13 +38,10 @@ struct Vfs::Zero_file_system : Single_file_system
 		                Genode::Allocator &alloc)
 		: Single_vfs_handle(ds, fs, alloc, 0) { }
 
-		Read_result read(char *dst, file_size count,
-		                 file_size &out_count) override
+		Read_result read(char *, file_size,
+		                 file_size &) override
 		{
-			memset(dst, 0, count);
-			out_count = count;
-
-			return READ_OK;
+			return READ_ERR_IO;
 		}
 
 		Write_result write(char const *, file_size count,
