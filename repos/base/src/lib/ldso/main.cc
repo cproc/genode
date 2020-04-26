@@ -19,6 +19,7 @@
 #include <util/string.h>
 #include <base/thread.h>
 #include <base/heap.h>
+#include <base/platform.h>
 
 /* base-internal includes */
 #include <base/internal/unmanaged_singleton.h>
