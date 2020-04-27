@@ -44,12 +44,14 @@
 #include <internal/suspend.h>
 
 
-static Libc::Suspend *_suspend_ptr;
+static Libc::Suspend      *_suspend_ptr;
+static Genode::Region_map *_rm;
 
 
-void Libc::init_vfs_plugin(Suspend &suspend)
+void Libc::init_vfs_plugin(Suspend &suspend, Genode::Region_map &rm)
 {
 	_suspend_ptr = &suspend;
+	_rm = &rm;
 }
 
 
@@ -810,6 +812,7 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+Genode::warning("Vfs_plugin::read(): count: ", count);
 	dispatch_pending_io_signals();
 
 	if ((fd->flags & O_ACCMODE) == O_WRONLY) {
@@ -900,6 +903,7 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	}
 
 	VFS_THREAD_SAFE(handle->advance_seek(out_count));
+Genode::warning("Vfs_plugin::read(): out_count: ", out_count);
 
 	return out_count;
 }
@@ -1554,13 +1558,16 @@ int Libc::Vfs_plugin::rename(char const *from_path, char const *to_path)
 void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags,
                              File_descriptor *fd, ::off_t offset)
 {
+Genode::warning("Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
+                ", offset: ", offset, ", length: ", length);
+#if 0
 	if (prot != PROT_READ && !(prot == (PROT_READ | PROT_WRITE) && flags == MAP_PRIVATE)) {
 		error("mmap for prot=", Hex(prot), " not supported");
 		errno = EACCES;
 		return (void *)-1;
 	}
-
-	if (addr_in != 0) {
+#endif
+	if ((addr_in != 0) && (flags & MAP_FIXED)) {
 		error("mmap for predefined address not supported");
 		errno = EINVAL;
 		return (void *)-1;
@@ -1571,38 +1578,58 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 	 *     'Vfs::Directory_service::dataspace'.
 	 */
 
-	void *addr = mem_alloc()->alloc(length, PAGE_SHIFT);
-	if (addr == (void *)-1) {
-		errno = ENOMEM;
-		return (void *)-1;
-	}
+	void *addr = nullptr;
 
-	/* copy variables for complete read */
-	size_t read_remain = length;
-	size_t read_offset = offset;
-	char *read_addr = (char *)addr;
-
-	while (read_remain > 0) {
-		ssize_t length_read = ::pread(fd->libc_fd, read_addr, read_remain, read_offset);
-		if (length_read < 0) { /* error */
-			error("mmap could not obtain file content");
-			::munmap(addr, length);
-			errno = EACCES;
+	if (flags == MAP_PRIVATE) {
+		addr = mem_alloc()->alloc(length, PAGE_SHIFT);
+		if (addr == (void *)-1) {
+			error("mmap out of memory");
+			errno = ENOMEM;
 			return (void *)-1;
-		} else if (length_read == 0) /* EOF */
-			break; /* done (length can legally be greater than the file length) */
-		read_remain -= length_read;
-		read_offset += length_read;
-		read_addr += length_read;
-	}
+		}
 
+		/* copy variables for complete read */
+		size_t read_remain = length;
+		size_t read_offset = offset;
+		char *read_addr = (char *)addr;
+
+		while (read_remain > 0) {
+			ssize_t length_read = ::pread(fd->libc_fd, read_addr, read_remain, read_offset);
+			if (length_read < 0) { /* error */
+				error("mmap could not obtain file content");
+				::munmap(addr, length);
+				errno = EACCES;
+				return (void *)-1;
+			} else if (length_read == 0) /* EOF */
+				break; /* done (length can legally be greater than the file length) */
+			read_remain -= length_read;
+			read_offset += length_read;
+			read_addr += length_read;
+		}
+	} else if (flags == MAP_SHARED) {
+
+		struct Missing_call_of_init_vfs_plugin : Genode::Exception { };
+		if (!_rm)
+			throw Missing_call_of_init_vfs_plugin();
+
+		Genode::Dataspace_capability ds_cap =
+			VFS_THREAD_SAFE(_root_fs.dataspace(fd->fd_path));
+		if (!ds_cap.valid()) {
+			Genode::error("mmap got invalid dataspace capability");
+			errno = ENODEV;
+			return (void*)-1;
+		}
+
+		addr = _rm->attach(ds_cap, length, offset);
+	}
+Genode::warning("Vfs_plugin::mmap(): ", addr);
 	return addr;
 }
 
 
 int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
-	mem_alloc()->free(addr);
+	//mem_alloc()->free(addr);
 	return 0;
 }
 
