@@ -354,6 +354,7 @@ __SYS_(int, fdatasync, (int libc_fd), {
 
 
 __SYS_(int, ftruncate, (int libc_fd, ::off_t length), {
+Genode::warning("ftruncate(): libc_fd: ", libc_fd);
 	FD_FUNC_WRAPPER(ftruncate, libc_fd, length); })
 
 
@@ -398,9 +399,12 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
 {
-
+Genode::warning("mmap(): addr: ", addr,
+                ", libc_fd: ", libc_fd,
+                ", offset: ", offset,
+                ", length: ", length);
 	/* handle requests for anonymous memory */
-	if (!addr && libc_fd == -1) {
+	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
 		bool const executable = prot & PROT_EXEC;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
@@ -588,6 +592,7 @@ extern "C" int pipe2(int pipefd[2], int flags)
 
 
 __SYS_(ssize_t, read, (int libc_fd, void *buf, ::size_t count), {
+Genode::warning("read(): fd: ", libc_fd);
 	FD_FUNC_WRAPPER(read, libc_fd, buf, count); })
 
 
