@@ -5,11 +5,13 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/libc \
                   [depot_user]/src/qt5_base \
                   [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_core \
                   [depot_user]/src/stdcxx \
                   [depot_user]/src/vfs \
                   [depot_user]/src/zlib \
-                  [depot_user]/src/test-qt_core
+
+append build_components { test/qt5/qt_core }
+
+build $build_components
 
 install_config {
 <config verbose="yes">
@@ -46,7 +48,7 @@ install_config {
 	</start>
 </config>}
 
-build_boot_image { }
+build_boot_image { test-qt_core libc_pipe.lib.so qt5_core.lib.so }
 
 append qemu_args " -nographic "
 
