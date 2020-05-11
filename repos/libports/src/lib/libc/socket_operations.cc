@@ -230,6 +230,16 @@ __SYS_(int, socket, (int domain, int type, int protocol),
 		error("plugin()->socket() failed");
 		return -1;
 	}
-
+Genode::warning(&domain, ": socket(): ", new_fdo->libc_fd);
 	return new_fdo->libc_fd;
 })
+
+extern "C" void wait_for_continue();
+extern "C" int socketpair(int, int, int, int*)
+{
+	Genode::warning("socketpair()");
+	wait_for_continue();
+	errno = ENOSYS;
+	return -1;
+}
+
