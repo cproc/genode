@@ -19,8 +19,12 @@
 
 extern void genode_exit(int status) __attribute__((noreturn));
 
+extern "C" void wait_for_continue();
+
 extern "C" void _exit(int status)
 {
+Genode::error(&status, ": _exit(", status, ")");
+//wait_for_continue();
 	genode_exit(status);
 }
 

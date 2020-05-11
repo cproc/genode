@@ -541,6 +541,8 @@ QNitpickerPlatformWindow::QNitpickerPlatformWindow(Genode::Env &env, QWindow *wi
 	connect(this, SIGNAL(_mode_changed()),
 	        this, SLOT(_handle_mode_changed()),
 	        Qt::QueuedConnection);
+
+	_mode_changed();
 }
 
 QNitpickerPlatformWindow::~QNitpickerPlatformWindow()
