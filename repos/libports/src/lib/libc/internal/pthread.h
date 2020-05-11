@@ -46,7 +46,7 @@ class Libc::Pthread_registry
 {
 	private:
 
-		enum { MAX_NUM_PTHREADS = 128 };
+		enum { MAX_NUM_PTHREADS = 256 };
 
 		Pthread *_array[MAX_NUM_PTHREADS] = { 0 };
 
