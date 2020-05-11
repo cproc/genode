@@ -142,7 +142,10 @@ int clock_gettime(clockid_t clk_id, struct timespec *ts)
 {
 	typedef Libc::uint64_t uint64_t;
 
-	if (!ts) return Errno(EFAULT);
+	if (!ts) {
+Genode::error("clock_gettime(): !ts");
+		return Errno(EFAULT);
+	}
 
 	struct Missing_call_of_init_time : Exception { };
 
@@ -174,7 +177,10 @@ int clock_gettime(clockid_t clk_id, struct timespec *ts)
 		Rtc &rtc = *unmanaged_singleton<Rtc>(_rtc_path, *_watch_ptr);
 
 		time_t const rtc_value = rtc.read();
-		if (!rtc_value) return Errno(EINVAL);
+		if (!rtc_value) {
+Genode::error("clock_gettime(): !rtc_value");
+			return Errno(EINVAL);
+		}
 
 		uint64_t const time = current_time().trunc_to_plain_ms().value;
 
@@ -185,7 +191,9 @@ int clock_gettime(clockid_t clk_id, struct timespec *ts)
 
 	/* component uptime */
 	case CLOCK_MONOTONIC:
+	case CLOCK_MONOTONIC_FAST:
 	case CLOCK_UPTIME:
+	case CLOCK_THREAD_CPUTIME_ID:
 	{
 		uint64_t us = current_time().trunc_to_plain_us().value;
 
@@ -195,6 +203,7 @@ int clock_gettime(clockid_t clk_id, struct timespec *ts)
 	}
 
 	default:
+Genode::error("clock_gettime(): invalid clkid: ", clk_id);
 		return Errno(EINVAL);
 	}
 
