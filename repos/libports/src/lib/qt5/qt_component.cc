@@ -15,23 +15,53 @@
 #include <libc/component.h>
 
 /* libc includes */
-#include <stdlib.h> /* 'exit'   */
+#include <dlfcn.h>  /* 'dlopen'  */
+#include <stdio.h>  /* 'fprintf' */
+#include <stdlib.h> /* 'exit'    */
 
 /* provided by the application */
 extern "C" int main(int argc, char const **argv);
-
-void initialize_qt_gui(Genode::Env &env) __attribute__((weak));
-void initialize_qt_gui(Genode::Env &) { }
 
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
 
-		initialize_qt_gui(env);
+		/*
+		 * initialize the QPA plugin
+		 *
+		 * when Qt loads the plugin again, it will get the same handle
+		 */
+
+		void *qpa_plugin_handle =
+			dlopen("/qt/plugins/platforms/qt5_qpa_nitpicker.lib.so",
+			       RTLD_LAZY);
+		
+		if (qpa_plugin_handle) {
+
+			typedef void (*initialize_qpa_plugin_t)(Genode::Env &);
+
+			initialize_qpa_plugin_t initialize_qpa_plugin = 
+				(initialize_qpa_plugin_t) dlsym(qpa_plugin_handle,
+				                                "initialize_qpa_plugin");
+
+			if (!initialize_qpa_plugin) {
+				fprintf(stderr, "Could not find 'initialize_qpa_plugin' \
+				                 function in QPA plugin\n");
+				dlclose(qpa_plugin_handle);
+				exit(1);
+			}
+
+			initialize_qpa_plugin(env);
+		}
 
 		int argc = 1;
 		char const *argv[] = { "qt5_app", 0 };
 
-		exit(main(argc, argv));
+		int exit_value = main(argc, argv);
+
+		if (qpa_plugin_handle)
+			dlclose(qpa_plugin_handle);
+
+		exit(exit_value);
 	});
 }
