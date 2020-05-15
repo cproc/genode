@@ -1,0 +1,9 @@
+LICENSE := GPL
+VERSION := 5.13.2
+QTWEBKIT_VERSION = 5.9.1
+
+DOWNLOADS := qt5.git
+
+URL(qt5) := https://github.com/cproc/qt5.git
+REV(qt5) := 887cbbf284e2510840b177c70cc97f95425c5714
+DIR(qt5) := src/lib/qt5
