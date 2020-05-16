@@ -1,15 +1,47 @@
-QT5_PORT_DIR := $(call select_from_ports,qt5)
-QT5_CONTRIB_DIR := $(QT5_PORT_DIR)/src/lib/qt5/qt5
+include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
 
-QMAKE_PROJECT_PATH = $(QT5_CONTRIB_DIR)/qttools/examples/designer/calculatorform
-QMAKE_PROJECT_FILE = $(QMAKE_PROJECT_PATH)/calculatorform.pro
+TARGET = calculatorform
 
-vpath % $(QMAKE_PROJECT_PATH)
+LIBS = qt5_base stdcxx
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_defaults.inc)
+$(TARGET): env.sh qmake_root
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_final.inc)
+	@#
+	@# add Qt dependencies to qmake_root
+	@#
 
-LIBS += qt5_component
+	ln -sf $(BUILD_BASE_DIR)/bin/libQt5Core.lib.so qmake_root/lib/
+	ln -sf $(BUILD_BASE_DIR)/bin/libQt5Gui.lib.so qmake_root/lib/
+	ln -sf $(BUILD_BASE_DIR)/bin/libQt5Widgets.lib.so qmake_root/lib/
 
-CC_CXX_WARN_STRICT =
+	@#
+	@# run qmake
+	@#
+
+	source env.sh && $(QMAKE) \
+		-qtconf qmake_root/mkspecs/genode-x86-g++/qt.conf \
+		$(QT_DIR)/qttools/examples/designer/calculatorform/calculatorform.pro
+
+	@#
+	@# build
+	@#
+
+	source env.sh && $(MAKE)
+
+	@#
+	@# create stripped version
+	@#
+
+	$(STRIP) $(TARGET) -o $(TARGET).stripped
+
+	@#
+	@# create symlink in 'bin' directory
+	@#
+
+	ln -sf $(CURDIR)/$(TARGET).stripped $(PWD)/bin/$(TARGET)
+
+	@#
+	@# create symlink in 'debug' directory
+	@#
+
+	ln -sf $(CURDIR)/$(TARGET) $(PWD)/debug/
