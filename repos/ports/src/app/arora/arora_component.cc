@@ -15,8 +15,9 @@
 #include <libc/component.h>
 
 /* libc includes */
-#include <stdlib.h> /* 'exit'   */
-#include <pthread.h>
+#include <dlfcn.h>  /* 'dlopen'  */
+#include <stdio.h>  /* 'fprintf' */
+#include <stdlib.h> /* 'exit'    */
 
 /* Qt includes */
 #include <qpluginwidget/qpluginwidget.h>
@@ -26,27 +27,50 @@ extern "C" int main(int argc, char const **argv);
 
 extern void initialize_qt_gui(Genode::Env &);
 
-/*
- * The main function is called from a dedicated thread, because it sometimes
- * blocks on a pthread condition variable, which prevents Genode signal
- * processing with the current implementation.
- */
-void *arora_main(void *)
-{
-	int argc = 1;
-	char const *argv[] = { "arora", 0 };
-
-	exit(main(argc, argv));
-}
-
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
 
-		initialize_qt_gui(env);
+		/* initialize the QPA plugin */
+
+		void *qpa_plugin_handle =
+			dlopen("/qt/plugins/platforms/qt5_qpa_nitpicker.lib.so",
+			       RTLD_LAZY);
+		
+		if (qpa_plugin_handle) {
+
+			typedef void (*initialize_qpa_plugin_t)(Genode::Env &);
+
+			initialize_qpa_plugin_t initialize_qpa_plugin = 
+				(initialize_qpa_plugin_t) dlsym(qpa_plugin_handle,
+				                                "initialize_qpa_plugin");
+
+			if (!initialize_qpa_plugin) {
+				fprintf(stderr, "Could not find 'initialize_qpa_plugin' \
+				                 function in QPA plugin\n");
+				dlclose(qpa_plugin_handle);
+				exit(1);
+			}
+
+			initialize_qpa_plugin(env);
+		}
+
+		/* initialize the plugin widget */
+
 		QPluginWidget::env(env);
 
-		pthread_t main_thread;
-		pthread_create(&main_thread, nullptr, arora_main, nullptr);
+
+		int argc = 3;
+		char const *argv[] = { "arora",
+		                       "-platformpluginpath",
+		                       "/qt/plugins/platforms",
+		                       0 };
+
+		int exit_value = main(argc, argv);
+
+		if (qpa_plugin_handle)
+			dlclose(qpa_plugin_handle);
+
+		exit(exit_value);
 	});
 }
