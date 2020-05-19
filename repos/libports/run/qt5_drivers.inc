@@ -320,6 +320,9 @@ proc drivers_start_nodes { feature_arg } {
 			<binary name="} [nic_drv_binary] {"/>
 			<resource name="RAM" quantum="8M"/>
 			<provides><service name="Nic"/></provides>
+			<config>
+				<nic tap="tap_chpro"/>
+			</config>
 		</start>
 	}
 
