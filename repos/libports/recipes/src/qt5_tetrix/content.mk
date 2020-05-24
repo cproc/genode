@@ -1,15 +1,13 @@
-MIRROR_FROM_REP_DIR := src/app/qt5/examples/tetrix \
-                       src/app/qt5/tmpl/target_defaults.inc \
-                       src/app/qt5/tmpl/target_final.inc
+MIRROR_FROM_REP_DIR := src/app/qt5/examples/tetrix
 
 content: $(MIRROR_FROM_REP_DIR) LICENSE
 
 $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
 
-PORT_DIR := $(call port_dir,$(REP_DIR)/ports/qt5)
+PORT_DIR := $(call port_dir,$(REP_DIR)/ports/qt5_new)
 
-MIRROR_FROM_PORT_DIR := src/lib/qt5/qt5/qtscript/examples/script/qstetrix
+MIRROR_FROM_PORT_DIR := src/lib/qt5/qtbase/examples/widgets/widgets/tetrix
 
 content: $(MIRROR_FROM_PORT_DIR)
 
