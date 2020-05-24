@@ -1,4 +1,4 @@
-MIRROR_FROM_REP_DIR := src/app/qt5/examples/calculatorform
+MIRROR_FROM_REP_DIR := src/app/qt5/examples/minimal_browser
 
 content: $(MIRROR_FROM_REP_DIR) LICENSE
 
@@ -7,7 +7,7 @@ $(MIRROR_FROM_REP_DIR):
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/qt5_new)
 
-MIRROR_FROM_PORT_DIR := src/lib/qt5/qttools/examples/designer/calculatorform
+MIRROR_FROM_PORT_DIR := src/lib/qt5/qtwebengine/examples/webengine/minimal
 
 content: $(MIRROR_FROM_PORT_DIR)
 
