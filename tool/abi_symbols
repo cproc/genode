@@ -27,7 +27,7 @@ set symbol_blacklist [split [read $fd] "\n"]
 close $fd
 
 # add notice that the symbols file hasn't undergone any manual inspection
-puts "# Please review the symbols and remove this line."
+#puts "# Please review the symbols and remove this line."
 
 set i 0
 set output_lines {}
@@ -58,6 +58,11 @@ foreach line [split $symbols "\n"] {
 	# Ignore undefined symbols
 	#
 	if {$type == "U"} { set keep 0 }
+	
+	#
+	# Ignore absolute values
+	#
+	if {$type == "A"} { set keep 0 }
 
 	#
 	# Check if the unmangled line contains a template-argument delimiter ('<')
@@ -66,7 +71,7 @@ foreach line [split $symbols "\n"] {
 	# arguments won't. We can discard symbols for the former but not the
 	# latter.
 	#
-	if {[regexp {^[^(]+<} $demangled_name dummy]} { set keep 0 }
+	#if {[regexp {^[^(]+<} $demangled_name dummy]} { set keep 0 }
 
 	#
 	# Drop weak vtable and typeinfo symbols
@@ -77,8 +82,8 @@ foreach line [split $symbols "\n"] {
 	# of shared libraries is rather small compared to the huge inflation of the
 	# ABI size caused by such symbols.
 	#
-	if {($type == "V") && ([regexp {^(typeinfo |vtable )} $demangled_name dummy])} {
-		set keep 0 }
+	#if {($type == "V") && ([regexp {^(typeinfo |vtable )} $demangled_name dummy])} {
+	#	set keep 0 }
 
 	#
 	# Drop weak C++ symbols
@@ -87,8 +92,8 @@ foreach line [split $symbols "\n"] {
 	# created, weak C++ symbols are implicitly created by the compiler for
 	# inline functions.
 	#
-	if {[regexp {W|V} $type] && ($name != $demangled_name)} {
-		set keep 0 }
+	#if {[regexp {W|V} $type] && ($name != $demangled_name)} {
+	#	set keep 0 }
 
 	#
 	# Drop weak local symbols
