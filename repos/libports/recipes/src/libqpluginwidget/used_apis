@@ -1,0 +1,14 @@
+base
+framebuffer_session
+input_session
+libc
+libqnitpickerviewwidget
+loader_session
+mesa
+nitpicker_session
+os
+qoost
+qt5
+stdcxx
+vfs
+zlib
