@@ -22,11 +22,9 @@
 		<rom label="libm.lib.so"/>
 		<rom label="libpng.lib.so"/>
 		<rom label="mesa.lib.so"/>
-		<rom label="qt5_core.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
 		<rom label="qt5_dejavusans.tar"/>
-		<rom label="qt5_gui.lib.so"/>
-		<rom label="qt5_qjpeg.lib.so"/>
-		<rom label="qt5_qpa_nitpicker.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs_pipe.lib.so"/>
@@ -35,8 +33,8 @@
 		<!-- application -->
 		
 		<rom label="qt5_component.lib.so"/>
-		<rom label="qt5_printsupport.lib.so"/>
-		<rom label="qt5_widgets.lib.so"/>
+		<rom label="libQt5PrintSupport.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
 		<rom label="textedit"/>
 		<rom label="textedit.config"/>
 
