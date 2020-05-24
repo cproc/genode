@@ -1,17 +1,18 @@
 source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
+import_from_depot [depot_user]/src/qt5_calculatorform
+
 #
 # Build
 #
 
 append build_components [qt5_build_components feature]
 
-# XXX: qt5 must have been built before
-append build_components {
-	lib/ld
-	lib/vfs/pipe
-	app/qt5/examples/calculatorform
-}
+#append build_components {
+#	lib/ld
+#	lib/vfs/pipe
+#	app/qt5/examples/calculatorform
+#}
 
 build $build_components
 
