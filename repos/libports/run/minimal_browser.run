@@ -2,20 +2,28 @@ source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 set feature(Nic) 1
 
+import_from_depot [depot_user]/src/qt5_minimal_browser \
+                  [depot_user]/src/qt5_base \
+                  [depot_user]/src/qt5_declarative \
+                  [depot_user]/src/qt5_quickcontrols \
+                  [depot_user]/src/qt5_webengine \
+                  [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs_lwip
+
 #
 # Build
 #
 
 append build_components [qt5_build_components feature]
 
-append build_components {
-	app/qt5/examples/minimal_browser
-	lib/ld
-	lib/vfs/lwip
-	lib/vfs/jitterentropy
-	lib/vfs/pipe
-	server/vfs
-}
+#append build_components {
+#	app/qt5/examples/minimal_browser
+#	lib/ld
+#	lib/vfs/lwip
+#	lib/vfs/jitterentropy
+#	lib/vfs/pipe
+#	server/vfs
+#}
 
 build $build_components
 

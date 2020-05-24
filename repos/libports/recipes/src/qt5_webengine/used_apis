@@ -1,6 +1,6 @@
-base
+expat
 libc
 mesa
-qt5
 qt5_component
+so
 stdcxx
