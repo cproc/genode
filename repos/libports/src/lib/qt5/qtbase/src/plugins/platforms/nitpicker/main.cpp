@@ -17,14 +17,15 @@
 /* Qt includes */
 #include "qnitpickerintegrationplugin.h"
 
-QT_BEGIN_NAMESPACE
-
 Genode::Env *QNitpickerIntegrationPlugin::_env = nullptr;
 
-void initialize_qt_gui(Genode::Env &env)
+extern "C" void initialize_qpa_plugin(Genode::Env &env)
 {
 	QNitpickerIntegrationPlugin::env(env);
 }
+
+
+QT_BEGIN_NAMESPACE
 
 
 QStringList QNitpickerIntegrationPlugin::keys() const
@@ -46,6 +47,6 @@ QPlatformIntegration *QNitpickerIntegrationPlugin::create(const QString& system,
 	return 0;
 }
 
-Q_IMPORT_PLUGIN(QNitpickerIntegrationPlugin)
+//Q_IMPORT_PLUGIN(QNitpickerIntegrationPlugin)
 
 QT_END_NAMESPACE
