@@ -13,4 +13,4 @@
 
 #include "main.h"
 
-Q_IMPORT_PLUGIN(QJpegPlugin)
+//Q_IMPORT_PLUGIN(QJpegPlugin)
