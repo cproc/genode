@@ -10,6 +10,8 @@ import_from_depot [depot_user]/src/qt5_component \
 
 append build_components [qt5_build_components feature]
 
+append build_components { lib/ld app/qt5/examples/calculatorform }
+
 build $build_components
 
 
@@ -33,12 +35,19 @@ append config [qt5_start_nodes feature]
 append config {
 	<start name="calculatorform" caps="200">
 		<resource name="RAM" quantum="80M"/>
-		<config>
+		<config ld_verbose="true">
 			<vfs>
 				<dir name="dev">
 					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="qt5_qpa_nitpicker.lib.so"/>
+						</dir>
+					</dir>
 				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
@@ -63,6 +72,18 @@ install_config $config
 #
 
 append boot_modules [qt5_boot_modules feature]
+
+append boot_modules {
+	calculatorform
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	qt5_component.lib.so
+	qt5_qpa_nitpicker.lib.so
+	qt5_core.lib.so
+	qt5_gui.lib.so
+	qt5_widgets.lib.so
+}
 
 build_boot_image $boot_modules
 
