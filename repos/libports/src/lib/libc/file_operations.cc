@@ -415,7 +415,7 @@ Genode::warning(&length, ": mmap(): addr: ", addr,
 			return MAP_FAILED;
 		}
 
-		bool const executable = prot & PROT_EXEC;
+		bool const executable = /*prot & PROT_EXEC*/true;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
 			errno = ENOMEM;
