@@ -29,7 +29,7 @@ built.tag: env.sh qmake_root
 		-opensource \
 		-confirm-license \
 		-no-pch \
-		-debug \
+		-release \
 		-no-strip \
 		-opengl desktop \
 		-no-accessibility \
