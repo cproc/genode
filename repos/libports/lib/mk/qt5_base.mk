@@ -21,7 +21,7 @@ built.tag: qmake_prepared.tag qmake_root/lib/ld.lib.so
 		-opensource \
 		-confirm-license \
 		-no-pch \
-		-debug \
+		-release \
 		-no-strip \
 		-opengl desktop \
 		-no-sse2 \
