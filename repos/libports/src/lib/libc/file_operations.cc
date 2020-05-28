@@ -401,7 +401,7 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 {
 	/* handle requests for anonymous memory */
 	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
-		bool const executable = prot & PROT_EXEC;
+		bool const executable = /*prot & PROT_EXEC*/true;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
 			errno = ENOMEM;
