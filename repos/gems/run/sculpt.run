@@ -222,7 +222,7 @@ install_config {
 	</start>
 
 	<start name="fs_report">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Report"/> </provides>
 		<config> <vfs> <fs/> </vfs> </config>
 		<route>
