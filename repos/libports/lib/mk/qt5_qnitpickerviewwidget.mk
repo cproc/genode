@@ -8,6 +8,6 @@ SRC_CC = qnitpickerviewwidget.cpp \
 vpath %.h $(call select_from_repositories,include/qt5/qnitpickerviewwidget)
 vpath %.cpp $(REP_DIR)/src/lib/qt5/qnitpickerviewwidget
 
-LIBS += libc qoost qt5_core qt5_gui qt5_qpa_nitpicker qt5_widgets
+LIBS += libc qoost libQt5Core libQt5Gui libQt5Widgets
 
 CC_CXX_WARN_STRICT =
