@@ -57,7 +57,7 @@ append config {
 	</start>
 	<start name="test-qpluginwidget" caps="900">
 		<resource name="RAM" quantum="30M"/>
-		<config>
+		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<dir name="pipe"> <pipe/> </dir>
@@ -68,6 +68,12 @@ append config {
 					<dir name="plugins">
 						<dir name="platforms">
 							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+						<dir name="qnitpickerviewwidget">
+							<rom name="libqnitpickerviewwidget.lib.so"/>
+						</dir>
+						<dir name="qpluginwidget">
+							<rom name="libqpluginwidget.lib.so"/>
 						</dir>
 					</dir>
 				</dir>

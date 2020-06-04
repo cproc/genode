@@ -133,4 +133,34 @@ class QPluginWidget : public QEmbeddedViewWidget
 		static void env(Libc::Env &env) { _env = &env; }
 };
 
+
+class QPluginWidgetInterface
+{
+	public:
+		virtual QWidget *createWidget(QWidget *parent, QUrl plugin_url, QString &args,
+		                              int max_width = -1, int max_height = -1) = 0;
+};
+
+
+Q_DECLARE_INTERFACE(QPluginWidgetInterface, "org.genode.QPluginWidgetInterface")
+
+
+class QPluginWidgetPlugin : public QObject, public QPluginWidgetInterface
+{
+	Q_OBJECT
+	Q_PLUGIN_METADATA(IID "org.genode.QPluginWidgetInterface" FILE "qpluginwidget.json")
+	Q_INTERFACES(QPluginWidgetInterface)
+
+	public:
+
+		explicit QPluginWidgetPlugin(QObject *parent = 0) : QObject(parent) { }
+
+		QWidget *createWidget(QWidget *parent, QUrl plugin_url, QString &args,
+		                      int max_width = -1, int max_height = -1)
+		{
+			return new QPluginWidget(parent, plugin_url, args, max_width, max_height);
+		}
+	
+};
+
 #endif // QPLUGINWIDGET_H

@@ -212,7 +212,7 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 		Nitpicker::Point const offset(view_geometry.buf_x, view_geometry.buf_y);
 		nitpicker->enqueue<Command::Offset>(view_handle, offset);
 	}
-
+#if 0
 	/* bring the plugin view to the front of the Qt window */
 	QNitpickerPlatformWindow *platform_window =
 		dynamic_cast<QNitpickerPlatformWindow*>(window()->windowHandle()->handle());
@@ -224,13 +224,16 @@ void QNitpickerViewWidget::paintEvent(QPaintEvent *event)
 	nitpicker->execute();
 
 	nitpicker->release_view_handle(neighbor_handle);
+#endif
 }
 
 
 void QNitpickerViewWidget::focusInEvent(QFocusEvent *)
 {
+#if 0
 	QNitpickerPlatformWindow *platform_window =
 		dynamic_cast<QNitpickerPlatformWindow*>(window()->windowHandle()->handle());
 
 	platform_window->nitpicker().focus(nitpicker->rpc_cap());
+#endif
 }

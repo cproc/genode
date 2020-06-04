@@ -435,7 +435,7 @@ void QPluginWidget::showEvent(QShowEvent *event)
 	if (!_plugin_starter_started) {
 
 		QNitpickerPlatformWindow *platform_window =
-			dynamic_cast<QNitpickerPlatformWindow*>(window()->windowHandle()->handle());
+			static_cast<QNitpickerPlatformWindow*>(window()->windowHandle()->handle());
 
 		assert(_env != nullptr);
 
@@ -498,4 +498,3 @@ void QPluginWidget::hideEvent(QHideEvent *event)
 		_plugin_starter->view_geometry(geometry, offset);
 	}
 }
-
