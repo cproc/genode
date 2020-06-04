@@ -122,16 +122,18 @@ env.sh:
 #
 
 qmake_root:
-	mkdir $@
+	mkdir -p $@
 
 qmake_root/bin: qmake_root
-	ln -snf $(QT_TOOLS_DIR)/bin $@
+	mkdir -p $@
+	ln -sf $(QT_TOOLS_DIR)/bin/* $@/
 
 qmake_root/include: qmake_root
-	ln -snf $(QT_API_DIR)/include $@
+	mkdir -p $@
+	ln -snf $(QT_API_DIR)/include/* $@/
 
 qmake_root/lib: qmake_root
-	mkdir $@
+	mkdir -p $@
 
 qmake_root/lib/%.lib.so: qmake_root/lib
 	ln -sf $(BUILD_BASE_DIR)/var/libcache/$*/$*.abi.so $@
@@ -168,40 +170,24 @@ else
 endif
 
 
-#
-# build rule for Qt5 applications using target.mk
-#
+.PHONY: build_with_qmake
 
-$(TARGET): qmake_prepared.tag
-
-	@#
-	@# run qmake
-	@#
+build_with_qmake: qmake_prepared.tag
 
 	source env.sh && $(QMAKE) \
 		-qtconf qmake_root/mkspecs/genode-x86-g++/qt.conf \
 		$(QMAKE_PROJECT_FILE)
 
-	@#
-	@# build
-	@#
-
 	source env.sh && $(MAKE)
 
-	@#
-	@# create stripped binary version
-	@#
+	for qmake_target_binary in $(QMAKE_TARGET_BINARIES); do \
+		$(STRIP) $${qmake_target_binary} -o $${qmake_target_binary}.stripped; \
+		ln -sf $(CURDIR)/$${qmake_target_binary}.stripped $(PWD)/bin/$${qmake_target_binary}; \
+		ln -sf $(CURDIR)/$${qmake_target_binary} $(PWD)/debug/; \
+	done
 
-	$(STRIP) $(TARGET) -o $(TARGET).stripped
+#
+# build Qt5 applications with qmake
+#
 
-	@#
-	@# create symlink in 'bin' directory
-	@#
-
-	ln -sf $(CURDIR)/$(TARGET).stripped $(PWD)/bin/$(TARGET)
-
-	@#
-	@# create symlink in 'debug' directory
-	@#
-
-	ln -sf $(CURDIR)/$(TARGET) $(PWD)/debug/
+$(TARGET): build_with_qmake

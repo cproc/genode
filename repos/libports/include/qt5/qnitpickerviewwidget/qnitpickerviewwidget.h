@@ -62,7 +62,7 @@ protected:
 	View_geometry _calc_view_geometry();
 };
 
-
+#if 0
 class QNitpickerViewWidget : public QEmbeddedViewWidget
 {
 	Q_OBJECT
@@ -85,5 +85,5 @@ public:
 	                      Nitpicker::Session::View_handle view_handle,
 	                      int buf_x, int buf_y, int w, int h);
 };
-
+#endif
 #endif // QNITPICKERVIEWWIDGET_H

@@ -57,7 +57,7 @@ append config {
 	</start>
 	<start name="test-qpluginwidget" caps="900">
 		<resource name="RAM" quantum="30M"/>
-		<config>
+		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<dir name="pipe"> <pipe/> </dir>

@@ -2,6 +2,8 @@ TARGET = test-qpluginwidget
 
 QMAKE_PROJECT_FILE = $(PRG_DIR)/qpluginwidget.pro
 
+QMAKE_TARGET_BINARIES = $(TARGET)
+
 QT5_LIBS = libQt5Core libQt5Gui libQt5Network libQt5Widgets
 
 LIBS = libc libm mesa qt5_component stdcxx libqnitpickerviewwidget libqpluginwidget qoost $(QT5_LIBS)
@@ -20,7 +22,9 @@ QT5_GENODE_LIBS_APP += libqnitpickerviewwidget.lib.so libqpluginwidget.lib.so
 
 TEST_PLUGIN_TAR = $(BUILD_BASE_DIR)/bin/test-plugin.tar
 
-$(TARGET): $(TEST_PLUGIN_TAR) qmake_root/lib/libqnitpickerviewwidget.lib.so qmake_root/lib/libqpluginwidget.lib.so
+qmake_prepared.tag: qmake_root/lib/libqnitpickerviewwidget.lib.so qmake_root/lib/libqpluginwidget.lib.so
+
+$(TARGET): $(TEST_PLUGIN_TAR)
 
 $(TEST_PLUGIN_TAR): config.plugin
 	$(VERBOSE)tar cf $@ -C $(PRG_DIR) config.plugin

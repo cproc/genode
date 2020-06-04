@@ -119,7 +119,7 @@ void QEmbeddedViewWidget::destroyed(QObject *obj)
 	_scrollbars.remove(qobject_cast<QScrollBar*>(obj));
 }
 
-
+#if 0
 /**************************
  ** QNitpickerViewWidget **
  **************************/
@@ -234,3 +234,4 @@ void QNitpickerViewWidget::focusInEvent(QFocusEvent *)
 
 	platform_window->nitpicker().focus(nitpicker->rpc_cap());
 }
+#endif
