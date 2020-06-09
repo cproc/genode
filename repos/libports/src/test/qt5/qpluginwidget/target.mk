@@ -1,17 +1,29 @@
-include $(call select_from_repositories,src/app/qt5/tmpl/target_defaults.inc)
+TARGET = test-qpluginwidget
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_final.inc)
+QMAKE_PROJECT_FILE = $(PRG_DIR)/qpluginwidget.pro
 
-LIBS += qt5_qpluginwidget qt5_network qoost
+QT5_LIBS = libQt5Core libQt5Gui libQt5Network libQt5Widgets
+
+LIBS = libc libm mesa qt5_component stdcxx libqnitpickerviewwidget libqpluginwidget qoost $(QT5_LIBS)
+
+include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
+
+#
+# add extra libraries
+#
+
+QT5_GENODE_LIBS_APP += libqnitpickerviewwidget.lib.so libqpluginwidget.lib.so
+
+#
+# create tar archive for test plugin
+#
 
 TEST_PLUGIN_TAR = $(BUILD_BASE_DIR)/bin/test-plugin.tar
 
-$(TARGET): $(TEST_PLUGIN_TAR)
+$(TARGET): $(TEST_PLUGIN_TAR) qmake_root/lib/libqnitpickerviewwidget.lib.so qmake_root/lib/libqpluginwidget.lib.so
 
 $(TEST_PLUGIN_TAR): config.plugin
 	$(VERBOSE)tar cf $@ -C $(PRG_DIR) config.plugin
 
 clean:
 	$(VERBOSE)rm $(TEST_PLUGIN_TAR)
-
-CC_CXX_WARN_STRICT =
