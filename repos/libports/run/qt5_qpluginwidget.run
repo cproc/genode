@@ -1,12 +1,10 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 import_from_depot [depot_user]/src/libcrypto \
                   [depot_user]/src/libssl \
                   [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_network \
-                  [depot_user]/src/qt5_qnitpickerviewwidget \
-                  [depot_user]/src/qt5_qpluginwidget \
-                  [depot_user]/src/qt5_widgets \
+                  [depot_user]/src/libqnitpickerviewwidget \
+                  [depot_user]/src/libqpluginwidget \
                   [depot_user]/src/test-qpluginwidget
 
 #
@@ -65,6 +63,13 @@ append config {
 					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
 				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>

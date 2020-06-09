@@ -1,7 +1,9 @@
-include $(call select_from_repositories,src/app/qt5/tmpl/target_defaults.inc)
+TARGET = test-qt_core
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_final.inc)
+QMAKE_PROJECT_FILE = $(PRG_DIR)/qt_core.pro
 
-LIBS += qt5_component
+QT5_LIBS = libQt5Core
 
-CC_CXX_WARN_STRICT =
+LIBS = libc libm qt5_component stdcxx $(QT5_LIBS)
+
+include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
