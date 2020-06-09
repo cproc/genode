@@ -7,7 +7,7 @@
 /* Qt includes */
 #include <QtGui>
 #include <QApplication>
-#include <qpluginwidget/qpluginwidget.h>
+#include <qpluginwidget.h>
 
 /* Qoost includes */
 #include <qoost/compound_widget.h>

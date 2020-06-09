@@ -1,8 +1,4 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
-
-import_from_depot [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_widgets \
-                  [depot_user]/src/qt5_calculatorform
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 #
 # Build
@@ -10,7 +6,12 @@ import_from_depot [depot_user]/src/qt5_component \
 
 append build_components [qt5_build_components feature]
 
-append build_components { lib/ld app/qt5/examples/calculatorform }
+# XXX: qt5 must have been built before
+append build_components {
+	lib/ld
+	lib/vfs/pipe
+	app/qt5/examples/calculatorform
+}
 
 build $build_components
 
@@ -45,7 +46,7 @@ append config {
 				<dir name="qt">
 					<dir name="plugins">
 						<dir name="platforms">
-							<rom name="qt5_qpa_nitpicker.lib.so"/>
+							<rom name="libqnitpicker.lib.so"/>
 						</dir>
 					</dir>
 				</dir>
@@ -78,11 +79,12 @@ append boot_modules {
 	ld.lib.so
 	libc.lib.so
 	libm.lib.so
+	vfs_pipe.lib.so
 	qt5_component.lib.so
-	qt5_qpa_nitpicker.lib.so
-	qt5_core.lib.so
-	qt5_gui.lib.so
-	qt5_widgets.lib.so
+	libqnitpicker.lib.so
+	libQt5Core.lib.so
+	libQt5Gui.lib.so
+	libQt5Widgets.lib.so
 }
 
 build_boot_image $boot_modules
