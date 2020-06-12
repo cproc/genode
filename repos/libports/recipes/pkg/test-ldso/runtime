@@ -109,7 +109,7 @@
 		<rom label="ld.lib.so"/>
 		<rom label="test-ldso_lib_1.lib.so"/>
 		<rom label="test-ldso_lib_2.lib.so"/>
-		<rom label="test-ldso_lib_dl.lib.so"/>
+		<rom label="test-ldso_lib_dl_1.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="vfs.lib.so"/>

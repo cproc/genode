@@ -38,7 +38,7 @@ Global_object global_object;
 /*
  * XXX currently untested
  */
-extern "C" void lib_dl_symbol()
+extern "C" void lib_dl_1_symbol()
 {
 	Genode::log("called (from '", __func__, "')");
 	Genode::log("Call 'lib_1_good': ");

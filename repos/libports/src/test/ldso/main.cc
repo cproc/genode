@@ -182,8 +182,10 @@ static void test_shared_object_api(Env &env, Allocator &alloc)
 	 * 'lib_dl_so' is a local variable such that its destructor is called
 	 * when leaving the scope of the function.
 	 */
-	Shared_object lib_dl_so(env, alloc, "test-ldso_lib_dl.lib.so",
-	                        Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
+	Shared_object lib_dl_1_so(env, alloc, "test-ldso_lib_dl_1.lib.so",
+	                          Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
+	void *lib_dl_1_symbol = lib_dl_1_so.lookup("lib_dl_1_symbol");
+	log("lib_dl_1_symbol: ", lib_dl_1_symbol);
 }
 
 
