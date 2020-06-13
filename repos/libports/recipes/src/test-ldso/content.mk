@@ -1,5 +1,6 @@
 MIRROR_FROM_REP_DIR := $(addprefix lib/mk/,\
-	test-ldso_lib_dl.mk \
+	test-ldso_lib_dl_1.mk \
+	test-ldso_lib_dl_2.mk \
 	test-ldso_lib_1.mk \
 	test-ldso_lib_2.mk )
 

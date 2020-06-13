@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Genode Labs GmbH
+ * Copyright (C) 2014-2020 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -24,7 +24,7 @@ struct Global_object
 {
 	Global_object()
 	{
-		Genode::log("Global object constructed");
+		log("Global object constructed");
 	}
 };
 
@@ -34,13 +34,10 @@ struct Global_object
  */
 Global_object global_object;
 
+void lib_dl_1_good() { log(__func__); }
 
-/*
- * XXX currently untested
- */
-extern "C" void lib_dl_symbol()
+extern "C" void lib_dl_1_test()
 {
-	Genode::log("called (from '", __func__, "')");
-	Genode::log("Call 'lib_1_good': ");
+	log(__func__, ": call 'lib_1_good':");
 	lib_1_good();
 }

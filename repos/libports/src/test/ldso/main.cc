@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2017 Genode Labs GmbH
+ * Copyright (C) 2009-2020 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -179,11 +179,23 @@ static void test_shared_object_api(Env &env, Allocator &alloc)
 	 * When loading the shared object, we expect the global constructor
 	 * that is present in the library to print a message.
 	 *
-	 * 'lib_dl_so' is a local variable such that its destructor is called
+	 * 'lib_dl_*_so' is a local variable such that its destructor is called
 	 * when leaving the scope of the function.
 	 */
-	Shared_object lib_dl_so(env, alloc, "test-ldso_lib_dl.lib.so",
-	                        Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
+
+	Shared_object lib_dl_1_so(env, alloc, "test-ldso_lib_dl_1.lib.so",
+	                          Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
+	typedef void (*lib_dl_1_test_t)();
+	lib_dl_1_test_t lib_dl_1_test =
+		(lib_dl_1_test_t)lib_dl_1_so.lookup("lib_dl_1_test");
+	lib_dl_1_test();
+
+	Shared_object lib_dl_2_so(env, alloc, "test-ldso_lib_dl_2.lib.so",
+	                          Shared_object::BIND_LAZY, Shared_object::DONT_KEEP);
+	typedef void (*lib_dl_2_test_t)();
+	lib_dl_2_test_t lib_dl_2_test =
+		(lib_dl_2_test_t)lib_dl_2_so.lookup("lib_dl_2_test");
+	lib_dl_2_test();
 }
 
 

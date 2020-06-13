@@ -19,6 +19,7 @@ void lib_1_test();
 void lib_1_good();
 void lib_1_exception();
 void lib_2_exception();
+void lib_dl_1_good();
 
 struct Lib_1_local_3
 {

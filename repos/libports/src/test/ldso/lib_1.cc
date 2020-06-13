@@ -116,7 +116,7 @@ static void lib_1_attr_destructor_2()  { log(__func__, " ", Hex(--lib_1_pod_2));
 static void exception() { throw 666; }
 
 void lib_1_exception() { throw Genode::Region_map::Region_conflict(); }
-void lib_1_good() { }
+void lib_1_good() { log(__func__); }
 
 
 void lib_1_test()
