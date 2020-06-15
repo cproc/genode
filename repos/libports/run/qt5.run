@@ -1,12 +1,9 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 import_from_depot [depot_user]/src/qt5_component \
                   [depot_user]/src/qt5_calculatorform \
                   [depot_user]/src/qt5_launchpad \
-                  [depot_user]/src/qt5_scriptclassic \
-                  [depot_user]/src/qt5_tetrix \
-                  [depot_user]/src/qt5_ui_tools \
-                  [depot_user]/src/qt5_widgets
+                  [depot_user]/src/qt5_tetrix
 
 #
 # Build
@@ -44,6 +41,13 @@ append config {
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 			<launcher name="calculatorform" ram_quota="30M" caps="200">
@@ -54,6 +58,13 @@ append config {
 							<dir name="pipe"> <pipe/> </dir>
 							<log/>
 							<inline name="rtc">2018-01-01 00:01</inline>
+						</dir>
+						<dir name="qt">
+							<dir name="plugins">
+								<dir name="platforms">
+									<rom name="libqnitpicker.lib.so"/>
+								</dir>
+							</dir>
 						</dir>
 						<tar name="qt5_dejavusans.tar"/>
 					</vfs>
@@ -67,6 +78,13 @@ append config {
 							<dir name="pipe"> <pipe/> </dir>
 							<log/>
 							<inline name="rtc">2018-01-01 00:01</inline>
+						</dir>
+						<dir name="qt">
+							<dir name="plugins">
+								<dir name="platforms">
+									<rom name="libqnitpicker.lib.so"/>
+								</dir>
+							</dir>
 						</dir>
 						<tar name="qt5_dejavusans.tar"/>
 					</vfs>

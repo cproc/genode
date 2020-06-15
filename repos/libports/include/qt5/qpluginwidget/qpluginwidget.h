@@ -22,7 +22,7 @@
 #include <QtGui>
 #include <QtNetwork>
 
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qnitpickerviewwidget.h>
 
 enum Plugin_loading_state
 {
@@ -131,6 +131,39 @@ class QPluginWidget : public QEmbeddedViewWidget
 		~QPluginWidget();
 
 		static void env(Libc::Env &env) { _env = &env; }
+};
+
+
+class QPluginWidgetInterface
+{
+	public:
+		virtual void env(Libc::Env &env) = 0;
+		virtual QWidget *createWidget(QWidget *parent, QUrl plugin_url, QString &args,
+		                              int max_width = -1, int max_height = -1) = 0;
+};
+
+
+Q_DECLARE_INTERFACE(QPluginWidgetInterface, "org.genode.QPluginWidgetInterface")
+
+
+class QPluginWidgetPlugin : public QObject, public QPluginWidgetInterface
+{
+	Q_OBJECT
+	Q_PLUGIN_METADATA(IID "org.genode.QPluginWidgetInterface" FILE "qpluginwidget.json")
+	Q_INTERFACES(QPluginWidgetInterface)
+
+	public:
+
+		explicit QPluginWidgetPlugin(QObject *parent = 0) : QObject(parent) { }
+
+		void env(Libc::Env &env) { QPluginWidget::env(env); }
+
+		QWidget *createWidget(QWidget *parent, QUrl plugin_url, QString &args,
+		                      int max_width = -1, int max_height = -1)
+		{
+			return new QPluginWidget(parent, plugin_url, args, max_width, max_height);
+		}
+	
 };
 
 #endif // QPLUGINWIDGET_H
