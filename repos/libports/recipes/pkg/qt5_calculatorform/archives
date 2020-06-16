@@ -1,0 +1,11 @@
+_/src/expat
+_/src/libc
+_/src/mesa
+_/src/qt5_base
+_/raw/qt5_calculatorform
+_/src/qt5_calculatorform
+_/src/qt5_component
+_/raw/qt5_dejavusans
+_/src/stdcxx
+_/src/vfs
+_/src/vfs_pipe

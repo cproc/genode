@@ -1,17 +1,11 @@
-QT5_PORT_DIR := $(call select_from_ports,qt5)
-QT5_CONTRIB_DIR := $(QT5_PORT_DIR)/src/lib/qt5/qt5
+TARGET = build_with_qmake
 
-QMAKE_PROJECT_PATH = $(QT5_CONTRIB_DIR)/qtscript/examples/script/qstetrix
-QMAKE_PROJECT_FILE = $(QMAKE_PROJECT_PATH)/qstetrix.pro
+QMAKE_PROJECT_FILE = $(QT_DIR)/qtbase/examples/widgets/widgets/tetrix/tetrix.pro
 
-vpath % $(QMAKE_PROJECT_PATH)
+QMAKE_TARGET_BINARIES = tetrix
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_defaults.inc)
+QT5_PORT_LIBS = libQt5Core libQt5Gui libQt5Widgets
 
-CC_CXX_OPT += -DQT_NO_SCRIPTTOOLS
+LIBS = libc libm mesa qt5_component stdcxx $(QT5_PORT_LIBS)
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_final.inc)
-
-LIBS += qt5_component
-
-CC_CXX_WARN_STRICT =
+include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)

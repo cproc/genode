@@ -1,7 +1,12 @@
-include $(call select_from_repositories,src/app/qt5/tmpl/target_defaults.inc)
+TARGET = build_with_qmake
 
-include $(call select_from_repositories,src/app/qt5/tmpl/target_final.inc)
+QMAKE_PROJECT_FILE = $(PRG_DIR)/qt_quick.pro
 
-LIBS += qt5_component
+QMAKE_TARGET_BINARIES = test-qt_quick
 
-CC_CXX_WARN_STRICT =
+QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network
+QT5_PORT_LIBS += libQt5Qml libQt5Quick
+
+LIBS = libc libm mesa qt5_component stdcxx $(QT5_PORT_LIBS)
+
+include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)

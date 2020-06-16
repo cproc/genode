@@ -29,6 +29,6 @@ COMPILER_MOC_HEADER_MAKE_ALL_FILES_FILTER_OUT = \
 
 include $(REP_DIR)/lib/mk/qt5.inc
 
-LIBS += qt5_core zlib libpng
+LIBS += qt5_core zlib libpng mesa
 
 CC_CXX_WARN_STRICT =

@@ -2,11 +2,7 @@ base
 libc
 mesa
 os
-qt5_core
-qt5_gui
-qt5_qjpeg
-qt5_qpa_nitpicker
-qt5_widgets
+qt5
 stdcxx
 timer_session
 vfs
