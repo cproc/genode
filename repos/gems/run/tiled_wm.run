@@ -1,9 +1,7 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 import_from_depot [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_printsupport \
                   [depot_user]/src/qt5_textedit \
-                  [depot_user]/src/qt5_widgets \
                   [depot_user]/src/dynamic_rom \
                   [depot_user]/src/test-tiled_wm
 
@@ -119,6 +117,13 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
 				<dir name="fs"> <ram/> </dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 		</config>
@@ -144,6 +149,13 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
 				<dir name="fs"> <ram/> </dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 		</config>
@@ -166,6 +178,13 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
 				<dir name="fs"> <ram/> </dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 		</config>
@@ -188,6 +207,13 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
 				<dir name="fs"> <ram/> </dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 		</config>
@@ -209,6 +235,13 @@ append config {
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
 				<dir name="fs"> <ram/> </dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
 		</config>
