@@ -29,7 +29,7 @@ endif
 INC_DIR += $(QT5_INC_DIR)
 
 # extracted from qt.prf
-QT_DEFINES += -DQT_STATICPLUGIN
+#QT_DEFINES += -DQT_STATICPLUGIN
 
 QT_DEFINES += -D__GENODE__
 

@@ -1,14 +1,7 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
-import_from_depot [depot_user]/raw/qt5_qtquick2 \
-                  [depot_user]/src/libcrypto \
-                  [depot_user]/src/libssl \
-                  [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_network \
-                  [depot_user]/src/qt5_qml \
-                  [depot_user]/src/qt5_qtquick2 \
-                  [depot_user]/src/qt5_quick \
-                  [depot_user]/src/qt5_widgets \
+import_from_depot [depot_user]/src/qt5_component \
+                  [depot_user]/src/qt5_declarative \
                   [depot_user]/src/test-qt_quick
 
 #
@@ -46,9 +39,15 @@ append config {
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<tar name="qt5_dejavusans.tar"/>
-				<tar name="qt5_qtquick2.tar"/>
-				<tar name="qt5_qtquick2plugin.tar" />
+				<tar name="qt5_declarative_qml.tar"/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc"/>
 		</config>
