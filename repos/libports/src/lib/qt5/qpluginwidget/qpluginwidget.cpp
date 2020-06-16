@@ -18,9 +18,9 @@
 /* Qt includes */
 #include <QtGui>
 
-#include <qnitpickerplatformwindow.h>
+#include <qpa_nitpicker/qnitpickerplatformwindow.h>
 
-#include <qpluginwidget/qpluginwidget.h>
+#include <qpluginwidget.h>
 
 Libc::Env     *QPluginWidget::_env = 0;
 QPluginWidget *QPluginWidget::_last = 0;
@@ -498,4 +498,3 @@ void QPluginWidget::hideEvent(QHideEvent *event)
 		_plugin_starter->view_geometry(geometry, offset);
 	}
 }
-

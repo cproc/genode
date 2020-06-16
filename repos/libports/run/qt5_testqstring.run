@@ -1,8 +1,6 @@
-source ${genode_dir}/repos/libports/run/qt5_common.inc
+source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 import_from_depot [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_test \
-                  [depot_user]/src/qt5_widgets \
                   [depot_user]/src/qt5_testqstring
 
 #
@@ -32,7 +30,7 @@ append config {
 append config [qt5_start_nodes feature]
 
 append config {
-	<start name="testqstring" caps="200">
+	<start name="tutorial1" caps="200">
 		<resource name="RAM" quantum="80M"/>
 		<config>
 			<vfs>
@@ -40,6 +38,13 @@ append config {
 					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="libqnitpicker.lib.so"/>
+						</dir>
+					</dir>
 				</dir>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>

@@ -118,6 +118,13 @@ append config {
 					<jitterentropy name="random"/>
 					<inline name="rtc">2018-01-01 00:01</inline> 
 				</dir>
+				<dir name="qt">
+					<dir name="plugins">
+						<dir name="platforms">
+							<rom name="qt5_qpa_nitpicker.lib.so"/>
+						</dir>
+					</dir>
+				</dir>
 				<fs/>
 				<tar name="qt5_dejavusans.tar"/>
 			</vfs>
