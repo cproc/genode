@@ -1,0 +1,52 @@
+<runtime ram="2G" caps="10000" binary="init" config="init.config">
+
+	<requires>
+		<nic/>
+		<nitpicker/>
+		<report label="minimal -> shape"/>
+	</requires>
+
+	<content>
+
+		<rom label="egl.lib.so"/>
+		<rom label="egl_swrast.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libQt5Network.lib.so"/>
+		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5Quick.lib.so"/>
+		<rom label="libQt5QuickWidgets.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
+		<rom label="libQt5WebEngineCore.lib.so"/>
+		<rom label="libQt5WebEngine.lib.so"/>
+		<rom label="libqnitpicker.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="libwindowplugin.lib.so"/>
+		<rom label="libqtwebengineplugin.lib.so"/>
+
+		<rom label="mesa.lib.so"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="qt5_qtquick2.tar"/>
+		<rom label="qt5_qtquick2plugin.tar"/>
+		<rom label="qt5_qtquick_window.tar"/>
+		<rom label="qt5_windowplugin.tar"/>
+		<rom label="qt5_qtwebengine.tar"/>
+		<rom label="qt5_qtwebengineplugin.tar"/>
+		<rom label="qt5_qtquick_controls.tar"/>
+		<rom label="qt5_qtquickcontrolsplugin.tar"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="qt5_component.lib.so"/>
+		<rom label="minimal"/>
+		<rom label="init.config"/>
+
+	</content>
+
+</runtime>
