@@ -359,7 +359,7 @@ append_if $use_framebuffer config {
 			<any-service><parent/></any-service>
 		</route>}
 append_if [expr $use_framebuffer &&  [have_include "power_on/qemu"]] config {
-		<config width="1280" height="960" depth="16" buffered="yes"/>}
+		<config width="1280" height="960" depth="32" buffered="yes"/>}
 append_if [expr $use_framebuffer && ![have_include "power_on/qemu"]] config {
 		<config buffered="yes"/>}
 append_if $use_framebuffer config {
