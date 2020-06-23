@@ -1,4 +1,14 @@
-SHARED=yes
+ifeq ($(filter-out $(SPECS),arm),)
+QMAKE_PLATFORM = genode-arm-g++
+else ifeq ($(filter-out $(SPECS),arm_64),)
+QMAKE_PLATFORM = genode-aarch64-g++
+else ifeq ($(filter-out $(SPECS),x86_32),)
+QMAKE_PLATFORM = genode-x86_32-g++
+else ifeq ($(filter-out $(SPECS),x86_64),)
+QMAKE_PLATFORM = genode-x86_64-g++
+else
+$(error Error: unsupported platform)
+endif
 
 #
 # build dependency libraries in var/libcache
@@ -22,7 +32,14 @@ QT_PORT_DIR := $(call select_from_ports,qt5_new)
 QT_DIR      := $(QT_PORT_DIR)/src/lib/qt5
 
 #
-# flags to be passed to mkspecs/genode-x86-g++/qmake.conf via env.sh
+# Genode libraries to be linked to Qt applications and libraries
+#
+
+QT5_GENODE_LIBS_APP   = libc.lib.so libm.lib.so stdcxx.lib.so qt5_component.lib.so
+QT5_GENODE_LIBS_SHLIB = ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so
+
+#
+# flags to be passed to qmake.conf via env.sh
 #
 # information collected from global.mk, lib.mk and prg.mk, only variables
 # from global.mk and prg.mk are available
@@ -55,17 +72,17 @@ $(CC_MARCH) \
 -Wl,-rpath-link=. \
 -Wl,-T -Wl,$(LD_SCRIPT_DYN) \
 -L$(CURDIR)/qmake_root/lib \
--l:ld.lib.so \
--l:libc.lib.so \
--l:libm.lib.so \
--l:qt5_component.lib.so \
--l:stdcxx.lib.so \
-$(shell $(CC) $(CC_MARCH) -print-libgcc-file-name)
+-Wl,--whole-archive \
+-Wl,--start-group \
+$(addprefix -l:,$(QT5_GENODE_LIBS_APP)) \
+-Wl,--end-group \
+-Wl,--no-whole-archive
 
 GENODE_QMAKE_LFLAGS_SHLIB = \
 \
 $(LD_OPT_NOSTDLIB) \
 \
+-Wl,-shared \
 -Wl,--eh-frame-hdr \
 \
 $(addprefix $(LD_OPT_PREFIX),$(LD_MARCH)) \
@@ -77,14 +94,18 @@ $(addprefix $(LD_OPT_PREFIX),--entry=0x0) \
 -L$(CURDIR)/qmake_root/lib \
 -Wl,--whole-archive \
 -Wl,--start-group \
--l:ld.lib.so \
--l:libc.lib.so \
--l:libm.lib.so \
--l:stdcxx.lib.so \
+$(addprefix -l:,$(QT5_GENODE_LIBS_SHLIB)) \
 -l:ldso_so_support.lib.a \
-$(shell $(CC) $(CC_MARCH) -print-libgcc-file-name) \
 -Wl,--end-group \
 -Wl,--no-whole-archive
+
+#
+# libgcc must appear on the command line after all other libs
+# (including those added by qmake) and using the QMAKE_LIBS
+# variable achieves this, fortunately
+#
+GENODE_QMAKE_LIBS = \
+	$(shell $(CC) $(CC_MARCH) -print-libgcc-file-name)
 
 GENODE_QMAKE_INCDIR_OPENGL = $(call select_from_ports,mesa)/include
 GENODE_QMAKE_LIBS_OPENGL = $(CURDIR)/qmake_root/lib/mesa.lib.so
@@ -93,7 +114,7 @@ GENODE_QMAKE_INCDIR_EGL = $(call select_from_ports,mesa)/include
 GENODE_QMAKE_LIBS_EGL = $(CURDIR)/qmake_root/lib/egl.lib.so
 
 #
-# export variables for mkspecs/genode-x86-g++/qmake.conf
+# export variables for qmake.conf
 #
 
 env.sh:
@@ -108,6 +129,7 @@ env.sh:
 	echo "export GENODE_QMAKE_CFLAGS='$(GENODE_QMAKE_CFLAGS)'" >> $@
 	echo "export GENODE_QMAKE_LFLAGS_APP='$(GENODE_QMAKE_LFLAGS_APP)'" >> $@
 	echo "export GENODE_QMAKE_LFLAGS_SHLIB='$(GENODE_QMAKE_LFLAGS_SHLIB)'" >> $@
+	echo "export GENODE_QMAKE_LIBS='$(GENODE_QMAKE_LIBS)'" >> $@
 	echo "export GENODE_QMAKE_INCDIR_OPENGL='$(GENODE_QMAKE_INCDIR_OPENGL)'" >> $@
 	echo "export GENODE_QMAKE_LIBS_OPENGL='$(GENODE_QMAKE_LIBS_OPENGL)'" >> $@
 	echo "export GENODE_QMAKE_INCDIR_EGL='$(GENODE_QMAKE_INCDIR_EGL)'" >> $@
@@ -136,12 +158,12 @@ built.tag: env.sh
 
 	source env.sh && $(QT_DIR)/configure \
 	-prefix /qt \
-	-xplatform genode-x86-g++ \
-	-qpa nitpicker \
+	-xplatform $(QMAKE_PLATFORM) \
+	-qpa genode \
 	-opensource \
 	-confirm-license \
 	-no-pch \
-	-debug \
+	-release \
 	-no-strip \
 	-opengl desktop \
 	-nomake tools \
@@ -152,32 +174,12 @@ built.tag: env.sh
 	-skip qtserialport \
 	-skip qttools \
 	-skip qtwebglplugin \
+	-skip qtwebengine \
 	-no-accessibility \
 	-no-feature-dbus \
 	-no-feature-filesystemwatcher \
 	-no-feature-networkinterface \
-	-no-feature-process \
-	-no-webengine-alsa \
-	-no-webengine-embedded-build \
-	-qt-webengine-icu \
-	-qt-webengine-ffmpeg \
-	-qt-webengine-opus \
-	-qt-webengine-webp \
-	-no-webengine-pepper-plugins \
-	-no-webengine-printing-and-pdf \
-	-no-webengine-proprietary-codecs \
-	-no-webengine-pulseaudio \
-	-no-webengine-spellchecker \
-	-no-webengine-native-spellchecker \
-	-no-webengine-extensions \
-	-no-webengine-webrtc \
-	-no-webengine-geolocation \
-	-no-webengine-v8-snapshot \
-	-no-webengine-webchannel \
-	-no-webengine-kerberos \
-	-webengine-widgets \
-	-webengine-qml \
-	-no-webengine-sndio
+	-no-feature-process
 
 	#
 	# build
