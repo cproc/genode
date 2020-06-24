@@ -1,12 +1,9 @@
 base
 libc
+mesa
 os
 qoost
-qt5_core
-qt5_gui
-qt5_qjpeg
-qt5_qpa_nitpicker
-qt5_widgets
+qt5
 report_session
 stdcxx
 vfs

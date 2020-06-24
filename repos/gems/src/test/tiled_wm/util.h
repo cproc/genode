@@ -32,7 +32,9 @@
 
 /* Libc includes */
 #include <libc/component.h>
-
+#include <dlfcn.h>  /* 'dlopen'  */
+#include <stdio.h>  /* 'fprintf' */
+#include <unistd.h> /* 'access'  */
 
 typedef Genode::String<32> Name;
 
@@ -75,11 +77,39 @@ class Genode_signal_proxy : public QObject,
  * Qt initialization
  */
 
-extern void initialize_qt_gui(Genode::Env &);
-
 static inline QApplication & qt5_initialization(Libc::Env &env)
 {
-	initialize_qt_gui(env);
+	/*
+	 * initialize the QPA plugin
+	 *
+	 * when Qt loads the plugin again, it will get the same handle
+	 */
+
+	char const *qpa_plugin = "/qt/plugins/platforms/libqnitpicker.lib.so";
+
+	void *qpa_plugin_handle = nullptr;
+
+	/* check existence with 'access()' first to avoid ld error messages */
+	if (access(qpa_plugin, F_OK) == 0)
+		qpa_plugin_handle = dlopen(qpa_plugin, RTLD_LAZY | RTLD_GLOBAL);
+	
+	if (qpa_plugin_handle) {
+
+		typedef void (*initialize_qpa_plugin_t)(Genode::Env &);
+
+		initialize_qpa_plugin_t initialize_qpa_plugin = 
+			(initialize_qpa_plugin_t) dlsym(qpa_plugin_handle,
+				                            "initialize_qpa_plugin");
+
+		if (!initialize_qpa_plugin) {
+			fprintf(stderr, "Could not find 'initialize_qpa_plugin' \
+				             function in QPA plugin\n");
+			dlclose(qpa_plugin_handle);
+			exit(1);
+		}
+
+		initialize_qpa_plugin(env);
+	}
 
 	char const *argv[] = { "qt5_app", 0 };
 	int argc = sizeof(argv)/sizeof(*argv);
