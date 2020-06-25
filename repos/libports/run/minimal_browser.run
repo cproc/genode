@@ -85,8 +85,8 @@ append config {
 				</dir>
 				<dir name="shm"> <shm/> </dir>
 				<dir name="socket">
-					<lwip dhcp="yes"/>
-					<!--<lwip ip_addr="10.0.10.2" netmask="255.255.255.0" gateway="10.0.10.1" nameserver="10.0.0.2"/>-->
+					<!--<lwip dhcp="yes"/>-->
+					<lwip ip_addr="10.0.10.2" netmask="255.255.255.0" gateway="10.0.10.1" nameserver="10.0.0.2"/>
 					<!--<fs/>-->
 				</dir>
 				<dir name="tmp"> <ram/> </dir>
