@@ -15,9 +15,6 @@
 #define QNITPICKERVIEWWIDGET_H
 
 #include <QtWidgets>
-#if 0
-#include <qwindowsystem_qws.h>
-#endif
 
 #include <nitpicker_session/client.h>
 
@@ -79,11 +76,39 @@ protected:
 
 public:
 
-	QNitpickerViewWidget(QWidget *parent =0);
+	QNitpickerViewWidget(QWidget *parent = 0);
 	~QNitpickerViewWidget();
 	void setNitpickerView(Nitpicker::Session_client *nitpicker,
 	                      Nitpicker::Session::View_handle view_handle,
 	                      int buf_x, int buf_y, int w, int h);
+};
+
+
+class QNitpickerViewWidgetInterface
+{
+	public:
+		virtual QWidget *createWidget(QWidget *parent = 0) = 0;
+};
+
+
+Q_DECLARE_INTERFACE(QNitpickerViewWidgetInterface, "org.genode.QNitpickerViewWidgetInterface")
+
+
+class QNitpickerViewWidgetPlugin : public QObject, public QNitpickerViewWidgetInterface
+{
+	Q_OBJECT
+	Q_PLUGIN_METADATA(IID "org.genode.QNitpickerViewWidgetInterface" FILE "qnitpickerviewwidget.json")
+	Q_INTERFACES(QNitpickerViewWidgetInterface)
+
+	public:
+
+		explicit QNitpickerViewWidgetPlugin(QObject *parent = 0) : QObject(parent) { }
+
+		QWidget *createWidget(QWidget *parent = 0)
+		{
+			return new QNitpickerViewWidget(parent);
+		}
+	
 };
 
 #endif // QNITPICKERVIEWWIDGET_H
