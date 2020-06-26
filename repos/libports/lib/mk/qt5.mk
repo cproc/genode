@@ -175,7 +175,6 @@ built.tag: env.sh
 	-skip qttools \
 	-skip qtwebglplugin \
 	-skip qtwebengine \
-	-no-accessibility \
 	-no-feature-dbus \
 	-no-feature-filesystemwatcher \
 	-no-feature-networkinterface \

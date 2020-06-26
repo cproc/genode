@@ -21,7 +21,6 @@ built.tag: qmake_prepared.tag qmake_root/lib/ld.lib.so
 		-release \
 		-no-strip \
 		-opengl desktop \
-		-no-accessibility \
 		-no-feature-dbus \
 		-no-feature-filesystemwatcher \
 		-no-feature-networkinterface \
