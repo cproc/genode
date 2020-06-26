@@ -147,7 +147,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="nitpicker" caps="110">
+	<start name="nitpicker" caps="120">
 		<resource name="RAM" quantum="1216K"/>
 		<provides> <service name="Gui"/> </provides>
 		<route>
