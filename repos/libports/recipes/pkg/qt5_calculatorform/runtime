@@ -1,0 +1,29 @@
+<runtime ram="64M" caps="500" binary="calculatorform" config="calculatorform.config">
+
+	<requires>
+		<nitpicker/>
+	</requires>
+
+	<content>
+	
+		<rom label="egl.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="qt5_component.lib.so"/>
+		<rom label="calculatorform"/>
+		<rom label="calculatorform.config"/>
+
+	</content>
+
+</runtime>

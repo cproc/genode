@@ -15,9 +15,6 @@
 #define QGENODEVIEWWIDGET_H
 
 #include <QtWidgets>
-#if 0
-#include <qwindowsystem_qws.h>
-#endif
 
 #include <gui_session/client.h>
 
@@ -84,6 +81,33 @@ public:
 	void setGenodeView(Gui::Session_client *gui,
 	                   Gui::Session::View_handle view_handle,
 	                   int buf_x, int buf_y, int w, int h);
+};
+
+class QGenodeViewWidgetInterface
+{
+	public:
+		virtual QWidget *createWidget(QWidget *parent = 0) = 0;
+};
+
+
+Q_DECLARE_INTERFACE(QGenodeViewWidgetInterface, "org.genode.QGenodeViewWidgetInterface")
+
+
+class QGenodeViewWidgetPlugin : public QObject, public QGenodeViewWidgetInterface
+{
+	Q_OBJECT
+	Q_PLUGIN_METADATA(IID "org.genode.QGenodeViewWidgetInterface" FILE "qgenodeviewwidget.json")
+	Q_INTERFACES(QGenodeViewWidgetInterface)
+
+	public:
+
+		explicit QGenodeViewWidgetPlugin(QObject *parent = 0) : QObject(parent) { }
+
+		QWidget *createWidget(QWidget *parent = 0)
+		{
+			return new QGenodeViewWidget(parent);
+		}
+	
 };
 
 #endif // QGENODEVIEWWIDGET_H

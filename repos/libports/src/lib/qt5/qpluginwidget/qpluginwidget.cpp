@@ -18,9 +18,9 @@
 /* Qt includes */
 #include <QtGui>
 
-#include <qgenodeplatformwindow.h>
+#include <qpa_genode/qgenodeplatformwindow.h>
 
-#include <qpluginwidget/qpluginwidget.h>
+#include <qpluginwidget.h>
 
 Libc::Env     *QPluginWidget::_env = 0;
 QPluginWidget *QPluginWidget::_last = 0;
@@ -498,4 +498,3 @@ void QPluginWidget::hideEvent(QHideEvent *event)
 		_plugin_starter->view_geometry(geometry, offset);
 	}
 }
-

@@ -10,8 +10,8 @@
 
 #include <QtGui>
 
-#include <qgenodeplatformwindow.h>
-#include <qgenodeviewwidget/qgenodeviewwidget.h>
+#include <qpa_genode/qgenodeplatformwindow.h>
+#include <qgenodeviewwidget.h>
 
 
 /*************************

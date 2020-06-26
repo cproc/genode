@@ -1,52 +1,25 @@
-
-source ${genode_dir}/repos/libports/run/qt5_drivers.inc
-
-set feature(Input) 1
-set feature(Framebuffer) 1
-set feature(Timer) 1
-
 create_boot_directory
 
-import_from_depot [depot_user]/src/[base_src] \
+import_from_depot [depot_user]/pkg/[drivers_interactive_pkg] \
+                  [depot_user]/pkg/themed_wm \
+                  [depot_user]/raw/qt5_dejavusans \
+                  [depot_user]/src/[base_src] \
                   [depot_user]/src/expat \
                   [depot_user]/src/freetype \
+                  [depot_user]/src/global_keys_handler \
                   [depot_user]/src/init \
                   [depot_user]/src/jpeg \
                   [depot_user]/src/libc \
                   [depot_user]/src/libpng \
                   [depot_user]/src/mesa \
                   [depot_user]/src/nitpicker \
-                  [depot_user]/src/global_keys_handler \
-                  [depot_user]/src/rom_filter \
-                  [depot_user]/src/qt5_core \
-                  [depot_user]/src/qt5_gui \
-                  [depot_user]/src/qt5_qjpeg \
-                  [depot_user]/src/qt5_qpa_genode \
+                  [depot_user]/src/qt5_base \
                   [depot_user]/src/report_rom \
+                  [depot_user]/src/rom_filter \
                   [depot_user]/src/stdcxx \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_pipe \
-                  [depot_user]/src/zlib \
-                  [depot_user]/pkg/themed_wm \
-                  [depot_user]/raw/qt5_dejavusans
-
-#
-# Build
-#
-
-proc qt5_build_components { feature_arg } {
-
-	upvar $feature_arg feature
-
-	set build_components { }
-
-	append build_components [drivers_build_components feature]
-
-	append build_components { }
-
-	return $build_components
-}
-
+                  [depot_user]/src/zlib
 
 #
 # Configuration
@@ -78,34 +51,52 @@ proc qt5_decorator_config { } {
 		</config>}
 }
 
-proc qt5_parent_provides { feature_arg } {
+proc qt5_parent_provides { } {
 
-	upvar $feature_arg feature
+	set parent_provides { }
 
-	set parent_provides [drivers_parent_provides feature]
+	append parent_provides {
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	}
 
 	return $parent_provides
 }
 
-proc qt5_start_nodes { feature_arg } {
+proc qt5_start_nodes { } {
 
-	upvar $feature_arg feature
-
-	set start_nodes [drivers_start_nodes feature]
+	set start_nodes { }
 
 	append start_nodes {
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides><service name="Timer"/></provides>
+		</start>
+
+		<start name="drivers" caps="1000">
+			<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+			<binary name="init"/>
+			<route>
+				<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+				<service name="Timer"> <child name="timer"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+			<provides>
+				<service name="Input"/> <service name="Framebuffer"/>
+			</provides>
+		</start>
+
 		<start name="nitpicker" caps="200">
 			<resource name="RAM" quantum="2M"/>
-			<provides> <service name="Gui"/> </provides>
-			<route> }
-	append_if [use_fb_sdl feature] start_nodes {
-				<service name="Framebuffer"> <child name="fb_sdl" /> </service>
-	}
-	append_if [use_fb_drv feature] start_nodes {
-				<service name="Framebuffer"> <child name="fb_drv" /> </service>
-	}
-	append start_nodes {
-				<service name="Input">  <child name="input_filter"/> </service>
+			<provides><service name="Gui"/></provides>
+			<route>
 				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
@@ -237,21 +228,4 @@ proc qt5_start_nodes { feature_arg } {
 	}
 
 	return $start_nodes
-}
-
-#
-# Boot modules
-#
-
-proc qt5_boot_modules { feature_arg } {
-
-	upvar $feature_arg feature
-
-	set boot_modules { }
-
-	append boot_modules [drivers_boot_modules feature]
-
-	append boot_modules { }
-
-	return $boot_modules
 }

@@ -5,8 +5,7 @@ content: $(MIRROR_FROM_REP_DIR) LICENSE
 $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
 
-MIRROR_FROM_LIBPORTS := src/app/qt5/tmpl/target_defaults.inc \
-                        src/app/qt5/tmpl/target_final.inc
+MIRROR_FROM_LIBPORTS := lib/import/import-qt5_qmake.mk
 
 content: $(MIRROR_FROM_LIBPORTS)
 
