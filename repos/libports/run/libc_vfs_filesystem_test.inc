@@ -130,7 +130,7 @@ append_if $use_sd_card_drv config {
 }
 
 append_if $use_vfs_block config {
-	<start name="vfs_block">
+	<start name="vfs_block" caps="150">
 		<resource name="RAM" quantum="68M" />
 		<provides><service name="Block"/></provides>
 		<config>
