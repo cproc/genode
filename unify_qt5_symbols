@@ -1,0 +1,38 @@
+#!/usr/bin/tclsh
+
+#
+# tool to keep only the symbol definitions with the highest size:
+# 
+# symbol D 4
+# symbol D 8
+#
+# keeps
+#
+# symbol D 8
+#
+# ---
+#
+# the input is expected to be sorted and unified and with each symbol occurring
+# not more than twice
+#
+
+set lines [split [exec cat $argv] "\n"]
+
+for { set i 0 } { $i < [llength $lines] } { incr i } {
+	set line1 [lindex $lines $i]
+	set line2 [lindex $lines [expr $i + 1]]
+	set name1 [lindex $line1 0]
+	set name2 [lindex $line2 0]
+	if { $name1 == $name2 } {
+		set size1 [lindex $line1 2]
+		set size2 [lindex $line2 2]
+		if { $size1 > $size2 } {
+			puts $line1
+		} else {
+			puts $line2
+		}
+		incr i
+	} else {
+		puts $line1
+	}
+}
