@@ -656,7 +656,7 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
                                 ::size_t count)
 {
-Genode::warning(&fd, ": Vfs_plugin::write(): fd: ", fd->libc_fd, ", count: ", count);
+//Genode::warning(&fd, ": Vfs_plugin::write(): fd: ", fd->libc_fd, ", count: ", count);
 
 	typedef Vfs::File_io_service::Write_result Result;
 

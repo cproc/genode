@@ -405,7 +405,8 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 Genode::warning(&length, ": mmap(): addr: ", addr,
                 ", libc_fd: ", libc_fd,
                 ", offset: ", offset,
-                ", length: ", length);
+                ", length: ", length,
+                ", ret: ", __builtin_return_address(0));
 	/* handle requests for anonymous memory */
 	if ((flags & MAP_ANONYMOUS) || (flags & MAP_ANON)) {
 
@@ -715,8 +716,8 @@ extern "C" int unlink(const char *path)
 
 __SYS_(ssize_t, write, (int libc_fd, const void *buf, ::size_t count),
 {
-if (libc_fd != 4)
-	Genode::warning(&libc_fd, ": write(): fd: ", libc_fd, ", count: ", count);
+//if (libc_fd != 4)
+//	Genode::warning(&libc_fd, ": write(): fd: ", libc_fd, ", count: ", count);
 	int flags = fcntl(libc_fd, F_GETFL);
 
 	if ((flags != -1) && (flags & O_APPEND))

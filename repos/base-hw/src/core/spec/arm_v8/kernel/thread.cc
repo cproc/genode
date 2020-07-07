@@ -53,7 +53,10 @@ void Thread::exception(Cpu & cpu)
 			default:
 				Genode::raw("Unknown cpu exception EC=", Cpu::Esr::Ec::get(esr),
 				            " ISS=", Cpu::Esr::Iss::get(esr),
-				            " ip=", (void*)regs->ip);
+				            " ip=", (void*)regs->ip,
+				            " sp=", (void*)regs->sp,
+				            " fp=", (void*)regs->r[29]);
+				Genode::raw("code: ", Genode::Hex(*(Genode::uint64_t*)regs->ip));
 			};
 			break;
 		}

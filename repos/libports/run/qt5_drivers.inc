@@ -94,8 +94,9 @@ proc use_usb_nic { feature_arg } {
 }
 
 proc use_usb_drv { feature_arg } {
-	upvar $feature_arg feature
-	return [expr {[use_usb_input feature] || [use_usb_nic feature]}]
+	#upvar $feature_arg feature
+	#return [expr {[use_usb_input feature] || [use_usb_nic feature]}]
+	return true
 }
 
 proc usb_drv_binary { } {
@@ -131,6 +132,8 @@ proc drivers_build_components { feature_arg } {
 	lappend_if [use_nic_drv feature]      build_components drivers/nic
 	lappend_if [use_ps2_drv feature]      build_components drivers/input/spec/ps2
 	lappend_if [use_usb_drv feature]      build_components drivers/usb
+	lappend build_components drivers/usb_host
+	lappend build_components drivers/usb_hid
 
 	return $build_components
 }
@@ -306,7 +309,7 @@ proc drivers_start_nodes { feature_arg } {
 		append_if [use_ps2_drv feature] start_nodes {
 					<service name="Input" label="ps2"> <child name="ps2_drv" /> </service>}
 		append_if [use_usb_drv feature] start_nodes {
-					<service name="Input" label="usb"> <child name="usb_drv" /> </service>}
+					<service name="Input" label="usb"> <child name="usb_hid_drv" /> </service>}
 		append_if [use_fb_sdl feature] start_nodes {
 					<service name="Input" label="sdl"> <child name="fb_sdl" /> </service>}
 		append start_nodes {
@@ -352,33 +355,60 @@ proc drivers_start_nodes { feature_arg } {
 		</start>
 	}
 
-	if { [use_usb_drv feature] } {
-		append start_nodes {
-			<start name="usb_drv" caps="120">
-				<binary name="} [usb_drv_binary] {"/>
-				<resource name="RAM" quantum="12M"/>
-				<provides>}
-		append_if [use_usb_input feature] start_nodes {
-					<service name="Input"/>}
-		append_if [use_usb_nic feature] start_nodes {
-					<service name="Nic"/>}
-		append start_nodes {
-				</provides>
-				<config uhci="yes" ehci="yes" xhci="yes"
-				        capslock_led="rom" numlock_led="rom">}
-		append_if [use_usb_input feature] start_nodes {
-					<hid/>}
-		append_if [use_usb_nic feature] start_nodes {
-					<nic mac="2e:60:90:0c:4e:01" />}
-		append start_nodes {
-				</config>
+
+#	if { [use_usb_drv feature] } {
+#		append start_nodes {
+#			<start name="usb_drv" caps="120">
+#				<binary name="} [usb_drv_binary] {"/>
+#				<resource name="RAM" quantum="12M"/>
+#				<provides>}
+#		append_if [use_usb_input feature] start_nodes {
+#					<service name="Input"/>}
+#		append_if [use_usb_nic feature] start_nodes {
+#					<service name="Nic"/>}
+#		append start_nodes {
+#				</provides>
+#				<config uhci="yes" ehci="yes" xhci="yes"
+#				        capslock_led="rom" numlock_led="rom">}
+#		append_if [use_usb_input feature] start_nodes {
+#					<hid/>}
+#		append_if [use_usb_nic feature] start_nodes {
+#					<nic mac="2e:60:90:0c:4e:01" />}
+#		append start_nodes {
+#				</config>
+#			<route>
+#				<service name="ROM" label="capslock"> <child name="wm_report_rom"/> </service>
+#				<service name="ROM" label="numlock"> <child name="wm_report_rom"/> </service>
+#				<any-service> <parent/> <any-child/> </any-service>
+#			</route>
+#			</start>
+#		}
+#	}
+
+	append start_nodes {
+		<start name="usb_drv" caps="150">
+			<binary name="imx8q_evk_usb_host_drv"/>
+			<resource name="RAM" quantum="12M"/>
+			<provides> <service name="Usb"/> </provides>
+			<config bios_handoff="yes">
+				<report devices="yes"/>
+				<policy label_prefix="usb_hid_drv" class="0x3"/>
+			</config>
 			<route>
-				<service name="ROM" label="capslock"> <child name="wm_report_rom"/> </service>
-				<service name="ROM" label="numlock"> <child name="wm_report_rom"/> </service>
+				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
-			</start>
-		}
+		</start>
+
+		<start name="usb_hid_drv" caps="140">
+			<resource name="RAM" quantum="11M"/>
+			<provides><service name="Input"/></provides>
+			<config use_report="yes"/>
+			<route>
+				<service name="ROM" label="report"> <child name="wm_report_rom"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
 	}
 
 	return $start_nodes
@@ -407,7 +437,9 @@ proc drivers_boot_modules { feature_arg } {
 	lappend_if [use_input_filter feature] boot_modules special.chargen
 	lappend_if [use_nic_drv feature]      boot_modules [nic_drv_binary]
 	lappend_if [use_ps2_drv feature]      boot_modules ps2_drv
-	lappend_if [use_usb_drv feature]      boot_modules [usb_drv_binary]
+	#lappend_if [use_usb_drv feature]      boot_modules [usb_drv_binary]
+	lappend boot_modules imx8q_evk_usb_host_drv
+	lappend boot_modules usb_hid_drv
 
 	return $boot_modules
 }
