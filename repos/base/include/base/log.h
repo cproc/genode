@@ -150,7 +150,7 @@ namespace Genode {
 	 * formatting error/warning messages.
 	 */
 	template <typename... ARGS>
-	void warning(ARGS &&... args) { Log::log().output(Log::WARNING, args...); }
+	void warning(ARGS &&... /*args*/) { /*Log::log().output(Log::WARNING, args...);*/ }
 
 
 	/**
