@@ -131,7 +131,7 @@ void Kernel::Thread::_call_cache_coherent_region()
 		Cpu::cache_coherent_region(base, size);
 	} else {
 		Genode::raw(*this, " tried to make invalid address ",
-		            base, " cache coherent");
+		            (void*)base, " cache coherent");
 	}
 }
 
