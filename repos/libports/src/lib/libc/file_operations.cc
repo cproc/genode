@@ -204,6 +204,7 @@ static void resolve_symlinks_except_last_element(char const *path, Absolute_path
 
 extern "C" int access(const char *path, int amode)
 {
+Genode::warning(&path, ": access(", Genode::Cstring(path), ")");
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
@@ -233,6 +234,7 @@ extern "C" int chdir(const char *path)
  */
 __SYS_(int, close, (int libc_fd),
 {
+Genode::warning(&libc_fd, ": close(): fd: ", libc_fd);
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 
 	if (!fd)
@@ -354,6 +356,7 @@ __SYS_(int, fdatasync, (int libc_fd), {
 
 
 __SYS_(int, ftruncate, (int libc_fd, ::off_t length), {
+Genode::warning(&libc_fd, ": ftruncate(): libc_fd: ", libc_fd);
 	FD_FUNC_WRAPPER(ftruncate, libc_fd, length); })
 
 
@@ -371,6 +374,7 @@ __SYS_(::off_t, lseek, (int libc_fd, ::off_t offset, int whence), {
 
 extern "C" int lstat(const char *path, struct stat *buf)
 {
+Genode::warning(&path, ": lstat(): ", Genode::Cstring(path));
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks_except_last_element(path, resolved_path);
@@ -398,15 +402,27 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
 {
+Genode::warning(&length, ": mmap(): addr: ", addr,
+                ", libc_fd: ", libc_fd,
+                ", offset: ", offset,
+                ", length: ", length);
 	/* handle requests for anonymous memory */
-	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
-		bool const executable = /*prot & PROT_EXEC*/true;
+	if ((flags & MAP_ANONYMOUS) || (flags & MAP_ANON)) {
+
+		if (addr && (flags & MAP_FIXED)) {
+			Genode::error("mmap anonymous memory at fixed address not supported yet");
+			errno = EINVAL;
+			return MAP_FAILED;
+		}
+
+		bool const executable = true/*prot & PROT_EXEC*/;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
 		}
 		mmap_registry()->insert(start, length, 0);
+Genode::warning(&length, ": mmap(): ", start, " - ", (void*)((addr_t)start + length - 1));
 		return start;
 	}
 
@@ -420,16 +436,22 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 	mmap_registry()->insert(start, length, fd->plugin);
+Genode::warning(&length, ": mmap(): ", start, " - ", (void*)((addr_t)start + length - 1));
 	return start;
 })
 
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+Genode::warning(&start, ": munmap(): start: ", start, ", length: ", length);
 	if (!mmap_registry()->registered(start)) {
 		warning("munmap: could not lookup plugin for address ", start);
+#if 0
 		errno = EINVAL;
 		return -1;
+#else
+		return 0;
+#endif
 	}
 
 	/*
@@ -476,9 +498,10 @@ __SYS_(int, msync, (void *start, ::size_t len, int flags),
 	return ret;
 })
 
-
+extern "C" void wait_for_continue();
 __SYS_(int, open, (const char *pathname, int flags, ...),
 {
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), ")");
 	Absolute_path resolved_path;
 
 	Plugin *plugin;
@@ -487,6 +510,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	try {
 		resolve_symlinks_except_last_element(pathname, resolved_path);
 	} catch (Symlink_resolve_error) {
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
 		return -1;
 	}
 
@@ -496,10 +520,14 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 			resolve_symlinks(resolved_path.base(), resolved_path);
 		} catch (Symlink_resolve_error) {
 			if (errno == ENOENT) {
-				if (!(flags & O_CREAT))
+				if (!(flags & O_CREAT)) {
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
 					return -1;
-			} else
+				}
+			} else {
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): -1");
 				return -1;
+			}
 		}
 	}
 
@@ -512,10 +540,13 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 
 	new_fdo = plugin->open(resolved_path.base(), flags);
 	if (!new_fdo) {
-		error("plugin()->open(\"", pathname, "\") failed");
+		error(&flags, ": plugin()->open(\"", pathname, "\") failed");
+		wait_for_continue();
 		return -1;
 	}
 	new_fdo->path(resolved_path.base());
+
+Genode::warning(&flags, ": open(", Genode::Cstring(pathname), "): fd: ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 })
@@ -587,6 +618,8 @@ extern "C" int pipe2(int pipefd[2], int flags)
 
 
 __SYS_(ssize_t, read, (int libc_fd, void *buf, ::size_t count), {
+if (libc_fd != 4)
+	Genode::warning(&libc_fd, ": read(): fd: ", libc_fd, ", count: ", count);
 	FD_FUNC_WRAPPER(read, libc_fd, buf, count); })
 
 
@@ -645,6 +678,7 @@ extern "C" int rmdir(const char *path)
 
 extern "C" int stat(const char *path, struct stat *buf)
 {
+Genode::warning(&path, ": stat(", Genode::Cstring(path), ")");
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks(path, resolved_path);
@@ -681,6 +715,8 @@ extern "C" int unlink(const char *path)
 
 __SYS_(ssize_t, write, (int libc_fd, const void *buf, ::size_t count),
 {
+if (libc_fd != 5)
+	Genode::warning(&libc_fd, ": write(): fd: ", libc_fd, ", count: ", count);
 	int flags = fcntl(libc_fd, F_GETFL);
 
 	if ((flags != -1) && (flags & O_APPEND))
