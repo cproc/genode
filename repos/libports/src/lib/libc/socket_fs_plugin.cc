@@ -115,7 +115,7 @@ namespace Libc { namespace Socket_fs {
 
 using namespace Libc::Socket_fs;
 
-
+extern "C" void wait_for_continue();
 struct Libc::Socket_fs::Context : Plugin_context
 {
 	public:
@@ -279,6 +279,8 @@ struct Libc::Socket_fs::Context : Plugin_context
 
 			if (connect_status_len <= 0) {
 				error("socket_fs: reading from the connect file failed");
+				error(&connect_status_len, ": wait_for_continue()");
+				wait_for_continue();
 				return -1;
 			}
 
@@ -620,6 +622,9 @@ extern "C" int socket_fs_accept(int libc_fd, sockaddr *addr, socklen_t *addrlen)
 	accept_context->fd_flags(listen_context->fd_flags());
 
 	_accept_fd.confirm();
+int dummy;
+Genode::warning(&dummy, ": socket_fs_accept(): fd: ", accept_fd->libc_fd);
+
 	return accept_fd->libc_fd;
 }
 
@@ -800,6 +805,7 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 	int data_fd = flags & MSG_PEEK ? context->peek_fd() : context->data_fd();
 
 	try {
+Genode::warning(&fd, ": do_recvfrom(): fd: ", fd->libc_fd);
 		if (lseek(data_fd, 0, SEEK_SET) != 0)
 			return Errno(EINVAL);
 
@@ -830,6 +836,7 @@ static ssize_t do_recvfrom(File_descriptor *fd,
 extern "C" ssize_t socket_fs_recvfrom(int libc_fd, void *buf, ::size_t len, int flags,
                                       sockaddr *src_addr, socklen_t *src_addrlen)
 {
+Genode::warning(&libc_fd, ": socket_fs_recvfrom(): fd: ", libc_fd);
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	if (!fd) return Errno(EBADF);
 
@@ -839,6 +846,7 @@ extern "C" ssize_t socket_fs_recvfrom(int libc_fd, void *buf, ::size_t len, int 
 
 extern "C" ssize_t socket_fs_recv(int libc_fd, void *buf, ::size_t len, int flags)
 {
+Genode::warning(&libc_fd, ": socket_fs_recv(): fd: ", libc_fd);
 	/* identical to recvfrom() with a NULL src_addr argument */
 	return socket_fs_recvfrom(libc_fd, buf, len, flags, nullptr, nullptr);
 }
@@ -1070,7 +1078,8 @@ extern "C" int socket_fs_socket(int domain, int type, int protocol)
 		destroy(alloc, context);
 		return Errno(EMFILE);
 	}
-Genode::warning("socket_fs_socket(): ", fd->libc_fd);
+int dummy;
+Genode::warning(&dummy, ": socket_fs_socket(): fd: ", fd->libc_fd);
 	return fd->libc_fd;
 }
 
@@ -1300,6 +1309,7 @@ int Socket_fs::Plugin::select(int nfds,
 extern "C" void wait_for_continue();
 int Socket_fs::Plugin::close(File_descriptor *fd)
 {
+Genode::warning(&fd, ": Socket_fs::Plugin::close(): ", fd->libc_fd);
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(EBADF);
 
