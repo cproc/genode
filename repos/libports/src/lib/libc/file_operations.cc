@@ -398,9 +398,8 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
 {
-
 	/* handle requests for anonymous memory */
-	if (!addr && libc_fd == -1) {
+	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
 		bool const executable = prot & PROT_EXEC;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
