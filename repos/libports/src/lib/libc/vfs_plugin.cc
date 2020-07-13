@@ -341,6 +341,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int 
 		switch (_root_fs.open(path, flags, &handle, _alloc)) {
 
 		case Result::OPEN_OK:
+Genode::warning(&path, ": Vfs_plugin::open(): ", Genode::Cstring(path), ": handle: ", handle);
 			break;
 
 		case Result::OPEN_ERR_UNACCESSIBLE:
@@ -846,6 +847,8 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
                                 ::size_t count)
 {
+//Genode::warning(&fd, ": Vfs_plugin::write(): fd: ", fd->libc_fd, ", count: ", count);
+
 	typedef Vfs::File_io_service::Write_result Result;
 
 	if ((fd->flags & O_ACCMODE) == O_RDONLY) {
@@ -976,6 +979,7 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", count: ", count);
 	/* TODO why is this required? */
 	dispatch_pending_io_signals();
 
@@ -997,6 +1001,7 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	int result_errno = 0;
 	monitor().monitor(vfs_mutex(), [&] {
 		if (fd->flags & O_NONBLOCK && !read_ready_from_kernel(fd)) {
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ": EAGAIN");
 			result_errno = EAGAIN;
 			return Fn::COMPLETE;
 		}
@@ -1029,6 +1034,7 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	}
 
 	handle->advance_seek(out_count);
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", out_count: ", out_count);
 
 	return out_count;
 }
@@ -1670,6 +1676,9 @@ int Libc::Vfs_plugin::rename(char const *from_path, char const *to_path)
 void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags,
                              File_descriptor *fd, ::off_t offset)
 {
+Genode::warning(&length, ": Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
+                ", offset: ", offset, ", length: ", length);
+
 	if ((prot != PROT_READ) && (prot != (PROT_READ | PROT_WRITE))) {
 		error("mmap for prot=", Hex(prot), " not supported");
 		errno = EACCES;
@@ -1734,7 +1743,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 
 		addr = region_map().attach(ds_cap, length, offset);
 	}
-
+//Genode::warning(&length, ": Vfs_plugin::mmap(): ", addr);
 	return addr;
 }
 
