@@ -834,6 +834,7 @@ class Vfs::Fs_file_system : public File_system
 
 				*out_handle = new (alloc)
 					Fs_vfs_file_handle(*this, alloc, vfs_mode, _handle_space, file, _fs);
+Genode::warning(&path, ": Fs_file_system::open(): ", Genode::Cstring(path), ": ", *out_handle);
 			}
 			catch (::File_system::Lookup_failed)       { return OPEN_ERR_UNACCESSIBLE;  }
 			catch (::File_system::Permission_denied)   { return OPEN_ERR_NO_PERM;       }
@@ -992,6 +993,7 @@ class Vfs::Fs_file_system : public File_system
 		{
 			Mutex::Guard guard(_mutex);
 
+//Genode::warning(&vfs_handle, ": Fs_file_system::queue_read(): ", vfs_handle);
 			Fs_vfs_handle *handle = static_cast<Fs_vfs_handle *>(vfs_handle);
 
 			bool result = handle->queue_read(count);
@@ -1004,6 +1006,7 @@ class Vfs::Fs_file_system : public File_system
 		                          file_size &out_count) override
 		{
 			Mutex::Guard guard(_mutex);
+//Genode::warning(&vfs_handle, ": Fs_file_system::complete_read(): ", vfs_handle);
 
 			out_count = 0;
 
