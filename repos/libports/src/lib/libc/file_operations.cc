@@ -399,9 +399,8 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
 {
-
 	/* handle requests for anonymous memory */
-	if (!addr && libc_fd == -1) {
+	if (!(addr && (flags & MAP_FIXED)) && libc_fd == -1) {
 		bool const executable = prot & PROT_EXEC;
 		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
 		if (!start) {
@@ -430,8 +429,12 @@ extern "C" int munmap(void *start, ::size_t length)
 {
 	if (!mmap_registry()->registered(start)) {
 		warning("munmap: could not lookup plugin for address ", start);
+#if 0
 		errno = EINVAL;
 		return -1;
+#else
+		return 0;
+#endif
 	}
 
 	/*
