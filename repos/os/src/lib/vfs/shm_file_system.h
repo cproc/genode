@@ -20,250 +20,29 @@
 
 namespace Vfs { class Shm_file_system; }
 
-namespace Vfs_shm {
-
-	using namespace Genode;
-	using namespace Vfs;
-	using namespace Ram_fs;
-	using File_system::Chunk;
-	using File_system::Chunk_index;
-
-	struct Io_handle;
-	struct Watch_handle;
-
-	class Node;
-	class File;
-	class Symlink;
-	class Directory;
-
-	enum { MAX_NAME_LEN = 128 };
-
-	typedef Genode::Allocator::Out_of_memory Out_of_memory;
-
-	/**
-	 * Return base-name portion of null-terminated path string
-	 */
-	static inline char const *basename(char const *path)
-	{
-		char const *start = path;
-
-		for (; *path; ++path)
-			if (*path == '/')
-				start = path + 1;
-
-		return start;
-	}
-
-}
-
-
-struct Vfs_shm::Io_handle final : public  Vfs_handle,
-                                  private Genode::List<Io_handle>::Element
-{
-	friend Genode::List<Io_handle>;
-
-	Vfs_shm::Node &node;
-
-	/* Track if this handle has modified its node */
-	bool modifying = false;
-
-	Io_handle(Vfs::File_system &fs,
-	          Allocator       &alloc,
-	          int              status_flags,
-	          Vfs_shm::Node   &node)
-	: Vfs_handle(fs, fs, alloc, status_flags), node(node)
-	{ }
-};
-
-
-struct Vfs_shm::Watch_handle final : public  Vfs_watch_handle,
-                                     private Genode::List<Watch_handle>::Element
-{
-	friend Genode::List<Watch_handle>;
-	using Genode::List<Watch_handle>::Element::next;
-
-	Vfs_shm::Node &node;
-
-	Watch_handle(Vfs::File_system &fs,
-	             Allocator        &alloc,
-	             Node             &node)
-	: Vfs_watch_handle(fs, alloc), node(node) { }
-};
-
-extern "C" void wait_for_continue();
-class Vfs_shm::Node : private Genode::Avl_node<Node>, private Genode::Mutex
+class Vfs_shm_file : Genode::List<Vfs_shm_file>::Element
 {
 	private:
 
-		friend class Genode::Avl_node<Node>;
-		friend class Genode::Avl_tree<Node>;
-		friend class Genode::List<Io_handle>;
-		friend class Genode::List<Io_handle>::Element;
-		friend class Genode::List<Watch_handle>;
-		friend class Genode::List<Watch_handle>::Element;
-		friend class Watch_handle;
-		friend class Directory;
-
-		char _name[MAX_NAME_LEN];
-		Genode::List<Io_handle>       _io_handles { };
-		Genode::List<Watch_handle> _watch_handles { };
-
-		/**
-		 * Generate unique inode number
-		 */
-		static unsigned _unique_inode()
-		{
-			static unsigned long inode_count;
-			return ++inode_count;
-		}
-
-		Vfs::Timestamp _modification_time { Vfs::Timestamp::INVALID };
-
-	public:
-
-		using Mutex::acquire;
-		using Mutex::release;
-
-		unsigned inode;
-
-		Node(char const *node_name)
-		: inode(_unique_inode())
-		{
-			name(node_name);
-		}
-
-		virtual ~Node() { }
-
-		char const *name() { return _name; }
-		void name(char const *name) { copy_cstring(_name, name, MAX_NAME_LEN); }
-
-		virtual Vfs::file_size length() = 0;
-
-		void open(Io_handle &handle) { _io_handles.insert(&handle); }
-		void open(Watch_handle &handle) { _watch_handles.insert(&handle); }
-
-		bool opened() const
-		{
-			return _io_handles.first() != nullptr;
-		}
-
-		void close(Io_handle &handle)    {    _io_handles.remove(&handle); }
-		void close(Watch_handle &handle) { _watch_handles.remove(&handle); }
-
-		void notify()
-		{
-			for (Watch_handle *h = _watch_handles.first(); h; h = h->next())
-				h->watch_response();
-		}
-
-		void unlink() { inode = 0; }
-		bool unlinked() const { return inode == 0; }
-
-		bool update_modification_timestamp(Vfs::Timestamp time)
-		{
-			_modification_time = time;
-			return true;
-		}
-
-		Vfs::Timestamp modification_time() const { return _modification_time; }
-
-		Vfs::Node_rwx rwx() const
-		{
-			return { .readable   = true,
-			         .writeable  = true,
-			         .executable = true };
-		}
-
-		virtual size_t read(char*, size_t, file_size)
-		{
-			Genode::error("Vfs_shm::Node::read() called");
-			return 0;
-		}
-
-		virtual Vfs::File_io_service::Read_result complete_read(char *,
-		                                                        file_size,
-		                                                        file_size,
-		                                                        file_size &)
-		{
-			Genode::error("Vfs_shm::Node::complete_read() called");
-			return Vfs::File_io_service::READ_ERR_INVALID;
-		}
-
-		virtual size_t write(char const *, size_t, file_size)
-		{
-			Genode::error("Vfs_shm::Node::write() called");
-			return 0;
-		}
-
-		virtual void truncate(file_size)
-		{
-			Genode::error("Vfs_shm::Node::truncate() called");
-		}
-
-		/************************
-		 ** Avl node interface **
-		 ************************/
-
-		bool higher(Node *c) { return (strcmp(c->_name, _name) > 0); }
-
-		/**
-		 * Find index N by walking down the tree N times,
-		 * not the most efficient way to do this.
-		 */
-		Node *index(file_offset &i)
-		{
-			if (i-- == 0)
-				return this;
-
-			Node *n;
-
-			n = child(LEFT);
-			if (n)
-				n = n->index(i);
-
-			if (n) return n;
-
-			n = child(RIGHT);
-			if (n)
-				n = n->index(i);
-
-			return n;
-		}
-
-		Node *sibling(const char *name)
-		{
-			if (strcmp(name, _name) == 0) return this;
-
-			Node *c =
-				Avl_node<Node>::child(strcmp(name, _name) > 0);
-			return c ? c->sibling(name) : nullptr;
-		}
-
-		struct Guard
-		{
-			Node &node;
-			bool release { true };
-
-			Guard(Node *guard_node) : node(*guard_node) { node.acquire(); }
-
-			~Guard() { if (release) node.release(); }
-		};
-};
-
-
-class Vfs_shm::File : public Vfs_shm::Node
-{
-	private:
+		typedef String<MAX_NAME_LEN> Filename;
+		Filename       _filename { };
 
 		Ram_allocator &_ram;
-		file_size      _length = 0;
+
+		file_size      _length { 0 };
 
 	public:
+
+		bool matches(const char *path)
+		{
+			return (strlen(path) == (strlen(_filename.string()) + 1)) &&
+			       (strcmp(&path[1], _filename.string()) == 0);
+		}
 
 		Ram_dataspace_capability ds_cap { };
 
-		File(char const *name, Ram_allocator &ram)
-		: Node(name), _ram(ram) { }
+		Vfs_shm_file(char const *name, Ram_allocator &ram)
+		: _filename(name), _ram(ram) { }
 
 		~File()
 		{
@@ -305,226 +84,98 @@ class Vfs_shm::File : public Vfs_shm::Node
 };
 
 
-class Vfs_shm::Symlink : public Vfs_shm::Node
+struct Shm_vfs_handle : Vfs_handle
 {
-	private:
+	using Vfs_handle::Vfs_handle;
 
-		char   _target[MAX_PATH_LEN];
-		size_t _len = 0;
+	virtual Read_result read(char *dst, file_size count,
+			                 file_size &out_count) = 0;
 
-	public:
+	virtual Write_result write(char const *src, file_size count,
+			                   file_size &out_count) = 0;
 
-		Symlink(char const *name) : Node(name) { }
+	virtual Sync_result sync()
+	{
+		return SYNC_OK;
+	}
 
-		file_size length() override { return _len; }
-
-		void set(char const *target, size_t len)
-		{
-			for (size_t i = 0; i < len; ++i) {
-				if (target[i] == '\0') {
-					len = i;
-					break;
-				}
-			}
-
-			_len = len;
-			memcpy(_target, target, _len);
-		}
-
-		size_t get(char *buf, size_t len)
-		{
-			size_t out = min(len, _len);
-			memcpy(buf, _target, out);
-			return out;
-		}
-
-		Vfs::File_io_service::Read_result complete_read(char *dst,
-		                                                file_size count,
-		                                                file_size,
-		                                                file_size &out_count) override
-		{
-			out_count = get(dst, count);
-			return Vfs::File_io_service::READ_OK;
-		}
-
-		size_t write(char const *src, size_t len, file_size) override
-		{
-			if (len > MAX_PATH_LEN)
-				return 0;
-
-			set(src, len);
-
-			return len;
-		}
+	virtual bool read_ready() = 0;
 };
 
-
-class Vfs_shm::Directory : public Vfs_shm::Node
+struct Shm_vfs_dir_handle : Shm_vfs_handle
 {
 	private:
 
-		Avl_tree<Node>  _entries { };
-		file_size       _count = 0;
+		List<Vfs_shm_file> &_files;
+
+		/*
+		 * Noncopyable
+		 */
+		Shm_vfs_dir_handle(Single_vfs_dir_handle const &);
+		Shm_vfs_dir_handle &operator = (Shm_vfs_dir_handle const &);
 
 	public:
 
-		Directory(char const *name)
-		: Node(name) { }
+		Shm_vfs_dir_handle(Directory_service  &ds,
+				           File_io_service    &fs,
+				           List<Vfs_shm_file> &files,
+				           Genode::Allocator  &alloc)
+		:
+			Shm_vfs_handle(ds, fs, alloc, 0),
+			_files(files) { }
 
-		void empty(Allocator &alloc)
+		Read_result read(char *dst, file_size count,
+				         file_size &out_count) override
 		{
-			while (Node *node = _entries.first()) {
-				_entries.remove(node);
-				if (File *file = dynamic_cast<File*>(node)) {
-					if (file->opened())
-						continue;
-				} else if (Directory *dir = dynamic_cast<Directory*>(node)) {
-					dir->empty(alloc);
-				}
-				destroy(alloc, node);
-			}
-		}
+			Genode::error("Shm_vfs_dir_handle::read() called, not implemented");
 
-		void adopt(Node *node)
-		{
-			_entries.insert(node);
-			++_count;
-		}
-
-		Node *child(char const *name)
-		{
-			Node *node = _entries.first();
-			return node ? node->sibling(name) : nullptr;
-		}
-
-		void release(Node *node)
-		{
-			_entries.remove(node);
-			--_count;
-		}
-
-		file_size length() override { return _count; }
-
-		Vfs::File_io_service::Read_result complete_read(char *dst,
-		                                                file_size count,
-		                                                file_size seek_offset,
-			                                            file_size &out_count) override
-		{
-			typedef Vfs::Directory_service::Dirent Dirent;
+			out_count = 0;
 
 			if (count < sizeof(Dirent))
-				return Vfs::File_io_service::READ_ERR_INVALID;
+				return READ_ERR_INVALID;
 
-			file_offset index = seek_offset / sizeof(Dirent);
+			Dirent &out = *(Dirent*)dst;
 
-			Dirent &dirent = *(Dirent*)dst;
-
-			using Dirent_type = Vfs::Directory_service::Dirent_type;
+			out = {
+				.fileno = (Genode::addr_t)this,
+				.type   = Dirent_type::END,
+				.rwx    = { },
+				.name   = { }
+			};
 
 			out_count = sizeof(Dirent);
 
-			Node *node_ptr = _entries.first();
-			if (node_ptr) node_ptr = node_ptr->index(index);
-			if (!node_ptr) {
-				dirent.type = Dirent_type::END;
-				return Vfs::File_io_service::READ_OK;
-			}
-
-			Node &node = *node_ptr;
-
-			auto dirent_type = [&] ()
-			{
-				if (dynamic_cast<File      *>(node_ptr)) return Dirent_type::CONTINUOUS_FILE;
-				if (dynamic_cast<Directory *>(node_ptr)) return Dirent_type::DIRECTORY;
-				if (dynamic_cast<Symlink   *>(node_ptr)) return Dirent_type::SYMLINK;
-
-				return Dirent_type::END;
-			};
-
-			Dirent_type const type = dirent_type();
-
-			if (type == Dirent_type::END)
-				return Vfs::File_io_service::READ_ERR_INVALID;
-
-			dirent = {
-				.fileno = node.inode,
-				.type   = type,
-				.rwx    = node.rwx(),
-				.name   = { node.name() }
-			};
-
-			return Vfs::File_io_service::READ_OK;
+			return READ_OK;
 		}
-};
 
+		Write_result write(char const *, file_size, file_size &) override
+		{
+			return WRITE_ERR_INVALID;
+		}
+
+		bool read_ready() override { return true; }
+};
 
 class Vfs::Shm_file_system : public Vfs::File_system
 {
 	private:
 
-		friend class Genode::List<Vfs_shm::Watch_handle>;
+		Vfs::Env &_env;
+		Genode::List<Vfs_shm_file> _files;
+		size_t                     _num_dirent { 0 };
 
-		Vfs::Env           &_env;
-		Vfs_shm::Directory  _root = { "" };
-
-		Vfs_shm::Node *lookup(char const *path, bool return_parent = false)
+		bool _root(const char *path)
 		{
-			using namespace Vfs_shm;
-
-			if (*path ==  '/') ++path;
-			if (*path == '\0') return &_root;
-
-			char buf[Vfs::MAX_PATH_LEN];
-			copy_cstring(buf, path, Vfs::MAX_PATH_LEN);
-			Directory *dir = &_root;
-
-			char *name = &buf[0];
-			for (size_t i = 0; i < MAX_PATH_LEN; ++i) {
-				if (buf[i] == '/') {
-					buf[i] = '\0';
-
-					Node *node = dir->child(name);
-					if (!node) return nullptr;
-
-					dir = dynamic_cast<Directory *>(node);
-					if (!dir) return nullptr;
-
-					/* set the current name aside */
-					name = &buf[i+1];
-				} else if (buf[i] == '\0') {
-					if (return_parent)
-						return dir;
-					else
-						return dir->child(name);
-				}
-			}
-			return nullptr;
+			return (strcmp(path, "") == 0) || (strcmp(path, "/") == 0);
 		}
 
-		Vfs_shm::Directory *lookup_parent(char const *path)
+		Vfs_shm_file *_lookup(char const *path)
 		{
-			using namespace Vfs_shm;
-
-			Node *node = lookup(path, true);
-			if (node)
-				return dynamic_cast<Directory *>(node);
-			return nullptr;
-		}
-
-		void remove(Vfs_shm::Node *node)
-		{
-			using namespace Vfs_shm;
-
-			if (File *file = dynamic_cast<File*>(node)) {
-				if (file->opened()) {
-					file->unlink();
-					return;
-				}
-			} else if (Directory *dir = dynamic_cast<Directory*>(node)) {
-				dir->empty(_env.alloc());
+			for (Vfs_shm_file *file = _files.first(); file; file = file->next()) {
+				if (file->matches(path)
+					return file;
 			}
-
-			destroy(_env.alloc(), node);
+			return nullptr;
 		}
 
 	public:
@@ -538,31 +189,79 @@ class Vfs::Shm_file_system : public Vfs::File_system
 		 ** Directory service interface **
 		 *********************************/
 
-		file_size num_dirent(char const *path) override
+		Dataspace_capability dataspace(char const *path) override
 		{
 			using namespace Vfs_shm;
+Genode::warning(&path, ": Vfs::Shm_file_system::dataspace(): ", Genode::Cstring(path));
+			Ram_dataspace_capability ds_cap;
 
-			if (Node *node = lookup(path)) {
-				Node::Guard guard(node);
-				if (Directory *dir = dynamic_cast<Directory *>(node))
-					return dir->length();
+			Vfs_shm_file *file = _lookup(path);
+
+			if (!file) {
+Genode::error("Vfs::Shm_file_system::dataspace(): lookup failed");
+				return ds_cap;
 			}
 
-			return 0;
+			return file->ds_cap;
+		}
+
+		void release(char const *, Dataspace_capability ds_cap) override {
+			_env.env().ram().free(
+				static_cap_cast<Genode::Ram_dataspace>(ds_cap)); }
+
+		Stat_result stat(char const *path, Stat &out) override
+		{
+			out = Stat { };
+			out.device = (Genode::addr_t)this;
+
+			if (_root(path)) {
+				out.type = Node_type::DIRECTORY;
+
+			} else if ((Vfs_shm_file *file = _lookup(path))) {
+				out.type  = Node_type::CONTINUOUS_FILE;
+				out.rwx   = Node_rwx::rw();
+				out.inode = (unsigned long)file;
+			} else {
+				return STAT_ERR_NO_ENTRY;
+			}
+			return STAT_OK;
+		}
+
+		file_size num_dirent(char const *path) override
+		{
+			if (_root(path))
+				return 1;
+			else
+				return _num_dirent;
 		}
 
 		bool directory(char const *path) override
 		{
-			using namespace Vfs_shm;
+			if (_root(path))
+				return true;
 
-			Node *node = lookup(path);
-			return node
-				? (dynamic_cast<Directory *>(node) != nullptr)
-				: false;
+			return false;
 		}
 
 		char const *leaf_path(char const *path) override {
-			return lookup(path) ? path : nullptr; }
+			return _lookup(path) ? path : nullptr; }
+
+		Opendir_result opendir(char const  *path, bool create,
+		                       Vfs_handle **handle,
+		                       Allocator   &alloc) override
+		{
+			if (!_root(path))
+				return OPENDIR_ERR_LOOKUP_FAILED;
+
+			if (create)
+				return OPENDIR_ERR_PERMISSION_DENIED;
+
+			try {
+				*out_handle = new (alloc)
+					Shm_vfs_dir_handle(*this, *this, alloc, _files);
+				return OPENDIR_OK;
+			}
+		}
 
 		Open_result open(char const  *path, unsigned mode,
 		                 Vfs_handle **handle,
@@ -572,34 +271,31 @@ Genode::warning(&path, ": Vfs::Shm_file_system::open(): path: ", Genode::Cstring
                 ", mode: ", Genode::Hex(mode));
 			using namespace Vfs_shm;
 
-			File *file;
-			char const *name = basename(path);
+			Vfs_shm_File *file;
+			//char const *name = basename(path);
+			char const *name = path;
 			bool const create = mode & OPEN_MODE_CREATE;
 
 			if (create) {
-				Directory *parent = lookup_parent(path);
-				if (!parent) return OPEN_ERR_UNACCESSIBLE;
-				Node::Guard guard(parent);
 
-				if (parent->child(name)) return OPEN_ERR_EXISTS;
+				/* XXX lookup first */
 
 				if (strlen(name) >= MAX_NAME_LEN)
 					return OPEN_ERR_NAME_TOO_LONG;
 
-				try { file = new (_env.alloc()) File(name, _env.env().ram()); }
+				try { file = new (_env.alloc()) Vfs_shm_file(name, _env.env().ram()); }
 				catch (Out_of_memory) { return OPEN_ERR_NO_SPACE; }
-				parent->adopt(file);
-				parent->notify();
+
+				_files.insert(file);
 Genode::warning(&path, ": Vfs::Shm_file_system::open(): new file created: ", file);
 			} else {
-				Node *node = lookup(path);
-				if (!node) return OPEN_ERR_UNACCESSIBLE;
-
-				file = dynamic_cast<File *>(node);
+				Vfs_hm_file *file = _lookup(path);
 				if (!file) return OPEN_ERR_UNACCESSIBLE;
+
 Genode::warning(&path, ": Vfs::Shm_file_system::open(): file found: ", file);
 			}
 
+			/* XXX create handle */
 			try {
 				*handle = new (alloc) Io_handle(*this, alloc, mode, *file);
 				return OPEN_OK;
@@ -615,121 +311,6 @@ Genode::warning(&path, ": Vfs::Shm_file_system::open(): file found: ", file);
 					remove(file);
 				}
 				return OPEN_ERR_OUT_OF_CAPS;
-			}
-		}
-
-		Opendir_result opendir(char const  *path, bool create,
-		                       Vfs_handle **handle,
-		                       Allocator   &alloc) override
-		{
-			using namespace Vfs_shm;
-
-			Directory *parent = lookup_parent(path);
-			if (!parent) return OPENDIR_ERR_LOOKUP_FAILED;
-			Node::Guard guard(parent);
-
-			char const *name = basename(path);
-
-			Directory *dir;
-
-			if (create) {
-				if (*name == '\0')
-					return OPENDIR_ERR_NODE_ALREADY_EXISTS;
-
-				if (strlen(name) >= MAX_NAME_LEN)
-					return OPENDIR_ERR_NAME_TOO_LONG;
-
-				if (parent->child(name))
-					return OPENDIR_ERR_NODE_ALREADY_EXISTS;
-
-				try { dir = new (_env.alloc()) Directory(name); }
-				catch (Out_of_memory) { return OPENDIR_ERR_NO_SPACE; }
-
-				parent->adopt(dir);
-				parent->notify();
-			} else {
-
-				Node *node = lookup(path);
-				if (!node) return OPENDIR_ERR_LOOKUP_FAILED;
-
-				dir = dynamic_cast<Directory *>(node);
-				if (!dir) return OPENDIR_ERR_LOOKUP_FAILED;
-			}
-
-			try {
-				*handle = new (alloc) Io_handle(
-					*this, alloc, Io_handle::STATUS_RDONLY, *dir);
-				return OPENDIR_OK;
-			} catch (Genode::Out_of_ram) {
-				if (create) {
-					parent->release(dir);
-					remove(dir);
-				}
-				return OPENDIR_ERR_OUT_OF_RAM;
-			} catch (Genode::Out_of_caps) {
-				if (create) {
-					parent->release(dir);
-					remove(dir);
-				}
-				return OPENDIR_ERR_OUT_OF_CAPS;
-			}
-		}
-
-		Openlink_result openlink(char const *path, bool create,
-		                         Vfs_handle **handle, Allocator &alloc) override
-		{
-			using namespace Vfs_shm;
-
-			Directory *parent = lookup_parent(path);
-			if (!parent) return OPENLINK_ERR_LOOKUP_FAILED;
-			Node::Guard guard(parent);
-
-			char const *name = basename(path);
-
-			Symlink *link;
-
-			Node *node = parent->child(name);
-
-			if (create) {
-
-				if (node)
-					return OPENLINK_ERR_NODE_ALREADY_EXISTS;
-
-				if (strlen(name) >= MAX_NAME_LEN)
-					return OPENLINK_ERR_NAME_TOO_LONG;
-
-				try { link = new (_env.alloc()) Symlink(name); }
-				catch (Out_of_memory) { return OPENLINK_ERR_NO_SPACE; }
-
-				link->acquire();
-				parent->adopt(link);
-				link->release();
-				parent->notify();
-			} else {
-
-				if (!node) return OPENLINK_ERR_LOOKUP_FAILED;
-				Node::Guard guard(node);
-
-				link = dynamic_cast<Symlink *>(node);
-				if (!link) return OPENLINK_ERR_LOOKUP_FAILED;
-			}
-
-			try {
-				*handle = new (alloc)
-					Io_handle(*this, alloc, Io_handle::STATUS_RDWR, *link);
-				return OPENLINK_OK;
-			} catch (Genode::Out_of_ram) {
-				if (create) {
-					parent->release(link);
-					remove(link);
-				}
-				return OPENLINK_ERR_OUT_OF_RAM;
-			} catch (Genode::Out_of_caps) {
-				if (create) {
-					parent->release(link);
-					remove(link);
-				}
-				return OPENLINK_ERR_OUT_OF_CAPS;
 			}
 		}
 
@@ -765,7 +346,6 @@ Genode::warning(&path, ": Vfs::Shm_file_system::open(): file found: ", file);
 			auto node_type = [&] ()
 			{
 				if (dynamic_cast<Directory *>(node_ptr)) return Node_type::DIRECTORY;
-				if (dynamic_cast<Symlink   *>(node_ptr)) return Node_type::SYMLINK;
 
 				return Node_type::CONTINUOUS_FILE;
 			};
@@ -784,60 +364,7 @@ Genode::warning(&path, ": Vfs::Shm_file_system::open(): file found: ", file);
 
 		Rename_result rename(char const *from, char const *to) override
 		{
-			using namespace Vfs_shm;
-
-			if ((strcmp(from, to) == 0) && lookup(from))
-				return RENAME_OK;
-
-			char const *new_name = basename(to);
-			if (strlen(new_name) >= MAX_NAME_LEN)
-				return RENAME_ERR_NO_PERM;
-
-			Directory *from_dir = lookup_parent(from);
-			if (!from_dir) return RENAME_ERR_NO_ENTRY;
-			Node::Guard from_guard(from_dir);
-
-			Directory *to_dir = lookup_parent(to);
-			if (!to_dir) return RENAME_ERR_NO_ENTRY;
-
-			/* unlock the node so a second guard can be constructed */
-			if (from_dir == to_dir) {
-				from_dir->Node::release();
-				from_guard.release = false;
-			}
-
-			Node::Guard to_guard(to_dir);
-
-			Node *from_node = from_dir->child(basename(from));
-			if (!from_node) return RENAME_ERR_NO_ENTRY;
-			Node::Guard guard(from_node);
-
-			Node *to_node = to_dir->child(new_name);
-			if (to_node) {
-				to_node->acquire();
-
-				if (Directory *dir = dynamic_cast<Directory*>(to_node))
-					if (dir->length() || (!dynamic_cast<Directory*>(from_node)))
-						return RENAME_ERR_NO_PERM;
-
-				/* detach node to be replaced from directory */
-				to_dir->release(to_node);
-
-				/* notify the node being replaced */
-				to_node->notify();
-
-				/* free the node that is replaced */
-				remove(to_node);
-			}
-
-			from_dir->release(from_node);
-			from_node->name(new_name);
-			to_dir->adopt(from_node);
-
-			from_dir->notify();
-			to_dir->notify();
-
-			return RENAME_OK;
+			return RENAME_ERR_NO_PERM;
 		}
 
 		Unlink_result unlink(char const *path) override
@@ -859,28 +386,6 @@ Genode::warning(&path, ": Vfs::Shm_file_system::open(): file found: ", file);
 			return UNLINK_OK;
 		}
 
-		Dataspace_capability dataspace(char const *path) override
-		{
-			using namespace Vfs_shm;
-Genode::warning(&path, ": Vfs::Shm_file_system::dataspace(): ", Genode::Cstring(path));
-			Ram_dataspace_capability ds_cap;
-
-			Node *node = lookup(path);
-			if (!node) {
-Genode::error("Vfs::Shm_file_system::dataspace(): lookup failed");
-				return ds_cap;
-			}
-			Node::Guard guard(node);
-
-			File *file = dynamic_cast<File *>(node);
-			if (!file) return ds_cap;
-
-			return file->ds_cap;
-		}
-
-		void release(char const *, Dataspace_capability ds_cap) override {
-			_env.env().ram().free(
-				static_cap_cast<Genode::Ram_dataspace>(ds_cap)); }
 
 
 		/************************
