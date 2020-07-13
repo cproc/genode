@@ -321,6 +321,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags,
 		switch (VFS_THREAD_SAFE(_root_fs.open(path, flags, &handle, _alloc))) {
 
 		case Result::OPEN_OK:
+Genode::warning(&path, ": Vfs_plugin::open(): ", Genode::Cstring(path), ": handle: ", handle);
 			break;
 
 		case Result::OPEN_ERR_UNACCESSIBLE:
@@ -655,6 +656,8 @@ int Libc::Vfs_plugin::stat(char const *path, struct stat *buf)
 ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
                                 ::size_t count)
 {
+//Genode::warning(&fd, ": Vfs_plugin::write(): fd: ", fd->libc_fd, ", count: ", count);
+
 	typedef Vfs::File_io_service::Write_result Result;
 
 	if ((fd->flags & O_ACCMODE) == O_RDONLY) {
@@ -812,6 +815,8 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", count: ", count);
+
 	dispatch_pending_io_signals();
 
 	if ((fd->flags & O_ACCMODE) == O_WRONLY) {
@@ -825,8 +830,10 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	if (fd->flags & O_DIRECTORY)
 		return Errno(EISDIR);
 
-	if (fd->flags & O_NONBLOCK && !read_ready(fd))
+	if (fd->flags & O_NONBLOCK && !read_ready(fd)) {
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ": EAGAIN");
 		return Errno(EAGAIN);
+	}
 
 	{
 		struct Check : Suspend_functor
@@ -902,6 +909,7 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	}
 
 	VFS_THREAD_SAFE(handle->advance_seek(out_count));
+//Genode::warning(&fd, ": Vfs_plugin::read(): fd: ", fd->libc_fd, ", out_count: ", out_count);
 
 	return out_count;
 }
@@ -1556,6 +1564,8 @@ int Libc::Vfs_plugin::rename(char const *from_path, char const *to_path)
 void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags,
                              File_descriptor *fd, ::off_t offset)
 {
+Genode::warning(&length, ": Vfs_plugin::mmap(): path: ", Genode::Cstring(fd->fd_path),
+                ", offset: ", offset, ", length: ", length);
 #if 0
 	if (prot != PROT_READ && !(prot == (PROT_READ | PROT_WRITE) && flags == MAP_PRIVATE)) {
 		error("mmap for prot=", Hex(prot), " not supported");
@@ -1618,7 +1628,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 
 		addr = _rm->attach(ds_cap, length, offset);
 	}
-
+//Genode::warning(&length, ": Vfs_plugin::mmap(): ", addr);
 	return addr;
 }
 
