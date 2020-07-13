@@ -2,12 +2,18 @@ source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 set feature(Nic) 1
 
-import_from_depot [depot_user]/src/qt5_minimal_browser \
-                  [depot_user]/src/qt5_base \
-                  [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_declarative \
+#import_from_depot [depot_user]/src/qt5_minimal_browser \
+#                  [depot_user]/src/qt5_base \
+#                  [depot_user]/src/qt5_component \
+#                  [depot_user]/src/qt5_declarative \
+#                  [depot_user]/src/qt5_quickcontrols \
+#                  [depot_user]/src/qt5_webengine \
+#                  [depot_user]/src/vfs_jitterentropy \
+#                  [depot_user]/src/vfs_lwip
+
+import_from_depot [depot_user]/src/qt5_base \
                   [depot_user]/src/qt5_quickcontrols \
-                  [depot_user]/src/qt5_webengine \
+                  [depot_user]/src/qt5_component \
                   [depot_user]/src/vfs_jitterentropy \
                   [depot_user]/src/vfs_lwip
 
@@ -17,14 +23,14 @@ import_from_depot [depot_user]/src/qt5_minimal_browser \
 
 append build_components [qt5_build_components feature]
 
-#append build_components {
-#	app/qt5/examples/minimal_browser
-#	lib/ld
-#	lib/vfs/lwip
-#	lib/vfs/jitterentropy
-#	lib/vfs/pipe
-#	server/vfs
-#}
+append build_components {
+	app/qt5/examples/minimal_browser
+	lib/ld
+	lib/vfs/lwip
+	lib/vfs/jitterentropy
+	lib/vfs/pipe
+	server/vfs
+}
 
 build $build_components
 
@@ -86,7 +92,9 @@ append config {
 				<tar name="qt5_webengine_resources.tar"/>
 				<ram/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1" placement="single-cpu"/>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1">
+				<pthread placement="single-cpu"/>
+			</libc>
 		</config>
 		<route>
 			<service name="Gui"> <child name="wm"/> </service>
@@ -107,39 +115,35 @@ install_config $config
 
 append boot_modules [qt5_boot_modules feature]
 
-#append boot_modules {
-#	minimal
-#	libQt5Core.lib.so
-#	libQt5Gui.lib.so
-#	libQt5Network.lib.so
-#	libQt5Qml.lib.so
-#	libQt5Quick.lib.so
-#	libQt5WebEngine.lib.so
-#	libQt5WebEngineCore.lib.so
-#	libQt5Widgets.lib.so
-#	libqnitpicker.lib.so
-#	qt5_component.lib.so
-#	qt5_qtquick2.tar
-#	qt5_qtquick2plugin.tar
-#	libqtquick2plugin.lib.so
-#	qt5_qtquick_window.tar
-#	qt5_windowplugin.tar
-#	libwindowplugin.lib.so
-#	qt5_qtwebengine.tar
-#	qt5_qtwebengineplugin.tar
-#	libqtwebengineplugin.lib.so
-#	qt5_qtquick_controls.tar
-#	qt5_qtquickcontrolsplugin.tar
-#	libqtquickcontrolsplugin.lib.so
-#	vfs.lib.so
-#	vfs_jitterentropy.lib.so
-#	vfs_lwip.lib.so
-#	vfs_pipe.lib.so
-#	ld.lib.so
-#	libc.lib.so
-#	libm.lib.so
-#	vfs
-#}
+append boot_modules {
+	ld.lib.so
+	libQt5Core.lib.so
+	libQt5Gui.lib.so
+	libQt5Network.lib.so
+	libQt5Qml.lib.so
+	libQt5Quick.lib.so
+	libQt5WebEngine.lib.so
+	libQt5WebEngineCore.lib.so
+	libQt5Widgets.lib.so
+	libc.lib.so
+	libm.lib.so
+	libqgenode.lib.so
+	libqtquick2plugin.lib.so
+	libqtwebengineplugin.lib.so
+	libwindowplugin.lib.so
+	minimal
+	qt5_component.lib.so
+	qt5_declarative_qml.tar
+	qt5_libqgenode.tar
+	qt5_quickcontrols_qml.tar
+	qt5_webengine_qml.tar
+	qt5_webengine_resources.tar
+	vfs
+	vfs.lib.so
+	vfs_jitterentropy.lib.so
+	vfs_lwip.lib.so
+	vfs_pipe.lib.so
+}
 
 build_boot_image $boot_modules
 
