@@ -132,7 +132,7 @@ int dladdr(const void *addr, Dl_info *dlip)
 
 int dlclose(void *handle)
 {
-	destroy(Libc::Allocator(), to_object(handle));
+	//destroy(Libc::Allocator(), to_object(handle));
 	return 0;
 }
 
