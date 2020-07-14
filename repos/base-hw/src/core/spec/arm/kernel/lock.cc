@@ -33,6 +33,8 @@ void Kernel::Lock::lock()
 		/* at least print an error message */
 		Genode::raw("Cpu ", _current_cpu,
 		            " error: re-entered lock. Kernel exception?!");
+		Thread &th = *static_cast<Thread*>(&cpu_pool().executing_cpu().scheduled_job());
+		Genode::raw("ip= ", Genode::Hex(th.regs->ip));
 	}
 
 	Cpu::wait_for_xchg(&_locked, LOCKED, UNLOCKED);
