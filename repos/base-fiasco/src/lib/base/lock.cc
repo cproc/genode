@@ -12,7 +12,6 @@
  */
 
 /* Genode includes */
-#include <base/cancelable_lock.h>
 #include <base/thread.h>
 #include <cpu/atomic.h>
 #include <cpu/memory_barrier.h>
@@ -25,7 +24,7 @@ namespace Fiasco {
 using namespace Genode;
 
 
-Cancelable_lock::Cancelable_lock(Cancelable_lock::State initial)
+Lock::Lock(Lock::State initial)
 : _state(UNLOCKED), _owner(nullptr)
 {
 	if (initial == LOCKED)
@@ -33,14 +32,14 @@ Cancelable_lock::Cancelable_lock(Cancelable_lock::State initial)
 }
 
 
-void Cancelable_lock::lock()
+void Lock::lock()
 {
 	Applicant myself(Thread::myself());
 	lock(myself);
 }
 
 
-void Cancelable_lock::lock(Applicant &myself)
+void Lock::lock(Applicant &myself)
 {
 	/*
 	 * XXX: How to notice cancel-blocking signals issued when  being outside the
@@ -54,7 +53,7 @@ void Cancelable_lock::lock(Applicant &myself)
 }
 
 
-void Cancelable_lock::unlock()
+void Lock::unlock()
 {
 	_owner = Applicant(nullptr);
 	Genode::memory_barrier();
