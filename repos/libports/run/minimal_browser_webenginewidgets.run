@@ -30,6 +30,7 @@ append build_components {
 	lib/vfs/jitterentropy
 	lib/vfs/pipe
 	server/vfs
+	app/top
 }
 
 build $build_components
@@ -66,6 +67,11 @@ append config {
 	</start>
 -->
 
+	<start name="top">
+		<resource name="RAM" quantum="2M"/>
+		<config period_ms="2000"/>
+	</start>
+
 	<start name="minimal" caps="10000">
 		<resource name="RAM" quantum="2G"/>
 		<config ld_verbose="yes">
@@ -92,7 +98,9 @@ append config {
 				<tar name="qt5_webengine_resources.tar"/>
 				<ram/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1" placement="single-cpu"/>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1">
+				<!--<pthread placement="single-cpu"/>-->
+			</libc>
 		</config>
 		<route>
 			<service name="Gui"> <child name="wm"/> </service>
@@ -143,6 +151,7 @@ append boot_modules {
 	vfs_jitterentropy.lib.so
 	vfs_lwip.lib.so
 	vfs_pipe.lib.so
+	top
 }
 
 build_boot_image $boot_modules
