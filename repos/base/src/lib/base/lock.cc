@@ -12,7 +12,7 @@
  */
 
 /* Genode includes */
-#include <base/cancelable_lock.h>
+#include <base/lock.h>
 #include <cpu/memory_barrier.h>
 
 /* base-internal includes */
@@ -37,7 +37,7 @@ static inline bool thread_base_valid(Genode::Thread *thread_base)
  ** Lock applicant **
  ********************/
 
-void Cancelable_lock::Applicant::wake_up()
+void Lock::Applicant::wake_up()
 {
 	if (!thread_base_valid(_thread_base)) return;
 
@@ -57,16 +57,16 @@ void Cancelable_lock::Applicant::wake_up()
 
 
 /*********************
- ** Cancelable lock **
+ ** Lock lock **
  *********************/
 
-void Cancelable_lock::lock()
+void Lock::lock()
 {
 	Applicant myself(Thread::myself());
 	lock(myself);
 }
 
-void Cancelable_lock::lock(Applicant &myself)
+void Lock::lock(Applicant &myself)
 {
 	spinlock_lock(&_spinlock_state);
 
@@ -157,7 +157,7 @@ void Cancelable_lock::lock(Applicant &myself)
 }
 
 
-void Cancelable_lock::unlock()
+void Lock::unlock()
 {
 	spinlock_lock(&_spinlock_state);
 
@@ -190,7 +190,7 @@ void Cancelable_lock::unlock()
 }
 
 
-Cancelable_lock::Cancelable_lock(Cancelable_lock::State initial)
+Lock::Lock(Lock::State initial)
 :
 	_spinlock_state(SPINLOCK_UNLOCKED),
 	_state(UNLOCKED),
