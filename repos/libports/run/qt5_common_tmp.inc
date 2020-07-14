@@ -158,6 +158,7 @@ proc qt5_start_nodes { feature_arg } {
 				<policy label="ps2_drv -> numlock"            report="global_keys_handler -> numlock"/>
 				<policy label="usb_drv -> capslock"           report="global_keys_handler -> capslock"/>
 				<policy label="usb_drv -> numlock"            report="global_keys_handler -> numlock"/>
+				<policy label="usb_hid_drv -> report"         report="usb_drv -> devices"/>
 			</config>
 		</start>
 
