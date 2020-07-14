@@ -2,21 +2,38 @@ source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
 set feature(Nic) 1
 
-import_from_depot [depot_user]/src/qt5_minimal_browser \
-                  [depot_user]/src/qt5_base \
-                  [depot_user]/src/qt5_component \
-                  [depot_user]/src/qt5_declarative \
+#import_from_depot [depot_user]/src/qt5_minimal_browser \
+#                  [depot_user]/src/qt5_base \
+#                  [depot_user]/src/qt5_component \
+#                  [depot_user]/src/qt5_declarative \
+#                  [depot_user]/src/qt5_quickcontrols \
+#                  [depot_user]/src/qt5_webengine \
+#                  [depot_user]/src/vfs_jitterentropy \
+#                  [depot_user]/src/vfs_lwip \
+#                  [depot_user]/src/vfs_qtwebengine
+
+import_from_depot [depot_user]/src/qt5_base \
                   [depot_user]/src/qt5_quickcontrols \
-                  [depot_user]/src/qt5_webengine \
+                  [depot_user]/src/qt5_component \
                   [depot_user]/src/vfs_jitterentropy \
-                  [depot_user]/src/vfs_lwip \
-                  [depot_user]/src/vfs_qtwebengine
+                  [depot_user]/src/vfs_lwip
 
 #
 # Build
 #
 
 append build_components [qt5_build_components feature]
+
+append build_components {
+	app/qt5/examples/minimal_browser
+	lib/ld
+	lib/vfs/lwip
+	lib/vfs/jitterentropy
+	lib/vfs/pipe
+	lib/vfs/qtwebengine
+	server/vfs
+	app/top
+}
 
 build $build_components
 
@@ -46,12 +63,16 @@ append config {
 		<config>
 			<vfs>
 				<lwip dhcp="yes"/>
-				<!--<lwip ip_addr="10.0.10.2" netmask="255.255.255.0" gateway="10.0.10.1" nameserver="10.0.0.2"/>-->
 			</vfs>
 			<default-policy writeable="yes" root="/"/>
 		</config>
 	</start>
 -->
+
+	<start name="top">
+		<resource name="RAM" quantum="2M"/>
+		<config period_ms="2000"/>
+	</start>
 
 	<start name="minimal" caps="10000">
 		<resource name="RAM" quantum="4G"/>
@@ -67,7 +88,6 @@ append config {
 				<dir name="shm"> <qtwebengine/> </dir>
 				<dir name="socket">
 					<lwip dhcp="yes"/>
-					<!--<lwip ip_addr="10.0.10.2" netmask="255.255.255.0" gateway="10.0.10.1" nameserver="10.0.0.2"/>-->
 					<!--<fs/>-->
 				</dir>
 				<dir name="tmp"> <ram/> </dir>
@@ -79,7 +99,9 @@ append config {
 				<tar name="qt5_webengine_resources.tar"/>
 				<ram/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1" placement="single-cpu"/>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1">
+				<pthread placement="single-cpu"/>
+			</libc>
 		</config>
 		<route>
 			<service name="Gui"> <child name="wm"/> </service>
@@ -99,6 +121,45 @@ install_config $config
 #
 
 append boot_modules [qt5_boot_modules feature]
+
+append boot_modules {
+	egl.lib.so
+	expat.lib.so
+	glapi.lib.so
+	ld.lib.so
+	libQt5Core.lib.so
+	libQt5Gui.lib.so
+	libQt5Network.lib.so
+	libQt5Qml.lib.so
+	libQt5Quick.lib.so
+	libQt5WebEngine.lib.so
+	libQt5WebEngineCore.lib.so
+	libQt5Widgets.lib.so
+	libc.lib.so
+	libm.lib.so
+	libqgenode.lib.so
+	libqjpeg.lib.so
+	libqtquick2plugin.lib.so
+	libqtquickcontrolsplugin.lib.so
+	libqtwebengineplugin.lib.so
+	libwindowplugin.lib.so
+	mesa.lib.so
+	minimal
+	qt5_component.lib.so
+	qt5_declarative_qml.tar
+	qt5_libqgenode.tar
+	qt5_quickcontrols_qml.tar
+	qt5_webengine_qml.tar
+	qt5_webengine_resources.tar
+	stdcxx.lib.so
+	vfs
+	vfs.lib.so
+	vfs_jitterentropy.lib.so
+	vfs_lwip.lib.so
+	vfs_pipe.lib.so
+	vfs_qtwebengine.lib.so
+	top
+}
 
 build_boot_image $boot_modules
 
