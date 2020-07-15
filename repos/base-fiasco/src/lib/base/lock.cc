@@ -46,8 +46,7 @@ void Lock::lock(Applicant &myself)
 	 *      'l4_ipc_sleep' system call?
 	 */
 	while (!Genode::cmpxchg(&_state, UNLOCKED, LOCKED))
-		if (Fiasco::l4_ipc_sleep(Fiasco::l4_ipc_timeout(0, 0, 500, 0)) != L4_IPC_RETIMEOUT)
-			throw Genode::Blocking_canceled();
+		Fiasco::l4_ipc_sleep(Fiasco::l4_ipc_timeout(0, 0, 500, 0));
 
 	_owner = myself;
 }

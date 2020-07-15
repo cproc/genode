@@ -84,9 +84,7 @@ class Genode::Lock
 		explicit Lock(State);
 
 		/**
-		 * Try to aquire the lock and block while the lock is not free
-		 *
-		 * \throw  Genode::Blocking_canceled
+		 * Try to acquire the lock and block while the lock is not free.
 		 */
 		void lock();
 
