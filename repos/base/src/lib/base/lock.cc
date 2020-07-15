@@ -126,34 +126,6 @@ void Lock::lock(Applicant &myself)
 	 * !   thread_yield();
 	 */
 	thread_stop_myself(myself.thread_base());
-
-	/*
-	 * We expect to be the lock owner when woken up. If this is not
-	 * the case, the blocking was canceled via core's cancel-blocking
-	 * mechanism. We have to dequeue ourself from the list of applicants
-	 * and reflect this condition as a C++ exception.
-	 */
-	spinlock_lock(&_spinlock_state);
-	if (_owner != myself) {
-		/*
-		 * Check if we are the applicant to be waken up next,
-		 * otherwise, go through the list of remaining applicants
-		 */
-		for (Applicant *a = &_owner; a; a = a->applicant_to_wake_up()) {
-			/* remove reference to ourself from the applicants list */
-			if (a->applicant_to_wake_up() == &myself) {
-				a->applicant_to_wake_up(myself.applicant_to_wake_up());
-				if (_last_applicant == &myself)
-					_last_applicant = a;
-				break;
-			}
-		}
-
-		spinlock_unlock(&_spinlock_state);
-
-		throw Blocking_canceled();
-	}
-	spinlock_unlock(&_spinlock_state);
 }
 
 
