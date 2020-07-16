@@ -190,12 +190,15 @@ class Dataspace_file_system : public Vfs::File_system
 
 		Dataspace_capability dataspace(char const *path) override
 		{
+Genode::warning(&path, ": Dataspace_file_system::dataspace(): ", Genode::Cstring(path));
 			Ram_dataspace_capability ds_cap;
 
 			Dataspace_vfs_file *file = _lookup(path);
 
-			if (!file)
+			if (!file) {
+Genode::error("Dataspace_file_system::dataspace(): lookup failed");
 				return ds_cap;
+			}
 
 			return file->ds_cap;
 		}
@@ -206,6 +209,7 @@ class Dataspace_file_system : public Vfs::File_system
 
 		Stat_result stat(char const *path, Stat &out) override
 		{
+Genode::warning(&path, ": Dataspace_file_system::stat(): path: ", Genode::Cstring(path));
 			out = Stat { };
 			out.device = (Genode::addr_t)this;
 
@@ -213,6 +217,7 @@ class Dataspace_file_system : public Vfs::File_system
 				out.type = Node_type::DIRECTORY;
 
 			} else if (_lookup(path)) {
+Genode::warning(&path, ": Dataspace_file_system::stat(): found path: ", Genode::Cstring(path));
 				out.type  = Node_type::CONTINUOUS_FILE;
 				out.rwx   = Node_rwx::rw();
 				out.inode = (unsigned long)_lookup(path); /* XXX optimize */
@@ -224,6 +229,7 @@ class Dataspace_file_system : public Vfs::File_system
 
 		file_size num_dirent(char const *path) override
 		{
+Genode::warning(&path, ": Dataspace_file_system::num_dirent()");
 			if (_root(path))
 				return 1;
 			else
@@ -245,7 +251,7 @@ class Dataspace_file_system : public Vfs::File_system
 		                       Vfs_handle **handle,
 		                       Allocator   &alloc) override
 		{
-Genode::error(&path, ": Vfs::Dataspace_file_system::opendir(): path: ", Genode::Cstring(path));
+Genode::error(&path, ": Dataspace_file_system::opendir(): path: ", Genode::Cstring(path));
 			if (!_root(path))
 				return OPENDIR_ERR_LOOKUP_FAILED;
 
@@ -267,6 +273,8 @@ Genode::error(&path, ": Vfs::Dataspace_file_system::opendir(): path: ", Genode::
 		                 Vfs_handle **handle,
 		                 Allocator   &alloc) override
 		{
+Genode::warning(&path, ": Dataspace_file_system::open(): path: ", Genode::Cstring(path),
+                ", mode: ", Genode::Hex(mode));
 			Dataspace_vfs_file *file { };
 
 			bool const create = mode & OPEN_MODE_CREATE;
@@ -283,13 +291,17 @@ Genode::error(&path, ": Vfs::Dataspace_file_system::opendir(): path: ", Genode::
 				catch (Allocator::Out_of_memory) { return OPEN_ERR_NO_SPACE; }
 
 				_files.insert(file);
+Genode::warning(&path, ": Dataspace_file_system::open(): new file created: ", file);
 			} else {
 				Dataspace_vfs_file *file = _lookup(path);
 				if (!file) return OPEN_ERR_UNACCESSIBLE;
+
+Genode::warning(&path, ": Dataspace_file_system::open(): file found: ", file);
 			}
 
 			try {
 				*handle = new (alloc) Dataspace_vfs_file_handle(*this, *this, alloc, *file);
+Genode::warning(&path, ": Dataspace_file_system::open(): new file handle: ", handle);
 				return OPEN_OK;
 			}
 			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
@@ -340,6 +352,7 @@ Genode::error(&path, ": Vfs::Dataspace_file_system::opendir(): path: ", Genode::
 
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
 		{
+Genode::warning(&vfs_handle, ": Dataspace_file_system::ftruncate(): len: ", len);
 			Dataspace_vfs_file_handle *handle =
 				dynamic_cast<Dataspace_vfs_file_handle *>(vfs_handle);
 
