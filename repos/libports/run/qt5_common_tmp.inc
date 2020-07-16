@@ -1,11 +1,10 @@
+create_boot_directory
 
 source ${genode_dir}/repos/libports/run/qt5_drivers.inc
 
 set feature(Input) 1
 set feature(Framebuffer) 1
 set feature(Timer) 1
-
-create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/expat \
@@ -93,13 +92,16 @@ proc qt5_start_nodes { feature_arg } {
 	append start_nodes {
 		<start name="nitpicker" caps="200">
 			<resource name="RAM" quantum="2M"/>
-			<provides><service name="Gui"/></provides>
+			<provides>
+				<service name="Gui"/>
+				<service name="Capture"/>
+			</provides>
 			<route> }
 	append_if [use_fb_sdl feature] start_nodes { 
-				<service name="Framebuffer"> <child name="fb_sdl" /> </service>
+				<service name="Capture"> <child name="fb_sdl" /> </service>
 	}
 	append_if [use_fb_drv feature] start_nodes {
-				<service name="Framebuffer"> <child name="fb_drv" /> </service>
+				<service name="Capture"> <child name="fb_drv" /> </service>
 	}
 	append start_nodes {
 				<service name="Input">  <child name="input_filter"/> </service>

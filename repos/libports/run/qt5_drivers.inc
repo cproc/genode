@@ -1,3 +1,5 @@
+import_from_depot [depot_user]/src/input_event_bridge
+
 #
 # Global variables required by platform_drv-related functions
 #
@@ -185,20 +187,24 @@ proc drivers_start_nodes { feature_arg } {
 		<start name="fb_drv" caps="200">
 			<binary name="} [fb_drv_binary] {"/>
 			<resource name="RAM" quantum="64M"/>
-			<provides><service name="Framebuffer"/></provides>
 			<config>
 				<connector name="HDMI-A-1" width="1920" height="1080" hz="60" enabled="true"/>
 			</config>
 		</start>
 	}
 
+	append start_nodes {
+		<start name="input_event_bridge" caps="100">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Input"/> <service name="Event"/> </provides>
+			<route> <any-service> <parent/> </any-service> </route>
+			<config/>
+		</start> 
+	}
+
 	append_if [use_fb_sdl feature] start_nodes {
 		<start name="fb_sdl" ld="no">
 			<resource name="RAM" quantum="4M"/>
-			<provides>
-				<service name="Input"/>
-				<service name="Framebuffer"/>
-			</provides>
 		</start>
 	}
 
@@ -311,7 +317,7 @@ proc drivers_start_nodes { feature_arg } {
 		append_if [have_spec imx8q_evk] start_nodes {
 					<service name="Input" label="usb"> <child name="usb_hid_drv" /> </service>}
 		append_if [use_fb_sdl feature] start_nodes {
-					<service name="Input" label="sdl"> <child name="fb_sdl" /> </service>}
+					<service name="Input" label="sdl"> <child name="input_event_bridge" /> </service>}
 		append start_nodes {
 				</route>
 			</start>
