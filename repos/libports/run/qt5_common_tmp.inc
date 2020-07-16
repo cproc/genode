@@ -1,11 +1,10 @@
+create_boot_directory
 
 source ${genode_dir}/repos/libports/run/qt5_drivers.inc
 
 set feature(Input) 1
 set feature(Framebuffer) 1
 set feature(Timer) 1
-
-create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/expat \
@@ -93,21 +92,18 @@ proc qt5_start_nodes { feature_arg } {
 	append start_nodes {
 		<start name="nitpicker" caps="200">
 			<resource name="RAM" quantum="2M"/>
-			<provides><service name="Gui"/></provides>
-			<route> }
-	append_if [use_fb_sdl feature] start_nodes { 
-				<service name="Framebuffer"> <child name="fb_sdl" /> </service>
-	}
-	append_if [use_fb_drv feature] start_nodes {
-				<service name="Framebuffer"> <child name="fb_drv" /> </service>
-	}
-	append start_nodes {
+			<provides>
+				<service name="Gui"/>
+				<service name="Capture"/>
+			</provides>
+			<route>
 				<service name="Input">  <child name="input_filter"/> </service>
 				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
-			<config>
+			<config request_framebuffer="no">
 				<report focus="yes" hover="yes" xray="yes"/>
+				<capture/>
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client" focus="click" hover="always" />
@@ -121,7 +117,7 @@ proc qt5_start_nodes { feature_arg } {
 		</start>
 
 		<start name="pointer">
-			<resource name="RAM" quantum="1M"/>
+			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Report"/> </provides>
 			<config shapes="yes"/>
 			<route>
