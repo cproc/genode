@@ -43,7 +43,7 @@ namespace Libc {
  * Used by 'pthread_self()' to find out if the current thread is an alien
  * thread.
  */
-class Libc::Pthread_registry
+class Libc::Pthread_registry : Avl_tree<Libc::Pthread>
 {
 	private:
 
@@ -109,7 +109,7 @@ struct Genode::Thread::Tls::Base
 };
 
 
-struct Libc::Pthread : Noncopyable, Thread::Tls::Base
+struct Libc::Pthread : Noncopyable, Thread::Tls::Base, Avl_node<Libc::Pthread>
 {
 	typedef void *(*start_routine_t) (void *);
 
@@ -289,6 +289,12 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 			return true;
 		}
+
+		/************************
+		 ** Avl node interface **
+		 ************************/
+
+		bool higher(Pthread *t) { return (t > this); }
 };
 
 
