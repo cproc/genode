@@ -61,7 +61,7 @@ class Genode::Region_registry
 {
 	public:
 
-		enum { MAX_REGIONS = 4096 };
+		enum { MAX_REGIONS = 16*4096 };
 
 	private:
 
