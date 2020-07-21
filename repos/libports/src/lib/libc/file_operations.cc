@@ -413,6 +413,10 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
 {
+Genode::warning(&length, ": mmap(): addr: ", addr,
+                ", libc_fd: ", libc_fd,
+                ", offset: ", offset,
+                ", length: ", length);
 	/* handle requests for anonymous memory */
 	if ((flags & MAP_ANONYMOUS) || (flags & MAP_ANON)) {
 
@@ -430,6 +434,7 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 		mmap_registry()->insert(start, length, 0);
 		::memset(start, 0, length);
+Genode::warning(&length, ": mmap(): ", start, " - ", (void*)((addr_t)start + length - 1));
 		return start;
 	}
 
@@ -443,12 +448,14 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 	mmap_registry()->insert(start, length, fd->plugin);
+Genode::warning(&length, ": mmap(): ", start, " - ", (void*)((addr_t)start + length - 1));
 	return start;
 })
 
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+Genode::warning(&start, ": munmap(): start: ", start, ", length: ", length);
 	if (!mmap_registry()->registered(start)) {
 		warning("munmap: could not lookup plugin for address ", start);
 		errno = EINVAL;
