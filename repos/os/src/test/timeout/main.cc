@@ -770,6 +770,71 @@ struct Fast_polling : Test
 };
 
 
+struct Thread_test : Test
+{
+	static constexpr char const *brief = "timeout construction and destruction in separate thread";
+
+	struct Test_thread : Genode::Thread
+	{
+		Timer::Connection  &timer;
+		Signal_transmitter &done;
+		int                 handle_count { 0 };
+
+		Test_thread(Genode::Env &env, const char * name, Timer::Connection &timer, Signal_transmitter &done)
+		: Thread(env, Thread::Name(name), 8192),
+		  timer(timer), done(done) { start(); }
+
+		void handle_ot(Duration)
+		{
+			handle_count++;
+
+			if (handle_count % 100 == 0)
+				Genode::log("handle count: ", handle_count);
+		}
+
+		void entry() override
+		{
+			Genode::log("test thread entry");
+
+			static constexpr int num_iterations = 100000;
+
+			/*
+			 * XXX: tuned manually so that the reported 'end handle count'
+			 *      is around 50% of num_iterations
+			 */
+			static constexpr int delay_loop_count = 3000000;
+
+			for (int i = 0; i < num_iterations; i++) {
+
+				/* the timeout object gets deleted at the end of the iteration */
+
+				Timer::One_shot_timeout<Test_thread> ot { timer, *this, &Test_thread::handle_ot };
+				ot.schedule(Microseconds(1));
+
+				for (volatile int j = 0; j < delay_loop_count; j++) { }
+
+				/* report progress */
+
+				if (i % 100 == 0)
+					Genode::log("iteration: ", i);
+			}
+
+			Genode::log("end handle count: ", handle_count, " of ", num_iterations);
+
+			done.submit();
+		}
+	} test_thread;
+
+	Thread_test(Env                       &env,
+	            unsigned                  &error_cnt,
+	            Signal_context_capability  done_cap,
+	            unsigned                   id)
+	:
+		Test(env, error_cnt, done_cap, id, brief),
+		test_thread(env, "test_thread", timer, done) { }
+};
+
+
 struct Main
 {
 	Env                           &env;
@@ -778,10 +843,12 @@ struct Main
 	Constructible<Duration_test>   test_1      { };
 	Constructible<Fast_polling>    test_2      { };
 	Constructible<Mixed_timeouts>  test_3      { };
+	Constructible<Thread_test>     test_4      { };
 	Signal_handler<Main>           test_0_done { env.ep(), *this, &Main::handle_test_0_done };
 	Signal_handler<Main>           test_1_done { env.ep(), *this, &Main::handle_test_1_done };
 	Signal_handler<Main>           test_2_done { env.ep(), *this, &Main::handle_test_2_done };
 	Signal_handler<Main>           test_3_done { env.ep(), *this, &Main::handle_test_3_done };
+	Signal_handler<Main>           test_4_done { env.ep(), *this, &Main::handle_test_4_done };
 
 	Main(Env &env) : env(env)
 	{
@@ -809,6 +876,12 @@ struct Main
 	void handle_test_3_done()
 	{
 		test_3.destruct();
+		test_4.construct(env, error_cnt, test_4_done, 4);
+	}
+
+	void handle_test_4_done()
+	{
+		test_4.destruct();
 		if (error_cnt) {
 			error("test failed because of ", error_cnt, " error(s)");
 			env.parent().exit(-1);
