@@ -121,6 +121,8 @@ class Timer::One_shot_timeout : private Genode::Noncopyable
 		                 Handler_method     method)
 		: _timeout(timeout_scheduler), _handler(object, method) { }
 
+		~One_shot_timeout() { _timeout.discard(); }
+
 		void schedule(Microseconds duration) {
 			_timeout.schedule_one_shot(duration, _handler); }
 
