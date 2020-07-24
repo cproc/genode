@@ -769,7 +769,7 @@ struct Fast_polling : Test
 	}
 };
 
-
+extern "C" void wait_for_continue();
 struct Thread_test : Test
 {
 	static constexpr char const *brief = "timeout construction and destruction in separate thread";
@@ -802,14 +802,15 @@ struct Thread_test : Test
 			 * XXX: tuned manually so that the reported 'end handle count'
 			 *      is around 50% of num_iterations
 			 */
-			static constexpr int delay_loop_count = 2400000;
-
+			static constexpr int delay_loop_count = 2150000;
+wait_for_continue();
 			for (int i = 0; i < num_iterations; i++) {
 
 				/* the timeout object gets deleted at the end of the iteration */
 
-				Timer::One_shot_timeout<Test_thread> ot { timer, *this, &Test_thread::handle_ot };
-				ot.schedule(Microseconds(1));
+				//Timer::One_shot_timeout<Test_thread> ot { timer, *this, &Test_thread::handle_ot };
+				//ot.schedule(Microseconds(1));
+				Timer::Periodic_timeout<Test_thread> pt { timer, *this, &Test_thread::handle_ot, Microseconds(1) };
 
 				for (volatile int j = 0; j < delay_loop_count; j++) { }
 
