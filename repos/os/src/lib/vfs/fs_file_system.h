@@ -537,6 +537,8 @@ class Vfs::Fs_file_system : public File_system
 
 		void _ready_to_submit()
 		{
+			Mutex::Guard guard(_mutex);
+
 			_congested_handles.dequeue_all([] (Fs_vfs_handle &handle) {
 				handle.io_progress_response(); });
 		}
