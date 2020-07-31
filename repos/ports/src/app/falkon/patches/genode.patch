@@ -1,0 +1,428 @@
+genode.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ CMakeLists.txt                                |  146 -------------------------
+ falkon.pro                                    |   20 ++-
+ src/defines.pri                               |   21 ++--
+ src/lib/adblock/adblockmanager.cpp            |    1 
+ src/lib/app/mainapplication.cpp               |   13 +-
+ src/lib/lib.pro                               |    4 -
+ src/lib/tools/qztools.cpp                     |    4 +
+ src/main/main.cpp                             |    4 +
+ src/main/main.pro                             |    5 +
+ src/plugins/AutoScroll/autoscrollsettings.cpp |    2 
+ 10 files changed, 48 insertions(+), 172 deletions(-)
+ delete mode 100644 CMakeLists.txt
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+deleted file mode 100644
+index c73dfa4f..00000000
+--- a/CMakeLists.txt
++++ /dev/null
+@@ -1,146 +0,0 @@
+-# CMake version required. This must be the very first line, because it sets default policies affecting everything else
+-cmake_minimum_required(VERSION 3.1)
+-
+-# Project name and version
+-project(Falkon VERSION 2.1.99)
+-
+-# Find ECM, with nice error handling in case of failure
+-include(FeatureSummary)
+-find_package(ECM 5.27.0 CONFIG)
+-set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/frameworks/extra-cmake-modules")
+-feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
+-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+-
+-# Many includes from ECM, to get all the nice cmake functions and settings
+-include(KDEInstallDirs)
+-include(KDECMakeSettings)
+-include(KDECompilerSettings NO_POLICY_SCOPE)
+-include(ECMInstallIcons)
+-include(ECMSetupVersion)
+-include(ECMAddAppIcon)
+-include(ECMQtDeclareLoggingCategory)
+-
+-# Output dirs (like ECM 5.38 does)
+-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+-
+-# Version (TODO: move to a generated header once qmake support is dropped, to avoid full recompilations when changing this
+-add_definitions(-DFALKON_VERSION=\"${PROJECT_VERSION}\")
+-
+-# Defines that are always set
+-add_definitions(-DQT_NO_URL_CAST_FROM_STRING -DQT_USE_QSTRINGBUILDER -DQT_NO_CAST_TO_ASCII)
+-
+-# Configurable options (TODO: move all defines to a generated header)
+-option(NO_SYSTEM_DATAPATH "TODO" OFF)
+-if (NO_SYSTEM_DATAPATH)
+-    add_definitions(-DNO_SYSTEM_DATAPATH)
+-endif()
+-option(KDE_INTEGRATION "TODO" OFF)
+-if (KDE_INTEGRATION)
+-    set(KF5_MIN_VERSION "5.27.0")
+-    find_package(KF5 ${KF5_MIN_VERSION} COMPONENTS Wallet)
+-    add_definitions(-DKDE_INTEGRATION)
+-endif()
+-option(GNOME_INTEGRATION "TODO" OFF)
+-if (GNOME_INTEGRATION)
+-    find_package(PkgConfig)
+-    if (PKG_CONFIG_FOUND)
+-        pkg_check_modules(GNOME_KEYRING gnome-keyring-1)
+-    endif()
+-    add_definitions(-DGNOME_INTEGRATION)
+-endif()
+-option(NO_X11 "TODO" OFF)
+-if (NO_X11)
+-    add_definitions(-DNO_X11)
+-endif()
+-option(PORTABLE_BUILD "TODO" OFF)
+-if (PORTABLE_BUILD)
+-    add_definitions(-DPORTABLE_BUILD)
+-endif()
+-option(NONBLOCK_JS_DIALOGS "TODO" OFF)
+-if (NONBLOCK_JS_DIALOGS)
+-    add_definitions(-DNONBLOCK_JS_DIALOGS)
+-endif()
+-option(USE_LIBPATH "TODO" "") # REMOVE?
+-if (USE_LIBPATH)
+-    add_definitions(-DUSE_LIBPATH=\"${USE_LIBPATH}\")
+-endif()
+-option(DISABLE_DBUS "TODO" OFF)
+-if (DISABLE_DBUS)
+-    add_definitions(-DDISABLE_DBUS)
+-endif()
+-option(DISABLE_UPDATES_CHECK "TODO" OFF)
+-if (DISABLE_UPDATES_CHECK)
+-    add_definitions(-DDISABLE_UPDATES_CHECK)
+-endif()
+-# Note: the old qmake option DEBUG_BUILD is now -DCMAKE_BUILD_TYPE=Debug, and FALKON_PREFIX is now -DCMAKE_INSTALL_PREFIX
+-#       SHARE_FOLDER is now auto-detected, so is USE_LIBPATH.
+-
+-# Mandatory: Qt5
+-set(QT_MIN_VERSION "5.8.0")
+-find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Widgets Network Sql QuickWidgets PrintSupport WebEngineWidgets WebChannel Test)
+-if (NOT DISABLE_DBUS)
+-    find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS DBus)
+-endif()
+-
+-if (UNIX AND NOT APPLE AND NOT NO_X11)
+-    find_package(X11)
+-    if (X11_FOUND)
+-        add_definitions(-DQZ_WS_X11)
+-    endif()
+-    find_package(XCB COMPONENTS XCB)
+-    find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS X11Extras)
+-endif()
+-if (WIN32)
+-    add_definitions(-DW7API)
+-    find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS WinExtras)
+-    # TODO set var for LIBS += User32.lib Ole32.lib Shell32.lib ShlWapi.lib Gdi32.lib ComCtl32.lib ?
+-endif()
+-
+-# Git revision
+-if (EXISTS "${CMAKE_SOURCE_DIR}/.git")
+-  find_package(Git QUIET)
+-  if(GIT_FOUND)
+-    execute_process(
+-      COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+-      OUTPUT_VARIABLE GIT_REVISION
+-    )
+-    string(REGEX REPLACE "\n" "" GIT_REVISION "${GIT_REVISION}")
+-    add_definitions(-DGIT_REVISION=\"${GIT_REVISION}\")
+-  else()
+-    message(STATUS "Git revision could not be determined")
+-  endif()
+-endif()
+-
+-# Include dirs used everywhere
+-include_directories(
+-     ${CMAKE_SOURCE_DIR}/src/lib/3rdparty
+-     ${CMAKE_SOURCE_DIR}/src/lib/adblock
+-     ${CMAKE_SOURCE_DIR}/src/lib/app
+-     ${CMAKE_SOURCE_DIR}/src/lib/autofill
+-     ${CMAKE_SOURCE_DIR}/src/lib/bookmarks
+-     ${CMAKE_SOURCE_DIR}/src/lib/cookies
+-     ${CMAKE_SOURCE_DIR}/src/lib/downloads
+-     ${CMAKE_SOURCE_DIR}/src/lib/history
+-     ${CMAKE_SOURCE_DIR}/src/lib/navigation
+-     ${CMAKE_SOURCE_DIR}/src/lib/network
+-     ${CMAKE_SOURCE_DIR}/src/lib/notifications
+-     ${CMAKE_SOURCE_DIR}/src/lib/opensearch
+-     ${CMAKE_SOURCE_DIR}/src/lib/other
+-     ${CMAKE_SOURCE_DIR}/src/lib/plugins
+-     ${CMAKE_SOURCE_DIR}/src/lib/popupwindow
+-     ${CMAKE_SOURCE_DIR}/src/lib/preferences
+-     ${CMAKE_SOURCE_DIR}/src/lib/session
+-     ${CMAKE_SOURCE_DIR}/src/lib/sidebar
+-     ${CMAKE_SOURCE_DIR}/src/lib/tabwidget
+-     ${CMAKE_SOURCE_DIR}/src/lib/tools
+-     ${CMAKE_SOURCE_DIR}/src/lib/webengine
+-     ${CMAKE_SOURCE_DIR}/src/lib/webtab
+-)
+-
+-# Finally, go into the subdirs
+-add_subdirectory(src)
+-add_subdirectory(tests/autotests)
+-
+diff --git a/falkon.pro b/falkon.pro
+index fc6ab748..67ea9a0f 100644
+--- a/falkon.pro
++++ b/falkon.pro
+@@ -6,13 +6,13 @@
+ #
+ #-------------------------------------------------
+ 
+-lessThan(QT_VERSION, 5.8) {
+-    error("Falkon requires at least Qt 5.8!")
+-}
+-
+-lessThan(QT.webengine.VERSION, 5.8) {
+-    error("Falkon requires at least QtWebEngine 5.8!")
+-}
++#lessThan(QT_VERSION, 5.8) {
++#    error("Falkon requires at least Qt 5.8!")
++#}
++#
++#lessThan(QT.webengine.VERSION, 5.8) {
++#    error("Falkon requires at least QtWebEngine 5.8!")
++#}
+ 
+ # Create plugins directory first on Mac / Linux
+ mac|unix: system(test -d bin/plugins || mkdir bin/plugins)
+@@ -25,10 +25,10 @@ src_lib.target = sub-src-lib
+ src_main.subdir = src/main
+ src_main.depends = sub-src-lib
+ 
+-src_plugins.subdir = src/plugins
+-src_plugins.depends = sub-src-lib
++#src_plugins.subdir = src/plugins
++#src_plugins.depends = sub-src-lib
+ 
+-SUBDIRS += src_lib src_main src_plugins
++SUBDIRS += src_lib src_main #src_plugins
+ 
+ mac: {
+     macdeploysh.target = bundle
+diff --git a/src/defines.pri b/src/defines.pri
+index c26a24e8..cf4c0cb3 100644
+--- a/src/defines.pri
++++ b/src/defines.pri
+@@ -1,9 +1,16 @@
+-DESTDIR = $$PWD/../bin
++#DESTDIR = $$PWD/../bin
++#QZ_DESTDIR = $$DESTDIR
++#OBJECTS_DIR = $$PWD/../build
++#MOC_DIR = $$PWD/../build
++#RCC_DIR = $$PWD/../build
++#UI_DIR = $$PWD/../build
++
++DESTDIR = $$OUT_PWD/../..
+ QZ_DESTDIR = $$DESTDIR
+-OBJECTS_DIR = $$PWD/../build
+-MOC_DIR = $$PWD/../build
+-RCC_DIR = $$PWD/../build
+-UI_DIR = $$PWD/../build
++#OBJECTS_DIR = .
++#MOC_DIR = .
++#RCC_DIR = .
++#UI_DIR = .
+ 
+ # workaround for #849: see https://bugreports.qt-project.org/browse/QTBUG-23196
+ mocinclude.CONFIG *= fix_target
+@@ -15,11 +22,11 @@ DEFINES *= FALKON_VERSION=\\\"""$$QZ_VERSION"\\\""
+ d_no_system_datapath = $$(NO_SYSTEM_DATAPATH)
+ d_kde_integration = $$(KDE_INTEGRATION)
+ d_gnome_integration = $$(GNOME_INTEGRATION)
+-d_nox11 = $$(NO_X11)
++d_nox11 = "true"
+ d_portable = $$(PORTABLE_BUILD)
+ d_nonblock_dialogs = $$(NONBLOCK_JS_DIALOGS)
+ d_use_lib_path = $$(USE_LIBPATH)
+-d_disable_dbus = $$(DISABLE_DBUS)
++d_disable_dbus = "true"
+ d_disable_updates_check = $$(DISABLE_UPDATES_CHECK)
+ d_debug_build = $$(DEBUG_BUILD)
+ d_prefix = $$(FALKON_PREFIX)
+diff --git a/src/lib/adblock/adblockmanager.cpp b/src/lib/adblock/adblockmanager.cpp
+index 5530dc9e..9215f69d 100644
+--- a/src/lib/adblock/adblockmanager.cpp
++++ b/src/lib/adblock/adblockmanager.cpp
+@@ -28,6 +28,7 @@
+ #include "settings.h"
+ #include "networkmanager.h"
+ 
++#include <QAction>
+ #include <QDateTime>
+ #include <QTextStream>
+ #include <QDir>
+diff --git a/src/lib/app/mainapplication.cpp b/src/lib/app/mainapplication.cpp
+index c65828e4..66096071 100644
+--- a/src/lib/app/mainapplication.cpp
++++ b/src/lib/app/mainapplication.cpp
+@@ -147,7 +147,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+ 
+     bool noAddons = false;
+     bool newInstance = false;
+-
++#if 0
+     if (argc > 1) {
+         CommandLineOptions cmd;
+         foreach (const CommandLineOptions::ActionPair &pair, cmd.getActions()) {
+@@ -202,7 +202,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+             }
+         }
+     }
+-
++#endif
+     if (isPortable()) {
+         std::cout << "Falkon: Running in Portable Mode." << std::endl;
+         DataPaths::setPortableVersion();
+@@ -235,7 +235,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+     if (messages.isEmpty()) {
+         messages.append(QLatin1String(" "));
+     }
+-
++#if 0
+     if (isRunning()) {
+         m_isClosing = true;
+         foreach (const QString &message, messages) {
+@@ -243,6 +243,8 @@ MainApplication::MainApplication(int &argc, char** argv)
+         }
+         return;
+     }
++#endif
++qDebug() << "1";
+ 
+ #ifdef Q_OS_MACOS
+     setQuitOnLastWindowClosed(false);
+@@ -257,6 +259,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+     QDesktopServices::setUrlHandler(QSL("http"), this, "addNewTab");
+     QDesktopServices::setUrlHandler(QSL("https"), this, "addNewTab");
+     QDesktopServices::setUrlHandler(QSL("ftp"), this, "addNewTab");
++qDebug() << "2";
+ 
+     ProfileManager profileManager;
+     profileManager.initConfigDir();
+@@ -653,9 +656,9 @@ void MainApplication::startPrivateBrowsing(const QUrl &startUrl)
+         args << url.toEncoded();
+     }
+ 
+-    if (!QProcess::startDetached(applicationFilePath(), args)) {
++    //if (!QProcess::startDetached(applicationFilePath(), args)) {
+         qWarning() << "MainApplication: Cannot start new browser process for private browsing!" << applicationFilePath() << args;
+-    }
++    //}
+ }
+ 
+ void MainApplication::reloadUserStyleSheet()
+diff --git a/src/lib/lib.pro b/src/lib/lib.pro
+index 52de094a..f69f6dd8 100644
+--- a/src/lib/lib.pro
++++ b/src/lib/lib.pro
+@@ -13,7 +13,7 @@ include(3rdparty/qtsingleapplication/qtsingleapplication.pri)
+ 
+ CONFIG(debug, debug|release): include(../../tests/modeltest/modeltest.pri)
+ 
+-unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
++#unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
+ 
+ INCLUDEPATH += 3rdparty \
+                adblock \
+@@ -457,7 +457,7 @@ RESOURCES += \
+     data/icons.qrc \
+     data/breeze-fallback.qrc
+ 
+-!mac:unix {
++!mac:!genode:unix {
+     target.path = $$library_folder
+ 
+     INSTALLS += target
+diff --git a/src/lib/tools/qztools.cpp b/src/lib/tools/qztools.cpp
+index ea64f3d8..cb802ecf 100644
+--- a/src/lib/tools/qztools.cpp
++++ b/src/lib/tools/qztools.cpp
+@@ -806,6 +806,7 @@ QStringList QzTools::splitCommandArguments(const QString &command)
+ 
+ bool QzTools::startExternalProcess(const QString &executable, const QString &args)
+ {
++#if 0
+     const QStringList arguments = splitCommandArguments(args);
+ 
+     bool success = QProcess::startDetached(executable, arguments);
+@@ -820,6 +821,9 @@ bool QzTools::startExternalProcess(const QString &executable, const QString &arg
+     }
+ 
+     return success;
++#else
++	return false;
++#endif
+ }
+ 
+ void QzTools::setWmClass(const QString &name, const QWidget* widget)
+diff --git a/src/main/main.cpp b/src/main/main.cpp
+index c1af1b6f..14ac8564 100644
+--- a/src/main/main.cpp
++++ b/src/main/main.cpp
+@@ -22,6 +22,7 @@
+ #include <QMessageBox> // For QT_REQUIRE_VERSION
+ #include <iostream>
+ 
++#if 0
+ #if defined(Q_OS_LINUX) || defined(__GLIBC__) || defined(__FreeBSD__) || defined(__HAIKU__)
+ #include <signal.h>
+ #include <execinfo.h>
+@@ -94,6 +95,7 @@ void falkon_signal_handler(int s)
+     std::cout << "Backtrace successfully saved in " << qPrintable(dir.absoluteFilePath(file.fileName())) << std::endl;
+ }
+ #endif // defined(Q_OS_LINUX) || defined(__GLIBC__) || defined(__FreeBSD__)
++#endif
+ 
+ #ifndef Q_OS_WIN
+ void msgHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+@@ -129,8 +131,10 @@ int main(int argc, char* argv[])
+     qInstallMessageHandler(&msgHandler);
+ #endif
+ 
++#if 0
+ #if defined(Q_OS_LINUX) || defined(__GLIBC__) || defined(__FreeBSD__)
+     signal(SIGSEGV, falkon_signal_handler);
++#endif
+ #endif
+ 
+     // Hack to fix QT_STYLE_OVERRIDE with QProxyStyle
+diff --git a/src/main/main.pro b/src/main/main.pro
+index ee9ae20b..a2667c6f 100644
+--- a/src/main/main.pro
++++ b/src/main/main.pro
+@@ -12,10 +12,11 @@ LIBS += $$QZ_DESTDIR/libFalkon.la
+ }
+ else {
+ !unix|mac: LIBS += -L$$QZ_DESTDIR -lFalkon
+-!mac:unix: LIBS += $$QZ_DESTDIR/libFalkon.so
++!mac:!genode:unix: LIBS += $$QZ_DESTDIR/libFalkon.so
++genode: LIBS += $$QZ_DESTDIR/libFalkon.lib.so
+ }
+ 
+-unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
++#unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
+ 
+ INCLUDEPATH += ../lib/3rdparty \
+                ../lib/app \
+diff --git a/src/plugins/AutoScroll/autoscrollsettings.cpp b/src/plugins/AutoScroll/autoscrollsettings.cpp
+index 696856c9..17f9ba64 100644
+--- a/src/plugins/AutoScroll/autoscrollsettings.cpp
++++ b/src/plugins/AutoScroll/autoscrollsettings.cpp
+@@ -19,6 +19,8 @@
+ #include "ui_autoscrollsettings.h"
+ #include "autoscroller.h"
+ 
++#include <QIcon>
++
+ AutoScrollSettings::AutoScrollSettings(AutoScroller* scroller, QWidget* parent)
+     : QDialog(parent)
+     , ui(new Ui::AutoScrollSettings)
