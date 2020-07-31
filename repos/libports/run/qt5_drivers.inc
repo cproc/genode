@@ -252,6 +252,7 @@ proc drivers_start_nodes { } {
 			<provides><service name="Nic"/></provides>
 			<config>
 				<card type="fsl,imx6sx-fec" mii="rgmii" irq="152" mmio="0x30be0000"/>
+				<nic tap="tap_chpro"/>
 			</config>
 		</start>
 	}
