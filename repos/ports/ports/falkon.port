@@ -1,0 +1,10 @@
+LICENSE   := GPLv3
+VERSION   := 3.0
+DOWNLOADS := falkon.git
+
+URL(falkon) := https://github.com/KDE/falkon.git
+REV(falkon) := 0118c0cb966b2c15823945730a7aaa5b3dca545d
+DIR(falkon) := src/app/falkon
+
+PATCHES   := src/app/falkon/patches/*.patch
+PATCH_OPT := -p1 -d ${DIR(falkon)}
