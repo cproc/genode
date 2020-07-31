@@ -45,7 +45,7 @@ void Libc::Component::construct(Libc::Env &env)
 		char const *argv[] = { "qt5_app",
 		                       0 };
 #endif
-//wait_for_continue();
+wait_for_continue();
 		int exit_value = main(argc, argv);
 
 //Genode::error("main() returned");
