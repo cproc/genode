@@ -19,6 +19,7 @@ built.tag: qmake_prepared.tag qmake_root/lib/ld.lib.so
 		-confirm-license \
 		-no-pch \
 		-release \
+		-force-debug-info \
 		-no-strip \
 		-opengl desktop \
 		-no-feature-dbus \
