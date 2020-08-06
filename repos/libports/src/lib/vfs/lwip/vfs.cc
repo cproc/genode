@@ -1703,7 +1703,7 @@ void tcp_err_callback(void *arg, err_t)
 /*********************
  ** VFS file-system **
  *********************/
-
+extern "C" void wait_for_continue();
 class Lwip::File_system final : public Vfs::File_system, public Lwip::Directory
 {
 	private:
@@ -1970,6 +1970,8 @@ class Lwip::File_system final : public Vfs::File_system, public Lwip::Directory
 				destroy(handle->alloc(), handle);
 			} else {
 				Genode::error("refusing to destroy strange handle");
+				Genode::error(&vfs_handle, ": wait_for_continue()");
+				wait_for_continue();
 			}
 
 			/* destroy sockets that are not referenced by any handles */
