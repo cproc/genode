@@ -24,6 +24,7 @@ append build_components [qt5_build_components]
 
 append build_components {
 	app/qt5/examples/minimal_browser
+	app/qt5/examples/calculatorform
 	lib/ld
 	lib/vfs/lwip
 	lib/vfs/jitterentropy
@@ -144,6 +145,7 @@ append boot_modules {
 	libwindowplugin.lib.so
 	mesa.lib.so
 	minimal
+	calculatorform
 	qt5_component.lib.so
 	qt5_declarative_qml.tar
 	qt5_libqgenode.tar
