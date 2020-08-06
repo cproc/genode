@@ -89,6 +89,7 @@ poll(struct pollfd fds[], nfds_t nfds, int timeout)
 		tvp = &tv;
 	}
 	ret = select(maxfd + 1, &readfds, &writefds, &exceptfds, tvp);
+//Genode::log("*** ", &ret, ": poll(): timeout: ", timeout, ", ret: ", ret);
 
 	/* scan through select results and set poll() flags */
 	for (i = 0; i < nfds; i++) {
