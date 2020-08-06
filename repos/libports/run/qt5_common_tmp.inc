@@ -2,10 +2,6 @@ create_boot_directory
 
 source ${genode_dir}/repos/libports/run/qt5_drivers.inc
 
-set feature(Input) 1
-set feature(Framebuffer) 1
-set feature(Timer) 1
-
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/expat \
                   [depot_user]/src/freetype \
@@ -30,13 +26,11 @@ import_from_depot [depot_user]/src/[base_src] \
 # Build
 #
 
-proc qt5_build_components { feature_arg } {
-
-	upvar $feature_arg feature
+proc qt5_build_components { } {
 
 	set build_components { }
 
-	append build_components [drivers_build_components feature]
+	append build_components [drivers_build_components]
 
 	append build_components { }
 
@@ -74,20 +68,16 @@ proc qt5_decorator_config { } {
 		</config>}
 }
 
-proc qt5_parent_provides { feature_arg } {
+proc qt5_parent_provides { } {
 
-	upvar $feature_arg feature
-
-	set parent_provides [drivers_parent_provides feature]
+	set parent_provides [drivers_parent_provides]
 
 	return $parent_provides
 }
 
-proc qt5_start_nodes { feature_arg } {
+proc qt5_start_nodes { } {
 
-	upvar $feature_arg feature
-
-	set start_nodes [drivers_start_nodes feature]
+	set start_nodes [drivers_start_nodes]
 
 	append start_nodes {
 		<start name="nitpicker" caps="200">
@@ -237,13 +227,11 @@ proc qt5_start_nodes { feature_arg } {
 # Boot modules
 #
 
-proc qt5_boot_modules { feature_arg } {
-
-	upvar $feature_arg feature
+proc qt5_boot_modules { } {
 
 	set boot_modules { }
 
-	append boot_modules [drivers_boot_modules feature]
+	append boot_modules [drivers_boot_modules]
 
 	append boot_modules { }
 
