@@ -236,12 +236,29 @@ namespace Libc {
 
 		return VFS_THREAD_SAFE(handle->fs().read_ready(handle));
 #else
-		Vfs::Vfs_handle *handle = vfs_handle(fd);
-		if (!handle) return false;
+		bool result = false;
 
-		handle->fs().notify_read_ready(handle);
+		auto fn = [&] {
 
-		return handle->fs().read_ready(handle);
+			Vfs::Vfs_handle *handle = vfs_handle(fd);
+			if (!handle) return Fn::COMPLETE;
+
+			handle->fs().notify_read_ready(handle);
+
+			result = handle->fs().read_ready(handle);
+
+			return Fn::COMPLETE;
+		};
+
+		if (Libc::Kernel::kernel().main_context() && Libc::Kernel::kernel().main_suspended()) {
+			error("READ_READY_FROM_KERNEL IN KERNEL");
+			fn();
+		} else {
+			error("READ_READY_FROM_KERNEL IN USER");
+			monitor().monitor(vfs_mutex(), fn);
+		}
+
+		return result;
 #endif
 	}
 }
@@ -2527,7 +2544,11 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 			throw Missing_call_of_init_vfs_plugin();
 
 		Genode::Dataspace_capability ds_cap =
+#if OLD_STYLE
 			VFS_THREAD_SAFE(_root_fs.dataspace(fd->fd_path));
+#else
+			_root_fs.dataspace(fd->fd_path);
+#endif
 		if (!ds_cap.valid()) {
 			Genode::error("mmap got invalid dataspace capability");
 			errno = ENODEV;
