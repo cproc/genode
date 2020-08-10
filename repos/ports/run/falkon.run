@@ -53,7 +53,7 @@ append config [qt5_start_nodes]
 
 append config {
 
-<!--
+
 	<start name="vfs" caps="250">
 		<resource name="RAM" quantum="256M"/>
 		<provides> <service name="File_system"/> </provides>
@@ -64,7 +64,7 @@ append config {
 			<default-policy writeable="yes" root="/"/>
 		</config>
 	</start>
--->
+
 
 	<start name="top">
 		<resource name="RAM" quantum="2M"/>
@@ -84,8 +84,8 @@ append config {
 				</dir>
 				<dir name="shm"> <qtwebengine/> </dir>
 				<dir name="socket">
-					<lwip dhcp="yes"/>
-					<!--<fs/>-->
+					<!--<lwip dhcp="yes"/>-->
+					<fs/>
 				</dir>
 				<dir name="tmp"> <ram/> </dir>
 				<tar name="qt5_dejavusans.tar"/>
@@ -99,7 +99,7 @@ append config {
 				<ram/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc" socket="/socket" pid="1">
-				<!--<pthread placement="single-cpu"/>-->
+				<pthread placement="single-cpu"/>
 			</libc>
 		</config>
 		<route>
