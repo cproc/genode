@@ -53,6 +53,7 @@ bool Hw::Address_space::insert_translation(addr_t virt, addr_t phys,
 				_tt.insert_translation(virt, phys, size, flags, _tt_alloc);
 				return true;
 			} catch(Hw::Out_of_tables &) {
+				warning("flush()");
 				flush(platform().vm_start(), platform().vm_size());
 			}
 		}
