@@ -3,6 +3,8 @@ source ${genode_dir}/repos/libports/run/qt5_common.inc
 import_from_depot [depot_user]/src/qt5_calculatorform \
                   [depot_user]/src/qt5_component
 
+build { app/qt5/examples/calculatorform lib/ld }
+
 #
 # Generate config
 #
@@ -54,6 +56,17 @@ install_config $config
 #
 
 append boot_modules [qt5_boot_modules]
+
+append boot_modules {
+	calculatorform
+	ld.lib.so
+	libQt5Core.lib.so
+	libQt5Gui.lib.so
+	libc.lib.so
+	libqgenode.lib.so
+	stdcxx.lib.so
+	vfs.lib.so
+}
 
 build_boot_image $boot_modules
 
