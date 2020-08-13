@@ -117,6 +117,7 @@ typedef Token<Scanner_policy_path_element> Path_element_token;
  */
 void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 {
+Genode::log(&path, ": resolve_symlinks(): ", Genode::Cstring(path));
 	char path_element[PATH_MAX];
 	char symlink_target[PATH_MAX];
 
@@ -129,6 +130,7 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 	do {
 		if (follow_count++ == FOLLOW_LIMIT) {
 			errno = ELOOP;
+			Genode::error("error 1");
 			throw Symlink_resolve_error();
 		}
 
@@ -151,6 +153,7 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 				next_iteration_working_path.append_element(path_element);
 			} catch (Path_base::Path_too_long) {
 				errno = ENAMETOOLONG;
+				Genode::error("error 2");
 				throw Symlink_resolve_error();
 			}
 
@@ -163,14 +166,17 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 				int res;
 				FNAME_FUNC_WRAPPER_GENERIC(res = , stat, next_iteration_working_path.base(), &stat_buf);
 				if (res == -1) {
+					Genode::error(&path, ": error 3");
 					throw Symlink_resolve_error();
 				}
 				if (S_ISLNK(stat_buf.st_mode)) {
 					FNAME_FUNC_WRAPPER_GENERIC(res = , readlink,
 					                           next_iteration_working_path.base(),
 					                           symlink_target, sizeof(symlink_target) - 1);
-					if (res < 1)
+					if (res < 1) {
+						Genode::error("error 4");
 						throw Symlink_resolve_error();
+					}
 
 					/* zero terminate target */
 					symlink_target[res] = 0;
@@ -185,6 +191,7 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 							next_iteration_working_path.append_element(symlink_target);
 						} catch (Path_base::Path_too_long) {
 							errno = ENAMETOOLONG;
+							Genode::error("error 5");
 							throw Symlink_resolve_error();
 						}
 					}
@@ -199,6 +206,7 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 
 	resolved_path = next_iteration_working_path;
 	resolved_path.remove_trailing('/');
+	Genode::log(&path, ": resolve_symlinks() ok");
 }
 
 
