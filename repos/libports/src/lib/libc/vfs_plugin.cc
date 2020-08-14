@@ -204,12 +204,37 @@ namespace Libc {
 
 	bool read_ready_from_kernel(File_descriptor *fd)
 	{
+#if 0
+		bool result = false;
+
+		auto fn = [&] {
+
+			Vfs::Vfs_handle *handle = vfs_handle(fd);
+			if (!handle) return Fn::COMPLETE;
+
+			handle->fs().notify_read_ready(handle);
+
+			result = handle->fs().read_ready(handle);
+
+			return Fn::COMPLETE;
+		};
+
+		if (Libc::Kernel::kernel().main_context() && Libc::Kernel::kernel().main_suspended()) {
+			//error("READ_READY_FROM_KERNEL IN KERNEL");
+			fn();
+		} else {
+			//error("READ_READY_FROM_KERNEL IN USER");
+			Mutex::Guard guard(vfs_mutex());
+			monitor().monitor(vfs_mutex(), fn);
+		}
+
+		return result;
+#else
 		Vfs::Vfs_handle *handle = vfs_handle(fd);
 		if (!handle) return false;
-
 		handle->fs().notify_read_ready(handle);
-
 		return handle->fs().read_ready(handle);
+#endif
 	}
 }
 
@@ -1815,8 +1840,6 @@ int Libc::Vfs_plugin::select(int nfds,
 	FD_ZERO(writefds);
 	FD_ZERO(exceptfds);
 
-	Mutex::Guard guard(vfs_mutex());
-
 	auto fn = [&] {
 		for (int fd = 0; fd < nfds; ++fd) {
 
@@ -1854,6 +1877,7 @@ int Libc::Vfs_plugin::select(int nfds,
 	if (Libc::Kernel::kernel().main_context() && Libc::Kernel::kernel().main_suspended()) {
 		fn();
 	} else {
+		Mutex::Guard guard(vfs_mutex());
 		monitor().monitor(vfs_mutex(), fn);
 	}
 
