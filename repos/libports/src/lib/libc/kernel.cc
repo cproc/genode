@@ -74,11 +74,12 @@ size_t Libc::Kernel::_user_stack_size()
 	return size;
 }
 
-
+extern "C" void wait_for_continue();
 void Libc::Kernel::schedule_suspend(void(*original_suspended_callback) ())
 {
 	if (_state != USER) {
 		error(__PRETTY_FUNCTION__, " called from non-user context");
+		//wait_for_continue();
 		return;
 	}
 
