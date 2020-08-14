@@ -1,11 +1,6 @@
+create_boot_directory
 
 source ${genode_dir}/repos/libports/run/qt5_drivers.inc
-
-set feature(Input) 1
-set feature(Framebuffer) 1
-set feature(Timer) 1
-
-create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/expat \
@@ -31,13 +26,11 @@ import_from_depot [depot_user]/src/[base_src] \
 # Build
 #
 
-proc qt5_build_components { feature_arg } {
-
-	upvar $feature_arg feature
+proc qt5_build_components { } {
 
 	set build_components { }
 
-	append build_components [drivers_build_components feature]
+	append build_components [drivers_build_components]
 
 	append build_components { }
 
@@ -75,39 +68,33 @@ proc qt5_decorator_config { } {
 		</config>}
 }
 
-proc qt5_parent_provides { feature_arg } {
+proc qt5_parent_provides { } {
 
-	upvar $feature_arg feature
-
-	set parent_provides [drivers_parent_provides feature]
+	set parent_provides [drivers_parent_provides]
 
 	return $parent_provides
 }
 
-proc qt5_start_nodes { feature_arg } {
+proc qt5_start_nodes { } {
 
-	upvar $feature_arg feature
-
-	set start_nodes [drivers_start_nodes feature]
+	set start_nodes [drivers_start_nodes]
 
 	append start_nodes {
 		<start name="nitpicker" caps="200">
 			<resource name="RAM" quantum="2M"/>
-			<provides><service name="Gui"/></provides>
-			<route> }
-	append_if [use_fb_sdl feature] start_nodes { 
-				<service name="Framebuffer"> <child name="fb_sdl" /> </service>
-	}
-	append_if [use_fb_drv feature] start_nodes {
-				<service name="Framebuffer"> <child name="fb_drv" /> </service>
-	}
-	append start_nodes {
-				<service name="Input">  <child name="input_filter"/> </service>
+			<provides>
+				<service name="Gui"/>
+				<service name="Capture"/>
+				<service name="Event"/>
+			</provides>
+			<route>
 				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
-			<config>
+			<config request_framebuffer="no" request_input="no">
 				<report focus="yes" hover="yes" xray="yes"/>
+				<capture/>
+				<event/>
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client" focus="click" hover="always" />
@@ -121,7 +108,7 @@ proc qt5_start_nodes { feature_arg } {
 		</start>
 
 		<start name="pointer">
-			<resource name="RAM" quantum="1M"/>
+			<resource name="RAM" quantum="2M"/>
 			<provides> <service name="Report"/> </provides>
 			<config shapes="yes"/>
 			<route>
@@ -152,7 +139,7 @@ proc qt5_start_nodes { feature_arg } {
 				<policy label="clipboard -> focus"            report="nitpicker -> focus"/>
 				<policy label="pointer -> hover"              report="nitpicker -> hover"/>
 				<policy label="pointer -> xray"               report="nitpicker -> xray"/>
-				<policy label="input_filter -> capslock"      report="global_keys_handler -> capslock"/>
+				<policy label="event_filter -> capslock"      report="global_keys_handler -> capslock"/>
 				<policy label="numlock_remap_rom -> numlock"  report="global_keys_handler -> numlock"/>
 				<policy label="ps2_drv -> capslock"           report="global_keys_handler -> capslock"/>
 				<policy label="ps2_drv -> numlock"            report="global_keys_handler -> numlock"/>
@@ -241,13 +228,11 @@ proc qt5_start_nodes { feature_arg } {
 # Boot modules
 #
 
-proc qt5_boot_modules { feature_arg } {
-
-	upvar $feature_arg feature
+proc qt5_boot_modules { } {
 
 	set boot_modules { }
 
-	append boot_modules [drivers_boot_modules feature]
+	append boot_modules [drivers_boot_modules]
 
 	append boot_modules { }
 

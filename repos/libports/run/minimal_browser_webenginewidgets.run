@@ -1,7 +1,5 @@
 source ${genode_dir}/repos/libports/run/qt5_common_tmp.inc
 
-set feature(Nic) 1
-
 #import_from_depot [depot_user]/src/qt5_minimal_browser \
 #                  [depot_user]/src/qt5_base \
 #                  [depot_user]/src/qt5_component \
@@ -22,7 +20,7 @@ import_from_depot [depot_user]/src/qt5_base \
 # Build
 #
 
-append build_components [qt5_build_components feature]
+append build_components [qt5_build_components]
 
 append build_components {
 	app/qt5/examples/minimal_browser_webenginewidgets
@@ -44,7 +42,7 @@ build $build_components
 append config {
 <config>
 	<parent-provides>}
-append config [qt5_parent_provides feature]
+append config [qt5_parent_provides]
 append config {
 	</parent-provides>
 	<default caps="100"/>
@@ -52,7 +50,7 @@ append config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
 
-append config [qt5_start_nodes feature]
+append config [qt5_start_nodes]
 
 append config {
 
@@ -121,7 +119,7 @@ install_config $config
 # Boot modules
 #
 
-append boot_modules [qt5_boot_modules feature]
+append boot_modules [qt5_boot_modules]
 
 append boot_modules {
 	egl.lib.so
