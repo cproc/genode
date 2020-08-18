@@ -42,6 +42,7 @@
 #include <internal/monitor.h>
 #include <internal/pthread.h>
 #include <internal/cwd.h>
+#include <internal/rtc.h>
 
 namespace Libc {
 	class Kernel;
@@ -108,6 +109,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
                             Select,
                             Kernel_routine_scheduler,
                             Current_time,
+                            Current_real_time,
                             Watch,
                             Cwd
 {
@@ -157,6 +159,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		Vfs_plugin _vfs { _libc_env, _libc_env.vfs_env(), _heap, *this,
 		                  _update_mtime ? Vfs_plugin::Update_mtime::YES
 		                                : Vfs_plugin::Update_mtime::NO,
+		                  *this /* current_real_time */,
 		                  _libc_env.config() };
 
 		bool  const _cloned = _libc_env.libc_config().attribute_value("cloned", false);
@@ -179,6 +182,8 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		typedef String<Vfs::MAX_PATH_LEN> Config_attr;
 
 		Config_attr const _rtc_path = _libc_env.libc_config().attribute_value("rtc", Config_attr());
+
+		Constructible<Rtc> _rtc { };
 
 		/* handler for watching the stdout's info pseudo file */
 		Constructible<Watch_handler<Kernel>> _terminal_resize_handler { };
@@ -675,6 +680,24 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 * Cwd interface
 		 */
 		Absolute_path &cwd() { return _cwd; }
+
+
+		/*********************************
+		 ** Current_real_time interface **
+		 *********************************/
+
+		bool has_real_time() const override
+		{
+			return (_rtc_path != "");
+		}
+
+		timespec current_real_time() override
+		{
+			if (!_rtc.constructed())
+				_rtc.construct(_vfs, _heap, _rtc_path, *this);
+
+			return _rtc->read(current_time());
+		}
 
 
 		/****************************************
