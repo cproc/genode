@@ -24,6 +24,8 @@
     <pkg path="usb_webcam"      info="USB webcam"/>
     <pkg path="bsd_audio_drv"   info="audio driver" arch="x86_64"/>
     <pkg path="mixer"           info="audio mixer"/>
+    <pkg path="falkon"          info="Qt5-based web browser"/>
+    <pkg path="falkon-jemalloc" info="Qt5-based web browser"/>
     <pkg path="qt5_virtualkeyboard_app" info="Qt5-based virtual keyboard"/>
   </index>
 
