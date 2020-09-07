@@ -209,7 +209,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		bool    _dispatch_pending_io_signals = false;
 
 		/* io_progress_handler marker */
-		bool _io_ready { false };
+		bool _io_progressed { false };
 
 		Thread &_myself { *Thread::myself() };
 
@@ -463,6 +463,9 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 				dispatch_all_pending_io_signals();
 
+				if (_io_progressed)
+					Kernel::resume_all();
+
 				/*
 				 * Execute monitors on kernel entry regardless of any I/O
 				 * because the monitor function may be unrelated to I/O.
@@ -470,7 +473,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 				if (_execute_monitors_pending == Monitor::Pool::State::JOBS_PENDING)
 					_execute_monitors_pending = _monitors.execute_monitors();
 
-				_io_ready = false;
+				_io_progressed = false;
 
 				/*
 				 * Process I/O signals without returning to the application
@@ -479,11 +482,26 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 				auto main_blocked_in_monitor = [&] ()
 				{
+					/*
+					 * In general, 'resume_all()' only flags the main state but
+					 * does not alter the main monitor job. For exmaple in case
+					 * of a sleep timeout, main is resumed by 'resume_main()'
+					 * in 'Main_blockade::wakeup()' but did not yet return from
+					 * 'suspend()'. The expired state in the main job is set
+					 * only after 'suspend()' returned.
+					 */
+					if (_resume_main_once)
+						return false;
+
 					return _main_monitor_job.constructed()
-					   && !_main_monitor_job->completed();
+					   && !_main_monitor_job->completed()
+					   && !_main_monitor_job->expired();
 				};
 
-				while (main_blocked_in_monitor() || (_resume_main_once == false)) {
+				auto main_suspended_for_io = [&] {
+					return _resume_main_once == false; };
+
+				while (main_blocked_in_monitor() || main_suspended_for_io()) {
 
 					/*
 					 * Block for one I/O signal and process all pending ones
@@ -570,13 +588,16 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 			}
 		}
 
-		void _charge_monitors() override
+		void _trigger_monitor_examination() override
 		{
-			if (_execute_monitors_pending == Monitor::Pool::State::ALL_COMPLETE) {
-				_execute_monitors_pending =  Monitor::Pool::State::JOBS_PENDING;
-				if (!_main_context())
-					Signal_transmitter(*_execute_monitors).submit();
-			}
+			if (!_main_context())
+				Signal_transmitter(*_execute_monitors).submit();
+		}
+
+		void _monitors_outdated() override
+		{
+			_execute_monitors_pending = Monitor::Pool::State::JOBS_PENDING;
+			_io_progressed = true;
 		}
 
 		/**
@@ -647,7 +668,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		/**
 		 * Cwd interface
 		 */
-		Absolute_path &cwd() { return _cwd; }
+		Absolute_path &cwd() override { return _cwd; }
 
 
 		/*********************************
@@ -672,11 +693,8 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 ** Vfs::Io_response_handler interface **
 		 ****************************************/
 
-		void read_ready_response() override {
-			_io_ready = true; }
-
-		void io_progress_response() override {
-			_io_ready = true; }
+		void read_ready_response() override  { _io_progressed = true; }
+		void io_progress_response() override { _io_progressed = true; }
 
 
 		/**********************************************
