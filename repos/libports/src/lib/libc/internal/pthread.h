@@ -51,6 +51,9 @@ class Libc::Pthread_registry
 
 		Pthread *_array[MAX_NUM_PTHREADS] = { 0 };
 
+		/* self-destructing thread to be cleaned up on next 'cleanup()' call */
+		Pthread *_cleanup_thread { nullptr };
+
 	public:
 
 		void insert(Pthread &thread);
@@ -58,6 +61,9 @@ class Libc::Pthread_registry
 		void remove(Pthread &thread);
 
 		bool contains(Pthread &thread);
+
+		/* destroy '_cleanup_thread' and replace by new one if given */
+		void cleanup(Pthread *new_cleanup_thread = nullptr);
 };
 
 
@@ -68,8 +74,9 @@ extern "C" {
 
 	struct pthread_attr
 	{
-		void   *stack_addr { nullptr };
-		size_t  stack_size { Libc::Component::stack_size() };
+		void   *stack_addr   { nullptr };
+		size_t  stack_size   { Libc::Component::stack_size() };
+		int     detach_state { PTHREAD_CREATE_JOINABLE };
 	};
 
 	/*
@@ -160,6 +167,7 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 		void _associate_thread_with_pthread()
 		{
 			Thread::Tls::Base::tls(_thread, *this);
+			pthread_registry().cleanup();
 			pthread_registry().insert(*this);
 		}
 
@@ -179,6 +187,8 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 		/* return value for 'pthread_join()' */
 		void *_retval = PTHREAD_CANCELED;
+
+		bool _joinable;
 
 		/* attributes for 'pthread_attr_get_np()' */
 		void   *_stack_addr = nullptr;
@@ -210,11 +220,13 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 		 */
 		Pthread(start_routine_t start_routine,
 		        void *arg, size_t stack_size, char const * name,
+		        bool joinable,
 		        Cpu_session * cpu, Affinity::Location location)
 		:
 			_thread(_construct_thread_object(name, stack_size, cpu, location,
 			                                 start_routine, arg,
-			                                 _stack_addr, _stack_size))
+			                                 _stack_addr, _stack_size)),
+			_joinable(joinable)
 		{
 			_associate_thread_with_pthread();
 		}
@@ -244,6 +256,8 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 		void join(void **retval);
 
+		int detach();
+
 		/*
 		 * Inform the thread calling 'pthread_join()' that this thread can be
 		 * destroyed.
@@ -255,6 +269,10 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 			while (cleanup_pop(1)) { }
 			_retval = retval;
 			cancel();
+			if (!_joinable) {
+				/* register for external destruction */
+				pthread_registry().cleanup(this);
+			}
 		}
 
 		void   *stack_addr() const { return _stack_addr; }

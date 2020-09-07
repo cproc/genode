@@ -68,7 +68,10 @@ void Libc::Pthread::Thread_object::entry()
 	_stack_addr = (void *)info.base;
 	_stack_size = info.top - info.base;
 
-	pthread_exit(_start_routine(_arg));
+	//pthread_exit(_start_routine(_arg));
+	void *value = _start_routine(_arg);
+	Genode::error(pthread_self(), ": pthread done");
+	pthread_exit(value);
 }
 
 
@@ -104,6 +107,19 @@ void Libc::Pthread::join(void **retval)
 }
 
 
+void Libc::Pthread::detach()
+{
+	if (!_joinable)
+		return EINVAL;
+
+	_joinable = false;
+
+	/* XXX */
+
+	return 0;
+}
+
+
 void Libc::Pthread::cancel()
 {
 	_exiting = true;
@@ -114,7 +130,8 @@ void Libc::Pthread::cancel()
 
 	_resume_ptr->resume_all();
 
-	_join_blockade.wakeup();
+	if (_joinable)
+		_join_blockade.wakeup();
 }
 
 
@@ -159,6 +176,21 @@ bool Libc::Pthread_registry::contains(Pthread &thread)
 			return true;
 
 	return false;
+}
+
+
+void Libc::Pthread_registry::cleanup(Pthread *new_cleanup_thread)
+{
+	static Mutex cleanup_mutex;
+	Mutex::Guard guard(cleanup_mutex);
+
+	if (_cleanup_thread) {
+		Genode::error("destroying cleanup thread");
+		Libc::Allocator alloc { };
+		destroy(alloc, _cleanup_thread);
+	}
+
+	_cleanup_thread = new_cleanup_thread;
 }
 
 
@@ -629,6 +661,34 @@ extern "C" {
 	pthread_t __sys_thr_self(void);
 
 
+	int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
+	{
+		if (!attr || !*attr || !detachstate)
+			return EINVAL;
+
+		*detachstate = (*attr)->detach_state;
+
+		return 0;
+	}
+
+	typeof(pthread_attr_getdetachstate) _pthread_attr_getdetachstate
+		__attribute__((alias("pthread_attr_getdetachstate")));
+
+
+	int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
+	{
+		if (!attr || !*attr)
+			return EINVAL;
+
+		(*attr)->detach_state = detachstate;
+
+		return 0;
+	}
+
+	typeof(pthread_attr_setdetachstate) _pthread_attr_setdetachstate
+		__attribute__((alias("pthread_attr_setdetachstate")));
+
+
 	int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
 	{
 		if (!attr || !*attr)
@@ -705,6 +765,17 @@ extern "C" {
 
 	typeof(pthread_equal) _pthread_equal
 		__attribute__((alias("pthread_equal")));
+
+
+	int pthread_detach(pthread_t thread)
+	{
+		Genode::error("pthread_detach(): self: ", pthread_self(), ", thread: ", thread);
+		return thread->detach();
+		return 0;
+	}
+
+	typeof(pthread_detach) _pthread_detach
+		__attribute__((alias("pthread_detach")));
 
 
 	void __pthread_cleanup_push_imp(void (*routine)(void*), void *arg,

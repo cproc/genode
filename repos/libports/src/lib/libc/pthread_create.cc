@@ -87,12 +87,13 @@ static unsigned pthread_id()
 int Libc::pthread_create(pthread_t *thread,
                          void *(*start_routine) (void *), void *arg,
                          size_t stack_size, char const * name,
+                         bool joinable,
                          Cpu_session * cpu, Affinity::Location location)
 {
 	Libc::Allocator alloc { };
 	pthread_t thread_obj = new (alloc)
 	                       pthread(start_routine, arg,
-	                               stack_size, name, cpu, location);
+	                               stack_size, name, joinable, cpu, location);
 	if (!thread_obj)
 		return EAGAIN;
 
@@ -116,18 +117,25 @@ int Libc::pthread_create(pthread_t *thread, Thread &t)
 	return 0;
 }
 
-
+extern "C" void wait_for_continue();
 extern "C"
 {
 	int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                   void *(*start_routine) (void *), void *arg)
 	{
+static int count = 0;
+count++;
+Genode::warning("pthread_create(): ", count);
+//wait_for_continue();
 		if (!_cpu_session || !start_routine || !thread)
 			return EINVAL;
 
 		size_t const stack_size = (attr && *attr && (*attr)->stack_size)
 		                        ? (*attr)->stack_size
 		                        : Libc::Component::stack_size();
+
+		bool const joinable = (attr && *attr &&
+		                      ((*attr)->detach_state == PTHREAD_CREATE_JOINABLE));
 
 		using Genode::Affinity;
 
@@ -142,8 +150,8 @@ extern "C"
 			Genode::log("create ", pthread_name, " -> cpu ", cpu);
 
 		return Libc::pthread_create(thread, start_routine, arg, stack_size,
-		                            pthread_name.string(), _cpu_session,
-		                            location);
+		                            pthread_name.string(), joinable,
+		                            _cpu_session, location);
 	}
 
 	typeof(pthread_create) _pthread_create

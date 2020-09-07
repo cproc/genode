@@ -30,6 +30,7 @@ namespace Libc {
 	int pthread_create(pthread_t *thread,
 	                   void *(*start_routine) (void *), void *arg,
 	                   size_t stack_size, char const * name,
+	                   bool joinable,
 	                   Cpu_session * cpu, Affinity::Location location);
 
 	int pthread_create(pthread_t *, Thread &);
