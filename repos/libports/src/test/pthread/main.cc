@@ -68,7 +68,7 @@ static void *thread_func(void *arg)
  * Test self-destructing threads with 'pthread_join()', both when created and
  * joined by the main thread and when created and joined by a pthread.
  */
-
+extern "C" void wait_for_continue();
 static void self_destruct_helper(void *(*start_routine)(void*), uintptr_t num_iterations)
 {
 	for (uintptr_t i = 0; i < num_iterations; i++) {
@@ -76,18 +76,25 @@ static void self_destruct_helper(void *(*start_routine)(void*), uintptr_t num_it
 		pthread_t  t;
 		void      *retval;
 
-		if (pthread_create(&t, 0, start_routine, (void*)i) != 0) {
+		pthread_attr_t attr;
+
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+		if (pthread_create(&t, &attr, start_routine, (void*)i) != 0) {
 			printf("error: pthread_create() failed\n");
 			exit(-1);
 		}
 
-		pthread_join(t, &retval);
-
-		if (retval != (void*)i) {
-			printf("error: return value does not match\n");
-			exit(-1);
-		}
+//		pthread_join(t, &retval);
+//
+//		if (retval != (void*)i) {
+//			printf("error: return value does not match\n");
+//			exit(-1);
+//		}
 	}
+
+	wait_for_continue();
 }
 
 static void *thread_func_self_destruct2(void *arg)
@@ -98,8 +105,8 @@ static void *thread_func_self_destruct2(void *arg)
 static void *thread_func_self_destruct(void *arg)
 {
 	/* also test nesting of pthreads */
-	self_destruct_helper(thread_func_self_destruct2, 2);
-
+	//self_destruct_helper(thread_func_self_destruct2, 2);
+pthread_detach(pthread_self());
 	return arg;
 }
 
@@ -1163,7 +1170,7 @@ int main(int argc, char **argv)
 	if (!pthread_main)
 		exit(-1);
 
-	test_interplay();
+	//test_interplay();
 	test_self_destruct();
 	test_mutex();
 	test_mutex_stress();
