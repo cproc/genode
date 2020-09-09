@@ -61,7 +61,6 @@ class Libc::Monitor : Interface
 
 		virtual Result _monitor(Mutex &, Function &, uint64_t) = 0;
 		virtual void _trigger_monitor_examination() = 0;
-		virtual void _monitors_outdated() = 0;
 
 	public:
 
@@ -89,16 +88,8 @@ class Libc::Monitor : Interface
 
 		/**
 		 * Trigger examination of monitored functions
-		 *
-		 * Monitor functions are executed only if the monitor state is
-		 * outdated.
 		 */
 		void trigger_monitor_examination() { _trigger_monitor_examination(); }
-
-		/**
-		 * Mark monitor state as outdated
-		 */
-		void monitors_outdated() { _monitors_outdated(); }
 };
 
 
@@ -144,7 +135,6 @@ struct Libc::Monitor::Pool
 
 			mutex.release();
 
-			_monitor.monitors_outdated();
 			_monitor.trigger_monitor_examination();
 
 			job.wait_for_completion();

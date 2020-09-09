@@ -291,7 +291,9 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 		void _monitors_handler()
 		{
-			 /* used to leave I/O-signal dispatcher only - handled afterwards */
+			/* mark monitors for execution when running in kernel only */
+			_execute_monitors_pending = Monitor::Pool::State::JOBS_PENDING;
+			_io_progressed = true;
 		}
 
 		Constructible<Clone_connection> _clone_connection { };
@@ -466,14 +468,14 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 				if (_io_progressed)
 					Kernel::resume_all();
 
+				_io_progressed = false;
+
 				/*
 				 * Execute monitors on kernel entry regardless of any I/O
 				 * because the monitor function may be unrelated to I/O.
 				 */
 				if (_execute_monitors_pending == Monitor::Pool::State::JOBS_PENDING)
 					_execute_monitors_pending = _monitors.execute_monitors();
-
-				_io_progressed = false;
 
 				/*
 				 * Process I/O signals without returning to the application
@@ -590,14 +592,10 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 
 		void _trigger_monitor_examination() override
 		{
-			if (!_main_context())
+			if (_main_context())
+				_monitors_handler();
+			else
 				Signal_transmitter(*_execute_monitors).submit();
-		}
-
-		void _monitors_outdated() override
-		{
-			_execute_monitors_pending = Monitor::Pool::State::JOBS_PENDING;
-			_io_progressed = true;
 		}
 
 		/**
