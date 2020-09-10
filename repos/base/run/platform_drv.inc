@@ -1,6 +1,7 @@
 proc have_platform_drv {} {
 	return [expr [have_board imx53_qsb] \
 	          || [have_board imx53_qsb_tz] \
+	          || [have_board imx8q_evk] \
 	          || [have_board rpi] \
 	          || [have_board pc]]
 }
@@ -67,6 +68,7 @@ proc append_platform_drv_build_components {} {
 proc platform_drv_binary {} {
 	if {[have_board imx53_qsb]}    { return imx53_platform_drv }
 	if {[have_board imx53_qsb_tz]} { return imx53_platform_drv }
+	if {[have_board imx8q_evk]}    { return imx8mq_platform_drv }
 	if {[have_board rpi]}          { return rpi_platform_drv   }
 	if {[have_board pc]}           { return platform_drv       }
 	return no_platform_drv_available
@@ -96,7 +98,9 @@ proc platform_drv_policy {} {
 		return {}
 	}
 
-	set drv_policy ""
+	if (![have_spec x86]) {
+		return $drv_policy
+	}
 
 	if {[acpi_drv_name] eq "acpica"} {
 		append drv_policy {
@@ -248,6 +252,76 @@ proc platform_drv_config {} {
 		</route>}
 
 		append drv_config [platform_drv_config_config]
+
+		if [have_spec imx8q_evk] {
+			append drv_config {
+				<device name="usb_host_2">
+					<io_mem       address="0x38200000" size="0x10000"/>
+					<irq          number="73"/>
+					<power-domain name="usb_otg_2"/>
+					<clock        name="usb_phy_ref_clk_root"
+				              	  driver_name="usb_phy_root_clk"
+				              	  parent="system_pll1_div8"
+				              	  rate="100000000"/>
+					<clock        name="usb_core_ref_clk_root"
+				              	  parent="system_pll1_div8"
+				              	  rate="100000000"/>
+					<clock        name="usb_bus_clk_root"
+				              	  parent="system_pll2_div2"
+				              	  rate="500000000"/>
+					<clock        name="usb_ctrl2_gate"/>
+					<clock        name="usb_phy2_gate"/>
+					<property     name="compatible" value="snps,dwc3"/>
+					<property     name="dr_mode"    value="host"/>
+				</device>
+
+				<device name="dcss">
+					<io_mem       address="0x32e00000" size="0x30000"/>
+					<irq          number="50"/>
+					<clock        name="display_apb_clk_root"
+				              	  driver_name="apb"/>
+					<clock        name="display_axi_clk_root"
+				              	  parent="system_pll1_clk"
+				              	  rate="800000000"
+				              	  driver_name="axi"/>
+					<clock        name="display_rtrm_clk_root"
+				              	  parent="system_pll1_clk"
+				              	  rate="400000000"
+				              	  driver_name="rtrm"/>
+					<clock        name="video2_pll2_clk"
+				              	  parent="27m_ref_clk"
+				              	  driver_name="pix"/>
+					<clock        name="display_dtrc_clk_root"
+				              	  driver_name="dtrc"/>
+					<clock        name="dc_pixel_clk_root"
+				              	  parent="video_pll1_clk"
+				              	  rate="594000000"/>
+					<property     name="compatible" value="nxp,imx8mq-dcss"/>
+					<property     name="disp-dev"   value="hdmi_disp"/>
+				</device>
+
+				<device name="hdmi">
+					<io_mem       address="0x32c00000" size="0x100000"/>
+					<io_mem       address="0x32e40000" size="0x40000"/>
+					<io_mem       address="0x32e2f000" size="0x10"/>
+					<irq          number="48"/>
+					<irq          number="57"/>
+					<property     name="compatible" value="fsl,imx8mq-hdmi"/>
+				</device>
+
+				<device name="fec">
+					<io_mem   address="0x30be0000" size="0x4000"/>
+					<irq      number="152"/>
+					<irq      number="151"/>
+					<irq      number="150"/>
+					<property name="compatible" value="fsl,imx6sx-fec"/>
+					<property name="mii"        value="rgmii-id"/>
+				</device>
+			}
+
+
+		}
+
 		append drv_config [platform_drv_policy]
 
 		append drv_config {
