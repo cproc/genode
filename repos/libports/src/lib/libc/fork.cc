@@ -354,41 +354,35 @@ struct Libc::Local_clone_service : Noncopyable
 
 	typedef Local_service<Session> Service;
 
-	Child_ready &_child_ready;
-
-	Io_signal_handler<Local_clone_service> _child_ready_handler;
-
-	void _handle_child_ready()
-	{
-		_child_ready.child_ready();
-
-		monitor().monitors_outdated();
-	}
-
 	struct Factory : Local_service<Session>::Factory
 	{
-		Session                  &_session;
-		Signal_context_capability _started_sigh;
+		Session     &_session;
+		Child_ready &_child_ready;
 
-		Factory(Session &session, Signal_context_capability started_sigh)
-		: _session(session), _started_sigh(started_sigh) { }
+		Factory(Session &session, Child_ready &child_ready)
+		: _session(session), _child_ready(child_ready) { }
 
 		Session &create(Args const &, Affinity) override { return _session; }
 
 		void upgrade(Session &, Args const &) override { }
 
-		void destroy(Session &) override { Signal_transmitter(_started_sigh).submit(); }
+		void destroy(Session &) override
+		{
+			Mutex mutex { };
+			mutex.acquire();
+
+			monitor().monitor(mutex, [&] {
+				_child_ready.child_ready();
+				return Fn::COMPLETE;
+			});
+		}
 
 	} _factory;
 
 	Service service { _factory };
 
 	Local_clone_service(Env &env, Entrypoint &ep, Child_ready &child_ready)
-	:
-		_session(env, ep), _child_ready(child_ready),
-		_child_ready_handler(env.ep(), *this, &Local_clone_service::_handle_child_ready),
-		_factory(_session, _child_ready_handler)
-	{ }
+	: _session(env, ep), _factory(_session, child_ready) { }
 };
 
 
@@ -409,8 +403,8 @@ struct Libc::Forked_child : Child_policy, Child_ready
 	Name const _name { _pid };
 
 	/*
-	 * Signal handler triggered at the main entrypoint, waking up the libc
-	 * suspend mechanism.
+	 * Signal handler triggered at the main entrypoint, charging 'SIGCHILD'
+	 * and waking up the libc monitor mechanism.
 	 */
 	Io_signal_handler<Libc::Forked_child> _exit_handler {
 		_env.ep(), *this, &Forked_child::_handle_exit };
@@ -418,7 +412,7 @@ struct Libc::Forked_child : Child_policy, Child_ready
 	void _handle_exit()
 	{
 		_signal.charge(SIGCHLD);
-		monitor().monitors_outdated();
+		monitor().trigger_monitor_examination();
 	}
 
 	Child_config _child_config;
@@ -446,7 +440,7 @@ struct Libc::Forked_child : Child_policy, Child_ready
 		/*
 		 * Don't modify the state if the child already exited.
 		 * This can happen for short-lived children where the asynchronous
-		 * notification for '_handle_exit' arrives before '_handle_child_ready'
+		 * notification for 'Child_exit' arrives before 'Child_ready'
 		 * (while the parent is still blocking in the fork call).
 		 */
 		if (_state == State::STARTING_UP)
@@ -531,6 +525,10 @@ struct Libc::Forked_child : Child_policy, Child_ready
 		_exit_code = code;
 		_state     = State::EXITED;
 
+		/*
+		 * We can't destroy the child object in a monitor from this RPC
+		 * function as this would deadlock in an 'Entrypoint::dissolve()'.
+		 */
 		Signal_transmitter(_exit_handler).submit();
 	}
 
