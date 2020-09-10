@@ -94,7 +94,8 @@ class Sculpt::Runtime_state : public Runtime_info
 
 			Constructible<Component> construction { };
 
-			bool launched;
+			bool     launched;
+			unsigned version = 0;
 
 			/**
 			 * Constructor used for child started via launcher
@@ -121,6 +122,9 @@ class Sculpt::Runtime_state : public Runtime_info
 					return;
 
 				gen_named_node(xml, "start", name, [&] () {
+
+					if (version > 0)
+						xml.attribute("version", version);
 
 					/* interactively constructed */
 					if (construction.constructed()) {
@@ -361,6 +365,13 @@ class Sculpt::Runtime_state : public Runtime_info
 			 * Child was present at initial deploy config, mark as abandoned
 			 */
 			new (_alloc) Registered<Abandoned_child>(_abandoned_children, name);
+		}
+
+		void restart(Start_name const &name)
+		{
+			_launched_children.for_each([&] (Registered<Launched_child> &child) {
+				if (child.name == name)
+					child.version++; });
 		}
 
 		void launch(Start_name const &name, Path const &launcher)
