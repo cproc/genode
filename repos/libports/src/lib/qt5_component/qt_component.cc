@@ -17,6 +17,7 @@
 
 /* libc includes */
 #include <stdlib.h> /* 'exit'    */
+#include <pthread.h>
 
 /* qt5_component includes */
 #include <qt5_component/qpa_init.h>
@@ -27,15 +28,23 @@ extern char **environ;
 /* provided by the application */
 extern "C" int main(int argc, char **argv, char **envp);
 
+int argc    = 0;
+char **argv = nullptr;
+char **envp = nullptr;
+
+void *main_func(void *arg)
+{
+	Libc::with_libc([&] {
+		exit(main(argc, argv, envp));
+	});
+}
+
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
 
 		qpa_init(env);
 
-		int argc    = 0;
-		char **argv = nullptr;
-		char **envp = nullptr;
 
 		populate_args_and_env(env, argc, argv, envp);
 
@@ -51,6 +60,8 @@ void Libc::Component::construct(Libc::Env &env)
 
 		environ = envp;
 
-		exit(main(argc, argv, envp));
+		pthread_t main_thread;
+		pthread_create(&main_thread, nullptr, main_func, nullptr);
+		//pthread_join(main_thread, nullptr);
 	});
 }
