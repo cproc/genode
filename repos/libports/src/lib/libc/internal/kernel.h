@@ -407,6 +407,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		 */
 		void run(Application_code &app_code)
 		{
+Genode::log("run()");
 			if (!_main_context() || _state != KERNEL) {
 				error(__PRETTY_FUNCTION__, " called from non-kernel context");
 				return;
@@ -506,6 +507,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 					_switch_to_user();
 				}
 			}
+Genode::log("run() finished");
 		}
 
 		/**
@@ -575,8 +577,13 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 		{
 			if (_main_context())
 				_monitors_handler();
-			else
+			else {
+				static int count;
+				count++;
+				if (count % 1000 == 0)
+					Genode::log("_trigger_monitor_examination(): ", count);
 				Signal_transmitter(*_execute_monitors).submit();
+			}
 		}
 
 		/**

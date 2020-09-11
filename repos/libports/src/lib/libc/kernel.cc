@@ -392,13 +392,42 @@ extern void (*libc_select_notify_from_kernel)();
 
 void Libc::Kernel::handle_io_progress()
 {
+	static unsigned int count;
+	static unsigned int io_progressed_count;
+	static unsigned int monitor_count;
+	static unsigned int duration;
+	static unsigned int monitor_duration;
+
+	count++;
+	if (count % 1000 == 0) {
+		Genode::log("handle_io_progress(): executed: ", count, ", io: ", io_progressed_count,
+	                ", monitor: ", monitor_count, ", duration: ", duration, ", monitor duration: ", monitor_duration,
+	                ", ratio: ", (monitor_duration * 100) / (duration + monitor_duration));
+	    duration = 0;
+	    monitor_duration = 0;
+	}
+
 	if (_io_progressed) {
 		_io_progressed = false;
 
+		io_progressed_count++;
+
 		Kernel::resume_all();
 
-		if (_execute_monitors_pending == Monitor::Pool::State::JOBS_PENDING)
+		if (_execute_monitors_pending == Monitor::Pool::State::JOBS_PENDING) {
+			monitor_count++;
+			static unsigned int d2_ms;
+
+			unsigned int d1_ms = current_time().trunc_to_plain_ms().value;
+
+			if (d2_ms)
+				duration += d1_ms - d2_ms;
+
 			_execute_monitors_pending = _monitors.execute_monitors();
+			d2_ms = current_time().trunc_to_plain_ms().value;
+			
+			monitor_duration += (d2_ms - d1_ms);
+		}
 	}
 }
 
@@ -476,7 +505,7 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 	init_vfs_plugin(*this, _env.rm());
 	init_file_operations(*this);
 	init_time(*this, *this);
-	init_select(*this, _signal, *this);
+	init_select(*this, _signal, *this, *this);
 	init_socket_fs(*this);
 	init_passwd(_passwd_config());
 	init_signal(_signal);
