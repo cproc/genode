@@ -53,13 +53,15 @@ using namespace Libc;
 static Select       *_select_ptr;
 static Libc::Signal *_signal_ptr;
 static Monitor      *_monitor_ptr;
+static Current_time *_current_time_ptr;
 
 
-void Libc::init_select(Select &select, Signal &signal, Monitor &monitor)
+void Libc::init_select(Select &select, Signal &signal, Monitor &monitor, Current_time &current_time)
 {
 	_select_ptr  = &select;
 	_signal_ptr  = &signal;
 	_monitor_ptr = &monitor;
+	_current_time_ptr = &current_time;
 }
 
 
@@ -291,9 +293,17 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 		return (_signal_ptr->count() != orig_signal_count);
 	};
 
+	unsigned int monitor_duration = 0;
+
 	auto monitor_fn = [&] ()
 	{
+		unsigned int d1_ms = _current_time_ptr->current_time().trunc_to_plain_ms().value;
+
 		select_notify_from_kernel();
+
+		unsigned int d2_ms = _current_time_ptr->current_time().trunc_to_plain_ms().value;
+	
+		monitor_duration += d2_ms - d1_ms;
 
 		if (select_cb->nready != 0)
 			return Monitor::Function_result::COMPLETE;
@@ -306,6 +316,16 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 
 	Monitor::Result const monitor_result =
 		_monitor_ptr->monitor(monitor_fn, timeout_ms);
+
+	{
+		static int count;
+		static unsigned int duration;
+		static Mutex mutex;
+		Mutex::Guard guard(mutex);
+		duration += monitor_duration;
+		if (++count % 1000 == 0)
+			Genode::log("select(): count: ", count, ", duration: ", duration);
+	}
 
 	select_cb_list().remove(&(*select_cb));
 

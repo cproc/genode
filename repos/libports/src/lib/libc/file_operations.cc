@@ -246,7 +246,9 @@ extern "C" int chdir(const char *path)
  */
 __SYS_(int, close, (int libc_fd),
 {
+//Genode::error("close(): ", libc_fd);
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
+//Genode::error("close(): found: ", libc_fd);
 
 	if (!fd)
 		return Errno(EBADF);
@@ -537,7 +539,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	if (!new_fdo)
 		return -1;
 	new_fdo->path(resolved_path.base());
-
+//Genode::error("open(", Genode::Cstring(pathname), "): ", new_fdo->libc_fd);
 	return new_fdo->libc_fd;
 })
 

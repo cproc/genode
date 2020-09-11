@@ -72,14 +72,29 @@ class Libc::Monitor : Interface
 		template <typename FN>
 		Result monitor(FN const &fn, uint64_t timeout_ms = 0)
 		{
+			static unsigned int execute_count;
+			static unsigned int monitor_count;
+
 			struct _Function : Function
 			{
 				FN const &fn;
-				Function_result execute() override { return fn(); }
-				_Function(FN const &fn) : fn(fn) { }
-			} function { fn };
+				unsigned int &count;
+				static void marker() { }
+				Function_result execute() override
+				{
+					count++;
+					return fn();
+				}
+				_Function(FN const &fn, unsigned int &count) : fn(fn), count(count) { }
+			} function { fn, execute_count };
 
-			return _monitor(function, timeout_ms);
+			Result result = _monitor(function, timeout_ms);
+
+			if (++monitor_count % 1000 == 0)
+				Genode::log(__PRETTY_FUNCTION__, ": m: ", monitor_count, ", e: ", execute_count,
+				            ", fn: ", (void*)&_Function::marker);
+
+			return result;
 		}
 
 		/**

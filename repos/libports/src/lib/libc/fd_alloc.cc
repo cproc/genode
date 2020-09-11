@@ -93,7 +93,7 @@ void File_descriptor_allocator::preserve(int fd)
 		alloc(nullptr, nullptr, fd);
 }
 
-
+extern "C" void wait_for_continue();
 File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 {
 	Mutex::Guard guard(_mutex);
@@ -107,7 +107,12 @@ File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 		Id_space::Id const id {(unsigned)libc_fd};
 		_id_space.apply<File_descriptor>(id, [&] (File_descriptor &fd) {
 			result = &fd; });
-	} catch (Id_space::Unknown_id) { }
+	} catch (Id_space::Unknown_id) {
+		int dummy;
+		Genode::error(&dummy, ": unknown fd: ", libc_fd);
+		//wait_for_continue();
+	}
+		
 
 	return result;
 }

@@ -21,6 +21,7 @@
 #include <util/list.h>
 #include <base/semaphore.h>
 #include <base/capability.h>
+#include <base/log.h>
 
 /* only needed for base-hw */
 namespace Kernel { struct Signal_receiver; }
@@ -497,7 +498,7 @@ struct Genode::Io_signal_handler : Signal_handler<T, EP>
 {
 	Io_signal_handler(EP &ep, T &obj, void (T::*member)())
 	: Signal_handler<T, EP>(ep, obj, member)
-	{ Signal_context::_level = Signal_context::Level::Io; }
+	{ Signal_context::_level = Signal_context::Level::Io; Genode::log(__PRETTY_FUNCTION__); }
 };
 
 #endif /* _INCLUDE__BASE__SIGNAL_H_ */
