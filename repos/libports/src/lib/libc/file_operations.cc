@@ -17,6 +17,8 @@
 /* Genode includes */
 #include <base/env.h>
 #include <os/path.h>
+#include <region_map/client.h>
+#include <rm_session/connection.h>
 #include <util/token.h>
 
 /* Genode-specific libc interfaces */
@@ -63,11 +65,14 @@ Libc::Mmap_registry *Libc::mmap_registry()
 }
 
 
-static Cwd *_cwd_ptr;
+static Cwd                   *_cwd_ptr;
+static Genode::Env           *_env_ptr;
 
-void Libc::init_file_operations(Cwd &cwd)
+void Libc::init_file_operations(Cwd &cwd,
+                                Genode::Env &env)
 {
 	_cwd_ptr = &cwd;
+	_env_ptr = &env;
 }
 
 
@@ -85,6 +90,17 @@ static Absolute_path &cwd()
 		throw Missing_call_of_init_file_operations();
 
 	return _cwd_ptr->cwd();
+}
+
+/*
+ * Genode environment
+ */
+static Genode::Env &env()
+{
+	struct Missing_call_of_init_vfs_plugin : Genode::Exception { };
+	if (!_env_ptr)
+		throw Missing_call_of_init_vfs_plugin();
+	return *_env_ptr;
 }
 
 /**
@@ -246,6 +262,7 @@ extern "C" int chdir(const char *path)
  */
 __SYS_(int, close, (int libc_fd),
 {
+Genode::warning("close(): ", libc_fd, ", ret: ", __builtin_return_address(0));
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 
 	if (!fd)
@@ -253,7 +270,7 @@ __SYS_(int, close, (int libc_fd),
 
 	if (!fd->plugin || fd->plugin->close(fd) != 0)
 		file_descriptor_allocator()->free(fd);
-
+//Genode::warning("close() finished: ", libc_fd);
 	return 0;
 })
 
@@ -262,12 +279,14 @@ extern "C" int dup(int libc_fd)
 {
 	File_descriptor *ret_fd;
 	FD_FUNC_WRAPPER_GENERIC(ret_fd =, 0, dup, libc_fd);
+Genode::warning("dup(): ", libc_fd, " -> ", ret_fd->libc_fd);
 	return ret_fd ? ret_fd->libc_fd : INVALID_FD;
 }
 
 
 extern "C" int dup2(int libc_fd, int new_libc_fd)
 {
+Genode::warning("dup2(): ", libc_fd, " -> ", new_libc_fd);
 	File_descriptor *fd = libc_fd_to_fd(libc_fd, "dup2");
 	if (!fd || !fd->plugin) {
 		errno = EBADF;
@@ -408,6 +427,11 @@ extern "C" int mkdir(const char *path, mode_t mode)
 	}
 }
 
+static Genode::Mutex mmap_size_mutex;
+static size_t mmap_size;
+extern "C" void wait_for_continue();
+
+
 
 __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
@@ -416,6 +440,7 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 	/* handle requests for anonymous memory */
 	if ((flags & MAP_ANONYMOUS) || (flags & MAP_ANON)) {
 
+#if 1
 		if (flags & MAP_FIXED) {
 			Genode::error("mmap for fixed predefined address not supported yet");
 			errno = EINVAL;
@@ -423,13 +448,39 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 
 		bool const executable = prot & PROT_EXEC;
-		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
+		void *start = mem_alloc(executable)->alloc(length, /*PAGE_SHIFT*/21);
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
 		}
 		::memset(start, 0, align_addr(length, PAGE_SHIFT));
 		mmap_registry()->insert(start, length, 0);
+		{
+			Genode::Mutex::Guard guard(mmap_size_mutex);
+			mmap_size += length;
+		}
+#else
+		enum { SUB_RM_SIZE = 1024UL * 1024 * 1024 };
+		static Genode::Rm_connection rm { env() };
+		static Genode::Region_map_client sub_rm { rm.create(SUB_RM_SIZE) };
+		static Genode::addr_t sub_rm_start { (Genode::addr_t)env().rm().attach(sub_rm.dataspace()) };
+		static Genode::Heap heap(env().ram(), env().rm());
+		static Genode::Allocator_avl sub_rm_alloc { &heap };
+		static int sub_rm_add_range_result { sub_rm_alloc.add_range(sub_rm_start, SUB_RM_SIZE) };
+
+		Genode::warning("sub_rm_start: ", (void*)sub_rm_start);
+
+		Genode::Ram_dataspace_capability ds { env().ram().alloc(length) };
+
+		void *start = nullptr;
+		sub_rm_alloc.alloc_aligned(length, &start, log2(length));
+
+		Genode::log("mmap(): ", start, " - ", start + length - 1, ", ret: ", __builtin_return_address(0));
+
+		sub_rm.attach_at(ds, (Genode::addr_t)start - sub_rm_start);
+
+		mmap_registry()->insert(start, length, 0);
+#endif
 		return start;
 	}
 
@@ -442,15 +493,32 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 	}
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
+
+	if (start == (void*)-1)
+		return MAP_FAILED;
+
 	mmap_registry()->insert(start, length, fd->plugin);
+
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size += length;
+	}
+
 	return start;
 })
 
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size -= length;
+		Genode::log("theoretical mmap allocation: ", mmap_size);
+	}
+
 	if (!mmap_registry()->registered(start)) {
-		warning("munmap: could not lookup plugin for address ", start);
+		warning("munmap: could not lookup plugin for address ", start, " - ", start + length - 1);
+		//wait_for_continue();
 		errno = EINVAL;
 		return -1;
 	}
@@ -472,7 +540,7 @@ extern "C" int munmap(void *start, ::size_t length)
 		mem_alloc(executable)->free(start);
 	}
 
-	mmap_registry()->remove(start);
+	mmap_registry()->remove(start, length);
 	return ret;
 }
 
@@ -537,6 +605,22 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	if (!new_fdo)
 		return -1;
 	new_fdo->path(resolved_path.base());
+Genode::warning("open(): ", Genode::Cstring(pathname), ": ", new_fdo->libc_fd);
+	{
+		static Genode::Mutex mutex;
+		Genode::Mutex::Guard guard(mutex);
+		static int max_open_count;
+		int open_count = 0;
+		for (int i = 0; i < 1024; i++) {
+			File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(i);
+			if (!fd) continue;
+			open_count++;
+			Genode::log(i, ": ", Genode::Cstring(fd->fd_path));
+		}
+		if (open_count > max_open_count)
+			max_open_count = open_count;
+		Genode::log("number of open files: ", open_count, ", max: ", max_open_count);
+	}
 
 	return new_fdo->libc_fd;
 })
@@ -691,6 +775,8 @@ extern "C" int symlink(const char *oldpath, const char *newpath)
 
 extern "C" int unlink(const char *path)
 {
+Genode::warning("unlink(): ", Genode::Cstring(path));
+#if 1
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks_except_last_element(path, resolved_path);
@@ -698,6 +784,9 @@ extern "C" int unlink(const char *path)
 	} catch(Symlink_resolve_error) {
 		return -1;
 	}
+#else
+	return 0;
+#endif
 }
 
 
