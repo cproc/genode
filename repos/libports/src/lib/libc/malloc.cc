@@ -139,6 +139,8 @@ class Libc::Malloc
 			return msb;
 		}
 
+		size_t _allocated { 0 };
+
 	public:
 
 		Malloc(Allocator &backing_store) : _backing_store(backing_store)
@@ -178,6 +180,8 @@ class Libc::Malloc
 
 			*(aligned_addr - 1) = Metadata(real_size, offset);
 
+			_allocated += real_size;
+//Genode::log("alloc(): ", _allocated);
 			return aligned_addr;
 		}
 
@@ -220,6 +224,8 @@ class Libc::Malloc
 			} else {
 				_slabs[msb - SLAB_START]->free(alloc_addr);
 			}
+
+			_allocated -= real_size;
 		}
 };
 
