@@ -1665,16 +1665,28 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		addr = region_map().attach(ds_cap, length, offset);
 	}
 
+	/* duplicate the file descriptor to keep the file open */
+	_mmap_registry.insert(addr, dup(fd));
+
 	return addr;
 }
 
 
 int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
+	if (!_mmap_registry.registered(addr)) {
+		Genode::error("Libc::Vfs_plugin::munmap(): could not find area in registry");
+		return Errno(EINVAL);
+	}
+
 	if (mem_alloc()->size_at(addr) > 0)
 		mem_alloc()->free(addr);
-	else
+	else {
 		region_map().detach(addr);
+		Libc::File_descriptor *fd = _mmap_registry.lookup_fd_by_addr(addr);
+		close(fd);
+		_mmap_registry.remove(addr);
+	}
 
 	return 0;
 }
