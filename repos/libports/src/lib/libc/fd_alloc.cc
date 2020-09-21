@@ -53,7 +53,7 @@ File_descriptor_allocator::File_descriptor_allocator(Allocator &alloc)
 : _alloc(alloc)
 { }
 
-
+extern "C" void wait_for_continue();
 File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
                                                   Plugin_context *context,
                                                   int libc_fd)
@@ -69,9 +69,9 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 		} else {
 			_id_allocator.alloc_addr(addr_t(libc_fd));
 		}
-
+Genode::log("File_descriptor_allocator::alloc(): ", id.value, ", ret: ", __builtin_return_address(0));
 		return new (_alloc) File_descriptor(_id_space, *plugin, *context, id);
-	} catch (...) { return nullptr; }
+	} catch (...) { Genode::error("XXX"); wait_for_continue(); return nullptr; }
 }
 
 
@@ -169,9 +169,10 @@ void File_descriptor_allocator::generate_info(Xml_generator &xml)
 	});
 }
 
-
+extern "C" void wait_for_continue();
 void File_descriptor::path(char const *newpath)
 {
+Genode::log("File_descriptor::path(): libc_fd: ", libc_fd, ", path: ", Genode::Cstring(newpath));
 	if (fd_path)
 		warning("may leak former FD path memory");
 
@@ -189,8 +190,11 @@ void File_descriptor::path(char const *newpath)
 		}
 		::memcpy(buf, newpath, path_size);
 		fd_path = buf;
-	} else
+	} else {
+		Genode::error(&newpath, ": empty path");
+		wait_for_continue();
 		fd_path = 0;
+	}
 }
 
 

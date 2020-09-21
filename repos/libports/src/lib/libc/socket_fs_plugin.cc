@@ -658,6 +658,7 @@ extern "C" int socket_fs_connect(int libc_fd, sockaddr const *addr, socklen_t ad
 			try {
 				addr_string = Sockaddr_string(host_string(*(sockaddr_in const *)addr),
 				                              port_string(*(sockaddr_in const *)addr));
+Genode::log("socket_fs_connect(): ", libc_fd, ", addr: ", Genode::Cstring(addr_string.base()));
 			}
 			catch (Address_conversion_failed) { return Errno(EINVAL); }
 
@@ -1042,7 +1043,7 @@ extern "C" int socket_fs_socket(int domain, int type, int protocol)
 		destroy(alloc, context);
 		return Errno(EMFILE);
 	}
-
+Genode::warning("socket_fs_socket(): ", fd->libc_fd);
 	return fd->libc_fd;
 }
 
@@ -1262,9 +1263,17 @@ int Socket_fs::Plugin::select(int nfds,
 	return nready;
 }
 
-
+extern "C" void wait_for_continue();
 int Socket_fs::Plugin::close(File_descriptor *fd)
 {
+#if 0
+static int count;
+count++;
+if (count % 100 == 0) {
+	Genode::error("Socket_fs::Plugin::close()");
+	wait_for_continue();
+}
+#endif
 	Socket_fs::Context *context = dynamic_cast<Socket_fs::Context *>(fd->context);
 	if (!context) return Errno(EBADF);
 

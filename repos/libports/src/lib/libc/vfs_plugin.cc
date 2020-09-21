@@ -258,6 +258,7 @@ int Libc::Vfs_plugin::access(const char *path, int amode)
 
 Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int flags, int libc_fd)
 {
+Genode::log("Vfs_plugin::open_from_kernel(", Genode::Cstring(path), ")");
 	if (_root_fs.directory(path)) {
 
 		if (((flags & O_ACCMODE) != O_RDONLY)) {
@@ -286,6 +287,13 @@ Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int 
 
 		File_descriptor *fd =
 			file_descriptor_allocator()->alloc(this, vfs_context(handle), libc_fd);
+
+		if (!fd) {
+			Genode::error("Vfs_plugin::open_from_kernel(): could not allocate fd");
+			handle->close();
+			errno = EMFILE;
+			return nullptr;
+		}
 
 		handle->handler(&_response_handler);
 		fd->flags = flags & O_ACCMODE;
@@ -360,18 +368,26 @@ Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int 
 	File_descriptor *fd =
 		file_descriptor_allocator()->alloc(this, vfs_context(handle), libc_fd);
 
+	if (!fd) {
+		Genode::error("Vfs_plugin::open_from_kernel(): could not allocate fd");
+		handle->close();
+		errno = EMFILE;
+		return nullptr;
+	}
+
 	handle->handler(&_response_handler);
 	fd->flags = flags & (O_ACCMODE|O_NONBLOCK|O_APPEND);
 
 	if (flags & O_TRUNC)
 		warning(__func__, ": O_TRUNC is not supported");
-
+Genode::log("Vfs_plugin::open_from_kernel(", Genode::Cstring(path), "): ", fd->libc_fd);
 	return fd;
 }
 
 
 Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 {
+Genode::log("Vfs_plugin::open(", Genode::Cstring(path), ")");
 	File_descriptor *fd = nullptr;
 	int result_errno = 0;
 	{
@@ -406,9 +422,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 
 				fd = file_descriptor_allocator()->alloc(this, vfs_context(handle), Libc::ANY_FD);
 
-				/* FIXME error cleanup code leaks resources! */
-
 				if (!fd) {
+					Genode::error("Vfs_plugin::open(): could not allocate fd");
 					handle->close();
 					result_errno = EMFILE;
 					return Fn::COMPLETE;
@@ -487,9 +502,8 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 
 			fd = file_descriptor_allocator()->alloc(this, vfs_context(handle), Libc::ANY_FD);
 
-			/* FIXME error cleanup code leaks resources! */
-
 			if (!fd) {
+				Genode::error("Vfs_plugin::open(): could not allocate fd");
 				handle->close();
 				result_errno = EMFILE;
 				return Fn::COMPLETE;
@@ -510,7 +524,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 		errno = EINVAL; /* XXX which error code fits best ? */
 		fd = nullptr;
 	}
-
+Genode::log("Vfs_plugin::open(", Genode::Cstring(path), "): ", fd ? fd->libc_fd : -1);
 	return fd;
 }
 
@@ -654,10 +668,17 @@ Libc::File_descriptor *Libc::Vfs_plugin::dup(File_descriptor *fd)
 		File_descriptor * const new_fd =
 			file_descriptor_allocator()->alloc(this, vfs_context(handle));
 
+		if (!new_fd) {
+			error("Vfs_plugin::dup(): could not allocate fd");
+			handle->close();
+			result_errno = EMFILE;
+			return Fn::COMPLETE;
+		}
 		new_fd->flags = fd->flags;
 		new_fd->path(fd->fd_path);
 
 		result = new_fd;
+Genode::warning("Vfs_plugin::dup(): ", fd->libc_fd, " -> ", new_fd->libc_fd);
 		return Fn::COMPLETE;
 	});
 
@@ -1613,6 +1634,15 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		return (void *)-1;
 	}
 
+	/* duplicate the file descriptor to keep the file open as long as the mapping exists */
+	Libc::File_descriptor *dup_fd = dup(fd);
+
+	if (!dup_fd) {
+		error("Vfs_plugin::mmap(): could not duplicate fd");
+		errno = ENFILE;
+		return (void*)-1;
+	}
+
 	void *addr = nullptr;
 
 	if (flags & MAP_PRIVATE) {
@@ -1625,6 +1655,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		addr = mem_alloc()->alloc(length, PAGE_SHIFT);
 		if (addr == (void *)-1) {
 			error("mmap out of memory");
+			close(dup_fd);
 			errno = ENOMEM;
 			return (void *)-1;
 		}
@@ -1639,6 +1670,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 			if (length_read < 0) { /* error */
 				error("mmap could not obtain file content");
 				::munmap(addr, length);
+				close(dup_fd);
 				errno = EACCES;
 				return (void *)-1;
 			} else if (length_read == 0) /* EOF */
@@ -1658,6 +1690,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 
 		if (!ds_cap.valid()) {
 			Genode::error("mmap got invalid dataspace capability");
+			close(dup_fd);
 			errno = ENODEV;
 			return (void*)-1;
 		}
@@ -1665,16 +1698,27 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		addr = region_map().attach(ds_cap, length, offset);
 	}
 
+	_mmap_registry.insert(addr, dup_fd);
+
 	return addr;
 }
 
 
 int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
+	if (!_mmap_registry.registered(addr)) {
+		Genode::error("Libc::Vfs_plugin::munmap(): could not find area in registry");
+		return Errno(EINVAL);
+	}
+
 	if (mem_alloc()->size_at(addr) > 0)
 		mem_alloc()->free(addr);
-	else
+	else {
 		region_map().detach(addr);
+		Libc::File_descriptor *fd = _mmap_registry.lookup_fd_by_addr(addr);
+		close(fd);
+		_mmap_registry.remove(addr);
+	}
 
 	return 0;
 }
