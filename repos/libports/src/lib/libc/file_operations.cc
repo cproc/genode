@@ -408,7 +408,9 @@ extern "C" int mkdir(const char *path, mode_t mode)
 	}
 }
 
-
+static Genode::Mutex mmap_size_mutex;
+static size_t mmap_size;
+extern "C" void wait_for_continue();
 __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
@@ -430,6 +432,11 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 		::memset(start, 0, align_addr(length, PAGE_SHIFT));
 		mmap_registry()->insert(start, length, 0);
+		{
+			Genode::Mutex::Guard guard(mmap_size_mutex);
+			mmap_size += length;
+		}
+		Genode::log("mmap(): ", start, " - ", start + length - 1);
 		return start;
 	}
 
@@ -443,14 +450,25 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
 	mmap_registry()->insert(start, length, fd->plugin);
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size += length;
+	}
 	return start;
 })
 
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size -= length;
+		//Genode::log("theoretical mmap allocation: ", mmap_size);
+	}
+
 	if (!mmap_registry()->registered(start)) {
-		warning("munmap: could not lookup plugin for address ", start);
+		warning("munmap: could not lookup plugin for address ", start, " - ", start + length - 1);
+		wait_for_continue();
 		errno = EINVAL;
 		return -1;
 	}
@@ -472,7 +490,7 @@ extern "C" int munmap(void *start, ::size_t length)
 		mem_alloc(executable)->free(start);
 	}
 
-	mmap_registry()->remove(start);
+	mmap_registry()->remove(start, length);
 	return ret;
 }
 

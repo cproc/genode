@@ -46,9 +46,10 @@ class Libc::Mmap_registry
 		{
 			void   * const start;
 			Plugin * const plugin;
+			size_t   const len;
 
-			Entry(void *start, Plugin *plugin)
-			: start(start), plugin(plugin) { }
+			Entry(void *start, Plugin *plugin, size_t len)
+			: start(start), plugin(plugin), len(len) { }
 		};
 
 	private:
@@ -65,9 +66,12 @@ class Libc::Mmap_registry
 		template <typename ENTRY>
 		static ENTRY *_lookup_by_addr_unsynchronized(ENTRY *curr, void * const start)
 		{
-			for (; curr; curr = curr->next())
+			for (; curr; curr = curr->next()) {
 				if (curr->start == start)
 					return curr;
+				else if ((curr->start < start) && (start < curr->start + curr->len))
+					Genode::error("found partial entry: ", curr->start, " - ", curr->start + curr->len - 1);
+			}
 
 			return 0;
 		}
@@ -82,6 +86,8 @@ class Libc::Mmap_registry
 			return _lookup_by_addr_unsynchronized(_list.first(), start);
 		}
 
+		size_t _allocated { 0 };
+
 	public:
 
 		void insert(void *start, size_t len, Plugin *plugin)
@@ -94,7 +100,9 @@ class Libc::Mmap_registry
 				return;
 			}
 
-			_list.insert(new (&_md_alloc) Entry(start, plugin));
+			_list.insert(new (&_md_alloc) Entry(start, plugin, len));
+
+			_allocated += len;
 		}
 
 		Plugin *lookup_plugin_by_addr(void *start) const
@@ -112,7 +120,7 @@ class Libc::Mmap_registry
 			return _lookup_by_addr_unsynchronized(start) != 0;
 		}
 
-		void remove(void *start)
+		void remove(void *start, size_t len)
 		{
 			Mutex::Guard guard(_mutex);
 
@@ -125,6 +133,13 @@ class Libc::Mmap_registry
 			}
 
 			_list.remove(e);
+
+			_allocated -= e->len;
+
+if (len < e->len)
+	Genode::error("munmap(): start: ", start, ", original length: ", e->len, ", unmap length: ", len);
+
+//Genode::log("mmap: allocated: ", _allocated);
 			destroy(&_md_alloc, e);
 		}
 };
