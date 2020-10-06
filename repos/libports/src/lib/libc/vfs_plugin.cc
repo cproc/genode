@@ -259,6 +259,7 @@ int Libc::Vfs_plugin::access(const char *path, int amode)
 
 Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int flags, int libc_fd)
 {
+Genode::log("Vfs_plugin::open_from_kernel(", Genode::Cstring(path), ")");
 	if (_root_fs.directory(path)) {
 
 		if (((flags & O_ACCMODE) != O_RDONLY)) {
@@ -378,13 +379,14 @@ Libc::File_descriptor *Libc::Vfs_plugin::open_from_kernel(const char *path, int 
 
 	if (flags & O_TRUNC)
 		warning(__func__, ": O_TRUNC is not supported");
-
+Genode::log("Vfs_plugin::open_from_kernel(", Genode::Cstring(path), "): ", fd->libc_fd);
 	return fd;
 }
 
 
 Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 {
+Genode::log("Vfs_plugin::open(", Genode::Cstring(path), ")");
 	File_descriptor *fd = nullptr;
 	int result_errno = 0;
 	{
@@ -519,7 +521,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::open(char const *path, int flags)
 		errno = EINVAL; /* XXX which error code fits best ? */
 		fd = nullptr;
 	}
-
+Genode::log("Vfs_plugin::open(", Genode::Cstring(path), "): ", fd ? fd->libc_fd : -1);
 	return fd;
 }
 
@@ -673,6 +675,7 @@ Libc::File_descriptor *Libc::Vfs_plugin::dup(File_descriptor *fd)
 		new_fd->path(fd->fd_path);
 
 		result = new_fd;
+Genode::warning("Vfs_plugin::dup(): ", fd->libc_fd, " -> ", new_fd->libc_fd);
 		return Fn::COMPLETE;
 	});
 
