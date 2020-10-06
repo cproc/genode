@@ -74,6 +74,7 @@ void Libc::init_file_operations(Cwd &cwd,
 	config_accessor.config().with_sub_node("libc", [&] (Xml_node libc) {
 		libc.with_sub_node("mmap", [&] (Xml_node mmap) {
 			_mmap_align = mmap.attribute_value("align", 12U);
+			Genode::log("_mmap_align: ", _mmap_align);
 		});
 	});
 }
@@ -254,6 +255,7 @@ extern "C" int chdir(const char *path)
  */
 __SYS_(int, close, (int libc_fd),
 {
+Genode::warning("close(): ", libc_fd, ", ret: ", __builtin_return_address(0));
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 
 	if (!fd)
@@ -261,7 +263,7 @@ __SYS_(int, close, (int libc_fd),
 
 	if (!fd->plugin || fd->plugin->close(fd) != 0)
 		file_descriptor_allocator()->free(fd);
-
+//Genode::warning("close() finished: ", libc_fd);
 	return 0;
 })
 
@@ -270,12 +272,14 @@ extern "C" int dup(int libc_fd)
 {
 	File_descriptor *ret_fd;
 	FD_FUNC_WRAPPER_GENERIC(ret_fd =, 0, dup, libc_fd);
+Genode::warning("dup(): ", libc_fd, " -> ", ret_fd->libc_fd);
 	return ret_fd ? ret_fd->libc_fd : INVALID_FD;
 }
 
 
 extern "C" int dup2(int libc_fd, int new_libc_fd)
 {
+Genode::warning("dup2(): ", libc_fd, " -> ", new_libc_fd);
 	File_descriptor *fd = libc_fd_to_fd(libc_fd, "dup2");
 	if (!fd || !fd->plugin) {
 		errno = EBADF;
@@ -416,6 +420,10 @@ extern "C" int mkdir(const char *path, mode_t mode)
 	}
 }
 
+static Genode::Mutex mmap_size_mutex;
+static size_t mmap_size;
+static size_t mmap_size_anon;
+
 
 __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
@@ -438,6 +446,13 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 		::memset(start, 0, align_addr(length, PAGE_SHIFT));
 		mmap_registry()->insert(start, length, 0);
+		{
+			Genode::Mutex::Guard guard(mmap_size_mutex);
+			mmap_size_anon += length;
+			mmap_size += length;
+			Genode::log("mmap allocation: total: ", mmap_size, ", anon: ", mmap_size_anon);
+		}
+
 		return start;
 	}
 
@@ -455,6 +470,13 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		return MAP_FAILED;
 
 	mmap_registry()->insert(start, length, fd->plugin);
+
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size += length;
+		Genode::log("mmap allocation: total: ", mmap_size, ", anon: ", mmap_size_anon);
+	}
+
 	return start;
 })
 
@@ -462,7 +484,7 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 extern "C" int munmap(void *start, ::size_t length)
 {
 	if (!mmap_registry()->registered(start)) {
-		warning("munmap: could not lookup plugin for address ", start);
+		warning("munmap: could not lookup plugin for address ", start, " - ", start + length - 1);
 		errno = EINVAL;
 		return -1;
 	}
@@ -482,6 +504,14 @@ extern "C" int munmap(void *start, ::size_t length)
 		/* XXX another metadata handling required to track anonymous memory */
 		mem_alloc(!executable)->free(start);
 		mem_alloc(executable)->free(start);
+	}
+
+	{
+		Genode::Mutex::Guard guard(mmap_size_mutex);
+		mmap_size -= length;
+		if (!plugin)
+			mmap_size_anon -= length;
+		Genode::log("mmap allocation: total: ", mmap_size, ", anon: ", mmap_size_anon);
 	}
 
 	mmap_registry()->remove(start);
@@ -549,6 +579,22 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	if (!new_fdo)
 		return -1;
 	new_fdo->path(resolved_path.base());
+Genode::warning("open(): ", Genode::Cstring(pathname), ": ", new_fdo->libc_fd);
+	{
+		static Genode::Mutex mutex;
+		Genode::Mutex::Guard guard(mutex);
+		static int max_open_count;
+		int open_count = 0;
+		for (int i = 0; i < 1024; i++) {
+			File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(i);
+			if (!fd) continue;
+			open_count++;
+			//Genode::log(i, ": ", Genode::Cstring(fd->fd_path));
+		}
+		if (open_count > max_open_count)
+			max_open_count = open_count;
+		Genode::log("number of open files: ", open_count, ", max: ", max_open_count);
+	}
 
 	return new_fdo->libc_fd;
 })
@@ -703,6 +749,7 @@ extern "C" int symlink(const char *oldpath, const char *newpath)
 
 extern "C" int unlink(const char *path)
 {
+Genode::warning("unlink(): ", Genode::Cstring(path));
 	try {
 		Absolute_path resolved_path;
 		resolve_symlinks_except_last_element(path, resolved_path);
