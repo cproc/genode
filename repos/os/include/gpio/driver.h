@@ -15,20 +15,10 @@
 #define _INCLUDE__GPIO__DRIVER_H_
 
 /* Genode includes */
-#include <base/log.h>
 #include <base/signal.h>
 
-namespace Gpio {
-	struct Driver;
-	struct Pin;
-}
+namespace Gpio { struct Driver; }
 
-struct Gpio::Pin
-{
-	unsigned value;
-
-	void print(Genode::Output &out) const { Genode::print(out, value); }
-};
 
 struct Gpio::Driver : Genode::Interface
 {
@@ -37,84 +27,84 @@ struct Gpio::Driver : Genode::Interface
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void direction(Pin gpio, bool input) = 0;
+	virtual void direction(unsigned gpio, bool input) = 0;
 
 	/**
 	 * Set output level (high or low)
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void write(Pin gpio, bool enable) = 0;
+	virtual void write(unsigned gpio, bool enable) = 0;
 
 	/**
 	 * Read input level (high or low)
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual bool read(Pin gpio) = 0;
+	virtual bool read(unsigned gpio) = 0;
 
 	/**
 	 * Enable/disable debounce logic for the GPIO pin
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void debounce_enable(Pin gpio, bool enable) = 0;
+	virtual void debounce_enable(unsigned gpio, bool enable) = 0;
 
 	/**
 	 * Set delay for debounce logic for the GPIO pin
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void debounce_time(Pin gpio, unsigned long us) = 0;
+	virtual void debounce_time(unsigned gpio, unsigned long us) = 0;
 
 	/**
 	 * Set IRQ trigger state to falling edge-triggered
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void falling_detect(Pin gpio) = 0;
+	virtual void falling_detect(unsigned gpio) = 0;
 
 	/**
 	 * Set IRQ trigger state to rising edge-triggered
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void rising_detect(Pin gpio) = 0;
+	virtual void rising_detect(unsigned gpio) = 0;
 
 	/**
 	 * Set IRQ trigger state to high level-triggered
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void high_detect(Pin gpio) = 0;
+	virtual void high_detect(unsigned gpio) = 0;
 
 	/**
 	 * Set IRQ trigger state to low level-triggered
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void low_detect(Pin gpio) = 0;
+	virtual void low_detect(unsigned gpio) = 0;
 
 	/**
 	 * Enable/disable IRQ for specified GPIO pin
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void irq_enable(Pin gpio, bool enable) = 0;
+	virtual void irq_enable(unsigned gpio, bool enable) = 0;
 
 	/**
 	 * Acknowledge IRQ for specified GPIO pin
 	 *
 	 * \param gpio  corresponding gpio pin number
 	 */
-	virtual void ack_irq(Pin gpio) = 0;
+	virtual void ack_irq(unsigned gpio) = 0;
 
 	/**
 	 * Register signal handler for interrupts
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void register_signal(Pin gpio,
+	virtual void register_signal(unsigned gpio,
 	                             Genode::Signal_context_capability cap) = 0;
 
 	/**
@@ -122,14 +112,14 @@ struct Gpio::Driver : Genode::Interface
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual void unregister_signal(Pin gpio) = 0;
+	virtual void unregister_signal(unsigned gpio) = 0;
 
 	/**
 	 * Check whether GPIO number is valid
 	 *
 	 *\param gpio  corresponding gpio pin number
 	 */
-	virtual bool gpio_valid(Pin gpio) = 0;
+	virtual bool gpio_valid(unsigned gpio) = 0;
 };
 
 #endif /* _INCLUDE__GPIO__DRIVER_H_ */

@@ -28,7 +28,6 @@
 
 class Imx_driver : public Gpio::Driver
 {
-	using Pin = Gpio::Pin;
 	private:
 
 		enum {
@@ -103,7 +102,7 @@ class Imx_driver : public Gpio::Driver
 				  _irqh_low(env, irq_low, this),
 				  _irqh_high(env, irq_high, this) { }
 
-				Gpio_reg& regs() { return _reg; }
+				Gpio_reg* regs() { return &_reg; }
 
 				void irq(int pin, bool enable)
 				{
@@ -124,20 +123,19 @@ class Imx_driver : public Gpio::Driver
 		Platform::Connection             _platform_connection;
 		Genode::Constructible<Gpio_bank> _gpio_banks[MAX_BANKS];
 
-		template <typename FN>
-		void _with_gpio(Pin gpio, FN const &fn)
+		Gpio_bank &_gpio_bank(int gpio)
 		{
-			unsigned bank = gpio.value >> PIN_SHIFT;
+			int bank = gpio >> PIN_SHIFT;
 
 			if (bank >= MAX_BANKS) {
-				Genode::warning("no Gpio_bank for pin ", gpio, " ignoring");
-				return;
+				Genode::error("no Gpio_bank for pin ", gpio, " available");
+				throw -1;
 			}
 
-			fn(*_gpio_banks[bank]);
+			return *_gpio_banks[bank];
 		}
 
-		unsigned _gpio_index(Pin gpio) const { return gpio.value & 0x1f; }
+		int _gpio_index(int gpio) { return gpio & 0x1f; }
 
 	public:
 
@@ -177,12 +175,12 @@ class Imx_driver : public Gpio::Driver
 
 					_gpio_banks[i].construct(env, io_mem, irq_low, irq_high);
 
-					Gpio_reg &regs = _gpio_banks[i]->regs();
+					Gpio_reg *regs = _gpio_banks[i]->regs();
 					for (unsigned j = 0; j < MAX_PINS; j++) {
-						regs.write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::LOW_LEVEL, j);
-						regs.write<Gpio_reg::Int_mask>(0, j);
+						regs->write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::LOW_LEVEL, j);
+						regs->write<Gpio_reg::Int_mask>(0, j);
 					}
-					regs.write<Gpio_reg::Int_stat>(0xffffffff);
+					regs->write<Gpio_reg::Int_stat>(0xffffffff);
 
 					i++;
 				});
@@ -193,113 +191,87 @@ class Imx_driver : public Gpio::Driver
 		 **  Gpio::Driver interface  **
 		 ******************************/
 
-		void direction(Pin gpio, bool input) override
+		void direction(unsigned gpio, bool input) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Dir>(input ? 0 : 1,
-				                               _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			gpio_reg->write<Gpio_reg::Dir>(input ? 0 : 1,
+			                               _gpio_index(gpio));
 		}
 
-		void write(Pin gpio, bool level) override
+		void write(unsigned gpio, bool level) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Data>(level ? 1 : 0,
-				                               _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+
+			gpio_reg->write<Gpio_reg::Data>(level ? 1 : 0,
+			                                _gpio_index(gpio));
 		}
 
-		bool read(Pin gpio) override
+		bool read(unsigned gpio) override
 		{
-			bool ret = false;
-
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				ret = gpio_reg.read<Gpio_reg::Pad_stat>(_gpio_index(gpio));
-			});
-
-			return ret;
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			return gpio_reg->read<Gpio_reg::Pad_stat>(_gpio_index(gpio));
 		}
 
-		void debounce_enable(Pin /* gpio */, bool /* enable */) override
+		void debounce_enable(unsigned /* gpio */, bool /* enable */) override
 		{
 			Genode::warning("debounce enable not supported");
 		}
 
-		void debounce_time(Pin /* gpio */, unsigned long /* us */) override
+		void debounce_time(unsigned /* gpio */, unsigned long /* us */) override
 		{
 			Genode::warning("debounce time not supported");
 		}
 
-		void falling_detect(Pin gpio) override
+		void falling_detect(unsigned gpio) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::FAL_EDGE,
-				                                   _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			gpio_reg->write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::FAL_EDGE,
+			                                    _gpio_index(gpio));
 		}
 
-		void rising_detect(Pin gpio) override
+		void rising_detect(unsigned gpio) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::RIS_EDGE,
-				                                   _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			gpio_reg->write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::RIS_EDGE,
+			                                    _gpio_index(gpio));
 		}
 
-		void high_detect(Pin gpio) override
+		void high_detect(unsigned gpio) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::HIGH_LEVEL,
-				                                   _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			gpio_reg->write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::HIGH_LEVEL,
+			                                    _gpio_index(gpio));
 		}
 
-		void low_detect(Pin gpio) override
+		void low_detect(unsigned gpio) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				Gpio_reg &gpio_reg = bank.regs();
-				gpio_reg.write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::LOW_LEVEL,
-				                                    _gpio_index(gpio));
-			});
+			Gpio_reg *gpio_reg = _gpio_bank(gpio).regs();
+			gpio_reg->write<Gpio_reg::Int_conf>(Gpio_reg::Int_conf::LOW_LEVEL,
+			                                    _gpio_index(gpio));
 		}
 
-		void irq_enable(Pin gpio, bool enable) override
+		void irq_enable(unsigned gpio, bool enable) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				bank.irq(_gpio_index(gpio), enable);
-			});
+			_gpio_bank(gpio).irq(_gpio_index(gpio), enable);
 		}
 
-		void ack_irq(Pin gpio) override
+		void ack_irq(unsigned gpio) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				bank.ack_irq(_gpio_index(gpio));
-			});
+			_gpio_bank(gpio).ack_irq(_gpio_index(gpio));
 		}
 
-		void register_signal(Pin gpio,
+		void register_signal(unsigned gpio,
 		                     Genode::Signal_context_capability cap) override
 		{
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				bank.sigh(_gpio_index(gpio), cap);
-			});
-		}
+			_gpio_bank(gpio).sigh(_gpio_index(gpio), cap); }
 
-		void unregister_signal(Pin gpio) override
+		void unregister_signal(unsigned gpio) override
 		{
 			Genode::Signal_context_capability cap;
-			_with_gpio(gpio, [&](Gpio_bank &bank) {
-				bank.sigh(_gpio_index(gpio), cap);
-			});
+			_gpio_bank(gpio).sigh(_gpio_index(gpio), cap);
 		}
 
-		bool gpio_valid(Pin gpio) override { return gpio.value < (MAX_PINS*MAX_BANKS); }
+		bool gpio_valid(unsigned gpio) override { return gpio < (MAX_PINS*MAX_BANKS); }
 };
 
 #endif /* _DRIVERS__GPIO__IMX__DRIVER_H_ */

@@ -48,9 +48,7 @@ void Gpio::process_config(Genode::Xml_node const &config, Gpio::Driver &driver)
 	config.for_each_sub_node("gpio", [&] (Genode::Xml_node const &gpio_node) {
 
 		unsigned const num = gpio_node.attribute_value("num", 0U);
-		Pin gpio { num };
-
-		if (!driver.gpio_valid(gpio)) {
+		if (!driver.gpio_valid(num)) {
 			Genode::warning("invalid GPIO number ", num, ", ignore node");
 			return;
 		}
@@ -62,11 +60,11 @@ void Gpio::process_config(Genode::Xml_node const &config, Gpio::Driver &driver)
 
 		if (mode == "O" || mode == "o") {
 			value = gpio_node.attribute_value("value", value);
-			driver.write(gpio, value);
-			driver.direction(Pin {num}, false);
+			driver.write(num, value);
+			driver.direction(num, false);
 		}
 		else if (mode == "I" || mode == "i") {
-			driver.direction(Pin {num}, true);
+			driver.direction(num, true);
 		}
 		else {
 			Genode::error("gpio ", num, " has invalid mode, must be I or O");
