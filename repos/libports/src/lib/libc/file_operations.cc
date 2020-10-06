@@ -63,11 +63,19 @@ Libc::Mmap_registry *Libc::mmap_registry()
 }
 
 
-static Cwd *_cwd_ptr;
+static Cwd          *_cwd_ptr;
+static unsigned int  _mmap_align { 12 }; /* log2 */
 
-void Libc::init_file_operations(Cwd &cwd)
+void Libc::init_file_operations(Cwd &cwd,
+                                Config_accessor const &config_accessor)
 {
 	_cwd_ptr = &cwd;
+
+	config_accessor.config().with_sub_node("libc", [&] (Xml_node libc) {
+		libc.with_sub_node("mmap", [&] (Xml_node mmap) {
+			_mmap_align = mmap.attribute_value("align", 12U);
+		});
+	});
 }
 
 
@@ -423,7 +431,7 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 
 		bool const executable = prot & PROT_EXEC;
-		void *start = mem_alloc(executable)->alloc(length, PAGE_SHIFT);
+		void *start = mem_alloc(executable)->alloc(length, _mmap_align);
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
@@ -442,6 +450,10 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 	}
 
 	void *start = fd->plugin->mmap(addr, length, prot, flags, fd, offset);
+
+	if (start == MAP_FAILED)
+		return MAP_FAILED;
+
 	mmap_registry()->insert(start, length, fd->plugin);
 	return start;
 })

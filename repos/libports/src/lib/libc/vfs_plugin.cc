@@ -1701,6 +1701,15 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		return (void *)-1;
 	}
 
+	/* duplicate the file descriptor to keep the file open as long as the mapping exists */
+	Libc::File_descriptor *dup_fd = dup(fd);
+
+	if (!dup_fd) {
+		error("Vfs_plugin::mmap(): could not duplicate fd");
+		errno = ENFILE;
+		return (void*)-1;
+	}
+
 	void *addr = nullptr;
 
 	if (flags & MAP_PRIVATE) {
@@ -1713,6 +1722,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		addr = mem_alloc()->alloc(length, PAGE_SHIFT);
 		if (addr == (void *)-1) {
 			error("mmap out of memory");
+			close(dup_fd);
 			errno = ENOMEM;
 			return (void *)-1;
 		}
@@ -1727,6 +1737,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 			if (length_read < 0) { /* error */
 				error("mmap could not obtain file content");
 				::munmap(addr, length);
+				close(dup_fd);
 				errno = EACCES;
 				return (void *)-1;
 			} else if (length_read == 0) /* EOF */
@@ -1746,6 +1757,7 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 
 		if (!ds_cap.valid()) {
 			Genode::error("mmap got invalid dataspace capability");
+			close(dup_fd);
 			errno = ENODEV;
 			return (void*)-1;
 		}
@@ -1753,16 +1765,39 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		addr = region_map().attach(ds_cap, length, offset);
 	}
 
+	new (_alloc) Mmap_entry(_mmap_registry, addr, dup_fd);
+
 	return addr;
 }
 
 
 int Libc::Vfs_plugin::munmap(void *addr, ::size_t)
 {
-	if (mem_alloc()->size_at(addr) > 0)
-		mem_alloc()->free(addr);
-	else
-		region_map().detach(addr);
+	bool mmap_entry_found = false;
+	Libc::File_descriptor *fd = nullptr;
+
+	_mmap_registry.for_each([&] (Mmap_entry &entry) {
+
+		if (entry.start == addr) {
+
+			if (mem_alloc()->size_at(addr) > 0)
+				mem_alloc()->free(addr);
+			else {
+				region_map().detach(addr);
+				fd = entry.fd;
+			}
+			destroy(_alloc, &entry);
+			mmap_entry_found = true;
+		}
+	});
+
+	if (!mmap_entry_found) {
+		Genode::error("Libc::Vfs_plugin::munmap(): could not find area in registry");
+		return Errno(EINVAL);
+	}
+
+	if (fd)
+		close(fd);
 
 	return 0;
 }
