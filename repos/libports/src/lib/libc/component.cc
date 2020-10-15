@@ -17,6 +17,7 @@
 
 /* libc includes */
 #include <libc-plugin/plugin_registry.h>
+#include <pthread.h>
 
 /* base-internal includes */
 #include <base/internal/unmanaged_singleton.h>
@@ -29,6 +30,15 @@ extern char **environ;
 
 
 Genode::size_t Component::stack_size() { return Libc::Component::stack_size(); }
+
+
+/* pthread start routine */
+void *libc_component_construct(void *arg)
+{
+	Libc::Env *libc_env = (Libc::Env*)arg;
+	Libc::Component::construct(*libc_env);
+	return nullptr;
+}
 
 
 void Component::construct(Genode::Env &env)
@@ -70,8 +80,13 @@ void Component::construct(Genode::Env &env)
 	};
 	Libc::plugin_registry()->for_each_plugin(init_plugin);
 
+#if 0
+	pthread_t main_thread;
+	pthread_create(&main_thread, nullptr, libc_component_construct, &kernel.libc_env());
+#else
 	/* construct libc component on kernel stack */
 	Libc::Component::construct(kernel.libc_env());
+#endif
 }
 
 
