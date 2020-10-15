@@ -17,6 +17,7 @@ include:
 	cp -r $(REP_DIR)/include/libc $@/
 	cp -r $(REP_DIR)/include/libc-genode $@/
 	cp    $(REP_DIR)/src/lib/libc/internal/legacy.h $@/libc/
+	cp -r $(REP_DIR)/include/libc-plugin $@/
 
 content: lib/mk/ldso_so_support.mk src/lib/ldso/so_support.c
 
