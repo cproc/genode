@@ -88,7 +88,12 @@ class Genode::Signal
 			 */
 			Data() : context(0), num(0) { }
 
-		} _data;
+		} _data { };
+
+		/**
+		 * Constructor for invalid signal
+		 */
+		Signal() { };
 
 		/**
 		 * Constructor
@@ -117,6 +122,7 @@ class Genode::Signal
 
 		Signal_context *context()       { return _data.context; }
 		unsigned        num()     const { return _data.num; }
+		bool valid()              const { return _data.context != nullptr; }
 };
 
 
@@ -299,8 +305,10 @@ class Genode::Signal_receiver : Noncopyable
 
 					do {
 						Mutex::Guard mutex_guard(context->_mutex);
+						/* XXX: remove try/catch together with exception
+						        throwing 'pending_signal()' implementation */
 						try {
-							functor(*context);
+							if (functor(*context)) return;
 						} catch (Break_for_each) { return; }
 						context = context->_next;
 					} while (context != _head);
@@ -407,6 +415,13 @@ class Genode::Signal_receiver : Noncopyable
 		 * \return  received signal
 		 */
 		Signal pending_signal();
+
+		/**
+		 * Retrieve  pending signal
+		 *
+		 * \return  received signal (invalid if no pending signal found)
+		 */
+		Signal pending_signal_no_exception();
 
 		/**
 		 * Locally submit signal to the receiver
