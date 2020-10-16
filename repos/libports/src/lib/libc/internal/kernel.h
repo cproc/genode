@@ -570,7 +570,7 @@ struct Libc::Kernel final : Vfs::Io_response_handler,
 			if (!_execute_monitors_pending) {
 				_execute_monitors_pending = true;
 				if (!_main_context())
-					Signal_transmitter(*_execute_monitors).submit();
+					_execute_monitors->local_submit();
 			}
 		}
 
