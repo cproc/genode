@@ -30,6 +30,14 @@ void Genode::init_signal_transmitter(Env &env) { _pd = &env.pd(); }
 
 void Signal_transmitter::submit(unsigned cnt)
 {
+//	{
+//		static Genode::Mutex mutex;
+//		Genode::Mutex::Guard guard(mutex);
+//		static int count = 0;
+//		count++;
+//		if (count % 100 == 0) Genode::log("submit(): ", count);
+//	}
+
 	{
 		Trace::Signal_submit trace_event(cnt);
 	}

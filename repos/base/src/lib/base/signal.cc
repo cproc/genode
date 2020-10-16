@@ -255,6 +255,13 @@ Signal Signal_receiver::pending_signal()
 	Signal::Data result;
 	_contexts.for_each_locked([&] (Signal_context &context) {
 
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("for_each: ", count);
+//}
+
 		if (!context._pending) return false;
 
 		_contexts.head(context._next);
@@ -263,6 +270,12 @@ Signal Signal_receiver::pending_signal()
 		context._curr_signal = Signal::Data(0, 0);
 
 		Trace::Signal_received trace_event(context, result.num);
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("pending: ", count);
+//}
 		throw Context_ring::Break_for_each();
 	});
 	if (result.context) {
@@ -282,6 +295,13 @@ Signal Signal_receiver::pending_signal()
 	 * signal, we may have increased the semaphore already. In this case
 	 * the signal-causing context is absent from the list.
 	 */
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("not pending: ", count);
+//}
+
 	throw Signal_not_pending();
 }
 
@@ -292,6 +312,13 @@ Signal Signal_receiver::pending_signal_no_exception()
 	Signal::Data result;
 	_contexts.for_each_locked([&] (Signal_context &context) -> bool {
 
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("for_each: ", count);
+//}
+
 		if (!context._pending) return false;
 
 		_contexts.head(context._next);
@@ -300,6 +327,12 @@ Signal Signal_receiver::pending_signal_no_exception()
 		context._curr_signal = Signal::Data(0, 0);
 
 		Trace::Signal_received trace_event(context, result.num);
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("pending: ", count);
+//}
 		return true;
 	});
 	if (result.context) {
@@ -319,6 +352,13 @@ Signal Signal_receiver::pending_signal_no_exception()
 	 * signal, we may have increased the semaphore already. In this case
 	 * the signal-causing context is absent from the list.
 	 */
+//{
+//	static int count = 0;
+//	count++;
+//	if (count % 100 == 0)
+//		Genode::log("not pending: ", count);
+//}
+
 	return Signal();
 }
 
