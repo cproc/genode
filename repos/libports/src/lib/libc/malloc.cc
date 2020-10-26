@@ -266,10 +266,14 @@ extern "C" void *realloc(void *ptr, size_t size)
 	return mallocator->realloc(ptr, size);
 }
 
-
+extern "C" void wait_for_continue();
 int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
-	*memptr = mallocator->alloc(size, alignment);
+if (alignment == 32) {
+	Genode::error("posix_memalign()");
+}
+
+	*memptr = mallocator->alloc(size, /*alignment*/8);
 
 	if (!*memptr)
 		return Errno(ENOMEM);
