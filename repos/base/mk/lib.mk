@@ -239,7 +239,7 @@ $(LIB_CHECKED): $(LIB_SO)
 	$(VERBOSE)$(BASE_DIR)/../../tool/check_abi $(LIB_SO) $(SYMBOLS)
 
 $(LIB_SO).stripped: $(LIB_SO)
-	$(VERBOSE)$(STRIP) -o $@ $<
+	$(VERBOSE)cp $< $@
 
 $(DEBUG_SO): $(LIB_SO)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $@
