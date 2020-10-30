@@ -55,15 +55,17 @@ void Entrypoint::Signal_proxy_component::signal()
 	 * Note, we handle only one signal here to ensure fairness between RPCs and
 	 * signals.
 	 */
-	try {
-		Signal sig = ep._sig_rec->pending_signal();
+
+	Signal sig = ep._sig_rec->pending_signal();
+
+	if (sig.valid()) {
 		ep._dispatch_signal(sig);
 
 		if (sig.context()->level() == Signal_context::Level::Io) {
 			/* trigger the progress handler */
 			io_progress = true;
 		}
-	} catch (Signal_receiver::Signal_not_pending) { }
+	}
 
 	if (io_progress)
 		ep._handle_io_progress();
@@ -185,7 +187,7 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 
 	for (;;) {
 
-		Signal sig = _sig_rec->pending_signal_no_exception();
+		Signal sig = _sig_rec->pending_signal();
 
 		if (sig.valid()) {
 

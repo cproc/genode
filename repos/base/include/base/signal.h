@@ -307,11 +307,7 @@ class Genode::Signal_receiver : Noncopyable
 
 					do {
 						Mutex::Guard mutex_guard(context->_mutex);
-						/* XXX: remove try/catch together with exception
-						        throwing 'pending_signal()' implementation */
-						try {
-							if (functor(*context)) return;
-						} catch (Break_for_each) { return; }
+						if (functor(*context)) return;
 						context = context->_next;
 					} while (context != _head);
 				}
@@ -362,7 +358,6 @@ class Genode::Signal_receiver : Noncopyable
 		 */
 		class Context_already_in_use { };
 		class Context_not_associated { };
-		class Signal_not_pending     { };
 
 		/**
 		 * Constructor
@@ -411,19 +406,11 @@ class Genode::Signal_receiver : Noncopyable
 		void unblock_signal_waiter(Rpc_entrypoint &rpc_ep);
 
 		/**
-		 * Retrieve  pending signal
-		 *
-		 * \throw   'Signal_not_pending' no pending signal found
-		 * \return  received signal
-		 */
-		Signal pending_signal();
-
-		/**
-		 * Retrieve  pending signal
+		 * Retrieve pending signal
 		 *
 		 * \return  received signal (invalid if no pending signal found)
 		 */
-		Signal pending_signal_no_exception();
+		Signal pending_signal();
 
 		/**
 		 * Locally submit signal to the receiver
