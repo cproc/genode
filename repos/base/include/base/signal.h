@@ -260,7 +260,7 @@ class Genode::Signal_context : Interface, Noncopyable
 
 		List_element<Signal_context> *deferred_le() { return &_deferred_le; }
 
-		void local_submit(unsigned cnt = 1);
+		void local_submit();
 
 		/*
 		 * Signal contexts are never invoked but only used as arguments for

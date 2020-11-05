@@ -114,11 +114,11 @@ namespace Genode {
  ** Signal_context **
  ********************/
 
-void Signal_context::local_submit(unsigned cnt)
+void Signal_context::local_submit()
 {
 	if (_receiver) {
 		/* construct and locally submit signal object */
-		Signal::Data signal(this, cnt);
+		Signal::Data signal(this, 1);
 		_receiver->local_submit(signal);
 	}
 }

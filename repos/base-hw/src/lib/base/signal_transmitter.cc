@@ -40,7 +40,7 @@ void Signal_transmitter::submit(unsigned cnt)
  ** Signal_context **
  ********************/
 
-void Signal_context::local_submit(unsigned cnt)
+void Signal_context::local_submit()
 {
-	Kernel::submit_signal(Capability_space::capid(_cap), cnt);
+	Kernel::submit_signal(Capability_space::capid(_cap), 1);
 }
