@@ -122,7 +122,7 @@ class Genode::Signal
 
 		Signal_context *context()       { return _data.context; }
 		unsigned        num()     const { return _data.num; }
-		bool valid()              const { return _data.context != nullptr; }
+		bool            valid()   const { return _data.context != nullptr; }
 };
 
 
