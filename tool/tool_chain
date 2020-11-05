@@ -221,12 +221,12 @@ LANGUAGES              = c,c++
 LIB_GCC                = cd $(INSTALL_LOCATION)/lib/gcc/riscv64-unknown-elf/$(GCC_VERSION)/rv64imac/lp64 && \
                          $(SUDO) ln -sf ../../include include
 else
-LANGUAGES              = c,c++,ada
+LANGUAGES              = c,c++
 LIB_GCC                =
 endif
 
 GCC_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG) \
-                        --enable-languages=c,c++,ada \
+                        --enable-languages=c,c++ \
                         --disable-bootstrap \
                         --disable-libatomic \
                         --disable-libcilkrts \
@@ -236,6 +236,7 @@ GCC_BOOTSTRAP_CONFIG += $(COMMON_BOOTSTRAP_CONFIG) \
                         --disable-libsanitizer \
                         --disable-libquadmath \
                         --disable-libssp \
+                        --with-arch=armv7-a --with-fpu=vfpv3-d16 --with-float=hard \
                         --with-gmp=$(LOCAL_LIB_INSTALL_LOCATION) \
                         --with-mpfr=$(LOCAL_LIB_INSTALL_LOCATION) \
                         --with-mpc=$(LOCAL_LIB_INSTALL_LOCATION)
@@ -339,7 +340,7 @@ GDB_INSTALLED_BINARIES      = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-g
 ALI2DEP_BINARY              = $(BUILD_LOCATION)/ali2dep/ali2dep
 ALI2DEP_INSTALLED_BINARY    = $(LOCAL_INSTALL_LOCATION)/bin/genode-$(PLATFORM)-ali2dep
 
-build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES) $(ALI2DEP_INSTALLED_BINARY)
+build_all: $(GCC_INSTALLED_BINARIES) $(GDB_INSTALLED_BINARIES)
 
 GMP_CONTRIB_DIR = $(shell $(GENODE_DIR)/tool/ports/current gmp)/src/lib/gmp
 
