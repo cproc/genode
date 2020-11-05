@@ -188,7 +188,7 @@ inline void lx_boost_rlimit()
 {
 	rlimit rlimit { };
 
-	if (int const res = lx_syscall(SYS_getrlimit, RLIMIT_NOFILE, &rlimit)) {
+	if (int const res = lx_syscall(SYS_ugetrlimit, RLIMIT_NOFILE, &rlimit)) {
 		Genode::warning("unable to obtain RLIMIT_NOFILE (", res, "), keeping limit unchanged");
 		return;
 	}
