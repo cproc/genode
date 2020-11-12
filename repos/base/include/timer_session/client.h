@@ -35,7 +35,14 @@ struct Timer::Session_client : Genode::Rpc_client<Session>
 
 	uint64_t elapsed_ms() const override { return call<Rpc_elapsed_ms>(); }
 
-	uint64_t elapsed_us() const override { return call<Rpc_elapsed_us>(); }
+	uint64_t elapsed_us() const override {
+#if 0
+		static int count = 0;
+		count++;
+		if (count == 10000) Genode::log("elapsed_us() called ", count, " times");
+#endif
+		return call<Rpc_elapsed_us>();
+	}
 };
 
 #endif /* _INCLUDE__TIMER_SESSION__CLIENT_H_ */
