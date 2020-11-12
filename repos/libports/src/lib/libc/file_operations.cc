@@ -111,11 +111,26 @@ struct Scanner_policy_path_element
 typedef Token<Scanner_policy_path_element> Path_element_token;
 
 
+#define MEASURE_RESOLVE_SYMLINKS 0
+
 /**
  * Resolve symbolic links in a given absolute path
  */
 void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 {
+#if MEASURE_RESOLVE_SYMLINKS
+	static Genode::Mutex mutex;
+	static unsigned long long duration;
+
+	Genode::Mutex::Guard guard(mutex);
+
+	unsigned long long t1;
+
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	t1 = ((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec;
+#endif
+
 	char path_element[PATH_MAX];
 	char symlink_target[PATH_MAX];
 
@@ -127,6 +142,14 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 	bool symlink_resolved_in_this_iteration;
 	do {
 		if (follow_count++ == FOLLOW_LIMIT) {
+#if MEASURE_RESOLVE_SYMLINKS
+			{
+				struct timespec ts;
+				clock_gettime(CLOCK_MONOTONIC, &ts);
+				duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+				Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+			}
+#endif
 			errno = ELOOP;
 			throw Symlink_resolve_error();
 		}
@@ -149,6 +172,14 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 			try {
 				next_iteration_working_path.append_element(path_element);
 			} catch (Path_base::Path_too_long) {
+#if MEASURE_RESOLVE_SYMLINKS
+				{
+					struct timespec ts;
+					clock_gettime(CLOCK_MONOTONIC, &ts);
+					duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+					Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+				}
+#endif
 				errno = ENAMETOOLONG;
 				throw Symlink_resolve_error();
 			}
@@ -162,14 +193,31 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 				int res;
 				FNAME_FUNC_WRAPPER_GENERIC(res = , stat, next_iteration_working_path.base(), &stat_buf);
 				if (res == -1) {
+#if MEASURE_RESOLVE_SYMLINKS
+					{
+						struct timespec ts;
+						clock_gettime(CLOCK_MONOTONIC, &ts);
+						duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+						Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+					}
+#endif
 					throw Symlink_resolve_error();
 				}
 				if (S_ISLNK(stat_buf.st_mode)) {
 					FNAME_FUNC_WRAPPER_GENERIC(res = , readlink,
 					                           next_iteration_working_path.base(),
 					                           symlink_target, sizeof(symlink_target) - 1);
-					if (res < 1)
+					if (res < 1) {
+#if MEASURE_RESOLVE_SYMLINKS
+						{
+							struct timespec ts;
+							clock_gettime(CLOCK_MONOTONIC, &ts);
+							duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+							Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+						}
+#endif
 						throw Symlink_resolve_error();
+					}
 
 					/* zero terminate target */
 					symlink_target[res] = 0;
@@ -183,6 +231,14 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 						try {
 							next_iteration_working_path.append_element(symlink_target);
 						} catch (Path_base::Path_too_long) {
+#if MEASURE_RESOLVE_SYMLINKS
+							{
+								struct timespec ts;
+								clock_gettime(CLOCK_MONOTONIC, &ts);
+								duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+								Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+							}
+#endif
 							errno = ENAMETOOLONG;
 							throw Symlink_resolve_error();
 						}
@@ -198,6 +254,14 @@ void Libc::resolve_symlinks(char const *path, Absolute_path &resolved_path)
 
 	resolved_path = next_iteration_working_path;
 	resolved_path.remove_trailing('/');
+#if MEASURE_RESOLVE_SYMLINKS
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+		Genode::log("resolve_symlinks(): ", duration / 1000 / 1000, " ms");
+	}
+#endif
 }
 
 
