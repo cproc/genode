@@ -26,7 +26,6 @@ SRC_CC        = main.cc \
                 core_rpc_cap_alloc.cc \
                 io_mem_session_component.cc \
                 io_port_session_component.cc \
-                io_port_session_support.cc \
                 irq_session_component.cc \
                 signal_source_component.cc \
                 signal_transmitter_proxy.cc \
@@ -41,6 +40,10 @@ SRC_CC        = main.cc \
                 heartbeat.cc \
                 thread.cc \
                 thread_myself.cc
+
+ifeq ($(filter-out $(SPECS),x86),)
+	SRC_CC += io_port_session_support.cc
+endif
 
 INC_DIR      += $(REP_DIR)/src/core/include \
                 $(GEN_CORE_DIR)/include \
