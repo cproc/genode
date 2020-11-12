@@ -21,7 +21,7 @@ code respectively the download source of binaries are described below.
   https://github.com/alex-ab/morbo.git.
 
   git branch intel_hwp
-  git commit 7256607dbc8631736fc22fc37474fb138b553978
+  git commit 84be1183b066e9ba78c874713db4e68a5c3393fa
 
 :'pulsar':
 
