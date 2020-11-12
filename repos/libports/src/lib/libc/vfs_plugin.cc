@@ -939,10 +939,23 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 	return out_count;
 }
 
-
+#define MEASURE_READ 0
 ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
                                ::size_t count)
 {
+#if MEASURE_READ
+	static Genode::Mutex mutex;
+	static unsigned long long duration;
+
+	Genode::Mutex::Guard guard(mutex);
+
+	unsigned long long t1;
+
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	t1 = ((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec;
+#endif
+
 	if ((fd->flags & O_ACCMODE) == O_WRONLY) {
 		return Errno(EBADF);
 	}
@@ -991,6 +1004,15 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	}
 
 	handle->advance_seek(out_count);
+
+#if MEASURE_READ
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		duration += (((unsigned long long)ts.tv_sec * 1000 * 1000 * 1000) + ts.tv_nsec - t1);
+		Genode::log("read(): ", duration / 1000 / 1000, " ms");
+	}
+#endif
 
 	return out_count;
 }
