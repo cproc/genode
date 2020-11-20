@@ -32,17 +32,15 @@ proc qt5_layouter_config { } {
 		</config>}
 }
 
-proc qt5_decorator_binary { } { return "decorator" }
+proc qt5_decorator_binary { } { return "themed_decorator" }
 
 proc qt5_decorator_config { } {
 	return {
 		<config>
-			<!-- this is an example config for the themed decorator
 			<vfs>
 				<tar name="plain_decorator_theme.tar"/>
 			</vfs>
 			<libc/>
-			-->
 			<default-policy/>
 		</config>}
 }
@@ -169,7 +167,7 @@ proc qt5_start_nodes { } {
 		</start>
 
 		<start name="drivers" caps="1500" managing_system="yes">
-			<resource name="RAM" quantum="64M"/>
+			<resource name="RAM" quantum="80M"/>
 			<binary name="init"/>
 			<route>
 				<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
@@ -192,14 +190,14 @@ proc qt5_start_nodes { } {
 				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
-			<config>
+			<config focus="rom">
 				<capture/> <event/>
 
 				<report focus="yes" hover="yes" xray="yes"/>
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client"
-				        focus="click" hover="always" width="1024" height="768"/>
+				        hover="always" width="1024" height="768"/>
 
 				<policy label_prefix="pointer" domain="pointer"/>
 				<default-policy domain="default"/>
