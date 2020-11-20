@@ -1,5 +1,3 @@
-REQUIRES += x86_64
-
 SRC_CC = vfs.cc
 
 INC_DIR += $(REP_DIR)/src/lib/vfs/cbe

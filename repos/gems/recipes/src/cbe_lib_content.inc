@@ -10,8 +10,7 @@ $(MIRROR_FROM_CBE_DIR):
 	cp -r $(CBE_DIR)/$@ $(dir $@)
 
 src/lib/$(LIB_SUB_DIR)/target.mk: src/lib/$(LIB_SUB_DIR)
-	echo "REQUIRES += x86_64" > $@
-	echo "LIBS += $(LIB_SUB_DIR)" >> $@
+	echo "LIBS += $(LIB_SUB_DIR)" > $@
 
 LICENSE:
 	cp $(GENODE_DIR)/LICENSE $@

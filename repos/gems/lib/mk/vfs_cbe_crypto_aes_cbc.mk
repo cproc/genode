@@ -1,5 +1,3 @@
-REQUIRES += x86_64
-
 SRC_CC := vfs.cc
 SRC_CC += aes_cbc.cc
 

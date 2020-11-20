@@ -1,5 +1,3 @@
-REQUIRES += x86_64
-
 CBE_DIR = $(call select_from_ports,cbe)
 
 LIBS += spark cbe_common
