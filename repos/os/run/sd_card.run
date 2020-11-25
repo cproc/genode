@@ -3,10 +3,9 @@ assert_spec pbxa9
 create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init \
-                  [depot_user]/src/platform_drv \
-                  [depot_user]/src/sd_card_drv
+                  [depot_user]/src/platform_drv
 
-build { test/block/client }
+build { drivers/sd_card test/block/client }
 
 install_config {
 <config>
@@ -76,7 +75,7 @@ install_config {
 	</start>
 </config> }
 
-build_boot_image { test-block-client }
+build_boot_image { pl180_sd_card_drv test-block-client }
 
 set disk_image "bin/sd_card.img"
 if { [file exists $disk_image] == 0 } then {

@@ -113,7 +113,7 @@ if { $mmc_rootfs } {
 	# add targets that enable MMC access via paravirtualized block
 	lappend targets timer
 	lappend targets drivers/platform
-	lappend targets drivers/sd_card
+	lappend targets drivers/sd_card/imx53
 	lappend targets server/part_block
 }
 

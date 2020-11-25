@@ -14,7 +14,7 @@ proc buffer_size_kib {} {
 
 proc sd_card_drv {} {
 	if {[have_spec pbxa9]}           { return pl180_sd_card_drv }
-	if {[have_spec imx8q_evk]}       { return imx6_sd_card_drv  }
+	if {[have_spec imx8q_evk]}       { return imx8_sd_card_drv  }
 	if {[have_spec imx6q_sabrelite]} { return imx6_sd_card_drv  }
 	if {[have_spec imx53]}           { return imx53_sd_card_drv }
 	if {[have_spec rpi]}             { return rpi_sd_card_drv   }
@@ -71,8 +71,7 @@ proc device_resources {} {
 create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init \
-                  [depot_user]/src/platform_drv \
-                  [depot_user]/src/sd_card_drv
+                  [depot_user]/src/platform_drv
 
 install_config {
 <config verbose="yes">
@@ -127,7 +126,8 @@ install_config {
 
 </config> }
 
-build_boot_image {}
+build { drivers/sd_card }
+build_boot_image [sd_card_drv]
 
 
 #

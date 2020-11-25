@@ -46,7 +46,7 @@ set build_components { test/libc_vfs }
 lappend build_components {*}$test_build_components
 
 lappend_if $use_sd_card_drv build_components drivers/platform
-lappend_if $use_sd_card_drv build_components drivers/sd_card
+lappend_if $use_sd_card_drv build_components drivers/sd_card/pl180
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components

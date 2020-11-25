@@ -40,7 +40,7 @@ lappend build_components test/libc_$filesystem
 
 lappend_if $use_ahci        build_components drivers/ahci
 lappend_if $use_sd_card_drv build_components drivers/platform
-lappend_if $use_sd_card_drv build_components drivers/sd_card
+lappend_if $use_sd_card_drv build_components drivers/sd_card/pl180
 lappend_if $use_vfs_block   build_components server/vfs_block
 lappend_if $use_vfs_block   build_components lib/vfs/import
 
