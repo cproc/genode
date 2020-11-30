@@ -950,6 +950,7 @@ write T
 writev T
 wscanf T
 xsi_sigpause T
+wait_for_continue T
 
 
 #
