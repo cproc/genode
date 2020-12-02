@@ -81,7 +81,7 @@ class Usb::Session_client : public Genode::Rpc_client<Session>
 		}
 
 		bool interface_extra(unsigned index, unsigned alt_setting,
-		                     Interface_extra *interface_data)
+		                     Interface_extra *interface_data) override
 		{
 			return call<Rpc_iface_extra>(index, alt_setting, interface_data);
 		}
