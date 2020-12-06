@@ -14,6 +14,7 @@
     <pkg path="system_shell" info="command-line interface to the system"/>
     <pkg path="qt5_textedit" info="Qt5-based text editor"/>
     <pkg path="report_dump"  info="save periodic snapshots of the report fs"/>
+    <pkg path="qt5_virtualkeyboard_app" info="Qt5-based virtual keyboard"/>
   </index>
 
   <index name="Demos">
