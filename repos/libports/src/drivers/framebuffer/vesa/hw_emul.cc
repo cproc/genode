@@ -170,7 +170,7 @@ static bool handle_pci_port_write(unsigned short port, T val)
 		}
 
 	case PCI_DATA_REG:
-		warning("writing data register not supported (value=", Hex(val), ")");
+		//warning("writing data register not supported (value=", Hex(val), ")");
 		return true;
 
 	default:
