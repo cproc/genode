@@ -1,0 +1,53 @@
+<runtime ram="64M" caps="500" binary="test-qt_quick" config="test-qt_quick.config">
+
+	<requires>
+		<gui/>
+		<report label="shape"/>
+		<timer/>
+	</requires>
+
+	<content>
+
+		<!-- common for Qt GUI applications -->
+
+		<rom label="egl.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="freetype.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="jpeg.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="qt5_libqgenode.tar"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="zlib.lib.so"/>
+
+		<!-- additional files needed for this particular application -->
+
+		<!-- qt5_base -->
+
+		<rom label="libQt5Network.lib.so"/>
+
+		<!-- qt5_declarative -->
+
+		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5Quick.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="qt5_declarative_qml.tar"/>
+
+		<!-- application -->
+
+		<rom label="qt5_component.lib.so"/>
+		<rom label="test-qt_quick"/>
+		<rom label="test-qt_quick.config"/>
+
+	</content>
+
+</runtime>
