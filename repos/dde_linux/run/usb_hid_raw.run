@@ -116,13 +116,14 @@ append config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="trace_logger" priority="-1">
+	<start name="log" priority="-1">
+		<binary name="trace_logger"/>
 		<resource name="RAM" quantum="80M"/>
 		<config verbose="yes"
-				session_ram="10M"
+				session_ram="16M"
 				session_parent_levels="1"
 				session_arg_buffer="64K"
-				period_sec="5"
+				period_sec="30"
 				activity="yes"
 				affinity="yes"
 				default_policy="null"
@@ -134,6 +135,11 @@ append config {
 			        policy="log_output"/>
 
 			<policy label="init -> usb_hid_drv"
+			        thread="ep"
+			        buffer="4096K"
+			        policy="log_output"/>
+
+			<policy label="init -> test-input"
 			        thread="ep"
 			        buffer="4096K"
 			        policy="log_output"/>

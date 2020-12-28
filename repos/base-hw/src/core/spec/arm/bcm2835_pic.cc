@@ -49,6 +49,11 @@ Hw::Bcm2835_pic::Usb_dwc_otg::Usb_dwc_otg()
 
 bool Hw::Bcm2835_pic::Usb_dwc_otg::handle_sof()
 {
+#if 1
+	/* debug: report current frame number to driver */
+	write<Guid::Num>(read<Host_frame_number::Num>());
+	return false;
+#endif
 	static int handle_sof_count = 0;
 	static int is_sof_count = 0;
 	static int cnt_count = 0;
@@ -164,7 +169,7 @@ bool Hw::Bcm2835_pic::take_request(unsigned &irq)
 		/* handle SOF interrupts locally, filter from the user land */
 		if (irq == Board::DWC_IRQ) {
 			if (dwc_irq_count >= 100000) {
-				Genode::raw("Sof statistics: ", dwc_sof_count, "/", dwc_irq_count);
+				//Genode::raw("Sof statistics: ", dwc_sof_count, "/", dwc_irq_count);
 				dwc_sof_count = 0;
 				dwc_irq_count = 0;
 			}

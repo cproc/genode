@@ -68,7 +68,7 @@ REV(dwc_otg) := r3
 DIR(dwc_otg) := $(SRC_DIR_USB)/drivers/usb/host/dwc_otg
 
 URL(dwc_otg_host) := https://github.com/cproc/dwc_otg.git
-REV(dwc_otg_host) := r4-hack
+REV(dwc_otg_host) := r4-debug
 DIR(dwc_otg_host) := $(SRC_DIR_USB_HOST)/drivers/usb/host
 
 
