@@ -169,7 +169,7 @@ proc qt5_start_nodes { } {
 		</start>
 
 		<start name="drivers" caps="1500" managing_system="yes">
-			<resource name="RAM" quantum="64M"/>
+			<resource name="RAM" quantum="80M"/>
 			<binary name="init"/>
 			<route>
 				<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
