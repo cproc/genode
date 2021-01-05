@@ -32,17 +32,15 @@ proc qt5_layouter_config { } {
 		</config>}
 }
 
-proc qt5_decorator_binary { } { return "decorator" }
+proc qt5_decorator_binary { } { return "themed_decorator" }
 
 proc qt5_decorator_config { } {
 	return {
 		<config>
-			<!-- this is an example config for the themed decorator
 			<vfs>
 				<tar name="plain_decorator_theme.tar"/>
 			</vfs>
 			<libc/>
-			-->
 			<default-policy/>
 		</config>}
 }
