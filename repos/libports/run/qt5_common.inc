@@ -190,14 +190,14 @@ proc qt5_start_nodes { } {
 				<service name="Report"> <child name="wm_report_rom"/> </service>
 				<any-service> <parent /> <any-child /> </any-service>
 			</route>
-			<config>
+			<config focus="rom">
 				<capture/> <event/>
 
 				<report focus="yes" hover="yes" xray="yes"/>
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client"
-				        focus="click" hover="always" width="1024" height="768"/>
+				        hover="always" width="1024" height="768"/>
 
 				<policy label_prefix="pointer" domain="pointer"/>
 				<default-policy domain="default"/>
