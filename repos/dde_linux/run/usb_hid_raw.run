@@ -287,9 +287,40 @@ if {[have_spec x86]} { append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
-append qemu_args "  -usb  -usbdevice mouse -usbdevice keyboard"
 append qemu_args " -device usb-ehci,id=ehci"
+#append qemu_args " -device usb-kbd,id=ukb1"
+append qemu_args " -nographic"
 append xen_args  { usbdevice=\["mouse","keyboard"\] }
+
+##############################
+
+#run_genode_until {.*USB HID.*Keyboard.*\n} 60
+run_genode_until {.*dev_info: 6 ports detected} 60
+
+set spawn_id $qemu_spawn_id
+
+# send Ctrl-a+c to enter Qemu's monitor mode
+send "\x01\x63"
+
+# wait for monitor to become ready
+run_genode_until {(qemu)} 20 $spawn_id
+
+while {1} {
+
+	# connect keyboard
+	send "device_add usb-kbd,id=ukb1\n"
+
+	# wait for keyboard
+	run_genode_until {.*USB HID.*Keyboard.*\n} 600 $spawn_id
+
+	# disconnect keyboard
+	send "device_del ukb1\n"
+
+	# wait for disconnect
+	run_genode_until {.*USB disconnect.*\n} 600 $spawn_id
+}
+
+##############################
 
 if { [have_include "power_on/qemu"] || ![get_cmd_switch --autopilot] } { run_genode_until forever }
 

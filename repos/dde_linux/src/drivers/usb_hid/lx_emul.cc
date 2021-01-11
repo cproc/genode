@@ -102,8 +102,12 @@ struct Lx_driver
 	Lx_driver(device_driver & drv) : dev_drv(drv) { list().insert(&le); }
 
 	bool match(struct device *dev) {
-		return dev_drv.bus->match ? dev_drv.bus->match(dev, &dev_drv)
-		                          : false; }
+		Genode::log("Lx_driver::match(): dev: ", dev);
+		bool result = dev_drv.bus->match ? dev_drv.bus->match(dev, &dev_drv)
+		                          : false;
+		Genode::log("Lx_driver::match(): result: ", result);
+		return result;
+	}
 
 	int probe(struct device *dev)
 	{
