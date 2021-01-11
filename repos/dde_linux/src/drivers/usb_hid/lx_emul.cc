@@ -102,8 +102,12 @@ struct Lx_driver
 	Lx_driver(device_driver & drv) : dev_drv(drv) { list().insert(&le); }
 
 	bool match(struct device *dev) {
-		return dev_drv.bus->match ? dev_drv.bus->match(dev, &dev_drv)
-		                          : false; }
+		Genode::log("Lx_driver::match(): dev: ", dev);
+		bool result = dev_drv.bus->match ? dev_drv.bus->match(dev, &dev_drv)
+		                          : false;
+		Genode::log("Lx_driver::match(): result: ", result);
+		return result;
+	}
 
 	int probe(struct device *dev)
 	{
@@ -571,7 +575,7 @@ void *kmalloc(size_t size, gfp_t flags)
 
 		if (flags & __GFP_ZERO)
 			memset(addr, 0, size);
-
+Genode::log("kmalloc(): ", addr, " - ", addr + size - 1);
 		return addr;
 	} catch (...) {
 		return NULL;
@@ -581,6 +585,7 @@ void *kmalloc(size_t size, gfp_t flags)
 extern "C"
 void kfree(const void *p)
 {
+Genode::log("kfree(): ", p);
 	if (!p) return;
 
 	heap().free((void *)p, 0);
