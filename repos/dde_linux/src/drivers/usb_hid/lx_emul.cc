@@ -594,7 +594,7 @@ void *kmalloc(size_t size, gfp_t flags)
 
 		if (flags & __GFP_ZERO)
 			memset(addr, 0, size);
-
+//Genode::log("kmalloc(): ", addr, " - ", addr + size - 1, " (", size, "), ret: ", __builtin_return_address(0));
 		return addr;
 	} catch (...) {
 		return NULL;
@@ -604,6 +604,7 @@ void *kmalloc(size_t size, gfp_t flags)
 extern "C"
 void kfree(const void *p)
 {
+//Genode::log("kfree(): ", p);
 	if (!p) return;
 
 	heap().free((void *)p, 0);
