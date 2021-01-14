@@ -255,6 +255,7 @@ Slab::~Slab()
 
 Slab::Block *Slab::_new_slab_block()
 {
+//Genode::log("Slab::_new_slab_block(): ", __builtin_return_address(0));
 	void *sb = nullptr;
 	if (!_backing_store || !_backing_store->alloc(_block_size, &sb))
 		return nullptr;
@@ -321,6 +322,7 @@ void Slab::insert_sb(void *ptr)
 
 bool Slab::alloc(size_t size, void **out_addr)
 {
+//Genode::log(this, ": Slab::alloc(", size, "): ret: ", __builtin_return_address(0));
 	/* too large for us ? */
 	if (size > _slab_size) {
 		error("requested size ", size, " is larger then slab size ",

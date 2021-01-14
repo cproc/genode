@@ -276,6 +276,7 @@ class Genode::Allocator_avl_base : public Range_allocator
 
 		bool alloc(size_t size, void **out_addr) override
 		{
+//Genode::log("Avl alloc(", size, "): ", __builtin_return_address(0));
 			return (Allocator_avl_base::alloc_aligned(
 				size, out_addr, log2(sizeof(addr_t))).ok());
 		}

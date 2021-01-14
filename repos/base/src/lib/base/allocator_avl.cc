@@ -97,6 +97,7 @@ void Allocator_avl_base::Block::recompute()
 
 Allocator_avl_base::Block *Allocator_avl_base::_alloc_block_metadata()
 {
+//Genode::log("_alloc_block_metadata(): ret: ", __builtin_return_address(0));
 	void *b = nullptr;
 	if (_md_alloc->alloc(sizeof(Block), &b))
 		return construct_at<Block>(b, 0, 0, 0);
@@ -107,6 +108,7 @@ Allocator_avl_base::Block *Allocator_avl_base::_alloc_block_metadata()
 
 bool Allocator_avl_base::_alloc_two_blocks_metadata(Block **dst1, Block **dst2)
 {
+//Genode::log("_alloc_two_blocks_metadata(): ret: ", __builtin_return_address(0));
 	Block * const b1 = _alloc_block_metadata();
 	Block * const b2 = _alloc_block_metadata();
 
@@ -285,6 +287,7 @@ Range_allocator::Alloc_return
 Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align,
                                   addr_t from, addr_t to)
 {
+//Genode::log(this, ": alloc_aligned(", size, "), avail: ", avail(), ", ret: ", __builtin_return_address(0));
 	Block *dst1, *dst2;
 	if (!_alloc_two_blocks_metadata(&dst1, &dst2))
 		return Alloc_return(Alloc_return::OUT_OF_METADATA);
@@ -307,6 +310,7 @@ Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align,
 
 	/* create allocated block */
 	Block *new_block = _alloc_block_metadata();
+
 	if (!new_block) {
 		_md_alloc->free(new_block, sizeof(Block));
 		return Alloc_return(Alloc_return::OUT_OF_METADATA);
@@ -314,6 +318,7 @@ Allocator_avl_base::alloc_aligned(size_t size, void **out_addr, int align,
 	_add_block(new_block, new_addr, size, Block::USED);
 
 	*out_addr = reinterpret_cast<void *>(new_addr);
+//Genode::log(this, ": alloc_aligned() ok");
 	return Alloc_return(Alloc_return::OK);
 }
 
@@ -344,6 +349,7 @@ Range_allocator::Alloc_return Allocator_avl_base::alloc_addr(size_t size, addr_t
 
 	/* create allocated block */
 	Block *new_block = _alloc_block_metadata();
+
 	if (!new_block) {
 		_md_alloc->free(new_block, sizeof(Block));
 		return Alloc_return(Alloc_return::OUT_OF_METADATA);

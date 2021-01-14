@@ -767,6 +767,7 @@ class Genode::Packet_stream_source : private Packet_stream_base
 		 */
 		Packet_descriptor alloc_packet(Genode::size_t size, int align = POLICY::Packet_descriptor::PACKET_ALIGNMENT)
 		{
+//Genode::log("alloc_packet(", size, "): ret: ", __builtin_return_address(0));
 			void *base = 0;
 			if (size && _packet_alloc.alloc_aligned(size, &base, align).error())
 				throw Packet_alloc_failed();
@@ -853,6 +854,7 @@ class Genode::Packet_stream_source : private Packet_stream_base
 		 */
 		void release_packet(Packet_descriptor packet)
 		{
+//Genode::log("release_packet(", packet.size(), "): ret: ", __builtin_return_address(0));
 			if (packet.size())
 				_packet_alloc.free((void *)packet.offset(), packet.size());
 		}

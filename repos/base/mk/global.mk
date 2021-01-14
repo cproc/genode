@@ -143,7 +143,7 @@ CC_WARN += -Wno-error=implicit-fallthrough
 #
 # Additional warnings for C++
 #
-CC_CXX_WARN_STRICT ?= -Wextra -Weffc++ -Werror -Wsuggest-override
+CC_CXX_WARN_STRICT ?= -Wextra -Werror -Wsuggest-override
 CC_CXX_WARN        ?= $(CC_WARN) $(CC_CXX_WARN_STRICT)
 
 #

@@ -146,12 +146,14 @@ void Thread::join() { _join.block(); }
 void *Thread::alloc_secondary_stack(char const *name, size_t stack_size)
 {
 	Stack *stack = _alloc_stack(stack_size, name, false);
+//Genode::log("Thread::alloc_secondary_stack(): ", (void*)stack->top(), ", ret: ", __builtin_return_address(0));
 	return (void *)stack->top();
 }
 
 
 void Thread::free_secondary_stack(void* stack_addr)
 {
+//Genode::log("Thread::free_secondary_stack(): ", stack_addr);
 	addr_t base = Stack_allocator::addr_to_base(stack_addr);
 	_free_stack(Stack_allocator::base_to_stack(base));
 }

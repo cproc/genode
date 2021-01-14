@@ -30,7 +30,7 @@ static void *try_alloc(Allocator *alloc, size_t size)
 }
 
 
-void *operator new    (__SIZE_TYPE__ s, Allocator *a) { return try_alloc(a, s); }
+void *operator new    (__SIZE_TYPE__ s, Allocator *a) { /*Genode::log("new(): ", __builtin_return_address(0));*/ return try_alloc(a, s); }
 void *operator new [] (__SIZE_TYPE__ s, Allocator *a) { return try_alloc(a, s); }
 void *operator new    (__SIZE_TYPE__ s, Allocator &a) { return a.alloc(s); }
 void *operator new [] (__SIZE_TYPE__ s, Allocator &a) { return a.alloc(s); }
