@@ -40,13 +40,11 @@ void Driver::Device::register_device()
 
 	udev = (usb_device*) kzalloc(sizeof(usb_device), GFP_KERNEL);
 	udev->bus = (usb_bus*) kzalloc(sizeof(usb_bus), GFP_KERNEL);
-	udev->config = (usb_host_config*) kzalloc(sizeof(usb_host_config), GFP_KERNEL);
 	udev->bus->bus_name = "usbbus";
 	udev->bus->controller = (device*) (&usb);
 	udev->bus_mA = 900; /* set to maximum USB3.0 */
 
 	Genode::memcpy(&udev->descriptor,   &dev_desc,    sizeof(usb_device_descriptor));
-	Genode::memcpy(&udev->config->desc, &config_desc, sizeof(usb_config_descriptor));
 	udev->devnum = dev_desc.num;
 	udev->speed  = (usb_device_speed) dev_desc.speed;
 	udev->authorized = 1;
@@ -84,8 +82,8 @@ void Driver::Device::unregister_device()
 		if (!udev->config->interface[i]) break;
 		else remove_interface(udev->config->interface[i]);
 	}
+	usb_destroy_configuration(udev);
 	kfree(udev->bus);
-	kfree(udev->config);
 	kfree(udev);
 	udev = nullptr;
 }
@@ -127,7 +125,7 @@ Driver::Device::Device(Driver & driver, Label label)
 : label(label),
   driver(driver),
   env(driver.env),
-  alloc(driver.alloc),
+  alloc(&driver.heap),
   state_task(env.ep(), state_task_entry, reinterpret_cast<void*>(this),
              "usb_state", Lx::Task::PRIORITY_0, Lx::scheduler()),
   urb_task(env.ep(), urb_task_entry, reinterpret_cast<void*>(this),

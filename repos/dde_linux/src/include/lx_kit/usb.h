@@ -27,6 +27,7 @@ class Urb : public Usb::Completion
 		urb                  & _urb;
 		Usb::Packet_descriptor _packet {
 			_usb.source()->alloc_packet(_urb.transfer_buffer_length) };
+		bool                   _completed { false };
 
 	public:
 
@@ -79,6 +80,12 @@ class Urb : public Usb::Completion
 			};
 		}
 
+		~Urb()
+		{
+			if (!_completed) 
+				_usb.source()->release_packet(_packet);
+		}
+
 		void send()
 		{
 			_usb.source()->submit_packet(_packet);
@@ -99,7 +106,8 @@ class Urb : public Usb::Completion
 			}
 
 			if (_urb.complete) _urb.complete(&_urb);
-			kfree(_packet.completion);
+
+			_completed = true;
 		}
 };
 
