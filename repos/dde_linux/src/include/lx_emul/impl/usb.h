@@ -44,11 +44,12 @@ int usb_control_msg(struct usb_device *dev, unsigned int pipe,
 	usb_fill_control_urb(u, dev, pipe, (unsigned char *)dr, data,
 	                     size, nullptr, nullptr);
 
-	Genode::construct_at<Sync_ctrl_urb>(scu, *(Usb::Connection*)(dev->bus->controller), *u);
+	Genode::construct_at<Sync_ctrl_urb>(scu, *(Usb::Connection*)(dev->bus->controller), *u, true);
 
 	scu->send(timeout);
 	int ret = u->actual_length;
 	usb_free_urb(u);
+	kfree(dr);
 	return ret;
 }
 
@@ -72,7 +73,15 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 	if (!u)
 		return 1;
 
-	Genode::construct_at<Urb>(u, *(Usb::Connection*)(urb->dev->bus->controller), *urb);
+	Genode::construct_at<Urb>(u, *(Usb::Connection*)(urb->dev->bus->controller), *urb, false);
+
+	/*
+	 * Auto-destruction of the 'Urb' object in its completion function
+	 * does not work when the 'Usb' session gets closed before the
+	 * completion function was called. So we store the pointer in the
+	 * otherwise unused 'hcpriv' member and free it in 'usb_free_urb()'.
+	 */
+	urb->hcpriv = u;
 
 	u->send();
 	return 0;
@@ -81,5 +90,12 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 
 void usb_free_urb(struct urb *urb)
 {
+	if (!urb)
+		return;
+
+	/* free 'Urb' object */
+	if (urb->hcpriv)
+		kfree(urb->hcpriv);
+
 	kfree(urb);
 }
