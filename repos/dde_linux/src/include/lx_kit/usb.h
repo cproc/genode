@@ -27,10 +27,12 @@ class Urb : public Usb::Completion
 		urb                  & _urb;
 		Usb::Packet_descriptor _packet {
 			_usb.source()->alloc_packet(_urb.transfer_buffer_length) };
+		bool                   _free_on_completion;
 
 	public:
 
-		Urb(Usb::Session_client &usb, urb & urb) : _usb(usb), _urb(urb)
+		Urb(Usb::Session_client &usb, urb & urb, bool free_on_completion)
+		: _usb(usb), _urb(urb), _free_on_completion(free_on_completion)
 		{
 			_packet.completion = this;
 
@@ -99,7 +101,8 @@ class Urb : public Usb::Completion
 			}
 
 			if (_urb.complete) _urb.complete(&_urb);
-			kfree(_packet.completion);
+			if (_free_on_completion)
+				kfree(_packet.completion);
 		}
 };
 
@@ -112,7 +115,9 @@ class Sync_ctrl_urb : public Urb
 
 	public:
 
-		Sync_ctrl_urb(Usb::Session_client & usb, urb & urb) : Urb(usb, urb) {
+		Sync_ctrl_urb(Usb::Session_client & usb, urb & urb,
+		              bool free_on_completion)
+		: Urb(usb, urb, free_on_completion) {
 			init_completion(&_comp); }
 
 		void complete(Usb::Packet_descriptor &p) override
