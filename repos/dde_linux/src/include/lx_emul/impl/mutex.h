@@ -26,11 +26,13 @@ void mutex_init(struct mutex *m)
 	m->waiters = nullptr;
 	m->id      = ++id;
 	m->counter = 0;
+//Genode::log("mutex_init(): ", m, ", ret: ", __builtin_return_address(0));
 }
 
 
 void mutex_destroy(struct mutex *m)
 {
+//Genode::log("mutex_destroy(): ", m);
 	Lx::Task::List *waiters = static_cast<Lx::Task::List *>(m->waiters);
 
 	/* FIXME potentially blocked tasks are not unblocked */
@@ -51,6 +53,7 @@ static inline void __check_or_initialize_mutex(struct mutex *m)
 {
 	if (!m->waiters) {
 		m->waiters = new (&Lx_kit::env().heap()) Lx::Task::List;
+//Genode::log("_check_or_initialize_mutex(): ", m, ", ret: ", __builtin_return_address(0));
 	}
 }
 

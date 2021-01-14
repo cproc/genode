@@ -26,9 +26,10 @@
 #include <lx_emul/extern_c_end.h>
 
 extern "C" void usb_detect_interface_quirks(struct usb_device *udev);
-
+extern void kmalloc_dump();
 void Driver::Device::register_device()
 {
+Genode::log("register_device()");
 	if (udev) {
 		Genode::error("device already registered!");
 		return;
@@ -73,11 +74,13 @@ void Driver::Device::register_device()
 		struct usb_device_id   id;
 		probe_interface(iface, &id);
 	}
+Genode::log("register_device() finished");
 }
 
 
 void Driver::Device::unregister_device()
 {
+Genode::log("unregister_device()");
 	for (unsigned i = 0; i < USB_MAXINTERFACES; i++) {
 		if (!udev->config->interface[i]) break;
 		else remove_interface(udev->config->interface[i]);
@@ -86,6 +89,8 @@ void Driver::Device::unregister_device()
 	kfree(udev->bus);
 	kfree(udev);
 	udev = nullptr;
+Genode::log("unregister_device() finished");
+kmalloc_dump();
 }
 
 

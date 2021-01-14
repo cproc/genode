@@ -22,6 +22,8 @@ namespace Genode { struct Pd_session_client; }
 
 struct Genode::Pd_session_client : Rpc_client<Pd_session>
 {
+	int allocated { 0 };
+
 	explicit Pd_session_client(Pd_session_capability session)
 	: Rpc_client<Pd_session>(session) { }
 
@@ -76,10 +78,20 @@ struct Genode::Pd_session_client : Rpc_client<Pd_session>
 	Ram_dataspace_capability alloc(size_t size,
 	                               Cache_attribute cached = CACHED) override
 	{
-		return call<Rpc_alloc>(size, cached);
+		Ram_dataspace_capability cap = call<Rpc_alloc>(size, cached);
+		Genode::Dataspace_client dsc(cap);
+		allocated += dsc.size();
+//Genode::log("alloc(", size, "): ", allocated, ", ret: ", __builtin_return_address(0));
+		return cap;
 	}
 
-	void free(Ram_dataspace_capability ds) override { call<Rpc_free>(ds); }
+	void free(Ram_dataspace_capability ds) override
+	{
+		Genode::Dataspace_client dsc(ds);
+		allocated -= dsc.size();
+//Genode::log("free(): ", dsc.size(), ", ", allocated);
+		call<Rpc_free>(ds);
+	}
 
 	size_t dataspace_size(Ram_dataspace_capability ds) const override
 	{

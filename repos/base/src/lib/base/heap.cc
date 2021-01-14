@@ -86,6 +86,7 @@ Heap::Dataspace *Heap::_allocate_dataspace(size_t size, bool enforce_separate_me
 
 	/* make new ram dataspace available at our local address space */
 	try {
+//Genode::log("_allocate_dataspace(", size, "): ", __builtin_return_address(0));
 		new_ds_cap = _ds_pool.ram_alloc->alloc(size);
 		try { ds_addr = _ds_pool.region_map->attach(new_ds_cap); }
 		catch (Out_of_ram) {
@@ -127,6 +128,7 @@ Heap::Dataspace *Heap::_allocate_dataspace(size_t size, bool enforce_separate_me
 			warning("could not allocate dataspace meta data - this should never happen");
 			return 0;
 		}
+		_quota_used += sizeof(Heap::Dataspace);
 	}
 
 	ds = construct_at<Dataspace>(ds_meta_data_addr, new_ds_cap, ds_addr, size);
@@ -228,8 +230,14 @@ bool Heap::alloc(size_t size, void **out_addr)
 	/* check requested allocation against quota limit */
 	if (size + _quota_used > _quota_limit)
 		return false;
-
-	return _unsynchronized_alloc(size, out_addr);
+	bool result = _unsynchronized_alloc(size, out_addr);
+Genode::log(this, ": Heap::alloc(): addr: ", *out_addr, ", size: ", size, ", ret: ", __builtin_return_address(0));
+#if 0
+if (_alloc_count < 10000)
+	_allocations[_alloc_count++] = *out_addr;
+//Genode::log("alloc() finished");
+#endif
+	return result;
 }
 
 
@@ -246,6 +254,16 @@ void Heap::free(void *addr, size_t)
 		/* forward request to our local allocator */
 		_alloc->free(addr, size);
 		_quota_used -= size;
+#if 0
+for (int i = 0; i < _alloc_count; i++) {
+	if (_allocations[i] == addr) {
+		_allocations[i] = 0;
+		break;
+	}
+}
+#endif
+Genode::log(this, ": Heap::free(): addr: ", addr, ", size: ", size, ", used: ", _quota_used);
+//_dump_heap();
 		return;
 	}
 
@@ -268,7 +286,17 @@ void Heap::free(void *addr, size_t)
 	_ds_pool.remove_and_free(*ds);
 	_alloc->free(ds);
 
-	_quota_used -= ds->size;
+	_quota_used -= (ds->size + sizeof(Heap::Dataspace));
+#if 0
+for (int i = 0; i < _alloc_count; i++) {
+	if (_allocations[i] == addr) {
+		_allocations[i] = 0;
+		break;
+	}
+}
+#endif
+Genode::log(this, ": Heap::free(): addr: ", addr, ", size: ", size, ", used: ", _quota_used);
+//_dump_heap();
 }
 
 

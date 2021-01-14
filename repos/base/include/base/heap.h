@@ -95,7 +95,19 @@ class Genode::Heap : public Allocator
 		size_t                         _quota_limit { 0 };
 		size_t                         _quota_used  { 0 };
 		size_t                         _chunk_size  { 0 };
+#if 0
+		int _alloc_count { 0 };
+		void *_allocations[10000] { 0 };
 
+		void _dump_heap() {
+			Genode::log(this, ": dump_heap()");
+			for (int i = 7; i < _alloc_count; i++) {
+				if (_allocations[i])
+					Genode::log(i, ": ", _allocations[i]);
+			}
+			Genode::log(this, ": dump_heap() finished");
+		}
+#endif
 		/**
 		 * Allocate a new dataspace of the specified size
 		 *

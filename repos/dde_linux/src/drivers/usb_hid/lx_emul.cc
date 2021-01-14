@@ -580,6 +580,17 @@ static Genode::Allocator &heap()
 	return heap;
 }
 
+void *kmallocs[10000];
+
+void kmalloc_dump()
+{
+lx_printf("kmalloc_dump()\n");
+	for (int i = 0; i < 10000; i++)
+		if (kmallocs[i])
+			lx_printf("%d: %p\n", i, kmallocs[i]);
+lx_printf("kmalloc_dump() finished\n");
+}
+
 extern "C"
 void *kmalloc(size_t size, gfp_t flags)
 {
@@ -595,6 +606,11 @@ void *kmalloc(size_t size, gfp_t flags)
 		if (flags & __GFP_ZERO)
 			memset(addr, 0, size);
 
+static int count = 0;
+if ((count >= 7) && (count < 10000))
+	kmallocs[count] = addr;
+//Genode::log("kmalloc(): ", addr, " - ", addr + size - 1, " (", size, "), ret: ", __builtin_return_address(0), ", count: ", count);
+count++;
 		return addr;
 	} catch (...) {
 		return NULL;
@@ -604,7 +620,15 @@ void *kmalloc(size_t size, gfp_t flags)
 extern "C"
 void kfree(const void *p)
 {
+//Genode::log("kfree(): ", p);
 	if (!p) return;
+
+for (int i = 0; i < 10000; i++) {
+	if (kmallocs[i] == p) {
+		kmallocs[i] = 0;
+		break;
+	}
+}
 
 	heap().free((void *)p, 0);
 }
