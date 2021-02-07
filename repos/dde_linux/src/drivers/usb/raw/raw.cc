@@ -28,6 +28,9 @@
 #include <lx_kit/malloc.h>
 #include <lx_kit/scheduler.h>
 
+/* definition from scsi.h conflicts with USB session timeout error */
+#undef TIMEOUT_ERROR
+
 using namespace Genode;
 
 extern "C" int usb_set_configuration(struct usb_device *dev, int configuration);
@@ -168,9 +171,27 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 			kfree(buf);
 
-			p.control.actual_size = err;
+			if (err >= 0) {
+				p.succeded = true;
+				p.control.actual_size = err;
+			} else {
+				p.control.actual_size = 0;
 
-			p.succeded = (err < 0 && err != -EPIPE) ? false : true;
+				if (err == -ENOENT)
+					p.error = Packet_descriptor::INTERFACE_OR_ENDPOINT_ERROR;
+				else if ((err == -ENODEV) || (err == -ESHUTDOWN))
+					p.error = Packet_descriptor::NO_DEVICE_ERROR;
+				else if ((err == -EPROTO) || (err == -EILSEQ))
+					p.error = Packet_descriptor::PROTOCOL_ERROR;
+				else if (err == -EPIPE)
+					p.error = Packet_descriptor::STALL_ERROR;
+				else if (err == -ETIMEDOUT)
+					p.error = Packet_descriptor::TIMEOUT_ERROR;
+				else {
+					Genode::error(__func__, ": unhandled error: ", err);
+					p.error = Packet_descriptor::UNKNOWN_ERROR;
+				}
+			}
 		}
 
 		/**
@@ -187,16 +208,34 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			                          p.control.request, p.control.request_type,
 			                          p.control.value, p.control.index, buf, p.size(),
 			                          p.control.timeout);
-			if (err >= 0 || err== -EPIPE) {
-				p.control.actual_size = err;
+
+			if (err >= 0) {
 				p.succeded = true;
+				p.control.actual_size = err;
+
+				if (p.control.request == USB_REQ_CLEAR_FEATURE &&
+				    p.control.value == USB_ENDPOINT_HALT) {
+					usb_reset_endpoint(_device->udev, p.control.index);
+				}
+			} else {
+				p.control.actual_size = 0;
+
+				if (err == -ENOENT)
+					p.error = Packet_descriptor::INTERFACE_OR_ENDPOINT_ERROR;
+				else if ((err == -ENODEV) || (err == -ESHUTDOWN))
+					p.error = Packet_descriptor::NO_DEVICE_ERROR;
+				else if ((err == -EPROTO) || (err == -EILSEQ))
+					p.error = Packet_descriptor::PROTOCOL_ERROR;
+				else if (err == -EPIPE)
+					p.error = Packet_descriptor::STALL_ERROR;
+				else if (err == -ETIMEDOUT)
+					p.error = Packet_descriptor::TIMEOUT_ERROR;
+				else {
+					Genode::error(__func__, ": unhandled error: ", err);
+					p.error = Packet_descriptor::UNKNOWN_ERROR;
+				}
 			}
 
-			if (err >= 0
-			    && p.control.request == USB_REQ_CLEAR_FEATURE
-			    && p.control.value == USB_ENDPOINT_HALT) {
-				usb_reset_endpoint(_device->udev, p.control.index);
-			}
 			kfree(buf);
 		}
 
@@ -235,10 +274,15 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 				if (read)
 					Genode::memcpy(_sink->packet_content(p), urb->transfer_buffer,
 					               urb->actual_length);
-			}
-
-			if (urb->status == -EPIPE) {
+			} else if (urb->status == -ESHUTDOWN) {
+				p.error = Packet_descriptor::NO_DEVICE_ERROR;
+			} else if ((urb->status == -EPROTO) || (urb->status == -EILSEQ)) {
+				p.error = Packet_descriptor::PROTOCOL_ERROR;
+			} else if (urb->status == -EPIPE) {
 				p.error = Packet_descriptor::STALL_ERROR;
+			} else {
+				Genode::error(__func__, ": unhandled error: ", urb->status);
+				p.error = Packet_descriptor::UNKNOWN_ERROR;
 			}
 
 			_ack_packet(p);
@@ -280,7 +324,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			if (!bulk_urb) {
 				error("Failed to allocate bulk URB");
 				dma_free(buf);
-				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+				p.error = Usb::Packet_descriptor::MEMORY_ERROR;
 				return false;
 			}
 
@@ -291,8 +335,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 			int ret = usb_submit_urb(bulk_urb, GFP_KERNEL);
 			if (ret != 0) {
-				error("Failed to submit URB, error: ", ret);
-				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+				if (ret == -ENOENT)
+					p.error = Packet_descriptor::INTERFACE_OR_ENDPOINT_ERROR;
+				else if ((ret == -ENODEV) || (ret == -ESHUTDOWN))
+					p.error = Packet_descriptor::NO_DEVICE_ERROR;
+				else {
+					Genode::error(__func__, ": unhandled error: ", ret);
+					p.error = Packet_descriptor::UNKNOWN_ERROR;
+				}
 
 				free_complete_data(data);
 				usb_free_urb(bulk_urb);
@@ -322,7 +372,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			if (!irq_urb) {
 				error("Failed to allocate interrupt URB");
 				dma_free(buf);
-				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+				p.error = Usb::Packet_descriptor::MEMORY_ERROR;
 				return false;
 			}
 
@@ -344,8 +394,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 			int ret = usb_submit_urb(irq_urb, GFP_KERNEL);
 			if (ret != 0) {
-				error("Failed to submit URB, error: ", ret);
-				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+				if (ret == -ENOENT)
+					p.error = Packet_descriptor::INTERFACE_OR_ENDPOINT_ERROR;
+				else if ((ret == -ENODEV) || (ret == -ESHUTDOWN))
+					p.error = Packet_descriptor::NO_DEVICE_ERROR;
+				else {
+					Genode::error(__func__, ": unhandled error: ", ret);
+					p.error = Packet_descriptor::UNKNOWN_ERROR;
+				}
 
 				free_complete_data(data);
 				usb_free_urb(irq_urb);
@@ -379,7 +435,7 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			if (!urb) {
 				error("Failed to allocate isochronous URB");
 				dma_free(buf);
-				p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+				p.error = Usb::Packet_descriptor::MEMORY_ERROR;
 				return false;
 			}
 
@@ -407,8 +463,14 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			if (ret == 0)
 				return true;
 
-			error("Failed to submit URB, error: ", ret);
-			p.error = Usb::Packet_descriptor::SUBMIT_ERROR;
+			if (ret == -ENOENT)
+				p.error = Packet_descriptor::INTERFACE_OR_ENDPOINT_ERROR;
+			else if ((ret == -ENODEV) || (ret == -ESHUTDOWN))
+				p.error = Packet_descriptor::NO_DEVICE_ERROR;
+			else {
+				Genode::error(__func__, ": unhandled error: ", ret);
+				p.error = Packet_descriptor::UNKNOWN_ERROR;
+			}
 
 			free_complete_data(data);
 			usb_free_urb(urb);
@@ -425,6 +487,8 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 			                            p.interface.alt_setting);
 			if (!err)
 				p.succeded = true;
+			else
+				Genode::error(__func__, ": unhandled error: ", err);
 		}
 
 		/**
@@ -448,6 +512,8 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 			if (!err)
 				p.succeded = true;
+			else
+				Genode::error(__func__, ": unhandled error: ", err);
 		}
 
 		/**
@@ -482,7 +548,15 @@ class Usb::Worker : public Genode::Weak_object<Usb::Worker>
 
 				_p_in_flight++;
 
-				if (!_device || !_device->udev || !_sink->packet_valid(p)) {
+				if (!_device || !_device->udev ||
+				    _device->udev->state == USB_STATE_NOTATTACHED) {
+				    p.error = Packet_descriptor::NO_DEVICE_ERROR;
+				    _ack_packet(p);
+				    continue;
+				}
+
+				if (!_sink->packet_valid(p)) {
+					p.error = Packet_descriptor::PACKET_INVALID_ERROR;
 					_ack_packet(p);
 					continue;
 				}
