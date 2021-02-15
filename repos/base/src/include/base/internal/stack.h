@@ -77,6 +77,7 @@ class Genode::Stack
 		typedef Cpu_session::Name Name;
 
 	private:
+public:
 
 		/**
 		 * Top of the stack is accessible via stack_top()
@@ -85,6 +86,11 @@ class Genode::Stack
 		 * overlapping of stack top and the 'stack_base' member.
 		 */
 		addr_t _stack[1];
+
+		/*
+		 * TLS pointer for libc pthreads
+		 */
+		addr_t _libc_tls_pointer { };
 
 		/**
 		 * Thread name, used for debugging
@@ -151,6 +157,20 @@ class Genode::Stack
 		 * Return base (the "end") of stack
 		 */
 		addr_t base() const { return _base; }
+
+		/**
+		 * Return libc TLS pointer offset relative to end of stack
+		 */
+		addr_t libc_tls_pointer_offset()
+		{
+//			Genode::log("libc_tls_pointer_offset()");
+//			Genode::log("this: ", this, ", sizeof(Stack): ", sizeof(Stack), ", ", Genode::Hex((addr_t)this + sizeof(Stack)));
+//			Genode::log("&_libc_tls_pointer: ", &_libc_tls_pointer);
+			addr_t offset = (addr_t)this + sizeof(Stack) - (addr_t)&_libc_tls_pointer;
+//			Genode::log("offset: ", Genode::Hex(offset));
+//			Genode::log("&_libc_tls_pointer2: ", Genode::Hex((addr_t)this + sizeof(Stack) - offset));
+			return offset;
+		}
 
 		/**
 		 * Ensure that the stack has a given minimum size

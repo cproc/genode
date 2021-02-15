@@ -50,7 +50,7 @@ class Genode::Thread
 		typedef Cpu_session::Name   Name;
 		typedef Cpu_session::Weight Weight;
 
-		struct Stack_info { addr_t base; addr_t top; };
+		struct Stack_info { addr_t base; addr_t top; addr_t libc_tls_pointer_offset; };
 
 		struct Tls { struct Base; Base *ptr; };
 

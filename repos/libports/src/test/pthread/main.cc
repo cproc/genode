@@ -1094,6 +1094,62 @@ static void test_cleanup()
 }
 
 
+static void print_stack_address()
+{
+	int dummy;
+	printf("&dummy: %p\n", &dummy);
+}
+
+static pthread_key_t key;
+int tls_data;
+
+void *tls_start_routine(void *)
+{
+	void *ptr;
+#if 0
+	printf("tls\n");
+	ptr = pthread_getspecific(key);
+	if (ptr != NULL) {
+		Genode::error("tls data found");
+		exit(-1);
+	}
+#endif
+#if 0
+	ptr = &tls_data;
+	pthread_setspecific(key, ptr);
+	ptr = pthread_getspecific(key);
+	if (ptr != &tls_data) {
+		Genode::error("tls mismatch");
+		exit(-1);
+	}
+#endif
+	//print_stack_address();
+	return nullptr;
+}
+
+static void test_tls()
+{
+	pthread_t t;
+	pthread_t t2;
+	void *retval;
+
+printf("start\n");
+pthread_self();
+#if 0
+	//print_stack_address();
+	for (int i = 0; i < 1; i++) {
+		pthread_key_create(&key, NULL);
+		pthread_create(&t, 0, tls_start_routine, nullptr);
+		pthread_create(&t2, 0, tls_start_routine, nullptr);
+		pthread_join(t, &retval);
+		pthread_join(t2, &retval);
+		pthread_key_delete(key);
+	}
+#endif
+printf("finish\n");
+}
+
+
 int main(int argc, char **argv)
 {
 	printf("--- pthread test ---\n");
@@ -1104,6 +1160,9 @@ int main(int argc, char **argv)
 	if (!pthread_main)
 		exit(-1);
 
+	test_tls();
+
+#if 0
 	test_interplay();
 	test_self_destruct();
 	test_mutex();
@@ -1111,7 +1170,7 @@ int main(int argc, char **argv)
 	test_lock_and_sleep();
 	test_cond();
 	test_cleanup();
-
+#endif
 	printf("--- returning from main ---\n");
 	return 0;
 }

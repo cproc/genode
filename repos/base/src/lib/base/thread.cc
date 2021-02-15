@@ -70,6 +70,10 @@ Thread::_alloc_stack(size_t stack_size, char const *name, bool main_thread)
 	Stack *stack = Stack_allocator::stack_allocator().alloc(this, main_thread);
 	if (!stack)
 		throw Out_of_stack_space();
+//Genode::log("Thread::_alloc_stack(): stack->top(): ", Genode::Hex(stack->top()));
+//Genode::log("Thread::_alloc_stack(): stack: ", stack);
+//Genode::log("Thread::_alloc_stack(): &stack->_stack: ", &stack->_stack);
+//Genode::log("Thread::_alloc_stack(): &stack->_tls: ", &stack->_tls);
 
 	/* determine size of dataspace to allocate for the stack */
 	enum { PAGE_SIZE_LOG2 = 12 };
@@ -86,7 +90,7 @@ Thread::_alloc_stack(size_t stack_size, char const *name, bool main_thread)
 	 */
 	addr_t ds_addr = Stack_allocator::addr_to_base(stack) +
 	                 stack_virtual_size() - ds_size;
-
+//Genode::log("Thread::_alloc_stack(): ds_addr: ", Genode::Hex(ds_addr));
 	/* add padding for UTCB if defined for the platform */
 	if (sizeof(Native_utcb) >= (1 << PAGE_SIZE_LOG2))
 		ds_addr -= sizeof(Native_utcb);
@@ -175,7 +179,8 @@ Thread::Stack_info Thread::mystack()
 {
 	addr_t base = Stack_allocator::addr_to_base(&base);
 	Stack *stack = Stack_allocator::base_to_stack(base);
-	return { stack->base(), stack->top() };
+	return { stack->base(), stack->top(),
+	         stack_virtual_size() - stack->libc_tls_pointer_offset() };
 }
 
 
