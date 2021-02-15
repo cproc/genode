@@ -66,12 +66,19 @@ namespace { using Fn = Libc::Monitor::Function_result; }
  ** Pthread **
  *************/
 
+size_t Pthread::_stack_virtual_size;
+size_t Pthread::_stack_virtual_base_mask;
+size_t Pthread::_tls_pointer_offset;
+
 void Libc::Pthread::Thread_object::entry()
 {
 	/* obtain stack attributes of new thread */
 	Thread::Stack_info info = Thread::mystack();
+
 	_stack_addr = (void *)info.base;
 	_stack_size = info.top - info.base;
+
+	*(_tls_pointer()) = this;
 
 	pthread_exit(_start_routine(_arg));
 }
@@ -521,6 +528,136 @@ extern "C" int sem_set_clock(sem_t *sem, clockid_t clock_id);
 
 extern "C" {
 
+	/* TLS */
+
+
+	struct Key_element : List<Key_element>::Element
+	{
+		const void *thread_base;
+		const void *value;
+
+		Key_element(const void *thread_base, const void *value)
+		: thread_base(thread_base),
+		  value(value) { }
+	};
+
+
+	static Mutex &key_list_mutex()
+	{
+		static Mutex inst { };
+		return inst;
+	}
+
+
+	struct Keys
+	{
+		List<Key_element> key[PTHREAD_KEYS_MAX];
+	};
+
+
+	static Keys &keys()
+	{
+		static Keys inst { };
+		return inst;
+	}
+
+
+	int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
+	{
+		if (!key)
+			return EINVAL;
+
+		Mutex::Guard guard(key_list_mutex());
+
+		for (int k = 0; k < PTHREAD_KEYS_MAX; k++) {
+			/*
+			 * Find an empty key slot and insert an element for the current
+			 * thread to mark the key slot as used.
+			 */
+			if (!keys().key[k].first()) {
+				Libc::Allocator alloc { };
+				Key_element *key_element = new (alloc) Key_element(Thread::myself(), 0);
+				keys().key[k].insert(key_element);
+				*key = k;
+				return 0;
+			}
+		}
+
+		return EAGAIN;
+	}
+
+	typeof(pthread_key_create) _pthread_key_create
+		__attribute__((alias("pthread_key_create")));
+
+
+	int pthread_key_delete(pthread_key_t key)
+	{
+		if (key < 0 || key >= PTHREAD_KEYS_MAX || !keys().key[key].first())
+			return EINVAL;
+
+		Mutex::Guard guard(key_list_mutex());
+
+		while (Key_element * element = keys().key[key].first()) {
+			keys().key[key].remove(element);
+			Libc::Allocator alloc { };
+			destroy(alloc, element);
+		}
+
+		return 0;
+	}
+
+	typeof(pthread_key_delete) _pthread_key_delete
+		__attribute__((alias("pthread_key_delete")));
+
+
+	int pthread_setspecific(pthread_key_t key, const void *value)
+	{
+		if (key < 0 || key >= PTHREAD_KEYS_MAX)
+			return EINVAL;
+
+		void *myself = Thread::myself();
+
+		Mutex::Guard guard(key_list_mutex());
+
+		for (Key_element *key_element = keys().key[key].first(); key_element;
+		     key_element = key_element->next())
+			if (key_element->thread_base == myself) {
+				key_element->value = value;
+				return 0;
+			}
+
+		/* key element does not exist yet - create a new one */
+		Libc::Allocator alloc { };
+		Key_element *key_element = new (alloc) Key_element(myself, value);
+		keys().key[key].insert(key_element);
+		return 0;
+	}
+
+	typeof(pthread_setspecific) _pthread_setspecific
+		__attribute__((alias("pthread_setspecific")));
+
+
+	void *pthread_getspecific(pthread_key_t key)
+	{
+		if (key < 0 || key >= PTHREAD_KEYS_MAX)
+			return nullptr;
+
+		void *myself = Thread::myself();
+
+		Mutex::Guard guard(key_list_mutex());
+
+		for (Key_element *key_element = keys().key[key].first(); key_element;
+		     key_element = key_element->next())
+			if (key_element->thread_base == myself)
+				return (void*)(key_element->value);
+
+		return 0;
+	}
+
+	typeof(pthread_getspecific) _pthread_getspecific
+		__attribute__((alias("pthread_getspecific")));
+
+
 	/* Thread */
 
 	int pthread_join(pthread_t thread, void **retval)
@@ -577,6 +714,21 @@ extern "C" {
 
 	void pthread_exit(void *value_ptr)
 	{
+		{
+			void *myself = Thread::myself();
+
+			Mutex::Guard guard(key_list_mutex());
+
+			for (int key = 0; key < PTHREAD_KEYS_MAX; key++) {
+				for (Key_element *key_element = keys().key[key].first(); key_element;
+			     	 key_element = key_element->next())
+					if (key_element->thread_base == myself) {
+						Genode::error("deleting TLS data: key: ", key, ", value: ", key_element->value);
+						key_element->value = nullptr;
+					}
+			}
+		}
+
 		pthread_self()->exit(value_ptr);
 	}
 
@@ -593,6 +745,7 @@ extern "C" {
 
 	pthread_t pthread_self(void)
 	{
+
 		try {
 			pthread_t pthread_myself =
 				static_cast<pthread_t>(&Thread::Tls::Base::tls());
@@ -612,6 +765,9 @@ extern "C" {
 			      "'", Thread::myself()->name().string(), "'");
 			return nullptr;
 		}
+
+int dummy;
+Genode::log("pthread_self(): &dummy: ", &dummy);
 
 		/*
 		 * We create a pthread object associated to the main thread's Thread
@@ -1166,136 +1322,6 @@ extern "C" {
 
 	typeof(pthread_cond_broadcast) _pthread_cond_broadcast
 		__attribute__((alias("pthread_cond_broadcast")));
-
-
-	/* TLS */
-
-
-	struct Key_element : List<Key_element>::Element
-	{
-		const void *thread_base;
-		const void *value;
-
-		Key_element(const void *thread_base, const void *value)
-		: thread_base(thread_base),
-		  value(value) { }
-	};
-
-
-	static Mutex &key_list_mutex()
-	{
-		static Mutex inst { };
-		return inst;
-	}
-
-
-	struct Keys
-	{
-		List<Key_element> key[PTHREAD_KEYS_MAX];
-	};
-
-
-	static Keys &keys()
-	{
-		static Keys inst { };
-		return inst;
-	}
-
-
-	int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
-	{
-		if (!key)
-			return EINVAL;
-
-		Mutex::Guard guard(key_list_mutex());
-
-		for (int k = 0; k < PTHREAD_KEYS_MAX; k++) {
-			/*
-			 * Find an empty key slot and insert an element for the current
-			 * thread to mark the key slot as used.
-			 */
-			if (!keys().key[k].first()) {
-				Libc::Allocator alloc { };
-				Key_element *key_element = new (alloc) Key_element(Thread::myself(), 0);
-				keys().key[k].insert(key_element);
-				*key = k;
-				return 0;
-			}
-		}
-
-		return EAGAIN;
-	}
-
-	typeof(pthread_key_create) _pthread_key_create
-		__attribute__((alias("pthread_key_create")));
-
-
-	int pthread_key_delete(pthread_key_t key)
-	{
-		if (key < 0 || key >= PTHREAD_KEYS_MAX || !keys().key[key].first())
-			return EINVAL;
-
-		Mutex::Guard guard(key_list_mutex());
-
-		while (Key_element * element = keys().key[key].first()) {
-			keys().key[key].remove(element);
-			Libc::Allocator alloc { };
-			destroy(alloc, element);
-		}
-
-		return 0;
-	}
-
-	typeof(pthread_key_delete) _pthread_key_delete
-		__attribute__((alias("pthread_key_delete")));
-
-
-	int pthread_setspecific(pthread_key_t key, const void *value)
-	{
-		if (key < 0 || key >= PTHREAD_KEYS_MAX)
-			return EINVAL;
-
-		void *myself = Thread::myself();
-
-		Mutex::Guard guard(key_list_mutex());
-
-		for (Key_element *key_element = keys().key[key].first(); key_element;
-		     key_element = key_element->next())
-			if (key_element->thread_base == myself) {
-				key_element->value = value;
-				return 0;
-			}
-
-		/* key element does not exist yet - create a new one */
-		Libc::Allocator alloc { };
-		Key_element *key_element = new (alloc) Key_element(Thread::myself(), value);
-		keys().key[key].insert(key_element);
-		return 0;
-	}
-
-	typeof(pthread_setspecific) _pthread_setspecific
-		__attribute__((alias("pthread_setspecific")));
-
-
-	void *pthread_getspecific(pthread_key_t key)
-	{
-		if (key < 0 || key >= PTHREAD_KEYS_MAX)
-			return nullptr;
-
-		void *myself = Thread::myself();
-
-		Mutex::Guard guard(key_list_mutex());
-
-		for (Key_element *key_element = keys().key[key].first(); key_element;
-		     key_element = key_element->next())
-			if (key_element->thread_base == myself)
-				return (void*)(key_element->value);
-
-		return 0;
-	}
-
-	typeof(pthread_getspecific) _pthread_getspecific
-		__attribute__((alias("pthread_getspecific")));
 
 
 	int pthread_once(pthread_once_t *once, void (*init_once)(void))

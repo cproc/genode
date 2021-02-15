@@ -212,6 +212,25 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 		List<Cleanup_handler> _cleanup_handlers;
 
+		/* TLS support */
+
+		/* cached value of 'Thread::stack_virtual_size()' for fast TLS pointer lookup */
+		static size_t _stack_virtual_size;
+
+		/* mask to obtain stack virtual base from address of stack variable */
+		static size_t _stack_virtual_base_mask;
+
+		/* offset of TLS pointer relative to base of a thread's virtual stack area */
+		static size_t _tls_pointer_offset;
+
+		static Pthread **_tls_pointer()
+		{
+			int stack_variable;
+			addr_t stack_virtual_base = (((addr_t)&stack_variable) & _stack_virtual_base_mask);
+			return (Pthread**)(stack_virtual_base + _tls_pointer_offset);
+		}
+
+
 	public:
 
 		int thread_local_errno = 0;
@@ -242,6 +261,12 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 			Thread::Stack_info info = Thread::mystack();
 			_stack_addr = (void *)info.base;
 			_stack_size = info.top - info.base;
+			_tls_pointer_offset = info.libc_tls_pointer_offset;
+
+			_stack_virtual_size = Thread::stack_virtual_size();
+			_stack_virtual_base_mask = ~(_stack_virtual_size - 1);
+
+			*(_tls_pointer()) = this;
 
 			_associate_thread_with_pthread();
 		}
@@ -282,6 +307,11 @@ struct Libc::Pthread : Noncopyable, Thread::Tls::Base
 
 		void   *stack_addr() const { return _stack_addr; }
 		size_t  stack_size() const { return _stack_size; }
+
+		static Pthread *self()
+		{
+			return *(_tls_pointer());
+		}
 
 		/*
 		 * Push a cleanup handler to the cancellation cleanup stack.
