@@ -1101,6 +1101,8 @@ static void test_tls_data()
 {
 	int test;
 
+printf("start\n");
+for (int i = 0; i < 100000000; i++) {
 	if (pthread_setspecific(key, &test) != 0) {
 		Genode::error("pthread_setspecific() failed");
 		exit(-1);
@@ -1110,6 +1112,8 @@ static void test_tls_data()
 		Genode::error("pthread_getspecific() failed");
 		exit(-1);
 	}
+}
+printf("finish\n");
 }
 
 
@@ -1162,7 +1166,7 @@ int main(int argc, char **argv)
 	printf("main thread: running, my thread ID is %p\n", pthread_main);
 	if (!pthread_main)
 		exit(-1);
-
+#if 0
 	test_interplay();
 	test_self_destruct();
 	test_mutex();
@@ -1170,6 +1174,7 @@ int main(int argc, char **argv)
 	test_lock_and_sleep();
 	test_cond();
 	test_cleanup();
+#endif
 	test_tls();
 
 	printf("--- returning from main ---\n");
