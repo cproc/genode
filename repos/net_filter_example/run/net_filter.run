@@ -101,7 +101,10 @@ install_config {
 			<service name="Uplink"/>
 		</provides>
 		<config>
+			<policy label="nic_drv_blue -> " domain="uplink"/>
 			<default-policy domain="default"/>
+
+			<domain name="uplink"/>
 			<domain name="default" interface="10.0.1.1/24">
 				<dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.2" />
 			</domain>
@@ -140,7 +143,10 @@ install_config {
 			<service name="Uplink"/>
 		</provides>
 		<config>
+			<policy label="nic_drv_green -> " domain="uplink"/>
 			<default-policy domain="default"/>
+
+			<domain name="uplink"/>
 			<domain name="default" interface="10.0.2.1/24">
 				<dhcp-server ip_first="10.0.2.2" ip_last="10.0.2.2" />
 			</domain>
