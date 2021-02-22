@@ -1,0 +1,213 @@
+#
+# \brief  Netfilter prototype
+# \author Stefan Kalkowski
+# \date   2021-02-22
+#
+
+if {![have_board imx8q_evk]} {
+	puts "Run script is not supported on this platform"
+	exit 0
+}
+
+create_boot_directory
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/platform_drv \
+                  [depot_user]/src/lighttpd \
+                  [depot_user]/src/fetchurl \
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/fec_nic_drv \
+                  [depot_user]/src/usb_host_drv \
+                  [depot_user]/src/usb_net_drv \
+                  [depot_user]/src/nic_router \
+                  [depot_user]/src/vfs \
+
+build { drivers/usb_net }
+
+install_config {
+<config verbose="yes" prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service><parent/><any-child/></any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+		<route>
+			<service name="ROM"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="RM">  <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="platform_drv" caps="150">
+		<binary name="imx8mq_platform_drv"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Platform"/> </provides>
+		<config>
+			<device name="fec">
+				<io_mem   address="0x30be0000" size="0x4000"/>
+				<irq      number="152"/>
+				<irq      number="151"/>
+				<irq      number="150"/>
+				<property name="compatible" value="fsl,imx6sx-fec"/>
+				<property name="mii"        value="rgmii-id"/>
+			</device>
+
+			<device name="usb_host_2">
+				<io_mem       address="0x38200000" size="0x10000"/>
+				<irq          number="73"/>
+				<power-domain name="usb_otg_2"/>
+				<clock        name="usb_phy_ref_clk_root"
+				              driver_name="usb_phy_root_clk"
+				              parent="system_pll1_div8"
+				              rate="100000000"/>
+				<clock        name="usb_core_ref_clk_root"
+				              parent="system_pll1_div8"
+				              rate="100000000"/>
+				<clock        name="usb_bus_clk_root"
+				              parent="system_pll2_div2"
+				              rate="500000000"/>
+				<clock        name="usb_ctrl2_gate"/>
+				<clock        name="usb_phy2_gate"/>
+				<property     name="compatible" value="snps,dwc3"/>
+				<property     name="dr_mode"    value="host"/>
+			</device>
+
+			<policy label="nic_drv_blue -> "> <device name="fec"/>        </policy>
+			<policy label="usb_drv -> ">      <device name="usb_host_2"/> </policy>
+		</config>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+
+	<start name="nat_blue">
+		<binary name="nic_router"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config>
+			<default-policy domain="default"/>
+			<domain name="default" interface="10.0.1.1/24">
+				<dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.2" />
+			</domain>
+		</config>
+		<route>
+			<service name="ROM">   <parent/> </service>
+			<service name="PD">    <parent/> </service>
+			<service name="RM">    <parent/> </service>
+			<service name="CPU">   <parent/> </service>
+			<service name="LOG">   <parent/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+		</route>
+	</start>
+
+	<start name="nic_drv_blue" caps="130">
+		<binary name="fec_nic_drv" />
+		<resource name="RAM" quantum="20M"/>
+		<config mode="uplink_client"/>
+		<route>
+			<service name="ROM">      <parent/> </service>
+			<service name="PD">       <parent/> </service>
+			<service name="RM">       <parent/> </service>
+			<service name="CPU">      <parent/> </service>
+			<service name="LOG">      <parent/> </service>
+			<service name="Timer">    <child name="timer"/>        </service>
+			<service name="Uplink">   <child name="nat_blue"/>     </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+	</start>
+
+	<start name="nat_green">
+		<binary name="nic_router"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config>
+			<default-policy domain="default"/>
+			<domain name="default" interface="10.0.2.1/24">
+				<dhcp-server ip_first="10.0.2.2" ip_last="10.0.2.2" />
+			</domain>
+		</config>
+		<route>
+			<service name="ROM">   <parent/> </service>
+			<service name="PD">    <parent/> </service>
+			<service name="RM">    <parent/> </service>
+			<service name="CPU">   <parent/> </service>
+			<service name="LOG">   <parent/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+		</route>
+	</start>
+
+	<start name="report_rom" caps="150">
+		<resource name="RAM" quantum="12M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config verbose="yes"/>
+		<route>
+			<service name="RM">  <parent/> </service>
+			<service name="ROM"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+		</route>
+	</start>
+
+	<start name="usb_drv" caps="150">
+		<binary name="imx8q_evk_usb_host_drv"/>
+		<resource name="RAM" quantum="12M"/>
+		<provides> <service name="Usb"/> </provides>
+		<config>
+			<report devices="yes"/>
+			<policy label="nic_drv_green -> " vendor_id="0x0b95" product_id="0x1790"/>
+		</config>
+		<route>
+			<service name="RM">       <parent/> </service>
+			<service name="ROM">      <parent/> </service>
+			<service name="PD">       <parent/> </service>
+			<service name="CPU">      <parent/> </service>
+			<service name="LOG">      <parent/> </service>
+			<service name="Report">   <child name="report_rom"/>   </service>
+			<service name="Timer">    <child name="timer"/>        </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
+		</route>
+	</start>
+
+	<start name="nic_drv_green" caps="120">
+		<binary name="usb_net_drv"/>
+		<resource name="RAM" quantum="15M"/>
+		<config mode="uplink_client" mac="02:00:00:00:01:01" />
+		<route>
+			<service name="ROM">    <parent/> </service>
+			<service name="PD">     <parent/> </service>
+			<service name="RM">     <parent/> </service>
+			<service name="CPU">    <parent/> </service>
+			<service name="LOG">    <parent/> </service>
+			<service name="Timer">  <child name="timer"/>     </service>
+			<service name="Uplink"> <child name="nat_green"/> </service>
+			<service name="Usb">    <child name="usb_drv"/>   </service>
+		</route>
+	</start>
+</config>
+}
+
+build_boot_image { usb_net_drv }
+run_genode_until forever
