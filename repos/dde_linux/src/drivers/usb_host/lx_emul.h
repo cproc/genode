@@ -25,9 +25,9 @@
 
 #define DEBUG_COMPLETION   0
 #define DEBUG_DMA          0
-#define DEBUG_DRIVER       0
+#define DEBUG_DRIVER       1
 #define DEBUG_KREF         0
-#define DEBUG_LINUX_PRINTK 0
+#define DEBUG_LINUX_PRINTK 1
 #define DEBUG_PCI          0
 #define DEBUG_SKB          0
 #define DEBUG_SLAB         0

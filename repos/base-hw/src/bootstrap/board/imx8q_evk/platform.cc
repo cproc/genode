@@ -209,6 +209,33 @@ Bootstrap::Platform::Board::Board()
 	v = pll.read<Pll_reg::Pll_arm_0>();
 	pll.write<Pll_reg::Pll_arm_0>(v ^ (1<<12));
 	ccm.write<Ccm_reg::Target_root_0>(0x11000000);
+
+
+for (int i = 0; i < 20; i++) Genode::raw("mfindex: ", Genode::Hex(*(volatile unsigned int*)0x38200440));
+
+Genode::raw("disabling HC");
+
+unsigned int tmp = *(volatile unsigned int*)0x38200020;
+tmp &= ~1;
+*(volatile unsigned int*)0x38200020 = tmp;
+
+for (int i = 0; i < 20; i++) Genode::raw("mfindex: ", Genode::Hex(*(volatile unsigned int*)0x38200440));
+
+Genode::raw("resetting HC");
+
+tmp = *(volatile unsigned int*)0x38200020;
+tmp |= 2;
+*(volatile unsigned int*)0x38200020 = tmp;
+
+for (int i = 0; i < 20; i++) Genode::raw("mfindex: ", Genode::Hex(*(volatile unsigned int*)0x38200440));
+
+Genode::raw("enabling HC");
+
+tmp = *(volatile unsigned int*)0x38200020;
+tmp |= 1;
+*(volatile unsigned int*)0x38200020 = tmp;
+
+for (int i = 0; i < 20; i++) Genode::raw("mfindex: ", Genode::Hex(*(volatile unsigned int*)0x38200440));
 }
 
 

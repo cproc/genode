@@ -23,7 +23,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nic_router \
                   [depot_user]/src/vfs \
 
-build { drivers/usb_net }
+build { drivers/usb_net drivers/usb_host }
 
 install_config {
 <config verbose="yes" prio_levels="2">
@@ -119,7 +119,7 @@ install_config {
 			<service name="Timer"> <child name="timer"/> </service>
 		</route>
 	</start>
-
+<!--
 	<start name="nic_drv_blue" caps="130">
 		<binary name="fec_nic_drv" />
 		<resource name="RAM" quantum="20M"/>
@@ -135,7 +135,7 @@ install_config {
 			<service name="Platform"> <child name="platform_drv"/> </service>
 		</route>
 	</start>
-
+-->
 	<start name="nat_green">
 		<binary name="nic_router"/>
 		<resource name="RAM" quantum="8M"/>
@@ -181,6 +181,7 @@ install_config {
 	<start name="usb_drv" caps="150">
 		<binary name="imx8q_evk_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
+		<resource name="CPU" quantum="80"/>
 		<provides> <service name="Usb"/> </provides>
 		<config>
 			<report devices="yes"/>
@@ -213,6 +214,7 @@ install_config {
 			<service name="Usb">    <child name="usb_drv"/>   </service>
 		</route>
 	</start>
+
 </config>
 }
 
