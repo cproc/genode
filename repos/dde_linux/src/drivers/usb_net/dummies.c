@@ -53,12 +53,6 @@ __wsum csum_partial(const void *buff, int len, __wsum sum)
 	return -1;
 }
 
-void * dev_get_drvdata(const struct device *dev)
-{
-	TRACE_AND_STOP;
-	return NULL;
-}
-
 int device_set_wakeup_enable(struct device *dev, bool enable)
 {
 	TRACE_AND_STOP;
@@ -257,7 +251,7 @@ void read_unlock_bh(rwlock_t * l)
 
 void unregister_netdev(struct net_device * dev)
 {
-	TRACE_AND_STOP;
+	TRACE;
 }
 
 void secpath_reset(struct sk_buff * skb)
@@ -383,7 +377,7 @@ int usb_interrupt_msg(struct usb_device *usb_dev, unsigned int pipe, void *data,
 
 void usb_scuttle_anchored_urbs(struct usb_anchor *anchor)
 {
-	TRACE_AND_STOP;
+	TRACE;
 }
 
 int usb_string(struct usb_device *dev, int index, char *buf, size_t size)
