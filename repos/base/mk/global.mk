@@ -142,6 +142,12 @@ CC_WARN += -Wno-error=implicit-fallthrough
 
 # XXX fix the errors and remove this option
 CC_WARN += -Wno-error=address-of-packed-member
+CC_WARN += -Wno-error=class-memaccess
+CC_WARN += -Wno-error=deprecated-copy
+CC_WARN += -Wno-error=narrowing
+CC_WARN += -Wno-error=maybe-uninitialized
+CC_WARN += -Wno-error=array-bounds
+CC_OPT += -fcommon
 
 #
 # Additional warnings for C++
