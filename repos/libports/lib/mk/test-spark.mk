@@ -1,3 +1,5 @@
+REQUIRES = updated_ali2dep
+
 LIBS    += base spark
 SRC_ADB += add_package.adb
 

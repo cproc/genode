@@ -1,3 +1,5 @@
+REQUIRES = updated_ali2dep
+
 include $(REP_DIR)/lib/mk/spark.inc
 
 ADALIB     = $(ADA_RTS)/adalib
