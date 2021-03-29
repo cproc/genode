@@ -20,6 +20,9 @@ CC_WARN          = -Wall -Wextra -Waggregate-return -Wcast-align -Wcast-qual \
 # XXX fix the warnings and remove this option
 CC_WARN         += -Wno-error=implicit-fallthrough
 
+# XXX fix the errors and remove this option
+CC_WARN         += -Wno-error=array-bounds
+
 CC_OPT          += -pipe \
                    -fdata-sections -fomit-frame-pointer -freg-struct-return \
                    -freorder-blocks -funit-at-a-time -fno-exceptions -fno-rtti \
