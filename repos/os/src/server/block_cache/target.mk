@@ -1,3 +1,5 @@
+REQUIRES = link_error_fix
+
 TARGET = block_cache
 LIBS   = base
 SRC_CC = main.cc lru.cc
