@@ -734,7 +734,7 @@ class Genode::Xml_node
 		template <typename STRING>
 		STRING decoded_content() const
 		{
-			char buf[STRING::capacity() + 1];
+			char buf[STRING::capacity() + 1] = { 0 };
 			size_t const len = decoded_content(buf, sizeof(buf) - 1);
 			buf[min(len, sizeof(buf) - 1)] = 0;
 			return STRING(Cstring(buf));
