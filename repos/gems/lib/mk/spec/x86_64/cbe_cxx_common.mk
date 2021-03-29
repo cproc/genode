@@ -1,3 +1,5 @@
+REQUIRES = updated_libsparkcrypto
+
 CBE_DIR = $(call select_from_ports,cbe)
 
 LIBS += spark cbe_common
