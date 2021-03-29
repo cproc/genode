@@ -1,5 +1,5 @@
 REQUIRES := x86_64
-
+REQUIRES += compile_fix
 TARGET  := cbe_tester
 SRC_CC  += main.cc
 SRC_CC  += crypto.cc
