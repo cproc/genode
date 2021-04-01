@@ -20,7 +20,6 @@
 
 /* local includes */
 #include "report.h"
-#include "child.h"
 
 namespace Sandbox { class State_reporter; }
 
@@ -33,8 +32,6 @@ class Sandbox::State_reporter : public Report_update_trigger
 		{
 			virtual void produce_state_report(Xml_generator &xml,
 			                                  Report_detail const &) const = 0;
-
-			virtual Child::Sample_state_result sample_children_state() = 0;
 		};
 
 	private:
@@ -63,7 +60,7 @@ class Sandbox::State_reporter : public Report_update_trigger
 			_env.ep(), *this, &State_reporter::_handle_timer };
 
 		Signal_handler<State_reporter> _timer_periodic_handler {
-			_env.ep(), *this, &State_reporter::_handle_periodic_timer };
+			_env.ep(), *this, &State_reporter::_handle_timer };
 
 		Signal_handler<State_reporter> _immediate_handler {
 			_env.ep(), *this, &State_reporter::_handle_timer };
@@ -71,21 +68,6 @@ class Sandbox::State_reporter : public Report_update_trigger
 		bool _scheduled = false;
 
 		State_handler &_state_handler;
-
-		bool _periodic_sampling_needed() const
-		{
-			return _report_detail->child_ram()
-			    || _report_detail->child_caps();
-		}
-
-		void _handle_periodic_timer()
-		{
-			if (!_periodic_sampling_needed())
-				return;
-
-			if (_producer.sample_children_state() == Child::Sample_state_result::CHANGED)
-				_handle_timer();
-		}
 
 		void _handle_timer()
 		{
@@ -158,7 +140,8 @@ class Sandbox::State_reporter : public Report_update_trigger
 			 */
 			uint64_t const period_ms           = max(1000U, _report_delay_ms);
 			bool     const period_changed      = (_report_period_ms != period_ms);
-			bool     const report_periodically = _periodic_sampling_needed();
+			bool     const report_periodically = _report_detail->child_ram()
+			                                  || _report_detail->child_caps();
 
 			if (report_periodically && !_timer_periodic.constructed()) {
 				_timer_periodic.construct(_env);
