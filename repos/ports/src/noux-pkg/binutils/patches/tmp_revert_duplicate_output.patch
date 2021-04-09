@@ -1,0 +1,186 @@
+Revert "Duplicate output sections in scripts"
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+This reverts commit 21401fc7bf67dbf73f4a3eda4bcfc58fa4211584.
+---
+ ld/ChangeLog |  183 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ld/ldlang.c  |   72 +++++++++++++----------
+ ld/ldlang.h  |    4 +
+ 3 files changed, 225 insertions(+), 34 deletions(-)
+
+diff --git a/ld/ldlang.c b/ld/ldlang.c
+index 8cbeda68f46..74814013d34 100644
+--- a/ld/ldlang.c
++++ b/ld/ldlang.c
+@@ -1305,7 +1305,7 @@ lang_init (void)
+   first_file = lang_add_input_file (NULL, lang_input_file_is_marker_enum,
+ 				    NULL);
+   abs_output_section =
+-    lang_output_section_statement_lookup (BFD_ABS_SECTION_NAME, 0, 1);
++    lang_output_section_statement_lookup (BFD_ABS_SECTION_NAME, 0, TRUE);
+ 
+   abs_output_section->bfd_section = bfd_abs_section_ptr;
+ 
+@@ -1464,21 +1464,19 @@ lang_output_section_get (const asection *output_section)
+ 
+ /* Find or create an output_section_statement with the given NAME.
+    If CONSTRAINT is non-zero match one with that constraint, otherwise
+-   match any non-negative constraint.  If CREATE is 0 return NULL when
+-   no match exists.  If CREATE is 1, create an output_section_statement
+-   when no match exists or if CONSTRAINT is SPECIAL.  If CREATE is 2,
+-   always make a new output_section_statement.  */
++   match any non-negative constraint.  If CREATE, always make a
++   new output_section_statement for SPECIAL CONSTRAINT.  */
+ 
+ lang_output_section_statement_type *
+ lang_output_section_statement_lookup (const char *name,
+ 				      int constraint,
+-				      int create)
++				      bfd_boolean create)
+ {
+   struct out_section_hash_entry *entry;
+ 
+   entry = ((struct out_section_hash_entry *)
+ 	   bfd_hash_lookup (&output_section_statement_table, name,
+-			    create != 0, FALSE));
++			    create, FALSE));
+   if (entry == NULL)
+     {
+       if (create)
+@@ -1493,19 +1491,23 @@ lang_output_section_statement_lookup (const char *name,
+       struct out_section_hash_entry *last_ent;
+ 
+       name = entry->s.output_section_statement.name;
+-      do
+-	{
+-	  if (create != 2
+-	      && !(create && constraint == SPECIAL)
+-	      && (constraint == entry->s.output_section_statement.constraint
+-		  || (constraint == 0
+-		      && entry->s.output_section_statement.constraint >= 0)))
+-	    return &entry->s.output_section_statement;
+-	  last_ent = entry;
+-	  entry = (struct out_section_hash_entry *) entry->root.next;
+-	}
+-      while (entry != NULL
+-	     && name == entry->s.output_section_statement.name);
++      if (create && constraint == SPECIAL)
++	/* Not traversing to the end reverses the order of the second
++	   and subsequent SPECIAL sections in the hash table chain,
++	   but that shouldn't matter.  */
++	last_ent = entry;
++      else
++	do
++	  {
++	    if (constraint == entry->s.output_section_statement.constraint
++		|| (constraint == 0
++		    && entry->s.output_section_statement.constraint >= 0))
++	      return &entry->s.output_section_statement;
++	    last_ent = entry;
++	    entry = (struct out_section_hash_entry *) entry->root.next;
++	  }
++	while (entry != NULL
++	       && name == entry->s.output_section_statement.name);
+ 
+       if (!create)
+ 	return NULL;
+@@ -4175,18 +4177,22 @@ map_input_to_output_sections
+ 	  break;
+ 	case lang_output_section_statement_enum:
+ 	  tos = &s->output_section_statement;
+-	  if (tos->constraint == ONLY_IF_RW
+-	      || tos->constraint == ONLY_IF_RO)
++	  if (tos->constraint != 0)
+ 	    {
++	      if (tos->constraint != ONLY_IF_RW
++		  && tos->constraint != ONLY_IF_RO)
++		break;
+ 	      tos->all_input_readonly = TRUE;
+ 	      check_input_sections (tos->children.head, tos);
+ 	      if (tos->all_input_readonly != (tos->constraint == ONLY_IF_RO))
+-		tos->constraint = -1;
++		{
++		  tos->constraint = -1;
++		  break;
++		}
+ 	    }
+-	  if (tos->constraint >= 0)
+-	    map_input_to_output_sections (tos->children.head,
+-					  target,
+-					  tos);
++	  map_input_to_output_sections (tos->children.head,
++					target,
++					tos);
+ 	  break;
+ 	case lang_output_statement_enum:
+ 	  break;
+@@ -4266,7 +4272,7 @@ map_input_to_output_sections
+ 		 place them in amongst other sections then the address
+ 		 will affect following script sections, which is
+ 		 likely to surprise naive users.  */
+-	      tos = lang_output_section_statement_lookup (name, 0, 1);
++	      tos = lang_output_section_statement_lookup (name, 0, TRUE);
+ 	      tos->addr_tree = s->address_statement.address;
+ 	      if (tos->bfd_section == NULL)
+ 		init_os (tos, 0);
+@@ -7202,7 +7208,8 @@ ldlang_place_orphan (asection *s)
+   if (config.orphan_handling == orphan_handling_discard)
+     {
+       lang_output_section_statement_type *os;
+-      os = lang_output_section_statement_lookup (DISCARD_SECTION_NAME, 0, 1);
++      os = lang_output_section_statement_lookup (DISCARD_SECTION_NAME, 0,
++						 TRUE);
+       if (os->addr_tree == NULL
+ 	  && (bfd_link_relocatable (&link_info)
+ 	      || (s->flags & (SEC_LOAD | SEC_ALLOC)) == 0))
+@@ -7225,7 +7232,7 @@ ldlang_place_orphan (asection *s)
+       os = ldemul_place_orphan (s, name, constraint);
+       if (os == NULL)
+ 	{
+-	  os = lang_output_section_statement_lookup (name, constraint, 1);
++	  os = lang_output_section_statement_lookup (name, constraint, TRUE);
+ 	  if (os->addr_tree == NULL
+ 	      && (bfd_link_relocatable (&link_info)
+ 		  || (s->flags & (SEC_LOAD | SEC_ALLOC)) == 0))
+@@ -7272,7 +7279,8 @@ lang_place_orphans (void)
+ 		    {
+ 		      if (default_common_section == NULL)
+ 			default_common_section
+-			  = lang_output_section_statement_lookup (".bss", 0, 1);
++			  = lang_output_section_statement_lookup (".bss", 0,
++								  TRUE);
+ 		      lang_add_section (&default_common_section->children, s,
+ 					NULL, default_common_section);
+ 		    }
+@@ -7414,7 +7422,7 @@ lang_enter_output_section_statement (const char *output_section_statement_name,
+   lang_output_section_statement_type *os;
+ 
+   os = lang_output_section_statement_lookup (output_section_statement_name,
+-					     constraint, 2);
++					     constraint, TRUE);
+   current_section = os;
+ 
+   if (os->addr_tree == NULL)
+diff --git a/ld/ldlang.h b/ld/ldlang.h
+index 718bcee8990..6e5f81b7c6c 100644
+--- a/ld/ldlang.h
++++ b/ld/ldlang.h
+@@ -589,7 +589,7 @@ extern asection *section_for_dot
+        statement = statement->next)
+ 
+ #define lang_output_section_find(NAME) \
+-  lang_output_section_statement_lookup (NAME, 0, 0)
++  lang_output_section_statement_lookup (NAME, 0, FALSE)
+ 
+ extern void lang_process
+   (void);
+@@ -608,7 +608,7 @@ extern void lang_add_keepsyms_file
+ extern lang_output_section_statement_type *lang_output_section_get
+   (const asection *);
+ extern lang_output_section_statement_type *lang_output_section_statement_lookup
+-  (const char *, int, int);
++  (const char *, int, bfd_boolean);
+ extern lang_output_section_statement_type *next_matching_output_section_statement
+   (lang_output_section_statement_type *, int);
+ extern void ldlang_add_undef
