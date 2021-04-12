@@ -1,3 +1,5 @@
+REQUIRES = updated_libsparkcrypto
+
 SRC_CC = vfs.cc
 
 INC_DIR += $(REP_DIR)/src/lib/vfs/cbe
