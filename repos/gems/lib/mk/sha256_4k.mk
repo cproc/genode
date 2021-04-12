@@ -1,3 +1,5 @@
+REQUIRES = updated_libsparkcrypto
+
 CBE_DIR = $(call select_from_ports,cbe)
 
 SRC_ADB := sha256_4k.adb
