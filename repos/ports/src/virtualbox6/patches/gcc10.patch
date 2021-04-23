@@ -1,0 +1,14 @@
+Fix compile error with GCC 10
+
+diff --git a/src/virtualbox6/src/VBox/Main/src-server/HostDnsService.h b/src/virtualbox6/src/VBox/Main/src-server/HostDnsService.h
+index 495f43c..8e62573 100644
+--- a/src/virtualbox6/src/VBox/Main/src-server/HostDnsService.h
++++ b/src/virtualbox6/src/VBox/Main/src-server/HostDnsService.h
+@@ -26,6 +26,7 @@
+ #include <iprt/cpp/lock.h>
+ 
+ #include <list>
++#include <string>
+ #include <vector>
+ 
+ typedef std::list<com::Utf8Str> Utf8StrList;
