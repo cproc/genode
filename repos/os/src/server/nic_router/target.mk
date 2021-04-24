@@ -30,6 +30,7 @@ SRC_CC += \
 	uplink_session_root.cc \
 	communication_buffer.cc \
 
+CC_WARN += -Wno-error=stringop-overflow
 
 INC_DIR += $(PRG_DIR)
 
