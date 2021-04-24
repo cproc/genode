@@ -3,8 +3,8 @@ VERSION   := git
 DOWNLOADS := nova.git
 
 # r10 branch
-URL(nova) := https://github.com/alex-ab/NOVA.git
-REV(nova) := 98b501b243bcd7aa1be36454cf58a63aae362c2e
+URL(nova) := https://github.com/cproc/NOVA.git
+REV(nova) := 6f77dfc231c75a3ff325959d34f2bbde0a9d5b10
 DIR(nova) := src/kernel/nova
 
 PATCHES   := $(sort $(wildcard $(REP_DIR)/patches/*.patch))
