@@ -13,6 +13,9 @@ INC_DIR += $(READLINE_DIR)/src/base
 CC_DEF += -DHAVE_CONFIG_H
 CC_DEF += -DRL_LIBRARY_VERSION='"6.0"'
 
+# Prevent link error with GCC 10, which defaults to -fno-common
+CC_OPT += -fcommon
+
 # dim build noise for contrib code
 CC_WARN = -Wno-unused-but-set-variable
 
