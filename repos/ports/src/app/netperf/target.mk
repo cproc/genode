@@ -14,6 +14,9 @@ SRC_CC += timer.cc
 INC_DIR += $(PRG_DIR)
 CC_OPT  += -DHAVE_CONFIG_H -DGENODE_BUILD
 
+# Prevent link error with GCC 10, which defaults to -fno-common
+CC_OPT  += -fcommon
+
 CC_WARN = -Wall -Wno-unused -Wno-maybe-uninitialized -Wno-format-truncation \
           -Wno-stringop-truncation -Wno-stringop-overflow
 
