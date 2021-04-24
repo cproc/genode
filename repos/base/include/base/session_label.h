@@ -89,7 +89,7 @@ namespace Genode {
 	 */
 	inline Session_label label_from_args(char const *args)
 	{
-		char buf[Session_label::capacity()];
+		char buf[Session_label::capacity()] = "";
 		Arg_string::find_arg(args, "label").string(buf, sizeof(buf), "");
 
 		return Session_label(Cstring(buf));
