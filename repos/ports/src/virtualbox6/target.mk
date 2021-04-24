@@ -6,6 +6,8 @@ include $(REP_DIR)/lib/mk/virtualbox6-common.inc
 
 CC_WARN += -Wall
 
+CC_WARN += -Wno-error=narrowing
+
 SRC_CC := main.cc drivers.cc
 SRC_CC += libc.cc unimpl.cc dummies.cc pdm.cc devices.cc nem.cc dynlib.cc
 SRC_CC += pthread.cc network.cc devxhci.cc

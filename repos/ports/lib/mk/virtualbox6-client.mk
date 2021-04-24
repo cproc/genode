@@ -72,4 +72,6 @@ INC_DIR += $(VBOX_DIR)/Main/include
 INC_DIR += $(VIRTUALBOX_DIR)/VBoxAPIWrap
 INC_DIR += $(VIRTUALBOX_DIR)/include/VBox/Graphics
 
+CC_WARN += -Wno-error=narrowing
+
 CC_CXX_WARN_STRICT =
