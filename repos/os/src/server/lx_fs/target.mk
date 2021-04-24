@@ -4,3 +4,5 @@ SRC_CC   = main.cc
 LIBS     = lx_hybrid
 
 INC_DIR += $(PRG_DIR)
+
+CC_WARN += -Wno-error=narrowing
