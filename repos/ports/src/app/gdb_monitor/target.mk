@@ -38,6 +38,7 @@ SRC_CC += common/agent.cc \
           common/gdb_tilde_expand.cc \
           common/gdb_vecs.cc \
           common/job-control.cc \
+          common/netstuff.cc \
           common/pathstuff.cc \
           common/posix-strerror.cc \
           common/print-utils.cc \
@@ -80,7 +81,7 @@ SRC_CC += genode-low.cc \
           signal_handler_thread.cc \
           main.cc
 
-CC_OPT += -DGDBSERVER -DPKGVERSION="\"8.1.1\"" -DREPORT_BUGS_TO="\"\""
+CC_OPT += -DGDBSERVER -DPKGVERSION="\"8.3.0\"" -DREPORT_BUGS_TO="\"\""
 CC_OPT += -DHAVE_SYS_WAIT_H -DHAVE_SYS_PTRACE_H -DHAVE_DECL_PTRACE -DHAVE_TERMIOS
 CC_OPT += -fpermissive -Wno-unused-function
 
