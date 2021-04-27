@@ -140,6 +140,7 @@ set gdb_target_binary "test-gdb_monitor"
 # sequence of GDB commands to execute at startup
 set gdb_cmds ""
 append gdb_cmds {-ex "target remote localhost:$local_port" }
+append gdb_cmds {-ex "set style enabled off" }
 append gdb_cmds [gdb_initial_breakpoint_cmds $gdb_target_binary]
 
 # run GDB
