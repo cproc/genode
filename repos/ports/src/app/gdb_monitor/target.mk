@@ -38,6 +38,7 @@ SRC_CC += common/agent.cc \
           common/gdb_tilde_expand.cc \
           common/gdb_vecs.cc \
           common/job-control.cc \
+          common/netstuff.cc \
           common/pathstuff.cc \
           common/posix-strerror.cc \
           common/print-utils.cc \

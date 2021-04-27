@@ -1,4 +1,7 @@
 Change URL: https://gnutoolchain-gerrit.osci.io/r/c/binutils-gdb/+/726
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
 ......................................................................
 
 [ARM, sim] Fix build error and warnings
@@ -44,15 +47,16 @@ Signed-off-by: Luis Machado <luis.machado@linaro.org>
 
 Change-Id: I21db699d3b61b2de8c44053e47be4387285af28f
 ---
-M sim/arm/armemu.c
-M sim/arm/arminit.c
-M sim/arm/maverick.c
-A sim/arm/maverick.h
-M sim/arm/wrapper.c
-5 files changed, 57 insertions(+), 67 deletions(-)
+ sim/arm/armemu.c   |    4 ----
+ sim/arm/arminit.c  |    4 ++++
+ sim/arm/maverick.c |   35 +++++------------------------------
+ sim/arm/maverick.h |   46 ++++++++++++++++++++++++++++++++++++++++++++++
+ sim/arm/wrapper.c  |   35 ++---------------------------------
+ 5 files changed, 57 insertions(+), 67 deletions(-)
+ create mode 100644 sim/arm/maverick.h
 
 diff --git a/sim/arm/armemu.c b/sim/arm/armemu.c
-index 76f398b..3a72277 100644
+index 76f398b3d71..3a72277683e 100644
 --- a/sim/arm/armemu.c
 +++ b/sim/arm/armemu.c
 @@ -1140,10 +1140,6 @@ handle_VFP_move (ARMul_State * state, ARMword instr)
@@ -67,7 +71,7 @@ index 76f398b..3a72277 100644
  #ifdef MODE32
  ARMul_Emulate32 (ARMul_State * state)
 diff --git a/sim/arm/arminit.c b/sim/arm/arminit.c
-index 851d356..3a626c8 100644
+index 851d3567e19..3a626c84674 100644
 --- a/sim/arm/arminit.c
 +++ b/sim/arm/arminit.c
 @@ -40,6 +40,10 @@ unsigned ARMul_MultTable[32] =
@@ -82,7 +86,7 @@ index 851d356..3a626c8 100644
  *         Call this routine once to set up the emulator's tables.           *
  \***************************************************************************/
 diff --git a/sim/arm/maverick.c b/sim/arm/maverick.c
-index d8be20c..ec21b6c 100644
+index c1126921290..bae8c4785ca 100644
 --- a/sim/arm/maverick.c
 +++ b/sim/arm/maverick.c
 @@ -19,6 +19,7 @@
@@ -136,7 +140,7 @@ index d8be20c..ec21b6c 100644
  ARMword DSPsc;
 diff --git a/sim/arm/maverick.h b/sim/arm/maverick.h
 new file mode 100644
-index 0000000..2549d21
+index 00000000000..2549d215765
 --- /dev/null
 +++ b/sim/arm/maverick.h
 @@ -0,0 +1,46 @@
@@ -187,7 +191,7 @@ index 0000000..2549d21
 +extern union maverick_acc_regs DSPacc[4];
 +extern ARMword DSPsc;
 diff --git a/sim/arm/wrapper.c b/sim/arm/wrapper.c
-index bc1a043..e1e48ed 100644
+index fde5d8c3265..78a91924a94 100644
 --- a/sim/arm/wrapper.c
 +++ b/sim/arm/wrapper.c
 @@ -37,6 +37,7 @@
