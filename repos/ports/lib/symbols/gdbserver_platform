@@ -28,7 +28,6 @@ _Z17i386_emit_gt_gotoPiS_ T
 _Z17i386_emit_le_gotoPiS_ T
 _Z17i386_emit_lt_gotoPiS_ T
 _Z17i386_emit_ne_gotoPiS_ T
-_Z17iterate_over_lwps6ptid_tPFiP8lwp_infoPvES2_ U
 _Z18amd64_emit_eq_gotoPiS_ T
 _Z18amd64_emit_ge_gotoPiS_ T
 _Z18amd64_emit_gt_gotoPiS_ T
