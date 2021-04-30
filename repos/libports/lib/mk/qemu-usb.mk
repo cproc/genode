@@ -1,3 +1,5 @@
+REQUIRES = x86
+
 LIB_DIR      = $(REP_DIR)/src/lib/qemu-usb
 QEMU_USB_DIR = $(call select_from_ports,qemu-usb)/src/lib/qemu/hw/usb
 

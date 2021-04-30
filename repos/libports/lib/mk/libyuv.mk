@@ -1,3 +1,5 @@
+REQUIRES = x86
+
 YUV_DIR = $(call select_from_ports,libyuv)/libyuv
 
 LIBS = libc
