@@ -33,7 +33,11 @@
 			<resource name="RAM" quantum="64M"/>
 			<config>
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
-				<libc stdout="/dev/log"/>
+				<libc stdout="/dev/log">
+					<pthread placement="manual">
+						<thread id="0" cpu="1"/>
+					</pthread>
+				</libc>
 			</config>
 		</start>
 	</config>
