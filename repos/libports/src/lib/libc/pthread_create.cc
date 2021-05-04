@@ -82,9 +82,8 @@ struct Placement_policy
 		}
 	}
 
-	void add_placement(unsigned pthread, unsigned cpu)
+	void add_placement(Genode::Allocator &alloc, unsigned pthread, unsigned cpu)
 	{
-		Libc::Allocator alloc { };
 		new (alloc) Registered<Placement> (_policies, pthread, cpu);
 	}
 };
@@ -92,11 +91,18 @@ struct Placement_policy
 
 static Cpu_session      *_cpu_session { nullptr };
 static bool              _verbose     { false };
-static Placement_policy  _policy      { };
+
+
+Placement_policy &placement_policy()
+{
+	static Placement_policy policy { };
+	return policy;
+}
 
 
 void Libc::init_pthread_support(Cpu_session &cpu_session,
-                                Xml_node node)
+                                Xml_node const &node,
+                                Genode::Allocator &alloc)
 {
 	_cpu_session = &cpu_session;
 
@@ -104,7 +110,7 @@ void Libc::init_pthread_support(Cpu_session &cpu_session,
 
 	String<32> const policy_name = node.attribute_value("placement",
 	                                                    String<32>("all-cpus"));
-	_policy.policy(policy_name);
+	placement_policy().policy(policy_name);
 
 	node.for_each_sub_node("thread", [&](Xml_node &policy) {
 
@@ -115,7 +121,7 @@ void Libc::init_pthread_support(Cpu_session &cpu_session,
 			if (_verbose)
 				log("pthread.", id, " -> cpu ", cpu);
 
-			_policy.add_placement(id, cpu);
+			placement_policy().add_placement(alloc, id, cpu);
 		}
 	});
 }
@@ -182,7 +188,7 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                        : Libc::Component::stack_size();
 
 	unsigned const id { pthread_id() };
-	unsigned const cpu = _policy.placement(id);
+	unsigned const cpu = placement_policy().placement(id);
 
 	String<32> const pthread_name { "pthread.", id };
 	Affinity::Space space { _cpu_session->affinity_space() };
