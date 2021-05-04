@@ -28,7 +28,6 @@ _Z17i386_emit_gt_gotoPiS_ T
 _Z17i386_emit_le_gotoPiS_ T
 _Z17i386_emit_lt_gotoPiS_ T
 _Z17i386_emit_ne_gotoPiS_ T
-_Z17iterate_over_lwps6ptid_tPFiP8lwp_infoPvES2_ U
 _Z18amd64_emit_eq_gotoPiS_ T
 _Z18amd64_emit_ge_gotoPiS_ T
 _Z18amd64_emit_gt_gotoPiS_ T
@@ -55,7 +54,6 @@ _Z21genode_store_registerim T
 _Z21get_raw_reg_func_addrv U
 _Z21lwp_arch_private_infoP8lwp_info U
 _Z21tdesc_set_struct_sizeP22tdesc_type_with_fieldsi U
-_Z21write_inferior_memoryyPKhi U
 _Z21x86_linux_dr_get_addri T
 _Z21x86_linux_dr_set_addriy T
 _Z22claim_trampoline_spaceyPy U
