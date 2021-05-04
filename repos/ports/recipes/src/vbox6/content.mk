@@ -35,9 +35,13 @@ MIRROR_FROM_LIBPORTS := \
 	lib/import/import-qemu-usb_include.mk \
 	lib/mk/libc-common.inc \
 	lib/mk/libc-mem.mk \
-	lib/mk/libyuv.mk \
-	lib/mk/qemu-usb.mk \
+	lib/mk/libyuv.inc \
+	lib/mk/qemu-usb.inc \
 	lib/mk/qemu-usb_include.mk \
+	lib/mk/spec/x86_32/libyuv.mk \
+	lib/mk/spec/x86_32/qemu-usb.mk \
+	lib/mk/spec/x86_64/libyuv.mk \
+	lib/mk/spec/x86_64/qemu-usb.mk \
 	src/lib/libc/internal/init.h \
 	src/lib/libc/internal/mem_alloc.h \
 	src/lib/libc/internal/monitor.h \
