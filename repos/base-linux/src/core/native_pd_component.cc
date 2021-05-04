@@ -15,6 +15,7 @@
 #include <util/arg_string.h>
 #include <base/log.h>
 #include <base/snprintf.h>
+#include <cpu/consts.h>
 
 /* core-local includes */
 #include <pd_session_component.h>
@@ -55,7 +56,7 @@ struct Execve_args_and_stack
 
 	void *initial_sp()
 	{
-		return stack + STACK_SIZE - 2*sizeof(umword_t);
+		return (void *)Abi::stack_align((addr_t)(stack + STACK_SIZE));
 	}
 };
 
