@@ -10,10 +10,10 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  3 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/gdb/configure b/gdb/configure
-index 866564fbe68..c57da84a2d2 100755
+index b572d414..bb760f9c 100755
 --- a/gdb/configure
 +++ b/gdb/configure
-@@ -6659,11 +6659,11 @@ fi
+@@ -6620,11 +6620,11 @@ fi
  # configuration.
  gdb_host_obs=posix-hdep.o
  
@@ -29,7 +29,7 @@ index 866564fbe68..c57da84a2d2 100755
  
  . $srcdir/configure.host
  
-@@ -13839,7 +13839,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
+@@ -14369,7 +14369,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
    return 0;
  }
  _ACEOF
@@ -39,10 +39,10 @@ index 866564fbe68..c57da84a2d2 100755
  else
    gdb_cv_func_sigsetjmp=no
 diff --git a/gdb/dwarf-index-write.c b/gdb/dwarf-index-write.c
-index 519179be4d8..f0b2574a1e0 100644
+index b176c1ef..3f4d2e8a 100644
 --- a/gdb/dwarf-index-write.c
 +++ b/gdb/dwarf-index-write.c
-@@ -701,7 +701,7 @@ public:
+@@ -742,7 +742,7 @@ public:
      gdb_assert (m_abbrev_table.empty ());
      const size_t name_count = m_name_to_value_set.size ();
      m_bucket_table.resize
@@ -52,7 +52,7 @@ index 519179be4d8..f0b2574a1e0 100644
      m_name_table_string_offs.reserve (name_count);
      m_name_table_entry_offs.reserve (name_count);
 diff --git a/sim/common/Make-common.in b/sim/common/Make-common.in
-index 1a3bcc9417e..744a5f2ebc2 100644
+index b254bf6c..5441cd82 100644
 --- a/sim/common/Make-common.in
 +++ b/sim/common/Make-common.in
 @@ -236,7 +236,7 @@ CSEARCH = -I. -I$(srcdir) -I../common -I$(srccom) \
