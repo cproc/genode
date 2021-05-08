@@ -33,6 +33,8 @@ set build_components {
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
 
+lappend build_components "lib/gdbserver_platform-$::env(KERNEL)"
+
 build $build_components
 
 create_boot_directory
@@ -85,13 +87,17 @@ set config {
 	<start name="nic_drv">
 		<binary name="ipxe_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
+
+		<provides> <service name="Nic"/> </provides>
+<!--
 		<config mode="uplink_client"/>
 		<route>
 			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
+-->
 	</start>
-
+<!--
 	<start name="nic_router" caps="200">
 		<resource name="RAM" quantum="10M"/>
 		<provides>
@@ -126,7 +132,7 @@ set config {
 
 		</config>
 	</start>
-
+-->
 	<start name="rtc_drv">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
@@ -167,13 +173,13 @@ set config {
 			</target>
 			<preserve name="RAM" quantum="64M"/>
 			<vfs>
-				<dir name="dev"> <log/> <terminal/> </dir>
+				<dir name="dev"> <log/> <terminal raw="yes"/> </dir>
 				<dir name="pipe"> <pipe/> </dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe"/>
 		</config>
 		<route>
-			<service name="Nic"> <child name="nic_router"/> </service>
+			<service name="Nic"> <child name="nic_drv"/> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<service name="Terminal"> <child name="pc_uart_drv"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -260,7 +266,7 @@ proc binary_name_gdbserver_platform_lib_so { } {
 # generic modules
 set boot_modules {
 	core ld.lib.so init timer ipxe_nic_drv rtc_drv report_rom vfs fs_rom
-	test-terminal_echo nic_router
+	test-terminal_echo
 
 	pc_uart_drv gdb_monitor gdbserver_platform.lib.so stdcxx.lib.so
 
@@ -285,7 +291,16 @@ build_boot_image $boot_modules
 set local_port 5556
 
 append qemu_args     " -m 512 "
-append_qemu_nic_args "hostfwd=tcp::5555-:22"
+#append_qemu_nic_args "hostfwd=tcp::5555-:22"
+
+proc qemu_nic_model {} {
+	if [have_spec x86]     { return e1000 }
+	if [have_spec lan9118] { return lan9118 }
+	return nic_model_missing
+}
+
+append qemu_args " -netdev user,id=net0,hostfwd=tcp::5555-:22 "
+append qemu_args " -net nic,model=[qemu_nic_model],netdev=net0 "
 
 # qemu config
 append qemu_args " -display none "
@@ -333,7 +348,7 @@ append gdb_cmds {-ex "cont" }
 
 puts "command: [gdb] debug/ld.lib.so $gdb_cmds"
 
-exec [terminal] -e "bash -lc \'[gdb] debug/ld.lib.so $gdb_cmds\'" &
+exec x-terminal-emulator -e "bash -lc \'[gdb] debug/ld.lib.so $gdb_cmds\'" &
 
 interact -i [output_spawn_id]
 
