@@ -44,7 +44,20 @@ struct Main
 	Main(Genode::Env &env) : _env(env)
 	{
 		Genode::log("--- SSH terminal started ---");
+
+		int res = 0;
+		for (int i = 0; i < 1000000; i++) {
+			for (int j = 0; j < 1000; j++) {
+				res += 1;
+			}
+		}
+		Genode::log(res);
+
+		Genode::log("--- SSH terminal started 2 ---");
+
 		_env.parent().announce(env.ep().manage(_root));
+
+		Genode::log("--- SSH terminal started 3 ---");
 	}
 };
 
