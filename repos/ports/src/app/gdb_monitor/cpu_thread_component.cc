@@ -245,9 +245,11 @@ void Cpu_thread_component::pause()
 		_parent_cpu_thread.pause();
 
 		try {
+			Genode::log("Cpu_thread_component::pause(): calling _parent_cpu_thread.state()");
 			/* check if the thread state is valid */
 			_parent_cpu_thread.state();
 			/* the thread is paused */
+			Genode::log("Cpu_thread_component::pause(): _parent_cpu_thread.state() returned");
 			return;
 		} catch (State_access_failed) {
 			loop_cnt ++;
@@ -280,7 +282,10 @@ void Cpu_thread_component::state(Thread_state const &state)
 
 Thread_state Cpu_thread_component::state()
 {
-	return _parent_cpu_thread.state();
+	Genode::log("Cpu_thread_component::state(): calling _parent_cpu_thread.state()");
+	Thread_state res = _parent_cpu_thread.state();
+	Genode::log("Cpu_thread_component::state(): _parent_cpu_thread.state() returned");
+	return res;
 }
 
 

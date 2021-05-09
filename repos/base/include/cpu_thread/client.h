@@ -38,7 +38,12 @@ struct Genode::Cpu_thread_client : Rpc_client<Cpu_thread>
 		call<Rpc_resume>(); }
 
 	Thread_state state() override {
-		return call<Rpc_get_state>(); }
+		int dummy;
+		Genode::log(&dummy, ": Cpu_thread_client::state(): ret: ", __builtin_return_address(0));
+		Thread_state res = call<Rpc_get_state>();
+		Genode::log(&dummy, ": Cpu_thread_client::state() finished");
+		return res;
+	}
 
 	void state(Thread_state const &state) override {
 		call<Rpc_set_state>(state); }

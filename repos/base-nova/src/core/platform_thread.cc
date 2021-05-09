@@ -251,6 +251,7 @@ void Platform_thread::resume()
 
 Thread_state Platform_thread::state()
 {
+Genode::log("Platform_thread::state()");
 	if (!_pager) throw Cpu_thread::State_access_failed();
 
 	Thread_state s;

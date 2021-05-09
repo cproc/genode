@@ -36,8 +36,10 @@ Thread_state get_current_thread_state()
 	ptid_t ptid = current_thread->id;
 
 	Cpu_thread_client cpu_thread(csc.thread_cap(ptid.lwp()));
-
-	return cpu_thread.state();
+Genode::log("get_current_thread_state(): calling cpu_thread.state()");
+	Thread_state res = cpu_thread.state();
+Genode::log("get_current_thread_state(): cpu_thread.state() returned");
+	return res;
 }
 
 
