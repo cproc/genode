@@ -20,28 +20,6 @@ default: symlinks
 symlinks: $(DOWNLOADS)
 	$(VERBOSE)ln -s amd64.c             ${DIR(gdb)}/gdb/arch/amd64.cc
 	$(VERBOSE)ln -s i386.c              ${DIR(gdb)}/gdb/arch/i386.cc
-	$(VERBOSE)ln -s ax.c                ${DIR(gdb)}/gdb/gdbserver/ax.cc
-	$(VERBOSE)ln -s debug.c             ${DIR(gdb)}/gdb/gdbserver/debug.cc
-	$(VERBOSE)ln -s dll.c               ${DIR(gdb)}/gdb/gdbserver/dll.cc
-	$(VERBOSE)ln -s event-loop.c        ${DIR(gdb)}/gdb/gdbserver/event-loop.cc
-	$(VERBOSE)ln -s fork-child.c        ${DIR(gdb)}/gdb/gdbserver/fork-child.cc
-	$(VERBOSE)ln -s hostio.c            ${DIR(gdb)}/gdb/gdbserver/hostio.cc
-	$(VERBOSE)ln -s i387-fp.c           ${DIR(gdb)}/gdb/gdbserver/i387-fp.cc
-	$(VERBOSE)ln -s inferiors.c         ${DIR(gdb)}/gdb/gdbserver/inferiors.cc
-	$(VERBOSE)ln -s linux-low.c         ${DIR(gdb)}/gdb/gdbserver/linux-low.cc
-	$(VERBOSE)ln -s linux-x86-low.c     ${DIR(gdb)}/gdb/gdbserver/linux-x86-low.cc
-	$(VERBOSE)ln -s linux-x86-tdesc.c   ${DIR(gdb)}/gdb/gdbserver/linux-x86-tdesc.cc
-	$(VERBOSE)ln -s mem-break.c         ${DIR(gdb)}/gdb/gdbserver/mem-break.cc
-	$(VERBOSE)ln -s notif.c             ${DIR(gdb)}/gdb/gdbserver/notif.cc
-	$(VERBOSE)ln -s regcache.c          ${DIR(gdb)}/gdb/gdbserver/regcache.cc
-	$(VERBOSE)ln -s remote-utils.c      ${DIR(gdb)}/gdb/gdbserver/remote-utils.cc
-	$(VERBOSE)ln -s server.c            ${DIR(gdb)}/gdb/gdbserver/server.cc
-	$(VERBOSE)ln -s symbol.c            ${DIR(gdb)}/gdb/gdbserver/symbol.cc
-	$(VERBOSE)ln -s target.c            ${DIR(gdb)}/gdb/gdbserver/target.cc
-	$(VERBOSE)ln -s tdesc.c             ${DIR(gdb)}/gdb/gdbserver/tdesc.cc
-	$(VERBOSE)ln -s tracepoint.c        ${DIR(gdb)}/gdb/gdbserver/tracepoint.cc
-	$(VERBOSE)ln -s utils.c             ${DIR(gdb)}/gdb/gdbserver/utils.cc
-	$(VERBOSE)ln -s x86-low.c           ${DIR(gdb)}/gdb/gdbserver/x86-low.cc
 	$(VERBOSE)ln -s fork-inferior.c     ${DIR(gdb)}/gdb/nat/fork-inferior.cc
 	$(VERBOSE)ln -s linux-ptrace.c      ${DIR(gdb)}/gdb/nat/linux-ptrace.cc
 	$(VERBOSE)ln -s x86-dregs.c         ${DIR(gdb)}/gdb/nat/x86-dregs.cc
@@ -49,6 +27,28 @@ symlinks: $(DOWNLOADS)
 	$(VERBOSE)ln -s x86-linux-dregs.c   ${DIR(gdb)}/gdb/nat/x86-linux-dregs.cc
 	$(VERBOSE)ln -s waitstatus.c        ${DIR(gdb)}/gdb/target/waitstatus.cc
 	$(VERBOSE)ln -s alloc.c             ${DIR(gdb)}/gdb/alloc.cc
+	$(VERBOSE)ln -s ax.c                ${DIR(gdb)}/gdbserver/ax.cc
+	$(VERBOSE)ln -s debug.c             ${DIR(gdb)}/gdbserver/debug.cc
+	$(VERBOSE)ln -s dll.c               ${DIR(gdb)}/gdbserver/dll.cc
+	$(VERBOSE)ln -s event-loop.c        ${DIR(gdb)}/gdbserver/event-loop.cc
+	$(VERBOSE)ln -s fork-child.c        ${DIR(gdb)}/gdbserver/fork-child.cc
+	$(VERBOSE)ln -s hostio.c            ${DIR(gdb)}/gdbserver/hostio.cc
+	$(VERBOSE)ln -s i387-fp.c           ${DIR(gdb)}/gdbserver/i387-fp.cc
+	$(VERBOSE)ln -s inferiors.c         ${DIR(gdb)}/gdbserver/inferiors.cc
+	$(VERBOSE)ln -s linux-low.c         ${DIR(gdb)}/gdbserver/linux-low.cc
+	$(VERBOSE)ln -s linux-x86-low.c     ${DIR(gdb)}/gdbserver/linux-x86-low.cc
+	$(VERBOSE)ln -s linux-x86-tdesc.c   ${DIR(gdb)}/gdbserver/linux-x86-tdesc.cc
+	$(VERBOSE)ln -s mem-break.c         ${DIR(gdb)}/gdbserver/mem-break.cc
+	$(VERBOSE)ln -s notif.c             ${DIR(gdb)}/gdbserver/notif.cc
+	$(VERBOSE)ln -s regcache.c          ${DIR(gdb)}/gdbserver/regcache.cc
+	$(VERBOSE)ln -s remote-utils.c      ${DIR(gdb)}/gdbserver/remote-utils.cc
+	$(VERBOSE)ln -s server.c            ${DIR(gdb)}/gdbserver/server.cc
+	$(VERBOSE)ln -s symbol.c            ${DIR(gdb)}/gdbserver/symbol.cc
+	$(VERBOSE)ln -s target.c            ${DIR(gdb)}/gdbserver/target.cc
+	$(VERBOSE)ln -s tdesc.c             ${DIR(gdb)}/gdbserver/tdesc.cc
+	$(VERBOSE)ln -s tracepoint.c        ${DIR(gdb)}/gdbserver/tracepoint.cc
+	$(VERBOSE)ln -s utils.c             ${DIR(gdb)}/gdbserver/utils.cc
+	$(VERBOSE)ln -s x86-low.c           ${DIR(gdb)}/gdbserver/x86-low.cc
 	$(VERBOSE)ln -s agent.c             ${DIR(gdb)}/gdbsupport/agent.cc
 	$(VERBOSE)ln -s buffer.c            ${DIR(gdb)}/gdbsupport/buffer.cc
 	$(VERBOSE)ln -s cleanups.c          ${DIR(gdb)}/gdbsupport/cleanups.cc
