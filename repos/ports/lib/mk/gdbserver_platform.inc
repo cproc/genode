@@ -4,6 +4,7 @@ INC_DIR += $(REP_DIR)/src/lib/gdbserver_libc_support \
            $(REP_DIR)/src/lib/gdbserver_platform \
            $(REP_DIR)/src/app/gdb_monitor \
            $(GDB_CONTRIB_DIR)/include \
+           $(GDB_CONTRIB_DIR) \
            $(GDB_CONTRIB_DIR)/gdb \
            $(GDB_CONTRIB_DIR)/gdb/common \
            $(GDB_CONTRIB_DIR)/gdb/gdbserver \

@@ -20,30 +20,6 @@ default: symlinks
 symlinks: $(DOWNLOADS)
 	$(VERBOSE)ln -s amd64.c             ${DIR(gdb)}/gdb/arch/amd64.cc
 	$(VERBOSE)ln -s i386.c              ${DIR(gdb)}/gdb/arch/i386.cc
-	$(VERBOSE)ln -s agent.c             ${DIR(gdb)}/gdb/gdbsupport/agent.cc
-	$(VERBOSE)ln -s buffer.c            ${DIR(gdb)}/gdb/gdbsupport/buffer.cc
-	$(VERBOSE)ln -s cleanups.c          ${DIR(gdb)}/gdb/gdbsupport/cleanups.cc
-	$(VERBOSE)ln -s common-debug.c      ${DIR(gdb)}/gdb/gdbsupport/common-debug.cc
-	$(VERBOSE)ln -s common-exceptions.c ${DIR(gdb)}/gdb/gdbsupport/common-exceptions.cc
-	$(VERBOSE)ln -s common-inferior.c   ${DIR(gdb)}/gdb/gdbsupport/common-inferior.cc
-	$(VERBOSE)ln -s common-utils.c      ${DIR(gdb)}/gdb/gdbsupport/common-utils.cc
-	$(VERBOSE)ln -s environ.c           ${DIR(gdb)}/gdb/gdbsupport/environ.cc
-	$(VERBOSE)ln -s errors.c            ${DIR(gdb)}/gdb/gdbsupport/errors.cc
-	$(VERBOSE)ln -s filestuff.c         ${DIR(gdb)}/gdb/gdbsupport/filestuff.cc
-	$(VERBOSE)ln -s format.c            ${DIR(gdb)}/gdb/gdbsupport/format.cc
-	$(VERBOSE)ln -s gdb_tilde_expand.c  ${DIR(gdb)}/gdb/gdbsupport/gdb_tilde_expand.cc
-	$(VERBOSE)ln -s gdb_vecs.c          ${DIR(gdb)}/gdb/gdbsupport/gdb_vecs.cc
-	$(VERBOSE)ln -s job-control.c       ${DIR(gdb)}/gdb/gdbsupport/job-control.cc
-	$(VERBOSE)ln -s netstuff.c          ${DIR(gdb)}/gdb/gdbsupport/netstuff.cc
-	$(VERBOSE)ln -s pathstuff.c         ${DIR(gdb)}/gdb/gdbsupport/pathstuff.cc
-	$(VERBOSE)ln -s print-utils.c       ${DIR(gdb)}/gdb/gdbsupport/print-utils.cc
-	$(VERBOSE)ln -s ptid.c              ${DIR(gdb)}/gdb/gdbsupport/ptid.cc
-	$(VERBOSE)ln -s rsp-low.c           ${DIR(gdb)}/gdb/gdbsupport/rsp-low.cc
-	$(VERBOSE)ln -s safe-strerror.c     ${DIR(gdb)}/gdb/gdbsupport/safe-strerror.cc
-	$(VERBOSE)ln -s signals.c           ${DIR(gdb)}/gdb/gdbsupport/signals.cc
-	$(VERBOSE)ln -s tdesc.c             ${DIR(gdb)}/gdb/gdbsupport/tdesc.cc
-	$(VERBOSE)ln -s vec.c               ${DIR(gdb)}/gdb/gdbsupport/vec.cc
-	$(VERBOSE)ln -s xml-utils.c         ${DIR(gdb)}/gdb/gdbsupport/xml-utils.cc
 	$(VERBOSE)ln -s ax.c                ${DIR(gdb)}/gdb/gdbserver/ax.cc
 	$(VERBOSE)ln -s debug.c             ${DIR(gdb)}/gdb/gdbserver/debug.cc
 	$(VERBOSE)ln -s dll.c               ${DIR(gdb)}/gdb/gdbserver/dll.cc
@@ -73,3 +49,27 @@ symlinks: $(DOWNLOADS)
 	$(VERBOSE)ln -s x86-linux-dregs.c   ${DIR(gdb)}/gdb/nat/x86-linux-dregs.cc
 	$(VERBOSE)ln -s waitstatus.c        ${DIR(gdb)}/gdb/target/waitstatus.cc
 	$(VERBOSE)ln -s alloc.c             ${DIR(gdb)}/gdb/alloc.cc
+	$(VERBOSE)ln -s agent.c             ${DIR(gdb)}/gdbsupport/agent.cc
+	$(VERBOSE)ln -s buffer.c            ${DIR(gdb)}/gdbsupport/buffer.cc
+	$(VERBOSE)ln -s cleanups.c          ${DIR(gdb)}/gdbsupport/cleanups.cc
+	$(VERBOSE)ln -s common-debug.c      ${DIR(gdb)}/gdbsupport/common-debug.cc
+	$(VERBOSE)ln -s common-exceptions.c ${DIR(gdb)}/gdbsupport/common-exceptions.cc
+	$(VERBOSE)ln -s common-inferior.c   ${DIR(gdb)}/gdbsupport/common-inferior.cc
+	$(VERBOSE)ln -s common-utils.c      ${DIR(gdb)}/gdbsupport/common-utils.cc
+	$(VERBOSE)ln -s environ.c           ${DIR(gdb)}/gdbsupport/environ.cc
+	$(VERBOSE)ln -s errors.c            ${DIR(gdb)}/gdbsupport/errors.cc
+	$(VERBOSE)ln -s filestuff.c         ${DIR(gdb)}/gdbsupport/filestuff.cc
+	$(VERBOSE)ln -s format.c            ${DIR(gdb)}/gdbsupport/format.cc
+	$(VERBOSE)ln -s gdb_tilde_expand.c  ${DIR(gdb)}/gdbsupport/gdb_tilde_expand.cc
+	$(VERBOSE)ln -s gdb_vecs.c          ${DIR(gdb)}/gdbsupport/gdb_vecs.cc
+	$(VERBOSE)ln -s job-control.c       ${DIR(gdb)}/gdbsupport/job-control.cc
+	$(VERBOSE)ln -s netstuff.c          ${DIR(gdb)}/gdbsupport/netstuff.cc
+	$(VERBOSE)ln -s pathstuff.c         ${DIR(gdb)}/gdbsupport/pathstuff.cc
+	$(VERBOSE)ln -s print-utils.c       ${DIR(gdb)}/gdbsupport/print-utils.cc
+	$(VERBOSE)ln -s ptid.c              ${DIR(gdb)}/gdbsupport/ptid.cc
+	$(VERBOSE)ln -s rsp-low.c           ${DIR(gdb)}/gdbsupport/rsp-low.cc
+	$(VERBOSE)ln -s safe-strerror.c     ${DIR(gdb)}/gdbsupport/safe-strerror.cc
+	$(VERBOSE)ln -s signals.c           ${DIR(gdb)}/gdbsupport/signals.cc
+	$(VERBOSE)ln -s tdesc.c             ${DIR(gdb)}/gdbsupport/tdesc.cc
+	$(VERBOSE)ln -s vec.c               ${DIR(gdb)}/gdbsupport/vec.cc
+	$(VERBOSE)ln -s xml-utils.c         ${DIR(gdb)}/gdbsupport/xml-utils.cc
