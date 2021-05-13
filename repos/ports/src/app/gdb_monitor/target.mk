@@ -3,8 +3,8 @@ TARGET  =  gdb_monitor
 GDB_CONTRIB_DIR = $(call select_from_ports,gdb)/src/noux-pkg/gdb
 
 INC_DIR += $(GDB_CONTRIB_DIR)/include \
+           $(GDB_CONTRIB_DIR) \
            $(GDB_CONTRIB_DIR)/gdb \
-           $(GDB_CONTRIB_DIR)/gdb/gdbsupport \
            $(GDB_CONTRIB_DIR)/gdb/gdbserver \
            $(GDB_CONTRIB_DIR)/gdb/regformats \
            $(GDB_CONTRIB_DIR)/gnulib/import \
@@ -25,31 +25,33 @@ SRC_C   = argv.c \
 SRC_C  += rawmemchr.c \
           strchrnul.c
 
+# gdbsupport
+SRC_CC += agent.cc \
+          buffer.cc \
+          cleanups.cc \
+          common-debug.cc \
+          common-exceptions.cc \
+          common-inferior.cc \
+          common-utils.cc \
+          environ.cc \
+          errors.cc \
+          filestuff.cc \
+          format.cc \
+          gdb_tilde_expand.cc \
+          gdb_vecs.cc \
+          job-control.cc \
+          netstuff.cc \
+          pathstuff.cc \
+          print-utils.cc \
+          ptid.cc \
+          rsp-low.cc \
+          safe-strerror.cc \
+          signals.cc \
+          tdesc.cc \
+          xml-utils.cc
+
 # gdb
-SRC_CC += gdbsupport/agent.cc \
-          gdbsupport/buffer.cc \
-          gdbsupport/cleanups.cc \
-          gdbsupport/common-debug.cc \
-          gdbsupport/common-exceptions.cc \
-          gdbsupport/common-inferior.cc \
-          gdbsupport/common-utils.cc \
-          gdbsupport/environ.cc \
-          gdbsupport/errors.cc \
-          gdbsupport/filestuff.cc \
-          gdbsupport/format.cc \
-          gdbsupport/gdb_tilde_expand.cc \
-          gdbsupport/gdb_vecs.cc \
-          gdbsupport/job-control.cc \
-          gdbsupport/netstuff.cc \
-          gdbsupport/pathstuff.cc \
-          gdbsupport/print-utils.cc \
-          gdbsupport/ptid.cc \
-          gdbsupport/rsp-low.cc \
-          gdbsupport/safe-strerror.cc \
-          gdbsupport/signals.cc \
-          gdbsupport/tdesc.cc \
-          gdbsupport/xml-utils.cc \
-          gdbserver/ax.cc \
+SRC_CC += gdbserver/ax.cc \
           gdbserver/debug.cc \
           gdbserver/dll.cc \
           gdbserver/event-loop.cc \
@@ -90,6 +92,7 @@ CC_OPT += -fpermissive -Wno-unused-function
 vpath %.c  $(GDB_CONTRIB_DIR)/gnulib/import
 vpath %.c  $(GDB_CONTRIB_DIR)/libiberty
 vpath %.cc $(GDB_CONTRIB_DIR)/gdb
+vpath %.cc $(GDB_CONTRIB_DIR)/gdbsupport
 vpath %.cc $(PRG_DIR)/gdbserver
 
 #
