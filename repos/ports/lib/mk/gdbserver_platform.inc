@@ -7,8 +7,8 @@ INC_DIR += $(REP_DIR)/src/lib/gdbserver_libc_support \
            $(GDB_CONTRIB_DIR) \
            $(GDB_CONTRIB_DIR)/gdb \
            $(GDB_CONTRIB_DIR)/gdb/common \
-           $(GDB_CONTRIB_DIR)/gdb/gdbserver \
            $(GDB_CONTRIB_DIR)/gdb/regformats \
+           $(GDB_CONTRIB_DIR)/gdbserver \
            $(GDB_CONTRIB_DIR)/gnulib/import \
            $(REP_DIR)/src/app/gdb_monitor/gdbserver
 
@@ -23,3 +23,4 @@ LIBS += stdcxx libc
 
 vpath %.cc $(REP_DIR)/src/lib/gdbserver_platform
 vpath %.cc  $(GDB_CONTRIB_DIR)/gdb
+vpath %.cc  $(GDB_CONTRIB_DIR)/gdbserver
