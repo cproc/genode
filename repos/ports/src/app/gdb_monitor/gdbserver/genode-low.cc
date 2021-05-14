@@ -302,7 +302,7 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 				if (cc == 1 && c == '\003' && current_thread != NULL) {
 					/* this causes a SIGINT to be delivered to one of the threads */
-					(*the_target->request_interrupt)();
+					the_target->pt->request_interrupt();
 					continue;
 				} else {
 					if (verbose)
