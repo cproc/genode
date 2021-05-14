@@ -618,12 +618,12 @@ int genode_detach(int pid)
 }
 
 
-int genode_kill(int pid)
+int linux_process_target::kill(process_info *process)
 {
     /* TODO */
     if (verbose) warning(__func__, " not implemented, just detaching instead...");
 
-    return genode_detach(pid);
+    return genode_detach(process->pid);
 }
 
 
