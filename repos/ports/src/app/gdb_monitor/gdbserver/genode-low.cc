@@ -610,11 +610,17 @@ void genode_resume_all_threads()
 }
 
 
-int genode_detach(int pid)
+static int genode_detach(int)
 {
     genode_resume_all_threads();
 
     return 0;
+}
+
+
+int linux_process_target::detach(process_info *process)
+{
+    return genode_detach(process->pid);
 }
 
 
