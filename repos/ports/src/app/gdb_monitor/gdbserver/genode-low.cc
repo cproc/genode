@@ -720,6 +720,13 @@ int genode_read_memory(CORE_ADDR memaddr, unsigned char *myaddr, int len)
 }
 
 
+int linux_process_target::read_memory (CORE_ADDR memaddr,
+                                       unsigned char *myaddr, int len)
+{
+	return genode_read_memory(memaddr, myaddr, len);
+}
+
+
 void genode_write_memory_byte(void *addr, unsigned char value)
 {
 	memory_model().write(addr, value);
@@ -754,4 +761,11 @@ int genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len
 	}
 
 	return 0;
+}
+
+
+int linux_process_target::write_memory (CORE_ADDR memaddr,
+                                        const unsigned char *myaddr, int len)
+{
+	return genode_write_memory(memaddr, myaddr, len);
 }
