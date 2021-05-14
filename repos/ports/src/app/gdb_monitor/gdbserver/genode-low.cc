@@ -649,7 +649,7 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 }
 
 
-void genode_fetch_registers(struct regcache *regcache, int regno)
+void linux_process_target::fetch_registers (regcache *regcache, int regno)
 {
 	const struct regs_info *regs_info = (*the_low_target.regs_info) ();
 
@@ -671,7 +671,7 @@ void genode_fetch_registers(struct regcache *regcache, int regno)
 }
 
 
-void genode_store_registers(struct regcache *regcache, int regno)
+void linux_process_target::store_registers (regcache *regcache, int regno)
 {
 	if (verbose) log(__func__, ": regno=", regno);
 
