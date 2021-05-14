@@ -649,7 +649,7 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 }
 
 
-void linux_process_target::fetch_registers (regcache *regcache, int regno)
+void linux_process_target::fetch_registers(regcache *regcache, int regno)
 {
 	const struct regs_info *regs_info = (*the_low_target.regs_info) ();
 
@@ -671,7 +671,7 @@ void linux_process_target::fetch_registers (regcache *regcache, int regno)
 }
 
 
-void linux_process_target::store_registers (regcache *regcache, int regno)
+void linux_process_target::store_registers(regcache *regcache, int regno)
 {
 	if (verbose) log(__func__, ": regno=", regno);
 
@@ -720,8 +720,8 @@ int genode_read_memory(CORE_ADDR memaddr, unsigned char *myaddr, int len)
 }
 
 
-int linux_process_target::read_memory (CORE_ADDR memaddr,
-                                       unsigned char *myaddr, int len)
+int linux_process_target::read_memory(CORE_ADDR memaddr,
+                                      unsigned char *myaddr, int len)
 {
 	return genode_read_memory(memaddr, myaddr, len);
 }
@@ -733,7 +733,7 @@ void genode_write_memory_byte(void *addr, unsigned char value)
 }
 
 
-int genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
+int genode_write_memory(CORE_ADDR memaddr, const unsigned char *myaddr, int len)
 {
 	if (verbose)
 		log(__func__, "(", Hex(memaddr), ", ", myaddr, ", ", len, ")");
@@ -764,7 +764,7 @@ int genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len
 }
 
 
-int linux_process_target::write_memory (CORE_ADDR memaddr,
+int linux_process_target::write_memory(CORE_ADDR memaddr,
                                         const unsigned char *myaddr, int len)
 {
 	return genode_write_memory(memaddr, myaddr, len);
@@ -778,7 +778,23 @@ LONGEST linux_common_xfer_osdata(char const*, gdb_byte*, ULONGEST, ULONGEST)
 }
 
 
-int linux_common_core_of_thread (ptid_t)
+int linux_common_core_of_thread(ptid_t)
 {
 	return 0;
+}
+
+
+bool linux_process_target::supports_qxfer_libraries_svr4()
+{
+  return false;
+}
+
+
+int linux_process_target::qxfer_libraries_svr4(const char *,
+                                               unsigned char *,
+                                               unsigned const char *,
+                                               CORE_ADDR, int)
+{
+	Genode::error(__func__, " called, not implemented");
+	return -1;
 }
