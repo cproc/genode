@@ -32,6 +32,7 @@ SRC_CC += gdbserver/ax.cc \
           gdbserver/event-loop.cc \
           gdbserver/fork-child.cc \
           gdbserver/hostio.cc \
+          gdbserver/hostio-errno.cc \
           gdbserver/i387-fp.cc \
           gdbserver/inferiors.cc \
           gdbserver/linux-low.cc \
@@ -57,6 +58,7 @@ SRC_CC += gdbsupport/agent.cc \
           gdbsupport/common-utils.cc \
           gdbsupport/environ.cc \
           gdbsupport/errors.cc \
+          gdbsupport/fileio.cc \
           gdbsupport/filestuff.cc \
           gdbsupport/format.cc \
           gdbsupport/gdb_tilde_expand.cc \
