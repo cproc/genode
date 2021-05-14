@@ -770,8 +770,15 @@ int linux_process_target::write_memory (CORE_ADDR memaddr,
 	return genode_write_memory(memaddr, myaddr, len);
 }
 
+
 LONGEST linux_common_xfer_osdata(char const*, gdb_byte*, ULONGEST, ULONGEST)
 {
 	Genode::error(__func__, " called, not implemented");
 	return -1;
+}
+
+
+int linux_common_core_of_thread (ptid_t)
+{
+	return 0;
 }
