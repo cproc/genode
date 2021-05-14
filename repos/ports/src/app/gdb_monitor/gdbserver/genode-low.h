@@ -32,8 +32,6 @@ void genode_continue_thread(unsigned long lwpid, int single_step);
 
 int genode_kill(int pid);
 int genode_detach(int pid);
-void genode_fetch_registers(struct regcache *regcache, int regno);
-void genode_store_registers(struct regcache *regcache, int regno);
 int genode_read_memory(CORE_ADDR memaddr, unsigned char *myaddr, int len);
 int genode_write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len);
 
