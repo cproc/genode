@@ -156,6 +156,8 @@ _ZN20linux_process_target24supports_get_tls_addressEv U
 _ZN20linux_process_target25handle_new_gdb_connectionEv U
 _ZN20linux_process_target25supports_fast_tracepointsEv U
 _ZN20linux_process_target25supports_pid_to_exec_fileEv U
+_ZN20linux_process_target26low_supply_ptrace_registerEP8regcacheiPKc U
+_ZN20linux_process_target27low_collect_ptrace_registerEP8regcacheiPc U
 _ZN20linux_process_target29supports_hardware_single_stepEv U
 _ZN20linux_process_target29supports_qxfer_libraries_svr4Ev U
 _ZN20linux_process_target30supports_disable_randomizationEv U
@@ -245,7 +247,7 @@ sprintf U
 strtok_r U
 strtoul U
 the_linux_target D 8
-the_low_target D 152
+the_low_target D 136
 x86_dr_low D 48
 xcalloc U
 xstrdup U
