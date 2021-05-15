@@ -84,6 +84,9 @@ _ZN10x86_target10low_set_pcEP8regcachem T
 _ZN10x86_target13get_regs_infoEv T
 _ZN10x86_target14low_arch_setupEv T
 _ZN10x86_target16update_xmltargetEv T
+_ZN10x86_target17low_breakpoint_atEm T
+_ZN10x86_target21supports_z_point_typeEc T
+_ZN10x86_target23low_decr_pc_after_breakEv T
 _ZN10x86_target23sw_breakpoint_from_kindEiPi T
 _ZN10x86_target24low_supports_breakpointsEv T
 _ZN10x86_target25low_cannot_fetch_registerEi T
@@ -136,7 +139,6 @@ _ZN20linux_process_target21stopped_by_watchpointEv U
 _ZN20linux_process_target21supports_qxfer_osdataEv U
 _ZN20linux_process_target21supports_read_offsetsEv U
 _ZN20linux_process_target21supports_vfork_eventsEv U
-_ZN20linux_process_target21supports_z_point_typeEc U
 _ZN20linux_process_target22handle_monitor_commandEPc U
 _ZN20linux_process_target22supports_catch_syscallEv U
 _ZN20linux_process_target22supports_multi_processEv U
@@ -239,8 +241,7 @@ sprintf U
 strtok_r U
 strtoul U
 the_linux_target D 8
-the_low_target D 208
-the_target U
+the_low_target D 184
 x86_dr_low D 48
 xcalloc U
 xstrdup U
