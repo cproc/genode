@@ -10,6 +10,7 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
            $(GDB_CONTRIB_DIR)/gnulib/import \
            $(REP_DIR)/src/lib/gdbserver_libc_support \
            $(PRG_DIR)/gdbserver \
+           $(PRG_DIR)/gdbsupport \
            $(PRG_DIR)
 
 LIBS    =  stdcxx libc \
