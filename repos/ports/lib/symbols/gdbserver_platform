@@ -1,3 +1,4 @@
+# Please review the symbols and remove this line.
 _Unwind_Resume U
 _Z11ptid_of_lwpP8lwp_info U
 _Z12debug_printfPKcz U
@@ -78,6 +79,11 @@ _Z34raw_bkpt_type_to_target_hw_bp_type13raw_bkpt_type U
 _Z38have_fast_tracepoint_trampoline_bufferPc U
 _Z7warningPKcz U
 _Z8paddressm U
+_ZN10x86_target13get_regs_infoEv T
+_ZN10x86_target14low_arch_setupEv T
+_ZN10x86_target16update_xmltargetEv T
+_ZN10x86_target25low_cannot_fetch_registerEi T
+_ZN10x86_target25low_cannot_store_registerEi T
 _ZN11Gdb_monitor21Cpu_session_component10thread_capEm U
 _ZN11Gdb_monitor21Cpu_session_component17_setup_native_cpuEv T
 _ZN11Gdb_monitor21Cpu_session_component18parent_cpu_sessionEv U
@@ -111,6 +117,7 @@ _ZN20linux_process_target17get_ipa_tdesc_idxEv U
 _ZN20linux_process_target17request_interruptEv U
 _ZN20linux_process_target17stabilize_threadsEv U
 _ZN20linux_process_target17supports_non_stopEv U
+_ZN20linux_process_target18low_fetch_registerEP8regcachei U
 _ZN20linux_process_target18process_qsupportedEPPci U
 _ZN20linux_process_target18supports_read_auxvEv U
 _ZN20linux_process_target20post_create_inferiorEv U
@@ -228,7 +235,7 @@ sprintf U
 strtok_r U
 strtoul U
 the_linux_target D 8
-the_low_target D 296
+the_low_target D 256
 the_target U
 x86_dr_low D 48
 xcalloc U
