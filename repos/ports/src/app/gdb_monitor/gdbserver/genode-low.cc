@@ -31,8 +31,6 @@
 #include "server.h"
 #include "linux-low.h"
 
-void linux_detach_one_lwp (struct lwp_info *lwp);
-
 static bool verbose = false;
 
 Genode::Env *genode_env;
@@ -591,8 +589,8 @@ void genode_remove_thread(unsigned long lwpid)
 {
 	struct thread_info *thread_info =
 		find_thread_ptid(ptid_t(GENODE_MAIN_LWPID, lwpid, 0));
-	struct lwp_info *lwp = get_thread_lwp(thread_info);
-	linux_detach_one_lwp(lwp);
+	lwp_info *lwp = get_thread_lwp(thread_info);
+	the_linux_target->detach_one_lwp(lwp);
 }
 
 
