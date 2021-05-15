@@ -302,7 +302,7 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 				if (cc == 1 && c == '\003' && current_thread != NULL) {
 					/* this causes a SIGINT to be delivered to one of the threads */
-					the_target->pt->request_interrupt();
+					the_target->request_interrupt();
 					continue;
 				} else {
 					if (verbose)
@@ -527,7 +527,7 @@ extern "C" int vfork()
 
 	int breakpoint_len = 0;
 	unsigned char const *breakpoint_data =
-		the_target->pt->sw_breakpoint_from_kind(0, &breakpoint_len);
+		the_target->sw_breakpoint_from_kind(0, &breakpoint_len);
 
 	App_child *child = new (alloc) App_child(*genode_env,
 	                                         alloc,
