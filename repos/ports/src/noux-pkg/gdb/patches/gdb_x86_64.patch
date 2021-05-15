@@ -4,14 +4,14 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- gdb/amd64-tdep.c |   13 +++++++++++++
- gdb/defs.h       |    1 +
+ gdb/amd64-tdep.c |   14 ++++++++++++++
  gdb/i386-tdep.c  |    5 +++++
  gdb/osabi.c      |    6 ++++++
- 4 files changed, 25 insertions(+)
+ gdb/osabi.h      |    1 +
+ 4 files changed, 26 insertions(+)
 
 diff --git a/gdb/amd64-tdep.c b/gdb/amd64-tdep.c
-index 678aa4ef..142b7715 100644
+index 2c437084..129d45ba 100644
 --- a/gdb/amd64-tdep.c
 +++ b/gdb/amd64-tdep.c
 @@ -50,6 +50,7 @@
@@ -22,7 +22,7 @@ index 678aa4ef..142b7715 100644
  #include "solib-svr4.h"
  
  /* Note that the AMD64 architecture was previously known as x86-64.
-@@ -3338,6 +3339,13 @@ amd64_target_description (uint64_t xcr0, bool segments)
+@@ -3339,7 +3340,15 @@ amd64_target_description (uint64_t xcr0, bool segments)
    return *tdesc;
  }
  
@@ -33,10 +33,12 @@ index 678aa4ef..142b7715 100644
 +		  amd64_target_description (X86_XSTATE_SSE_MASK, false));
 +}
 +
+ void _initialize_amd64_tdep ();
++
  void
- _initialize_amd64_tdep (void)
+ _initialize_amd64_tdep ()
  {
-@@ -3345,6 +3353,11 @@ _initialize_amd64_tdep (void)
+@@ -3347,6 +3356,11 @@ _initialize_amd64_tdep ()
   			  amd64_none_init_abi);
    gdbarch_register_osabi (bfd_arch_i386, bfd_mach_x64_32, GDB_OSABI_NONE,
   			  amd64_x32_none_init_abi);
@@ -48,23 +50,11 @@ index 678aa4ef..142b7715 100644
  }
  
  
-diff --git a/gdb/defs.h b/gdb/defs.h
-index 567f214b..6ff664d8 100644
---- a/gdb/defs.h
-+++ b/gdb/defs.h
-@@ -496,6 +496,7 @@ enum gdb_osabi
-   GDB_OSABI_NEWLIB,
-   GDB_OSABI_SDE,
-   GDB_OSABI_PIKEOS,
-+  GDB_OSABI_GENODE,
- 
-   GDB_OSABI_INVALID		/* keep this last */
- };
 diff --git a/gdb/i386-tdep.c b/gdb/i386-tdep.c
-index 555f8dc5..c0b0556f 100644
+index 5718fd7e..4f15d9a1 100644
 --- a/gdb/i386-tdep.c
 +++ b/gdb/i386-tdep.c
-@@ -9094,6 +9094,11 @@ Show Intel Memory Protection Extensions specific variables."),
+@@ -9097,6 +9097,11 @@ Show Intel Memory Protection Extensions specific variables."),
    gdbarch_register_osabi (bfd_arch_i386, 0, GDB_OSABI_SVR4,
  			  i386_svr4_init_abi);
  
@@ -77,10 +67,10 @@ index 555f8dc5..c0b0556f 100644
    i386_init_reggroups ();
  
 diff --git a/gdb/osabi.c b/gdb/osabi.c
-index dec1bddc..7d0165d2 100644
+index 627b9d98..9eb8a912 100644
 --- a/gdb/osabi.c
 +++ b/gdb/osabi.c
-@@ -81,6 +81,7 @@ static const struct osabi_names gdb_osabi_names[] =
+@@ -82,6 +82,7 @@ static const struct osabi_names gdb_osabi_names[] =
    { "Newlib", NULL },
    { "SDE", NULL },
    { "PikeOS", NULL },
@@ -88,7 +78,7 @@ index dec1bddc..7d0165d2 100644
  
    { "<invalid>", NULL }
  };
-@@ -563,6 +564,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
+@@ -564,6 +565,11 @@ generic_elf_osabi_sniffer (bfd *abfd)
        bfd_map_over_sections (abfd,
  			     generic_elf_osabi_sniff_abi_tag_sections,
  			     &osabi);
@@ -100,3 +90,15 @@ index dec1bddc..7d0165d2 100644
        break;
  
      case ELFOSABI_FREEBSD:
+diff --git a/gdb/osabi.h b/gdb/osabi.h
+index a7e6a10d..52da236e 100644
+--- a/gdb/osabi.h
++++ b/gdb/osabi.h
+@@ -47,6 +47,7 @@ enum gdb_osabi
+   GDB_OSABI_NEWLIB,
+   GDB_OSABI_SDE,
+   GDB_OSABI_PIKEOS,
++  GDB_OSABI_GENODE,
+ 
+   GDB_OSABI_INVALID		/* keep this last */
+ };

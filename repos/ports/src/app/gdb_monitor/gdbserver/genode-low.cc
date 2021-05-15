@@ -800,7 +800,7 @@ int linux_process_target::qxfer_libraries_svr4(const char *,
 
 char *linux_proc_pid_to_exec_file(int)
 {
-	return "";
+	return nullptr;
 }
 
 

@@ -30,7 +30,6 @@ SRC_C  += rawmemchr.c \
 SRC_CC += gdbserver/ax.cc \
           gdbserver/debug.cc \
           gdbserver/dll.cc \
-          gdbserver/event-loop.cc \
           gdbserver/fork-child.cc \
           gdbserver/hostio.cc \
           gdbserver/hostio-errno.cc \
@@ -59,6 +58,7 @@ SRC_CC += gdbsupport/agent.cc \
           gdbsupport/common-utils.cc \
           gdbsupport/environ.cc \
           gdbsupport/errors.cc \
+          gdbsupport/event-loop.cc \
           gdbsupport/fileio.cc \
           gdbsupport/filestuff.cc \
           gdbsupport/format.cc \

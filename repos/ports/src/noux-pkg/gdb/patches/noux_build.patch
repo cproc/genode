@@ -5,15 +5,16 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 ---
  gdb/configure             |   10 +++++-----
- gdb/dwarf-index-write.c   |    2 +-
+ gdb/dwarf2/index-write.c  |    2 +-
+ gnulib/config.in          |    2 ++
  sim/common/Make-common.in |    2 +-
- 3 files changed, 7 insertions(+), 7 deletions(-)
+ 4 files changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/gdb/configure b/gdb/configure
-index b572d414..bb760f9c 100755
+index 7e1af589..1ca16761 100755
 --- a/gdb/configure
 +++ b/gdb/configure
-@@ -6620,11 +6620,11 @@ fi
+@@ -6634,11 +6634,11 @@ fi
  # configuration.
  gdb_host_obs=posix-hdep.o
  
@@ -29,7 +30,7 @@ index b572d414..bb760f9c 100755
  
  . $srcdir/configure.host
  
-@@ -14369,7 +14369,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
+@@ -14094,7 +14094,7 @@ sigjmp_buf env; while (! sigsetjmp (env, 1)) siglongjmp (env, 1);
    return 0;
  }
  _ACEOF
@@ -38,11 +39,11 @@ index b572d414..bb760f9c 100755
    gdb_cv_func_sigsetjmp=yes
  else
    gdb_cv_func_sigsetjmp=no
-diff --git a/gdb/dwarf-index-write.c b/gdb/dwarf-index-write.c
-index b176c1ef..3f4d2e8a 100644
---- a/gdb/dwarf-index-write.c
-+++ b/gdb/dwarf-index-write.c
-@@ -742,7 +742,7 @@ public:
+diff --git a/gdb/dwarf2/index-write.c b/gdb/dwarf2/index-write.c
+index 8c933dc6..68b46e8d 100644
+--- a/gdb/dwarf2/index-write.c
++++ b/gdb/dwarf2/index-write.c
+@@ -744,7 +744,7 @@ class debug_names
      gdb_assert (m_abbrev_table.empty ());
      const size_t name_count = m_name_to_value_set.size ();
      m_bucket_table.resize
@@ -51,6 +52,26 @@ index b176c1ef..3f4d2e8a 100644
      m_hash_table.reserve (name_count);
      m_name_table_string_offs.reserve (name_count);
      m_name_table_entry_offs.reserve (name_count);
+diff --git a/gnulib/config.in b/gnulib/config.in
+index 9e91a4f0..b4d6bbe2 100644
+--- a/gnulib/config.in
++++ b/gnulib/config.in
+@@ -1149,6 +1149,7 @@
+ /* Define to 1 to make NetBSD features available. MINIX 3 needs this. */
+ #undef _NETBSD_SOURCE
+ 
++#if 0
+ /* The _Noreturn keyword of C11.  */
+ #ifndef _Noreturn
+ # if (defined __cplusplus \
+@@ -1177,6 +1178,7 @@
+ #  define _Noreturn
+ # endif
+ #endif
++#endif
+ 
+ 
+ /* Define to 2 if the system does not provide POSIX.1 features except with
 diff --git a/sim/common/Make-common.in b/sim/common/Make-common.in
 index b254bf6c..5441cd82 100644
 --- a/sim/common/Make-common.in
