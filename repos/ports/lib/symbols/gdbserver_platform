@@ -95,6 +95,7 @@ _ZN10x86_target17low_delete_threadEP13arch_lwp_info T
 _ZN10x86_target17low_siginfo_fixupEP9__siginfoPhi T
 _ZN10x86_target18low_delete_processEP17arch_process_info T
 _ZN10x86_target18process_qsupportedEPPci T
+_ZN10x86_target20supports_tracepointsEv T
 _ZN10x86_target21low_prepare_to_resumeEP8lwp_info T
 _ZN10x86_target21supports_z_point_typeEc T
 _ZN10x86_target23low_decr_pc_after_breakEv T
@@ -145,7 +146,6 @@ _ZN20linux_process_target20qxfer_libraries_svr4EPKcPhPKhmi U
 _ZN20linux_process_target20stopped_data_addressEv U
 _ZN20linux_process_target20supports_exec_eventsEv U
 _ZN20linux_process_target20supports_fork_eventsEv U
-_ZN20linux_process_target20supports_tracepointsEv U
 _ZN20linux_process_target21done_accessing_memoryEv U
 _ZN20linux_process_target21stopped_by_watchpointEv U
 _ZN20linux_process_target21supports_qxfer_osdataEv U
@@ -255,7 +255,7 @@ sprintf U
 strtok_r U
 strtoul U
 the_linux_target D 8
-the_low_target D 72
+the_low_target D 64
 x86_dr_low D 48
 xcalloc U
 xstrdup U
