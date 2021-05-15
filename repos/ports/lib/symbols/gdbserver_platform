@@ -109,6 +109,7 @@ _ZN10x86_target25low_stopped_by_watchpointEv T
 _ZN10x86_target25supports_fast_tracepointsEv T
 _ZN10x86_target32get_min_fast_tracepoint_insn_lenEv T
 _ZN10x86_target32install_fast_tracepoint_jump_padEmmmmmPmS0_S0_PhS0_S0_S0_Pc T
+_ZN10x86_target8emit_opsEv T
 _ZN11Gdb_monitor21Cpu_session_component10thread_capEm U
 _ZN11Gdb_monitor21Cpu_session_component17_setup_native_cpuEv T
 _ZN11Gdb_monitor21Cpu_session_component18parent_cpu_sessionEv U
@@ -183,7 +184,6 @@ _ZN20linux_process_target6attachEm U
 _ZN20linux_process_target6detachEP12process_info U
 _ZN20linux_process_target6resumeEP13thread_resumem U
 _ZN20linux_process_target7read_pcEP8regcache U
-_ZN20linux_process_target8emit_opsEv U
 _ZN20linux_process_target8write_pcEP8regcachem U
 _ZN20linux_process_target9pause_allEb U
 _ZN20linux_process_target9read_auxvEmPhj U
@@ -256,7 +256,7 @@ sprintf U
 strtok_r U
 strtoul U
 the_linux_target D 8
-the_low_target D 40
+the_low_target D 32
 x86_dr_low D 48
 xcalloc U
 xstrdup U
