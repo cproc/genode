@@ -798,3 +798,31 @@ int linux_process_target::qxfer_libraries_svr4(const char *,
 	Genode::error(__func__, " called, not implemented");
 	return -1;
 }
+
+
+char *linux_proc_pid_to_exec_file(int)
+{
+	Genode::error(__func__, " called, not implemented");
+	return -1;
+}
+
+
+ssize_t linux_mntns_readlink(pid_t, const char *, char *, size_t)
+{
+	Genode::error(__func__, " called, not implemented");
+	return -1;
+}
+
+
+int linux_mntns_unlink (pid_t, const char *)
+{
+	Genode::error(__func__, " called, not implemented");
+	return -1;
+}
+
+
+int linux_mntns_open_cloexec(pid_t, const char *, int, mode_t)
+{
+	Genode::error(__func__, " called, not implemented");
+	return -1;
+}
