@@ -527,7 +527,7 @@ extern "C" int vfork()
 
 	int breakpoint_len = 0;
 	unsigned char const *breakpoint_data =
-		the_target->sw_breakpoint_from_kind(0, &breakpoint_len);
+		the_target->pt->sw_breakpoint_from_kind(0, &breakpoint_len);
 
 	App_child *child = new (alloc) App_child(*genode_env,
 	                                         alloc,
@@ -825,4 +825,10 @@ int linux_mntns_open_cloexec(pid_t, const char *, int, mode_t)
 {
 	Genode::error(__func__, " called, not implemented");
 	return -1;
+}
+
+
+const char *linux_proc_tid_get_name(ptid_t)
+{
+	return "";
 }
