@@ -45,11 +45,12 @@ proc kernel_binary { } { return "[pwd]/bin/foc-[board]" }
 
 proc l4_bin_dir { } {
 
-	if {[have_spec x86_32]}  { return "[l4_build_dir]/bin/x86_586" }
-	if {[have_spec x86_64]}  { return "[l4_build_dir]/bin/amd64_K8" }
-	if {[have_spec arm_v7a]} { return "[l4_build_dir]/bin/arm_armv7a" }
-	if {[have_spec arm_v6]}  { return "[l4_build_dir]/bin/arm_armv6" }
-	if {[have_spec arm_v8]}  { return "[l4_build_dir]/bin/arm64_armv8a" }
+	if {[have_spec x86_32]}    { return "[l4_build_dir]/bin/x86_586" }
+	if {[have_spec x86_64]}    { return "[l4_build_dir]/bin/amd64_K8" }
+	if {[have_spec arm_v7a]}   { return "[l4_build_dir]/bin/arm_armv7a" }
+	if {[have_spec armhf_v7a]} { return "[l4_build_dir]/bin/arm_armv7a" }
+	if {[have_spec arm_v6]}    { return "[l4_build_dir]/bin/arm_armv6" }
+	if {[have_spec arm_v8]}    { return "[l4_build_dir]/bin/arm64_armv8a" }
 
 	puts stderr "Error: Cannot determine bin directory"
 	exit 1

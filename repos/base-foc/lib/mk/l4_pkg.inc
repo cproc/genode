@@ -20,6 +20,10 @@ ifeq ($(filter-out $(SPECS),arm_v7a),)
 	L4_BUILD_ARCH := arm_armv7a
 endif
 
+ifeq ($(filter-out $(SPECS),armhf_v7a),)
+	L4_BUILD_ARCH := arm_armv7a
+endif
+
 ifeq ($(filter-out $(SPECS),arm_v6),)
 	L4_BUILD_ARCH := arm_armv6
 endif
