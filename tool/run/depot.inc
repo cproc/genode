@@ -19,12 +19,13 @@ proc depot_dir { } {
 # Return spec value to be used to access binary archives
 #
 proc depot_spec { } {
-	if {[have_spec x86_32]}  { return "x86_32" }
-	if {[have_spec x86_64]}  { return "x86_64" }
-	if {[have_spec arm_v6]}  { return "arm_v6" }
-	if {[have_spec arm_v7a]} { return "arm_v7a" }
-	if {[have_spec arm_v8a]} { return "arm_v8a" }
-	if {[have_spec riscv]}   { return "riscv" }
+	if {[have_spec x86_32]}    { return "x86_32" }
+	if {[have_spec x86_64]}    { return "x86_64" }
+	if {[have_spec arm_v6]}    { return "arm_v6" }
+	if {[have_spec arm_v7a]}   { return "arm_v7a" }
+	if {[have_spec armhf_v7a]} { return "armhf_v7a" }
+	if {[have_spec arm_v8a]}   { return "arm_v8a" }
+	if {[have_spec riscv]}     { return "riscv" }
 
 	puts stderr "Error: unsupported architecture"
 	exit 1

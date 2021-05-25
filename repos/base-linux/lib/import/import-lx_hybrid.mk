@@ -93,7 +93,10 @@ CXX_LINK_OPT     += -Wl,--dynamic-linker=/lib/ld-linux.so.2
 LD_SCRIPT_DEFAULT = ldscripts/elf_i386.xc
 endif
 
-ifeq (arm,$(findstring arm,$(SPECS)))
+ifeq (armhf,$(findstring armhf,$(SPECS)))
+CXX_LINK_OPT    += -Wl,--dynamic-linker=/lib/ld-linux-armhf.so.3
+LD_SCRIPT_STATIC = ldscripts/armelf_linux_eabi.xc
+else ifeq (arm,$(findstring arm,$(SPECS)))
 CXX_LINK_OPT    += -Wl,--dynamic-linker=/lib/ld-linux.so.3
 LD_SCRIPT_STATIC = ldscripts/armelf_linux_eabi.xc
 endif
