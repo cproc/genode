@@ -27,7 +27,7 @@ set symbol_blacklist [split [read $fd] "\n"]
 close $fd
 
 # add notice that the symbols file hasn't undergone any manual inspection
-puts "# Please review the symbols and remove this line."
+#puts "# Please review the symbols and remove this line."
 
 set i 0
 set output_lines {}
