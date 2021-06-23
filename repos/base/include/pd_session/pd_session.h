@@ -181,7 +181,7 @@ struct Genode::Pd_session : Session, Ram_allocator
 	 ** Virtual address-space management **
 	 **************************************/
 
-	enum { LINKER_AREA_SIZE = 256*1024*1024UL };
+	enum { LINKER_AREA_SIZE = 512*1024*1024UL };
 
 	/**
 	 * Return region map of the PD's virtual address space
