@@ -34,6 +34,8 @@
 			<service name="File_system"/>
 			<service name="Usb"/>
 			<service name="Nic"/>
+			<service name="Audio_out"/>
+			<service name="Audio_in"/>
 		</parent-provides>
 
 		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
@@ -47,7 +49,7 @@
 			<config vbox_file="machine.vbox" xhci="yes" vm_name="linux" capslock="rom">
 				<vfs>
 					<dir name="dev">
-						<log/> <rtc/> <null/> <zero/>
+						<log/> <rtc/> <null/> <zero/> <oss name="dsp"/>
 					</dir>
 					<dir name="pipe"> <pipe/> </dir>
 					<dir name="shared"> <fs label="shared" writeable="yes"/> </dir>
@@ -86,6 +88,7 @@
 		<rom label="qemu-usb.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
 		<rom label="vfs_pipe.lib.so"/>
 		<rom label="jpeg.lib.so"/>
 	</content>
