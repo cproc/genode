@@ -1223,6 +1223,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_CURRENT_OPTR");
 
 		/* dummy implementation */
 
@@ -1234,6 +1235,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_GETERROR) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETERROR");
 
 		/* dummy implementation */
 
@@ -1292,6 +1294,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_GETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1302,6 +1305,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_LOW_WATER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_LOW_WATER");
 
 		/* dummy implementation */
 
@@ -1377,6 +1381,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_SETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1387,6 +1392,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SETTRIGGER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETTRIGGER");
 
 		/* dummy implementation */
 
