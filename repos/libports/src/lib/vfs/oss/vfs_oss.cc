@@ -317,9 +317,13 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 			Write_result write(char const *buf, file_size buf_size,
 			                   file_size &out_count) override
 			{
+Genode::log("vfs_oss write(): ", buf_size);
 				try {
-					return _audio.write(buf, buf_size, out_count) ? WRITE_OK : WRITE_ERR_INVALID;
+					Write_result res = _audio.write(buf, buf_size, out_count) ? WRITE_OK : WRITE_ERR_INVALID;
+Genode::log("vfs_oss write() finished: ", (int)res);
+					return res;
 				} catch (Vfs::File_io_service::Insufficient_buffer) {
+Genode::log("vfs_oss write() finished with exception");
 					blocked = true;
 					return WRITE_OK;
 				}
