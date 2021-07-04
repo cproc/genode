@@ -1,0 +1,6 @@
+<launcher pkg="bsd_audio_drv">
+	<route>
+		<service name="RM"> <parent/> </service>
+		<service name="Platform"> <parent label="audio"/> </service>
+	</route>
+</launcher>
