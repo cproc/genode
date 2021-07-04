@@ -1222,6 +1222,23 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 			return Fn::COMPLETE;
 		});
 
+	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
+
+		oss_count_t *optr = (oss_count_t*)argp;
+
+		Genode::memset(optr, 0, sizeof(oss_count_t));
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_GETERROR) {
+
+		struct audio_errinfo *err_info =
+			(struct audio_errinfo*)argp;
+
+		Genode::memset(err_info, 0, sizeof(struct audio_errinfo));
+
+		handled = true;
+
 	} else if (request == SNDCTL_DSP_GETOSPACE) {
 
 		monitor().monitor([&] {
@@ -1249,15 +1266,30 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				struct audio_buf_info *buf_info =
 					(struct audio_buf_info*)argp;
 
-				buf_info->fragments = fragments;
-				buf_info->fragsize  = fragsize;
-				buf_info->bytes     = fragments * fragsize;
+				buf_info->fragments  = fragments;
+				buf_info->fragstotal = fragments;
+				buf_info->fragsize   = fragsize;
+				buf_info->bytes      = fragments * fragsize;
 
 				handled = true;
 			});
 
 			return Fn::COMPLETE;
 		});
+
+	} else if (request == SNDCTL_DSP_GETPLAYVOL) {
+
+		int *vol = (int*)argp;
+		*vol = 100;
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_LOW_WATER) {
+
+		int *val = (int*)argp;
+		*val = 0;
+
+		handled = true;
 
 	} else if (request == SNDCTL_DSP_POST) {
 
@@ -1324,6 +1356,17 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 			return Fn::COMPLETE;
 		});
 
+	} else if (request == SNDCTL_DSP_SETPLAYVOL) {
+
+		int *vol = (int*)argp;
+		*vol = 100;
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_SETTRIGGER) {
+
+		handled = true;
+
 	} else if (request == SNDCTL_DSP_SPEED) {
 
 		monitor().monitor([&] {
@@ -1384,11 +1427,17 @@ int Libc::Vfs_plugin::ioctl(File_descriptor *fd, unsigned long request, char *ar
 		result = _ioctl_dio(fd, request, argp);
 		break;
 	case SNDCTL_DSP_CHANNELS:
+	case SNDCTL_DSP_CURRENT_OPTR:
+	case SNDCTL_DSP_GETERROR:
 	case SNDCTL_DSP_GETOSPACE:
+	case SNDCTL_DSP_GETPLAYVOL:
+	case SNDCTL_DSP_LOW_WATER:
 	case SNDCTL_DSP_POST:
 	case SNDCTL_DSP_RESET:
 	case SNDCTL_DSP_SAMPLESIZE:
 	case SNDCTL_DSP_SETFRAGMENT:
+	case SNDCTL_DSP_SETPLAYVOL:
+	case SNDCTL_DSP_SETTRIGGER:
 	case SNDCTL_DSP_SPEED:
 		result = _ioctl_sndctl(fd, request, argp);
 		break;
