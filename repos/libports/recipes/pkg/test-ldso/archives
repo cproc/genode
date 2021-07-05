@@ -2,3 +2,4 @@ _/src/init
 _/src/test-ldso
 _/src/libc
 _/src/vfs
+_/src/sanitizer

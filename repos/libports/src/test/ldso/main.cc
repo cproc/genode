@@ -187,11 +187,17 @@ static void test_shared_object_api(Env &env, Allocator &alloc)
 }
 
 
+extern void sanitizer_init(Genode::Env &);
+extern void sanitizer_exit();
+extern "C" void wait_for_continue();
+
 /**
  * Main function of LDSO test
  */
 void Libc::Component::construct(Libc::Env &env)
 {
+	sanitizer_init(env);
+
 	static Heap heap(env.ram(), env.rm());
 
 	using Genode::log;
@@ -228,6 +234,7 @@ void Libc::Component::construct(Libc::Env &env)
 
 	log("Catch exceptions in program");
 	log("---------------------------");
+	//wait_for_continue();
 	try {
 		Rom_connection rom(env, "unknown_rom");
 		error("undelivered exception in remote procedure call");
@@ -276,6 +283,8 @@ void Libc::Component::construct(Libc::Env &env)
 
 	log("Destruction");
 	log("-----------");
+
+	sanitizer_exit();
 
 	Libc::exit(123);
 }
