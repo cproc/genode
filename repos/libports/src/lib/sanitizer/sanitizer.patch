@@ -4,7 +4,7 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
 
 
 ---
- sanitizer_common/sanitizer_genode.cc               |  331 ++++++++++++++++++++
+ sanitizer_common/sanitizer_genode.cc               |  353 ++++++++++++++++++++
  sanitizer_common/sanitizer_internal_defs.h         |    6 
  sanitizer_common/sanitizer_platform.h              |    4 
  sanitizer_common/sanitizer_posix.h                 |    2 
@@ -15,15 +15,15 @@ From: Christian Prochaska <christian.prochaska@genode-labs.com>
  sanitizer_common/sanitizer_symbolizer_report.cpp   |    4 
  ubsan/ubsan_diag.cpp                               |    4 
  ubsan/ubsan_flags.cpp                              |    6 
- 11 files changed, 385 insertions(+), 15 deletions(-)
+ 11 files changed, 407 insertions(+), 15 deletions(-)
  create mode 100644 sanitizer_common/sanitizer_genode.cc
 
 diff --git a/sanitizer_common/sanitizer_genode.cc b/sanitizer_common/sanitizer_genode.cc
 new file mode 100644
-index 0000000..03b1740
+index 0000000..4c71477
 --- /dev/null
 +++ b/sanitizer_common/sanitizer_genode.cc
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,353 @@
 +/*
 + * \brief  Genode-specific functions from sanitizer_common.h
 + *         and sanitizer_libc.h
@@ -128,8 +128,30 @@ index 0000000..03b1740
 +
 +bool __sanitizer::IsAccessibleMemoryRange(uptr beg, uptr size)
 +{
-+	if (verbose)
-+		Genode::error("sanitizer: ", __func__, " called");
++	/* handle wrap or zero size */
++	if (beg + size <= beg)
++		return false;
++
++	static constexpr uptr ds_size = 4096;
++
++	if (size > ds_size) {
++		Genode::error("sanitizer: ", __func__, ": size > ",
++		              ds_size, " currently not supported");
++		size = ds_size;
++	}
++
++	struct Sanitizer_not_initialized { };
++	if (!genode_env) throw Sanitizer_not_initialized();
++
++	static Genode::Ram_dataspace_capability ram_ds =
++		genode_env->ram().alloc(ds_size);
++
++	try {
++		genode_env->rm().attach_at(ram_ds, beg, size);
++		genode_env->rm().detach(beg);
++		return false;
++	} catch (Genode::Region_map::Region_conflict) { }
++
 +	return true;
 +}
 +
