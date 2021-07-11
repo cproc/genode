@@ -45,16 +45,26 @@ class Audio_out::Session_component : public Audio_out::Session_rpc_object
 
 		void _handle_data_available()
 		{
+			Genode::log("_handle_data_available(): empty: ", stream()->empty(), ", full: ", stream()->full());	
 			bool const full = stream()->full();
 			while (!stream()->empty()) {
+				Genode::log("_handle_data_available(): while: pos: ", stream()->pos(), ", empty: ", stream()->empty(), ", full: ", stream()->full());
 				unsigned pos = stream()->pos();
+				Genode::log("_handle_data_available(): while check 1");
 				Packet *p = stream()->get(pos);
+				Genode::log("_handle_data_available(): while check 2");
 				p->invalidate();
+				Genode::log("_handle_data_available(): while check 3");
 				p->mark_as_played();
+				Genode::log("_handle_data_available(): while check 4");
 				stream()->increment_position();
+				Genode::log("_handle_data_available(): while check 5");
 				progress_submit();
+				alloc_submit();
+				Genode::log("_handle_data_available(): while end");
 			}
 			if (full) alloc_submit();
+			Genode::log("_handle_data_available() finished: pos: ", stream()->pos(), ", full: ", stream()->full());	
 		}
 
 	public:
@@ -94,12 +104,14 @@ class Audio_out::Root : public Audio_out::Root_component
 		Session_component *_create_session(const char *args) override
 		{
 			using namespace Genode;
+Genode::log("_create_session(): args: ", Genode::Cstring(args));
 
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota").ulong_value(0);
 
 			size_t session_size = align_addr(sizeof(Session_component), 12);
-
+Genode::log("session_size: ", session_size);
+Genode::log("sizeof(Stream): ", sizeof(Stream));
 			if ((ram_quota < session_size) ||
 			    (sizeof(Stream) > ram_quota - session_size)) {
 				Genode::error("insufficient 'ram_quota', got ", ram_quota, ", "
