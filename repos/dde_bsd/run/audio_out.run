@@ -10,7 +10,7 @@ set wget [installed_command wget]
 # Configure
 #
 
-set use_mixer 0
+set use_mixer 1
 
 #
 # Build
@@ -23,6 +23,7 @@ set build_components {
 }
 
 lappend_if $use_mixer build_components server/mixer
+lappend_if $use_mixer build_components server/black_hole
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
@@ -60,8 +61,12 @@ append_platform_drv_config
 
 append_if $use_mixer config {
 	<start name="mixer">
+		<binary name="black_hole"/>
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Audio_out"/></provides>
+		<config>
+			<default out_volume="100" volume="25" muted="false"/>
+		</config>
 		<route>
 			<service name="Audio_out"> <child name="audio_drv"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -81,7 +86,7 @@ append config {
 			<config alsa_device="hw:CARD=Schiit,DEV=0"/>
 			when using Linux.
 		-->
-		<config/>
+		<config verbose="yes" report_mixer="yes"/>
 	</start>
 	<start name="test-audio_out">
 		<resource name="RAM" quantum="4M"/>
@@ -127,6 +132,7 @@ append boot_modules {
 }
 
 lappend_if $use_mixer boot_modules mixer
+lappend_if $use_mixer boot_modules black_hole
 
 append_platform_drv_boot_modules
 
