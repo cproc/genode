@@ -161,7 +161,7 @@ struct Vfs::Oss_file_system::Audio
 			_info.queue_size  = Audio_out::QUEUE_SIZE;
 			_info.ofrag_size  =
 				(unsigned)Audio_out::PERIOD * (unsigned)CHANNELS
-				                            * sizeof (short);
+				                            * sizeof (int16_t);
 			_info.ofrag_avail = _info.queue_size;
 			_info.update();
 			_info_fs.value(_info);
@@ -193,7 +193,8 @@ struct Vfs::Oss_file_system::Audio
 
 		bool _queue_threshold_reached() const
 		{
-			return _out[0]->stream()->queued() > 20;
+			//return _out[0]->stream()->queued() > 20;
+			return _out[0]->stream()->full();
 		}
 
 		bool need_data() const
@@ -213,12 +214,19 @@ struct Vfs::Oss_file_system::Audio
 
 				out_size = 0;
 
-				size_t const samples =
-					min(_left_buffer.write_avail(), buf_size/2);
+				size_t const buf_samples_total = buf_size / sizeof(int16_t);
+				size_t const buf_samples_per_channel = buf_samples_total / CHANNELS;
+
+				size_t const samples_to_write_per_channel =
+					min(_left_buffer.write_avail(), buf_samples_per_channel);
+
+Genode::log("write(): _left_buffer.write_avail(): ", _left_buffer.write_avail(),
+            ", buf_size: ", buf_size,
+            ", samples_to_write_per_channel: ", samples_to_write_per_channel);
 
 				float *dest[2] = { _left_buffer.write_addr(), _right_buffer.write_addr() };
 
-				for (size_t i = 0; i < samples/2; i++) {
+				for (size_t i = 0; i < samples_to_write_per_channel; i++) {
 
 					for (int c = 0; c < CHANNELS; c++) {
 						float *p = dest[c];
@@ -227,12 +235,12 @@ struct Vfs::Oss_file_system::Audio
 					}
 				}
 
-				_left_buffer.fill(samples/2);
-				_right_buffer.fill(samples/2);
+				_left_buffer.fill(samples_to_write_per_channel);
+				_right_buffer.fill(samples_to_write_per_channel);
 
-				out_size += (samples * 2);
+				out_size += (samples_to_write_per_channel * CHANNELS * sizeof(int16_t));
 			}
-
+Genode::log("write(): out_size: ", out_size);
 			while (_left_buffer.read_avail() >= Audio_out::PERIOD) {
 
 				if (!_started) {
