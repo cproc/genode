@@ -1286,7 +1286,8 @@ Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETERROR");
 				buf_info->fragstotal = fragments;
 				buf_info->fragsize   = fragsize;
 				buf_info->bytes      = fragments * fragsize;
-
+Genode::log("SNDCTL_DSP_GETOSPACE: fragments: ", buf_info->fragments,
+            ", fragsize: ", buf_info->fragsize, ", bytes: ", buf_info->bytes);
 				handled = true;
 			});
 
