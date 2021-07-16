@@ -110,6 +110,7 @@ class Genode::Magic_ring_buffer
 		 */
 		size_t write_avail() const
 		{
+//Genode::log("write_avail(): _wpos: ", _wpos, ", _rpos: ", _rpos, ", _capacity: ", _capacity);
 			if (_wpos >= _rpos)
 				return ((_rpos + _capacity - _wpos - 1) % _capacity);
 			else
@@ -141,14 +142,18 @@ class Genode::Magic_ring_buffer
 		 * Advance the ring write pointer
 		 */
 		void fill(size_t items) {
+//Genode::log("fill(): _wpos: ", _wpos, ", items: ", items);
 			_wpos = (_wpos+items) % _capacity;
+//Genode::log("fill() finished: _wpos: ", _wpos);
 		}
 
 		/**
 		 * Advance the ring read pointer
 		 */
 		void drain(size_t items) {
+//Genode::log("drain(): _rpos: ", _rpos, ", items: ", items);
 			_rpos = (_rpos+items) % _capacity;
+//Genode::log("drain() finished: _rpos: ", _rpos);
 		}
 };
 
