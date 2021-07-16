@@ -1189,7 +1189,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 	int result = 0;
 
 	if (request == SNDCTL_DSP_CHANNELS) {
-
+Genode::log("SNDCTL_DSP_CHANNELS");
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
 				if (info.type() != "oss") {
@@ -1223,6 +1223,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_CURRENT_OPTR");
 
 		/* dummy implementation */
 
@@ -1234,6 +1235,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_GETERROR) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETERROR");
 
 		/* dummy implementation */
 
@@ -1284,7 +1286,8 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				buf_info->fragstotal = fragments;
 				buf_info->fragsize   = fragsize;
 				buf_info->bytes      = fragments * fragsize;
-
+Genode::log("SNDCTL_DSP_GETOSPACE: fragments: ", buf_info->fragments,
+            ", fragsize: ", buf_info->fragsize, ", bytes: ", buf_info->bytes);
 				handled = true;
 			});
 
@@ -1292,6 +1295,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_GETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1302,6 +1306,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_LOW_WATER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_LOW_WATER");
 
 		/* dummy implementation */
 
@@ -1320,6 +1325,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SAMPLESIZE) {
+Genode::log("SNDCTL_DSP_SAMPLESIZE");
 
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
@@ -1349,6 +1355,11 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 
 	} else if (request == SNDCTL_DSP_SETFRAGMENT) {
 
+		int *frag = (int*)argp;
+		int max_fragments = *frag >> 16;
+		int size_selector = *frag & ((1<<16) - 1);
+Genode::log("SNDCTL_DSP_SETFRAGMENT: max_fragments: ", max_fragments, ", size_selector: ", size_selector);
+
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
 				if (info.type() != "oss") {
@@ -1377,6 +1388,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_SETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1387,12 +1399,14 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SETTRIGGER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETTRIGGER");
 
 		/* dummy implementation */
 
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SPEED) {
+Genode::log("SNDCTL_DSP_SPEED");
 
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
