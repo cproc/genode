@@ -205,10 +205,14 @@ struct Vfs::Oss_file_system::Audio
 		{
 			using namespace Genode;
 
+if (_out[0]->stream()->queued() < 20)
+	Genode::log("queued: ", _out[0]->stream()->queued());
+
 			bool block_write = false;
 
 			if (_queue_threshold_reached()) {
 				block_write = true;
+//Genode::log("going to block");
 			} else {
 
 				out_size = 0;
