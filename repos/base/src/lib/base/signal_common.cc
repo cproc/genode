@@ -118,6 +118,8 @@ Signal::Signal(Signal::Data data) : _data(data)
 
 Signal_context::~Signal_context()
 {
+int dummy;
+Genode::log(&dummy, ": ~Signal_context(): this: ", this);
 	/*
 	 * Detect bug in an application where a signal context is destroyed prior
 	 * dissolving it from the signal receiver.

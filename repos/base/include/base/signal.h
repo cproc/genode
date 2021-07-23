@@ -21,6 +21,7 @@
 #include <util/list.h>
 #include <base/semaphore.h>
 #include <base/capability.h>
+#include <base/log.h>
 
 /* only needed for base-hw */
 namespace Kernel { struct Signal_receiver; }
@@ -480,9 +481,9 @@ class Genode::Signal_handler : public Signal_dispatcher_base
 		Signal_handler(EP &ep, T &obj, void (T::*member)())
 		:
 			_cap(ep.manage(*this)), _ep(ep), _obj(obj), _member(member)
-		{ }
+		{ Genode::log("Signal_handler()"); }
 
-		~Signal_handler() { _ep.dissolve(*this); }
+		~Signal_handler() { Genode::log("~Signal_handler()"); _ep.dissolve(*this); }
 
 		/**
 		 * Interface of Signal_dispatcher_base

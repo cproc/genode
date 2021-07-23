@@ -38,6 +38,24 @@ class Audio_out::Session_component : public Audio_out::Session_rpc_object
 
 		Genode::Duration _delay { Genode::Milliseconds { 10 } };
 
+		Genode::Constructible<Genode::Signal_handler<Audio_out::Session_component>> _data_available_handler { };
+
+		Genode::Signal_context_capability _data_available_cap(Genode::Env &env)
+		{
+Genode::log("_data_available_cap()");
+			_data_available_handler.construct(env.ep(),
+			                                  *this,
+			                                  &Audio_out::Session_component::_handle_data_available);
+Genode::log("_data_available_cap() finished");
+			return *_data_available_handler;
+		}
+
+		void _handle_data_available()
+		{
+			Genode::log("_handle_data_available(): queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
+			_timeout.schedule(_delay.trunc_to_plain_us());
+		}
+
 		void _handle_timeout(Genode::Duration)
 		{
 			Genode::log(this, ": _handle_timeout(): queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
@@ -61,22 +79,6 @@ class Audio_out::Session_component : public Audio_out::Session_rpc_object
 			Genode::warning("_handle_timeout() finished: queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
 		}
 
-		Genode::Constructible<Genode::Signal_handler<Audio_out::Session_component>> _data_available_handler { };
-
-		Genode::Signal_context_capability _data_available_cap(Genode::Env &env)
-		{
-			_data_available_handler.construct(env.ep(),
-			                                  *this,
-			                                  &Audio_out::Session_component::_handle_data_available);
-			return *_data_available_handler;
-		}
-
-		void _handle_data_available()
-		{
-			Genode::log("_handle_data_available(): queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
-			_timeout.schedule(_delay.trunc_to_plain_us());
-		}
-
 	public:
 
 		Session_component(Genode::Env &env, Timer::Connection &timer)
@@ -86,7 +88,8 @@ class Audio_out::Session_component : public Audio_out::Session_rpc_object
 
 		~Session_component()
 		{
-Genode::log(this, ": ~Session_component()");
+int dummy;
+Genode::log(&dummy, ": ~Session_component(): this: ", this);
 			if (Session_rpc_object::active()) stop();
 		}
 
@@ -142,9 +145,9 @@ Genode::log("sizeof(Stream): ", sizeof(Stream));
 
 		void _destroy_session(Session_component *session) override
 		{
-Genode::log("_destroy_session()");
+Genode::log(&session, ": _destroy_session()");
 			Genode::destroy(md_alloc(), session);
-Genode::log("_destroy_session() finished");
+Genode::log(&session, ": _destroy_session() finished");
 		}
 
 	public:

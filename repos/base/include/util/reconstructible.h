@@ -95,7 +95,7 @@ class Genode::Reconstructible : Noncopyable
 			_do_construct(args...);
 		}
 
-		~Reconstructible() { destruct(); }
+		~Reconstructible() { Genode::raw("~Reconstructible()"); destruct(); }
 
 		/**
 		 * Construct new object in place
@@ -108,6 +108,7 @@ class Genode::Reconstructible : Noncopyable
 		{
 			destruct();
 			_do_construct(args...);
+Genode::raw("construct(): _ptr(): ", _ptr(), ": &_constructed: ", &_constructed, ", _constructed: ", _constructed);
 		}
 
 		/**
@@ -115,11 +116,16 @@ class Genode::Reconstructible : Noncopyable
 		 */
 		void destruct()
 		{
-			if (!_constructed)
+Genode::raw("destruct(): _ptr(): ", _ptr(), ", &_constructed: ", &_constructed, ", _constructed: ", _constructed);
+			if (!_constructed) {
+Genode::raw("destruct(): _ptr(): ", _ptr(), ": not constructed");
 				return;
+			}
+Genode::raw("destruct(): _ptr(): ", _ptr(), ": calling destructor");
 
 			/* invoke destructor */
 			_ptr()->~MT();
+Genode::raw("destruct(): _ptr(): ", _ptr(), ": destructor returned");
 
 			_constructed = false;
 		}

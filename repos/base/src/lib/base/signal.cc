@@ -169,13 +169,15 @@ namespace Genode {
 
 			bool test_and_lock(Signal_context *context) const
 			{
+Genode::log(&context, ": Signal_context_registry::test_and_lock()");
 				Mutex::Guard guard(_mutex);
 
 				/* search list for context */
 				List_element<Signal_context> const *le = _list.first();
 				for ( ; le; le = le->next()) {
-
+Genode::log(&context, ": Signal_context_registry::test_and_lock(): le: ", le);
 					if (context == le->object()) {
+Genode::log(&context, ": Signal_context_registry::test_and_lock(): context: ", context);
 						/* acquire the object */
 						context->_mutex.acquire();
 						return true;
@@ -215,7 +217,7 @@ Signal_context_capability Signal_receiver::manage(Signal_context *context)
 
 	/* insert context into context list */
 	_contexts.insert_as_tail(context);
-
+Genode::log(&context, ": Signal_receiver::manage(): context: ", context);
 	/* register context at process-wide registry */
 	signal_context_registry()->insert(&context->_registry_le);
 
@@ -319,7 +321,7 @@ void Signal_receiver::dispatch_signals(Signal_source *signal_source)
 
 		/* look up context as pointed to by the signal imprint */
 		Signal_context *context = (Signal_context *)(source_signal.imprint());
-
+Genode::log(&signal_source, ": Signal_receiver::dispatch_signals(): context: ", context);
 		if (!context) {
 			error("received null signal imprint, stop signal dispatcher");
 			sleep_forever();
