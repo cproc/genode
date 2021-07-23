@@ -10,7 +10,7 @@ set wget [installed_command wget]
 # Configure
 #
 
-set use_mixer 1
+set use_mixer 0
 
 #
 # Build
@@ -20,10 +20,10 @@ set build_components {
 	core init timer
 	drivers/audio
 	test/audio_out
+	server/black_hole
 }
 
 lappend_if $use_mixer build_components server/mixer
-lappend_if $use_mixer build_components server/black_hole
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
@@ -61,7 +61,6 @@ append_platform_drv_config
 
 append_if $use_mixer config {
 	<start name="mixer">
-		<binary name="black_hole"/>
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Audio_out"/></provides>
 		<config>
@@ -74,11 +73,11 @@ append_if $use_mixer config {
 	</start>}
 
 append_if [have_spec linux] config {
-	<start name="audio_drv" ld="no">}
+	<start name="audio_drv" ld="yes">}
 append_if [expr ![have_spec linux]] config {
 	<start name="audio_drv">}
 append config {
-		<binary name="} [audio_drv_binary] {"/>
+		<binary name="black_hole"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Audio_out"/> </provides>
 		<!--
@@ -128,11 +127,10 @@ if {![file exists bin/sample.raw]} {
 
 append boot_modules {
 	core ld.lib.so init timer } [audio_drv_binary] {
-	test-audio_out sample.raw
+	test-audio_out sample.raw black_hole
 }
 
 lappend_if $use_mixer boot_modules mixer
-lappend_if $use_mixer boot_modules black_hole
 
 append_platform_drv_boot_modules
 
@@ -144,4 +142,5 @@ append qemu_args "  -nographic -soundhw es1370 "
 # For obvious reasons the timeout depends on the total
 # length of the used sample file.
 #
-run_genode_until {.*played.*1 time\(s\)} 60
+#run_genode_until {.*played.*1 time\(s\)} 600
+run_genode_until forever

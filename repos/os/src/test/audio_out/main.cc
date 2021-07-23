@@ -79,7 +79,7 @@ class Track : public Thread
 				_audio_out[i]->start();
 
 			unsigned cnt = 0;
-			while (1) {
+//			while (1) {
 Genode::log("while");
 				for (size_t offset = 0, cnt = 1;
 				     offset < _size;
@@ -136,7 +136,7 @@ Genode::log("allocated packet position: ", pos);
 				}
 
 				log("played '", _name, "' ", ++cnt, " time(s)");
-			}
+//			}
 		}
 };
 
@@ -190,6 +190,8 @@ Main::Main(Env & env) : env(env)
 
 	for (unsigned i = 0; i < track_count; ++i)
 		new (heap) Track(env, filenames[i]);
+	
+	env.parent().exit(0);
 }
 
 
