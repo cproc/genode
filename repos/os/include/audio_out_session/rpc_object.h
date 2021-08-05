@@ -56,8 +56,10 @@ class Audio_out::Session_rpc_object : public Genode::Rpc_object<Audio_out::Sessi
 
 		void progress_sigh(Genode::Signal_context_capability sigh) override
 		{
+Genode::log("progress_sigh()");
 			_progress.context(sigh);
 			_progress_sigh = true;
+Genode::log("progress_sigh() finished");
 		}
 
 		Genode::Signal_context_capability data_avail_sigh() override {
@@ -65,8 +67,10 @@ class Audio_out::Session_rpc_object : public Genode::Rpc_object<Audio_out::Sessi
 
 		void alloc_sigh(Genode::Signal_context_capability sigh) override
 		{
+Genode::log("alloc_sigh()");
 			_alloc.context(sigh);
 			_alloc_sigh = true;
+Genode::log("alloc_sigh() finished");
 		}
 
 

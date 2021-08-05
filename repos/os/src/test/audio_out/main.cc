@@ -79,11 +79,13 @@ class Track : public Thread
 				_audio_out[i]->start();
 
 			unsigned cnt = 0;
-			while (1) {
-
+//			while (1) {
+Genode::log("while");
 				for (size_t offset = 0, cnt = 1;
 				     offset < _size;
 				     offset += PERIOD_FSIZE, ++cnt) {
+
+Genode::log("file offset: ", offset);
 
 					/*
 					 * The current chunk (in number of frames of one channel)
@@ -94,16 +96,20 @@ class Track : public Thread
 					               ? (_size - offset) / CHN_CNT / FRAME_SIZE
 					               : PERIOD;
 
+Genode::log("chunk frames: ", chunk);
+
 					Packet *p[CHN_CNT];
 					while (1)
 						try {
 							p[0] = _audio_out[0]->stream()->alloc();
 							break;
 						} catch (Audio_out::Stream::Alloc_failed) {
+Genode::log("Alloc_failed, calling wait_for_alloc()");
 							_audio_out[0]->wait_for_alloc();
 						}
 
 					unsigned pos = _audio_out[0]->stream()->packet_position(p[0]);
+Genode::log("allocated packet position: ", pos);
 					/* sync other channels with first one */
 					for (int chn = 1; chn < CHN_CNT; ++chn)
 						p[chn] = _audio_out[chn]->stream()->get(pos);
@@ -130,7 +136,7 @@ class Track : public Thread
 				}
 
 				log("played '", _name, "' ", ++cnt, " time(s)");
-			}
+//			}
 		}
 };
 
@@ -184,6 +190,8 @@ Main::Main(Env & env) : env(env)
 
 	for (unsigned i = 0; i < track_count; ++i)
 		new (heap) Track(env, filenames[i]);
+	
+	env.parent().exit(0);
 }
 
 
