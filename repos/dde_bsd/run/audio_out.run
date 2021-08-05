@@ -20,6 +20,7 @@ set build_components {
 	core init timer
 	drivers/audio
 	test/audio_out
+	server/black_hole
 }
 
 lappend_if $use_mixer build_components server/mixer
@@ -62,6 +63,9 @@ append_if $use_mixer config {
 	<start name="mixer">
 		<resource name="RAM" quantum="2M"/>
 		<provides><service name="Audio_out"/></provides>
+		<config>
+			<default out_volume="100" volume="25" muted="false"/>
+		</config>
 		<route>
 			<service name="Audio_out"> <child name="audio_drv"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -69,11 +73,11 @@ append_if $use_mixer config {
 	</start>}
 
 append_if [have_spec linux] config {
-	<start name="audio_drv" ld="no">}
+	<start name="audio_drv" ld="yes">}
 append_if [expr ![have_spec linux]] config {
 	<start name="audio_drv">}
 append config {
-		<binary name="} [audio_drv_binary] {"/>
+		<binary name="black_hole"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Audio_out"/> </provides>
 		<!--
@@ -81,7 +85,7 @@ append config {
 			<config alsa_device="hw:CARD=Schiit,DEV=0"/>
 			when using Linux.
 		-->
-		<config/>
+		<config verbose="yes" report_mixer="yes"/>
 	</start>
 	<start name="test-audio_out">
 		<resource name="RAM" quantum="4M"/>
@@ -123,7 +127,7 @@ if {![file exists bin/sample.raw]} {
 
 append boot_modules {
 	core ld.lib.so init timer } [audio_drv_binary] {
-	test-audio_out sample.raw
+	test-audio_out sample.raw black_hole
 }
 
 lappend_if $use_mixer boot_modules mixer
@@ -138,4 +142,5 @@ append qemu_args "  -nographic -soundhw es1370 "
 # For obvious reasons the timeout depends on the total
 # length of the used sample file.
 #
-run_genode_until {.*played.*1 time\(s\)} 60
+#run_genode_until {.*played.*1 time\(s\)} 600
+run_genode_until forever

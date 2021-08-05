@@ -64,11 +64,14 @@ class Audio_out::Session_component : Audio_out::Session_component_base,
 
 		void _handle_data_available() override
 		{
+			Genode::log("_handle_data_available(): queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
 			_timeout.schedule(_delay);
 		}
 
 		void _handle_timeout(Genode::Duration) override
 		{
+//			Genode::log(this, ": _handle_timeout(): queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
+
 			if (stream()->empty())
 				return;
 
@@ -84,6 +87,8 @@ class Audio_out::Session_component : Audio_out::Session_component_base,
 
 			if (!stream()->empty())
 				_timeout.schedule(_delay);
+
+//			Genode::warning("_handle_timeout() finished: queued: ", stream()->queued(), ", empty: ", stream()->empty(), ", full: ", stream()->full());	
 		}
 
 	public:
@@ -126,12 +131,14 @@ class Audio_out::Root : public Audio_out::Root_component
 		Session_component *_create_session(const char *args) override
 		{
 			using namespace Genode;
+Genode::log("_create_session(): args: ", Genode::Cstring(args));
 
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota").ulong_value(0);
 
 			size_t session_size = align_addr(sizeof(Session_component), 12);
-
+Genode::log("session_size: ", session_size);
+Genode::log("sizeof(Stream): ", sizeof(Stream));
 			if ((ram_quota < session_size) ||
 			    (sizeof(Stream) > ram_quota - session_size)) {
 				Genode::error("insufficient 'ram_quota', got ", ram_quota, ", "
