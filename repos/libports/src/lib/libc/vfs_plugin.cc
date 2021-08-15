@@ -1222,6 +1222,37 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 			return Fn::COMPLETE;
 		});
 
+	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
+
+		/* dummy implementation */
+
+		oss_count_t *optr = (oss_count_t*)argp;
+
+		optr->samples      = 0;
+		optr->fifo_samples = 0;
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_GETERROR) {
+
+		/* dummy implementation */
+
+		struct audio_errinfo *err_info =
+			(struct audio_errinfo*)argp;
+
+		err_info->play_underruns  = 0;
+		err_info->rec_overruns    = 0;
+		err_info->play_ptradjust  = 0;
+		err_info->rec_ptradjust   = 0;
+		err_info->play_errorcount = 0;
+		err_info->rec_errorcount  = 0;
+		err_info->play_lasterror  = 0;
+		err_info->rec_lasterror   = 0;
+		err_info->play_errorparm  = 0;
+		err_info->rec_errorparm   = 0;
+
+		handled = true;
+
 	} else if (request == SNDCTL_DSP_GETOSPACE) {
 
 		monitor().monitor([&] {
@@ -1249,15 +1280,36 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				struct audio_buf_info *buf_info =
 					(struct audio_buf_info*)argp;
 
-				buf_info->fragments = fragments;
-				buf_info->fragsize  = fragsize;
-				buf_info->bytes     = fragments * fragsize;
+				buf_info->fragments  = fragments;
+				buf_info->fragstotal = fragments;
+				buf_info->fragsize   = fragsize;
+				buf_info->bytes      = fragments * fragsize;
 
 				handled = true;
 			});
 
 			return Fn::COMPLETE;
 		});
+
+	} else if (request == SNDCTL_DSP_GETPLAYVOL) {
+
+		/* dummy implementation */
+
+		int *vol = (int*)argp;
+
+		*vol = 100;
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_LOW_WATER) {
+
+		/* dummy implementation */
+
+		int *val = (int*)argp;
+
+		*val = 0;
+
+		handled = true;
 
 	} else if (request == SNDCTL_DSP_POST) {
 
@@ -1324,6 +1376,22 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 			return Fn::COMPLETE;
 		});
 
+	} else if (request == SNDCTL_DSP_SETPLAYVOL) {
+
+		/* dummy implementation */
+
+		int *vol = (int*)argp;
+
+		*vol = 100;
+
+		handled = true;
+
+	} else if (request == SNDCTL_DSP_SETTRIGGER) {
+
+		/* dummy implementation */
+
+		handled = true;
+
 	} else if (request == SNDCTL_DSP_SPEED) {
 
 		monitor().monitor([&] {
@@ -1384,11 +1452,17 @@ int Libc::Vfs_plugin::ioctl(File_descriptor *fd, unsigned long request, char *ar
 		result = _ioctl_dio(fd, request, argp);
 		break;
 	case SNDCTL_DSP_CHANNELS:
+	case SNDCTL_DSP_CURRENT_OPTR:
+	case SNDCTL_DSP_GETERROR:
 	case SNDCTL_DSP_GETOSPACE:
+	case SNDCTL_DSP_GETPLAYVOL:
+	case SNDCTL_DSP_LOW_WATER:
 	case SNDCTL_DSP_POST:
 	case SNDCTL_DSP_RESET:
 	case SNDCTL_DSP_SAMPLESIZE:
 	case SNDCTL_DSP_SETFRAGMENT:
+	case SNDCTL_DSP_SETPLAYVOL:
+	case SNDCTL_DSP_SETTRIGGER:
 	case SNDCTL_DSP_SPEED:
 		result = _ioctl_sndctl(fd, request, argp);
 		break;
