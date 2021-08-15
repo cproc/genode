@@ -830,7 +830,7 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 		monitor().monitor([&] {
 			try {
 				out_result = handle->fs().write(handle, (char const *)buf, count, out_count);
-			} catch (Vfs::File_io_service::Insufficient_buffer) { }
+			} catch (Vfs::File_io_service::Insufficient_buffer) { Genode::warning("Insufficient_buffer"); }
 			return Fn::COMPLETE;
 		});
 	} else {
@@ -1229,7 +1229,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
-
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_CURRENT_OPTR");
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
 
@@ -1249,7 +1249,8 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				oss_count_t *optr = (oss_count_t *)argp;
 				optr->samples      = optr_samples;
 				optr->fifo_samples = optr_fifo_samples;
-
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_CURRENT_OPTR: samples: ", optr->samples,
+                ", fifo_samples: ", optr->fifo_samples);
 				handled = true;
 			});
 
@@ -1257,6 +1258,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_GETERROR) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETERROR");
 
 		int play_underruns = 0;
 
@@ -1331,7 +1333,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_GETOSPACE) {
-
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETOSPACE");
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
 				if (info.type() != "oss") {
@@ -1364,7 +1366,10 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				buf_info->fragstotal = fragstotal;
 				buf_info->fragsize   = fragsize;
 				buf_info->bytes      = fragments * fragsize;
-
+Genode::log("_ioctl_sndctl(): SNDCTL_DSP_GETOSPACE: fragments: ", buf_info->fragments,
+            ", fragstotal: ", buf_info->fragstotal,
+            ", fragsize: ", buf_info->fragsize,
+            ", bytes: ", buf_info->bytes);
 				handled = true;
 			});
 
@@ -1372,6 +1377,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		});
 
 	} else if (request == SNDCTL_DSP_GETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_GETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1382,6 +1388,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_LOW_WATER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_LOW_WATER");
 
 		/* dummy implementation */
 
@@ -1406,6 +1413,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SAMPLESIZE) {
+Genode::log("SNDCTL_DSP_SAMPLESIZE");
 
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {
@@ -1448,6 +1456,10 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		::snprintf(ofrag_size_string, sizeof(ofrag_size_string),
 		           "%u", 1 << size_selector);
 
+Genode::log("SNDCTL_DSP_SETFRAGMENT: max_fragments: ", max_fragments,
+            ", size_selector: ", size_selector,
+            ", frag_size_string: ", Genode::Cstring(frag_size_string));
+
 		Absolute_path ofrag_total_path = ioctl_dir(*fd);
 		ofrag_total_path.append_element("ofrag_total");
 		File_descriptor *ofrag_total_fd = open(ofrag_total_path.base(), O_RDWR);
@@ -1483,6 +1495,9 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					result = ENOTSUP;
 					return;
 				}
+
+Genode::log("SNDCTL_DSP_SETFRAGMENT: ofrag_size: ", ofrag_size);
+
 			});
 
 			return Fn::COMPLETE;
@@ -1491,6 +1506,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SETPLAYVOL) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETPLAYVOL");
 
 		/* dummy implementation */
 
@@ -1501,12 +1517,14 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SETTRIGGER) {
+Genode::warning("_ioctl_sndctl(): SNDCTL_DSP_SETTRIGGER");
 
 		/* dummy implementation */
 
 		handled = true;
 
 	} else if (request == SNDCTL_DSP_SPEED) {
+Genode::log("SNDCTL_DSP_SPEED");
 
 		monitor().monitor([&] {
 			_with_info(*fd, [&] (Xml_node info) {

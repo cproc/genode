@@ -119,8 +119,9 @@ class Audio_out::Out
 
 			Packet *p_left  = left()->get(lpos);
 			Packet *p_right = right()->get(rpos);
-
+Genode::log("_play_packet(): pos: ", lpos);
 			if (p_left->valid() && p_right->valid()) {
+Genode::log("_play_packet(): valid");
 				/* convert float to S16LE */
 				static short data[Audio_out::PERIOD * Audio_out::MAX_CHANNELS];
 
@@ -141,10 +142,12 @@ class Audio_out::Out
 				p_right->mark_as_played();
 
 			} else {
+Genode::log("_play_packet(): invalid");
 				_play_silence();
 			}
 
 			_advance_position(p_left, p_right);
+Genode::log("_play_packet() finished: pos: ", left()->pos());
 
 			/* always report when a period has passed */
 			Session_component *channel_left  = channel_acquired[LEFT];
