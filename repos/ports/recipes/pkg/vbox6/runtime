@@ -16,6 +16,7 @@
 		<rtc/>
 		<rom label="usb_devices"/>
 		<usb/>
+		<audio_out/>
 	</requires>
 
 	<config verbose="yes">
