@@ -1224,14 +1224,31 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 
 	} else if (request == SNDCTL_DSP_CURRENT_OPTR) {
 
-		/* dummy implementation */
+		monitor().monitor([&] {
+			_with_info(*fd, [&] (Xml_node info) {
 
-		oss_count_t *optr = (oss_count_t*)argp;
+				if (info.type() != "oss") {
+					return;
+				}
 
-		optr->samples      = 0;
-		optr->fifo_samples = 0;
+				long long const optr_samples =
+					info.attribute_value("optr_samples", -1L);
+				int const optr_fifo_samples =
+					info.attribute_value("optr_fifo_samples", -1L);
+				if ((optr_samples == -1) || (optr_fifo_samples == -1)) {
+					result = ENOTSUP;
+					return;
+				}
 
-		handled = true;
+				oss_count_t *optr = (oss_count_t*)argp;
+				optr->samples      = optr_samples;
+				optr->fifo_samples = optr_fifo_samples;
+
+				handled = true;
+			});
+
+			return Fn::COMPLETE;
+		});
 
 	} else if (request == SNDCTL_DSP_GETERROR) {
 
@@ -1265,14 +1282,17 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					info.attribute_value("frag_size", 0U);
 				unsigned int const frag_avail =
 					info.attribute_value("frag_avail", 0U);
-				if (!frag_avail || !frag_size) {
+				unsigned int const frag_total =
+					info.attribute_value("ofrag_total", 0U);
+				if (!frag_avail || !frag_total || !frag_size) {
 					result = ENOTSUP;
 					return;
 				}
 
-				int const fragsize  = (int)frag_size;
-				int const fragments = (int)frag_avail;
-				if (fragments < 0 || fragsize < 0) {
+				int const fragments  = (int)frag_avail;
+				int const fragstotal = (int)frag_total;
+				int const fragsize   = (int)frag_size;
+				if (fragments < 0 || fragstotal < 0 || fragsize < 0) {
 					result = EINVAL;
 					return;
 				}
@@ -1281,7 +1301,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					(struct audio_buf_info*)argp;
 
 				buf_info->fragments  = fragments;
-				buf_info->fragstotal = fragments;
+				buf_info->fragstotal = fragstotal;
 				buf_info->fragsize   = fragsize;
 				buf_info->bytes      = fragments * fragsize;
 
@@ -1349,7 +1369,33 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 
 	} else if (request == SNDCTL_DSP_SETFRAGMENT) {
 
+		int *frag = (int*)argp;
+		int max_fragments = *frag >> 16;
+		int size_selector = *frag & ((1<<16) - 1);
+
+		char ofrag_total_string[16];
+		char frag_size_string[16];
+
+		::snprintf(ofrag_total_string, sizeof(ofrag_total_string),
+		           "%u", max_fragments);
+
+		::snprintf(frag_size_string, sizeof(frag_size_string),
+		           "%u", 1 << size_selector);
+
+		Absolute_path ofrag_total_path = ioctl_dir(*fd);
+		ofrag_total_path.append_element("ofrag_total");
+		File_descriptor *ofrag_total_fd = open(ofrag_total_path.base(), O_RDWR);
+		write(ofrag_total_fd, ofrag_total_string, sizeof(ofrag_total_string));
+		close(ofrag_total_fd);
+
+		Absolute_path frag_size_path = ioctl_dir(*fd);
+		frag_size_path.append_element("frag_size");
+		File_descriptor *frag_size_fd = open(frag_size_path.base(), O_RDWR);
+		write(frag_size_fd, frag_size_string, sizeof(frag_size_string));
+		close(frag_size_fd);
+
 		monitor().monitor([&] {
+
 			_with_info(*fd, [&] (Xml_node info) {
 				if (info.type() != "oss") {
 					return;
@@ -1360,10 +1406,10 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				unsigned int const frag_size_log2 =
 					frag_size ? Genode::log2(frag_size) : 0;
 
-				unsigned int const queue_size =
-					info.attribute_value("queue_size", 0U);
+				unsigned int const ofrag_total =
+					info.attribute_value("ofrag_total", 0U);
 
-				if (!queue_size || !frag_size_log2) {
+				if (!ofrag_total || !frag_size_log2) {
 					result = ENOTSUP;
 					return;
 				}
