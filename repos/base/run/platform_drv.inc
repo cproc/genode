@@ -1,6 +1,7 @@
 proc have_platform_drv {} {
 	return [expr [have_board imx53_qsb] \
 	          || [have_board imx53_qsb_tz] \
+	          || [have_board imx8q_evk] \
 	          || [have_board rpi] \
 	          || [have_board pc]]
 }
@@ -67,6 +68,7 @@ proc append_platform_drv_build_components {} {
 proc platform_drv_binary {} {
 	if {[have_board imx53_qsb]}    { return imx53_platform_drv }
 	if {[have_board imx53_qsb_tz]} { return imx53_platform_drv }
+	if {[have_board imx8q_evk]}    { return imx8mq_platform_drv }
 	if {[have_board rpi]}          { return rpi_platform_drv   }
 	if {[have_board pc]}           { return platform_drv       }
 	return no_platform_drv_available
@@ -92,11 +94,26 @@ proc append_platform_drv_boot_modules {} {
 
 proc platform_drv_policy {} {
 
+	if {[have_board imx8q_evk]} {
+		return {
+			<policy label="usb_drv -> " info="yes"> <device name="usb_host_2"/> </policy>
+			<policy label="fb_drv -> "  info="yes">
+				<device name="dcss"/>
+				<device name="hdmi"/>
+				<device name="mipi_dsi"/>
+				<device name="src"/>
+			</policy>
+			<policy label="nic_drv -> " info="yes"> <device name="fec"/> </policy>
+		}
+	}
+
 	if {![have_board pc]} {
 		return {}
 	}
 
-	set drv_policy ""
+	if (![have_spec x86]) {
+		return $drv_policy
+	}
 
 	if {[acpi_drv_name] eq "acpica"} {
 		append drv_policy {
@@ -248,6 +265,98 @@ proc platform_drv_config {} {
 		</route>}
 
 		append drv_config [platform_drv_config_config]
+
+		if [have_board imx8q_evk] {
+			append drv_config {
+				<device name="usb_host_2" type="snps,dwc3">
+					<io_mem       address="0x38200000" size="0x10000"/>
+					<irq          number="73"/>
+					<power-domain name="usb_otg_2"/>
+					<clock        name="usb_phy_ref_clk_root"
+				              	  driver_name="usb_phy_root_clk"
+				              	  parent="system_pll1_div8"
+				              	  rate="100000000"/>
+					<clock        name="usb_core_ref_clk_root"
+				              	  parent="system_pll1_div8"
+				              	  rate="100000000"/>
+					<clock        name="usb_bus_clk_root"
+				              	  parent="system_pll2_div2"
+				              	  rate="500000000"/>
+					<clock        name="usb_ctrl2_gate"/>
+					<clock        name="usb_phy2_gate"/>
+					<property     name="dr_mode"    value="host"/>
+					<property     name="snps,dis_u2_susphy_quirk"/>
+				</device>
+
+				<device name="dcss" type="nxp,imx8mq-dcss">
+					<io_mem       address="0x32e00000" size="0x30000"/>
+					<irq          number="50"/>
+					<clock        name="display_apb_clk_root"
+				              	  driver_name="apb"/>
+					<clock        name="display_axi_clk_root"
+				              	  parent="system_pll1_clk"
+				              	  rate="800000000"
+				              	  driver_name="axi"/>
+					<clock        name="display_rtrm_clk_root"
+				              	  parent="system_pll1_clk"
+				              	  rate="400000000"
+				              	  driver_name="rtrm"/>
+					<clock        name="video_pll1_clk"
+				              	  parent="25m_ref_clk"
+				              	  rate="1200000000" />
+					<clock        name="display_dtrc_clk_root"
+				              	  driver_name="dtrc"/>
+					<clock        name="dc_pixel_clk_root"
+				              	  parent="video_pll1_clk"
+				              	  rate="120000000"
+				              	  driver_name="pix"/>
+					<property     name="disp-dev"   value="hdmi_disp"/>
+				</device>
+
+				<!-- CAUTION: System reset controller access is currently required by
+			     	 mipi_dsi -->
+				<device name="src" type="fsl,imx8mq-src">
+					<io_mem address="0x30390000" size="0x10000"/>
+				</device>
+
+				<device name="mipi_dsi" type="fsl,imx8mq-mipi-dsi_drm">
+					<io_mem       address="0x30a00000" size="0x1000"/>
+					<irq          number="66"/>
+					<power-domain name="mipi"/>
+					<clock        name="mipi_dsi_phy_ref_clk_root"
+				              	  parent="video_pll1_clk"
+				              	  rate="24000000"
+				              	  driver_name="phy_ref"/>
+					<clock        name="mipi_dsi_esc_rx_clk_root"
+				              	  parent="system_pll1_div10"
+				              	  rate="80000000"
+				              	  driver_name="rx_esc"/>
+					<clock        name="mipi_dsi_core_clk_root"
+				              	  parent="system_pll1_div3"
+				              	  rate="266000000"
+				              	  driver_name="core"/>
+				</device>
+
+				<device name="hdmi" type="fsl,imx8mq-hdmi">
+					<io_mem       address="0x32c00000" size="0x100000"/>
+					<io_mem       address="0x32e40000" size="0x40000"/>
+					<io_mem       address="0x32e2f000" size="0x10"/>
+					<irq          number="48"/>
+					<irq          number="57"/>
+				</device>
+
+				<device name="fec" type="fsl,imx6sx-fec">
+					<io_mem   address="0x30be0000" size="0x4000"/>
+					<irq      number="152"/>
+					<irq      number="151"/>
+					<irq      number="150"/>
+					<property name="mii"        value="rgmii-id"/>
+				</device>
+			}
+
+
+		}
+
 		append drv_config [platform_drv_policy]
 
 		append drv_config {
