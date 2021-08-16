@@ -207,8 +207,6 @@ struct Vfs::Oss_file_system::Audio
 
 			bool block_write = false;
 
-//error("plugin ", __func__, " buf_size=", buf_size);
-
 			if (_queue_threshold_reached()) {
 				block_write = true;
 			} else {
