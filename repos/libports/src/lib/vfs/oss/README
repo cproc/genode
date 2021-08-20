@@ -20,13 +20,13 @@ presents all files:
 
   * :format: sample format, e.g. s16le. Defaults to AFMT_S16_LE.
 
-  * :queue_size: number of packets in the underlying Audio_out session's
-    packet-stream.
+  * :frag_total: total number of fragments. Set to number of packets in the underlying
+    Audio_out session's packet-stream.
 
-  * :frag_size: size of a fragment. Set to 1024 (number of channels times
+  * :frag_size: size of a fragment. Set to 2048 (number of channels times
     size of Audio_out period times size of s16le sample).
 
-  * :frag_avail: number of available bytes. Initially set to queue size
+  * :frag_avail: number of available fragments. Initially set to total fragment count
     times frag size.
 
 In its current state it is merely enough to use simply applications requiring
