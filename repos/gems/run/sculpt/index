@@ -11,6 +11,7 @@
   </index>
 
   <index name="Tools">
+    <pkg path="bsd_audio_drv" info="audio driver"/>
     <pkg path="system_shell" info="command-line interface to the system"/>
     <pkg path="system_clock" info="system-clock service"/>
     <pkg path="qt5_textedit" info="Qt5-based text editor"/>
