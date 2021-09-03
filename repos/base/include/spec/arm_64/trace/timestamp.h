@@ -23,9 +23,10 @@ namespace Genode { namespace Trace {
 
 	inline Timestamp timestamp()
 	{
-		uint64_t t;
+		static uint64_t t;
 		/* cycle counter */
-		asm volatile("mrs %0, pmccntr_el0" : "=r" (t));
+		//asm volatile("mrs %0, pmccntr_el0" : "=r" (t));
+		t++;
 		return t;
 	}
 } }
