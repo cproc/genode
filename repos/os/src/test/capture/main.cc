@@ -156,7 +156,9 @@ struct Test::Main
 		Capture_input(Env &env, Gui::Area area, Xml_node const &config)
 		:
 			_env(env), _area(area), _at(_point_from_xml(config))
-		{ }
+		{
+			Genode::log("Capture_input(): ", _capture.screen_size().w(), ", ", _area.w());
+		}
 
 		Affected_rects capture() { return _capture.capture_at(_at); }
 
