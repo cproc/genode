@@ -19,9 +19,7 @@
 
 namespace Genode {
 
-	template <typename    OBJ_TYPE,
-	          unsigned    OBJ_ALIGNM_IN_BYTES_LOG2,
-	          typename... OBJ_CONSTR_ARGS>
+	template <typename, unsigned, typename...>
 	class Aligned;
 }
 
@@ -29,8 +27,8 @@ namespace Genode {
 template <typename    OBJ_TYPE,
           unsigned    OBJ_ALIGNM_IN_BYTES_LOG2,
           typename... OBJ_CONSTR_ARGS>
-class Genode::Aligned {
-
+class Genode::Aligned
+{
 	private:
 
 		uint8_t   _obj_space[sizeof(OBJ_TYPE) + (1 << OBJ_ALIGNM_IN_BYTES_LOG2) - 1];
