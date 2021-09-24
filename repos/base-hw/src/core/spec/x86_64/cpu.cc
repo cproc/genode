@@ -43,7 +43,7 @@ Genode::Cpu::Context::Context(bool core)
 }
 
 
-Genode::Cpu::Mmu_context::Mmu_context(addr_t                             table,
+Genode::Cpu::Mmu_context::Mmu_context(addr_t table,
                                       Board::Address_space_id_allocator &)
 : cr3(Cr3::Pdb::masked(table)) { }
 
