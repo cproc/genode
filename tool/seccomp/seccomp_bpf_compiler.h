@@ -205,6 +205,8 @@ class Filter
 						_add_allow_rule(SCMP_SYS(mmap));
 						_add_allow_rule(SCMP_SYS(cacheflush));
 						_add_allow_rule(SCMP_SYS(sigreturn));
+						_add_allow_rule(SCMP_SYS(rt_sigreturn));
+						_add_allow_rule(SCMP_SYS(restart_syscall));
 					}
 					break;
 				default:
