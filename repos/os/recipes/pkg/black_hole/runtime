@@ -2,10 +2,12 @@
 
 	<provides>
 		<audio_out/>
+		<capture/>
 	</provides>
 
 	<config>
 		<audio_out/>
+		<capture/>
 	</config>
 
 	<content>
