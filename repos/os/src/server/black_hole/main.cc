@@ -22,6 +22,7 @@
 
 /* local includes */
 #include "audio_out.h"
+#include "capture.h"
 
 
 /***************
@@ -37,14 +38,22 @@ struct Black_hole::Main
 	Genode::Sliced_heap heap { env.ram(), env.rm() };
 
 	Genode::Constructible<Audio_out::Root> audio_out_root { };
+	Genode::Constructible<Capture::Root>   capture_root { };
 
 	Main(Genode::Env &env) : env(env)
 	{
+Genode::log("Main()");
 		Genode::Attached_rom_dataspace _config_rom { env, "config" };
 
 		if (_config_rom.xml().has_sub_node("audio_out")) {
 			audio_out_root.construct(env, heap);
 			env.parent().announce(env.ep().manage(*audio_out_root));
+		}
+
+		if (_config_rom.xml().has_sub_node("capture")) {
+Genode::log("capture");
+			capture_root.construct(env, heap);
+			env.parent().announce(env.ep().manage(*capture_root));
 		}
 	}
 };
