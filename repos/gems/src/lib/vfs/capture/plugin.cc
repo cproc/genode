@@ -204,7 +204,7 @@ struct Vfs_capture::Local_factory : File_system_factory
 
 
 class Vfs_capture::File_system : private Local_factory,
-                             public  Vfs::Dir_file_system
+                                 public  Vfs::Dir_file_system
 {
 	private:
 
