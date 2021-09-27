@@ -22,3 +22,4 @@ _/pkg/system_clock
 _/pkg/mesa_gpu-cpu
 _/pkg/mesa_gpu-intel
 _/pkg/black_hole
+_/pkg/bsd_audio_drv
