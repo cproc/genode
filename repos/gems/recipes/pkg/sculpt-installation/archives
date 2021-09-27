@@ -28,3 +28,4 @@ _/pkg/usb_webcam
 _/pkg/file_vault
 _/pkg/test-capture
 _/pkg/black_hole
+_/pkg/bsd_audio_drv
