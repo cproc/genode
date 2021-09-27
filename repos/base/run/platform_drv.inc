@@ -95,7 +95,11 @@ proc platform_drv_policy {} {
 
 	if {[have_board imx8q_evk]} {
 		return {
-			<policy label="usb_drv -> " info="yes"> <device name="usb_host_2"/> </policy>
+			<policy label="usb_drv -> " info="yes">
+				<!--<device name="usb_host_2"/>-->
+				<device name="dwc3_usb_1"/>
+				<device name="phy_1"/>
+			</policy>
 			<policy label="fb_drv -> "  info="yes">
 				<device name="dcss"/>
 				<device name="hdmi"/>
@@ -285,6 +289,31 @@ proc platform_drv_config {} {
 					<clock        name="usb_phy2_gate"/>
 					<property     name="dr_mode"    value="host"/>
 					<property     name="snps,dis_u2_susphy_quirk"/>
+				</device>
+
+				<device name="dwc3_usb_1" type="snps,dwc3">
+					<io_mem       address="0x38200000" size="0x10000"/>
+					<irq          number="73"/>
+					<power-domain name="usb_otg_2"/>
+					<clock        name="usb_ctrl2_gate"
+				              	  driver_name="bus_early"/>
+					<clock        name="usb_core_ref_clk_root"
+				              	  parent="system_pll1_div8"
+				              	  rate="100000000"
+				              	  driver_name="ref"/>
+					<clock        name="usb_bus_clk_root"
+				              	  parent="system_pll2_div2"
+				              	  rate="500000000"
+				              	  driver_name="ref"/>
+				</device>
+
+				<device name="phy_1" type="fsl,imx8mq-usb-phy">
+					<io_mem address="0x382f0040" size="0x40"/>
+					<clock  name="usb_phy2_gate"
+				        	driver_name="phy"/>
+					<clock  name="usb_phy_ref_clk_root"
+				        	parent="system_pll1_div8"
+				        	rate="100000000"/>
 				</device>
 
 				<device name="dcss" type="nxp,imx8mq-dcss">
