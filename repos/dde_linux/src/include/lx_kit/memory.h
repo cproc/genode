@@ -69,6 +69,7 @@ class Lx_kit::Mem_allocator
 
 		void * alloc(size_t size, size_t align);
 		addr_t dma_addr(void * addr);
+		addr_t virt_addr(void * dma_addr);
 		size_t size(const void * ptr);
 		void   free(Attached_dataspace * ds);
 		bool   free(const void * ptr);

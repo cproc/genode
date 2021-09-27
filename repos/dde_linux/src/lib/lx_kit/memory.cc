@@ -108,6 +108,25 @@ Genode::addr_t Lx_kit::Mem_allocator::dma_addr(void * addr)
 }
 
 
+Genode::addr_t Lx_kit::Mem_allocator::virt_addr(void * dma_addr)
+{
+	addr_t ret = 0UL;
+
+	_buffers.for_each([&] (Buffer & b) {
+		addr_t other = (addr_t)dma_addr;
+		addr_t addr  = (addr_t)b.dma_addr();
+		if (addr > other || (addr+b.ds().size()) <= other)
+			return;
+
+		/* byte offset of 'addr' from start of block */
+		addr_t const offset = other - addr;
+		ret = (addr_t)b.ds().local_addr<void>() + offset;
+	});
+
+	return ret;
+}
+
+
 bool Lx_kit::Mem_allocator::free(const void * ptr)
 {
 	if (!_mem.valid_addr((addr_t)ptr))
