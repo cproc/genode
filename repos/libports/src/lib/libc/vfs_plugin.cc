@@ -1209,7 +1209,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					result = EINVAL;
 					return;
 				}
-
+#if 0
 				int const num_chans = *(int const *)argp;
 				if (num_chans < 0) {
 					result = EINVAL;
@@ -1220,7 +1220,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					result = ENOTSUP;
 					return;
 				}
-
+#endif
 				*(int *)argp = avail_chans;
 
 				handled = true;
