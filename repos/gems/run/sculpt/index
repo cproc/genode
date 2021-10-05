@@ -16,6 +16,7 @@
   </index>
 
   <index name="Tools">
+    <pkg path="black_hole"   info="dummy services provider"/>
     <pkg path="system_shell" info="command-line interface to the system"/>
     <pkg path="system_clock" info="system-clock service"/>
     <pkg path="qt5_textedit" info="Qt5-based text editor"/>
