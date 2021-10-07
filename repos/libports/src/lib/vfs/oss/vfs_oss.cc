@@ -1,17 +1,18 @@
 /*
- * \brief  OSS emulation to Audio_out file system
+ * \brief  OSS emulation to Audio_out and Audio_in file systems
  * \author Josef Soentgen
  * \date   2018-10-25
  */
 
 /*
- * Copyright (C) 2018-2020 Genode Labs GmbH
+ * Copyright (C) 2018-2021 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
  */
 
 /* Genode includes */
+#include <audio_in_session/connection.h>
 #include <audio_out_session/connection.h>
 #include <base/registry.h>
 #include <base/signal.h>
@@ -138,12 +139,14 @@ struct Vfs::Oss_file_system::Audio
 		Audio(Audio const &);
 		Audio &operator = (Audio const &);
 
-		bool _started     { false };
+		bool _audio_out_started { false };
+		bool _audio_in_started  { false };
 
 		enum { CHANNELS = 2, };
 		const char *_channel_names[CHANNELS] = { "front left", "front right" };
 
 		Genode::Constructible<Audio_out::Connection> _out[CHANNELS];
+		Genode::Constructible<Audio_in::Connection>  _in { };
 
 		Info &_info;
 		Readonly_value_file_system<Info, 256> &_info_fs;
@@ -166,6 +169,13 @@ struct Vfs::Oss_file_system::Audio
 				}
 			}
 
+			try {
+				_in.construct(env, "left");
+			} catch (...) {
+				Genode::error("could not create Audio_in channel");
+				throw;
+			}
+
 			_info.channels    = CHANNELS;
 			_info.format      = (unsigned)AFMT_S16_LE;
 			_info.sample_rate = Audio_out::SAMPLE_RATE;
@@ -178,12 +188,12 @@ struct Vfs::Oss_file_system::Audio
 			_info_fs.value(_info);
 		}
 
-		void alloc_sigh(Genode::Signal_context_capability sigh)
+		void out_alloc_sigh(Genode::Signal_context_capability sigh)
 		{
 			_out[0]->alloc_sigh(sigh);
 		}
 
-		void progress_sigh(Genode::Signal_context_capability sigh)
+		void out_progress_sigh(Genode::Signal_context_capability sigh)
 		{
 			_out[0]->progress_sigh(sigh);
 		}
@@ -194,7 +204,7 @@ struct Vfs::Oss_file_system::Audio
 				_out[i]->stop();
 			}
 
-			_started = false;
+			_audio_out_started = false;
 		}
 
 		unsigned queued() const
@@ -250,6 +260,28 @@ struct Vfs::Oss_file_system::Audio
 			return true;
 		}
 
+		bool read(char */*buf*/, file_size buf_size, file_size &out_size)
+		{
+#if 0
+			/* dummy implementation with audible noise for testing */
+
+			for (file_size i = 0; i < buf_size; i++)
+				buf[i] = i;
+#endif
+			if (!_audio_in_started) {
+				_in->start();
+				_audio_in_started = true;
+			}
+
+			Audio_in::Packet *p = _in->stream()->get(_in->stream()->pos());
+
+			Genode::log("read(): valid: ", p->valid());
+
+			out_size = buf_size;
+
+			return true;
+		}
+
 		bool write(char const *buf, file_size buf_size, file_size &out_size)
 		{
 			using namespace Genode;
@@ -274,7 +306,8 @@ struct Vfs::Oss_file_system::Audio
 
 			unsigned const stream_packets_total =
 				(_info.ofrag_total * _info.ofrag_size) / _stream_packet_size;
-
+//Genode::log("ofrag_total: ", _info.ofrag_total);
+//Genode::log("ofrag_size: ", _info.ofrag_size);
 			unsigned const stream_packets_used =
 				_info.optr_fifo_samples / Audio_out::PERIOD;
 
@@ -298,8 +331,8 @@ struct Vfs::Oss_file_system::Audio
 				throw Vfs::File_io_service::Insufficient_buffer();
 			}
 
-			if (!_started) {
-				_started = true;
+			if (!_audio_out_started) {
+				_audio_out_started = true;
 				_out[0]->start();
 				_out[1]->start();
 			}
@@ -403,13 +436,7 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 
 			Read_result read(char *buf, file_size buf_size, file_size &out_count) override
 			{
-				/* dummy implementation with audible noise for testing */
-
-				for (file_size i = 0; i < buf_size; i++)
-					buf[i] = i;
-
-				out_count = buf_size;
-
+				_audio.read(buf, buf_size, out_count);
 				return READ_OK;
 			}
 
@@ -435,15 +462,17 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 
 		Handle_registry _handle_registry { };
 
-		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _alloc_avail_sigh {
+#if 0
+		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _out_alloc_avail_sigh {
 			_ep, *this, &Vfs::Oss_file_system::Data_file_system::_handle_alloc_avail };
 
 		void _handle_alloc_avail() { }
+#endif
 
-		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _progress_sigh {
-			_ep, *this, &Vfs::Oss_file_system::Data_file_system::_handle_progress };
+		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _audio_out_progress_sigh {
+			_ep, *this, &Vfs::Oss_file_system::Data_file_system::_handle_audio_out_progress };
 
-		void _handle_progress()
+		void _handle_audio_out_progress()
 		{
 			if (_audio.handle_progress()) {
 				/* at least one stream packet is available */
@@ -468,8 +497,10 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 			_ep    { ep },
 			_audio { audio }
 		{
-			_audio.alloc_sigh(_alloc_avail_sigh);
-			_audio.progress_sigh(_progress_sigh);
+#if 0
+			_audio.out_alloc_sigh(_audio_out_alloc_avail_sigh);
+#endif
+			_audio.out_progress_sigh(_audio_out_progress_sigh);
 		}
 
 		static const char *name()   { return "data"; }
@@ -558,12 +589,12 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 		*this,
 		&Vfs::Oss_file_system::Local_factory::_play_underruns_changed };
 
-	static constexpr size_t _native_stream_size { (Audio_out::QUEUE_SIZE - 1) *
-	                                              _stream_packet_size };
+	static constexpr size_t _audio_out_stream_size { (Audio_out::QUEUE_SIZE - 1) *
+	                                                 _stream_packet_size };
 	static constexpr size_t _ofrag_total_min { 2 };
 	static constexpr size_t _ofrag_size_min { _stream_packet_size };
-	static constexpr size_t _ofrag_total_max { _native_stream_size / _ofrag_size_min };
-	static constexpr size_t _ofrag_size_max { _native_stream_size / _ofrag_total_min };
+	static constexpr size_t _ofrag_total_max { _audio_out_stream_size / _ofrag_size_min };
+	static constexpr size_t _ofrag_size_max { _audio_out_stream_size / _ofrag_total_min };
 
 	/********************
 	 ** Watch handlers **
@@ -576,8 +607,8 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 		ofrag_total_new = Genode::max(ofrag_total_new, _ofrag_total_min);
 		ofrag_total_new = Genode::min(ofrag_total_new, _ofrag_total_max);
 
-		if (ofrag_total_new * _info.ofrag_size > _native_stream_size)
-			_info.ofrag_size = 1 << Genode::log2(_native_stream_size / ofrag_total_new);
+		if (ofrag_total_new * _info.ofrag_size > _audio_out_stream_size)
+			_info.ofrag_size = 1 << Genode::log2(_audio_out_stream_size / ofrag_total_new);
 
 		_info.ofrag_total = ofrag_total_new;
 		_info.ofrag_avail = ofrag_total_new;
@@ -593,8 +624,8 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 		ofrag_size_new = Genode::max(ofrag_size_new, _ofrag_size_min);
 		ofrag_size_new = Genode::min(ofrag_size_new, _ofrag_size_max);
 
-		if (ofrag_size_new * _info.ofrag_total > _native_stream_size) {
-			_info.ofrag_total = _native_stream_size / ofrag_size_new;
+		if (ofrag_size_new * _info.ofrag_total > _audio_out_stream_size) {
+			_info.ofrag_total = _audio_out_stream_size / ofrag_size_new;
 			_info.ofrag_avail = _info.ofrag_total;
 		}
 
