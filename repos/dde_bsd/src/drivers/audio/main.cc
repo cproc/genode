@@ -88,10 +88,10 @@ class Audio_out::Out
 
 			left()->pos(left()->packet_position(l));
 			right()->pos(right()->packet_position(r));
-
+#if 1
 			left()->increment_position();
 			right()->increment_position();
-
+#endif
 			Session_component *channel_left  = channel_acquired[LEFT];
 			Session_component *channel_right = channel_acquired[RIGHT];
 
@@ -353,7 +353,7 @@ class Audio_in::In
 			bool overrun = stream()->overrun();
 
 			Packet *p = stream()->alloc();
-
+#if 0
 			float const scale = 32768.0f * 2;
 
 			float * const content = p->content();
@@ -361,7 +361,13 @@ class Audio_in::In
 				float sample = data[i] + data[i+1];
 				content[i/2] = sample / scale;
 			}
-
+#else
+			/* Generate test sound */
+			for (int i = 0; i < Audio_in::PERIOD; i++) {
+				int16_t sample = ((i*2) << 8) | (((i*2)+1) & 0xff);
+				p->content()[i] = (float)sample / 32768.0f;
+			}
+#endif
 			stream()->submit(p);
 
 			channel_acquired->progress_submit();

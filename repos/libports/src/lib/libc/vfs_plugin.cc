@@ -1341,10 +1341,10 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 
 		audio_buf_info &abinfo = *(audio_buf_info *)argp;
 		abinfo = {
-			.fragments  = 4,
-			.fragstotal = 256,
+			.fragments  = 254,
+			.fragstotal = 254,
 			.fragsize   = 2048,
-			.bytes      = 4*2048,
+			.bytes      = 254*2048,
 		};
 
 		handled = true;
