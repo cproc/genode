@@ -278,7 +278,7 @@ struct Vfs::Oss_file_system::Audio
 		bool read(char *buf, file_size buf_size, file_size &out_size)
 		{
 			Genode::log("read(): ", buf_size);
-#if 0
+#if 1
 			/* dummy implementation with audible noise for testing */
 
 			for (file_size i = 0; i < buf_size / sizeof(int16_t) / CHANNELS; i++) {
