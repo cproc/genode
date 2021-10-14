@@ -1,0 +1,74 @@
+sndio_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ libsndio/sio.c     |   19 +++++++++++++++----
+ libsndio/sio_oss.c |    2 +-
+ 2 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/libsndio/sio.c b/libsndio/sio.c
+index 1f4c55c..4186b40 100644
+--- a/libsndio/sio.c
++++ b/libsndio/sio.c
+@@ -301,12 +301,14 @@ sio_read(struct sio_hdl *hdl, void *buf, size_t len)
+ 	unsigned int n;
+ 	char *data = buf;
+ 	size_t todo = len, maxread;
+-
++fprintf(stderr, "*** %s: len: %zu\n", __func__, len);
+ 	if (hdl->eof) {
++fprintf(stderr, "*** %s: hdl->eof\n", __func__);
+ 		DPRINTF("sio_read: eof\n");
+ 		return 0;
+ 	}
+ 	if (!hdl->started || !(hdl->mode & SIO_REC)) {
++fprintf(stderr, "*** %s: error 2", __func__);
+ 		DPRINTF("sio_read: recording not started\n");
+ 		hdl->eof = 1;
+ 		return 0;
+@@ -315,18 +317,27 @@ sio_read(struct sio_hdl *hdl, void *buf, size_t len)
+ 		DPRINTF("sio_read: zero length read ignored\n");
+ 		return 0;
+ 	}
++//fprintf(stderr, "*** %s: check\n", __func__);
+ 	while (todo > 0) {
+-		if (!sio_rdrop(hdl))
++		if (!sio_rdrop(hdl)) {
++//fprintf(stderr, "*** %s: !sio_rdrop()\n", __func__);
+ 			return 0;
++		}
++#if 0
+ 		maxread = hdl->rused;
++fprintf(stderr, "*** %s: maxread: %zu\n", __func__, maxread);
+ 		if (maxread > todo)
+ 			maxread = todo;
++fprintf(stderr, "*** %s: maxread 2: %zu\n", __func__, maxread);
+ 		n = maxread > 0 ? hdl->ops->read(hdl, data, maxread) : 0;
++fprintf(stderr, "*** %s: n: %zu\n", __func__, n);
++#endif
++		n = hdl->ops->read(hdl, data, len);
+ 		if (n == 0) {
+ 			if (hdl->nbio || hdl->eof || todo < len)
+ 				break;
+-			if (!sio_psleep(hdl, POLLIN))
+-				break;
++//			if (!sio_psleep(hdl, POLLIN))
++//				break;
+ 			continue;
+ 		}
+ 		data += n;
+diff --git a/libsndio/sio_oss.c b/libsndio/sio_oss.c
+index 56b62b5..4a49744 100644
+--- a/libsndio/sio_oss.c
++++ b/libsndio/sio_oss.c
+@@ -582,7 +582,7 @@ sio_oss_read(struct sio_hdl *sh, void *buf, size_t len)
+ {
+ 	struct sio_oss_hdl *hdl = (struct sio_oss_hdl *)sh;
+ 	ssize_t n;
+-
++fprintf(stderr, "*** %s: len: %zu\n", __func__, len);
+ 	while ((n = read(hdl->fd, buf, len)) < 0) {
+ 		if (errno == EINTR)
+ 			continue;
