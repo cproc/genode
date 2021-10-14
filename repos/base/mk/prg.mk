@@ -217,7 +217,7 @@ $(TARGET): $(LINK_ITEMS) $(wildcard $(LD_SCRIPTS)) $(LIB_SO_DEPS)
 	$(MSG_LINK)$(TARGET)
 	$(VERBOSE)libs=$(LIB_CACHE_DIR); $(LD_CMD) -o $@
 
-STRIP_TARGET_CMD ?= $(STRIP) -o $@ $<
+STRIP_TARGET_CMD ?= cp $< $@
 
 $(TARGET).stripped: $(TARGET)
 	$(VERBOSE)$(STRIP_TARGET_CMD)
