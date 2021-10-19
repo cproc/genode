@@ -22,3 +22,4 @@ _/pkg/usb_webcam
 _/pkg/test-capture
 _/pkg/trace_logger
 _/pkg/mixer
+_/pkg/system_clock-dummy
