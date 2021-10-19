@@ -21,3 +21,4 @@ _/pkg/mesa_gpu-cpu
 _/pkg/usb_webcam
 _/pkg/test-capture
 _/pkg/mixer
+_/pkg/system_clock-dummy
