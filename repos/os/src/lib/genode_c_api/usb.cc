@@ -479,6 +479,10 @@ void genode_usb_session::handle_response(genode_usb_request_handle_t id,
                                          genode_usb_response_t       callback,
                                          void                      * callback_data)
 {
+	if (!packets[id].constructed()) {
+		Genode::warning("invalid packet index ", id);
+		return;
+	}
 	Usb::Packet_descriptor p = *packets[id];
 	_ack(callback((genode_usb_request_transfer*)&p.transfer,
 	              callback_data), p);
