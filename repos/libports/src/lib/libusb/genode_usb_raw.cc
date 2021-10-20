@@ -208,6 +208,14 @@ struct Usb_device
 								         char const * src = packet_content   + out_offset;
 
 								Genode::memcpy(dst, src, actual_length);
+#if 0
+								if (actual_length != transfer->iso_packet_desc[i].length) {
+									Genode::error("actual length (",
+									              actual_length,
+									              ") != transfer->iso_packet_desc[i].length (",
+									              transfer->iso_packet_desc[i].length, ")");
+								}
+#endif
 								out_offset += transfer->iso_packet_desc[i].length;
 
 								transfer->iso_packet_desc[i].actual_length = actual_length;
