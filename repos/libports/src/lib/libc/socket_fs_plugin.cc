@@ -635,7 +635,7 @@ extern "C" int socket_fs_bind(int libc_fd, sockaddr const *addr, socklen_t addrl
 	if (!addr) return Errno(EFAULT);
 
 	if (addr->sa_family != AF_INET) {
-		error(__func__, ": family not supported");
+		error(__func__, ": family not supported: ", addr->sa_family);
 		return Errno(EAFNOSUPPORT);
 	}
 
@@ -842,11 +842,25 @@ extern "C" ssize_t socket_fs_recv(int libc_fd, void *buf, ::size_t len, int flag
 	return socket_fs_recvfrom(libc_fd, buf, len, flags, nullptr, nullptr);
 }
 
-
+extern "C" void wait_for_continue();
 extern "C" ssize_t socket_fs_recvmsg(int libc_fd, msghdr *msg, int flags)
 {
-	warning("##########  TODO  ########## ", __func__);
-	return 0;
+//	warning("##########  TODO  ########## ", __func__);
+warning(__func__, ": msg_namelen: ", msg->msg_namelen,
+                  ", msg_iovlen: ", msg->msg_iovlen,
+                  ", msg_controllen: ", msg->msg_controllen,
+                  ", flags:", Genode::Hex(flags),
+                  ", iov_len: ", msg->msg_iov[0].iov_len);
+socklen_t src_addrlen = msg->msg_namelen;
+ssize_t res = socket_fs_recvfrom(libc_fd,
+                                 msg->msg_iov[0].iov_base,
+                                 msg->msg_iov[0].iov_len,
+                                 flags,
+                                 (sockaddr*)msg->msg_name,
+                                 &src_addrlen);
+//log(__func__, ": ", res);
+return res;
+//	return 0;
 }
 
 
