@@ -14,7 +14,8 @@
   </index>
 
   <index name="Tools">
-    <pkg path="falkon"       info="Qt5-based web browser"/>
+    <pkg path="falkon"          info="Qt5-based web browser"/>
+    <pkg path="falkon-capture"  info="Falkon + webcam support"/>
     <pkg path="system_shell"    info="command-line interface to the system"/>
     <pkg path="system_clock-pc" info="real-time-clock service" arch="x86_64"/>
     <pkg path="qt5_textedit"    info="Qt5-based text editor"/>
