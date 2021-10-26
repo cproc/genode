@@ -200,6 +200,18 @@ struct Usb_device
 							for (int i = 0; i < p.transfer.number_of_packets; i++) {
 								size_t const actual_length = p.transfer.actual_packet_size[i];
 
+								if (p.transfer.packet_size[i] != transfer->iso_packet_desc[i].length) {
+									Genode::error("error 1");
+								}
+
+								if (actual_length > p.transfer.packet_size[i]) {
+									Genode::error("error 2");
+								}
+
+								if (out_offset > p.size()) {
+									Genode::error("error 3");
+								}
+
 								/*
 								 * Copy the data from the proper offsets within the buffer as
 								 * a short read is still stored at this location.
