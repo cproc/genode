@@ -284,9 +284,10 @@ struct Vfs::Oss_file_system::Audio
 
 		bool read(char *buf, file_size buf_size, file_size &out_size)
 		{
-//Genode::log("read(): ", buf_size);
+Genode::log("read(): ", buf_size);
 
 #if 0
+//Genode::log("vfs");
 			/* dummy implementation with audible noise for testing */
 
 			for (file_size i = 0; i < buf_size / sizeof(int16_t) / CHANNELS; i++) {
@@ -297,7 +298,7 @@ struct Vfs::Oss_file_system::Audio
 			
 			out_size = buf_size;
 #else
-
+//Genode::log("Audio_in");
 			out_size = 0;
 
 			if (!_audio_in_started) {
@@ -321,21 +322,24 @@ struct Vfs::Oss_file_system::Audio
 			/* packet loop */
 
 			for (;;) {
-
+Genode::log("read(): packet loop for");
 				unsigned stream_pos = stream->pos();	
 
 				Audio_in::Packet *p = stream->get(stream_pos);
 
 				if (!p || !p->valid()) {
-//Genode::log("read(): packet invalid");
+Genode::log("read(): packet invalid");
 					return true;
 				}
 
-//Genode::log("read(): packet valid");
+Genode::log("read(): packet valid");
 
 				/* sample loop */
 
 				for (;;) {
+
+					if (samples_read == samples_to_read)
+						return true;
 
 					for (unsigned c = 0; c < CHANNELS; c++) {
 						unsigned const buf_index = out_size / sizeof(int16_t);
@@ -344,17 +348,16 @@ struct Vfs::Oss_file_system::Audio
 						out_size += sizeof(int16_t);
 					}
 
+					samples_read++;
+
 					_read_sample_offset++;
 					if (_read_sample_offset == Audio_in::PERIOD) {
 						p->invalidate();
 						p->mark_as_recorded();
 						stream->increment_position();
 						_read_sample_offset = 0;
+						break;
 					}
-
-					samples_read++;
-					if (samples_read == samples_to_read)
-						return true;
 				}
 			}
 #endif
@@ -366,6 +369,10 @@ struct Vfs::Oss_file_system::Audio
 			using namespace Genode;
 
 //Genode::log("write(): ", buf_size);
+if (buf_size < 2048) {
+	Genode::error("buf_size < 2048");
+	for (;;);
+}
 
 			bool block_write = false;
 

@@ -14,6 +14,7 @@
 /* libc includes */
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 
@@ -23,7 +24,7 @@ int main(int argc, char **argv)
 
 	printf("fd: %d\n", fd);
 
-	static char buf[1024];
+	static char buf[2048];
 #if 0
 	for (size_t i = 0; i < sizeof(buf); i++) {
 		buf[i] = i;
@@ -33,13 +34,22 @@ int main(int argc, char **argv)
 	ssize_t total_bytes_written = 0;
 
 	for (int i = 0; /*i < 512*/; i++) {
-		ssize_t bytes_read = read(fd, buf, sizeof(buf));
+
+		memset(buf, 0, sizeof(buf));
+
+		static constexpr int num_pieces = 1;
+		size_t bytes_read = 0;
+		for (int piece = 0; piece < num_pieces; piece++) {
+			bytes_read += read(fd,
+			                   &buf[piece * (sizeof(buf) / num_pieces)],
+			                   sizeof(buf) / num_pieces);
+		}
 		total_bytes_read += bytes_read;
-//printf("bytes read: %zd, %zd\n", bytes_read, total_bytes_read);
+printf("bytes read: %zd, %zd\n", bytes_read, total_bytes_read);
 		if (bytes_read > 0) {
 			ssize_t bytes_written = write(fd, buf, sizeof(buf));
 			total_bytes_written += bytes_written;
-//printf("bytes written: %zd, %zd\n", bytes_written, total_bytes_written);
+printf("bytes written: %zd, %zd\n", bytes_written, total_bytes_written);
 		}
 	}
 
