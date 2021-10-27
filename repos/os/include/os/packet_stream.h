@@ -335,8 +335,10 @@ class Genode::Packet_descriptor_transmitter
 
 			do {
 				/* block for signal if tx queue is full */
-				if (_tx_queue->full())
+				if (_tx_queue->full()) {
+Genode::log("XXX tx()");
 					_tx_ready.wait_for_signal();
+				}
 
 				/*
 				 * It could happen that pending signals do not refer to the
@@ -459,8 +461,10 @@ class Genode::Packet_descriptor_receiver
 		{
 			Genode::Mutex::Guard mutex_guard(_rx_queue_mutex);
 
-			while (_rx_queue->empty())
+			while (_rx_queue->empty()) {
+Genode::log("XXX rx()");
 				_rx_ready.wait_for_signal();
+			}
 
 			*out_packet = _rx_queue->get();
 

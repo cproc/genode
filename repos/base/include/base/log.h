@@ -139,7 +139,7 @@ namespace Genode {
 	 * Write 'args' as a regular message to the log
 	 */
 	template <typename... ARGS>
-	void log(ARGS &&... args) { Log::log().output(Log::LOG, args...); }
+	void log(ARGS &&... args) { Log::log().output(Log::LOG, Trace::timestamp() / 2496000, ": ", args...); }
 
 
 	/**
@@ -181,7 +181,7 @@ namespace Genode {
 	 */
 	template <typename... ARGS>
 	void trace(ARGS && ... args) {
-		Trace_output::trace_output().output(Trace::timestamp(), ": ", args...); }
+		Trace_output::trace_output().output(Trace::timestamp() / 2496000, ": ", args...); }
 }
 
 

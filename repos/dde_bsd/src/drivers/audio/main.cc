@@ -114,6 +114,7 @@ class Audio_out::Out
 
 		void _play_packet()
 		{
+//Genode::trace("audio_drv: _play_packet()");
 			unsigned lpos = left()->pos();
 			unsigned rpos = right()->pos();
 
@@ -126,13 +127,20 @@ class Audio_out::Out
 
 				for (unsigned i = 0; i < Audio_out::PERIOD * Audio_out::MAX_CHANNELS; i += 2) {
 					data[i] = p_left->content()[i / 2] * 32767;
+#if 1
+static int count = 0;
+if (data[i] != 0) {
+	Genode::log("audio_drv: ", count);
+	count++;
+}
+#endif
 					data[i + 1] = p_right->content()[i / 2] * 32767;
 				}
 
 				/* send to driver */
-				if (int err = Audio::play(data, sizeof(data))) {
-					Genode::warning("Error ", err, " during playback");
-				}
+//				if (int err = Audio::play(data, sizeof(data))) {
+//					Genode::warning("Error ", err, " during playback");
+//				}
 
 				p_left->invalidate();
 				p_right->invalidate();
@@ -167,6 +175,12 @@ class Audio_out::Out
 		 */
 		void _handle_notify()
 		{
+#if 0
+static int count = 0;
+count++;
+Genode::trace("_handle_notify(): ", count);
+#endif
+//Genode::trace("Audio_out::Out::_handle_notify()");
 			if (_active())
 				_play_packet();
 		}
@@ -353,7 +367,7 @@ class Audio_in::In
 			bool overrun = stream()->overrun();
 
 			Packet *p = stream()->alloc();
-#if 0
+#if 1
 			float const scale = 32768.0f * 2;
 
 			float * const content = p->content();
@@ -377,6 +391,7 @@ class Audio_in::In
 
 		void _handle_notify()
 		{
+//Genode::log("Audio_in::In::_handle_notify()");
 			if (_active())
 				_record_packet();
 		}
