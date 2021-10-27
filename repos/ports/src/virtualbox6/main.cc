@@ -262,7 +262,7 @@ struct Main : Event_handler
 		}
 	} _capslock { _env, _config.xml(), _capslock_handler };
 
-	Mouse_shape _mouse_shape { _env };
+	//Mouse_shape _mouse_shape { _env };
 
 	Signal_handler<Main> _exit_handler { _env.ep(), *this, &Main::_handle_exit };
 
@@ -278,7 +278,7 @@ struct Main : Event_handler
 
 	Input_adapter _input_adapter { _iconsole };
 
-	bool const _genode_gui_attached = ( _attach_genode_gui(), true );
+	bool const _genode_gui_attached = ( /*_attach_genode_gui(), true*/false );
 
 	void _attach_genode_gui()
 	{
@@ -454,10 +454,10 @@ void Main::handle_vbox_event(VBoxEventType_T ev_type, IEvent &ev)
 			shape_ev->COMGETTER(Width)(&width);
 			shape_ev->COMGETTER(Height)(&height);
 			shape_ev->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
-
+#if 0
 			_mouse_shape.update(visible, alpha, xHot, yHot, width, height,
 			                    ComSafeArrayAsInParam(shape));
-
+#endif
 		} break;
 
 	case VBoxEventType_OnKeyboardLedsChanged:

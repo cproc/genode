@@ -258,6 +258,9 @@ struct Vfs::Oss_file_system::Audio
 			if ((fifo_samples_new == 0) ||
 			    (fifo_samples_new > _info.optr_fifo_samples)) {
 				pause();
+static int underrun_count = 0;
+underrun_count++;
+Genode::warning("vfs_oss: underrun ", underrun_count);
 				if (fifo_samples_new > _info.optr_fifo_samples) {
 					_info.play_underruns++;
 					fifo_samples_new = 0;
@@ -287,17 +290,19 @@ struct Vfs::Oss_file_system::Audio
 //Genode::log("read(): ", buf_size);
 
 #if 0
+//Genode::log("vfs");
 			/* dummy implementation with audible noise for testing */
 
 			for (file_size i = 0; i < buf_size / sizeof(int16_t) / CHANNELS; i++) {
 				for (int c = 0; c < CHANNELS; c++) {
-					((int16_t*)buf)[(i * CHANNELS) + c] = ((i*2) << 8) | (((i*2)+1) & 0xff);
+					((int16_t*)buf)[(i * CHANNELS) + c] = (((i*2)+1) << 8) | (((i*2)+0) & 0xff);
 				}
 			}
 			
+
 			out_size = buf_size;
 #else
-
+//Genode::log("Audio_in");
 			out_size = 0;
 
 			if (!_audio_in_started) {
@@ -343,7 +348,7 @@ struct Vfs::Oss_file_system::Audio
 					for (unsigned c = 0; c < CHANNELS; c++) {
 						unsigned const buf_index = out_size / sizeof(int16_t);
 						((int16_t*)buf)[buf_index] = p->content()[_read_sample_offset] * 32768;
-//Genode::log("buf[", buf_index, "] = ", p->content()[_read_sample_offset] * 32768);
+//Genode::log("buf[", buf_index, "] = ", ((int16_t*)buf)[buf_index]);
 						out_size += sizeof(int16_t);
 					}
 
@@ -368,6 +373,10 @@ struct Vfs::Oss_file_system::Audio
 			using namespace Genode;
 
 //Genode::log("write(): ", buf_size);
+if (buf_size < 2048) {
+	Genode::warning("buf_size (", buf_size, ")< 2048");
+//	for (;;);
+}
 
 			bool block_write = false;
 
@@ -454,6 +463,11 @@ struct Vfs::Oss_file_system::Audio
 						int16_t src_sample;
 						if (buf_index * sizeof(uint16_t) < buf_size) {
 							src_sample = ((int16_t const*)buf)[buf_index];
+#if 0
+if (src_sample != 0) {
+	Genode::log("write(): sample: ", src_sample);
+}
+#endif
 						} else {
 							/*
 							 * Fill up the packet with zeroes if the buffer

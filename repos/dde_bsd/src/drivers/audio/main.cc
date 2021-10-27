@@ -126,6 +126,9 @@ class Audio_out::Out
 
 				for (unsigned i = 0; i < Audio_out::PERIOD * Audio_out::MAX_CHANNELS; i += 2) {
 					data[i] = p_left->content()[i / 2] * 32767;
+if (data[i] != 0) {
+	Genode::trace("stop");
+}
 					data[i + 1] = p_right->content()[i / 2] * 32767;
 				}
 
@@ -353,7 +356,7 @@ class Audio_in::In
 			bool overrun = stream()->overrun();
 
 			Packet *p = stream()->alloc();
-#if 0
+#if 1
 			float const scale = 32768.0f * 2;
 
 			float * const content = p->content();

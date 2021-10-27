@@ -181,7 +181,7 @@ namespace Genode {
 	 */
 	template <typename... ARGS>
 	void trace(ARGS && ... args) {
-		Trace_output::trace_output().output(Trace::timestamp(), ": ", args...); }
+		Trace_output::trace_output().output(Trace::timestamp() / 2400000, ": ", args...); }
 }
 
 
