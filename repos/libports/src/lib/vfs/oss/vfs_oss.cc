@@ -372,7 +372,8 @@ Genode::warning("vfs_oss: underrun ", underrun_count);
 		{
 			using namespace Genode;
 
-Genode::log("vfs_oss: write(): ", buf_size);
+//Genode::log("vfs_oss: write(): ", buf_size);
+
 if (buf_size < 2048) {
 	Genode::warning("buf_size (", buf_size, ")< 2048");
 //	for (;;);
@@ -483,7 +484,7 @@ if ((src_sample != 0) || (count == 0)) {
 						dest[c][sample_count] = ((float)src_sample) / 32768.0f;
 					}
 				}
-//Genode::trace("vfs_oss: submit()");
+
 				_out[0]->submit(lp);
 				_out[1]->submit(rp);
 			}
