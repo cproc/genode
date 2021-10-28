@@ -130,7 +130,7 @@ class Audio_out::Out
 #if 1
 static int count = 0;
 if (data[i] != 0) {
-	Genode::log("audio_drv: ", count);
+	Genode::trace("audio_drv: ", count);
 	count++;
 }
 #endif
