@@ -95,6 +95,7 @@ class Bsd::Format_command
 		 */
 		explicit Format_command(const char *format)
 		{
+//Genode::log("format: ", Genode::Cstring(format));
 			/* check for command begin and eat the character */
 			if (format[consumed] != '%') return;
 			if (!format[++consumed]) return;
@@ -106,9 +107,15 @@ class Bsd::Format_command
 			/* heading zero indicates zero-padding */
 			zeropad = (format[consumed] == '0');
 
+//Genode::log("format[consumed]: ", Genode::Char(format[consumed]));
 			/* read decimal padding value */
 			padding = decode_decimal(format, &consumed);
 			if (!format[consumed]) return;
+
+			if (format[consumed] == '.') {
+				consumed++;
+				decode_decimal(format, &consumed);
+			}
 
 			/* decode length */
 			switch (format[consumed]) {
@@ -147,6 +154,7 @@ class Bsd::Format_command
 				case 'i': type =  INT;    base = 10; break;
 				case 'o': type = UINT;    base =  8; break;
 				case 'u': type = UINT;    base = 10; break;
+				case 'b':
 				case 'x': type = UINT;    base = 16; break;
 				case 'X': type = UINT;    base = 16; uppercase = 1; break;
 				case 'p': type = PTR;     base = 16; break;
