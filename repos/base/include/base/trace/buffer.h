@@ -170,10 +170,9 @@ class Genode::Trace::Buffer
 			if (entry.length() == 0)
 				return Entry(0);
 
-			addr_t const offset = (addr_t)entry._entry - (addr_t)_entries;
-			if (offset + entry.length() + sizeof(_Entry) > _size)
+			addr_t const entry_data_offset = (addr_t)entry.data() - (addr_t)_entries;
+			if (entry_data_offset + entry.length() + sizeof(_Entry) > _size)
 				return Entry(0);
-
 			return Entry((_Entry const *)((addr_t)entry.data() + entry.length()));
 		}
 };
