@@ -1,0 +1,476 @@
+debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/VBox/Devices/Audio/AudioMixer.cpp          |    6 ++
+ src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp  |    3 +
+ .../src/VBox/Devices/Audio/DevHdaStream.cpp        |   41 ++++++++++++----
+ .../src/VBox/Devices/Audio/DrvAudio.cpp            |   52 ++++++++++++++------
+ .../src/VBox/Devices/Audio/DrvHostAudioOss.cpp     |   21 ++++++--
+ 5 files changed, 90 insertions(+), 33 deletions(-)
+
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
+index bce59d4..53149d5 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
+@@ -1485,6 +1485,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+      */
+     uint32_t cWritableStreams  = 0;
+     uint32_t cFramesToRead     = audioMixerSinkUpdateOutputCalcFramesToRead(pSink, &cWritableStreams);
++//RTLogPrintf("%s: cFramesToRead: %u, ret: %p\n", __func__, cFramesToRead, __builtin_return_address(0));
+     if (   cFramesToRead != 0
+         || cWritableStreams <= 1
+         || AudioMixBufFree(&pSink->MixBuf) > 2)
+@@ -1573,7 +1574,8 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+                         AudioMixBufPeek(&pSink->MixBuf, offSrcFrame, cSrcFramesPeeked, &cSrcFramesPeeked,
+                                         &pMixStream->PeekState, pvBuf, cbBuf, &cbDstPeeked);
+                         offSrcFrame += cSrcFramesPeeked;
+-
++//RTLogPrintf("%s: cSrcFramesPeeked: %u\n", __func__, cSrcFramesPeeked);
++//RTLogPrintf("%s: cbDstPeeked: %u\n", __func__, cbDstPeeked);
+                         /* Write it to the backend.  Since've checked that there is buffer
+                            space available, this should always write the whole buffer unless
+                            it's an unreliable stream. */
+@@ -1803,7 +1805,9 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void
+          */
+         if (!pSink->AIO.fShutdown)
+         {
++//RTLogPrintf("%p: %s: cMsSleep: %u\n", hThreadSelf, __func__, cMsSleep);
+             int rc = RTSemEventWait(pSink->AIO.hEvent, cMsSleep);
++//RTLogPrintf("%p: %s: rc: %u\n", hThreadSelf, __func__, rc);
+             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%s: RTSemEventWait -> %Rrc\n", pSink->pszName, rc), rc);
+         }
+     }
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
+index 5ba587d..d462c18 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
+@@ -1184,7 +1184,7 @@ static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
+     RT_NOREF(pDevIns);
+     uint8_t const  uSD   = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
+     uint32_t const uLPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
+-
++//RTLogPrintf("hdaRegReadLPIB(): %u\n", uLPIB);
+ #ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+     /*
+      * Should we consider doing DMA work while we're here?  That would require
+@@ -1748,6 +1748,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
+ 
+ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+ {
++//RTLogPrintf("hdaRegWriteSDSTS()\n");
+     uint32_t v = HDA_REG_IND(pThis, iReg);
+ 
+     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
+index 74caf45..de745af 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
+@@ -19,6 +19,8 @@
+ /*********************************************************************************************************************************
+ *   Header Files                                                                                                                 *
+ *********************************************************************************************************************************/
++#include <base/log.h>
++
+ #define LOG_GROUP LOG_GROUP_DEV_HDA
+ #include <VBox/log.h>
+ 
+@@ -552,9 +554,9 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
+         uint64_t const cTicks = ASMMultU64ByU32DivByU32(cTimerTicksPerSec, pStreamShared->State.aSchedule[i].cbPeriod, cbPerSec);
+         AssertLogRelMsgReturn((uint32_t)cTicks == cTicks, ("cTicks=%RU64 (%#RX64)\n", cTicks, cTicks), VERR_INTERNAL_ERROR_4);
+         pStreamShared->State.aSchedule[i].cPeriodTicks = RT_MAX((uint32_t)cTicks, 16);
+-        LogRel2(("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
++        RTLogPrintf("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
+                  pStreamShared->State.aSchedule[i].cbPeriod, pStreamShared->State.aSchedule[i].cLoops,
+-                 pStreamShared->State.aSchedule[i].idxFirst, pStreamShared->State.aSchedule[i].cEntries));
++                 pStreamShared->State.aSchedule[i].idxFirst, pStreamShared->State.aSchedule[i].cEntries);
+     }
+ 
+     return VINF_SUCCESS;
+@@ -1149,7 +1151,7 @@ static void hdaStreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
+ 
+     /* Update LPIB in any case. */
+     HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) = uLPIB;
+-
++//RTLogPrintf("LPIB set to %u\n", uLPIB);
+     /* Do we need to tell the current DMA position? */
+     if (pThis->fDMAPosition)
+     {
+@@ -1290,7 +1292,9 @@ DECLINLINE(bool) hdaStreamDmaBufNeedsIrq(PHDASTREAM pStreamShared)
+ {
+     uint8_t const idxBdle = pStreamShared->State.idxCurBdle;
+     AssertReturn(idxBdle < pStreamShared->State.cBdles, false);
+-    return (pStreamShared->State.aBdl[idxBdle].fFlags & HDA_BDLE_F_IOC) != 0;
++    bool res = (pStreamShared->State.aBdl[idxBdle].fFlags & HDA_BDLE_F_IOC) != 0;
++//Genode::trace("vmm: ", res);
++    return res;
+ }
+ 
+ /**
+@@ -1344,9 +1348,16 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
+     }
+ 
+     if (!(HDA_STREAM_REG(pThis, STS, uSD) & HDA_SDSTS_BCIS))
+-    { /* likely */ }
++    {
++    	/* likely */
++//RTLogPrintf("BCIS not set\n");
++Genode::trace("OK");
++    }
+     else
+     {
++Genode::trace("BCIS bit set, skipping transfer");
++//RTLogPrintf("BCIS still set, skipping transfer\n");
++pStreamShared->State.tsTransferNext = 0;
+         /** @todo r=bird: This is a bit fishy.  We should make effort the reschedule
+          *        the transfer immediately after the guest clears the interrupt.
+          *        The same fishy code is present in AC'97 with just a little
+@@ -1459,6 +1470,7 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
+                 /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
+                  * ending / beginning of a period. */
+                 /** @todo r=bird: What does the above comment mean? */
++//RTLogPrintf("setting BCIS\n");
+                 HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) |= HDA_SDSTS_BCIS;
+                 HDA_PROCESS_INTERRUPT(pDevIns, pThis);
+             }
+@@ -1691,14 +1703,15 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
+ {
+     uint8_t const uSD = pStreamShared->u8SD;
+     LogFlowFunc(("ENTER - #%u cbToProduce=%#x\n", uSD, cbToProduce));
+-
++//Genode::trace("4");
+     /*
+      * Common prologue.
+      */
+     if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, pStreamR3, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
+     { /* likely */ }
+-    else
++    else {
+         return;
++    }
+ 
+     /*
+      *
+@@ -1716,7 +1729,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
+     Assert(cbLeft == pStreamShared->State.cbCurDmaPeriod);
+ # endif
+     Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
+-
++//Genode::trace("cbLeft: ", cbLeft);
+     while (cbLeft > 0)
+     {
+         STAM_PROFILE_START(&pThis->StatOut, a);
+@@ -1782,6 +1795,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
+          * WALCLK and possibly SDnSTS before the DMA position).
+          */
+         hdaStreamSetPositionAdd(pStreamShared, pDevIns, pThis, cbRead);
++//Genode::trace("4");
+         hdaStreamDoDmaMaybeCompleteBuffer(pDevIns, pThis, pStreamShared, "hdaR3StreamDoDmaOutput");
+     }
+ 
+@@ -2211,7 +2225,7 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
+ {
+     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStreamShared->hTimer));
+-
++//Genode::trace("1: ", PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer) / 1000000);
+     /* Do the work: */
+     hdaR3StreamUpdateDma(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
+ 
+@@ -2240,10 +2254,14 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
+ 
+         /* Do the actual timer re-arming. */
+         uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+-        uint64_t const tsTransferNext = tsNow + pStreamShared->State.aSchedule[idxSched].cPeriodTicks;
++        uint64_t const tsTransferNext = tsNow +
++                                        (pStreamShared->State.tsTransferNext ?
++                                         pStreamShared->State.aSchedule[idxSched].cPeriodTicks :
++                                         0);
+         Log3Func(("[SD%RU8] fSinkActive=true, tsTransferNext=%RU64 (in %RU64)\n",
+                   pStreamShared->u8SD, tsTransferNext, tsTransferNext - tsNow));
+         int rc = PDMDevHlpTimerSet(pDevIns, pStreamShared->hTimer, tsTransferNext);
++//Genode::trace("2: ", tsTransferNext / 1000000);
+         AssertRC(rc);
+ 
+         /* Some legacy stuff: */
+@@ -2278,7 +2296,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+ {
+     RT_NOREF(pThisCC);
+     int rc2;
+-
++//Genode::trace("2");
+     /*
+      * Make sure we're running and got an active mixer sink.
+      */
+@@ -2337,6 +2355,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          * Do the DMA transfer.
+          */
+         uint64_t const offWriteBefore = pStreamShared->State.offWrite;
++//Genode::trace("3");
+         hdaR3StreamDoDmaOutput(pDevIns, pThis, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
+ 
+         /*
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
+index 76594ee..6010f6c 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
+@@ -1049,34 +1049,34 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+     if (PDMAudioPropsSampleSize(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+     {
+         PDMAudioPropsSetSampleSize(&pCfg->Props, PDMAudioPropsSampleSize(&pDrvCfg->Props));
+-        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
+-                 PDMAudioPropsSampleSize(&pCfg->Props), pszName));
++        RTLogPrintf("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
++                 PDMAudioPropsSampleSize(&pCfg->Props), pszName);
+     }
+ 
+     if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.uHz = pDrvCfg->Props.uHz;
+-        LogRel2(("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfg->Props.uHz, pszName));
++        RTLogPrintf("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfg->Props.uHz, pszName);
+     }
+ 
+     if (pDrvCfg->uSigned != UINT8_MAX) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.fSigned = RT_BOOL(pDrvCfg->uSigned);
+-        LogRel2(("Audio: Using custom %s sample format for stream '%s'\n",
+-                 pCfg->Props.fSigned ? "signed" : "unsigned", pszName));
++        RTLogPrintf("Audio: Using custom %s sample format for stream '%s'\n",
++                 pCfg->Props.fSigned ? "signed" : "unsigned", pszName);
+     }
+ 
+     if (pDrvCfg->uSwapEndian != UINT8_MAX) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.fSwapEndian = RT_BOOL(pDrvCfg->uSwapEndian);
+-        LogRel2(("Audio: Using custom %s endianess for samples of stream '%s'\n",
+-                 pCfg->Props.fSwapEndian ? "swapped" : "original", pszName));
++        RTLogPrintf("Audio: Using custom %s endianess for samples of stream '%s'\n",
++                 pCfg->Props.fSwapEndian ? "swapped" : "original", pszName);
+     }
+ 
+     if (PDMAudioPropsChannels(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+     {
+         PDMAudioPropsSetChannels(&pCfg->Props, PDMAudioPropsChannels(&pDrvCfg->Props));
+-        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pszName));
++        RTLogPrintf("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pszName);
+     }
+ 
+     /* Validate PCM properties. */
+@@ -1090,21 +1090,22 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+      * Buffer size
+      */
+     const char *pszWhat = "device-specific";
++RTLogPrintf("%s: pDrvCfg->uBufferSizeMs: %u\n", __func__, pDrvCfg->uBufferSizeMs);
+     if (pDrvCfg->uBufferSizeMs)
+     {
+         pCfg->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uBufferSizeMs);
+         pszWhat = "custom";
+     }
+-
++RTLogPrintf("%s: pCfg->Backend.cFramesBufferSize: %u\n", __func__, pCfg->Backend.cFramesBufferSize);
+     if (!pCfg->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
+     {
+         pCfg->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfg->Props, 300 /*ms*/);
+         pszWhat = "default";
+     }
+ 
+-    LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
++    RTLogPrintf("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
+              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize),
+-             pCfg->Backend.cFramesBufferSize, pszName));
++             pCfg->Backend.cFramesBufferSize, pszName);
+ 
+     /*
+      * Period size
+@@ -1130,14 +1131,15 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+         pCfg->Backend.cFramesPeriod = pCfg->Backend.cFramesBufferSize / 2;
+     }
+ 
+-    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
++    RTLogPrintf("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
+              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod),
+-             pCfg->Backend.cFramesPeriod, pszName));
++             pCfg->Backend.cFramesPeriod, pszName);
+ 
+     /*
+      * Pre-buffering size
+      */
+     pszWhat = "device-specific";
++//RTLogPrintf("%s: pDrvCfg->uPreBufSizeMs: %u\n", __func__, pDrvCfg->uPreBufSizeMs);
+     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
+     {
+         pCfg->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uPreBufSizeMs);
+@@ -1605,9 +1607,12 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
+      * Configure host buffers.
+      */
+     Assert(pStreamEx->cbPreBufThreshold == 0);
+-    if (pStreamEx->Core.Cfg.Backend.cFramesPreBuffering != 0)
++    if (pStreamEx->Core.Cfg.Backend.cFramesPreBuffering != 0) {
+         pStreamEx->cbPreBufThreshold = PDMAudioPropsFramesToBytes(&pStreamEx->Core.Cfg.Props,
+                                                                   pStreamEx->Core.Cfg.Backend.cFramesPreBuffering);
++RTLogPrintf("%s: pStreamEx->Core.Cfg.Backend.cFramesPreBuffering: %u\n", __func__, pStreamEx->Core.Cfg.Backend.cFramesPreBuffering);
++RTLogPrintf("%s: pStreamEx->cbPreBufThreshold: %u\n", __func__, pStreamEx->cbPreBufThreshold);
++	}
+ 
+     /* Allocate space for pre-buffering of output stream w/o mixing buffers. */
+     if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT)
+@@ -2647,6 +2652,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
+                                 AssertFailed();
+                                 RT_FALL_THROUGH();
+                             case PDMHOSTAUDIOSTREAMSTATE_OKAY:
++//RTLogPrintf("%s: PREBUF, before: %u\n", __func__, pStreamEx->Out.enmPlayState);
+                                 pStreamEx->Out.enmPlayState = pStreamEx->cbPreBufThreshold > 0
+                                                             ? DRVAUDIOPLAYSTATE_PREBUF : DRVAUDIOPLAYSTATE_PLAY;
+                                 break;
+@@ -3006,6 +3012,11 @@ static int drvAudioStreamPlayToPreBuffer(PDRVAUDIOSTREAM pStreamEx, const void *
+ static int drvAudioStreamPreBufComitting(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
+                                          const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+ {
++RTLogPrintf("%s: cbBuf: %u, ret: %p\n", __func__, cbBuf, __builtin_return_address(0));
++
++RTLogPrintf("%s: cbPreBufAlloc: %u\n", __func__, pStreamEx->Out.cbPreBufAlloc);
++RTLogPrintf("%s: cbPreBuffered: %u\n", __func__, pStreamEx->Out.cbPreBuffered);
++
+     /*
+      * First, top up the buffer with new data from pbBuf.
+      */
+@@ -3033,6 +3044,9 @@ static int drvAudioStreamPreBufComitting(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
+     uint32_t        off     = pStreamEx->Out.offPreBuf;
+     AssertStmt(off < pStreamEx->Out.cbPreBufAlloc, off %= cbAlloc);
+     uint32_t        cbLeft  = pStreamEx->Out.cbPreBuffered;
++RTLogPrintf("%s: cbPreBufAlloc 2: %u\n", __func__, pStreamEx->Out.cbPreBufAlloc);
++RTLogPrintf("%s: cbPreBuffered 2: %u\n", __func__, pStreamEx->Out.cbPreBuffered);
++
+     while (cbLeft > 0)
+     {
+         uint32_t const cbToWrite = RT_MIN(cbAlloc - off, cbLeft);
+@@ -3383,7 +3397,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+ {
+     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+     AssertPtr(pThis);
+-
++//RTLogPrintf("%s: cbBuf: %u, ret: %p\n", __func__, cbBuf, __builtin_return_address(0));
+     /*
+      * Check input and sanity.
+      */
+@@ -3432,12 +3446,14 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+             switch (pStreamEx->Out.enmPlayState)
+             {
+                 case DRVAUDIOPLAYSTATE_PLAY:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PLAY\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPlayLocked(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PLAY_PREBUF:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PLAY_PREBUF\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPlayLocked(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+@@ -3445,6 +3461,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF\n", __func__);
+                     if (cbBuf + pStreamEx->Out.cbPreBuffered < pStreamEx->cbPreBufThreshold)
+                         rc = drvAudioStreamPlayToPreBuffer(pStreamEx, pvBuf, cbBuf, pStreamEx->cbPreBufThreshold, pcbWritten);
+                     else if (   enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY
+@@ -3466,20 +3483,24 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF_OVERDUE:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_OVERDUE\n", __func__);
+                     Assert(   !(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY)
+                            || enmBackendState != PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     RT_FALL_THRU();
+                 case DRVAUDIOPLAYSTATE_PREBUF_SWITCHING:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_SWITCHING\n", __func__);
+                     rc = drvAudioStreamPlayToPreBuffer(pStreamEx, pvBuf, cbBuf, pStreamEx->cbPreBufThreshold, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF_COMMITTING:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_COMMITTING\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPreBufComitting(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_NOPLAY:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_NOPLAY\n", __func__);
+                     *pcbWritten = cbBuf;
+                     pStreamEx->offInternal += cbBuf;
+                     Log3Func(("[%s] Discarding the data, backend state: %s\n", pStreamEx->Core.Cfg.szName,
+@@ -3487,6 +3508,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 default:
++//RTLogPrintf("%s: default\n", __func__);
+                     *pcbWritten = cbBuf;
+                     AssertMsgFailedBreak(("%d; cbBuf=%#x\n", pStreamEx->Out.enmPlayState, cbBuf));
+             }
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+index d2a0f17..9dd6fb1 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+@@ -19,6 +19,7 @@
+ /*********************************************************************************************************************************
+ *   Header Files                                                                                                                 *
+ *********************************************************************************************************************************/
++#include <base/log.h>
+ #define LOG_ENABLED 1
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -301,8 +302,8 @@ static int drvHstAudOssStreamConfigure(int hFile, bool fInput, PDRVHSTAUDOSSSTRE
+     /*
+      * Set fragment size and count.
+      */
+-    LogRel2(("OSS: Requested %RU16 %s fragments, %RU32 bytes each\n",
+-             pOSSReq->cFragments, fInput ? "input" : "output", pOSSReq->cbFragment));
++    RTLogPrintf("OSS: Requested %RU16 %s fragments, %RU32 bytes each\n",
++             pOSSReq->cFragments, fInput ? "input" : "output", pOSSReq->cbFragment);
+ 
+     int mmmmssss = (pOSSReq->cFragments << 16) | pOSSReq->cbFragmentLog2;
+     AssertLogRelMsgReturn(ioctl(hFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss) >= 0,
+@@ -381,6 +382,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
+         ReqOssCfg.cbFragmentLog2 = 12;
+         ReqOssCfg.cbFragment     = RT_BIT_32(ReqOssCfg.cbFragmentLog2);
+         uint32_t const cbBuffer  = PDMAudioPropsFramesToBytes(&ReqOssCfg.Props, pCfgReq->Backend.cFramesBufferSize);
++//RTLogPrintf("%s: pCfgReq->Backend.cFramesBufferSize: %u, cbBuffer: %u\n", __func__, pCfgReq->Backend.cFramesBufferSize, cbBuffer);
+         ReqOssCfg.cFragments     = cbBuffer >> ReqOssCfg.cbFragmentLog2;
+         AssertLogRelStmt(cbBuffer < ((uint32_t)0x7ffe << ReqOssCfg.cbFragmentLog2), ReqOssCfg.cFragments = 0x7ffe);
+ 
+@@ -398,10 +400,16 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
+ 
+             memcpy(&pCfgAcq->Props, &pStreamOSS->OssCfg.Props, sizeof(PDMAUDIOPCMPROPS));
+             pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamOSS->OssCfg.cbFragment);
++//RTLogPrintf("%s: pStreamOSS->OssCfg.cbFragment: %u\n", __func__, pStreamOSS->OssCfg.cbFragment);
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesPeriod: %u\n", __func__, pCfgAcq->Backend.cFramesPeriod);
+             pCfgAcq->Backend.cFramesBufferSize   = pCfgAcq->Backend.cFramesPeriod * pStreamOSS->OssCfg.cFragments;
+-            pCfgAcq->Backend.cFramesPreBuffering = (uint64_t)pCfgReq->Backend.cFramesPreBuffering
++//RTLogPrintf("%s: pStreamOSS->OssCfg.cFragments: %u\n", __func__, pStreamOSS->OssCfg.cFragments);
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesBufferSize: %u\n", __func__, pCfgAcq->Backend.cFramesBufferSize);
++//RTLogPrintf("%s: pCfgReq->Backend.cFramesPreBuffering: %u\n", __func__, pCfgReq->Backend.cFramesPreBuffering);
++            pCfgAcq->Backend.cFramesPreBuffering = 0/*(uint64_t)pCfgReq->Backend.cFramesPreBuffering
+                                                  * pCfgAcq->Backend.cFramesBufferSize
+-                                                 / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
++                                                 / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1)*/;
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesPreBuffering 2: %u\n", __func__, pCfgAcq->Backend.cFramesPreBuffering);
+ 
+             /*
+              * Copy the stream config and we're done!
+@@ -730,7 +738,10 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
+     RT_NOREF(pInterface);
+     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+     AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
+-
++//Genode::trace(__func__, ": ", cbBuf);
++if (cbBuf == 24576) {
++	RTLogPrintf("%sBuf: %u, ret: %p\n", __func__, cbBuf, __builtin_return_address(0));
++}
+     /*
+      * Return immediately if this is a draining service call.
+      *
