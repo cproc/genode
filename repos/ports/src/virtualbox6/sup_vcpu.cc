@@ -674,15 +674,36 @@ template <typename VIRT> VBOXSTRICTRC Sup::Vcpu_impl<VIRT>::_switch_to_hw()
  ** Vcpu interface **
  ********************/
 
-template <typename T> void Sup::Vcpu_impl<T>::halt(Genode::uint64_t const wait_ns)
+template <typename T> void Sup::Vcpu_impl<T>::halt(Genode::uint64_t /*const*/ wait_ns)
 {
+#if 1
+//if (wait_ns >= RT_NS_1MS) {
+Genode::trace(this, ": ", __func__, ": ", wait_ns, " ns, ", wait_ns / RT_NS_1MS, " ms");
+//}
+#endif
+
+#if 1
+// XXX
+if (wait_ns < RT_NS_1MS) {
+	wait_ns = RT_NS_1MS;
+}
+#endif
+
 	RTSemEventMultiWait(_halt_semevent, wait_ns/RT_NS_1MS);
 	RTSemEventMultiReset(_halt_semevent);
+#if 1
+if (wait_ns >= RT_NS_1MS) {
+Genode::trace(this, ": ", __func__, " finished");
+}
+#endif
 }
 
 
 template <typename T> void Sup::Vcpu_impl<T>::wake_up()
 {
+#if 1
+Genode::trace(this, ": ", __func__);
+#endif
 	RTSemEventMultiSignal(_halt_semevent);
 }
 
@@ -690,7 +711,7 @@ template <typename T> void Sup::Vcpu_impl<T>::wake_up()
 template <typename T> void Sup::Vcpu_impl<T>::pause()
 {
 	Genode::Mutex::Guard guard(_nem_guard);
-
+Genode::trace(this, ": ", __func__, ", ret: ", __builtin_return_address(0));
 	PVMCPU     pVCpu    = &_vmcpu;
 	VMCPUSTATE enmState = pVCpu->enmState;
 
