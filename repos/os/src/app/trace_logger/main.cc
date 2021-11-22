@@ -154,13 +154,13 @@ if (_report_id > 2) {
 				Number_of_bytes const buffer_sz   = session_policy.attribute_value("buffer", _default_buf_sz);
 				Policy_name     const policy_name = session_policy.attribute_value("policy", _default_policy_name);
 				try {
-					_trace.trace(id.id, _policies.find_by_name(policy_name).id(), buffer_sz);
+					_trace.trace(id.id, _policies.find_by_name(policy_name).id(), buffer_sz / 2);
 				} catch (Policy_tree::No_match) {
 					Policy &policy = *new (_heap) Policy(_env, _trace, policy_name);
 					_policies.insert(policy);
-					_trace.trace(id.id, policy.id(), buffer_sz);
+					_trace.trace(id.id, policy.id(), buffer_sz / 2);
 				}
-				monitors.insert(new (_heap) Monitor(_trace, _env.rm(), id));
+				monitors.insert(new (_heap) Monitor(_trace, _env.rm(), id, _env.ram(), buffer_sz / 2));
 			}
 			catch (Trace::Already_traced         ) { warning("Cannot activate tracing: Already_traced"         ); return; }
 			catch (Trace::Source_is_dead         ) { warning("Cannot activate tracing: Source_is_dead"         ); return; }
