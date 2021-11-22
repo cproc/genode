@@ -1380,6 +1380,8 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 					info.attribute_value("ofrag_avail", 0U);
 				unsigned int const ofrag_total =
 					info.attribute_value("ofrag_total", 0U);
+				unsigned int const ofrag_bytes =
+					info.attribute_value("ofrag_bytes", 0U);
 				if (!ofrag_size || !ofrag_total) {
 					result = ENOTSUP;
 					return;
@@ -1388,7 +1390,13 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				int const fragments  = (int)ofrag_avail;
 				int const fragstotal = (int)ofrag_total;
 				int const fragsize   = (int)ofrag_size;
-				if (fragments < 0 || fragstotal < 0 || fragsize < 0) {
+				int const bytes      = (int)ofrag_bytes;
+				if (fragments < 0 || fragstotal < 0 ||
+				    fragsize < 0 || bytes < 0) {
+Genode::error("fragments: ", fragments,
+              ", fragstotal: ", fragstotal,
+              ", fragsize: ", fragsize,
+              ", bytes: ", bytes);
 					result = EINVAL;
 					return;
 				}
@@ -1399,7 +1407,7 @@ Libc::Vfs_plugin::_ioctl_sndctl(File_descriptor *fd, unsigned long request, char
 				buf_info->fragments  = fragments;
 				buf_info->fragstotal = fragstotal;
 				buf_info->fragsize   = fragsize;
-				buf_info->bytes      = fragments * fragsize;
+				buf_info->bytes      = bytes;
 
 				handled = true;
 			});

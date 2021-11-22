@@ -11,9 +11,13 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+/* Genode includes */
+#include <base/log.h>
+
 /* libc includes */
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 
@@ -21,19 +25,45 @@ int main(int argc, char **argv)
 {
 	int fd = open("/dev/dsp", O_RDWR);
 
-	printf("fd: %d\n", fd);
+	static char buf[1764];
 
-	static char buf[1024];
-#if 0
-	for (size_t i = 0; i < sizeof(buf); i++) {
-		buf[i] = i;
+#if 1
+	int CHANNELS = 2;
+	for (size_t i = 0; i < sizeof(buf) / sizeof(int16_t) / CHANNELS; i++) {
+		for (int c = 0; c < CHANNELS; c++) {
+			((int16_t*)buf)[(i * CHANNELS) + c] = (((i*2)+1) << 8) | (((i*2)+0) & 0xff);
+		}
 	}
 #endif
+
 	ssize_t total_bytes_read = 0;
 	ssize_t total_bytes_written = 0;
 
 	for (int i = 0; /*i < 512*/; i++) {
-		ssize_t bytes_read = read(fd, buf, sizeof(buf));
+
+//		memset(buf, 0, sizeof(buf));
+
+#if 0
+static int count = 0;
+if (count == 0) {
+	Genode::log("test: ", count);
+	Genode::trace("test: ", count);
+	buf[0] = 128;
+	count++;
+}
+#endif
+
+		size_t bytes_read = 0;
+#if 0
+		static constexpr int num_pieces = 1;
+		for (int piece = 0; piece < num_pieces; piece++) {
+			bytes_read += read(fd,
+			                   &buf[piece * (sizeof(buf) / num_pieces)],
+			                   sizeof(buf) / num_pieces);
+		}
+#else
+		bytes_read += sizeof(buf);
+#endif
 		total_bytes_read += bytes_read;
 //printf("bytes read: %zd, %zd\n", bytes_read, total_bytes_read);
 		if (bytes_read > 0) {

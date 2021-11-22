@@ -625,10 +625,10 @@ template <typename VIRT> VBOXSTRICTRC Sup::Vcpu_impl<VIRT>::_switch_to_hw()
 	Handle_exit_result result;
 	do {
 		_current_state = RUNNING;
-
+Genode::trace("run vCPU");
 		/* run vCPU until next exit */
 		_emt.switch_to_vcpu();
-
+//Genode::trace("2");
 		result = VIRT::handle_exit(_vcpu.state());
 
 		/* discharge by default */
@@ -637,23 +637,28 @@ template <typename VIRT> VBOXSTRICTRC Sup::Vcpu_impl<VIRT>::_switch_to_hw()
 		switch (result.state) {
 
 		case Exit_state::STARTUP:
+Genode::trace("Exit_state::STARTUP");
 			_current_state = _handle_startup();
 			break;
 
 		case Exit_state::IRQ_WINDOW:
+Genode::trace("Exit_state::IRQ_WINDOW");
 			_current_state = _handle_irq_window();
 			break;
 
 		case Exit_state::PAUSED:
+Genode::trace("Exit_state::PAUSED");
 			_current_state = _handle_paused();
 			break;
 
 		case Exit_state::NPT_EPT:
+Genode::trace("Exit_state::NPT_EPT");
 			_current_state = _handle_npt_ept(result.rc);
 			break;
 
 		case Exit_state::DEFAULT:
 		case Exit_state::ERROR:
+Genode::trace("Exit_state::DEFAULT or Exit_state::ERROR");
 			_current_state = PAUSED;
 			break;
 		}
