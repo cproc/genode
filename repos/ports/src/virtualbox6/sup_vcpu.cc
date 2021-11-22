@@ -676,10 +676,10 @@ Genode::trace("Exit_state::DEFAULT or Exit_state::ERROR");
 
 template <typename T> void Sup::Vcpu_impl<T>::halt(Genode::uint64_t const wait_ns)
 {
-Genode::trace(__func__, ": ", wait_ns, ", ", wait_ns / RT_NS_1MS);
+//Genode::trace(__func__, ": ", wait_ns, ", ", wait_ns / RT_NS_1MS);
 	RTSemEventMultiWait(_halt_semevent, wait_ns/RT_NS_1MS);
 	RTSemEventMultiReset(_halt_semevent);
-Genode::trace(__func__, " finished");
+//Genode::trace(__func__, " finished");
 }
 
 

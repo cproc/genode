@@ -146,24 +146,24 @@ append config {
 		<config period_ms="15000"/>
 	</start>
 -->
-
+<!--
 	<start name="trace_logger" priority="-2">
 		<resource name="RAM" quantum="1024M"/>
 		<config verbose="yes"
 				session_ram="512M"
 				session_parent_levels="1"
 				session_arg_buffer="64K"
-				period_sec="1"
+				period_sec="30"
 				activity="yes"
 				affinity="yes"
 				default_policy="null"
 				default_buffer="1M">
 
-				<!--<policy label_prefix="init -> audio_drv" thread="ep"/>-->
+				<policy label_prefix="init -> audio_drv" thread="ep"/>
 				<policy label_prefix="init -> virtualbox" thread="EMT" buffer="256M"/>
 		</config>
 	</start>
-
+-->
 	<start name="virtualbox" caps="1800" priority="-1">
 		<binary name="virtualbox6"/>
 		<resource name="RAM" quantum="4096M"/>

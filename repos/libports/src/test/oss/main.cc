@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 {
 	int fd = open("/dev/dsp", O_RDWR);
 
-	static char buf[1764];
+	static char buf[2048];
 
 #if 1
 	int CHANNELS = 2;
@@ -54,7 +54,7 @@ if (count == 0) {
 #endif
 
 		size_t bytes_read = 0;
-#if 0
+#if 1
 		static constexpr int num_pieces = 1;
 		for (int piece = 0; piece < num_pieces; piece++) {
 			bytes_read += read(fd,
@@ -65,11 +65,11 @@ if (count == 0) {
 		bytes_read += sizeof(buf);
 #endif
 		total_bytes_read += bytes_read;
-//printf("bytes read: %zd, %zd\n", bytes_read, total_bytes_read);
+printf("bytes read: %zd, %zd\n", bytes_read, total_bytes_read);
 		if (bytes_read > 0) {
 			ssize_t bytes_written = write(fd, buf, sizeof(buf));
 			total_bytes_written += bytes_written;
-//printf("bytes written: %zd, %zd\n", bytes_written, total_bytes_written);
+printf("bytes written: %zd, %zd\n", bytes_written, total_bytes_written);
 		}
 	}
 

@@ -332,7 +332,7 @@ static bool open_audio_device(dev_t dev)
 	if (!drv_loaded())
 		return false;
 
-	int err = audioopen(dev, FWRITE/*|FREAD*/, 0 /* ifmt */, 0 /* proc */);
+	int err = audioopen(dev, FWRITE|FREAD, 0 /* ifmt */, 0 /* proc */);
 	if (err)
 		return false;
 
@@ -594,7 +594,7 @@ extern "C" void notify_play()
 
 extern "C" void notify_record()
 {
-Genode::log("notify_record()");
+//Genode::log("notify_record()");
 	if (_record_sigh.valid())
 		Genode::Signal_transmitter(_record_sigh).submit();
 }
