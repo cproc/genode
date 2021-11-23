@@ -196,6 +196,16 @@ class Audio_in::Stream
 			return !valid;
 		}
 
+		unsigned queued() const
+		{
+			if (_tail > _pos)
+				return _tail - _pos;
+			else if (_pos > _tail)
+				return QUEUE_SIZE - (_pos - _tail);
+			else
+				return 0;
+		}
+
 		/**
 		 * Retrieve an packet at given position
 		 *
