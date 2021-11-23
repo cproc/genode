@@ -114,6 +114,7 @@ class Audio_out::Out
 
 		void _play_packet()
 		{
+//Genode::trace("audio_drv: _play_packet()");
 			unsigned lpos = left()->pos();
 			unsigned rpos = right()->pos();
 
@@ -126,6 +127,14 @@ class Audio_out::Out
 
 				for (unsigned i = 0; i < Audio_out::PERIOD * Audio_out::MAX_CHANNELS; i += 2) {
 					data[i] = p_left->content()[i / 2] * 32767;
+#if 1
+static int count = 0;
+if ((count == 0) && (data[i] != 0)) {
+	Genode::trace("audio_drv play: ", count);
+	//Genode::log("audio_drv play: ", count);
+	count++;
+}
+#endif
 					data[i + 1] = p_right->content()[i / 2] * 32767;
 				}
 
@@ -167,6 +176,12 @@ class Audio_out::Out
 		 */
 		void _handle_notify()
 		{
+#if 0
+static int count = 0;
+count++;
+Genode::trace("_handle_notify(): ", count);
+#endif
+//Genode::trace("Audio_out::Out::_handle_notify()");
 			if (_active())
 				_play_packet();
 		}
@@ -352,7 +367,16 @@ class Audio_in::In
 			 */
 			bool overrun = stream()->overrun();
 
+#if 0
+//Genode::trace("record queued: ", stream()->queued());
+Genode::log("record queued: ", stream()->queued());
+#endif
+
 			Packet *p = stream()->alloc();
+#if 0
+Genode::trace("record queued new: ", stream()->queued());
+#endif
+
 #if 0
 			float const scale = 32768.0f * 2;
 
@@ -360,13 +384,37 @@ class Audio_in::In
 			for (int i = 0; i < 2*Audio_in::PERIOD; i += 2) {
 				float sample = data[i] + data[i+1];
 				content[i/2] = sample / scale;
+#if 1
+static int count = 0;
+if ((count == 0) && (sample != 0)) {
+Genode::trace("audio_drv record: ", count);
+//Genode::log("audio_drv record: ", count);
+count++;
+}
+#endif
 			}
 #else
+
+#if 0
 			/* Generate test sound */
 			for (int i = 0; i < Audio_in::PERIOD; i++) {
 				int16_t sample = (((i*2)+1) << 8) | (((i*2)+0) & 0xff);
 				p->content()[i] = (float)sample / 32768.0f;
 			}
+#else
+			for (int i = 0; i < Audio_in::PERIOD; i++) {
+
+				static int count = 0;
+				if (count == 0) {
+					p->content()[i] = 0.3;
+Genode::trace("audio_drv record: ", count);
+				} else {
+					p->content()[i] = 0;
+				}
+				count++;
+			}
+#endif
+
 #endif
 			stream()->submit(p);
 
@@ -377,6 +425,7 @@ class Audio_in::In
 
 		void _handle_notify()
 		{
+//Genode::log("Audio_in::In::_handle_notify()");
 			if (_active())
 				_record_packet();
 		}

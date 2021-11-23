@@ -12,6 +12,8 @@ create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/pkg/sculpt-[board]
 
+build { app/trace_logger lib/trace/policy/null }
+
 proc config_system_content {} { return {\
 <!-- supported states: "poweroff" or "reset" when acpica started -->
 <!-- Note: power down your persistent Genode applications & VMs beforehand on your own ! -->
@@ -49,6 +51,23 @@ install_config {
 	<default caps="100"/>
 
 	<resource name="RAM" preserve="2M"/>
+
+	<start name="trace_logger" caps="200" priority="-2">
+		<resource name="RAM" quantum="80M"/>
+		<config verbose="yes"
+				session_ram="10M"
+				session_parent_levels="1"
+				session_arg_buffer="64K"
+				period_sec="15"
+				activity="yes"
+				affinity="yes"
+				default_policy="null"
+				default_buffer="1M">
+
+				<policy label_prefix="init -> runtime -> bsd_audio_drv" thread="ep"/>
+				<policy label_prefix="init -> runtime -> vbox6 -> vbox" thread="ep" thread2="EMT"/>
+		</config>
+	</start>
 
 	<start name="timer" priority="0">
 		<resource name="RAM" quantum="1M"/>
@@ -695,6 +714,6 @@ exec sh -c "tar cf [run_dir]/genode/depot_users.tar -C [genode_dir] \
 # Create boot image
 #
 
-append boot_modules { }
+append boot_modules { trace_logger null }
 
 build_boot_image $boot_modules
