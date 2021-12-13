@@ -62,14 +62,14 @@ namespace Genode {
 				unsigned from_i = 0;
 				for (unsigned i = 0; i < len; i++) {
 					if (string[i] == '\n') {
-						log(_label, Cstring(string + from_i, i - from_i));
+						log(/*_label,*/ Cstring(string + from_i, i - from_i));
 						from_i = i + 1;
 					}
 				}
 
 				/* if last character of string was not a line break, add one */
 				if (from_i < len)
-					log(_label, Cstring(string + from_i));
+					log(/*_label,*/ Cstring(string + from_i));
 			}
 	};
 }

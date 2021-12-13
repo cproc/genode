@@ -61,6 +61,7 @@ bool Timeout::scheduled() { return _handler != nullptr; }
 
 void Timeout_scheduler::handle_timeout(Duration curr_time)
 {
+Genode::trace(this, ": ", __func__, ": curr_time: ", curr_time.trunc_to_plain_ms());
 	List<List_element<Timeout> > pending_timeouts { };
 	{
 		/* acquire scheduler and update stored current time */
@@ -251,12 +252,15 @@ void Timeout_scheduler::_set_time_source_timeout()
 
 void Timeout_scheduler::_set_time_source_timeout(uint64_t duration_us)
 {
+//Genode::trace(__func__, ": duration_us: ", duration_us / 1000);
 	if (duration_us < _rate_limit_period.value) {
 		duration_us = _rate_limit_period.value;
 	}
 	if (duration_us > _max_sleep_time.value) {
 		duration_us = _max_sleep_time.value;
 	}
+//Genode::trace(__func__, ": duration_us 2: ", duration_us / 1000);
+
 	_time_source.set_timeout(Microseconds(duration_us), *this);
 }
 
@@ -288,6 +292,7 @@ void Timeout_scheduler::_schedule_timeout(Timeout         &timeout,
                                           Microseconds     period,
                                           Timeout_handler &handler)
 {
+//Genode::trace(__func__, ": ", duration);
 	/* acquire scheduler and timeout mutex */
 	Mutex::Guard const scheduler_guard { _mutex };
 	if (_destructor_called) {
@@ -307,6 +312,15 @@ void Timeout_scheduler::_schedule_timeout(Timeout         &timeout,
 		duration.value <= ~(uint64_t)0 - curr_time_us ?
 			curr_time_us + duration.value : ~(uint64_t)0 };
 
+#if 0
+static uint64_t ts_ms = Genode::Trace::timestamp() / 2496000;
+static uint64_t ts_off = ts_ms - (curr_time_us / 1000);
+
+Genode::trace(__func__, ": curr_time_us: ", curr_time_us / 1000,
+              "/", (curr_time_us / 1000) + ts_off,
+              ", deadline_us: ", deadline_us / 1000,
+              "/", (deadline_us / 1000) + ts_off);
+#endif
 	/* set up timeout object and insert into timeouts list */
 	timeout._handler = &handler;
 	timeout._deadline = Microseconds { deadline_us };
@@ -318,6 +332,7 @@ void Timeout_scheduler::_schedule_timeout(Timeout         &timeout,
 	 * time-source timeout.
 	 */
 	if (_timeouts.first() == &timeout) {
+//Genode::trace(__func__, ": first");
 		_set_time_source_timeout(deadline_us - curr_time_us);
 	}
 }
@@ -325,11 +340,15 @@ void Timeout_scheduler::_schedule_timeout(Timeout         &timeout,
 
 void Timeout_scheduler::_insert_into_timeouts_list(Timeout &timeout)
 {
+//Genode::trace(__func__);
 	/* if timeout list is empty, insert as first element */
 	if (_timeouts.first() == nullptr) {
 		_timeouts.insert(&timeout);
 		return;
 	}
+//Genode::trace(__func__, ": first dl: ", _timeouts.first()->_deadline.value / 1000,
+//              ", dl: ", timeout._deadline.value / 1000);
+
 	/* if timeout has the shortest deadline, insert as first element */
 	if (_timeouts.first()->_deadline.value >= timeout._deadline.value) {
 		_timeouts.insert(&timeout);

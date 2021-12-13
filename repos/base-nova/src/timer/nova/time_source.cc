@@ -28,6 +28,7 @@ void Timer::Time_source::set_timeout(Microseconds     duration,
 	/* set new timeout parameters and wake up the blocking thread */
 	Threaded_time_source::handler(handler);
 	_timeout_us = duration.value;
+Genode::trace(__func__, ": ", _timeout_us / 1000);
 	if (_sem) {
 		if (Nova::sm_ctrl(_sem, Nova::SEMAPHORE_UP) != Nova::NOVA_OK) {
 			nova_die();

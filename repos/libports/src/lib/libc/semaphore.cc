@@ -191,6 +191,9 @@ struct sem : Genode::Noncopyable
 
 			Libc::uint64_t const timeout_ms =
 				calculate_relative_timeout_ms(abs_now, abs_timeout);
+if (timeout_ms > 400) {
+Genode::trace(__func__, ": count: ", _count, ", timeout_ms: ", timeout_ms);
+}
 			if (!timeout_ms)
 				return ETIMEDOUT;
 

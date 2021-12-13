@@ -131,6 +131,7 @@ static inline int level(char const *value)
 static bool set_mixer_value(Mixer &mixer, char const * const field,
                                           char const * const value)
 {
+//Genode::log("set_mixer_value(): ", Genode::Cstring(field), ": ", Genode::Cstring(value));
 	char buffer[64];
 
 	for (unsigned i = 0; i < mixer.num; i++) {
@@ -144,9 +145,10 @@ static bool set_mixer_value(Mixer &mixer, char const * const field,
 		char const * const name       = info.label.name;
 
 		Genode::snprintf(buffer, sizeof(buffer), "%s.%s", class_name, name);
+//Genode::log("set_mixer_value(): buffer: ", Genode::Cstring(buffer));
 		if (Genode::strcmp(field, buffer) != 0)
 			continue;
-
+//Genode::log("set_mixer_value(): match");
 		mixer_ctrl_t ctrl;
 		ctrl.dev                   = info.index;
 		ctrl.type                  = info.type;
@@ -162,17 +164,21 @@ static bool set_mixer_value(Mixer &mixer, char const * const field,
 
 		int oldv = -1;
 		int newv =  0;
+//Genode::log("set_mixer_value(): ctrl.type: ", (int)ctrl.type);
 		switch (ctrl.type) {
 		case AUDIO_MIXER_ENUM:
 			{
-				for (int i = 0; i < info.un.e.num_mem; i++)
+				for (int i = 0; i < info.un.e.num_mem; i++) {
+//Genode::log("set_mixer_value(): name: ", Genode::Cstring(info.un.e.member[i].label.name));
 					if (Genode::strcmp(value, info.un.e.member[i].label.name) == 0) {
+//Genode::log("set_mixer_value(): match2");
 						oldv = ctrl.un.ord;
 						newv = info.un.e.member[i].ord;
 
 						ctrl.un.ord = newv;
 						break;
 					}
+				}
 				break;
 			}
 		case AUDIO_MIXER_SET:
@@ -326,7 +332,7 @@ static bool open_audio_device(dev_t dev)
 	if (!drv_loaded())
 		return false;
 
-	int err = audioopen(dev, FWRITE|FREAD, 0 /* ifmt */, 0 /* proc */);
+	int err = audioopen(dev, FWRITE/*|FREAD*/, 0 /* ifmt */, 0 /* proc */);
 	if (err)
 		return false;
 
@@ -353,6 +359,8 @@ static void configure_mixer(Genode::Env &env, Mixer &mixer, Genode::Xml_node con
 
 		set_mixer_value(mixer, field.string(), value.string());
 	});
+
+	dump_mixer(mixer);
 
 	if (mixer_reporter.enabled()) try {
 		Genode::Reporter::Xml_generator xml(mixer_reporter, [&]() {
@@ -578,6 +586,7 @@ static Genode::Signal_context_capability _record_sigh;
 
 extern "C" void notify_play()
 {
+//Genode::log("notify_play()");
 	if (_play_sigh.valid())
 		Genode::Signal_transmitter(_play_sigh).submit();
 }
@@ -585,6 +594,7 @@ extern "C" void notify_play()
 
 extern "C" void notify_record()
 {
+//Genode::log("notify_record()");
 	if (_record_sigh.valid())
 		Genode::Signal_transmitter(_record_sigh).submit();
 }
