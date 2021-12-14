@@ -3,6 +3,9 @@ set build_components {
 	drivers/audio
 	server/black_hole
 	lib/vfs/oss test/oss
+	app/trace_logger
+	lib/trace/policy/null
+	app/top
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -13,7 +16,7 @@ build $build_components
 create_boot_directory
 
 append config {
-<config>
+<config prio_levels="2">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="IRQ"/>
@@ -23,6 +26,7 @@ append config {
 		<service name="RM"/>
 		<service name="CPU"/>
 		<service name="LOG"/>
+		<service name="TRACE"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
@@ -37,6 +41,7 @@ append config {
 append_platform_drv_config
 
 append config {
+
 	<start name="audio_drv">
 		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
@@ -46,8 +51,7 @@ append config {
 		</provides>
 		<config verbose="no">
 
-			<!-- has no effect in vm -->
-			<mixer field="outputs.master" value="8"/>
+			<mixer field="outputs.master" value="64"/>
 
 			<mixer field="record.adc-0:1_source" value="sel2"/>
 			<mixer field="record.adc-0:1" value="255"/>
@@ -55,6 +59,8 @@ append config {
 
 		</config>
 	</start>
+
+<!--
 	<start name="black_hole">
 		<resource name="RAM" quantum="8M"/>
 		<provides>
@@ -66,6 +72,14 @@ append config {
 			<audio_out/>
 		</config>
 	</start>
+-->
+
+<!--
+	<start name="top">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+-->
+
 	<start name="test-oss">
 		<resource name="RAM" quantum="10M"/>
 		<config>
@@ -83,6 +97,26 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
+
+<!--
+	<start name="trace_logger" priority="-0">
+		<resource name="RAM" quantum="80M"/>
+		<config verbose="yes"
+				session_ram="10M"
+				session_parent_levels="1"
+				session_arg_buffer="64K"
+				period_sec="15"
+				activity="yes"
+				affinity="yes"
+				default_policy="null"
+				default_buffer="1M">
+
+				<policy label_prefix="init -> audio_drv" thread="ep"/>
+				<policy label_prefix="init -> test-oss" thread="ep"/>
+		</config>
+	</start>
+-->
+
 </config>
 }
 
@@ -93,6 +127,9 @@ set boot_modules {
 	black_hole
 	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so
 	posix.lib.so vfs_oss.lib.so
+	trace_logger
+	null
+	top
 }
 
 append boot_modules [audio_drv_binary]

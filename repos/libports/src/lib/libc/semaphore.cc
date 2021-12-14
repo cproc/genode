@@ -103,7 +103,6 @@ struct sem : Genode::Noncopyable
 			_append_applicant(&applicant);
 
 			_data_mutex.release();
-
 			blockade.block();
 
 			_data_mutex.acquire();
@@ -137,7 +136,8 @@ struct sem : Genode::Noncopyable
 				return _applicant_for_semaphore(blockade);
 			} else {
 				Pthread_blockade blockade { _timer_accessor(), timeout_ms };
-				return _applicant_for_semaphore(blockade);
+				bool result = _applicant_for_semaphore(blockade);
+				return result;
 			}
 		}
 
@@ -170,11 +170,10 @@ struct sem : Genode::Noncopyable
 			Mutex::Guard guard(_data_mutex);
 
 			/* fast path */
-			if (_try_down() == 0)
+			if (_try_down() == 0) {
 				return 0;
-
+			}
 			_apply_for_semaphore(0);
-
 			return 0;
 		}
 
@@ -191,11 +190,13 @@ struct sem : Genode::Noncopyable
 
 			Libc::uint64_t const timeout_ms =
 				calculate_relative_timeout_ms(abs_now, abs_timeout);
+
 			if (!timeout_ms)
 				return ETIMEDOUT;
 
-			if (_apply_for_semaphore(timeout_ms))
+			if (_apply_for_semaphore(timeout_ms)) {
 				return 0;
+			}
 			else
 				return ETIMEDOUT;
 		}

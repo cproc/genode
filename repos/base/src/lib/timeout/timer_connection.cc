@@ -19,9 +19,10 @@ using namespace Genode;
 using namespace Genode::Trace;
 
 
-void Timer::Connection::_update_interpolation_quality(uint64_t min_factor,
-                                                      uint64_t max_factor)
+void Timer::Connection::_update_interpolation_quality(uint64_t /*min_factor*/,
+                                                      uint64_t /*max_factor*/)
 {
+#if 0
 	/*
 	 * If the factor gets adapted less than 12.5%, we raise the
 	 * interpolation-quality value. Otherwise, we reset it to zero.
@@ -32,6 +33,7 @@ void Timer::Connection::_update_interpolation_quality(uint64_t min_factor,
 	} else if (_interpolation_quality) {
 		_interpolation_quality = 0;
 	}
+#endif
 }
 
 

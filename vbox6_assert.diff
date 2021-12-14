@@ -1,0 +1,50 @@
+vbox6_assert.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/VBox/Devices/Audio/DrvHostAudioOss.cpp     |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+index d67f2bb..d2a0f17 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+@@ -435,7 +435,9 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamDestroy(PPDMIHOSTAUDIO pInterface,
+     if (pStreamOSS->hThreadDrain != NIL_RTTHREAD)
+     {
+         int rc = RTThreadWait(pStreamOSS->hThreadDrain, 1, NULL);
++#if 0
+         AssertRC(rc);
++#endif
+         pStreamOSS->hThreadDrain = NIL_RTTHREAD;
+     }
+ 
+@@ -591,7 +593,9 @@ static DECLCALLBACK(int) drvHstAudOssDrainThread(RTTHREAD ThreadSelf, void *pvUs
+     /* Make it blocking (for Linux). */
+     int fOrgFlags = fcntl(pStreamOSS->hFile, F_GETFL, 0);
+     LogFunc(("F_GETFL -> %#x\n", fOrgFlags));
++#if 0
+     Assert(fOrgFlags != -1);
++#endif
+     if (fOrgFlags != -1 && (fOrgFlags & O_NONBLOCK))
+     {
+         rc = fcntl(pStreamOSS->hFile, F_SETFL, fOrgFlags & ~O_NONBLOCK);
+@@ -607,12 +611,14 @@ static DECLCALLBACK(int) drvHstAudOssDrainThread(RTTHREAD ThreadSelf, void *pvUs
+     if (fOrgFlags != -1)
+     {
+         rc = fcntl(pStreamOSS->hFile, F_SETFL, fOrgFlags);
++#if 0
+         Assert(rc != -1);
+-
++#endif
+         int fMask = 0;
+         rc = ioctl(pStreamOSS->hFile, SNDCTL_DSP_SETTRIGGER, &fMask);
++#if 0
+         Assert(rc >= 0);
+-
++#endif
+         pStreamOSS->fDraining = false;
+         LogFunc(("Restored non-block mode and cleared the trigger mask\n"));
+     }

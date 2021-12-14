@@ -180,6 +180,7 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                          void *(*start_routine) (void *), void *arg,
                          char const *name)
 {
+Genode::log(__func__, ": name: ", Genode::Cstring(name));
 	if (!_cpu_session || !start_routine || !thread)
 		return EINVAL;
 
@@ -188,7 +189,14 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                        : Libc::Component::stack_size();
 
 	unsigned const id { pthread_id() };
-	unsigned const cpu = placement_policy().placement(id);
+	unsigned /*const*/ cpu = placement_policy().placement(id);
+
+#if 0
+	if ((Genode::strcmp(name, "Port0") == 0) ||
+	    (Genode::strcmp(name, "MixAIO-1") == 0)) {
+		cpu = 1;
+	}
+#endif
 
 	String<32> const pthread_name { "pthread.", id };
 	Affinity::Space space { _cpu_session->affinity_space() };
