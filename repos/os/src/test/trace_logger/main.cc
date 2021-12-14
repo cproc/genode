@@ -22,9 +22,14 @@ using namespace Genode;
 void Component::construct(Genode::Env &env)
 {
 	Timer::Connection timer(env);
-	for (unsigned i = 0; ; i++) {
-		timer.msleep(100);
-		Thread::trace(String<32>(i, " ").string());
+	timer.msleep(1000);
+
+	for (uint64_t i = 0x100000000; i <= 0x1000000cc; i++) {
+		Genode::trace(Genode::Hex(i));
+		if (i == 0x100000080)
+			timer.msleep(2000);
 	}
+
+	timer.msleep(1000000);
 	env.parent().exit(0);
 }
