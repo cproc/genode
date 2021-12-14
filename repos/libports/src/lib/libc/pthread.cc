@@ -1189,17 +1189,25 @@ extern "C" {
 		pthread_mutex_unlock(&c->counter_mutex);
 
 		pthread_mutex_unlock(mutex);
-
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
 		if (!abstime) {
+Genode::trace(__func__, ": calling sem_wait()");
 			if (sem_wait(&c->signal_sem) == -1)
 				result = errno;
+Genode::trace(__func__, ": sem_wait() returned");
 		} else {
+Genode::trace(__func__, ": calling sem_timedwait()");
 			if (sem_timedwait(&c->signal_sem, abstime) == -1)
 				result = errno;
+Genode::trace(__func__, ": sem_timedwait() returned");
 		}
 
+//Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
+
 		if (c->num_signallers > 0) {
+//Genode::trace(__func__, ": num_signallers > 0");
 			if (result == ETIMEDOUT) {
 				/*
 				 * Another thread may have called pthread_cond_signal(),
@@ -1213,13 +1221,17 @@ extern "C" {
 				 */
 			}
 			sem_post(&c->handshake_sem);
+//Genode::trace(__func__, ": sem_post() returned");
 			--c->num_signallers;
 		}
 		c->num_waiters--;
 		pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": counter_mutex unlocked");
 
+
+Genode::trace(__func__, ": calling pthread_mutex_lock(mutex)");
 		pthread_mutex_lock(mutex);
-
+Genode::trace(__func__, ": pthread_mutex_lock(mutex) returned");
 		return result;
 	}
 
@@ -1246,13 +1258,16 @@ extern "C" {
 			cond_init(cond, NULL);
 
 		pthread_cond *c = *cond;
-
+Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
 		if (c->num_waiters > c->num_signallers) {
 			++c->num_signallers;
 			sem_post(&c->signal_sem);
 			pthread_mutex_unlock(&c->counter_mutex);
+Genode::trace(__func__, ": calling sem_wait(handshake_sem)");
 			sem_wait(&c->handshake_sem);
+Genode::trace(__func__, ": sem_wait(handshake_sem) returned");
 		} else
 			pthread_mutex_unlock(&c->counter_mutex);
 

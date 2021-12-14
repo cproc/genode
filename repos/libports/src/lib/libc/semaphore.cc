@@ -103,15 +103,18 @@ struct sem : Genode::Noncopyable
 			_append_applicant(&applicant);
 
 			_data_mutex.release();
-
+//Genode::trace(__func__, ": calling blockade.block()");
 			blockade.block();
+//Genode::trace(__func__, ": blockade.block() returned");
 
 			_data_mutex.acquire();
 
 			if (blockade.woken_up()) {
+//Genode::trace(__func__, ": return true");
 				return true;
 			} else {
 				_remove_applicant(&applicant);
+//Genode::trace(__func__, ": return false");
 				return false;
 			}
 		}
@@ -132,12 +135,15 @@ struct sem : Genode::Noncopyable
 		 */
 		bool _apply_for_semaphore(Libc::uint64_t timeout_ms)
 		{
+//Genode::trace(__func__, ": timeout_ms: ", timeout_ms);
 			if (Libc::Kernel::kernel().main_context()) {
 				Main_blockade blockade { timeout_ms };
 				return _applicant_for_semaphore(blockade);
 			} else {
 				Pthread_blockade blockade { _timer_accessor(), timeout_ms };
-				return _applicant_for_semaphore(blockade);
+				bool result = _applicant_for_semaphore(blockade);
+//Genode::trace(__func__, " finished");
+				return result;
 			}
 		}
 
@@ -167,14 +173,17 @@ struct sem : Genode::Noncopyable
 
 		int down()
 		{
+//Genode::trace(__func__, ": count: ", _count);
 			Mutex::Guard guard(_data_mutex);
 
 			/* fast path */
-			if (_try_down() == 0)
+			if (_try_down() == 0) {
+//Genode::trace(__func__, ": fast return");
 				return 0;
-
+			}
+//Genode::trace(__func__, ": calling _apply_for_semaphore()");
 			_apply_for_semaphore(0);
-
+//Genode::trace(__func__, ": _apply_for_semaphore() returned");
 			return 0;
 		}
 
@@ -191,11 +200,20 @@ struct sem : Genode::Noncopyable
 
 			Libc::uint64_t const timeout_ms =
 				calculate_relative_timeout_ms(abs_now, abs_timeout);
+
 			if (!timeout_ms)
 				return ETIMEDOUT;
 
-			if (_apply_for_semaphore(timeout_ms))
+//if (timeout_ms > 10) {
+//Genode::trace(__func__, ": count: ", _count, ", timeout_ms: ", timeout_ms, ", calling _apply_for_semaphore()");
+//}
+
+			if (_apply_for_semaphore(timeout_ms)) {
+//if (timeout_ms > 10) {
+//Genode::trace(__func__, " _apply_for_semaphore() returned");
+//}
 				return 0;
+			}
 			else
 				return ETIMEDOUT;
 		}

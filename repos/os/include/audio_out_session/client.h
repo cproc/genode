@@ -34,7 +34,7 @@ struct Audio_out::Signal
 	Signal() : cap(recv.manage(&context)) { }
 	~Signal() { recv.dissolve(&context); }
 
-	void wait() { recv.wait_for_signal(); }
+	void wait() { Genode::log("XXX wait()"); recv.wait_for_signal(); }
 };
 
 

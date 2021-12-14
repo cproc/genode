@@ -43,7 +43,7 @@ namespace Audio_in {
 	/**
 	 * Samples per period (~11.6ms)
 	 */
-	static constexpr Genode::size_t PERIOD = 512;
+	static constexpr Genode::size_t PERIOD = 441;
 }
 
 
@@ -194,6 +194,16 @@ class Audio_in::Stream
 				valid |= _buf[i].valid();
 
 			return !valid;
+		}
+
+		unsigned queued() const
+		{
+			if (_tail > _pos)
+				return _tail - _pos;
+			else if (_pos > _tail)
+				return QUEUE_SIZE - (_pos - _tail);
+			else
+				return 0;
 		}
 
 		/**

@@ -310,21 +310,37 @@ class Libc::Pthread_blockade : public Blockade, public Timeout_handler
 
 		Genode::Blockade       _blockade;
 		Constructible<Timeout> _timeout;
+		uint64_t _timeout_ms;
 
 	public:
 
 		Pthread_blockade(Timer_accessor &timer_accessor, uint64_t timeout_ms)
+		: _timeout_ms(timeout_ms)
 		{
 			if (timeout_ms) {
+//Genode::trace(this, ": ", __func__, ": ", timeout_ms);
 				_timeout.construct(timer_accessor, *this);
 				_timeout->start(timeout_ms);
 			}
 		}
 
-		void block() override { _blockade.block(); }
+		void block() override {
+#if 0
+if (_timeout_ms) {
+Genode::trace(this, ": ", __PRETTY_FUNCTION__, ": ", _timeout_ms);
+}
+#endif
+			_blockade.block();
+#if 0
+if (_timeout_ms) {
+Genode::trace(this, ": ", __PRETTY_FUNCTION__, " finished");
+}
+#endif
+		}
 
 		void wakeup() override
 		{
+//Genode::trace(this, ": ", __PRETTY_FUNCTION__);
 			_woken_up = true;
 			_blockade.wakeup();
 		}
@@ -334,6 +350,7 @@ class Libc::Pthread_blockade : public Blockade, public Timeout_handler
 		 */
 		void handle_timeout() override
 		{
+//Genode::trace(this, ": ", __PRETTY_FUNCTION__);
 			_expired = true;
 			_blockade.wakeup();
 		}
