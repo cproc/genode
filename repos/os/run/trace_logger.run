@@ -1,0 +1,76 @@
+create_boot_directory
+
+build {
+	core
+	init
+	lib/ld
+	timer
+	app/trace_logger
+	test/trace_logger
+	lib/trace/policy/null	
+}
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="TRACE"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="trace_logger" >
+		<resource name="RAM" quantum="80M"/>
+		<config verbose="yes"
+				session_ram="10M"
+				session_parent_levels="1"
+				session_arg_buffer="64K"
+				period_sec="3"
+				activity="yes"
+				affinity="yes"
+				default_policy="null"
+				default_buffer="1K">
+
+			<policy label="init -> test-trace_logger"
+			        thread="ep"
+			        buffer="8K"/>
+		</config>
+	</start>
+
+	<start name="test-trace_logger">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	core
+	init
+	timer
+	trace_logger
+	test-trace_logger
+	ld.lib.so
+	null
+}
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic  "
+
+run_genode_until forever
