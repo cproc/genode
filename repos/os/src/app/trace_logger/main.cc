@@ -189,10 +189,16 @@ class Main
 			Trace::Subject_info info = _trace.subject_info(id);
 			Session_label const label(info.session_label());
 			Session_policy policy(label, _config);
-			if (policy.has_attribute("thread"))
-				if (policy.attribute_value("thread", Thread_name()) != info.thread_name())
-					throw Session_policy::No_policy_defined();
-
+			if (policy.has_attribute("thread") ||
+			    policy.has_attribute("thread2")) {
+				if (policy.has_attribute("thread"))
+					if (policy.attribute_value("thread", Thread_name()) == info.thread_name())
+						return policy;
+				if (policy.has_attribute("thread2"))
+					if (policy.attribute_value("thread2", Thread_name()) == info.thread_name())
+						return policy;
+				throw Session_policy::No_policy_defined();
+			}
 			return policy;
 		}
 
