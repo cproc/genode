@@ -104,9 +104,16 @@ class Main
 
 					[&] (Xml_node const &policy) {
 
-						if (policy.has_attribute("thread"))
-							if (policy.attribute_value("thread", Thread_name()) != info.thread_name())
-								return;
+						if (!((policy.has_attribute("thread") &&
+							 (policy.attribute_value("thread", Thread_name()) == info.thread_name())) ||
+							(policy.has_attribute("thread2") &&
+							 (policy.attribute_value("thread2", Thread_name()) == info.thread_name())) ||
+							(policy.has_attribute("thread3") &&
+							 (policy.attribute_value("thread3", Thread_name()) == info.thread_name())) ||
+							(policy.has_attribute("thread4") &&
+							 (policy.attribute_value("thread4", Thread_name()) == info.thread_name())))) {
+							return;
+						}
 
 						try {
 							/* lookup monitor by subject ID */
