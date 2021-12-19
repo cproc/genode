@@ -61,10 +61,13 @@ Monitor &Monitor::find_by_subject_id(Trace::Subject_id const subject_id)
 Monitor::Monitor(Trace::Connection         &trace,
                  Region_map                &rm,
                  Trace::Subject_id   const  subject_id,
-                 Trace::Subject_info const &info)
+                 Trace::Subject_info const &info,
+                 Genode::Ram_allocator     &ram,
+                 Genode::size_t             buffer_sz)
 :
 	Monitor_base(trace, rm, subject_id),
-	_subject_id(subject_id), _buffer(_buffer_raw)
+	_subject_id(subject_id), _buffer(_buffer_raw),
+	_ram_ds(ram, rm, buffer_sz)
 {
 	update_info(info);
 }
@@ -85,6 +88,34 @@ void Monitor::update_info(Trace::Subject_info const &info)
 		warning("Cannot update subject info: Nonexistent_subject"); }
 }
 
+
+void Monitor::prepare_print()
+{
+	Genode::memset(_ram_ds.local_addr<char>(), 0, _ram_ds.size());
+
+	Genode::String_console sc(_ram_ds.local_addr<char>(), _ram_ds.size());
+
+	/* print all buffer entries that we haven't yet printed */
+	_buffer.for_each_new_entry([&] (Trace::Buffer::Entry entry) {
+
+		/* get readable data length and skip empty entries */
+		size_t length = min(entry.length(), (unsigned)MAX_ENTRY_LENGTH - 1);
+		if (!length)
+			return true;
+
+		/* copy entry data from buffer and add terminating '0' */
+		memcpy(_curr_entry_data, entry.data(), length);
+		_curr_entry_data[length] = '\0';
+
+		/* avoid output of empty lines due to end of line character at end */
+		if (_curr_entry_data[length - 1] == '\n')
+			_curr_entry_data[length - 1] = '\0';
+
+		sc.printf("%s\n", _curr_entry_data);
+
+		return true;
+	});
+}
 
 void Monitor::print(bool activity, bool affinity)
 {
@@ -108,41 +139,13 @@ void Monitor::print(bool activity, bool affinity)
 		log("   <affinity xpos=\"", _info.affinity().xpos(),
 		              "\" ypos=\"", _info.affinity().ypos(),
 		              "\">");
+	log("   <buffer>");
 
-	/* print all buffer entries that we haven't yet printed */
-	bool printed_buf_entries = false;
-	_buffer.for_each_new_entry([&] (Trace::Buffer::Entry entry) {
+	log(Cstring(_ram_ds.local_addr<char>()));
 
-		/* get readable data length and skip empty entries */
-		size_t length = min(entry.length(), (unsigned)MAX_ENTRY_LENGTH - 1);
-		if (!length)
-			return true;
-
-		/* copy entry data from buffer and add terminating '0' */
-		memcpy(_curr_entry_data, entry.data(), length);
-		_curr_entry_data[length] = '\0';
-
-		/* avoid output of empty lines due to end of line character at end */
-		if (_curr_entry_data[length - 1] == '\n')
-			_curr_entry_data[length - 1] = '\0';
-
-		/* print copied entry data out to log */
-		if (!printed_buf_entries) {
-			log("   <buffer>");
-			printed_buf_entries = true;
-		}
-		log(Cstring(_curr_entry_data));
-
-		return true;
-	});
-	/* print end tags */
-	if (printed_buf_entries)
-		log("   </buffer>");
-	else
-		log("   <buffer />");
+	log("   </buffer>");
 	log("</subject>");
 }
-
 
 /******************
  ** Monitor_tree **
