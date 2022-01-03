@@ -234,11 +234,17 @@ void Libc::Vfs_plugin::_with_info(File_descriptor &fd, FN const &fn)
 	path.append_element("info");
 
 	try {
-		File_content const content(_alloc, *_root_dir, path.string(),
-		                           File_content::Limit{4096U});
-
-		content.xml([&] (Xml_node node) {
-			fn(node); });
+		/*
+		 * Opening the info file repeatedly could be too expensive if
+		 * file system servers are part of the VFS, because the directory
+		 * status of the path would be checked at each VFS plugin every
+		 * time. So, we open the file only once.
+		 */
+		static Readonly_file file { *_root_dir, path.string() };
+		File_content::Size_to_read size_to_read {
+			min((size_t)(_root_dir->file_size(path.string())), 4096U) };
+		File_content const content(_alloc, file, size_to_read);
+		content.xml([&] (Xml_node node) { fn(node); });
 
 	} catch (...) { }
 }
