@@ -110,6 +110,7 @@ class Genodefb :
 
 		void update_mode(Fb_Genode::Mode mode)
 		{
+Genode::trace(__PRETTY_FUNCTION__);
 			Lock();
 
 			_fb_mode = mode;
@@ -126,6 +127,7 @@ class Genodefb :
 			}
 
 			Unlock();
+Genode::trace(__PRETTY_FUNCTION__, " finished");
 		}
 
 		STDMETHODIMP Lock()
@@ -142,7 +144,7 @@ class Genodefb :
 		                          PRUint32 w, PRUint32 h) override
 		{
 			HRESULT result = E_FAIL;
-
+Genode::trace(__PRETTY_FUNCTION__);
 			Lock();
 
 			/* save the new bitmap reference */
@@ -180,7 +182,7 @@ class Genodefb :
 
 			/* request appropriate NotifyUpdate() */
 			_display->InvalidateAndUpdateScreen(screen);
-
+Genode::trace(__PRETTY_FUNCTION__);
 			return result;
 		}
 
@@ -203,11 +205,13 @@ class Genodefb :
 
 		HRESULT NotifyUpdate(ULONG o_x, ULONG o_y, ULONG width, ULONG height) override
 		{
+Genode::trace(__PRETTY_FUNCTION__);
 			if (!_fb_base) return S_OK;
 
 			Lock();
 
 			if (_display_bitmap.isNull()) {
+Genode::trace(__PRETTY_FUNCTION__, " finished 0");
 				Unlock();
 				return S_OK;
 			}
@@ -246,11 +250,12 @@ class Genodefb :
 			                       Surface_base::Point(0, 0),
 			                       Texture_painter::SOLID,
 			                       false);
-
+Genode::trace(__func__, ": calling _fb.refresh()");
 			_fb.refresh(o_x, o_y, width, height);
+Genode::trace(__func__, ": _fb.refresh() returned");
 
 			Unlock();
-
+Genode::trace(__PRETTY_FUNCTION__, " finished");
 			return S_OK;
 		}
 
@@ -259,6 +264,8 @@ class Genodefb :
 		                               PRUint32 imageSize,
 		                               PRUint8 *image) override
 		{
+Genode::trace(__PRETTY_FUNCTION__);
+
 			if (!_fb_base) return S_OK;
 
 			Lock();
@@ -284,6 +291,7 @@ class Genodefb :
 			_fb.refresh(o_x, o_y, area_vm.w(), area_vm.h());
 
 			Unlock();
+Genode::trace(__PRETTY_FUNCTION__, " finished");
 
 			return S_OK;
 		}

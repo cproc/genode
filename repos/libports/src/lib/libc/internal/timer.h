@@ -100,10 +100,15 @@ struct Libc::Timeout
 	{
 		Milliseconds const now = _timer_accessor.timer().curr_time().trunc_to_plain_ms();
 
+//if (timeout_ms > 400) {
+//Genode::trace(__func__, ": now: ", now, ", timeout_ms: ", timeout_ms, ", ret: ", __builtin_return_address(0));
+//}
+
 		_expired             = false;
 		_absolute_timeout_ms = now.value + timeout_ms;
-
+Genode::trace(__func__, ": ", timeout_ms);
 		_timeout.schedule(_timer_accessor.timer().microseconds(timeout_ms));
+Genode::trace(__func__, " finished");
 	}
 
 	uint64_t duration_left() const

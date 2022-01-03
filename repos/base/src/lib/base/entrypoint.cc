@@ -43,6 +43,7 @@ static char const *initial_ep_name() { return "ep"; }
 
 void Entrypoint::Signal_proxy_component::signal()
 {
+//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
 	/* signal delivered successfully */
 	ep._signal_proxy_delivers_signal = false;
 
@@ -59,7 +60,9 @@ void Entrypoint::Signal_proxy_component::signal()
 	Signal sig = ep._sig_rec->pending_signal();
 
 	if (sig.valid()) {
+//Genode::trace(__func__, ": calling _dispatch_signal()");
 		ep._dispatch_signal(sig);
+//Genode::trace(__func__, ": _dispatch_signal() returned");
 
 		if (sig.context()->level() == Signal_context::Level::Io) {
 			/* trigger the progress handler */
@@ -69,6 +72,7 @@ void Entrypoint::Signal_proxy_component::signal()
 
 	if (io_progress)
 		ep._handle_io_progress();
+//Genode::trace(__func__, " finished");
 }
 
 
@@ -123,8 +127,9 @@ void Entrypoint::_process_incoming_signals()
 				Mutex::Guard guard { _block_for_signal_mutex };
 
 				_signal_proxy_delivers_signal = true;
-
+//Genode::trace(__func__, ": calling block_for_signal()");
 				_sig_rec->block_for_signal();
+//Genode::trace(__func__, ": block_for_signal() returned");
 			}
 
 			/*

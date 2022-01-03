@@ -127,9 +127,11 @@ class Main
 			/* dump information of each monitor in the new tree */
 			log("");
 			log("--- Report ", _report_id++, " (", _num_monitors, "/", _num_subjects, " subjects) ---");
+if (_report_id > 2) {
 			new_monitors.for_each([&] (Monitor &monitor) {
 				monitor.print(_activity, _affinity);
 			});
+}
 		}
 
 		void _destroy_monitor(Monitor_tree &monitors, Monitor &monitor)

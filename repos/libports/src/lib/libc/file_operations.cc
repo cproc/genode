@@ -575,6 +575,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 
 	if (flags & O_APPEND)
 		lseek(new_fdo->libc_fd, 0, SEEK_END);
+Genode::trace(__func__, ": ", Genode::Cstring(pathname), ": ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 })
@@ -756,6 +757,7 @@ extern "C" int unlink(const char *path)
 
 __SYS_(ssize_t, write, (int libc_fd, const void *buf, ::size_t count),
 {
+Genode::trace(__func__, ": ", libc_fd);
 	int flags = fcntl(libc_fd, F_GETFL);
 
 	if ((flags != -1) && (flags & O_APPEND))

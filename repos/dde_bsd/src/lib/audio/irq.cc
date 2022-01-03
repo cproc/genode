@@ -59,6 +59,7 @@ class Bsd::Irq
 				 */
 				void _handle()
 				{
+//Genode::trace("irq");
 					_task.unblock();
 					Bsd::scheduler().schedule();
 				}
@@ -154,6 +155,7 @@ extern "C" void *pci_intr_establish(pci_chipset_tag_t pc, pci_intr_handle_t ih,
                                     int ipl, int (*intrh)(void *), void *intarg,
                                     const char *intrstr)
 {
+Genode::log("pci_intr_establish(): intrh: ", intrh, ", %p, ret: ", __builtin_return_address(0));
 	Bsd::Bus_driver *drv = (Bsd::Bus_driver*)pc;
 
 	_bsd_irq->establish_intr(drv->irq_session(), intrh, intarg);

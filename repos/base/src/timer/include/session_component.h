@@ -53,6 +53,7 @@ class Timer::Session_component : public  Genode::Rpc_object<Session>,
 		 *********************/
 
 		void handle_timeout(Duration) override {
+//Genode::trace(this, ": submit()");
 			Genode::Signal_transmitter(_sigh).submit(); }
 
 	public:
@@ -67,6 +68,7 @@ class Timer::Session_component : public  Genode::Rpc_object<Session>,
 
 		void trigger_once(uint64_t us) override
 		{
+//Genode::trace(this, ": ", __func__, ": ", us / 1000);
 			/*
 			 * FIXME Workaround for the problem that Alarm scheduler may
 			 *       categorize big timeouts into the wrong time counter

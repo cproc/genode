@@ -53,8 +53,9 @@ void Rpc_entrypoint::entry()
 	Rpc_exception_code exc = Rpc_exception_code(Rpc_exception_code::INVALID_OBJECT);
 
 	while (!_exit_handler.exit) {
-
+//Genode::trace(__func__);
 		Rpc_request const request = ipc_reply_wait(_caller, exc, _snd_buf, _rcv_buf);
+//Genode::trace(__func__, ": got request");
 		_caller = request.caller;
 
 		Ipc_unmarshaller unmarshaller(_rcv_buf);
@@ -68,8 +69,10 @@ void Rpc_entrypoint::entry()
 		apply(request.badge, [&] (Rpc_object_base *obj)
 		{
 			if (!obj) { return;}
+//Genode::trace(__func__, ": calling dispatch()");
 			try { exc = obj->dispatch(opcode, unmarshaller, _snd_buf); }
 			catch(Blocking_canceled&) { }
+//Genode::trace(__func__, ": dispatch() returned");
 		});
 	}
 
