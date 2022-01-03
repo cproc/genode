@@ -27,6 +27,11 @@
 #include <base/attached_rom_dataspace.h>
 #include <base/sleep.h>
 
+/* VirtualBox includes */
+#include <iprt/thread.h>
+
+long prio_class(RTTHREADTYPE const type);
+
 namespace Sup { struct Drv; }
 
 namespace Pthread { struct Emt; }
@@ -55,7 +60,8 @@ class Sup::Drv
 
 		Cpu_virt const _cpu_virt { _cpu_virt_from_rom() };
 
-		Vm_connection _vm_connection { _env };
+		Vm_connection _vm_connection { _env, "",
+			prio_class(RTTHREADTYPE_EMULATION) };
 
 		Gip _gip { _env, _cpu_count, _cpu_freq_khz_from_rom() };
 		Gmm _gmm { _env, _vm_connection };
