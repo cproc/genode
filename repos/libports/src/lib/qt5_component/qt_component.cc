@@ -54,3 +54,6 @@ void Libc::Component::construct(Libc::Env &env)
 		exit(main(argc, argv, envp));
 	});
 }
+
+/* QtWebEngine (v8) needs a higher default stack size for pthreads */
+Genode::size_t Libc::Component::stack_size() { return 40UL*1024*sizeof(long); }
