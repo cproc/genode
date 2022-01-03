@@ -519,24 +519,23 @@ class Genode::File_content
 
 		typedef Directory::Path Path;
 
-		struct Limit { size_t value; };
+		struct Limit        { size_t value; };
+		struct Size_to_read { size_t value; };
+
 
 		/**
 		 * Constructor
 		 *
-		 * \throw Nonexistent_file
 		 * \throw Truncated_during_read  number of readable bytes differs
 		 *                               from file status information
 		 */
-		File_content(Allocator &alloc, Directory const &dir, Path const &rel_path,
-		             Limit limit)
+		File_content(Allocator &alloc, Readonly_file const &file, Size_to_read size_to_read)
 		:
-			_buffer(alloc, min((size_t)dir.file_size(rel_path), limit.value))
+			_buffer(alloc, size_to_read.value)
 		{
-			Readonly_file file {dir, rel_path};
-
 			size_t total_read = 0;
 			while (total_read < _buffer.size) {
+
 				size_t read_bytes = file.read(Readonly_file::At{total_read},
 				                              _buffer.ptr  + total_read,
 				                              _buffer.size - total_read);
@@ -550,6 +549,19 @@ class Genode::File_content
 			if (total_read != _buffer.size)
 				throw Truncated_during_read();
 		}
+
+		/**
+		 * Constructor
+		 *
+		 * \throw Nonexistent_file
+		 * \throw Truncated_during_read  number of readable bytes differs
+		 *                               from file status information
+		 */
+		File_content(Allocator &alloc, Directory const &dir, Path const &rel_path,
+		             Limit limit)
+		: File_content(alloc, Readonly_file{dir, rel_path},
+		               Size_to_read{min((size_t)dir.file_size(rel_path),
+		                                limit.value)}) { }
 
 		/**
 		 * Call functor 'fn' with content as 'Xml_node' argument
