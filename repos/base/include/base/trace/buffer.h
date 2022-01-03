@@ -43,11 +43,14 @@ class Genode::Trace::Buffer
 
 		void _buffer_wrapped()
 		{
+//Genode::error("wrapped");
+#if 0
 			_head_offset = 0;
 			_wrapped++;
 
 			/* mark first entry with len 0 */
 			_head_entry()->len = 0;
+#endif
 		}
 
 		/*
@@ -84,7 +87,7 @@ class Genode::Trace::Buffer
 
 			_buffer_wrapped();
 
-			return _head_entry()->data;
+			return /*_head_entry()->data*/nullptr;
 		}
 
 		void commit(size_t len)

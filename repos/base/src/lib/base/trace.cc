@@ -146,8 +146,12 @@ void Trace::Logger::log(char const *msg, size_t len)
 {
 	if (!this || !_evaluate_control()) return;
 
-	memcpy(buffer->reserve(len), msg, len);
-	buffer->commit(len);
+	char *buf = buffer->reserve(len);
+	if (buf) {
+		//memcpy(buffer->reserve(len), msg, len);
+		memcpy(buf, msg, len);
+		buffer->commit(len);
+	}
 }
 
 
