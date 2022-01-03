@@ -1174,6 +1174,7 @@ extern "C" {
 	                           pthread_mutex_t *__restrict mutex,
 	                           const struct timespec *__restrict abstime)
 	{
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
 		int result = 0;
 
 		if (!cond)
@@ -1184,21 +1185,33 @@ extern "C" {
 
 		pthread_cond *c = *cond;
 
+//Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
 		c->num_waiters++;
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
 		pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
 
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(mutex)");
 		pthread_mutex_unlock(mutex);
-
+//Genode::trace(__func__, ": pthread_mutex_unlock(mutex) returned");
 		if (!abstime) {
+Genode::trace(__func__, ": calling sem_wait(signal_sem)");
 			if (sem_wait(&c->signal_sem) == -1)
 				result = errno;
+Genode::trace(__func__, ": sem_wait(signal_sem) returned");
 		} else {
+Genode::trace(__func__, ": calling sem_timedwait()");
 			if (sem_timedwait(&c->signal_sem, abstime) == -1)
 				result = errno;
+Genode::trace(__func__, ": sem_timedwait() returned");
 		}
 
+//Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
+
 		if (c->num_signallers > 0) {
 			if (result == ETIMEDOUT) {
 				/*
@@ -1212,14 +1225,22 @@ extern "C" {
 				 * pthread_cond_wait/timedwait().
 				 */
 			}
+//Genode::trace(__func__, ": calling sem_post(handshake_sem)");
 			sem_post(&c->handshake_sem);
+//Genode::trace(__func__, ": sem_post(handshake_sem) returned");
 			--c->num_signallers;
 		}
 		c->num_waiters--;
+
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
 		pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
 
+Genode::trace(__func__, ": calling pthread_mutex_lock(mutex)");
 		pthread_mutex_lock(mutex);
+Genode::trace(__func__, ": pthread_mutex_lock(mutex) returned");
 
+//Genode::trace(__func__, " finished");
 		return result;
 	}
 
@@ -1239,6 +1260,7 @@ extern "C" {
 
 	int pthread_cond_signal(pthread_cond_t *cond)
 	{
+Genode::trace(__func__);
 		if (!cond)
 			return EINVAL;
 
@@ -1246,16 +1268,29 @@ extern "C" {
 			cond_init(cond, NULL);
 
 		pthread_cond *c = *cond;
-
+//Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
 		if (c->num_waiters > c->num_signallers) {
 			++c->num_signallers;
+//Genode::trace(__func__, ": calling sem_post(signal_sem)");
 			sem_post(&c->signal_sem);
-			pthread_mutex_unlock(&c->counter_mutex);
-			sem_wait(&c->handshake_sem);
-		} else
-			pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": sem_post(signal_sem) returned");
 
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
+			pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
+
+Genode::trace(__func__, ": calling sem_wait(handshake_sem)");
+			sem_wait(&c->handshake_sem);
+Genode::trace(__func__, ": sem_wait(handshake_sem) returned");
+		} else {
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
+			pthread_mutex_unlock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
+		}
+
+//Genode::trace(__func__, " finished");
 		return 0;
 	}
 
@@ -1265,6 +1300,8 @@ extern "C" {
 
 	int pthread_cond_broadcast(pthread_cond_t *cond)
 	{
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+
 		if (!cond)
 			return EINVAL;
 
@@ -1273,18 +1310,31 @@ extern "C" {
 
 		pthread_cond *c = *cond;
 
+//Genode::trace(__func__, ": calling pthread_mutex_lock(counter_mutex)");
 		pthread_mutex_lock(&c->counter_mutex);
+//Genode::trace(__func__, ": pthread_mutex_lock(counter_mutex) returned");
 		if (c->num_waiters > c->num_signallers) {
 			int still_waiting = c->num_waiters - c->num_signallers;
 			c->num_signallers = c->num_waiters;
-			for (int i = 0; i < still_waiting; i++)
+			for (int i = 0; i < still_waiting; i++) {
+Genode::trace(__func__, ": calling sem_post(signal_sem)");
 				sem_post(&c->signal_sem);
+Genode::trace(__func__, ": sem_post(signal_sem) returned");
+			}
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
 			pthread_mutex_unlock(&c->counter_mutex);
-			for (int i = 0; i < still_waiting; i++)
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
+			for (int i = 0; i < still_waiting; i++) {
+Genode::trace(__func__, ": calling sem_wait(handshake_sem)");
 				sem_wait(&c->handshake_sem);
-		} else
+Genode::trace(__func__, ": sem_wait(handshake_sem) returned");
+			}
+		} else {
+//Genode::trace(__func__, ": calling pthread_mutex_unlock(counter_mutex)");
 			pthread_mutex_unlock(&c->counter_mutex);
-
+//Genode::trace(__func__, ": pthread_mutex_unlock(counter_mutex) returned");
+		}
+//Genode::trace(__func__, " finished");
 		return 0;
 	}
 

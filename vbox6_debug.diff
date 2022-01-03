@@ -1,0 +1,2429 @@
+vbox6_debug.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/virtualbox6/include/VBox/vmm/pdmdev.h          |    1 
+ .../src/VBox/Devices/Audio/AudioMixBuffer.cpp      |    1 
+ .../src/VBox/Devices/Audio/AudioMixer.cpp          |   54 ++++++--
+ src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp  |   10 +
+ .../src/VBox/Devices/Audio/DevHdaStream.cpp        |  135 +++++++++++++++++---
+ .../src/VBox/Devices/Audio/DrvAudio.cpp            |   87 ++++++++++---
+ .../src/VBox/Devices/Audio/DrvHostAudioOss.cpp     |   76 +++++++++++
+ .../src/VBox/Devices/Graphics/DevVGA.cpp           |   20 +++
+ src/virtualbox6/src/VBox/Devices/PC/DevHPET.cpp    |    1 
+ .../src/VBox/Devices/Storage/DevAHCI.cpp           |   16 ++
+ .../src/VBox/Main/src-client/DisplayImpl.cpp       |   11 ++
+ .../src/VBox/Runtime/common/misc/thread.cpp        |    4 -
+ .../generic/RTSemEventMultiWait-generic.cpp        |    1 
+ .../VBox/Runtime/generic/RTTimerCreate-generic.cpp |    1 
+ .../src/VBox/Runtime/generic/critsect-generic.cpp  |    2 
+ .../src/VBox/Runtime/generic/sched-generic.cpp     |    1 
+ .../src/VBox/Runtime/generic/timer-generic.cpp     |   10 +
+ .../src/VBox/Runtime/r3/posix/sched-posix.cpp      |    1 
+ .../src/VBox/Runtime/r3/posix/semevent-posix.cpp   |   21 +++
+ .../VBox/Runtime/r3/posix/semeventmulti-posix.cpp  |   28 ++++
+ .../src/VBox/VMM/VMMAll/PDMAllCritSect.cpp         |    1 
+ src/virtualbox6/src/VBox/VMM/VMMAll/TMAll.cpp      |   19 +++
+ src/virtualbox6/src/VBox/VMM/VMMR3/EM.cpp          |    8 +
+ src/virtualbox6/src/VBox/VMM/VMMR3/EMR3Nem.cpp     |    2 
+ src/virtualbox6/src/VBox/VMM/VMMR3/PDMDevHlp.cpp   |    4 -
+ src/virtualbox6/src/VBox/VMM/VMMR3/TM.cpp          |   76 +++++++++++
+ src/virtualbox6/src/VBox/VMM/VMMR3/VMEmt.cpp       |   22 +++
+ 27 files changed, 537 insertions(+), 76 deletions(-)
+
+diff --git a/src/virtualbox6/include/VBox/vmm/pdmdev.h b/src/virtualbox6/include/VBox/vmm/pdmdev.h
+index 23aeb78..837007b 100644
+--- a/src/virtualbox6/include/VBox/vmm/pdmdev.h
++++ b/src/virtualbox6/include/VBox/vmm/pdmdev.h
+@@ -6862,6 +6862,7 @@ DECLINLINE(int) PDMDevHlpSUPSemEventSignal(PPDMDEVINS pDevIns, SUPSEMEVENT hEven
+  */
+ DECLINLINE(int) PDMDevHlpSUPSemEventWaitNoResume(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint32_t cMillies)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventWaitNoResume(pDevIns, hEvent, cMillies);
+ }
+ 
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixBuffer.cpp b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixBuffer.cpp
+index c8cd641..8517f8a 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixBuffer.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixBuffer.cpp
+@@ -750,6 +750,7 @@ DECLINLINE(int) audioMixBufRateInit(PAUDIOSTREAMRATE pRate, uint32_t uSrcHz, uin
+  */
+ int AudioMixBufInit(PAUDIOMIXBUF pMixBuf, const char *pszName, PCPDMAUDIOPCMPROPS pProps, uint32_t cFrames)
+ {
++RTLogPrintf("%s: cFrames: %u\n", __func__, cFrames);
+     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
+     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+     AssertPtrReturn(pProps,  VERR_INVALID_POINTER);
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
+index bce59d4..a812956 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/AudioMixer.cpp
+@@ -169,7 +169,7 @@ int AudioMixerCreate(const char *pszName, uint32_t fFlags, PAUDIOMIXER *ppMixer)
+     AssertReturn(cchName > 0 && cchName < 128, VERR_INVALID_NAME);
+     AssertReturn  (!(fFlags & ~AUDMIXER_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+     AssertPtrReturn(ppMixer, VERR_INVALID_POINTER);
+-
++//RTLogPrintf("%s\n", __func__);
+     int         rc;
+     PAUDIOMIXER pMixer = (PAUDIOMIXER)RTMemAllocZVar(sizeof(AUDIOMIXER) + cchName + 1);
+     if (pMixer)
+@@ -877,13 +877,17 @@ bool AudioMixerSinkIsActive(PAUDMIXSINK pSink)
+         return false;
+     AssertPtr(pSink);
+     AssertReturn(pSink->uMagic == AUDMIXSINK_MAGIC, false);
+-
++Genode::trace("*** ", __func__, ": calling RTCritSectEnter()");
+     int rc = RTCritSectEnter(&pSink->CritSect);
++Genode::trace("*** ", __func__, ": RTCritSectEnter() returned");
+     AssertRCReturn(rc, false);
+ 
+     bool const fIsActive = RT_BOOL(pSink->fStatus & AUDMIXSINK_STS_RUNNING);
+ 
++Genode::trace("*** ", __func__, ": calling RTCritSectLeave()");
+     RTCritSectLeave(&pSink->CritSect);
++Genode::trace("*** ", __func__, ": RTCritSectLeave() returned");
++
+     Log3Func(("[%s] returns %RTbool\n", pSink->pszName, fIsActive));
+     return fIsActive;
+ }
+@@ -958,7 +962,7 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PCPDMAUDIOPCMPROPS pProps, uint32
+     AssertReturn(pSink->uMagic == AUDMIXSINK_MAGIC, VERR_INVALID_MAGIC);
+     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+     AssertReturn(AudioHlpPcmPropsAreValid(pProps), VERR_INVALID_PARAMETER);
+-
++//RTLogPrintf("%s: cMsSchedulingHint: %u\n", __func__, cMsSchedulingHint);
+     /*
+      * Calculate the mixer buffer size so we can force a recreation if it changes.
+      *
+@@ -1141,6 +1145,8 @@ int AudioMixerSinkSetVolume(PAUDMIXSINK pSink, PCPDMAUDIOVOLUME pVol)
+ static uint32_t audioMixerSinkUpdateInputCalcFramesToTransfer(PAUDMIXSINK pSink, uint32_t *pcReadableStreams)
+ {
+     uint32_t      cFramesToRead    = AudioMixBufFree(&pSink->MixBuf);
++//Genode::trace(__func__, ": cFramesToRead * 4: ", cFramesToRead * 4);
++
+     uint32_t      cReadableStreams = 0;
+     PAUDMIXSTREAM pMixStream;
+     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+@@ -1153,7 +1159,7 @@ static uint32_t audioMixerSinkUpdateInputCalcFramesToTransfer(PAUDMIXSINK pSink,
+             PPDMIAUDIOCONNECTOR const pIConnector = pMixStream->pConn;
+             PPDMAUDIOSTREAM const     pStream     = pMixStream->pStream;
+             pIConnector->pfnStreamIterate(pIConnector, pStream);
+-
++//Genode::trace(__func__);
+             uint32_t const cbReadable = pIConnector->pfnStreamGetReadable(pIConnector, pStream);
+             uint32_t cFrames = PDMAudioPropsBytesToFrames(&pStream->Cfg.Props, cbReadable);
+             pMixStream->cFramesLastAvail = cFrames;
+@@ -1205,6 +1211,7 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
+      * try again.
+      */
+     uint32_t cReadableStreams  = 0;
++//Genode::trace(__func__);
+     uint32_t cFramesToXfer     = audioMixerSinkUpdateInputCalcFramesToTransfer(pSink, &cReadableStreams);
+     if (   cFramesToXfer != 0
+         || cReadableStreams <= 1
+@@ -1253,6 +1260,7 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
+         if (cMarkedUnreliable > 0)
+         {
+             cReadableStreams = 0;
++//Genode::trace(__func__, " 2");
+             cFramesToXfer = audioMixerSinkUpdateInputCalcFramesToTransfer(pSink, &cReadableStreams);
+         }
+ 
+@@ -1269,7 +1277,8 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
+ #ifndef ELECTRIC_INPUT_BUFFER
+             union
+             {
+-                uint8_t  ab[8192];
++// XXX
++                uint8_t  ab[2*8192];
+                 uint64_t au64[8192 / sizeof(uint64_t)]; /* Use uint64_t to ensure good alignment. */
+             } Buf;
+             void * const   pvBuf = &Buf;
+@@ -1308,6 +1317,8 @@ static int audioMixerSinkUpdateInput(PAUDMIXSINK pSink, uint32_t cbDmaBuf, uint3
+                          * Read a chunk from the backend.
+                          */
+                         uint32_t const cbSrcToRead = RT_MIN(cbBuf, cbSrcToXfer - offSrc);
++//Genode::trace(__func__, ": cbBuf: ", cbBuf, ", cbSrcToXfer: ", cbSrcToXfer, ", offSrc: ", offSrc);
++//Genode::trace(__func__, ": cbSrcToRead: ", cbSrcToRead);
+                         uint32_t       cbSrcRead   = 0;
+                         if (cbSrcToRead > 0)
+                         {
+@@ -1485,6 +1496,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+      */
+     uint32_t cWritableStreams  = 0;
+     uint32_t cFramesToRead     = audioMixerSinkUpdateOutputCalcFramesToRead(pSink, &cWritableStreams);
++//RTLogPrintf("%s: cFramesToRead: %u\n", __func__, cFramesToRead);
+     if (   cFramesToRead != 0
+         || cWritableStreams <= 1
+         || AudioMixBufFree(&pSink->MixBuf) > 2)
+@@ -1573,13 +1585,17 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+                         AudioMixBufPeek(&pSink->MixBuf, offSrcFrame, cSrcFramesPeeked, &cSrcFramesPeeked,
+                                         &pMixStream->PeekState, pvBuf, cbBuf, &cbDstPeeked);
+                         offSrcFrame += cSrcFramesPeeked;
+-
++//RTLogPrintf("%s: cSrcFramesPeeked: %u\n", __func__, cSrcFramesPeeked);
++//RTLogPrintf("%s: cbDstPeeked: %u\n", __func__, cbDstPeeked);
+                         /* Write it to the backend.  Since've checked that there is buffer
+                            space available, this should always write the whole buffer unless
+                            it's an unreliable stream. */
+                         uint32_t cbDstWritten = 0;
++//RTLogPrintf("%s: calling pfnStreamPlay(): %p, %u\n", __func__, pMixStream->pConn->pfnStreamPlay, cbDstPeeked);
+                         int rc2 = pMixStream->pConn->pfnStreamPlay(pMixStream->pConn, pMixStream->pStream,
+                                                                    pvBuf, cbDstPeeked, &cbDstWritten);
++//RTLogPrintf("%s: pfnStreamPlay() returned, rc2: %u, cbDstWritten: %u, cbDstPeeked: %u\n",
++//            __func__, rc2, cbDstWritten, cbDstPeeked);
+                         Log3Func(("%s: %#x L %#x => %#x bytes; wrote %#x rc2=%Rrc %s\n", pSink->pszName, offSrcFrame,
+                                   cSrcFramesPeeked - cSrcFramesPeeked, cbDstPeeked, cbDstWritten, rc2, pMixStream->pszName));
+ #ifdef ELECTRIC_PEEK_BUFFER
+@@ -1602,6 +1618,7 @@ static int audioMixerSinkUpdateOutput(PAUDMIXSINK pSink)
+                                      pMixStream->pszName, pSink->pszName, rc2));
+                             break;
+                         }
++//RTLogPrintf("%s: while %u < %u\n", __func__, offSrcFrame, cFramesToRead);
+                     } while (offSrcFrame < cFramesToRead);
+                 }
+             }
+@@ -1728,8 +1745,10 @@ int AudioMixerSinkUpdate(PAUDMIXSINK pSink, uint32_t cbDmaUsed, uint32_t cbDmaPe
+         /* Do separate processing for input and output sinks. */
+         if (pSink->enmDir == PDMAUDIODIR_OUT)
+             rc = audioMixerSinkUpdateOutput(pSink);
+-        else if (pSink->enmDir == PDMAUDIODIR_IN)
++        else if (pSink->enmDir == PDMAUDIODIR_IN) {
++//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+             rc = audioMixerSinkUpdateInput(pSink, cbDmaUsed, cbDmaPeriod);
++        }
+         else
+             AssertFailedStmt(rc = VERR_INTERNAL_ERROR_3);
+     }
+@@ -1750,13 +1769,14 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void
+     AssertPtr(pSink);
+     Assert(pSink->uMagic == AUDMIXSINK_MAGIC);
+     RT_NOREF(hThreadSelf);
+-
++//RTLogPrintf("%s\n", __func__);
+     /*
+      * The run loop.
+      */
+     LogFlowFunc(("%s: Entering run loop...\n", pSink->pszName));
+     while (!pSink->AIO.fShutdown)
+     {
++//RTLogPrintf("%s: loop\n", __func__);
+         RTMSINTERVAL cMsSleep = RT_INDEFINITE_WAIT;
+ 
+         RTCritSectEnter(&pSink->CritSect);
+@@ -1765,15 +1785,22 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void
+             /*
+              * Before doing jobs, always update input sinks.
+              */
+-            if (pSink->enmDir == PDMAUDIODIR_IN)
++            if (pSink->enmDir == PDMAUDIODIR_IN) {
++//Genode::trace(__func__);
++// XXX
+                 audioMixerSinkUpdateInput(pSink, 0 /*cbDmaUsed*/, 0 /*cbDmaPeriod*/);
++            }
+ 
+             /*
+              * Do the device specific updating.
+              */
+             uintptr_t const cUpdateJobs = RT_MIN(pSink->AIO.cUpdateJobs, RT_ELEMENTS(pSink->AIO.aUpdateJobs));
+-            for (uintptr_t iJob = 0; iJob < cUpdateJobs; iJob++)
++            for (uintptr_t iJob = 0; iJob < cUpdateJobs; iJob++) {
++//RTLogPrintf("%s: calling pfnUpdate()\n", __func__);
+                 pSink->AIO.aUpdateJobs[iJob].pfnUpdate(pSink->AIO.pDevIns, pSink, pSink->AIO.aUpdateJobs[iJob].pvUser);
++//RTLogPrintf("%s: pfnUpdate() returned\n", __func__);
++
++            }
+ 
+             /*
+              * Update output sinks after the updating.
+@@ -1803,7 +1830,11 @@ static DECLCALLBACK(int) audioMixerSinkAsyncIoThread(RTTHREAD hThreadSelf, void
+          */
+         if (!pSink->AIO.fShutdown)
+         {
++//Genode::trace(__func__, ": calling RTSemEventWait()");
++//uint64_t ts = Genode::Trace::timestamp();
+             int rc = RTSemEventWait(pSink->AIO.hEvent, cMsSleep);
++//uint64_t ts2 = Genode::Trace::timestamp();
++//Genode::trace(__func__, ": RTSemEventWait() returned, diff: ", (ts2 - ts) / 2496000);
+             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_TIMEOUT, ("%s: RTSemEventWait -> %Rrc\n", pSink->pszName, rc), rc);
+         }
+     }
+@@ -2003,7 +2034,8 @@ uint64_t AudioMixerSinkTransferFromCircBuf(PAUDMIXSINK pSink, PRTCIRCBUF pCircBu
+     uint32_t       cbToTransfer       = RT_MIN(cbCircBufReadable, cbSinkWritable);
+     /* Make sure that we always align the number of bytes when reading to the stream's PCM properties. */
+     uint32_t const cbToTransfer2      = cbToTransfer = PDMAudioPropsFloorBytesToFrame(&pSink->PCMProps, cbToTransfer);
+-
++//RTLogPrintf("%s: cbSinkWritable: %u, cbCircBufReadable: %u, cbToTransfer: %u, cbToTransfer2: %u\n",
++//            __func__, cbSinkWritable, cbCircBufReadable, cbToTransfer, cbToTransfer2);
+     Log3Func(("idStream=%u: cbSinkWritable=%#RX32 cbCircBufReadable=%#RX32 -> cbToTransfer=%#RX32 @%#RX64\n",
+               idStream, cbSinkWritable, cbCircBufReadable, cbToTransfer, offStream));
+     AssertMsg(!(pSink->fStatus & AUDMIXSINK_STS_DRAINING) || cbCircBufReadable == pSink->cbDmaLeftToDrain,
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
+index 5ba587d..0484ad4 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DevHda.cpp
+@@ -1184,7 +1184,7 @@ static VBOXSTRICTRC hdaRegReadLPIB(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t
+     RT_NOREF(pDevIns);
+     uint8_t const  uSD   = HDA_SD_NUM_FROM_REG(pThis, LPIB, iReg);
+     uint32_t const uLPIB = HDA_STREAM_REG(pThis, LPIB, uSD);
+-
++//RTLogPrintf("hdaRegReadLPIB(): %u\n", uLPIB);
+ #ifdef VBOX_HDA_WITH_ON_REG_ACCESS_DMA
+     /*
+      * Should we consider doing DMA work while we're here?  That would require
+@@ -1681,6 +1681,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
+                     AssertRC(rc2);
+ 
+                     /* Add the stream to the device setup. */
++//RTLogPrintf("%s\n", __func__);
+                     rc2 = hdaR3AddStream(pThisCC, &pStreamShared->State.Cfg);
+                     AssertRC(rc2);
+                 }
+@@ -1748,6 +1749,7 @@ static VBOXSTRICTRC hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32
+ 
+ static VBOXSTRICTRC hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
+ {
++//RTLogPrintf("hdaRegWriteSDSTS()\n");
+     uint32_t v = HDA_REG_IND(pThis, iReg);
+ 
+     /* Clear (zero) FIFOE, DESE and BCIS bits when writing 1 to it (6.2.33). */
+@@ -2623,7 +2625,7 @@ static int hdaR3MixerAddDrvStreams(PPDMDEVINS pDevIns, PHDASTATER3 pThisCC, PAUD
+ {
+     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
+     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
+-
++//RTLogPrintf("%s\n", __func__);
+     LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
+ 
+     int rc;
+@@ -2665,7 +2667,7 @@ DECLHIDDEN(int) hdaR3MixerAddStream(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixe
+ {
+     PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
+     AssertPtrReturn(pCfg,  VERR_INVALID_POINTER);
+-
++//RTLogPrintf("%s\n", __func__);
+     int rc;
+     PHDAMIXERSINK pSink = hdaR3MixerControlToSink(pThisCC, enmMixerCtl);
+     if (pSink)
+@@ -2885,6 +2887,7 @@ DECLHIDDEN(int) hdaR3MixerControl(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerC
+  */
+ DECLHIDDEN(int) hdaR3MixerSetVolume(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
+ {
++//Genode::log(__func__, ": pVol->fMuted: ", pVol->fMuted, ", ret: ", __builtin_return_address(0));
+     PHDASTATER3 pThisCC = RT_FROM_MEMBER(pCodec, HDASTATER3, Codec);
+     int         rc;
+ 
+@@ -2911,6 +2914,7 @@ DECLHIDDEN(int) hdaR3MixerSetVolume(PHDACODECR3 pCodec, PDMAUDIOMIXERCTL enmMixe
+  */
+ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+ {
++//Genode::trace("hdaR3Timer()");
+     PHDASTATE       pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
+     PHDASTATER3     pThisCC       = PDMDEVINS_2_DATA_CC(pDevIns, PHDASTATER3);
+     uintptr_t       idxStream     = (uintptr_t)pvUser;
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
+index 74caf45..1ca3bf2 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DevHdaStream.cpp
+@@ -19,6 +19,8 @@
+ /*********************************************************************************************************************************
+ *   Header Files                                                                                                                 *
+ *********************************************************************************************************************************/
++#include <base/log.h>
++
+ #define LOG_GROUP LOG_GROUP_DEV_HDA
+ #include <VBox/log.h>
+ 
+@@ -552,9 +554,9 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
+         uint64_t const cTicks = ASMMultU64ByU32DivByU32(cTimerTicksPerSec, pStreamShared->State.aSchedule[i].cbPeriod, cbPerSec);
+         AssertLogRelMsgReturn((uint32_t)cTicks == cTicks, ("cTicks=%RU64 (%#RX64)\n", cTicks, cTicks), VERR_INTERNAL_ERROR_4);
+         pStreamShared->State.aSchedule[i].cPeriodTicks = RT_MAX((uint32_t)cTicks, 16);
+-        LogRel2(("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
++        RTLogPrintf("HDA:  #%u: %u ticks / %u bytes, %u loops, BDLE%u L %u\n", i, pStreamShared->State.aSchedule[i].cPeriodTicks,
+                  pStreamShared->State.aSchedule[i].cbPeriod, pStreamShared->State.aSchedule[i].cLoops,
+-                 pStreamShared->State.aSchedule[i].idxFirst, pStreamShared->State.aSchedule[i].cEntries));
++                 pStreamShared->State.aSchedule[i].idxFirst, pStreamShared->State.aSchedule[i].cEntries);
+     }
+ 
+     return VINF_SUCCESS;
+@@ -576,6 +578,7 @@ static int hdaR3StreamCreateSchedule(PHDASTREAM pStreamShared, uint32_t cSegment
+  */
+ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, uint8_t uSD)
+ {
++//RTLogPrintf("%s\n", __func__);
+     /* This must be valid all times. */
+     AssertReturn(uSD < HDA_MAX_STREAMS, VERR_INVALID_PARAMETER);
+ 
+@@ -766,6 +769,7 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
+      * Set up data transfer stuff.
+      */
+     /* Set I/O scheduling hint for the backends. */
++//RTLogPrintf("%s: cNsPerPeriod: %u\n", __func__, cNsPerPeriod);
+     pCfg->Device.cMsSchedulingHint = cNsPerPeriod > RT_NS_1MS ? (cNsPerPeriod + RT_NS_1MS / 2) / RT_NS_1MS : 1;
+     LogRel2(("HDA: Stream #%RU8 set scheduling hint for the backends to %RU32ms\n", uSD, pCfg->Device.cMsSchedulingHint));
+ 
+@@ -827,8 +831,8 @@ int hdaR3StreamSetUp(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREAM pStreamShar
+      *       channels we don't support / need to save space.
+      */
+     uint32_t cbCircBuf = PDMAudioPropsMilliToBytes(&pCfg->Props, RT_MS_1SEC * 6 / uTransferHz);
+-    LogRel2(("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
+-             uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf)));
++    RTLogPrintf("HDA: Stream #%RU8 default ring buffer size is %RU32 bytes / %RU64 ms\n",
++             uSD, cbCircBuf, PDMAudioPropsBytesToMilli(&pCfg->Props, cbCircBuf));
+ 
+     uint32_t msCircBufCfg = hdaGetDirFromSD(uSD) == PDMAUDIODIR_IN ? pThis->cMsCircBufIn : pThis->cMsCircBufOut;
+     if (msCircBufCfg) /* Anything set via CFGM? */
+@@ -1149,7 +1153,7 @@ static void hdaStreamSetPositionAbs(PHDASTREAM pStreamShared, PPDMDEVINS pDevIns
+ 
+     /* Update LPIB in any case. */
+     HDA_STREAM_REG(pThis, LPIB, pStreamShared->u8SD) = uLPIB;
+-
++//RTLogPrintf("LPIB set to %u\n", uLPIB);
+     /* Do we need to tell the current DMA position? */
+     if (pThis->fDMAPosition)
+     {
+@@ -1290,7 +1294,8 @@ DECLINLINE(bool) hdaStreamDmaBufNeedsIrq(PHDASTREAM pStreamShared)
+ {
+     uint8_t const idxBdle = pStreamShared->State.idxCurBdle;
+     AssertReturn(idxBdle < pStreamShared->State.cBdles, false);
+-    return (pStreamShared->State.aBdl[idxBdle].fFlags & HDA_BDLE_F_IOC) != 0;
++    bool res = (pStreamShared->State.aBdl[idxBdle].fFlags & HDA_BDLE_F_IOC) != 0;
++    return res;
+ }
+ 
+ /**
+@@ -1344,9 +1349,16 @@ DECLINLINE(bool) hdaR3StreamDoDmaPrologue(PHDASTATE pThis, PHDASTREAM pStreamSha
+     }
+ 
+     if (!(HDA_STREAM_REG(pThis, STS, uSD) & HDA_SDSTS_BCIS))
+-    { /* likely */ }
++    {
++    	/* likely */
++    }
+     else
+     {
++static int count;
++count++;
++Genode::trace(__func__, ": BCIS bit set, skipping transfer: ", count);
++//RTLogPrintf("BCIS still set, skipping transfer\n");
++//pStreamShared->State.tsTransferNext = 0;
+         /** @todo r=bird: This is a bit fishy.  We should make effort the reschedule
+          *        the transfer immediately after the guest clears the interrupt.
+          *        The same fishy code is present in AC'97 with just a little
+@@ -1434,24 +1446,26 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
+                                                    PHDASTREAM pStreamShared, const char *pszFunction)
+ {
+     RT_NOREF(pszFunction);
+-
++//RTLogPrintf("%s\n", __func__);
+     /*
+      * Is the buffer descriptor complete.
+      */
+     if (hdaStreamDmaBufIsComplete(pStreamShared))
+     {
+-        Log3(("%s: [SD%RU8] Completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x\n", pszFunction, pStreamShared->u8SD,
+-              pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
+-              pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
+-              pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags));
++//        RTLogPrintf("%s: [SD%RU8] Completed BDLE%u %#RX64 LB %#RX32 fFlags=%#x\n", pszFunction, pStreamShared->u8SD,
++//              pStreamShared->State.idxCurBdle, pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].GCPhys,
++//              pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].cb,
++//              pStreamShared->State.aBdl[pStreamShared->State.idxCurBdle].fFlags);
+ 
+         /* Does the current BDLE require an interrupt to be sent? */
+         if (hdaStreamDmaBufNeedsIrq(pStreamShared))
+         {
++//RTLogPrintf("%s: needs IRQ\n", __func__);
+             /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL
+                register is set we need to generate an interrupt. */
+             if (HDA_STREAM_REG(pThis, CTL, pStreamShared->u8SD) & HDA_SDCTL_IOCE)
+             {
++//RTLogPrintf("%s: IOC set\n", __func__);
+                 /* Assert the interrupt before actually fetching the next BDLE below. */
+                 pStreamShared->State.cTransferPendingInterrupts = 1;
+                 Log3(("%s: [SD%RU8] Scheduling interrupt\n", pszFunction, pStreamShared->u8SD));
+@@ -1459,6 +1473,7 @@ DECLINLINE(bool) hdaStreamDoDmaMaybeCompleteBuffer(PPDMDEVINS pDevIns, PHDASTATE
+                 /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
+                  * ending / beginning of a period. */
+                 /** @todo r=bird: What does the above comment mean? */
++//RTLogPrintf("%s: setting BCIS\n", __func__);
+                 HDA_STREAM_REG(pThis, STS, pStreamShared->u8SD) |= HDA_SDSTS_BCIS;
+                 HDA_PROCESS_INTERRUPT(pDevIns, pThis);
+             }
+@@ -1509,7 +1524,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
+ {
+     uint8_t const uSD = pStreamShared->u8SD;
+     LogFlowFunc(("ENTER - #%u cbToConsume=%#x%s\n", uSD, cbToConsume, fWriteSilence ? " silence" : ""));
+-
++//Genode::trace(__func__, ": cbToConsume: ", cbToConsume, ", fWriteSilence: ", fWriteSilence);
+     /*
+      * Common prologue.
+      */
+@@ -1530,9 +1545,11 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
+     uint32_t   cbLeft   = cbToConsume;
+     Assert(cbLeft == pStreamShared->State.cbCurDmaPeriod);
+     Assert(PDMAudioPropsIsSizeAligned(&pStreamShared->State.Cfg.Props, cbLeft));
+-
++//Genode::trace(__func__, ": cbLeft: ", cbLeft);
+     while (cbLeft > 0)
+     {
++//Genode::trace(__func__, ": while, cbLeft: ", cbLeft);
++
+         STAM_PROFILE_START(&pThis->StatIn, a);
+ 
+         /*
+@@ -1540,6 +1557,7 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
+          */
+         uint32_t cbChunk = 0;
+         RTGCPHYS GCPhys  = hdaStreamDmaBufGet(pStreamShared, &cbChunk);
++//Genode::trace(__func__, ": while, cbChunk: ", cbChunk);
+ 
+         if (cbChunk <= cbLeft)
+         { /* very likely */ }
+@@ -1559,7 +1577,14 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
+                 size_t          cbBufSrc;
+                 RTCircBufAcquireReadBlock(pCircBuf, cbChunk, &pvBufSrc, &cbBufSrc);
+                 AssertBreakStmt(cbBufSrc, RTCircBufReleaseReadBlock(pCircBuf, 0));
+-
++#if 0
++for (int i = 0; i < cbBufSrc; i++)
++{
++	unsigned char c = ((unsigned char*)pvBufSrc)[i];
++	if (c != 0)
++		Genode::trace(__func__, ": buf[", i, "]: ", c);
++}
++#endif
+                 int rc2 = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBufSrc, cbBufSrc);
+                 AssertRC(rc2);
+ 
+@@ -1650,6 +1675,8 @@ static void hdaR3StreamDoDmaInput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTREA
+  */
+ static void hdaR3StreamPullFromMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink)
+ {
++//Genode::trace(__func__, ": u8SD: ", pStreamR3->u8SD,
++//             ", offWrite: ", pStreamShared->State.offWrite);
+ # ifdef LOG_ENABLED
+     uint64_t const offWriteOld = pStreamShared->State.offWrite;
+ # endif
+@@ -1691,14 +1718,14 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
+ {
+     uint8_t const uSD = pStreamShared->u8SD;
+     LogFlowFunc(("ENTER - #%u cbToProduce=%#x\n", uSD, cbToProduce));
+-
+     /*
+      * Common prologue.
+      */
+     if (hdaR3StreamDoDmaPrologue(pThis, pStreamShared, pStreamR3, uSD, tsNowNs, "hdaR3StreamDoDmaOutput"))
+     { /* likely */ }
+-    else
++    else {
+         return;
++    }
+ 
+     /*
+      *
+@@ -1741,6 +1768,7 @@ static void hdaR3StreamDoDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTRE
+             /* Grab internal DMA buffer space and read into it. */
+             void  *pvBufDst;
+             size_t cbBufDst;
++//RTLogPrintf("%s: %u bytes from guest to internal DMA\n", __func__, cbChunk);
+             RTCircBufAcquireWriteBlock(pCircBuf, cbChunk, &pvBufDst, &cbBufDst);
+             AssertBreakStmt(cbBufDst, RTCircBufReleaseWriteBlock(pCircBuf, 0));
+ 
+@@ -2030,6 +2058,7 @@ VBOXSTRICTRC hdaStreamMaybeDoOnAccessDmaOutput(PPDMDEVINS pDevIns, PHDASTATE pTh
+  */
+ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3, PAUDMIXSINK pSink, uint64_t nsNow)
+ {
++//RTLogPrintf("hdaR3StreamPushToMixer()\n");
+ # ifdef LOG_ENABLED
+     uint64_t const offReadOld = pStreamShared->State.offRead;
+ # endif
+@@ -2047,6 +2076,7 @@ static void hdaR3StreamPushToMixer(PHDASTREAM pStreamShared, PHDASTREAMR3 pStrea
+ 
+     /* Update buffer stats. */
+     pStreamR3->State.StatDmaBufUsed = (uint32_t)RTCircBufUsed(pStreamR3->State.pCircBuf);
++//RTLogPrintf("hdaR3StreamPushToMixer() finished, StatDmaBufUsed: %u\n", pStreamR3->State.StatDmaBufUsed);
+ }
+ 
+ 
+@@ -2211,9 +2241,13 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
+ {
+     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pStreamShared->hTimer));
+-
++//RTLogPrintf("%s\n", __func__);
++static int count = 0;
++count++;
++Genode::trace(__func__, ": count: ", count, ", calling hdaR3StreamUpdateDma()");
+     /* Do the work: */
+     hdaR3StreamUpdateDma(pDevIns, pThis, pThisCC, pStreamShared, pStreamR3);
++Genode::trace(__func__, ": hdaR3StreamUpdateDma() returned");
+ 
+     /* Re-arm the timer if the sink is still active: */
+     if (   pStreamShared->State.fRunning
+@@ -2240,10 +2274,47 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
+ 
+         /* Do the actual timer re-arming. */
+         uint64_t const tsNow = PDMDevHlpTimerGet(pDevIns, pStreamShared->hTimer); /* (For virtual sync this remains the same for the whole callout IIRC) */
+-        uint64_t const tsTransferNext = tsNow + pStreamShared->State.aSchedule[idxSched].cPeriodTicks;
++        uint64_t const tsTransferNext = tsNow +
++                                        (pStreamShared->State.tsTransferNext ?
++                                         pStreamShared->State.aSchedule[idxSched].cPeriodTicks /*- 1000000*/:
++                                         1000000);
+         Log3Func(("[SD%RU8] fSinkActive=true, tsTransferNext=%RU64 (in %RU64)\n",
+                   pStreamShared->u8SD, tsTransferNext, tsTransferNext - tsNow));
++
++Genode::trace(__func__, ": calling PDMDevHlpTimerSet()");
++
+         int rc = PDMDevHlpTimerSet(pDevIns, pStreamShared->hTimer, tsTransferNext);
++
++Genode::trace(__func__, ": PDMDevHlpTimerSet() returned");
++
++static uint64_t ts_offset_ms = 0;
++
++uint64_t ts_ms = Genode::Trace::timestamp() / 2496000;
++
++static int last_ts_ms = ts_ms;
++
++//if ((ts_offset_ms == 0) && (ts_ms - last_ts_ms == 10)) {
++//	ts_offset_ms = (Genode::Trace::timestamp() / 2496000) - (tsNow / 1000000);
++//}
++
++//if ((ts_offset_ms > 0) || false) {
++//int ts_ms_v = ts_ms - ts_offset_ms;
++//int ts_ms_diff = ts_ms_v - (tsNow / 1000000);
++uint64_t ts_ms_diff_to_last = ts_ms - last_ts_ms;
++static int sum_ts_ms_diff = 0;
++sum_ts_ms_diff += /*ts_ms_diff*/ ts_ms_diff_to_last - 10;
++Genode::trace(__func__, ": tsNow: ", tsNow / 1000000,
++              "/", ts_ms_diff_to_last,
++              "/", sum_ts_ms_diff,
++              ", tsTransferNext: ", tsTransferNext / 1000000, ", diff: ", (tsTransferNext - tsNow) / 1000000, " ms");
++
++if (ts_ms_diff_to_last >= 15) {
++Genode::trace("xxx: ", ts_ms_diff_to_last);
++}
++//}
++
++last_ts_ms = ts_ms;
++
+         AssertRC(rc);
+ 
+         /* Some legacy stuff: */
+@@ -2276,6 +2347,7 @@ uint64_t hdaR3StreamTimerMain(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 p
+ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER3 pThisCC,
+                                  PHDASTREAM pStreamShared, PHDASTREAMR3 pStreamR3)
+ {
++Genode::trace(__func__);
+     RT_NOREF(pThisCC);
+     int rc2;
+ 
+@@ -2284,16 +2356,18 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+      */
+     if (RT_LIKELY(pStreamShared->State.fRunning))
+     { /* likely */ }
+-    else
++    else {
+         return;
++    }
+ 
+     PAUDMIXSINK pSink = NULL;
+     if (pStreamR3->pMixSink)
+         pSink = pStreamR3->pMixSink->pMixSink;
+     if (RT_LIKELY(AudioMixerSinkIsActive(pSink)))
+     { /* likely */ }
+-    else
++    else {
+         return;
++    }
+ 
+     /*
+      * Get scheduling info common to both input and output streams.
+@@ -2327,6 +2401,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          * least one period worth of space there or we're in an overflow situation.
+          */
+         uint32_t cbStreamFree = hdaR3StreamGetFree(pStreamR3);
++//RTLogPrintf("%s: cbStreamFree: %u\n", __func__, cbStreamFree);
+         if (cbStreamFree >= cbPeriod)
+         { /* likely */ }
+         else
+@@ -2337,6 +2412,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          * Do the DMA transfer.
+          */
+         uint64_t const offWriteBefore = pStreamShared->State.offWrite;
++
+         hdaR3StreamDoDmaOutput(pDevIns, pThis, pStreamShared, pStreamR3, RT_MIN(cbStreamFree, cbPeriod), tsNowNs);
+ 
+         /*
+@@ -2354,7 +2430,9 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+         {
+             /* Notify the async I/O worker thread that there's work to do. */
+             Log5Func(("Notifying AIO thread\n"));
++Genode::trace("*** ", __func__, ": calling AudioMixerSinkSignalUpdateJob()");
+             rc2 = AudioMixerSinkSignalUpdateJob(pSink);
++Genode::trace("*** ", __func__, ": AudioMixerSinkSignalUpdateJob() returned");
+             AssertRC(rc2);
+             /* Update last read timestamp for logging/debugging. */
+             pStreamShared->State.tsLastReadNs = tsNowNs;
+@@ -2372,8 +2450,11 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          */
+         bool     fWriteSilence = false;
+         uint32_t cbStreamUsed  = hdaR3StreamGetUsed(pStreamR3);
++//Genode::trace(__func__, ": cbStreamUsed: ", cbStreamUsed);
+         if (pStreamShared->State.fInputPreBuffered && cbStreamUsed >= cbPeriod)
+-        { /*likely*/ }
++        { /*likely*/
++//Genode::trace(__func__, ": pStreamShared->State.fInputPreBuffered && ", cbStreamUsed, " >= ", cbPeriod);
++        }
+         /*
+          * Because it may take a while for the input stream to get going (at
+          * least with pulseaudio), we feed the guest silence till we've
+@@ -2383,18 +2464,21 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+         {
+             if (cbStreamUsed < pStreamShared->State.cbInputPreBuffer)
+             {
++//Genode::trace(__func__, ": !pStreamShared->State.fInputPreBuffered: ", cbStreamUsed, " < ", pStreamShared->State.cbInputPreBuffer);
+                 Log3(("hdaR3StreamUpdateDma: Pre-buffering (got %#x out of %#x bytes)...\n",
+                       cbStreamUsed, pStreamShared->State.cbInputPreBuffer));
+                 fWriteSilence = true;
+             }
+             else
+             {
++//Genode::trace(__func__, ": !pStreamShared->State.fInputPreBuffered: ", cbStreamUsed, " >= ", pStreamShared->State.cbInputPreBuffer);
+                 Log3(("hdaR3StreamUpdateDma: Completed pre-buffering (got %#x, needed %#x bytes).\n",
+                       cbStreamUsed, pStreamShared->State.cbInputPreBuffer));
+                 pStreamShared->State.fInputPreBuffered = true;
+                 fWriteSilence = true; /* For now, just do the most conservative thing. */
+             }
+             cbStreamUsed = cbPeriod;
++//Genode::trace(__func__, ": pre-buffering silence, cbStreamUsed new: ", cbStreamUsed);
+         }
+         /*
+          * When we're low on data, we must really try fetch some ourselves
+@@ -2402,6 +2486,8 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          */
+         else
+         {
++//Genode::trace(__func__, ": pStreamShared->State.fInputPreBuffered && ", cbStreamUsed, " < ", cbPeriod);
++
+             /** @todo We're ending up here to frequently with pulse audio at least (just
+              *        watch the stream stats in the statistcs viewer, and way to often we
+              *        have to inject silence bytes.  I suspect part of the problem is
+@@ -2413,6 +2499,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+             int rc = AudioMixerSinkTryLock(pSink);
+             if (RT_SUCCESS(rc))
+             {
++//Genode::trace(__func__);
+                 AudioMixerSinkUpdate(pSink, cbStreamUsed, cbPeriod);
+                 hdaR3StreamPullFromMixer(pStreamShared, pStreamR3, pSink);
+                 AudioMixerSinkUnlock(pSink);
+@@ -2476,6 +2563,7 @@ static void hdaR3StreamUpdateDma(PPDMDEVINS pDevIns, PHDASTATE pThis, PHDASTATER
+          *        we ideally want the AIO thread to run right before the DMA timer
+          *        rather than right after it ran. */
+         Log5Func(("Notifying AIO thread\n"));
++//Genode::trace(__func__, ": Notifying AIO thread");
+         rc2 = AudioMixerSinkSignalUpdateJob(pSink);
+         AssertRC(rc2);
+         pStreamShared->State.tsLastReadNs = tsNowNs;
+@@ -2503,7 +2591,7 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
+     Assert(pStreamR3 - &pThisCC->aStreams[0] == pStreamR3->u8SD);
+     Assert(pStreamShared->u8SD == pStreamR3->u8SD);
+     RT_NOREF(pSink);
+-
++//RTLogPrintf("%s\n", __func__);
+     /*
+      * Make sure we haven't change sink and that it's still active (it
+      * should be or we wouldn't have been called).
+@@ -2524,6 +2612,7 @@ DECLCALLBACK(void) hdaR3StreamUpdateAsyncIoJob(PPDMDEVINS pDevIns, PAUDMIXSINK p
+         Assert(hdaGetDirFromSD(pStreamShared->u8SD) == PDMAUDIODIR_IN);
+         hdaR3StreamPullFromMixer(pStreamShared, pStreamR3, pSink);
+     }
++//RTLogPrintf("%s finished\n", __func__);
+ }
+ 
+ #endif /* IN_RING3 */
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
+index 76594ee..132ce6e 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DrvAudio.cpp
+@@ -1049,34 +1049,34 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+     if (PDMAudioPropsSampleSize(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+     {
+         PDMAudioPropsSetSampleSize(&pCfg->Props, PDMAudioPropsSampleSize(&pDrvCfg->Props));
+-        LogRel2(("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
+-                 PDMAudioPropsSampleSize(&pCfg->Props), pszName));
++        RTLogPrintf("Audio: Using custom sample size of %RU8 bytes for stream '%s'\n",
++                 PDMAudioPropsSampleSize(&pCfg->Props), pszName);
+     }
+ 
+     if (pDrvCfg->Props.uHz) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.uHz = pDrvCfg->Props.uHz;
+-        LogRel2(("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfg->Props.uHz, pszName));
++        RTLogPrintf("Audio: Using custom Hz rate %RU32 for stream '%s'\n", pCfg->Props.uHz, pszName);
+     }
+ 
+     if (pDrvCfg->uSigned != UINT8_MAX) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.fSigned = RT_BOOL(pDrvCfg->uSigned);
+-        LogRel2(("Audio: Using custom %s sample format for stream '%s'\n",
+-                 pCfg->Props.fSigned ? "signed" : "unsigned", pszName));
++        RTLogPrintf("Audio: Using custom %s sample format for stream '%s'\n",
++                 pCfg->Props.fSigned ? "signed" : "unsigned", pszName);
+     }
+ 
+     if (pDrvCfg->uSwapEndian != UINT8_MAX) /* Anything set via custom extra-data? */
+     {
+         pCfg->Props.fSwapEndian = RT_BOOL(pDrvCfg->uSwapEndian);
+-        LogRel2(("Audio: Using custom %s endianess for samples of stream '%s'\n",
+-                 pCfg->Props.fSwapEndian ? "swapped" : "original", pszName));
++        RTLogPrintf("Audio: Using custom %s endianess for samples of stream '%s'\n",
++                 pCfg->Props.fSwapEndian ? "swapped" : "original", pszName);
+     }
+ 
+     if (PDMAudioPropsChannels(&pDrvCfg->Props) != 0) /* Anything set via custom extra-data? */
+     {
+         PDMAudioPropsSetChannels(&pCfg->Props, PDMAudioPropsChannels(&pDrvCfg->Props));
+-        LogRel2(("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pszName));
++        RTLogPrintf("Audio: Using custom %RU8 channel(s) for stream '%s'\n", PDMAudioPropsChannels(&pDrvCfg->Props), pszName);
+     }
+ 
+     /* Validate PCM properties. */
+@@ -1090,21 +1090,22 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+      * Buffer size
+      */
+     const char *pszWhat = "device-specific";
++//RTLogPrintf("%s: pDrvCfg->uBufferSizeMs: %u\n", __func__, pDrvCfg->uBufferSizeMs);
+     if (pDrvCfg->uBufferSizeMs)
+     {
+         pCfg->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uBufferSizeMs);
+         pszWhat = "custom";
+     }
+-
++//RTLogPrintf("%s: pCfg->Backend.cFramesBufferSize: %u\n", __func__, pCfg->Backend.cFramesBufferSize);
+     if (!pCfg->Backend.cFramesBufferSize) /* Set default buffer size if nothing explicitly is set. */
+     {
+         pCfg->Backend.cFramesBufferSize = PDMAudioPropsMilliToFrames(&pCfg->Props, 300 /*ms*/);
+         pszWhat = "default";
+     }
+ 
+-    LogRel2(("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
++    RTLogPrintf("Audio: Using %s buffer size %RU64 ms / %RU32 frames for stream '%s'\n",
+              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesBufferSize),
+-             pCfg->Backend.cFramesBufferSize, pszName));
++             pCfg->Backend.cFramesBufferSize, pszName);
+ 
+     /*
+      * Period size
+@@ -1130,14 +1131,15 @@ static int drvAudioStreamAdjustConfig(PCDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+         pCfg->Backend.cFramesPeriod = pCfg->Backend.cFramesBufferSize / 2;
+     }
+ 
+-    LogRel2(("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
++    RTLogPrintf("Audio: Using %s period size %RU64 ms / %RU32 frames for stream '%s'\n",
+              pszWhat, PDMAudioPropsFramesToMilli(&pCfg->Props, pCfg->Backend.cFramesPeriod),
+-             pCfg->Backend.cFramesPeriod, pszName));
++             pCfg->Backend.cFramesPeriod, pszName);
+ 
+     /*
+      * Pre-buffering size
+      */
+     pszWhat = "device-specific";
++//RTLogPrintf("%s: pDrvCfg->uPreBufSizeMs: %u\n", __func__, pDrvCfg->uPreBufSizeMs);
+     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
+     {
+         pCfg->Backend.cFramesPreBuffering = PDMAudioPropsMilliToFrames(&pCfg->Props, pDrvCfg->uPreBufSizeMs);
+@@ -1605,9 +1607,12 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx
+      * Configure host buffers.
+      */
+     Assert(pStreamEx->cbPreBufThreshold == 0);
+-    if (pStreamEx->Core.Cfg.Backend.cFramesPreBuffering != 0)
++    if (pStreamEx->Core.Cfg.Backend.cFramesPreBuffering != 0) {
+         pStreamEx->cbPreBufThreshold = PDMAudioPropsFramesToBytes(&pStreamEx->Core.Cfg.Props,
+                                                                   pStreamEx->Core.Cfg.Backend.cFramesPreBuffering);
++RTLogPrintf("%s: pStreamEx->Core.Cfg.Backend.cFramesPreBuffering: %u\n", __func__, pStreamEx->Core.Cfg.Backend.cFramesPreBuffering);
++RTLogPrintf("%s: pStreamEx->cbPreBufThreshold: %u\n", __func__, pStreamEx->cbPreBufThreshold);
++	}
+ 
+     /* Allocate space for pre-buffering of output stream w/o mixing buffers. */
+     if (pStreamEx->Core.Cfg.enmDir == PDMAUDIODIR_OUT)
+@@ -1697,7 +1702,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface, ui
+ {
+     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+     AssertPtr(pThis);
+-
++RTLogPrintf("%s\n", __func__);
+     /*
+      * Assert sanity.
+      */
+@@ -2647,6 +2652,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
+                                 AssertFailed();
+                                 RT_FALL_THROUGH();
+                             case PDMHOSTAUDIOSTREAMSTATE_OKAY:
++//RTLogPrintf("%s: PREBUF, before: %u\n", __func__, pStreamEx->Out.enmPlayState);
+                                 pStreamEx->Out.enmPlayState = pStreamEx->cbPreBufThreshold > 0
+                                                             ? DRVAUDIOPLAYSTATE_PREBUF : DRVAUDIOPLAYSTATE_PLAY;
+                                 break;
+@@ -2914,7 +2920,7 @@ static int drvAudioStreamPreBuffer(PDRVAUDIOSTREAM pStreamEx, const uint8_t *pbB
+ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
+                                     const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+ {
+-    Log3Func(("%s: @%#RX64: cbBuf=%#x\n", pStreamEx->Core.Cfg.szName, pStreamEx->offInternal, cbBuf));
++//    RTLogPrintf("%s: @%#RX64: cbBuf=%#x\n", pStreamEx->Core.Cfg.szName, pStreamEx->offInternal, cbBuf);
+ 
+     uint32_t      cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+     pStreamEx->Out.Stats.cbBackendWritableBefore = cbWritable;
+@@ -2922,11 +2928,14 @@ static int drvAudioStreamPlayLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
+     uint32_t      cbWritten  = 0;
+     int           rc         = VINF_SUCCESS;
+     uint8_t const cbFrame    = PDMAudioPropsFrameSize(&pStreamEx->Core.Cfg.Props);
++//RTLogPrintf("%s: %u >= %u && %u >= %u\n", __func__, cbBuf, cbFrame, cbWritable, cbFrame);
+     while (cbBuf >= cbFrame && cbWritable >= cbFrame)
+     {
+         uint32_t const cbToWrite    = PDMAudioPropsFloorBytesToFrame(&pStreamEx->Core.Cfg.Props, RT_MIN(cbBuf, cbWritable));
+         uint32_t       cbWrittenNow = 0;
++//RTLogPrintf("%s\n", __func__);
+         rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pStreamEx->pBackend, pbBuf, cbToWrite, &cbWrittenNow);
++//RTLogPrintf("%s: rc: %u\n", __func__, rc);
+         if (RT_SUCCESS(rc))
+         {
+             if (cbWrittenNow != cbToWrite)
+@@ -3006,6 +3015,11 @@ static int drvAudioStreamPlayToPreBuffer(PDRVAUDIOSTREAM pStreamEx, const void *
+ static int drvAudioStreamPreBufComitting(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamEx,
+                                          const uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+ {
++//RTLogPrintf("%s: cbBuf: %u, ret: %p\n", __func__, cbBuf, __builtin_return_address(0));
++
++//RTLogPrintf("%s: cbPreBufAlloc: %u\n", __func__, pStreamEx->Out.cbPreBufAlloc);
++//RTLogPrintf("%s: cbPreBuffered: %u\n", __func__, pStreamEx->Out.cbPreBuffered);
++
+     /*
+      * First, top up the buffer with new data from pbBuf.
+      */
+@@ -3033,6 +3047,9 @@ static int drvAudioStreamPreBufComitting(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStrea
+     uint32_t        off     = pStreamEx->Out.offPreBuf;
+     AssertStmt(off < pStreamEx->Out.cbPreBufAlloc, off %= cbAlloc);
+     uint32_t        cbLeft  = pStreamEx->Out.cbPreBuffered;
++//RTLogPrintf("%s: cbPreBufAlloc 2: %u\n", __func__, pStreamEx->Out.cbPreBufAlloc);
++//RTLogPrintf("%s: cbPreBuffered 2: %u\n", __func__, pStreamEx->Out.cbPreBuffered);
++
+     while (cbLeft > 0)
+     {
+         uint32_t const cbToWrite = RT_MIN(cbAlloc - off, cbLeft);
+@@ -3272,6 +3289,7 @@ static DECLCALLBACK(PDMAUDIOSTREAMSTATE) drvAudioStreamGetState(PPDMIAUDIOCONNEC
+  */
+ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream)
+ {
++Genode::trace(__func__);
+     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+     AssertPtr(pThis);
+     PDRVAUDIOSTREAM pStreamEx = (PDRVAUDIOSTREAM)pStream;
+@@ -3371,6 +3389,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
+     Log3Func(("[%s] cbWritable=%#RX32 (%RU64ms) enmPlayMode=%s enmBackendState=%s\n",
+               pStreamEx->Core.Cfg.szName, cbWritable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Cfg.Props, cbWritable),
+               drvAudioPlayStateName(enmPlayMode), PDMHostAudioStreamStateGetName(enmBackendState) ));
++Genode::trace(__func__, " finished");
+     return cbWritable;
+ }
+ 
+@@ -3383,7 +3402,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+ {
+     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+     AssertPtr(pThis);
+-
++//RTLogPrintf("%s: cbBuf: %u\n", __func__, cbBuf);
+     /*
+      * Check input and sanity.
+      */
+@@ -3407,7 +3426,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+     AssertMsg(PDMAudioPropsIsSizeAligned(&pStreamEx->Core.Cfg.Props, cbBuf),
+               ("Stream '%s' got a non-frame-aligned write (%#RX32 bytes)\n", pStreamEx->Core.Cfg.szName, cbBuf));
+     STAM_PROFILE_START(&pStreamEx->Out.Stats.ProfPlay, a);
+-
++Genode::trace(__func__);
+     int rc = RTCritSectEnter(&pStreamEx->Core.CritSect);
+     AssertRCReturn(rc, rc);
+ 
+@@ -3417,6 +3436,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+      */
+     if (PDMAudioStrmStatusIsReady(pStreamEx->fStatus))
+     {
++//RTLogPrintf("%s: ready\n", __func__);
++
+         RTCritSectRwEnterShared(&pThis->CritSectHotPlug);
+         if (   pThis->Out.fEnabled /* (see @bugref{9882}) */
+             && pThis->pHostDrvAudio != NULL)
+@@ -3432,12 +3453,14 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+             switch (pStreamEx->Out.enmPlayState)
+             {
+                 case DRVAUDIOPLAYSTATE_PLAY:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PLAY\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPlayLocked(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PLAY_PREBUF:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PLAY_PREBUF\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPlayLocked(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+@@ -3445,6 +3468,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF\n", __func__);
+                     if (cbBuf + pStreamEx->Out.cbPreBuffered < pStreamEx->cbPreBufThreshold)
+                         rc = drvAudioStreamPlayToPreBuffer(pStreamEx, pvBuf, cbBuf, pStreamEx->cbPreBufThreshold, pcbWritten);
+                     else if (   enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY
+@@ -3466,20 +3490,24 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF_OVERDUE:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_OVERDUE\n", __func__);
+                     Assert(   !(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY)
+                            || enmBackendState != PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     RT_FALL_THRU();
+                 case DRVAUDIOPLAYSTATE_PREBUF_SWITCHING:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_SWITCHING\n", __func__);
+                     rc = drvAudioStreamPlayToPreBuffer(pStreamEx, pvBuf, cbBuf, pStreamEx->cbPreBufThreshold, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_PREBUF_COMMITTING:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_PREBUF_COMMITTING\n", __func__);
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamPreBufComitting(pThis, pStreamEx, (uint8_t const *)pvBuf, cbBuf, pcbWritten);
+                     break;
+ 
+                 case DRVAUDIOPLAYSTATE_NOPLAY:
++//RTLogPrintf("%s: DRVAUDIOPLAYSTATE_NOPLAY\n", __func__);
+                     *pcbWritten = cbBuf;
+                     pStreamEx->offInternal += cbBuf;
+                     Log3Func(("[%s] Discarding the data, backend state: %s\n", pStreamEx->Core.Cfg.szName,
+@@ -3487,6 +3515,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+                     break;
+ 
+                 default:
++//RTLogPrintf("%s: default\n", __func__);
+                     *pcbWritten = cbBuf;
+                     AssertMsgFailedBreak(("%d; cbBuf=%#x\n", pStreamEx->Out.enmPlayState, cbBuf));
+             }
+@@ -3505,11 +3534,14 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface, PPDM
+         }
+         RTCritSectRwLeaveShared(&pThis->CritSectHotPlug);
+     }
+-    else
++    else {
++RTLogPrintf("%s: not ready\n", __func__);
+         rc = VERR_AUDIO_STREAM_NOT_READY;
++    }
+ 
+     STAM_PROFILE_STOP(&pStreamEx->Out.Stats.ProfPlay, a);
+     RTCritSectLeave(&pStreamEx->Core.CritSect);
++Genode::trace(__func__, " finished");
+     return rc;
+ }
+ 
+@@ -3549,6 +3581,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
+             case DRVAUDIOCAPTURESTATE_CAPTURING:
+                 Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                 Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY /* potential unplug race */);
++//Genode::trace(__func__, ": DRVAUDIOCAPTURESTATE_CAPTURING");
+                 cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+                 break;
+ 
+@@ -3559,6 +3592,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
+              */
+             case DRVAUDIOCAPTURESTATE_PREBUF:
+             {
++//Genode::trace(__func__, ": DRVAUDIOCAPTURESTATE_PREBUF");
+                 uint64_t const cNsStream = RTTimeNanoTS() - pStreamEx->nsStarted;
+                 uint64_t const offCur    = PDMAudioPropsNanoToBytes64(&pStreamEx->Core.Cfg.Props, cNsStream);
+                 if (offCur > pStreamEx->offInternal)
+@@ -3589,6 +3623,7 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
+     Log3Func(("[%s] cbReadable=%#RX32 (%RU64ms) enmCaptureMode=%s enmBackendState=%s\n",
+               pStreamEx->Core.Cfg.szName, cbReadable, PDMAudioPropsBytesToMilli(&pStreamEx->Core.Cfg.Props, cbReadable),
+               drvAudioCaptureStateName(enmCaptureState), PDMHostAudioStreamStateGetName(enmBackendState) ));
++//Genode::trace(__func__, " finished: ", cbReadable);
+     return cbReadable;
+ }
+ 
+@@ -3635,7 +3670,7 @@ static int drvAudioStreamCaptureLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
+                                        uint8_t *pbBuf, uint32_t cbBuf, uint32_t *pcbRead)
+ {
+     Log4Func(("%s: @%#RX64: cbBuf=%#x\n", pStreamEx->Core.Cfg.szName, pStreamEx->offInternal, cbBuf));
+-
++//Genode::trace(__func__, ": cbBuf: ", cbBuf);
+     uint32_t      cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+     pStreamEx->In.Stats.cbBackendReadableBefore = cbReadable;
+ 
+@@ -3668,7 +3703,7 @@ static int drvAudioStreamCaptureLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
+                      pStreamEx->Core.Cfg.szName, pStreamEx->offInternal, cbToRead, cbRead, cbReadable, rc));
+             return cbRead ? VINF_SUCCESS : rc;
+         }
+-
++//Genode::trace(__func__, " 2");
+         cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pStreamEx->pBackend);
+     }
+ 
+@@ -3689,6 +3724,7 @@ static int drvAudioStreamCaptureLocked(PDRVAUDIO pThis, PDRVAUDIOSTREAM pStreamE
+ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream,
+                                                void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+ {
++//Genode::trace(__func__, ": pvBuf: ", pvBuf, ", cbBuf: ", cbBuf);
+     PDRVAUDIO pThis = RT_FROM_MEMBER(pInterface, DRVAUDIO, IAudioConnector);
+     AssertPtr(pThis);
+ 
+@@ -3743,6 +3779,15 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface, P
+                     Assert(pStreamEx->fStatus & PDMAUDIOSTREAM_STS_BACKEND_READY);
+                     Assert(enmBackendState == PDMHOSTAUDIOSTREAMSTATE_OKAY);
+                     rc = drvAudioStreamCaptureLocked(pThis, pStreamEx, (uint8_t *)pvBuf, cbBuf, pcbRead);
++#if 0
++for (int i = 0; i < cbBuf; i++)
++{
++	unsigned char c = ((unsigned char*)pvBuf)[i];
++	if (c != 0)
++		Genode::trace(__func__, ": pvBuf[", i, "]: ", c, ", &pvBuf[", i, "]: ", &((unsigned char*)pvBuf)[i]);
++}
++#endif
++
+                     break;
+ 
+                 case DRVAUDIOCAPTURESTATE_PREBUF:
+diff --git a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+index d2a0f17..7ba4238 100644
+--- a/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Audio/DrvHostAudioOss.cpp
+@@ -19,6 +19,7 @@
+ /*********************************************************************************************************************************
+ *   Header Files                                                                                                                 *
+ *********************************************************************************************************************************/
++#include <base/log.h>
+ #define LOG_ENABLED 1
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -159,7 +160,7 @@ static int drvHstAudOssStreamClose(int *phFile)
+ {
+     if (!phFile || !*phFile || *phFile == -1)
+         return VINF_SUCCESS;
+-
++RTLogPrintf("%s: ", __func__);
+     int rc;
+     if (close(*phFile))
+     {
+@@ -301,8 +302,8 @@ static int drvHstAudOssStreamConfigure(int hFile, bool fInput, PDRVHSTAUDOSSSTRE
+     /*
+      * Set fragment size and count.
+      */
+-    LogRel2(("OSS: Requested %RU16 %s fragments, %RU32 bytes each\n",
+-             pOSSReq->cFragments, fInput ? "input" : "output", pOSSReq->cbFragment));
++    RTLogPrintf("OSS: Requested %RU16 %s fragments, %RU32 bytes each\n",
++             pOSSReq->cFragments, fInput ? "input" : "output", pOSSReq->cbFragment);
+ 
+     int mmmmssss = (pOSSReq->cFragments << 16) | pOSSReq->cbFragmentLog2;
+     AssertLogRelMsgReturn(ioctl(hFile, SNDCTL_DSP_SETFRAGMENT, &mmmmssss) >= 0,
+@@ -381,6 +382,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
+         ReqOssCfg.cbFragmentLog2 = 12;
+         ReqOssCfg.cbFragment     = RT_BIT_32(ReqOssCfg.cbFragmentLog2);
+         uint32_t const cbBuffer  = PDMAudioPropsFramesToBytes(&ReqOssCfg.Props, pCfgReq->Backend.cFramesBufferSize);
++//RTLogPrintf("%s: pCfgReq->Backend.cFramesBufferSize: %u, cbBuffer: %u\n", __func__, pCfgReq->Backend.cFramesBufferSize, cbBuffer);
+         ReqOssCfg.cFragments     = cbBuffer >> ReqOssCfg.cbFragmentLog2;
+         AssertLogRelStmt(cbBuffer < ((uint32_t)0x7ffe << ReqOssCfg.cbFragmentLog2), ReqOssCfg.cFragments = 0x7ffe);
+ 
+@@ -398,10 +400,21 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCreate(PPDMIHOSTAUDIO pInterface,
+ 
+             memcpy(&pCfgAcq->Props, &pStreamOSS->OssCfg.Props, sizeof(PDMAUDIOPCMPROPS));
+             pCfgAcq->Backend.cFramesPeriod       = PDMAudioPropsBytesToFrames(&pCfgAcq->Props, pStreamOSS->OssCfg.cbFragment);
++//RTLogPrintf("%s: pStreamOSS->OssCfg.cbFragment: %u\n", __func__, pStreamOSS->OssCfg.cbFragment);
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesPeriod: %u\n", __func__, pCfgAcq->Backend.cFramesPeriod);
+             pCfgAcq->Backend.cFramesBufferSize   = pCfgAcq->Backend.cFramesPeriod * pStreamOSS->OssCfg.cFragments;
+-            pCfgAcq->Backend.cFramesPreBuffering = (uint64_t)pCfgReq->Backend.cFramesPreBuffering
++//RTLogPrintf("%s: pStreamOSS->OssCfg.cFragments: %u\n", __func__, pStreamOSS->OssCfg.cFragments);
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesBufferSize: %u\n", __func__, pCfgAcq->Backend.cFramesBufferSize);
++//RTLogPrintf("%s: pCfgReq->Backend.cFramesPreBuffering: %u\n", __func__, pCfgReq->Backend.cFramesPreBuffering);
++            pCfgAcq->Backend.cFramesPreBuffering =
++#if 0
++            (uint64_t)pCfgReq->Backend.cFramesPreBuffering
+                                                  * pCfgAcq->Backend.cFramesBufferSize
+                                                  / RT_MAX(pCfgReq->Backend.cFramesBufferSize, 1);
++#else
++			0;
++#endif
++//RTLogPrintf("%s: -> pCfgAcq->Backend.cFramesPreBuffering 2: %u\n", __func__, pCfgAcq->Backend.cFramesPreBuffering);
+ 
+             /*
+              * Copy the stream config and we're done!
+@@ -688,6 +701,7 @@ static DECLCALLBACK(PDMHOSTAUDIOSTREAMSTATE) drvHstAudOssHA_StreamGetState(PPDMI
+  */
+ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+ {
++Genode::trace(__func__);
+     RT_NOREF(pInterface);
+     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+     AssertPtr(pStreamOSS);
+@@ -699,12 +713,15 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
+      *       to do (up to 2021), as these are documented as obsolete.
+      */
+     audio_buf_info BufInfo = { 0, 0, 0, 0 };
++Genode::trace(__func__, ": calling ioctl()");
+     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
++Genode::trace(__func__, ": ioctl() returned");
+     AssertMsgReturn(rc2 >= 0, ("SNDCTL_DSP_GETOSPACE failed: %s (%d)\n", strerror(errno), errno), 0);
+ 
+     /* Try use the size. */
+     uint32_t        cbRet;
+     uint32_t const  cbBuf = pStreamOSS->OssCfg.cbFragment * pStreamOSS->OssCfg.cFragments;
++//RTLogPrintf("%s: cbBuf: %u, BufInfo.bytes: %u\n", __func__, cbBuf, BufInfo.bytes);
+     if (BufInfo.bytes >= 0 && (unsigned)BufInfo.bytes <= cbBuf)
+         cbRet = BufInfo.bytes;
+     else
+@@ -717,6 +734,7 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
+     }
+ 
+     Log4Func(("returns %#x (%u) [cbBuf=%#x]\n", cbRet, cbRet, cbBuf));
++Genode::trace(__func__, " finished");
+     return cbRet;
+ }
+ 
+@@ -727,9 +745,16 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetWritable(PPDMIHOSTAUDIO pI
+ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                    const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
++
+     RT_NOREF(pInterface);
+     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+     AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
++//Genode::trace(__func__, ": ", cbBuf);
++//if (cbBuf == 24576) {
++//	RTLogPrintf("%sBuf: %u, ret: %p\n", __func__, cbBuf, __builtin_return_address(0));
++//}
++//RTLogPrintf("%s: check\n", __func__);
+ 
+     /*
+      * Return immediately if this is a draining service call.
+@@ -741,6 +766,7 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
+     { /* likely */ }
+     else
+     {
++RTLogPrintf("%s: draining %u\n", __func__, pStreamOSS->fDraining);
+         *pcbWritten = 0;
+         return VINF_SUCCESS;
+     }
+@@ -750,7 +776,9 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
+      * must match exactly).
+      */
+     audio_buf_info BufInfo;
++Genode::trace(__func__, ": calling ioctl()");
+     int rc2 = ioctl(pStreamOSS->hFile, SNDCTL_DSP_GETOSPACE, &BufInfo);
++Genode::trace(__func__, ": ioctl() returned");
+     AssertLogRelMsgReturn(rc2 >= 0, ("OSS: Failed to retrieve current playback buffer: %s (%d, hFile=%d, rc2=%d)\n",
+                                      strerror(errno), errno, pStreamOSS->hFile, rc2),
+                           RTErrConvertFromErrno(errno));
+@@ -779,8 +807,15 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamPlay(PPDMIHOSTAUDIO pInterface, PP
+     uint8_t const *pbBuf    = (uint8_t const *)pvBuf;
+     uint32_t       cbChunk  = cbToWrite;
+     uint32_t       offChunk = 0;
++
++static uint64_t last_ts = Genode::Trace::timestamp();
++uint64_t ts = Genode::Trace::timestamp();
++Genode::trace(__func__, ": cbChunk: ", cbChunk, ", ", (ts - last_ts) / 2496000);
++last_ts = ts;
++
+     while (cbChunk > 0)
+     {
++//RTLogPrintf("cbChunk: %d\n", cbChunk);
+         ssize_t cbWritten = write(pStreamOSS->hFile, &pbBuf[offChunk], RT_MIN(cbChunk, pStreamOSS->OssCfg.cbFragment));
+         if (cbWritten > 0)
+         {
+@@ -831,6 +866,7 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
+ 
+     uint32_t        cbRet;
+     uint32_t const  cbBuf = pStreamOSS->OssCfg.cbFragment * pStreamOSS->OssCfg.cFragments;
++//Genode::trace(__func__, ": cbBuf: ", cbBuf, ", BufInfo.bytes: ", BufInfo.bytes);
+     if (BufInfo.bytes >= 0 && (unsigned)BufInfo.bytes <= cbBuf)
+         cbRet = BufInfo.bytes;
+     else
+@@ -856,7 +892,9 @@ static DECLCALLBACK(uint32_t) drvHstAudOssHA_StreamGetReadable(PPDMIHOSTAUDIO pI
+         uint32_t cbToRead = PDMAudioPropsFramesToBytes(&pStreamOSS->Cfg.Props, 1);
+         uint8_t  abFrame[256];
+         Assert(cbToRead < sizeof(abFrame));
++Genode::trace(__func__, ": read() to start stream: cbToRead: ", cbToRead);
+         ssize_t  cbRead = read(pStreamOSS->hFile, abFrame, cbToRead);
++Genode::trace(__func__, ": read() to start stream: cbRead: ", cbRead);
+         RT_NOREF(cbRead);
+         LogFunc(("Dummy read for '%s' returns %zd (errno=%d)\n", pStreamOSS->Cfg.szName, cbRead, errno));
+     }
+@@ -876,13 +914,43 @@ static DECLCALLBACK(int) drvHstAudOssHA_StreamCapture(PPDMIHOSTAUDIO pInterface,
+     PDRVHSTAUDOSSSTREAM pStreamOSS = (PDRVHSTAUDOSSSTREAM)pStream;
+     AssertPtrReturn(pStreamOSS, VERR_INVALID_POINTER);
+     Log3Func(("@%#RX64 cbBuf=%#x %s\n", pStreamOSS->offInternal, cbBuf, pStreamOSS->Cfg.szName));
++//Genode::trace(__func__, ": cbBuf: ", cbBuf);
+ 
+     size_t          cbToRead = cbBuf;
+     uint8_t * const pbDst    = (uint8_t *)pvBuf;
+     size_t          offWrite = 0;
+     while (cbToRead > 0)
+     {
++#if 1
++static uint64_t last_ts = Genode::Trace::timestamp();
++uint64_t ts = Genode::Trace::timestamp();
++#endif
+         ssize_t cbRead = read(pStreamOSS->hFile, &pbDst[offWrite], cbToRead);
++#if 0
++Genode::trace(__func__, ": read(): offWrite: ", offWrite, ", cbToRead: ", cbToRead, ", cbRead: ", cbRead, ", diff: ", (ts - last_ts) / 2496000);
++#endif
++#if 0
++static int64_t expected_sum_diff = 0;
++static int64_t actual_sum_diff = 0;
++expected_sum_diff += (62517006UL * 2496 / 1000);
++actual_sum_diff += (ts - last_ts);
++//Genode::trace(__func__, ": expected_sum_diff: ", expected_sum_diff / 2496000,
++//              ", actual_sum_diff: ", actual_sum_diff / 2496000,
++//              ", drift: ", (actual_sum_diff - expected_sum_diff) / 2496000);
++#endif
++#if 1
++last_ts = ts;
++#endif
++
++#if 0
++for (int i = 0; i < cbToRead; i++)
++{
++	unsigned char c = pbDst[i];
++	if (c != 0)
++		Genode::trace(__func__, ": pbDst[", i, "]: ", c, ", &pbDst[", i, "]: ", &pbDst[i]);
++}
++#endif
++
+         if (cbRead > 0)
+         {
+             LogFlowFunc(("cbRead=%zi, offWrite=%zu cbToRead=%zu\n", cbRead, offWrite, cbToRead));
+diff --git a/src/virtualbox6/src/VBox/Devices/Graphics/DevVGA.cpp b/src/virtualbox6/src/VBox/Devices/Graphics/DevVGA.cpp
+index cb0e8dd..6a3a844 100644
+--- a/src/virtualbox6/src/VBox/Devices/Graphics/DevVGA.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Graphics/DevVGA.cpp
+@@ -4844,6 +4844,7 @@ static DECLCALLBACK(void) vgaR3DummyRefresh(PPDMIDISPLAYCONNECTOR pInterface)
+  */
+ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+ {
++Genode::trace(__func__);
+     PVGASTATECC pThisCC = RT_FROM_MEMBER(pInterface, VGASTATECC, IPort);
+     PPDMDEVINS  pDevIns = pThisCC->pDevIns;
+     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+@@ -4858,6 +4859,8 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+     {
+         /* Nothing to do as the guest will explicitely update us about frame buffer changes. */
+         PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
++Genode::trace(__func__, ": finished 1");
++
+         return VINF_SUCCESS;
+     }
+ #endif
+@@ -4868,6 +4871,8 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+     if (VBVAUpdateDisplay(pThis, pThisCC) == VINF_SUCCESS)
+     {
+         PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
++Genode::trace(__func__, ": finished 2");
++
+         return VINF_SUCCESS;
+     }
+ # endif /* VBOX_WITH_HGSMI */
+@@ -4887,6 +4892,8 @@ static DECLCALLBACK(int) vgaR3PortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
+     rc = vgaR3UpdateDisplay(pDevIns, pThis, pThisCC, false /*fUpdateAll*/, false /*fFailOnResize*/, true /*reset_dirty*/,
+                             pThisCC->pDrv, &pThis->graphic_mode);
+     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
++Genode::trace(__func__, ": finished 3");
++
+     return rc;
+ }
+ 
+@@ -5556,22 +5563,31 @@ static DECLCALLBACK(void) vgaR3PortReportHostCursorPosition(PPDMIDISPLAYPORT pIn
+  */
+ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+ {
++//Genode::trace(__func__);
+     PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+     PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+     RT_NOREF(pvUser, pTimer);
++//Genode::trace(__func__, " checkpoint 1");
+ 
+     if (pThis->fScanLineCfg & VBVASCANLINECFG_ENABLE_VSYNC_IRQ)
+         VBVARaiseIrq(pDevIns, pThis, pThisCC, HGSMIHOSTFLAGS_VSYNC);
+ 
+-    if (pThisCC->pDrv)
++//Genode::trace(__func__, " checkpoint 2");
++
++    if (pThisCC->pDrv) {
++//Genode::trace(__func__, ": pfnRefresh: ", pThisCC->pDrv->pfnRefresh);
+         pThisCC->pDrv->pfnRefresh(pThisCC->pDrv);
++    }
++//Genode::trace(__func__, " checkpoint 3");
+ 
+     if (pThis->cMilliesRefreshInterval)
+         PDMDevHlpTimerSetMillies(pDevIns, pThis->hRefreshTimer, pThis->cMilliesRefreshInterval);
++//Genode::trace(__func__, " checkpoint 4");
+ 
+ # ifdef VBOX_WITH_VIDEOHWACCEL
+     vbvaTimerCb(pDevIns, pThis, pThisCC);
+ # endif
++//Genode::trace(__func__, " checkpoint 5");
+ 
+ # ifdef VBOX_WITH_VMSVGA
+     /*
+@@ -5581,6 +5597,8 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
+     if (pThis->svga.fFIFOThreadSleeping && pThis->svga.fEnabled && pThis->svga.fConfigured)
+         vmsvgaR3FifoWatchdogTimer(pDevIns, pThis, pThisCC);
+ # endif
++//Genode::trace(__func__, " finished");
++
+ }
+ 
+ # ifdef VBOX_WITH_VMSVGA
+diff --git a/src/virtualbox6/src/VBox/Devices/PC/DevHPET.cpp b/src/virtualbox6/src/VBox/Devices/PC/DevHPET.cpp
+index 03b00ac..37fafb4 100644
+--- a/src/virtualbox6/src/VBox/Devices/PC/DevHPET.cpp
++++ b/src/virtualbox6/src/VBox/Devices/PC/DevHPET.cpp
+@@ -475,6 +475,7 @@ DECLINLINE(void) hpetTimerSetFrequencyHint(PPDMDEVINS pDevIns, PHPET pThis, PHPE
+  */
+ static void hpetProgramTimer(PPDMDEVINS pDevIns, PHPET pThis, PHPETTIMER pHpetTimer, uint64_t const tsNow)
+ {
++//RTLogPrintf("hpetProgramTimer()\n");
+     /*
+      * Calculate the number of HPET ticks to the next timer IRQ, but
+      * first updating comparator if periodic timer.
+diff --git a/src/virtualbox6/src/VBox/Devices/Storage/DevAHCI.cpp b/src/virtualbox6/src/VBox/Devices/Storage/DevAHCI.cpp
+index 7b005b2..0189a05 100644
+--- a/src/virtualbox6/src/VBox/Devices/Storage/DevAHCI.cpp
++++ b/src/virtualbox6/src/VBox/Devices/Storage/DevAHCI.cpp
+@@ -1048,13 +1048,20 @@ static void ahciPortResetFinish(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhci
+ static void ahciIoThreadKick(PPDMDEVINS pDevIns, PAHCIPORT pAhciPort)
+ {
+     LogFlowFunc(("Signal event semaphore\n"));
++Genode::trace("*** ", __func__);
++Genode::trace(__func__, ": calling PDMDevHlpSUPSemEventSignal()");
+     int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pAhciPort->hEvtProcess);
++Genode::trace(__func__, ": PDMDevHlpSUPSemEventSignal() returned");
++Genode::trace(__func__, ": calling PDMDevHlpSUPSemEventWaitNoResume()");
+     PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pAhciPort->hEvtProcessAck, 15 /* ms */);
++Genode::trace(__func__, ": PDMDevHlpSUPSemEventWaitNoResume() returned");
++Genode::trace("*** ", __func__, " finished");
+     AssertRC(rc);
+ }
+ 
+ static VBOXSTRICTRC PortCmdIssue_w(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pAhciPort, uint32_t iReg, uint32_t u32Value)
+ {
++Genode::trace(__func__);
+     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
+     RT_NOREF(pThis, iReg);
+ 
+@@ -1074,9 +1081,10 @@ static VBOXSTRICTRC PortCmdIssue_w(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pA
+         ASMAtomicOrU32(&pAhciPort->u32TasksNew, u32Value);
+ 
+         /* Send a notification to R3 if u32TasksNew was 0 before our write. */
+-        if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
++        if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping)) {
++Genode::trace(__func__, ": calling ahciIoThreadKick()");
+             ahciIoThreadKick(pDevIns, pAhciPort);
+-        else
++        } else
+             ahciLog(("%s: Worker thread busy, no need to kick.\n", __FUNCTION__));
+     }
+     else
+@@ -1199,6 +1207,7 @@ static VBOXSTRICTRC PortSControl_w(PPDMDEVINS pDevIns, PAHCI pThis, PAHCIPORT pA
+             pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
+ 
+             /* Kick the thread to finish the reset. */
++Genode::trace(__func__, ": calling ahciIoThreadKick()");
+             ahciIoThreadKick(pDevIns, pAhciPort);
+         }
+     }
+@@ -4527,8 +4536,11 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+         if (!u32Tasks)
+         {
+             Assert(ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping));
++Genode::trace(__func__, ": wait");
+             rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pAhciPort->hEvtProcess, RT_INDEFINITE_WAIT);
++Genode::trace(__func__, ": wait returned, signal");
+             PDMDevHlpSUPSemEventSignal(pDevIns, pAhciPort->hEvtProcessAck);
++Genode::trace(__func__, ": signal returned");
+             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                 break;
+diff --git a/src/virtualbox6/src/VBox/Main/src-client/DisplayImpl.cpp b/src/virtualbox6/src/VBox/Main/src-client/DisplayImpl.cpp
+index 00f2612..1dbb8ec 100644
+--- a/src/virtualbox6/src/VBox/Main/src-client/DisplayImpl.cpp
++++ b/src/virtualbox6/src/VBox/Main/src-client/DisplayImpl.cpp
+@@ -2935,6 +2935,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
+  */
+ /*static*/ DECLCALLBACK(void) Display::i_displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterface)
+ {
++//Genode::trace(__func__);
+     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+ 
+ #ifdef DEBUG_sunlover_2
+@@ -2945,13 +2946,18 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
+     Display *pDisplay = pDrv->pDisplay;
+     unsigned uScreenId;
+ 
++//Genode::trace(__func__, ": calling i_videoAccelRefreshProcess()");
+     int rc = pDisplay->i_videoAccelRefreshProcess(pDrv->pUpPort);
++//Genode::trace(__func__, ": i_videoAccelRefreshProcess() returned: ", rc);
++
+     if (rc != VINF_TRY_AGAIN) /* Means 'do nothing' here. */
+     {
+         if (rc == VWRN_INVALID_STATE)
+         {
++//Genode::trace(__func__, ": calling pfnUpdateDisplay(): ", pDrv->pUpPort->pfnUpdateDisplay);
+             /* No VBVA do a display update. */
+             pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
++//Genode::trace(__func__, ": pfnUpdateDisplay() finished");
+         }
+ 
+         /* Inform the VRDP server that the current display update sequence is
+@@ -2963,9 +2969,12 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
+         for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
+         {
+             Assert(pDisplay->mParent && pDisplay->mParent->i_consoleVRDPServer());
++//Genode::trace(__func__, "; calling SendUpdate()");
+             pDisplay->mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, NULL, 0);
++//Genode::trace(__func__, ": SendUpdate() returned");
+         }
+     }
++//Genode::trace(__func__, ": checkpoint");
+ 
+ #ifdef VBOX_WITH_RECORDING
+     AssertPtr(pDisplay->mParent);
+@@ -2975,6 +2984,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
+         && pCtx->IsStarted()
+         && pCtx->IsFeatureEnabled(RecordingFeature_Video))
+     {
++//Genode::trace(__func__, ": checkpoint 3");
+         do
+         {
+             /* If the recording context has reached the configured recording
+@@ -3039,6 +3049,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
+ #ifdef DEBUG_sunlover_2
+     LogFlowFunc(("leave\n"));
+ #endif /* DEBUG_sunlover_2 */
++//Genode::trace(__func__, "finished");
+ }
+ 
+ /**
+diff --git a/src/virtualbox6/src/VBox/Runtime/common/misc/thread.cpp b/src/virtualbox6/src/VBox/Runtime/common/misc/thread.cpp
+index 604dd04..428bed3 100644
+--- a/src/virtualbox6/src/VBox/Runtime/common/misc/thread.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/common/misc/thread.cpp
+@@ -705,8 +705,8 @@ DECLCALLBACK(DECLHIDDEN(int)) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD
+     int rc;
+     NOREF(pszThreadName);
+     rtThreadInsert(pThread, NativeThread);
+-    Log(("rtThreadMain: Starting: pThread=%p NativeThread=%RTnthrd Name=%s pfnThread=%p pvUser=%p\n",
+-         pThread, NativeThread, pThread->szName, pThread->pfnThread, pThread->pvUser));
++    RTLogPrintf("rtThreadMain: Starting: pThread=%p NativeThread=%RTnthrd Name=%s pfnThread=%p pvUser=%p\n",
++         pThread, NativeThread, pThread->szName, pThread->pfnThread, pThread->pvUser);
+ 
+     /*
+      * Change the priority.
+diff --git a/src/virtualbox6/src/VBox/Runtime/generic/RTSemEventMultiWait-generic.cpp b/src/virtualbox6/src/VBox/Runtime/generic/RTSemEventMultiWait-generic.cpp
+index c17edcd..51d98c1 100644
+--- a/src/virtualbox6/src/VBox/Runtime/generic/RTSemEventMultiWait-generic.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/generic/RTSemEventMultiWait-generic.cpp
+@@ -40,6 +40,7 @@
+ 
+ RTDECL(int) RTSemEventMultiWait(RTSEMEVENTMULTI EventSem, RTMSINTERVAL cMillies)
+ {
++//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     int rc;
+     if (cMillies == RT_INDEFINITE_WAIT)
+     {
+diff --git a/src/virtualbox6/src/VBox/Runtime/generic/RTTimerCreate-generic.cpp b/src/virtualbox6/src/VBox/Runtime/generic/RTTimerCreate-generic.cpp
+index c5f34a5..09eae73 100644
+--- a/src/virtualbox6/src/VBox/Runtime/generic/RTTimerCreate-generic.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/generic/RTTimerCreate-generic.cpp
+@@ -37,6 +37,7 @@
+ 
+ RTDECL(int) RTTimerCreate(PRTTIMER *ppTimer, unsigned uMilliesInterval, PFNRTTIMER pfnTimer, void *pvUser)
+ {
++Genode::log(__func__, ": ret: ", __builtin_return_address(0));
+     int rc = RTTimerCreateEx(ppTimer, uMilliesInterval * RT_NS_1MS_64, 0 /* fFlags */, pfnTimer, pvUser);
+     if (RT_SUCCESS(rc))
+     {
+diff --git a/src/virtualbox6/src/VBox/Runtime/generic/critsect-generic.cpp b/src/virtualbox6/src/VBox/Runtime/generic/critsect-generic.cpp
+index d63bbd3..6d88717 100644
+--- a/src/virtualbox6/src/VBox/Runtime/generic/critsect-generic.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/generic/critsect-generic.cpp
+@@ -348,6 +348,7 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS
+ 
+ RTDECL(int) RTCritSectEnter(PRTCRITSECT pCritSect)
+ {
++Genode::trace(__func__, ": ", pCritSect, ", ret: ", __builtin_return_address(0));
+ #ifndef RTCRITSECT_STRICT
+     return rtCritSectEnter(pCritSect, NULL);
+ #else
+@@ -368,6 +369,7 @@ RT_EXPORT_SYMBOL(RTCritSectEnterDebug);
+ 
+ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
+ {
++Genode::trace(__func__, ": ", pCritSect, ", ret: ", __builtin_return_address(0));
+     /*
+      * Assert sanity and check for NOP.
+      */
+diff --git a/src/virtualbox6/src/VBox/Runtime/generic/sched-generic.cpp b/src/virtualbox6/src/VBox/Runtime/generic/sched-generic.cpp
+index f897abd..9d0b188 100644
+--- a/src/virtualbox6/src/VBox/Runtime/generic/sched-generic.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/generic/sched-generic.cpp
+@@ -82,6 +82,7 @@ DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
+  */
+ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+ {
++//Genode::log(__func__, ": ", (int)enmType);
+     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
+     return VINF_SUCCESS;
+ }
+diff --git a/src/virtualbox6/src/VBox/Runtime/generic/timer-generic.cpp b/src/virtualbox6/src/VBox/Runtime/generic/timer-generic.cpp
+index 6857bfb..ce81e9a 100644
+--- a/src/virtualbox6/src/VBox/Runtime/generic/timer-generic.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/generic/timer-generic.cpp
+@@ -88,6 +88,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser);
+ 
+ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_t fFlags, PFNRTTIMER pfnTimer, void *pvUser)
+ {
++Genode::log(__func__, ": ret: ", __builtin_return_address(0));
+     *ppTimer = NULL;
+ 
+     /*
+@@ -253,6 +254,13 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD hThreadSelf, void *pvUser)
+         else
+         {
+             const uint64_t u64NanoTS = RTTimeNanoTS();
++#if 0
++Genode::trace(__func__, ": while: u64NanoTS: ", u64NanoTS / 1000000,
++              ", pTimer->u64NextTS: ", pTimer->u64NextTS / 1000000);
++if (u64NanoTS >= pTimer->u64NextTS + 2000000) {
++Genode::trace(__func__, ": ttt");
++}
++#endif
+             if (u64NanoTS >= pTimer->u64NextTS)
+             {
+                 pTimer->iTick++;
+@@ -268,6 +276,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD hThreadSelf, void *pvUser)
+ 
+                 /* calc the next time we should fire. */
+                 pTimer->u64NextTS = pTimer->u64StartTS + pTimer->iTick * pTimer->u64NanoInterval;
++//Genode::trace(__func__, ": pTimer->u64NextTS: ", pTimer->u64NextTS / 1000000);
+                 if (pTimer->u64NextTS < u64NanoTS)
+ #ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
+                     pTimer->u64NextTS = u64NanoTS + 1;
+@@ -278,6 +287,7 @@ static DECLCALLBACK(int) rtTimerThread(RTTHREAD hThreadSelf, void *pvUser)
+ 
+             /* block. */
+             uint64_t cNanoSeconds = pTimer->u64NextTS - u64NanoTS;
++//Genode::trace(__func__, ": cNanoSeconds: ", cNanoSeconds);
+ #ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
+             if (cNanoSeconds > 10)
+ #endif
+diff --git a/src/virtualbox6/src/VBox/Runtime/r3/posix/sched-posix.cpp b/src/virtualbox6/src/VBox/Runtime/r3/posix/sched-posix.cpp
+index 38d64f5..dadf648 100644
+--- a/src/virtualbox6/src/VBox/Runtime/r3/posix/sched-posix.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/r3/posix/sched-posix.cpp
+@@ -648,6 +648,7 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
+  */
+ DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
+ {
++Genode::log(__func__, ": ret: ", __builtin_return_address(0));
+     Assert(enmPriority > RTPROCPRIORITY_INVALID && enmPriority < RTPROCPRIORITY_LAST);
+ 
+ #ifdef RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY
+diff --git a/src/virtualbox6/src/VBox/Runtime/r3/posix/semevent-posix.cpp b/src/virtualbox6/src/VBox/Runtime/r3/posix/semevent-posix.cpp
+index f22f96b..8f16ac1 100644
+--- a/src/virtualbox6/src/VBox/Runtime/r3/posix/semevent-posix.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/r3/posix/semevent-posix.cpp
+@@ -237,6 +237,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
+ 
+ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     /*
+      * Validate input.
+      */
+@@ -257,7 +258,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
+     /*
+      * Lock the mutex semaphore.
+      */
++//Genode::trace(__func__, ": calling pthread_mutex_lock()");
+     int rc = pthread_mutex_lock(&pThis->Mutex);
++//Genode::trace(__func__, ": pthread_mutex_lock() returned");
++
+     if (rc)
+     {
+         AssertMsgFailed(("Failed to lock event sem %p, rc=%d.\n", hEventSem, rc));
+@@ -270,12 +274,16 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
+     if (pThis->u32State == EVENT_STATE_NOT_SIGNALED)
+     {
+         ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_SIGNALED);
++//Genode::trace(__func__, ": calling pthread_cond_signal()");
+         rc = pthread_cond_signal(&pThis->Cond);
++//Genode::trace(__func__, ": pthread_cond_signal() returned");
+         AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d.\n", hEventSem, rc));
+     }
+     else if (pThis->u32State == EVENT_STATE_SIGNALED)
+     {
++//Genode::trace(__func__, ": calling pthread_cond_signal()");
+         rc = pthread_cond_signal(&pThis->Cond); /* give'm another kick... */
++//Genode::trace(__func__, ": pthread_cond_signal() returned");
+         AssertMsg(!rc, ("Failed to signal event sem %p, rc=%d. (2)\n", hEventSem, rc));
+     }
+     else
+@@ -297,6 +305,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
+ 
+ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
+ {
++Genode::trace(__func__, ": cMillies: ", cMillies, ", ret: ", __builtin_return_address(0));
+ #ifdef RTSEMEVENT_STRICT
+     PCRTLOCKVALSRCPOS  pSrcPos = NULL;
+ #endif
+@@ -320,7 +329,9 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+             pthread_yield();
+ 
+          /* take mutex */
++//Genode::trace(__func__, ": calling pthread_mutex_lock()");
+         int rc = pthread_mutex_lock(&pThis->Mutex);
++//Genode::trace(__func__, ": pthread_mutex_lock() returned");
+         if (rc)
+         {
+             ASMAtomicDecU32(&pThis->cWaiters);
+@@ -366,7 +377,9 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+             RTTHREAD hThreadSelf = RTThreadSelf();
+ #endif
+             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
++//Genode::trace(__func__, ": calling pthread_cond_wait()");
+             rc = pthread_cond_wait(&pThis->Cond, &pThis->Mutex);
++//Genode::trace(__func__, ": pthread_cond_wait() returned");
+             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+             if (rc)
+             {
+@@ -408,7 +421,9 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+             pthread_yield();
+ 
+         /* take mutex */
++//Genode::trace(__func__, ": calling pthread_mutex_lock()");
+         int rc = pthread_mutex_lock(&pThis->Mutex);
++//Genode::trace(__func__, ": pthread_mutex_lock() returned");
+         if (rc)
+         {
+             ASMAtomicDecU32(&pThis->cWaiters);
+@@ -425,6 +440,7 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+                 ASMAtomicDecU32(&pThis->cWaiters);
+                 rc = pthread_mutex_unlock(&pThis->Mutex);
+                 AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc)); NOREF(rc);
++//Genode::trace(__func__, "finished SUCCESS");
+                 return VINF_SUCCESS;
+             }
+             if (pThis->u32State == EVENT_STATE_UNINITIALIZED)
+@@ -439,6 +455,8 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+             {
+                 ASMAtomicDecU32(&pThis->cWaiters);
+                 rc = pthread_mutex_unlock(&pThis->Mutex);
++//Genode::trace(__func__, "finished TIMEOUT");
++
+                 return VERR_TIMEOUT;
+             }
+ 
+@@ -462,7 +480,10 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
+             RTTHREAD hThreadSelf = RTThreadSelf();
+ #endif
+             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
++//Genode::trace(__func__, ": calling pthread_cond_timedwait()");
+             rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &ts);
++//Genode::trace(__func__, ": pthread_cond_timedwait() returned");
++
+             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+             if (rc && (rc != EINTR || !fAutoResume)) /* according to SuS this function shall not return EINTR, but linux man page says differently. */
+             {
+diff --git a/src/virtualbox6/src/VBox/Runtime/r3/posix/semeventmulti-posix.cpp b/src/virtualbox6/src/VBox/Runtime/r3/posix/semeventmulti-posix.cpp
+index 6dcd639..0a9bc6b 100644
+--- a/src/virtualbox6/src/VBox/Runtime/r3/posix/semeventmulti-posix.cpp
++++ b/src/virtualbox6/src/VBox/Runtime/r3/posix/semeventmulti-posix.cpp
+@@ -251,6 +251,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
+ 
+ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
+ {
++Genode::trace(hEventMultiSem, ": ", __func__, ": ret: ", __builtin_return_address(0));
+     /*
+      * Validate input.
+      */
+@@ -478,6 +479,7 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis,
+     struct timespec     ts = {0,0};
+     if (!pThis->fMonotonicClock)
+     {
++
+ #if defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)
+         struct timeval  tv = {0,0};
+         gettimeofday(&tv, NULL);
+@@ -494,6 +496,10 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis,
+                 || (uint64_t)ts.tv_sec + tsAdd.tv_sec >= UINT32_MAX) )
+             return rtSemEventMultiPosixWaitIndefinite(pThis, fFlags, pSrcPos);
+ 
++if (uTimeout > 400000000UL) {
++	Genode::trace(__func__, ": ", ts.tv_sec, ", ", ts.tv_nsec);
++}
++
+         ts.tv_sec  += tsAdd.tv_sec;
+         ts.tv_nsec += tsAdd.tv_nsec;
+         if (ts.tv_nsec >= 1000000000)
+@@ -502,6 +508,10 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis,
+             ts.tv_sec++;
+         }
+         /* Note! No need to complete uAbsTimeout for RTSEMWAIT_FLAGS_RELATIVE in this path. */
++if (uTimeout > 400000000UL) {
++	Genode::trace(__func__, " 2: ", ts.tv_sec, ", ", ts.tv_nsec);
++}
++
+     }
+     else
+     {
+@@ -529,6 +539,9 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis,
+         uint32_t const u32State = pThis->u32State;
+         if (u32State != EVENTMULTI_STATE_NOT_SIGNALED)
+         {
++if (uTimeout > 400000000UL) {
++	Genode::trace(__func__, ": signaled");
++}
+             ASMAtomicDecU32(&pThis->cWaiters);
+             rc = pthread_mutex_unlock(&pThis->Mutex);
+             AssertMsg(!rc, ("Failed to unlock event multi sem %p, rc=%d.\n", pThis, rc));
+@@ -555,7 +568,15 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis,
+         RTTHREAD hThreadSelf = RTThreadSelf();
+ #endif
+         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
++
++if (uTimeout > 400000000UL) {
++	Genode::trace(__func__, ": calling pthread_cond_timedwait()");
++}
+         rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &ts);
++if (uTimeout > 400000000UL) {
++	Genode::trace(__func__, ": pthread_cond_timedwait() returned: ", rc);
++}
++
+         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
+         if (    rc
+             && (   rc != EINTR  /* according to SuS this function shall not return EINTR, but linux man page says differently. */
+@@ -584,12 +605,17 @@ DECLINLINE(int) rtSemEventMultiPosixWait(RTSEMEVENTMULTI hEventMultiSem, uint32_
+     uint32_t u32 = pThis->u32State;
+     AssertReturn(u32 == EVENTMULTI_STATE_NOT_SIGNALED || u32 == EVENTMULTI_STATE_SIGNALED, VERR_INVALID_HANDLE);
+     AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+-
++//if (uTimeout > 400) {
++	Genode::trace(__func__, ": ", pThis, ", ret: ", __builtin_return_address(0));
++//}
+     /*
+      * Optimize the case where the event is signalled.
+      */
+     if (ASMAtomicUoReadU32(&pThis->u32State) == EVENTMULTI_STATE_SIGNALED)
+     {
++//if (uTimeout > 400) {
++//	Genode::trace(__func__, ": signaled");
++//}
+         int rc = rtSemEventMultiPosixWaitPoll(pThis);
+         if (RT_LIKELY(rc != VERR_TIMEOUT))
+             return rc;
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMAll/PDMAllCritSect.cpp b/src/virtualbox6/src/VBox/VMM/VMMAll/PDMAllCritSect.cpp
+index 6536090..92687ee 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMAll/PDMAllCritSect.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMAll/PDMAllCritSect.cpp
+@@ -130,6 +130,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
+  */
+ static int pdmR3R0CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hNativeSelf, PCRTLOCKVALSRCPOS pSrcPos)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     /*
+      * Start waiting.
+      */
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMAll/TMAll.cpp b/src/virtualbox6/src/VBox/VMM/VMMAll/TMAll.cpp
+index 71f94ab..896cd5a 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMAll/TMAll.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMAll/TMAll.cpp
+@@ -402,6 +402,7 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
+  */
+ DECL_FORCE_INLINE(void) tmTimerQueueLinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pTimer, uint64_t u64Expire)
+ {
++//Genode::trace(__func__, ": u64Expire: ", u64Expire / 1000000, ", ", pTimer->pszDesc);
+     Assert(!pTimer->offNext);
+     Assert(!pTimer->offPrev);
+     Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE || pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC); /* (active is not a stable state) */
+@@ -549,7 +550,7 @@ void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
+ {
+     TM_ASSERT_TIMER_LOCK_OWNERSHIP(pVM);
+     NOREF(pVM);
+-
++//RTLogPrintf("tmTimerQueueSchedule()\n");
+     /*
+      * Dequeue the scheduling list and iterate it.
+      */
+@@ -801,6 +802,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
+  */
+ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
+ {
++//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     PVMCPU                  pVCpuDst      = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
+     const uint64_t          u64Now        = TMVirtualGetNoCheck(pVM);
+     STAM_COUNTER_INC(&pVM->tm.s.StatPoll);
+@@ -1157,6 +1159,7 @@ VMMDECL(bool) TMTimerIsLockOwner(PTMTIMER pTimer)
+  */
+ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
+ {
++Genode::trace(__func__, ": u64Expire: ", u64Expire, ", ", pTimer->pszDesc);
+     Assert(!pTimer->offPrev);
+     Assert(!pTimer->offNext);
+     Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
+@@ -1200,6 +1203,7 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
+  */
+ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
+ {
++Genode::trace(__func__, ": u64Expire: ", u64Expire / 1000000, ", ", pTimer->pszDesc);
+     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
+     VM_ASSERT_EMT(pVM);
+     TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
+@@ -1212,11 +1216,13 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
+     {
+         case TMTIMERSTATE_EXPIRED_DELIVER:
+         case TMTIMERSTATE_STOPPED:
++
+             if (enmState == TMTIMERSTATE_EXPIRED_DELIVER)
+                 STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStExpDeliver);
+             else
+                 STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStStopped);
+ 
++//RTLogPrintf("tm: %u, %u, %u\n", pTimer->u64Expire, pVM->tm.s.u64VirtualSync, u64Expire);
+             AssertMsg(u64Expire >= pVM->tm.s.u64VirtualSync,
+                       ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
+             pTimer->u64Expire = u64Expire;
+@@ -1267,12 +1273,14 @@ static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
+  */
+ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+ {
++Genode::trace(__func__, ": pTimer: ", pTimer, ", u64Expire: ", u64Expire / 1000000, ", ", pTimer->pszDesc);
+     PVMCC pVM = pTimer->CTX_SUFF(pVM);
+     STAM_COUNTER_INC(&pTimer->StatSetAbsolute);
+ 
+     /* Treat virtual sync timers specially. */
+-    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
++    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC) {
+         return tmTimerVirtualSyncSet(pVM, pTimer, u64Expire);
++    }
+ 
+     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
+     TMTIMER_ASSERT_CRITSECT(pTimer);
+@@ -1328,6 +1336,8 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
+     int cRetries = 1000;
+     do
+     {
++Genode::trace(__func__, "2: pTimer: ", pTimer, ", u64Expire: ", u64Expire / 1000000, ", ", pTimer->pszDesc);
++
+         /*
+          * Change to any of the SET_EXPIRE states if valid and then to SCHEDULE or RESCHEDULE.
+          */
+@@ -1462,6 +1472,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVMCC pVM, TMCLOCK enmCl
+  */
+ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+ {
++Genode::trace(__func__, ": cTicksToNext: ", cTicksToNext, ", ", pTimer->pszDesc);
+     Assert(!pTimer->offPrev);
+     Assert(!pTimer->offNext);
+     Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
+@@ -1501,6 +1512,7 @@ static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t
+  */
+ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+ {
++Genode::trace(__func__, ": cTicksToNext: ", cTicksToNext, ", ", pTimer->pszDesc);
+     STAM_PROFILE_START(pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
+     VM_ASSERT_EMT(pVM);
+     TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer);
+@@ -1574,6 +1586,7 @@ static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cT
+  */
+ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+ {
++Genode::trace(__func__, ": cTicksToNext: ", cTicksToNext, ", ", pTimer->pszDesc);
+     PVMCC pVM = pTimer->CTX_SUFF(pVM);
+     STAM_COUNTER_INC(&pTimer->StatSetRelative);
+ 
+@@ -1781,6 +1794,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
+         TM_UNLOCK_TIMERS(pVM);
+ 
+     STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
++//Genode::trace(__func__, " finished");
+     return rc;
+ }
+ 
+@@ -1897,6 +1911,7 @@ static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
+  */
+ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
+ {
++Genode::trace(__func__, ": ", pTimer->pszDesc);
+     PVMCC pVM = pTimer->CTX_SUFF(pVM);
+     STAM_COUNTER_INC(&pTimer->StatStop);
+ 
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMR3/EM.cpp b/src/virtualbox6/src/VBox/VMM/VMMR3/EM.cpp
+index ea9c0e2..90b28dc 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMR3/EM.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMR3/EM.cpp
+@@ -1889,8 +1889,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+          * Timers before interrupts.
+          */
+         if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TIMER)
+-            && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
++            && !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) {
++Genode::trace(__func__, ": calling TMR3TimerQueuesDo()");
+             TMR3TimerQueuesDo(pVM);
++Genode::trace(__func__, ": TMR3TimerQueuesDo() returned");
++        }
+ 
+         /*
+          * Pick up asynchronously posted interrupts into the APIC.
+@@ -2242,8 +2245,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
+         /*
+          * If the virtual sync clock is still stopped, make TM restart it.
+          */
++#if 1
++// XXX: let timers be handled by EMT-1 only for now
+         if (VM_FF_IS_SET(pVM, VM_FF_TM_VIRTUAL_SYNC))
+             TMR3VirtualSyncFF(pVM, pVCpu);
++#endif
+ 
+ #ifdef DEBUG
+         /*
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMR3/EMR3Nem.cpp b/src/virtualbox6/src/VBox/VMM/VMMR3/EMR3Nem.cpp
+index dd0f3f9..20a877c 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMR3/EMR3Nem.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMR3/EMR3Nem.cpp
+@@ -404,7 +404,9 @@ VBOXSTRICTRC emR3NemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+         {
+             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatNEMEntry, a);
+             STAM_REL_PROFILE_START(&pVCpu->em.s.StatNEMExec, x);
++//Genode::trace(__func__, ": a");
+             rcStrict = NEMR3RunGC(pVM, pVCpu);
++//Genode::trace(__func__, ": b");
+             STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatNEMExec, x);
+         }
+         else
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMR3/PDMDevHlp.cpp b/src/virtualbox6/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
+index c5a9c7c..36ae5d1 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMR3/PDMDevHlp.cpp
+@@ -2271,6 +2271,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventClose(PPDMDEVINS pDevIns, SUPSEM
+ /** @interface_method_impl{PDMDEVHLPR3,pfnSUPSemEventSignal} */
+ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventSignal(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     PDMDEV_ASSERT_DEVINS(pDevIns);
+     LogFlow(("pdmR3DevHlp_SUPSemEventSignal: caller='%s'/%d: hEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEvent));
+ 
+@@ -2284,12 +2285,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventSignal(PPDMDEVINS pDevIns, SUPSE
+ /** @interface_method_impl{PDMDEVHLPR3,pfnSUPSemEventWaitNoResume} */
+ static DECLCALLBACK(int) pdmR3DevHlp_SUPSemEventWaitNoResume(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint32_t cMillies)
+ {
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     PDMDEV_ASSERT_DEVINS(pDevIns);
+     LogFlow(("pdmR3DevHlp_SUPSemEventWaitNoResume: caller='%s'/%d: hEvent=%p cNsTimeout=%RU32\n",
+              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, cMillies));
+-
+     int rc = SUPSemEventWaitNoResume(pDevIns->Internal.s.pVMR3->pSession, hEvent, cMillies);
+-
+     LogFlow(("pdmR3DevHlp_SUPSemEventWaitNoResume: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+     return rc;
+ }
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMR3/TM.cpp b/src/virtualbox6/src/VBox/VMM/VMMR3/TM.cpp
+index 1519010..60a7153 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMR3/TM.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMR3/TM.cpp
+@@ -663,6 +663,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
+     else if (RT_FAILURE(rc))
+         return VMSetError(pVM, rc, RT_SRC_POS,
+                           N_("Configuration error: Failed to query uint32_t value \"TimerMillies\""));
++//u32Millies = 5;
+     rc = RTTimerCreate(&pVM->tm.s.pTimer, u32Millies, tmR3TimerCallback, pVM);
+     if (RT_FAILURE(rc))
+     {
+@@ -1778,6 +1779,7 @@ VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTI
+  */
+ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
+ {
++//Genode::trace(__func__, ": ", pTimer->pszDesc);
+     /*
+      * Be extra careful here.
+      */
+@@ -2136,6 +2138,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+     if (VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
+         Log(("tmR3TimerCallback: timer event still pending!!\n"));
+ #endif
++//Genode::trace(__func__, ": tmR3AnyExpiredTimers(): ", tmR3AnyExpiredTimers(pVM));
+     if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
+         &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule /** @todo FIXME - reconsider offSchedule as a reason for running the timer queues. */
+             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
+@@ -2149,6 +2152,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+     {
+         Log5(("TM(%u): FF: 0 -> 1\n", __LINE__));
+         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
++//Genode::trace(__func__, ": VMR3NotifyCpuFFU()");
+         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
+         STAM_COUNTER_INC(&pVM->tm.s.StatTimerCallbackSetFF);
+     }
+@@ -2166,6 +2170,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
+  */
+ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+ {
++//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     /*
+      * Only the dedicated timer EMT should do stuff here.
+      * (fRunningQueues is only used as an indicator.)
+@@ -2175,6 +2180,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+     if (VMMGetCpu(pVM) != pVCpuDst)
+     {
+         Assert(pVM->cCpus > 1);
++//Genode::trace(__func__, " finished");
+         return;
+     }
+     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
+@@ -2195,7 +2201,10 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+     VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER);   /* Clear the FF once we started working for real. */
+ 
+     Assert(!pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule);
++//Genode::trace(__func__, ": calling tmR3TimerQueueRunVirtualSync()");
+     tmR3TimerQueueRunVirtualSync(pVM);
++//Genode::trace(__func__, ": tmR3TimerQueueRunVirtualSync() returned");
++
+     if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+         VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
+ 
+@@ -2207,7 +2216,9 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+     STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
+     if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule)
+         tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
++//Genode::trace(__func__, ": calling tmR3TimerQueueRun() TMCLOCK_VIRTUAL");
+     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL]);
++//Genode::trace(__func__, ": tmR3TimerQueueRun() returned");
+     STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_VIRTUAL], s2);
+ 
+     /* TMCLOCK_TSC */
+@@ -2215,9 +2226,13 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+ 
+     /* TMCLOCK_REAL */
+     STAM_PROFILE_ADV_START(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
+-    if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule)
++    if (pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule) {
++//Genode::trace(__func__, ": calling tmTimerQueueSchedule() TMCLOCK_REAL");
+         tmTimerQueueSchedule(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
++    }
++//Genode::trace(__func__, ": calling tmR3TimerQueueRun() TMCLOCK_REAL");
+     tmR3TimerQueueRun(pVM, &pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL]);
++//Genode::trace(__func__, ": tmR3TimerQueueRun() returned");
+     STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
+ 
+ #ifdef VBOX_STRICT
+@@ -2230,6 +2245,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
+     ASMAtomicWriteBool(&pVM->tm.s.fRunningQueues, false);
+     TM_UNLOCK_TIMERS(pVM);
+     STAM_PROFILE_STOP(&pVM->tm.s.StatDoQueues, a);
++//Genode::trace(__func__, " finished");
+ }
+ 
+ //RT_C_DECLS_BEGIN
+@@ -2265,11 +2281,22 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+     PTMTIMER pNext = TMTIMER_GET_HEAD(pQueue);
+     if (!pNext)
+         return;
++
+     const uint64_t u64Now = tmClock(pVM, pQueue->enmClock);
++//Genode::trace(__func__, ": u64Now: ", u64Now / 1000000, "/", u64Now);
++//if (pNext) {
++//Genode::trace(__func__, ": pNext->u64Expire: ", pNext->u64Expire / 1000000, "/", pNext->u64Expire,
++//              ", ", pNext->pszDesc);
++//}
+     while (pNext && pNext->u64Expire <= u64Now)
+     {
+         PTMTIMER        pTimer    = pNext;
+         pNext = TMTIMER_GET_NEXT(pTimer);
++//Genode::trace(__func__, ": pTimer->u64Expire: ", pTimer->u64Expire / 1000000, "/", pTimer->u64Expire, ", ", pTimer->pszDesc);
++//if (pNext) {
++//Genode::trace(__func__, ": pNext->u64Expire: ", pNext->u64Expire / 1000000, "/", pNext->u64Expire, ", ", pNext->pszDesc);
++//}
++
+         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
+         if (pCritSect)
+         {
+@@ -2302,6 +2329,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+             /* fire */
+             TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
+             STAM_PROFILE_START(&pTimer->StatTimer, PrfTimer);
++//Genode::trace(__func__, ": calling handler: ", pTimer->pszDesc);
+             switch (pTimer->enmType)
+             {
+                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+@@ -2313,6 +2341,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+                     AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
+                     break;
+             }
++//Genode::trace(__func__, ": handler returned");
+             STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
+ 
+             /* change the state if it wasn't changed already in the handler. */
+@@ -2322,6 +2351,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+         if (pCritSect)
+             PDMCritSectLeave(pCritSect);
+     } /* run loop */
++//Genode::trace(__func__, " finished");
+ }
+ 
+ 
+@@ -2340,16 +2370,30 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
+  */
+ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+ {
++//Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+     PTMTIMERQUEUE const pQueue = &pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC];
+     VM_ASSERT_EMT(pVM);
+     Assert(PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock));
+ 
++#if 0
++uint64_t ts1 = Genode::Trace::timestamp();
++Genode::trace(__func__, ": checkpoint 1.1");
++Genode::trace(__func__, ": checkpoint 1.2");
++Genode::trace(__func__, ": checkpoint 1.3");
++uint64_t ts2 = Genode::Trace::timestamp();
++uint64_t ts_diff_ms = (ts2 - ts1) / 2496000;
++if (ts_diff_ms >= 10) {
++Genode::trace("yyy");
++}
++#endif
++
+     /*
+      * Any timers?
+      */
+     PTMTIMER pNext = TMTIMER_GET_HEAD(pQueue);
+     if (RT_UNLIKELY(!pNext))
+     {
++//Genode::trace(__func__, ": no timer");
+         Assert(pVM->tm.s.fVirtualSyncTicking || !pVM->tm.s.cVirtualTicking);
+         return;
+     }
+@@ -2368,6 +2412,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+      * and 2) lag behind at a steady rate.
+      */
+     const uint64_t  u64VirtualNow  = TMVirtualGetNoCheck(pVM);
++//Genode::trace(__func__, ": u64VirtualNow: ", u64VirtualNow / 1000000);
+     uint64_t const  offSyncGivenUp = pVM->tm.s.offVirtualSyncGivenUp;
+     uint64_t        u64Now;
+     if (!pVM->tm.s.fVirtualSyncTicking)
+@@ -2382,15 +2427,20 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         bool        fStopCatchup   = false;
+         bool        fUpdateStuff   = false;
+         uint64_t    off            = pVM->tm.s.offVirtualSync;
++////Genode::trace(__func__, ": off: ", off);
+         if (pVM->tm.s.fVirtualSyncCatchUp)
+         {
+             uint64_t u64Delta = u64VirtualNow - pVM->tm.s.u64VirtualSyncCatchUpPrev;
++////Genode::trace(__func__, ": u64Delta: ", u64Delta);
+             if (RT_LIKELY(!(u64Delta >> 32)))
+             {
++////Genode::trace(__func__, ": percentage: ", pVM->tm.s.u32VirtualSyncCatchUpPercentage);
+                 uint64_t u64Sub = ASMMultU64ByU32DivByU32(u64Delta, pVM->tm.s.u32VirtualSyncCatchUpPercentage, 100);
++////Genode::trace(__func__, ": u64Sub: ", u64Sub);
+                 if (off > u64Sub + offSyncGivenUp)
+                 {
+                     off -= u64Sub;
++////Genode::trace(__func__, ": off 2.1: ", off);
+                     Log4(("TM: %'RU64/-%'8RU64: sub %'RU64 [tmR3TimerQueueRunVirtualSync]\n", u64VirtualNow - off, off - offSyncGivenUp, u64Sub));
+                 }
+                 else
+@@ -2398,6 +2448,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+                     STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
+                     fStopCatchup = true;
+                     off = offSyncGivenUp;
++////Genode::trace(__func__, ": off 2.2: ", off);
+                 }
+                 fUpdateStuff = true;
+             }
+@@ -2406,6 +2457,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+ 
+         /* Adjust against last returned time. */
+         uint64_t u64Last = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
++////Genode::trace(__func__, ": u64Last: ", u64Last / 1000000);
+         if (u64Last > u64Now)
+         {
+             u64Now = u64Last + 1;
+@@ -2414,6 +2466,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+ 
+         /* Check if stopped by expired timer. */
+         uint64_t const u64Expire = pNext->u64Expire;
++//Genode::trace(__func__, ": u64Now: ", u64Now / 1000000, ", pNext->u64Expire: ", pNext->u64Expire / 1000000, ", ", pNext->pszDesc);
+         if (u64Now >= u64Expire)
+         {
+             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStop);
+@@ -2439,11 +2492,13 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         }
+     }
+ 
++////Genode::trace(__func__, ": checkpoint 3");
++
+     /* calc end of frame. */
+     uint64_t u64Max = u64Now + pVM->tm.s.u32VirtualSyncScheduleSlack;
+     if (u64Max > u64VirtualNow - offSyncGivenUp)
+         u64Max = u64VirtualNow - offSyncGivenUp;
+-
++//Genode::trace(__func__, ": u64Max: ", u64Max / 1000000);
+     /* assert sanity */
+     Assert(u64Now <= u64VirtualNow - offSyncGivenUp);
+     Assert(u64Max <= u64VirtualNow - offSyncGivenUp);
+@@ -2456,11 +2511,18 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+ #ifdef VBOX_STRICT
+     uint64_t u64Prev = u64Now; NOREF(u64Prev);
+ #endif
++
+     while (pNext && pNext->u64Expire <= u64Max)
+     {
++////Genode::trace(__func__, ": while");
++
+         /* Advance */
+         PTMTIMER pTimer = pNext;
+         pNext = TMTIMER_GET_NEXT(pTimer);
++//Genode::trace(__func__, ": pTimer->u64Expire: ", pTimer->u64Expire / 1000000, ", ", pTimer->pszDesc);
++//if (pNext) {
++//Genode::trace(__func__, ": pNext->u64Expire: ", pNext->u64Expire / 1000000, ", ", pNext->pszDesc);
++//}
+ 
+         /* Take the associated lock. */
+         PPDMCRITSECT pCritSect = pTimer->pCritSect;
+@@ -2487,6 +2549,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         tmTimerQueueUnlinkActive(pQueue, pTimer);
+         TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
+         STAM_PROFILE_START(&pTimer->StatTimer, PrfTimer);
++
++//Genode::trace(__func__, ": calling handler: ", pTimer->pszDesc);
++
+         switch (pTimer->enmType)
+         {
+             case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+@@ -2498,6 +2563,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+                 AssertMsgFailed(("Invalid timer type %d (%s)\n", pTimer->enmType, pTimer->pszDesc));
+                 break;
+         }
++
++//Genode::trace(__func__, ": handler returned");
++
+         STAM_PROFILE_STOP(&pTimer->StatTimer, PrfTimer);
+ 
+         /* Change the state if it wasn't changed already in the handler.
+@@ -2633,6 +2701,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
+         ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, offNew);
+         ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, true);
+     }
++//Genode::trace(__func__, " finished");
+ }
+ 
+ 
+@@ -2669,6 +2738,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+      */
+     else
+     {
++#if 0
+         STAM_PROFILE_START(&pVM->tm.s.StatVirtualSyncFF, a);
+         PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VERR_IGNORED);
+         if (pVM->tm.s.fVirtualSyncTicking)
+@@ -2692,6 +2762,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+                 Log2(("TMR3VirtualSyncFF: running queue\n"));
+ 
+                 Assert(!pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule);
++Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+                 tmR3TimerQueueRunVirtualSync(pVM);
+                 if (pVM->tm.s.fVirtualSyncTicking) /** @todo move into tmR3TimerQueueRunVirtualSync - FIXME */
+                     VM_FF_CLEAR(pVM, VM_FF_TM_VIRTUAL_SYNC);
+@@ -2702,6 +2773,7 @@ VMMR3_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+             PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+             TM_UNLOCK_TIMERS(pVM);
+         }
++#endif
+     }
+ }
+ 
+diff --git a/src/virtualbox6/src/VBox/VMM/VMMR3/VMEmt.cpp b/src/virtualbox6/src/VBox/VMM/VMMR3/VMEmt.cpp
+index 4e05bd8..595475f 100644
+--- a/src/virtualbox6/src/VBox/VMM/VMMR3/VMEmt.cpp
++++ b/src/virtualbox6/src/VBox/VMM/VMMR3/VMEmt.cpp
+@@ -665,6 +665,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
+      * The defaults.
+      */
+     uint32_t cNsResolution = SUPSemEventMultiGetResolution(pUVM->vm.s.pSession);
++Genode::log(__func__, ": ", cNsResolution);
+     if (cNsResolution > 5*RT_NS_100US)
+         pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = 50000;
+     else if (cNsResolution > RT_NS_100US)
+@@ -702,7 +703,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+     PVM     pVM   = pUVCpu->pVM;
+     Assert(VMMGetCpu(pVM) == pVCpu);
+     NOREF(u64Now);
+-
++Genode::trace(__func__);
+     /*
+      * Halt loop.
+      */
+@@ -717,6 +718,13 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+          * Work the timers and check if we can exit.
+          */
+         uint64_t const u64StartTimers   = RTTimeNanoTS();
++
++//        uint64_t const ts1 = Genode::Trace::timestamp() / 2496;
++//        for (volatile int i = 0; i < 53000; i++) { }
++//        uint64_t const ts2 = Genode::Trace::timestamp() / 2496;
++//Genode::trace(__func__, ": diff: ", ts2 - ts1);
++
++//Genode::trace(__func__, ": loop: ts: ", u64StartTimers / 1000000);
+         TMR3TimerQueuesDo(pVM);
+         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+         STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
+@@ -734,11 +742,14 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+             ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
+             break;
+ 
++//Genode::trace(__func__, ": u64Delta: ", u64Delta, ", threshold: ", pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg);
++
+         /*
+          * Block if we're not spinning and the interval isn't all that small.
+          */
+         if (u64Delta >= pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg)
+         {
++//Genode::trace(__func__, ": blocking");
+             VMMR3YieldStop(pVM);
+             if (    VM_FF_IS_ANY_SET(pVM, VM_FF_EXTERNAL_HALTED_MASK)
+                 ||  VMCPU_FF_IS_ANY_SET(pVCpu, fMask))
+@@ -761,6 +772,12 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+             else
+             {
+                 int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
++#if 1
++if (cNsOverslept / 1000000 > 10) {
++Genode::trace(__func__, ": overslept: ", cNsOverslept / 1000000, " ms");
++//Genode::log(__func__, ": overslept: ", cNsOverslept / 1000000, " ms");
++}
++#endif
+                 if (cNsOverslept > 50000)
+                     STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOverslept, cNsOverslept);
+                 else if (cNsOverslept < -50000)
+@@ -778,11 +795,14 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
+             uint64_t const u64StartSchedYield   = RTTimeNanoTS();
+             rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POLL, false /* don't yield */, NULL);
+             uint64_t const cNsElapsedSchedYield = RTTimeNanoTS() - u64StartSchedYield;
++//Genode::trace(__func__, ": GVMM");
+             STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedSchedYield);
+         }
+     }
+     //RTLogPrintf("*** %u loops %'llu;  lag=%RU64\n", cLoops, u64NowLog - u64Start, TMVirtualSyncGetLag(pVM));
+ 
++Genode::trace(__func__, " finished");
++
+     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);
+     return rc;
+ }

@@ -43,7 +43,7 @@ namespace Audio_in {
 	/**
 	 * Samples per period (~11.6ms)
 	 */
-	static constexpr Genode::size_t PERIOD = 512;
+	static constexpr Genode::size_t PERIOD = 441;
 }
 
 

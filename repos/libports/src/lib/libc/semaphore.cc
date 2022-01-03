@@ -98,17 +98,20 @@ struct sem : Genode::Noncopyable
 
 		bool _applicant_for_semaphore(Libc::Blockade &blockade)
 		{
+Genode::trace(__func__);
 			Applicant applicant { blockade };
 
 			_append_applicant(&applicant);
 
 			_data_mutex.release();
-
 			blockade.block();
+
+Genode::trace(__func__, ": acquiring data mutex");
 
 			_data_mutex.acquire();
 
 			if (blockade.woken_up()) {
+Genode::trace(__func__, " finished");
 				return true;
 			} else {
 				_remove_applicant(&applicant);
@@ -136,8 +139,11 @@ struct sem : Genode::Noncopyable
 				Main_blockade blockade { timeout_ms };
 				return _applicant_for_semaphore(blockade);
 			} else {
+Genode::trace(__func__, ": ", timeout_ms);
 				Pthread_blockade blockade { _timer_accessor(), timeout_ms };
-				return _applicant_for_semaphore(blockade);
+Genode::trace(__func__, ": check");
+				bool result = _applicant_for_semaphore(blockade);
+				return result;
 			}
 		}
 
@@ -170,34 +176,43 @@ struct sem : Genode::Noncopyable
 			Mutex::Guard guard(_data_mutex);
 
 			/* fast path */
-			if (_try_down() == 0)
+			if (_try_down() == 0) {
 				return 0;
-
+			}
 			_apply_for_semaphore(0);
-
 			return 0;
 		}
 
 		int down_timed(timespec const &abs_timeout)
 		{
+Genode::trace(__func__);
 			Mutex::Guard guard(_data_mutex);
+Genode::trace(__func__, ": check 1");
 
 			/* fast path */
 			if (_try_down() == 0)
 				return 0;
+Genode::trace(__func__, ": check 2");
 
 			timespec abs_now;
 			clock_gettime(_clock_id, &abs_now);
+Genode::trace(__func__, ": check 3");
 
 			Libc::uint64_t const timeout_ms =
 				calculate_relative_timeout_ms(abs_now, abs_timeout);
-			if (!timeout_ms)
-				return ETIMEDOUT;
 
-			if (_apply_for_semaphore(timeout_ms))
-				return 0;
-			else
+			if (!timeout_ms) {
+Genode::trace(__func__, ": timeout 1");
 				return ETIMEDOUT;
+			}
+
+			if (_apply_for_semaphore(timeout_ms)) {
+				return 0;
+			}
+			else {
+Genode::trace(__func__, ": timeout 2");
+				return ETIMEDOUT;
+			}
 		}
 
 		int up()
@@ -281,6 +296,8 @@ extern "C" {
 
 	int sem_timedwait(sem_t * __restrict sem, const struct timespec * __restrict abstime)
 	{
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
+
 		/* abstime must be non-null according to the spec */
 		if (int res = (*sem)->down_timed(*abstime))
 			return Errno(res);
@@ -307,6 +324,7 @@ extern "C" {
 
 	int sem_wait(sem_t *sem)
 	{
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
 		if (int res = (*sem)->down())
 			return Errno(res);
 
