@@ -26,7 +26,7 @@
 /* libc includes */
 #include <sys/soundcard.h>
 
-static constexpr bool verbose_underrun { false };
+static constexpr bool verbose_underrun { true };
 
 static constexpr size_t _audio_in_stream_packet_size
 { Audio_in::PERIOD * Audio_in::SAMPLE_SIZE };
@@ -275,10 +275,18 @@ struct Vfs::Oss_file_system::Audio
 
 		void update_info_ofrag_avail_from_optr_fifo_samples()
 		{
+//int ofrag_bytes_old = _info.ofrag_bytes;
 			_info.ofrag_bytes = (_info.ofrag_total * _info.ofrag_size) -
 			                    ((_info.optr_fifo_samples + _write_sample_offset) *
 			                     CHANNELS * sizeof(int16_t));
+//Genode::log("ofrag_bytes diff: ", (int)_info.ofrag_bytes - ofrag_bytes_old);
 			_info.ofrag_avail = _info.ofrag_bytes / _info.ofrag_size;
+#if 0
+Genode::log("fifo samples: ", _info.optr_fifo_samples,
+            ", ofrag_total: ", _info.ofrag_total,
+            ", ofrag_avail: ", _info.ofrag_avail,
+            ", ofrag_bytes: ", _info.ofrag_bytes);
+#endif
 
 			_info.update();
 			_info_fs.value(_info);
@@ -292,6 +300,7 @@ struct Vfs::Oss_file_system::Audio
 				_read_sample_offset = 0;
 				_audio_in_started = false;
 				update_info_ifrag_avail();
+Genode::trace("halt_input(): _info.ifrag_bytes: ", _info.ifrag_bytes);
 			}
 		}
 
@@ -324,6 +333,12 @@ struct Vfs::Oss_file_system::Audio
 				fifo_samples_new -= Audio_out::PERIOD;
 			}
 
+#if 0
+Genode::log("handle_out_progress(): queued(): ", queued(),
+            ", fifo_samples_new; ", fifo_samples_new,
+            ", optr_fifo_samples: ", _info.optr_fifo_samples);
+#endif
+
 			if (fifo_samples_new == _info.optr_fifo_samples) {
 				/*
 				 * This is usually the progress signal for the first
@@ -336,11 +351,13 @@ struct Vfs::Oss_file_system::Audio
 			 * The queue count can wrap from 0 to 255 if packets are not
 			 * submitted fast enough.
 			 */
+
 			if ((fifo_samples_new == 0) ||
 			    (fifo_samples_new > _info.optr_fifo_samples)) {
 
 				halt_output();
 
+				/* TODO: submit or clear partially filled packet */
 				_write_sample_offset = 0;
 
 				if (fifo_samples_new > _info.optr_fifo_samples) {
@@ -367,9 +384,14 @@ struct Vfs::Oss_file_system::Audio
 			unsigned max_queued = (_info.ifrag_total * _info.ifrag_size) /
 			                      _audio_in_stream_packet_size;
 			unsigned queued = _in->stream()->queued();	
-
+#if 0
+Genode::log("update_info_ifrag_avail(): queued: ", _in->stream()->queued(),
+            ", max_queued: ", max_queued);
+Genode::log("update_info_ifrag_avail(): pos: ", _in->stream()->pos(),
+            ", tail: ", _in->stream()->tail());
+#endif
 			if (queued > max_queued) {
-
+Genode::trace("vfs_oss: overrun");
 				/*
 				 * Reset tail pointer to end of configured buffer
 				 * to stay in bounds of the configuration.
@@ -377,17 +399,41 @@ struct Vfs::Oss_file_system::Audio
 				unsigned pos = _in->stream()->pos();
 				for (unsigned int i = 0; i < max_queued; i++)
 					_in->stream()->increment_position();
-
+#if 0
+Genode::log("update_info_ifrag_avail() a: queued: ", _in->stream()->queued(),
+            ", max_queued: ", max_queued);
+Genode::log("update_info_ifrag_avail() a: pos: ", _in->stream()->pos(),
+            ", tail: ", _in->stream()->tail());
+#endif
 				_in->stream()->reset();
+#if 0
+Genode::log("update_info_ifrag_avail() b: queued: ", _in->stream()->queued(),
+            ", max_queued: ", max_queued);
+Genode::log("update_info_ifrag_avail() b: pos: ", _in->stream()->pos(),
+            ", tail: ", _in->stream()->tail());
+#endif
 				_in->stream()->pos(pos);
+#if 0
+Genode::log("update_info_ifrag_avail() c: queued: ", _in->stream()->queued(),
+            ", max_queued: ", max_queued);
+Genode::log("update_info_ifrag_avail() c: pos: ", _in->stream()->pos(),
+            ", tail: ", _in->stream()->tail());
+#endif
 			}
 
+#if 0
+Genode::log("update_info_ifrag_avail() 2: queued: ", _in->stream()->queued(),
+            ", max_queued: ", max_queued);
+Genode::log("update_info_ifrag_avail() 2: pos: ", _in->stream()->pos(),
+            ", tail: ", _in->stream()->tail());
+#endif
 			_info.ifrag_bytes = min((_in->stream()->queued() * _audio_in_stream_packet_size) -
 			                        (_read_sample_offset * Audio_in::SAMPLE_SIZE),
 			                        _info.ifrag_total * _info.ifrag_size);
 			_info.ifrag_avail = _info.ifrag_bytes / _info.ifrag_size;	
 			_info.update();
 			_info_fs.value(_info);
+//Genode::log("_info.ifrag_bytes new: ", _info.ifrag_bytes);
 		}
 
 		/*
@@ -399,6 +445,7 @@ struct Vfs::Oss_file_system::Audio
 		{
 			if (_audio_in_started) {
 				update_info_ifrag_avail();
+//Genode::trace("handle_in_progress(): _info.ifrag_bytes: ", _info.ifrag_bytes);
 				return _info.ifrag_bytes > 0;
 			}
 
@@ -407,6 +454,22 @@ struct Vfs::Oss_file_system::Audio
 
 		bool read(char *buf, file_size buf_size, file_size &out_size)
 		{
+//Genode::trace("read(): buf_size: ", buf_size, ", ifrag_bytes: ", _info.ifrag_bytes);
+
+#if 0
+//Genode::log("vfs");
+			/* dummy implementation with audible noise for testing */
+
+			for (file_size i = 0; i < buf_size / sizeof(int16_t) / CHANNELS; i++) {
+				for (int c = 0; c < CHANNELS; c++) {
+					((int16_t*)buf)[(i * CHANNELS) + c] = (((i*2)+1) << 8) | (((i*2)+0) & 0xff);
+				}
+			}
+			
+
+			out_size = buf_size;
+#else
+//Genode::log("Audio_in");
 			out_size = 0;
 
 			if (!_audio_in_started) {
@@ -423,6 +486,8 @@ struct Vfs::Oss_file_system::Audio
 
 			unsigned samples_to_read = buf_size / CHANNELS / sizeof(int16_t);
 
+//Genode::log("read(): samples_to_read: ", samples_to_read);
+
 			if (samples_to_read == 0) {
 				/* invalid argument */
 				return false;
@@ -436,33 +501,51 @@ struct Vfs::Oss_file_system::Audio
 
 			for (;;) {
 				unsigned stream_pos = stream->pos();	
+//Genode::log("read(): packet loop for, pos: ", stream->pos(), ", tail: ", stream->tail(), ", queued: ", stream->queued());
 
 				Audio_in::Packet *p = stream->get(stream_pos);
 
 				if (!p || !p->valid()) {
+//Genode::trace("read(): packet invalid, buf_size: ", buf_size, ", out_size: ", out_size);
 					update_info_ifrag_avail();
+//Genode::trace("read(): _info.ifrag_bytes: ", _info.ifrag_bytes);
 					return true;
 				}
+
+//Genode::log("read(): packet valid");
 
 				/* sample loop */
 
 				for (;;) {
 
 					if (samples_read == samples_to_read) {
+//Genode::trace("read(): finished, buf_size: ", buf_size, ", out_size: ", out_size);
 						update_info_ifrag_avail();
+//Genode::trace("read(): _info.ifrag_bytes 2: ", _info.ifrag_bytes);
 						return true;
 					}
 
 					for (unsigned c = 0; c < CHANNELS; c++) {
 						unsigned const buf_index = out_size / sizeof(int16_t);
 						((int16_t*)buf)[buf_index] = p->content()[_read_sample_offset] * 32768;
+#if 0
+static int count = 0;
+if (/*(count == 0) &&*/ (((int16_t*)buf)[buf_index] != 0)) {
+Genode::trace("vfs_oss read: ", out_size, ": i: ", ((int16_t*)buf)[buf_index],
+              ", f: ", p->content()[_read_sample_offset]);
+//Genode::log("vfs_oss read: ", count, ", i: ", ((int16_t*)buf)[buf_index],
+//              ", f: ", p->content()[_read_sample_offset]);
+//Genode::trace("buf[", buf_index, "] = ", ((int16_t*)buf)[buf_index]);
+count++;
+}
+#endif
 						out_size += sizeof(int16_t);
 					}
 
 					samples_read++;
 
 					_read_sample_offset++;
-
+//Genode::log("read(): samples_read: ", samples_read, ", _read_sample_offset: ", _read_sample_offset, ", period: ", Audio_in::PERIOD);
 					if (_read_sample_offset == Audio_in::PERIOD) {
 						p->invalidate();
 						p->mark_as_recorded();
@@ -472,6 +555,7 @@ struct Vfs::Oss_file_system::Audio
 					}
 				}
 			}
+#endif
 			return true;
 		}
 
@@ -481,8 +565,10 @@ struct Vfs::Oss_file_system::Audio
 
 			out_size = 0;
 
-			if (_info.ofrag_bytes == 0)
+			if (_info.ofrag_bytes == 0) {
+//Genode::log("buffer full, blocking");
 				throw Vfs::File_io_service::Insufficient_buffer();
+			}
 
 			bool block_write = false;
 
@@ -491,7 +577,11 @@ struct Vfs::Oss_file_system::Audio
 				block_write = true;
 			}
 
+//Genode::log("vfs_oss: write(): buf_size new: ", buf_size);
+
 			unsigned stream_samples_to_write = buf_size / CHANNELS / sizeof(int16_t);
+
+//Genode::log("vfs_oss: write(): stream_samples_to_write: ", stream_samples_to_write);
 
 			if (stream_samples_to_write == 0) {
 				/* invalid argument */
@@ -500,8 +590,11 @@ struct Vfs::Oss_file_system::Audio
 
 			if (!_audio_out_started) {
 				_audio_out_started = true;
+//Genode::log("vfs_oss: write(): queued() 0: ", queued());
 				_out[0]->start();
 				_out[1]->start();
+//Genode::log("vfs_oss: write(): queued() 1: ", queued());
+
 			}
 
 			unsigned stream_samples_written = 0;
@@ -509,10 +602,19 @@ struct Vfs::Oss_file_system::Audio
 			/* packet loop */
 
 			for (;;) {
-
+//Genode::log("vfs_oss: write(): packet loop");
 				Audio_out::Packet *lp = nullptr;
 
+//if (_write_sample_offset != 0) {
+//Genode::log("vfs_oss: write(): _write_sample_offset: ", _write_sample_offset);
+//}
+
 				if (_write_sample_offset == 0) {
+#if 0
+Genode::log("pre alloc: pos: ", _out[0]->stream()->pos(),
+            ", tail: ", _out[0]->stream()->tail(),
+            ", queued: ", _out[0]->stream()->queued());
+#endif
 
 					for (;;) {
 						try {
@@ -521,9 +623,19 @@ struct Vfs::Oss_file_system::Audio
 						}
 						catch (...) {
 							/* this can happen on underrun */
+							warning("stream full",
+							      " queued: ", _out[0]->stream()->queued(),
+							      " pos: ",    _out[0]->stream()->pos(),
+							      " tail: ",   _out[0]->stream()->tail()
+							);
 							_out[0]->stream()->reset();
 						}
 					}
+#if 0
+Genode::log("post alloc: pos: ", _out[0]->stream()->pos(),
+            ", tail: ", _out[0]->stream()->tail(),
+            ", queued: ", _out[0]->stream()->queued());
+#endif
 	            } else {
 	            	/*
 	            	 * Look up the previously allocated packet.
@@ -535,9 +647,15 @@ struct Vfs::Oss_file_system::Audio
 						 Audio_out::QUEUE_SIZE - 1) %
 						Audio_out::QUEUE_SIZE;
 					lp = _out[0]->stream()->get(tail);
+#if 0
+Genode::log("lookup: pos: ", _out[0]->stream()->pos(),
+            ", tail: ", _out[0]->stream()->tail(),
+            ", queued: ", _out[0]->stream()->queued());
+#endif
 	            }
-
+//Genode::log("lp: ", lp);
 				unsigned const pos    = _out[0]->stream()->packet_position(lp);
+//Genode::log("vfs_oss: write(): pos: ", pos);
 				Audio_out::Packet *rp = _out[1]->stream()->get(pos);
 
 				float *dest[CHANNELS] = { lp->content(), rp->content() };
@@ -545,31 +663,73 @@ struct Vfs::Oss_file_system::Audio
 				/* sample loop */
 
 				for (;;) {
+//Genode::log("vfs_oss: write(): sample loop");
 
 					for (unsigned c = 0; c < CHANNELS; c++) {
 						unsigned const buf_index = out_size / sizeof(int16_t);
+//Genode::log("buf_index: ", buf_index);
 						int16_t src_sample = ((int16_t const*)buf)[buf_index];
+//Genode::log("src_sample: ", src_sample);
+
+//Genode::log("_write_sample_offset: ", _write_sample_offset);
 						dest[c][_write_sample_offset] = ((float)src_sample) / 32768.0f;
+
+#if 0
+static int count = 0;
+
+#if 0
+if (count == 0) {
+	src_sample = 128;
+}
+#endif
+
+if (/*(count == 0) &&*/ (src_sample != 0)) {
+	Genode::trace("vfs_oss write: ", count, ": i: ", src_sample,
+	              ", f: ", dest[c][_write_sample_offset]);
+//	Genode::log("vfs_oss write: ", count, ", i: ", src_sample,
+//	            ", f: ", dest[c][_write_sample_offset]);
+	count++;
+}
+#endif
+
+
 						out_size += sizeof(int16_t);
+//Genode::log("out_size: ", out_size);
 					}
 
 					stream_samples_written++;
 
-					_write_sample_offset++;
+//Genode::log("stream_samples_written: ", stream_samples_written);
 
+
+					_write_sample_offset++;
 					if (_write_sample_offset == Audio_out::PERIOD) {
 						_info.optr_samples += Audio_out::PERIOD;
 						_info.optr_fifo_samples += Audio_out::PERIOD;
 						_out[0]->submit(lp);
 						_out[1]->submit(rp);
+//Genode::log("vfs_oss: write(): submitted, queued(): ", queued());
 						_write_sample_offset = 0;
 						if (stream_samples_written != stream_samples_to_write)
 							break;
 					}
 
 					if (stream_samples_written == stream_samples_to_write) {
+//Genode::log("vfs_oss: write(): done: out_size: ", out_size, ", block_write: ", block_write);
 
 						/* update info */
+
+#if 0
+for (unsigned int i = 0; i < Audio_out::PERIOD; i++) {
+Genode::log("content[", i, "]: ", dest[0][i]);
+}
+#endif
+
+#if 0
+Genode::log("vfs_oss: write(): stream_samples_written: ", stream_samples_written,
+            ", fifo_samples: ", _info.optr_fifo_samples,
+            ", _write_sample_offset: ", _write_sample_offset);
+#endif
 						update_info_ofrag_avail_from_optr_fifo_samples();
 
 						if (block_write) { throw Vfs::File_io_service::Insufficient_buffer(); }
@@ -621,7 +781,7 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 				}
 
 				bool success = _audio.read(buf, buf_size, out_count);
-
+//Genode::log("read(): out_count: ", out_count);
 				if (success) {
 					if (out_count == 0) {
 						blocked = true;
@@ -675,6 +835,7 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 
 		void _handle_audio_in_progress()
 		{
+//Genode::log("_handle_audio_in_progress()");
 			if (_audio.handle_in_progress()) {
 				/* at least one stream packet is available */
 				_handle_registry.for_each([this] (Registered_handle &handle) {
@@ -726,6 +887,8 @@ class Vfs::Oss_file_system::Data_file_system : public Single_file_system
 			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
 			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
 		}
+
+		/* XXX: close() */
 
 		/********************************
 		 ** File I/O service interface **
@@ -841,11 +1004,13 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 
 	void _halt_input_changed()
 	{
+Genode::log(__func__);
 		_audio.halt_input();
 	}
 
 	void _halt_output_changed()
 	{
+Genode::log(__func__);
 		_audio.halt_output();
 	}
 
@@ -862,7 +1027,7 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 		_info.ifrag_total = ifrag_total_new;
 		_info.ifrag_avail = 0;
 		_info.ifrag_bytes = 0;
-
+Genode::log("_ifrag_total_changed(): ", _info.ifrag_total, ", ", _info.ifrag_bytes);
 		_info.update();
 		_info_fs.value(_info);
 	}
@@ -878,6 +1043,7 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 			_info.ifrag_total = _audio_in_stream_size / ifrag_size_new;
 			_info.ifrag_avail = 0;
 			_info.ifrag_bytes = 0;
+Genode::log("_ifrag_size_changed(): ", _info.ifrag_total, ", ", _info.ifrag_bytes);
 		}
 
 		_info.ifrag_size = ifrag_size_new;
@@ -899,7 +1065,7 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 		_info.ofrag_total = ofrag_total_new;
 		_info.ofrag_avail = ofrag_total_new;
 		_info.ofrag_bytes = ofrag_total_new * _info.ofrag_size;
-
+Genode::log("_ofrag_total_changed(): ", _info.ofrag_total, ", ", _info.ofrag_bytes);
 		_info.update();
 		_info_fs.value(_info);
 	}
@@ -915,6 +1081,7 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 			_info.ofrag_total = _audio_out_stream_size / ofrag_size_new;
 			_info.ofrag_avail = _info.ofrag_total;
 			_info.ofrag_bytes = _info.ofrag_total * _info.ofrag_size;
+Genode::log("_ofrag_size_changed(): ", _info.ofrag_total, ", ", _info.ofrag_bytes);
 		}
 
 		_info.ofrag_size = ofrag_size_new;
@@ -926,6 +1093,7 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 	void _play_underruns_changed()
 	{
 		/* reset counter */
+
 		_info.play_underruns = 0;
 
 		_info.update();
