@@ -679,7 +679,7 @@ close $fd
 #
 # Add current depot index of [depot_user] as generated above.
 #
-set depot_selection { genodelabs cnuke alex-ab mstein nfeske cproc chelmuth
+set depot_selection { genodelabs cnuke alex-ab mstein nfeske cproc cproc_demo chelmuth
                       jschlatow ssumpf skalk }
 
 set depot_users_files {}
