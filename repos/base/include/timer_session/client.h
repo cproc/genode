@@ -33,9 +33,15 @@ struct Timer::Session_client : Genode::Rpc_client<Session>
 
 	void sigh(Signal_context_capability sigh) override { call<Rpc_sigh>(sigh); }
 
-	uint64_t elapsed_ms() const override { return call<Rpc_elapsed_ms>(); }
+	uint64_t elapsed_ms() const override {
+		//return call<Rpc_elapsed_ms>();
+		return Genode::Trace::timestamp() / 2496000;
+	}
 
-	uint64_t elapsed_us() const override { return call<Rpc_elapsed_us>(); }
+	uint64_t elapsed_us() const override {
+		//return call<Rpc_elapsed_us>();
+		return Genode::Trace::timestamp() / 2496;
+	}
 };
 
 #endif /* _INCLUDE__TIMER_SESSION__CLIENT_H_ */
