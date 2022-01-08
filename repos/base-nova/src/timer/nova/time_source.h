@@ -60,7 +60,7 @@ class Timer::Time_source : public Threaded_time_source
 		Genode::addr_t           _sem        { 0 };
 		uint64_t                 _timeout_us { 0 };
 		unsigned long      const _tsc_khz;
-		Duration                 _curr_time  { Microseconds(0) };
+		Duration                 _curr_time  { /*Microseconds(0)*/ Microseconds(Genode::Trace::timestamp() / 2496) };
 		Genode::Trace::Timestamp _tsc_start  { Genode::Trace::timestamp() };
 		Genode::Trace::Timestamp _tsc_last   { _tsc_start };
 
@@ -112,8 +112,10 @@ class Timer::Time_source : public Threaded_time_source
 				_curr_time.add(diff);
 				_tsc_last = curr_tsc;
 			}
-
-			return _curr_time;
+//Genode::trace(__func__, " nova 1: ", _curr_time.trunc_to_plain_ms());
+Duration curr_time { Microseconds(curr_tsc / 2496) };
+//Genode::trace(__func__, " nova 2: ", curr_time.trunc_to_plain_ms());
+			return curr_time;
 		}
 };
 
