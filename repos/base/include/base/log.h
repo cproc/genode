@@ -146,8 +146,10 @@ namespace Genode {
 	 * Write 'args' as a regular message to the log
 	 */
 	template <typename... ARGS>
-	void log(ARGS &&... args) { Log::log().output(Log::LOG, args...); }
+	void log(ARGS &&... args) { Log::log().output(Log::LOG, /*Trace::timestamp() / 2496000, ": ",*/ args...); }
 
+	template <typename... ARGS>
+	void log_ts(ARGS &&... args) { Log::log().output(Log::LOG, Trace::timestamp() / 2496000, ": ", args...); }
 
 	/**
 	 * Write 'args' as a warning message to the log
@@ -157,7 +159,7 @@ namespace Genode {
 	 * formatting error/warning messages.
 	 */
 	template <typename... ARGS>
-	void warning(ARGS &&... args) { Log::log().output(Log::WARNING, args...); }
+	void warning(ARGS &&... args) { Log::log().output(Log::WARNING, Trace::timestamp() / 2496000, ": ", args...); }
 
 
 	/**
@@ -169,7 +171,7 @@ namespace Genode {
 	 * with a lower-case character.
 	 */
 	template <typename... ARGS>
-	void error(ARGS &&... args) { Log::log().output(Log::ERROR, args...); }
+	void error(ARGS &&... args) { Log::log().output(Log::ERROR, Trace::timestamp() / 2496000, ": ", args...); }
 
 
 	/**
@@ -180,7 +182,6 @@ namespace Genode {
 	template <typename... ARGS>
 	void raw(ARGS &&... args) { Raw::output(args...); }
 
-
 	/**
 	 * Write 'args' to the trace buffer if tracing is enabled
 	 *
@@ -188,7 +189,18 @@ namespace Genode {
 	 */
 	template <typename... ARGS>
 	void trace(ARGS && ... args) {
-		Trace_output::trace_output().output(Trace::timestamp(), ": ", args...); }
+#if 0
+		Trace_output::trace_output().output(args...);
+#else
+		uint64_t ts = Trace::timestamp() / 2496000;
+		if (ts >= 150000) {
+			Trace_output::trace_output().output(/*Trace_output::trace_output().trace_count(), ": ",*/ ts, ": ", args...);
+		}
+//		else {
+//			Trace_output::trace_output().trace_count();
+//		}
+#endif
+	}
 }
 
 
