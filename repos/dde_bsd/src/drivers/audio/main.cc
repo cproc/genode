@@ -149,8 +149,11 @@ class Audio_out::Out
 			/* always report when a period has passed */
 			Session_component *channel_left  = channel_acquired[LEFT];
 			Session_component *channel_right = channel_acquired[RIGHT];
+Genode::trace(__func__, ": progress left");
 			channel_left->progress_submit();
+Genode::trace(__func__, ": progress right");
 			channel_right->progress_submit();
+Genode::trace(__func__, ": progress done");
 		}
 
 		/*
