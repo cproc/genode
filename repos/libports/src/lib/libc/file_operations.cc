@@ -255,7 +255,7 @@ extern "C" int chdir(const char *path)
 	return 0;
 }
 
-
+extern "C" void wait_for_continue();
 /**
  * Close is called incorrectly enough to justify a silent failure
  */
@@ -263,8 +263,11 @@ __SYS_(int, close, (int libc_fd),
 {
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 
-	if (!fd)
+	if (!fd) {
+Genode::error("invalid fd");
+//wait_for_continue();
 		return Errno(EBADF);
+	}
 
 	if (!fd->plugin || fd->plugin->close(fd) != 0)
 		file_descriptor_allocator()->free(fd);
