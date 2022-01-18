@@ -214,7 +214,8 @@ namespace Genode {
 		Trace_output::Fn(args...);
 #else
 		uint64_t ts = Trace::timestamp() / 2496000;
-		if (ts >= 150000) {
+		if ((ts >= 100000) && (ts <= 110000)) {
+
 			Trace_output::Fn(ts, ": ", args...);
 		}
 #endif
