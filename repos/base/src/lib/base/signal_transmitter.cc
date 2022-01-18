@@ -27,11 +27,17 @@ static Pd_session *_pd;
 
 void Genode::init_signal_transmitter(Env &env) { _pd = &env.pd(); }
 
-
+extern "C" void wait_for_continue();
 void Signal_transmitter::submit(unsigned cnt)
 {
 	{
 		Trace::Signal_submit trace_event(cnt);
+	}
+
+	if (!_context.valid()) {
+//		Genode::warning(__PRETTY_FUNCTION__, ": invalid signal context");
+//		wait_for_continue();
+		return;
 	}
 
 	if (_pd)

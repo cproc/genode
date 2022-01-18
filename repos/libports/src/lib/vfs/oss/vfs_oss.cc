@@ -26,7 +26,7 @@
 /* libc includes */
 #include <sys/soundcard.h>
 
-static constexpr bool verbose_underrun { false };
+static constexpr bool verbose_underrun { true };
 
 static constexpr size_t _audio_in_stream_packet_size
 { Audio_in::PERIOD * Audio_in::SAMPLE_SIZE };
@@ -240,8 +240,8 @@ struct Vfs::Oss_file_system::Audio
 			_info.ifrag_total = _audio_in_stream_size / _info.ifrag_size;
 			_info.ifrag_avail = 0;
 			_info.ifrag_bytes = 0;
-			_info.ofrag_size  = 2048;
-			_info.ofrag_total = _audio_out_stream_size / _info.ofrag_size;
+			_info.ofrag_size  = 2048/*1764*/;
+			_info.ofrag_total = _audio_out_stream_size / _info.ofrag_size/*2*//*10*/;
 			_info.ofrag_avail = _info.ofrag_total;
 			_info.ofrag_bytes = _info.ofrag_avail * _info.ofrag_size;
 			_info.update();
@@ -311,7 +311,7 @@ struct Vfs::Oss_file_system::Audio
 		{
 			unsigned fifo_samples_new = _out[0]->stream()->queued() *
 			                            Audio_out::PERIOD;
-
+Genode::trace(__func__, ": ", fifo_samples_new);
 			if ((fifo_samples_new >= Audio_out::PERIOD) &&
 			    (_write_sample_offset != 0)) {
 				/* an allocated packet is part of the queued count,
@@ -346,6 +346,8 @@ struct Vfs::Oss_file_system::Audio
 				if (verbose_underrun) {
 					static int play_underruns_total;
 					play_underruns_total++;
+					Genode::trace("vfs_oss: underrun (",
+					                play_underruns_total, ")");
 					Genode::warning("vfs_oss: underrun (",
 					                play_underruns_total, ")");
 				}
@@ -472,6 +474,7 @@ struct Vfs::Oss_file_system::Audio
 
 		bool write(char const *buf, file_size buf_size, file_size &out_size)
 		{
+Genode::trace(__func__, ": ", buf_size, ", ", _info.ofrag_bytes);
 			using namespace Genode;
 
 			out_size = 0;
@@ -555,6 +558,7 @@ struct Vfs::Oss_file_system::Audio
 					if (_write_sample_offset == Audio_out::PERIOD) {
 						_info.optr_samples += Audio_out::PERIOD;
 						_info.optr_fifo_samples += Audio_out::PERIOD;
+Genode::trace(__func__, ": submit");
 						_out[0]->submit(lp);
 						_out[1]->submit(rp);
 						_write_sample_offset = 0;
@@ -568,7 +572,7 @@ struct Vfs::Oss_file_system::Audio
 						update_info_ofrag_avail_from_optr_fifo_samples();
 
 						if (block_write) { throw Vfs::File_io_service::Insufficient_buffer(); }
-
+Genode::trace(__func__, ": finished");
 						return true;
 					}
 				}
