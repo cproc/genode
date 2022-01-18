@@ -58,8 +58,9 @@ namespace Genode {
 			_ep.apply(cap, [&] (Signal_context_component *context) {
 				if (context)
 					context->source().submit(*context, cnt);
-				else
+				else {
 					warning("invalid signal-context capability");
+				}
 			});
 		}
 

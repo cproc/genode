@@ -193,7 +193,7 @@ namespace Genode {
 		Trace_output::trace_output().output(args...);
 #else
 		uint64_t ts = Trace::timestamp() / 2496000;
-		if (ts >= 150000) {
+		if ((ts >= 100000) && (ts <= 110000)) {
 			Trace_output::trace_output().output(/*Trace_output::trace_output().trace_count(), ": ",*/ ts, ": ", args...);
 		}
 //		else {
