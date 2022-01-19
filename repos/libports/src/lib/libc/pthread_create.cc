@@ -217,5 +217,12 @@ extern "C" int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	return Libc::pthread_create(thread, attr, start_routine, arg, nullptr);
 }
 
-
 extern "C" typeof(pthread_create) _pthread_create __attribute__((alias("pthread_create")));
+
+
+extern "C" int pthread_create_with_name(pthread_t *thread, const pthread_attr_t *attr,
+                                        void *(*start_routine) (void *), void *arg,
+                                        char const *name)
+{
+	return Libc::pthread_create(thread, attr, start_routine, arg, name);
+}
