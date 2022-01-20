@@ -35,7 +35,7 @@ struct Menu_view::Frame_widget : Widget
 	:
 		Widget(factory, node, unique_id)
 	{
-		margin = { 4, 4, 4, 4 };
+		margin = { 4, 4, 1, 1 };
 	}
 
 	void update(Xml_node node) override
