@@ -21,6 +21,7 @@
 #include <util/list.h>
 #include <base/semaphore.h>
 #include <base/capability.h>
+#include <base/log.h>
 
 /* only needed for base-hw */
 namespace Kernel { struct Signal_receiver; }
@@ -487,7 +488,11 @@ class Genode::Signal_handler : public Signal_dispatcher_base
 		/**
 		 * Interface of Signal_dispatcher_base
 		 */
-		void dispatch(unsigned) override { (_obj.*_member)(); }
+		void dispatch(unsigned) override
+		{
+			Genode::trace(__PRETTY_FUNCTION__);
+			(_obj.*_member)();
+		}
 
 		operator Capability<Signal_context>() const { return _cap; }
 };
