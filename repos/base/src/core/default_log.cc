@@ -41,4 +41,11 @@ Genode::Log &Genode::Log::log()
 }
 
 
+Genode::Trace_output &Genode::Trace_output::trace_output()
+{
+	static Genode::Trace_output trace_output;
+	return trace_output;
+}
+
+
 void Genode::init_log(Parent &) { };
