@@ -43,6 +43,7 @@ static char const *initial_ep_name() { return "ep"; }
 
 void Entrypoint::Signal_proxy_component::signal()
 {
+Genode::trace(__func__, ": ret: ", __builtin_return_address(0));
 	/* signal delivered successfully */
 	ep._signal_proxy_delivers_signal = false;
 
@@ -59,7 +60,9 @@ void Entrypoint::Signal_proxy_component::signal()
 	Signal sig = ep._sig_rec->pending_signal();
 
 	if (sig.valid()) {
+Genode::trace(__func__, ": calling _dispatch_signal()");
 		ep._dispatch_signal(sig);
+Genode::trace(__func__, ": _dispatch_signal() returned");
 
 		if (sig.context()->level() == Signal_context::Level::Io) {
 			/* trigger the progress handler */
@@ -67,8 +70,11 @@ void Entrypoint::Signal_proxy_component::signal()
 		}
 	}
 
-	if (io_progress)
+	if (io_progress) {
+Genode::trace(__func__, ": calling _handle_io_progress()");
 		ep._handle_io_progress();
+	}
+Genode::trace(__func__, " finished");
 }
 
 
@@ -77,8 +83,10 @@ void Entrypoint::_dispatch_signal(Signal &sig)
 	Signal_dispatcher_base *dispatcher = 0;
 	dispatcher = dynamic_cast<Signal_dispatcher_base *>(sig.context());
 
-	if (!dispatcher)
+	if (!dispatcher) {
+Genode::trace(__func__, ": no dispatcher");
 		return;
+	}
 
 	dispatcher->dispatch(sig.num());
 }
@@ -123,8 +131,9 @@ void Entrypoint::_process_incoming_signals()
 				Mutex::Guard guard { _block_for_signal_mutex };
 
 				_signal_proxy_delivers_signal = true;
-
+////Genode::trace(__func__, ": calling block_for_signal()");
 				_sig_rec->block_for_signal();
+////Genode::trace(__func__, ": block_for_signal() returned");
 			}
 
 			/*
@@ -181,6 +190,7 @@ void Entrypoint::_process_incoming_signals()
 
 bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 {
+Genode::trace(__func__);
 	if (!_rpc_ep->is_myself())
 		warning(__func__, " called from non-entrypoint thread \"",
 		       Thread::myself()->name(), "\"");
@@ -196,13 +206,16 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 				_defer_signal(sig);
 				continue;
 			}
-
+Genode::trace(__func__, ": calling _dispatch_signal()");
 			_dispatch_signal(sig);
+Genode::trace(__func__, ": _dispatch_signal() returned");
 			break;
 		}
 
-		if (dont_block)
+		if (dont_block) {
+Genode::trace(__func__, " finished false");
 			return false;
+		}
 
 		{
 			/*
@@ -243,6 +256,7 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 			                                   &Entrypoint::_handle_deferred_signals);
 		Signal_transmitter(*_deferred_signal_handler).submit();
 	}
+Genode::trace(__func__, " finished true");
 
 	return true;
 }
