@@ -117,11 +117,45 @@ struct Explicitly_triple_nested : Test
 };
 
 
+/*
+ * Signal_handler_nested test
+ *
+ * Call with_libc nested from a signal handler
+ */
+struct Signal_handler_nested : Test
+{
+	Env &env;
+
+	Io_signal_handler<Signal_handler_nested> _sigh {
+		env.ep(), *this, &Signal_handler_nested::handle_signal };
+	
+	void handle_signal()
+	{
+		Libc::with_libc([&] () {
+			printf("Hello from with_libc nested in signal handler\n");
+		});
+	}
+
+	Signal_handler_nested(Env &env, int id)
+	: Test(env, id), env(env)
+	{
+		Libc::with_libc([&] () {
+
+			_sigh.local_submit();
+
+			/* 'printf()' executes the signal handler */
+			printf("Hello from with_libc\n");
+		});
+	}
+};
+
+
 struct Main
 {
 	Constructible<Explicitly_nested>        test_1;
 	Constructible<App_signal_deferred>      test_2;
 	Constructible<Explicitly_triple_nested> test_3;
+	Constructible<Signal_handler_nested>    test_4;
 
 	Main(Env &env)
 	{
@@ -130,6 +164,7 @@ struct Main
 		test_1.construct(env, 1); test_1.destruct();
 		test_2.construct(env, 2); test_2.destruct();
 		test_3.construct(env, 3); test_3.destruct();
+		test_4.construct(env, 4); test_4.destruct();
 
 		log("--- finished with_libc tests ---");
 	}
