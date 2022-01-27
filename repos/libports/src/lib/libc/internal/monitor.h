@@ -75,7 +75,11 @@ class Libc::Monitor : Interface
 			struct _Function : Function
 			{
 				FN const &fn;
-				Function_result execute() override { return fn(); }
+				Function_result execute() override
+				{
+Genode::trace(__PRETTY_FUNCTION__);
+					return fn();
+				}
 				_Function(FN const &fn) : fn(fn) { }
 			} function { fn };
 
@@ -130,8 +134,9 @@ struct Libc::Monitor::Pool
 			Registry<Job>::Element element { _jobs, job };
 
 			_monitor.trigger_monitor_examination();
-
+Genode::trace(__func__, ": calling job.wait_for_completion()");
 			job.wait_for_completion();
+Genode::trace(__func__, ": job.wait_for_completion() returned");
 		}
 
 		enum class State { JOBS_PENDING, ALL_COMPLETE };
@@ -139,13 +144,15 @@ struct Libc::Monitor::Pool
 		/* called by the monitor context itself */
 		State execute_monitors()
 		{
+Genode::trace(__func__);
 			State result = State::ALL_COMPLETE;
 
 			_jobs.for_each([&] (Job &job) {
 
 				if (!job.completed() && !job.expired()) {
-
+Genode::trace(__func__, ": calling job.execute()");
 					bool const completed = job.execute();
+Genode::trace(__func__, ": job.execute() returned");
 
 					if (completed)
 						job.complete();
@@ -154,7 +161,7 @@ struct Libc::Monitor::Pool
 						result = State::JOBS_PENDING;
 				}
 			});
-
+Genode::trace(__func__, " finished");
 			return result;
 		}
 };
