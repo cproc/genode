@@ -14,6 +14,7 @@
 #include <base/log.h>
 #include <base/allocator_avl.h>
 #include <base/signal.h>
+#include <libc/component.h>
 #include <usb/usb.h>
 #include <usb_session/connection.h>
 
@@ -36,30 +37,15 @@ static Genode::Env &genode_env()
 	abort();
 }
 
+static int ack_avail_pipe[2];
 
 struct Usb_ep
 {
 	Genode::Entrypoint _ep;
-	pthread_t          _pthread;
-
-	void _handle_pthread_registration()
-	{
-		Genode::Thread *myself = Genode::Thread::myself();
-		if (!myself || Libc::pthread_create_from_thread(&_pthread, *myself, &myself)) {
-			Genode::error("cannot register thread for pthread");
-			return;
-		}
-	}
-
-	Genode::Io_signal_handler<Usb_ep> _pthread_reg_sigh {
-		_ep, *this, &Usb_ep::_handle_pthread_registration };
 
 	Usb_ep(Genode::Env &env, size_t stack_size, char const *name,
 	       Genode::Affinity::Location location)
-	: _ep { env, stack_size, name, location }
-	{
-		Genode::Signal_transmitter(_pthread_reg_sigh).submit();
-	}
+	: _ep { env, stack_size, name, location } { }
 
 	Genode::Entrypoint &ep() { return _ep; }
 };
@@ -68,9 +54,9 @@ struct Usb_ep
 /*
  * Entrypoint for handling 'ack avail' signals from the USB driver.
  *
- * The entrypoint is needed because the main thread of an application
- * using libusb might be blocking on a pthread locking function, which
- * currently do not dispatch signals while blocking.
+ * The entrypoint is needed because the signal handler needs to
+ * write into a pipe, which causes a page fault when called within
+ * nested 'Libc::with_libc()' from the main entrypoint.
  */
 static Genode::Entrypoint &ep()
 {
@@ -131,6 +117,19 @@ struct Usb_device
 
 		void _handle_ack_avail()
 		{
+			Libc::with_libc([&] () {
+				char dummy = 1;
+				write(ack_avail_pipe[1], &dummy, sizeof(dummy));
+			});
+		}
+
+	public:
+
+		void handle_events()
+		{
+			char dummy;
+			read(ack_avail_pipe[0], &dummy, sizeof(dummy));
+
 			struct libusb_context *ctx = nullptr;
 
 			while (usb_connection.source()->ack_avail()) {
@@ -348,7 +347,14 @@ static int genode_init(struct libusb_context* ctx)
 		device_instance = new (libc_alloc) Usb_device;
 	} else {
 		Genode::error("tried to init genode usb context twice");
+		return LIBUSB_ERROR_OTHER;
 	}
+
+	if (pipe(ack_avail_pipe) != 0) {
+		Genode::error("could not create ack avail pipe");
+		return LIBUSB_ERROR_OTHER;
+	}
+
 	return LIBUSB_SUCCESS;
 }
 
@@ -436,7 +442,8 @@ static int genode_open(struct libusb_device_handle *dev_handle)
 	if (device_instance)
 		device_instance->open();
 
-	return LIBUSB_SUCCESS;
+	return usbi_add_pollfd(HANDLE_CTX(dev_handle), ack_avail_pipe[0],
+	                       POLLIN);
 }
 
 
@@ -444,6 +451,8 @@ static void genode_close(struct libusb_device_handle *dev_handle)
 {
 	if (device_instance)
 		device_instance->close();
+
+	usbi_remove_pollfd(HANDLE_CTX(dev_handle), ack_avail_pipe[0]);
 }
 
 
@@ -706,6 +715,19 @@ static int genode_cancel_transfer(struct usbi_transfer * itransfer)
 static void genode_clear_transfer_priv(struct usbi_transfer * itransfer) { }
 
 
+static int genode_handle_events(struct libusb_context *,
+                            struct pollfd *,
+                            POLL_NFDS_TYPE, int)
+{
+	if (device_instance) {
+		device_instance->handle_events();
+		return LIBUSB_SUCCESS;
+	}
+
+	return LIBUSB_ERROR_NO_DEVICE;
+}
+
+
 static int genode_handle_transfer_completion(struct usbi_transfer * itransfer)
 {
 	enum libusb_transfer_status status = LIBUSB_TRANSFER_COMPLETED;
@@ -768,7 +790,7 @@ const struct usbi_os_backend genode_usb_raw_backend = {
 	/*.cancel_transfer =*/ genode_cancel_transfer,
 	/*.clear_transfer_priv =*/ genode_clear_transfer_priv,
 
-	/*.handle_events =*/ NULL,
+	/*.handle_events =*/ genode_handle_events,
 	/*.handle_transfer_completion =*/ genode_handle_transfer_completion,
 
 	/*.clock_gettime =*/ genode_clock_gettime,
