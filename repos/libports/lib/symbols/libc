@@ -436,7 +436,7 @@ lseek T
 lstat T
 madvise W
 makecontext W
-malloc T
+malloc W
 mblen T
 mbrlen T
 mbrtowc T
