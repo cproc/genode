@@ -434,13 +434,19 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 		if (flags & MAP_FIXED) {
 			Genode::error("mmap for fixed predefined address not supported yet");
+wait_for_continue();
 			errno = EINVAL;
 			return MAP_FAILED;
 		}
 //Genode::log("mmap(): ", length);
 		bool const executable = prot & PROT_EXEC;
+		int alignment_log2 = (flags & MAP_ALIGNMENT_MASK) >>
+		                     MAP_ALIGNMENT_SHIFT;
+		if (alignment_log2 == 0)
+			alignment_log2 = _mmap_align_log2;
+//Genode::log("mmap(): length: ", length, ", align_log2: ", alignment_log2);
 //Genode::uint64_t ts1 = Genode::Trace::timestamp();
-		void *start = mem_alloc(executable)->alloc(length, _mmap_align_log2);
+		void *start = mem_alloc(executable)->alloc(length, alignment_log2);
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
@@ -455,6 +461,15 @@ static Genode::uint64_t sum_ts_diff;
 sum_ts_diff += ts_diff;
 Genode::uint64_t ts_diff_ms = /*(ts2 - ts1)*/sum_ts_diff / /*2496000*/3500000;
 Genode::log("mmap(): ", length, ", ", ts_diff_ms);
+#endif
+
+#if 0
+Genode::log("mmap()");
+static bool first = true;
+if (first) {
+	first = false;
+	wait_for_continue();
+}
 #endif
 		return start;
 	}

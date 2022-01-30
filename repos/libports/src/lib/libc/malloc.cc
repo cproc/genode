@@ -236,13 +236,22 @@ using namespace Libc;
 static Malloc *mallocator;
 
 
-extern "C" void *malloc(size_t size)
+extern "C" void *libc_malloc(size_t size)
 {
 	return mallocator->alloc(size);
 }
 
+extern "C" void wait_for_continue();
+extern "C" __attribute__((weak)) void *malloc(size_t size)
+{
+//Genode::error("*** malloc(), ret: ", __builtin_return_address(0));
+//wait_for_continue();
+//Genode::log(&size, ": malloc()");
+	return libc_malloc(size);
+}
 
-extern "C" void *calloc(size_t nmemb, size_t size)
+
+extern "C" __attribute__((weak)) void *calloc(size_t nmemb, size_t size)
 {
 	void *addr = malloc(nmemb*size);
 	if (addr)
@@ -251,13 +260,19 @@ extern "C" void *calloc(size_t nmemb, size_t size)
 }
 
 
-extern "C" void free(void *ptr)
+extern "C" void libc_free(void *ptr)
 {
 	if (ptr) mallocator->free(ptr);
 }
 
 
-extern "C" void *realloc(void *ptr, size_t size)
+extern "C" __attribute__((weak)) void free(void *ptr)
+{
+	libc_free(ptr);
+}
+
+
+extern "C" __attribute__((weak)) void *realloc(void *ptr, size_t size)
 {
 	if (!ptr) return malloc(size);
 
@@ -270,7 +285,7 @@ extern "C" void *realloc(void *ptr, size_t size)
 }
 
 
-int posix_memalign(void **memptr, size_t alignment, size_t size)
+extern "C" __attribute__((weak)) int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
 	*memptr = mallocator->alloc(size, alignment);
 
