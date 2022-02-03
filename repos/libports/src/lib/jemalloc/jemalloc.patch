@@ -1,0 +1,22 @@
+jemalloc.patch
+
+diff --git a/src/background_thread.c b/src/background_thread.c
+index 57b9b25..e935ed0 100644
+--- a/src/background_thread.c
++++ b/src/background_thread.c
+@@ -877,6 +877,7 @@ background_thread_ctl_init(tsdn_t *tsdn) {
+ 
+ bool
+ background_thread_boot0(void) {
++#ifdef JEMALLOC_BACKGROUND_THREAD
+ 	if (!have_background_thread && opt_background_thread) {
+ 		malloc_printf("<jemalloc>: option background_thread currently "
+ 		    "supports pthread only\n");
+@@ -887,6 +888,7 @@ background_thread_boot0(void) {
+ 	    pthread_create_fptr_init()) {
+ 		return true;
+ 	}
++#endif
+ #endif
+ 	return false;
+ }
