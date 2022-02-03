@@ -421,7 +421,7 @@ extern "C" int mkdir(const char *path, mode_t mode)
 	}
 }
 
-
+extern "C" void wait_for_continue();
 __SYS_(void *, mmap, (void *addr, ::size_t length,
                       int prot, int flags,
                       int libc_fd, ::off_t offset),
@@ -434,15 +434,25 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 			errno = EINVAL;
 			return MAP_FAILED;
 		}
-
+//Genode::log("mmap(): ", length);
 		bool const executable = prot & PROT_EXEC;
+//Genode::uint64_t ts1 = Genode::Trace::timestamp();
 		void *start = mem_alloc(executable)->alloc(length, _mmap_align_log2);
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
 		}
 		::memset(start, 0, align_addr(length, PAGE_SHIFT));
+//wait_for_continue();
 		mmap_registry()->insert(start, length, 0);
+#if 0
+Genode::uint64_t ts2 = Genode::Trace::timestamp();
+Genode::uint64_t ts_diff = (ts2 - ts1);
+static Genode::uint64_t sum_ts_diff;
+sum_ts_diff += ts_diff;
+Genode::uint64_t ts_diff_ms = /*(ts2 - ts1)*/sum_ts_diff / /*2496000*/3500000;
+Genode::log("mmap(): ", length, ", ", ts_diff_ms);
+#endif
 		return start;
 	}
 
