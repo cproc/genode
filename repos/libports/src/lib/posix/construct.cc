@@ -23,7 +23,7 @@ extern char **environ;
 
 /* provided by the application */
 extern "C" int main(int argc, char **argv, char **envp);
-
+extern "C" void wait_for_continue();
 static void construct_component(Libc::Env &env)
 {
 	int argc    = 0;
@@ -33,7 +33,7 @@ static void construct_component(Libc::Env &env)
 	populate_args_and_env(env, argc, argv, envp);
 
 	environ = envp;
-
+//wait_for_continue();
 	exit(main(argc, argv, envp));
 }
 
