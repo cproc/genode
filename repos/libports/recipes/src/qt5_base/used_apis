@@ -4,6 +4,7 @@ expat
 framebuffer_session
 gui_session
 input_session
+jemalloc
 libc
 mesa
 os
