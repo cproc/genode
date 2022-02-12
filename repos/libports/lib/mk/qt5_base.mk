@@ -1,6 +1,6 @@
 include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
 
-LIBS = base libc libm stdcxx qt5_component egl mesa qoost
+LIBS = base jemalloc libc libm stdcxx qt5_component egl mesa qoost
 
 built.tag: qmake_prepared.tag qmake_root/lib/ld.lib.so
 

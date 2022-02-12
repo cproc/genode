@@ -39,7 +39,7 @@ endif
 #
 
 QT5_GENODE_LIBS_APP   = libc.lib.so libm.lib.so stdcxx.lib.so qt5_component.lib.so
-QT5_GENODE_LIBS_SHLIB = libc.lib.so libm.lib.so stdcxx.lib.so
+QT5_GENODE_LIBS_SHLIB = libc.lib.so libm.lib.so stdcxx.lib.so jemalloc.lib.so
 
 #
 # flags to be passed to qmake via env.sh and mkspecs/common/genode.conf
@@ -167,6 +167,7 @@ qmake_root/mkspecs: qmake_root
 qmake_prepared.tag: env.sh \
                     qmake_root/bin \
                     qmake_root/include \
+                    qmake_root/lib/jemalloc.lib.so \
                     qmake_root/lib/libc.lib.so \
                     qmake_root/lib/libm.lib.so \
                     qmake_root/lib/egl.lib.so \
