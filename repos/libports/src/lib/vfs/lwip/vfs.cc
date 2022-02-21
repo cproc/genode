@@ -943,11 +943,15 @@ class Lwip::Udp_socket_dir final :
 			}
 
 			case Lwip_file_handle::CONNECT: {
+//Genode::log(__PRETTY_FUNCTION__, ": CONNECT");
 				/* check if the PCB was connected */
-				if (!ip_addr_isany(&_pcb->remote_ip))
+				if (!ip_addr_isany(&_pcb->remote_ip)) {
+//Genode::log(__PRETTY_FUNCTION__, ": CONNECT: connected");
 					out_count = Genode::snprintf(dst, count, "connected");
-				else
+				} else {
+//Genode::log(__PRETTY_FUNCTION__, ": CONNECT: not connected");
 					out_count = Genode::snprintf(dst, count, "not connected");
+				}
 				return Read_result::READ_OK;
 			}
 
@@ -1056,6 +1060,7 @@ class Lwip::Udp_socket_dir final :
 			}
 
 			case Lwip_file_handle::CONNECT: {
+//Genode::log(__PRETTY_FUNCTION__, ": CONNECT: ", Genode::Cstring(src));
 				if (count < ENDPOINT_STRLEN_MAX) {
 					char buf[ENDPOINT_STRLEN_MAX];
 
@@ -1285,6 +1290,7 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+//Genode::log(__PRETTY_FUNCTION__, "CONNECT");
 				/*
 				 * The connect file is considered readable when the socket is
 				 * writeable (connected or error).
@@ -1444,11 +1450,14 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+Genode::log(__PRETTY_FUNCTION__, ": CONNECT");
 				switch (state) {
 				case READY:
+Genode::log(__PRETTY_FUNCTION__, ": CONNECT: connected");
 					out_count = Genode::snprintf(dst, count, "connected");
 					break;
 				default:
+Genode::log(__PRETTY_FUNCTION__, ": CONNECT: connection refused");
 					out_count = Genode::snprintf(dst, count, "connection refused");
 					break;
 				}
@@ -1533,6 +1542,7 @@ class Lwip::Tcp_socket_dir final :
 				break;
 
 			case Lwip_file_handle::CONNECT:
+Genode::log(__PRETTY_FUNCTION__, ": CONNECT: ", Genode::Cstring(src));
 				if (((state == NEW) || (state == BOUND)) && (count < ENDPOINT_STRLEN_MAX-1)) {
 					char buf[ENDPOINT_STRLEN_MAX];
 					ip_addr_t addr;
@@ -1603,6 +1613,7 @@ void udp_recv_callback(void *arg, struct udp_pcb*, struct pbuf *buf, const ip_ad
 static
 err_t tcp_connect_callback(void *arg, struct tcp_pcb *pcb, err_t)
 {
+Genode::log(__PRETTY_FUNCTION__);
 	if (!arg) {
 		tcp_abort(pcb);
 		return ERR_ABRT;
