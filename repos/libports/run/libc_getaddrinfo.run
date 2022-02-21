@@ -1,7 +1,7 @@
-if {[have_spec linux]} {
-	puts "The [run_name] scenario requires QEMU networking."
-	exit 1
-}
+#if {[have_spec linux]} {
+#	puts "The [run_name] scenario requires QEMU networking."
+#	exit 1
+#}
 
 create_boot_directory
 
@@ -73,8 +73,7 @@ install_config {
 			<domain name="downlink" interface="10.0.3.1/24">
 
 				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2">
-					<dns-server ip="8.8.8.8"/>
-					<dns-server ip="1.1.1.1"/>
+					<dns-server ip="192.168.2.1"/>
 				</dhcp-server>
 
 				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
@@ -87,17 +86,15 @@ install_config {
 	</start>
 
 	<start name="test-libc_getaddrinfo" caps="256">
-		<resource name="RAM" quantum="16M"/>
-		<config>
+		<resource name="RAM" quantum="32M"/>
+		<config ld_verbose="yes">
 			<vfs>
 				<dir name="dev"> <log/> </dir>
 				<dir name="socket"> <lwip dhcp="yes"/> </dir>
 			</vfs>
-			<libc stdout="/dev/log" socket="/socket"/>
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
 			<arg value="test-libc_getaddrinfo"/>
-			<arg value="genode.org"/>
-			<arg value="hypervisor.org"/>
-			<arg value="example.com"/>
+			<arg value="jitsi"/>
 		</config>
 		<route>
 			<service name="Nic"> <child name="nic_router"/> </service>
@@ -107,9 +104,10 @@ install_config {
 </config>
 }
 
-build_boot_image { test-libc_getaddrinfo }
+build_boot_image { test-libc_getaddrinfo jemalloc.lib.so libc.lib.so }
 
 append qemu_args " -nographic "
 append_qemu_nic_args
 
+run_genode_until forever
 run_genode_until "child .* exited with exit value 0.*\n" 20

@@ -17,6 +17,54 @@
 #include <netinet/in.h>
 #include <ifaddrs.h>
 
+void test_getaddrinfo()
+{
+	struct addrinfo hints;
+	char ipstr[INET6_ADDRSTRLEN];
+
+	for (;;) {
+		int res;
+		char const *arg = "jitsi";
+
+		struct addrinfo *info, *p;
+
+		memset(&hints, 0x00, sizeof(hints));
+		hints.ai_family = AF_UNSPEC;
+
+		res = getaddrinfo(arg, NULL, &hints, &info);
+		if (res != 0) {
+			printf("%p: getaddrinfo error: %d\n", &res, res);
+			continue;
+		}
+
+		for (p = info; p != NULL; p = p->ai_next) {
+			void *addr;
+
+			// get the pointer to the address itself,
+			// different fields in IPv4 and IPv6:
+			if (p->ai_family == AF_INET) { // IPv4
+				struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+				addr = &(ipv4->sin_addr);
+			} else { // IPv6
+				struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
+				addr = &(ipv6->sin6_addr);
+			}
+
+			inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
+			printf("%p: %s: %s\n", &res, arg, ipstr);
+
+			break;
+		}
+
+		freeaddrinfo(info);
+	}
+}
+
+void *thread_func(void *arg)
+{
+	test_getaddrinfo();
+}
+
 int main(int argc, char **argv)
 {
 	{
@@ -58,46 +106,11 @@ int main(int argc, char **argv)
 		printf("getifaddrs ip_addr=%s, netmask=%s broadcast=%s\n", ip_addr, netmask, broadcast);
 	}
 
-	struct addrinfo hints;
-	char ipstr[INET6_ADDRSTRLEN];
+	pthread_t t;
+	pthread_create(&t, 0, thread_func, 0);
 
-	int i;
-	for (i = 1; i < argc; ++i) {
-		int res;
-		char const *arg = argv[i];
-
-		struct addrinfo *info, *p;
-
-		memset(&hints, 0x00, sizeof(hints));
-		hints.ai_family = AF_UNSPEC;
-
-		res = getaddrinfo(arg, NULL, &hints, &info);
-		if (res != 0) {
-			printf("getaddrinfo error: %d\n", res);
-			continue;
-		}
-
-		for (p = info; p != NULL; p = p->ai_next) {
-			void *addr;
-
-			// get the pointer to the address itself,
-			// different fields in IPv4 and IPv6:
-			if (p->ai_family == AF_INET) { // IPv4
-				struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
-				addr = &(ipv4->sin_addr);
-			} else { // IPv6
-				struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
-				addr = &(ipv6->sin6_addr);
-			}
-
-			inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-			printf("%s: %s\n", arg, ipstr);
-
-			break;
-		}
-
-		freeaddrinfo(info);
-	}
+//	sleep(100);
+	test_getaddrinfo();
 
 	return 0;
 }
