@@ -67,7 +67,7 @@ je_arena_stats_merge T
 je_arena_tcache_fill_small T
 je_arena_tdata_get_hard T
 je_arenas B 32760
-je_arenas_lock B 80
+je_arenas_lock B 144
 je_arenas_tdata_cleanup T
 je_b0get T
 je_background_thread_boot0 T
@@ -77,7 +77,7 @@ je_background_thread_ctl_init T
 je_background_thread_enabled_state B 1
 je_background_thread_info B 8
 je_background_thread_interval_check T
-je_background_thread_lock B 80
+je_background_thread_lock B 144
 je_background_thread_postfork_child T
 je_background_thread_postfork_parent T
 je_background_thread_prefork0 T
@@ -110,7 +110,7 @@ je_bitmap_size T
 je_bootstrap_calloc T
 je_bootstrap_free T
 je_bootstrap_malloc T
-je_bt2gctx_mtx B 80
+je_bt2gctx_mtx B 144
 je_bt_init T
 je_buferror T
 je_ckh_count T
@@ -170,7 +170,7 @@ je_extent_hooks_get T
 je_extent_hooks_set T
 je_extent_in_dss T
 je_extent_merge_wrapper T
-je_extent_mutex_pool B 20480
+je_extent_mutex_pool B 36864
 je_extent_purge_forced_wrapper T
 je_extent_purge_lazy_wrapper T
 je_extent_split_wrapper T
@@ -186,7 +186,7 @@ je_extents_npages_get T
 je_extents_postfork_child T
 je_extents_postfork_parent T
 je_extents_prefork T
-je_extents_rtree B 2097232
+je_extents_rtree B 2097296
 je_extents_state_get T
 je_free_default T
 je_global_mutex_names D 24
@@ -199,7 +199,6 @@ je_hook_invoke_expand T
 je_hook_remove T
 je_iarena_cleanup T
 je_init_system_thp_mode B 4
-je_isthreaded B 1
 je_je_sdallocx_noflags T
 je_jemalloc_postfork_child T
 je_large_dalloc T
@@ -269,15 +268,15 @@ je_nstime_nsec T
 je_nstime_sec T
 je_nstime_subtract T
 je_nstime_update D 8
-je_opt_abort B 1
-je_opt_abort_conf B 1
+je_opt_abort D 1
+je_opt_abort_conf D 1
 je_opt_background_thread B 1
 je_opt_confirm_conf B 1
 je_opt_dirty_decay_ms D 8
 je_opt_dss D 8
 je_opt_junk D 8
-je_opt_junk_alloc B 1
-je_opt_junk_free B 1
+je_opt_junk_alloc D 1
+je_opt_junk_free D 1
 je_opt_lg_extent_max_active_fit D 8
 je_opt_lg_prof_interval D 8
 je_opt_lg_prof_sample D 8
@@ -297,7 +296,7 @@ je_opt_prof_leak B 1
 je_opt_prof_log B 1
 je_opt_prof_prefix B 1
 je_opt_prof_thread_active_init D 1
-je_opt_retain B 1
+je_opt_retain D 1
 je_opt_stats_print B 1
 je_opt_stats_print_opts B 10
 je_opt_tcache D 1
@@ -358,7 +357,6 @@ je_prof_thread_active_init_set T
 je_prof_thread_active_set T
 je_prof_thread_name_get T
 je_prof_thread_name_set T
-je_pthread_create_wrapper T
 je_rtree_ctx_data_init T
 je_rtree_leaf_alloc D 8
 je_rtree_leaf_dalloc D 8
@@ -438,7 +436,6 @@ mallocx T
 memalign T
 nallocx T
 posix_memalign T
-pthread_create T
 rallocx T
 realloc T
 sallocx T
