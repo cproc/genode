@@ -203,7 +203,7 @@
 #define JEMALLOC_RETAIN
 
 /* TLS is used to map arenas and magazine caches to threads. */
-#define JEMALLOC_TLS 
+/* #undef JEMALLOC_TLS */
 
 /*
  * Used to mark unreachable code to quiet "end of non-void" compiler warnings.
