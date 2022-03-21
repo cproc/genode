@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 
 enum { MAX_COUNT = 100 };
 
@@ -30,14 +31,54 @@ int main(int, char **argv)
 	static char parent_argv0[ARGV0_SIZE];
 	strncpy(parent_argv0, argv[0], ARGV0_SIZE - 1);
 
+#if 1
+fprintf(stderr, "calling mmap()\n");
+	char *mmap_buf = (char*)mmap(0, 4096*8, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+fprintf(stderr, "mmap() returned: %p\n", mmap_buf);
+#endif
+
+#if 1
+fprintf(stderr, "calling mmap() 2\n");
+	char *mmap_buf2 = (char*)mmap(0, 4096*8, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+fprintf(stderr, "mmap() returned: %p\n", mmap_buf2);
+#endif
+
+#if 0
+fprintf(stderr, "calling malloc()\n");
+	char *malloc_buf = (char*)malloc(128*1024);
+fprintf(stderr, "malloc() returned: %p\n", malloc_buf);
+#endif
+
 	pid_t fork_ret = fork();
 	if (fork_ret < 0) {
 		printf("Error: fork returned %d, errno=%d\n", fork_ret, errno);
 		return -1;
 	}
 
-	printf("pid %d: fork returned %d\n", getpid(), fork_ret);
+	fprintf(stderr, "pid %d: fork returned %d\n", getpid(), fork_ret);
 
+#if 1
+fprintf(stderr, "writing mmap_buf\n");
+	*mmap_buf = 1;
+fprintf(stderr, "wrote mmap_buf\n");
+#endif
+
+#if 1
+fprintf(stderr, "calling mmap() 3\n");
+	char *mmap_buf3 = (char*)mmap(0, 4096*8, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+fprintf(stderr, "mmap() returned: %p\n", mmap_buf3);
+#endif
+
+#if 0
+	thread_local int x = 1;
+	fprintf(stderr, "&x: %p\n", &x);
+	fprintf(stderr, "x: %d\n", x);
+#endif
+
+//	*malloc_buf = 1;
+
+
+#if 0
 	/* check the consistency of known environment variable in both processes */
 	if (!getenv("WIZARD") || strcmp(getenv("WIZARD"), "gandalf") != 0) {
 		printf("Error: inheritance of environment variable failed\n");
@@ -118,7 +159,7 @@ int main(int, char **argv)
 	for (int i = 0; i < MAX_COUNT; ) {
 		printf("pid %d: parent      i = %d\n", getpid(), i++);
 	}
-
+#endif
 	printf("pid %d: parent waits for child exit\n", getpid());
 	waitpid(fork_ret, nullptr, 0);
 
