@@ -26,6 +26,7 @@ using namespace Genode;
 
 Libc::Mem_alloc_impl::Dataspace_pool::~Dataspace_pool()
 {
+Genode::log(__func__);
 	/* free all ram_dataspaces */
 	for (Dataspace *ds; (ds = first()); ) {
 
@@ -49,6 +50,7 @@ Libc::Mem_alloc_impl::Dataspace_pool::~Dataspace_pool()
 
 int Libc::Mem_alloc_impl::Dataspace_pool::expand(size_t size, Range_allocator *alloc)
 {
+Genode::log(__PRETTY_FUNCTION__, ": first(): ", first());
 	Ram_dataspace_capability new_ds_cap;
 	void *local_addr;
 
@@ -66,6 +68,7 @@ int Libc::Mem_alloc_impl::Dataspace_pool::expand(size_t size, Range_allocator *a
 		_ram->free(new_ds_cap);
 		return -3;
 	}
+Genode::log(__PRETTY_FUNCTION__, ": adding range: ", local_addr, ", ", size);
 
 	/* add new local address range to our local allocator */
 	alloc->add_range((addr_t)local_addr, size);
@@ -75,7 +78,7 @@ int Libc::Mem_alloc_impl::Dataspace_pool::expand(size_t size, Range_allocator *a
 
 		[&] (void *ptr) {
 			/* add dataspace information to list of dataspaces */
-			Dataspace *ds  = construct_at<Dataspace>(ptr, new_ds_cap, local_addr);
+			Dataspace *ds  = construct_at<Dataspace>(ptr, new_ds_cap, local_addr, size);
 			insert(ds);
 			return 0; },
 
@@ -123,12 +126,12 @@ void *Libc::Mem_alloc_impl::alloc(size_t size, size_t align_log2)
 		warning("libc: could not expand dataspace pool");
 		return 0;
 	}
-
+_num_ds++;
 	/* allocate originally requested block */
 	_alloc.alloc_aligned(size, align_log2).with_result(
 		[&] (void *ptr) { out_addr = ptr; },
-		[&] (Allocator::Alloc_error) { });
-
+		[&] (Allocator::Alloc_error) { Genode::error("Alloc_error"); });
+Genode::log(this, ": ", __func__, ": out_addr: ", out_addr);
 	return out_addr;
 }
 
@@ -171,6 +174,7 @@ static void _init_mem_alloc(Region_map &rm, Ram_allocator &ram)
 
 void Libc::init_mem_alloc(Genode::Env &env)
 {
+Genode::log(__func__);
 	_init_mem_alloc(env.rm(), env.ram());
 }
 

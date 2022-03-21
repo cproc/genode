@@ -20,6 +20,7 @@
 #include <base/env.h>
 #include <util/list.h>
 #include <rm_session/rm_session.h>
+#include <internal/clone_session.h>
 
 /* libc-internal includes */
 #include <internal/types.h>
@@ -54,9 +55,10 @@ namespace Libc {
 			{
 				Ram_dataspace_capability cap;
 				void *local_addr;
+				size_t size;
 
-				Dataspace(Ram_dataspace_capability c, void *a)
-				: cap(c), local_addr(a) {}
+				Dataspace(Ram_dataspace_capability c, void *a, size_t s)
+				: cap(c), local_addr(a), size(s) {}
 			};
 
 			class Dataspace_pool : public List<Dataspace>
@@ -98,12 +100,34 @@ namespace Libc {
 
 					void reassign_resources(Ram_allocator *ram, Region_map *rm) {
 						_ram = ram, _region_map = rm; }
+
+					void update_ds_cap(void *local_addr, Ram_dataspace_capability cap)
+					{
+						for (Dataspace *ds = first(); ds; ds = ds->next()) {
+							if (ds->local_addr == local_addr) {
+								ds->cap = cap;
+Genode::log("updated cap for local_addr ", local_addr);
+								return;
+							}
+						}
+Genode::error("ds for local address ", local_addr, " not found");
+					}
+
+					template <typename FN>
+					void for_each_region(FN const &fn) const {
+						for (Dataspace const *ds = first(); ds; ds = ds->next())  {
+							fn(ds->local_addr, (Genode::size_t)ds->size);
+						}
+					}
 			};
 
 			Mutex  mutable _mutex;
 			Dataspace_pool _ds_pool;      /* list of dataspaces */
 			Allocator_avl  _alloc;        /* local allocator    */
 			size_t         _chunk_size;
+
+			/* XXX */
+			int _num_ds { 0 };
 
 			/**
 			 * Try to allocate block at our local allocator
@@ -123,11 +147,26 @@ namespace Libc {
 				_ds_pool(&ram, &rm, executable),
 				_alloc(0),
 				_chunk_size(MIN_CHUNK_SIZE)
-			{ }
+			{
+Genode::log(this, ": ", __func__);
+			}
 
 			void *alloc(size_t size, size_t align_log2);
 			void free(void *ptr);
 			Size_at_result size_at(void const *ptr) const;
+
+			void reassign_resources(Ram_allocator *ram, Region_map *rm)
+			{ _ds_pool.reassign_resources(ram, rm); }
+
+			void update_ds_cap(void *local_addr, Ram_dataspace_capability cap)
+			{
+				_ds_pool.update_ds_cap(local_addr, cap);
+			}
+
+			template <typename FN>
+			void for_each_region(FN const &fn) const {
+				_ds_pool.for_each_region(fn);
+			}
 	};
 }
 

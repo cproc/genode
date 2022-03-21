@@ -1,4 +1,4 @@
-<runtime ram="32M" caps="1000" binary="init">
+<runtime ram="40M" caps="1000" binary="init">
 
 	<requires> <timer/> </requires>
 
@@ -8,6 +8,7 @@
 	</events>
 
 	<content>
+		<rom label="jemalloc.lib.so"/>
 		<rom label="ld.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libm.lib.so"/>
@@ -23,6 +24,7 @@
 			<service name="LOG"/>
 			<service name="CPU"/>
 			<service name="PD"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<start name="test-fork" caps="500">
 			<resource name="RAM" quantum="1G"/>

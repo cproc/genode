@@ -471,6 +471,7 @@ if (first) {
 	wait_for_continue();
 }
 #endif
+//Genode::log(&start, ": mmap(): ", start);
 		return start;
 	}
 
@@ -579,6 +580,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	}
 
 	plugin = plugin_registry()->get_plugin_for_open(resolved_path.base(), flags);
+
 
 	if (!plugin) {
 		error("no plugin found for open(\"", pathname, "\", ", flags, ")");
