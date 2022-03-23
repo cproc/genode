@@ -1,0 +1,376 @@
+if { [have_include "power_on/qemu"] || ![have_spec nova] || ![have_spec x86_64]} {
+	puts "Run script is only supported on 64-bit NOVA on real hardware"
+	exit 0
+}
+
+set build_components {
+	core
+	init lib/ld
+	timer
+	drivers/audio
+	drivers/framebuffer
+	drivers/ps2
+	server/log_terminal
+	server/fs_rom
+	server/vfs lib/vfs/import
+	server/report_rom
+	virtualbox6
+	app/trace_logger
+	lib/trace/policy/null
+	app/top
+	lib/vfs/oss
+	drivers/ahci
+	server/part_block
+	lib/vfs/rump
+	drivers/usb_host
+	app/usb_report_filter
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+# override defaults of platform_drv.inc
+proc platform_drv_priority {} { return { priority="-1"} }
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/nitpicker \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/jpeg
+
+
+set config {
+<config prio_levels="4">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="VM"/>
+		<service name="TRACE"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="150"/>}
+
+append_platform_drv_config
+
+append config {
+
+	<start name="usb_config_fs" priority="-1">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="File_system"/></provides>
+		<config verbose="yes">
+			<vfs>
+				<ram/>
+				<import>
+					<inline name="usb_drv.config">
+<config>
+	<report devices="yes" config="yes"/>
+	<policy label_prefix="virtualbox" class="0x3"/>
+</config>
+					</inline>
+					<inline name="usb_report_filter.config">
+<config>
+	<vfs> <fs/> </vfs>
+
+	<!-- USB device whitelist -->
+	<client label="virtualbox"/>
+	<device vendor_id="0x1bcf" product_id="0x0005"/> <!-- mouse -->
+	<device vendor_id="0x046d" product_id="0x0a01"/> <!-- headset -->
+	<device vendor_id="0x0d8c" product_id="0x0008"/> <!-- headset -->
+	<device vendor_id="0x0d8c" product_id="0x000e"/> <!-- headset -->
+</config>
+					</inline>
+				</import>
+			</vfs>
+			<policy label_prefix="usb_report_filter" root="/" writeable="yes" />
+			<policy label_prefix="usb_config_rom" root="/"/>
+		</config>
+	</start>
+
+	<start name="usb_config_rom" priority="-1">
+		<binary name="fs_rom"/>
+		<resource name="RAM" quantum="1200K"/>
+		<provides><service name="ROM"/></provides>
+		<route>
+			<service name="File_system"><child name="usb_config_fs"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="usb_report_filter" priority="-1">
+		<resource name="RAM" quantum="1200K"/>
+		<route>
+			<service name="Report"><child name="report_rom" /></service>
+			<service name="ROM" label="config">
+				<child name="usb_config_rom" label="usb_report_filter.config"/>
+			</service>
+			<service name="ROM" label="devices">
+				<child name="report_rom"/>
+			</service>
+			<service name="ROM" label="usb_drv_config">
+				<child name="report_rom"/>
+			</service>
+			<service name="File_system">
+				<child name="usb_config_fs"/>
+			</service>
+			<any-service><parent/><any-child /></any-service>
+		</route>
+	</start>
+
+	<start name="usb_drv" priority="-1"> }
+append config "<binary name=\"[usb_host_drv_binary]\"/>"
+append config {
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service name="Usb"/> </provides>
+		<route>
+			<service name="IRQ"><child name="acpi_drv" /></service>
+			<service name="Report"> <child name="report_rom" /> </service>
+			<service name="ROM" label="config">
+				<child name="usb_config_rom" label="usb_drv.config"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="ps2_drv" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<config/>
+	</start>
+
+	<start name="fb_drv" priority="-1">
+		<binary name="vesa_fb_drv"/>
+		<resource name="RAM" quantum="16M"/>
+		<config/>
+	</start>
+
+	<start name="nitpicker" priority="-1">
+		<resource name="RAM" quantum="12M"/>
+		<provides>
+			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
+		</provides>
+		<route>
+			<service name="Report"> <child name="report_rom" /> </service>
+			<any-service> <parent/> <any-child /> </any-service>
+		</route>
+		<config>
+			<capture/> <event/>
+			<report focus="yes" hover="yes" />
+
+			<domain name="pointer"  layer="1" content="client" label="no" origin="pointer" />
+			<domain name="cpu_load" layer="2" content="client" label="no" />
+			<domain name=""         layer="3" content="client" label="no" focus="click" hover="always" />
+
+			<policy label_prefix="pointer"          domain="pointer"/>
+			<policy label_prefix="cpu_load_display" domain="cpu_load"/>
+			<default-policy domain=""/>
+		</config>
+	</start>
+
+	<start name="pointer" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Report"/> </provides>
+		<config shapes="yes"/>
+		<route>
+			<service name="Gui"> <child name="nitpicker"/> </service>
+			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
+			<service name="ROM" label="xray"> <child name="report_rom"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="log_terminal" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Terminal"/>
+		</provides>
+	</start>
+
+	<start name="report_rom" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config verbose="no">
+			<policy label="pointer -> hover"                    report="nitpicker -> hover"/>
+			<policy label="pointer -> xray"                     report="nitpicker -> xray"/>
+			<policy label="usb_report_filter -> devices"        report="usb_drv -> devices"/>
+			<policy label="usb_report_filter -> usb_drv_config" report="usb_drv -> config"/>
+			<policy label="virtualbox -> usb_devices"           report="usb_report_filter -> usb_devices"/>
+		</config>
+	</start>
+
+	<start name="ahci_drv" priority="-1">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Block"/></provides>
+		<config>
+			<policy label_prefix="part_block" device="1" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="part_block" priority="-1">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Block"/></provides>
+		<route>
+			<any-service><child name="ahci_drv"/> <parent/><any-child/></any-service>
+		</route>
+		<config>
+			<policy label_prefix="rump_fs" partition="0" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="rump_fs" priority="-1" caps="200">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides><service name="File_system"/></provides>
+		<config ld_verbose="yes">
+			<vfs>
+				<rump fs="ext2fs" ram="28M"/>
+			</vfs>
+			<default-policy root="/vm/debian" writeable="yes"/>
+		</config>
+		<route>
+			<any-service><child name="part_block"/> <parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="audio_drv" priority="-1">
+		<binary name="} [audio_drv_binary] {"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Audio_out"/>
+			<service name="Audio_in"/>
+		</provides>
+		<config verbose="yes">
+			<mixer field="outputs.master" value="64"/>
+
+			<mixer field="record.adc-0:1_source" value="sel2"/>
+			<mixer field="record.adc-0:1" value="255"/>
+			<mixer field="record.enable" value="on"/>
+
+		</config>
+	</start>
+
+
+	<start name="top" priority="-3">
+		<resource name="RAM" quantum="2M"/>
+		<config period_ms="5000"/>
+	</start>
+
+
+	<start name="t" caps="400" priority="-3">
+		<binary name="trace_logger2"/>
+		<resource name="RAM" quantum="2048M"/>
+		<config verbose="yes"
+				session_ram="51M"
+				session_parent_levels="1"
+				session_arg_buffer="64K"
+				period_sec="15"
+				activity="yes"
+				affinity="yes"
+				default_policy="null"
+				default_buffer="1M">
+
+				<!--<policy label_prefix="init -> audio_drv" thread="ep"/>-->
+				<!--<policy label_prefix="init -> virtualbox" thread="EMT-1" thread2="EMT-1" buffer="256M"/>-->
+				<policy label_prefix="init -> virtualbox"/>
+		</config>
+	</start>
+
+
+	<start name="virtualbox" caps="1800" priority="-2">
+		<binary name="virtualbox6"/>
+		<resource name="RAM" quantum="4096M"/>
+		<config vbox_file="vm_debian.vbox6" vm_name="TestVM" xhci="yes" ld_verbose="yes">
+			<vfs>
+				<dir name="dev">
+					<log/> <null/> <zero/> <oss name="dsp"/> <terminal/>
+					<inline name="rtc">2021-10-26 00:01</inline> 
+				</dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<rom name="vm_debian.vbox6" />
+				<fs/>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe" rtc="/dev/rtc">
+				 <pthread placement="single-cpu"/>
+			</libc>
+			<arg value="virtualbox"/>
+			<env key="VBOX_USER_HOME" value="/"/>
+			<env key="VBOX_LOG_DEST" value="file=/dev/log"/>
+			<env key="VBOX_LOG" value="-*.e.l.f"/>
+			<env key="VBOX_RELEASE_LOG_DEST" value="file=/dev/log"/>
+			<env key="VBOX_RELEASE_LOG" value="-*.e.l.f"/>
+		</config>
+		<route>
+			<service name="Report"><child name="report_rom" /></service>
+			<service name="File_system"><child name="rump_fs" /></service>
+			<service name="ROM" label="usb_devices"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child /> </any-service>
+		</route>
+	</start>
+</config>
+}
+
+install_config $config
+
+exec ln -sf ${genode_dir}/repos/ports/run/vm_debian.vbox6 bin/
+
+set boot_modules {
+	core
+	init
+	timer
+	vesa_fb_drv
+	ps2_drv
+	log_terminal
+	fs_rom
+	vfs vfs.lib.so vfs_import.lib.so
+	report_rom
+	virtualbox6
+	vm_debian.vbox6
+	ld.lib.so libc.lib.so libm.lib.so
+	libiconv.lib.so stdcxx.lib.so
+	qemu-usb.lib.so
+	libyuv.lib.so jpeg.lib.so
+	vfs_oss.lib.so
+	trace_logger
+	null
+	top
+	ahci_drv
+	part_block
+	vfs_rump.lib.so
+	rump.lib.so
+	rump_fs.lib.so
+	egl.lib.so
+	expat.lib.so
+	glapi.lib.so
+	libdrm.lib.so
+	vfs_gpu.lib.so
+	mesa.lib.so
+	zlib.lib.so
+	virtualbox6-shaderlib.lib.so
+	usb_report_filter
+}
+
+append boot_modules [audio_drv_binary]
+append boot_modules " [usb_host_drv_binary] "
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+run_genode_until forever
