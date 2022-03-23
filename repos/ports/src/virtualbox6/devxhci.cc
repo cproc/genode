@@ -193,6 +193,10 @@ struct Timer_queue : public Qemu::Timer_queue
 
 		for (Context *c = _context_list.first(); c; c = c->next()) {
 			if (c->pending && c->timeout_abs_ns <= now) {
+uint64_t diff = now - c->timeout_abs_ns;
+if (diff >= 10000000) {
+Genode::log("diff: ", diff / 1000000);
+}
 				c->pending = false;
 				Qemu::usb_timer_callback(c->cb, c->data);
 			}
