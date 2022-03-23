@@ -4,7 +4,9 @@ if { [have_include "power_on/qemu"] || ![have_spec nova] || ![have_spec x86_64]}
 }
 
 set build_components {
-	core init lib/ld timer
+	core
+	init lib/ld
+	timer
 	drivers/audio
 	drivers/framebuffer
 	drivers/ps2
@@ -20,6 +22,8 @@ set build_components {
 	drivers/ahci
 	server/part_block
 	lib/vfs/rump
+	drivers/usb_host
+	app/usb_report_filter
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -62,6 +66,84 @@ set config {
 append_platform_drv_config
 
 append config {
+
+	<start name="usb_config_fs" priority="-1">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="File_system"/></provides>
+		<config verbose="yes">
+			<vfs>
+				<ram/>
+				<import>
+					<inline name="usb_drv.config">
+<config>
+	<report devices="yes" config="yes"/>
+	<policy label_prefix="virtualbox" class="0x3"/>
+</config>
+					</inline>
+					<inline name="usb_report_filter.config">
+<config>
+	<vfs> <fs/> </vfs>
+
+	<!-- USB device whitelist -->
+	<client label="virtualbox"/>
+	<device vendor_id="0x1bcf" product_id="0x0005"/> <!-- mouse -->
+	<device vendor_id="0x046d" product_id="0x0a01"/> <!-- headset -->
+	<device vendor_id="0x0d8c" product_id="0x0008"/> <!-- headset -->
+	<device vendor_id="0x0d8c" product_id="0x000e"/> <!-- headset -->
+</config>
+					</inline>
+				</import>
+			</vfs>
+			<policy label_prefix="usb_report_filter" root="/" writeable="yes" />
+			<policy label_prefix="usb_config_rom" root="/"/>
+		</config>
+	</start>
+
+	<start name="usb_config_rom" priority="-1">
+		<binary name="fs_rom"/>
+		<resource name="RAM" quantum="1200K"/>
+		<provides><service name="ROM"/></provides>
+		<route>
+			<service name="File_system"><child name="usb_config_fs"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="usb_report_filter" priority="-1">
+		<resource name="RAM" quantum="1200K"/>
+		<route>
+			<service name="Report"><child name="report_rom" /></service>
+			<service name="ROM" label="config">
+				<child name="usb_config_rom" label="usb_report_filter.config"/>
+			</service>
+			<service name="ROM" label="devices">
+				<child name="report_rom"/>
+			</service>
+			<service name="ROM" label="usb_drv_config">
+				<child name="report_rom"/>
+			</service>
+			<service name="File_system">
+				<child name="usb_config_fs"/>
+			</service>
+			<any-service><parent/><any-child /></any-service>
+		</route>
+	</start>
+
+	<start name="usb_drv" priority="-1"> }
+append config "<binary name=\"[usb_host_drv_binary]\"/>"
+append config {
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service name="Usb"/> </provides>
+		<route>
+			<service name="IRQ"><child name="acpi_drv" /></service>
+			<service name="Report"> <child name="report_rom" /> </service>
+			<service name="ROM" label="config">
+				<child name="usb_config_rom" label="usb_drv.config"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
 
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
@@ -127,6 +209,9 @@ append config {
 		<config verbose="no">
 			<policy label="pointer -> hover"                    report="nitpicker -> hover"/>
 			<policy label="pointer -> xray"                     report="nitpicker -> xray"/>
+			<policy label="usb_report_filter -> devices"        report="usb_drv -> devices"/>
+			<policy label="usb_report_filter -> usb_drv_config" report="usb_drv -> config"/>
+			<policy label="virtualbox -> usb_devices"           report="usb_report_filter -> usb_devices"/>
 		</config>
 	</start>
 
@@ -181,15 +266,15 @@ append config {
 		</config>
 	</start>
 
-<!--
+
 	<start name="top" priority="-3">
 		<resource name="RAM" quantum="2M"/>
-		<config period_ms="15000"/>
+		<config period_ms="5000"/>
 	</start>
--->
+
 
 	<start name="t" caps="400" priority="-3">
-		<binary name="trace_logger"/>
+		<binary name="trace_logger2"/>
 		<resource name="RAM" quantum="8192M"/>
 		<config verbose="yes"
 				session_ram="2000M"
@@ -212,7 +297,7 @@ append config {
 	<start name="virtualbox" caps="1800" priority="-2">
 		<binary name="virtualbox6"/>
 		<resource name="RAM" quantum="4096M"/>
-		<config vbox_file="vm_win10.vbox6" vm_name="TestVM" xhci="no" ld_verbose="yes">
+		<config vbox_file="vm_win10.vbox6" vm_name="TestVM" xhci="yes" ld_verbose="yes">
 			<vfs>
 				<dir name="dev">
 					<log/> <null/> <zero/> <oss name="dsp"/> <terminal/>
@@ -234,6 +319,8 @@ append config {
 		</config>
 		<route>
 			<service name="Report"><child name="report_rom" /></service>
+			<service name="File_system"><child name="rump_fs" /></service>
+			<service name="ROM" label="usb_devices"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>
@@ -277,9 +364,11 @@ set boot_modules {
 	mesa.lib.so
 	zlib.lib.so
 	virtualbox6-shaderlib.lib.so
+	usb_report_filter
 }
 
 append boot_modules [audio_drv_binary]
+append boot_modules " [usb_host_drv_binary] "
 
 append_platform_drv_boot_modules
 
