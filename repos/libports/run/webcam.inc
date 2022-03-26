@@ -3,8 +3,8 @@ assert_spec x86
 set build_components { }
 
 # fuji4
-proc libuvc_vendor_id {}  { return "0x04f2" }
-proc libuvc_product_id {} { return "0xb564" }
+#proc libuvc_vendor_id {}  { return "0x04f2" }
+#proc libuvc_product_id {} { return "0xb564" }
 
 # c270
 #proc libuvc_vendor_id {}  { return "0x046d" }
@@ -18,6 +18,9 @@ proc libuvc_product_id {} { return "0xb564" }
 #proc libuvc_vendor_id {}  { return "0x0bda" }
 #proc libuvc_product_id {} { return "0x58db" }
 
+# x260
+proc libuvc_vendor_id {}  { return "0x5986" }
+proc libuvc_product_id {} { return "0x0706" }
 
 
 create_boot_directory
