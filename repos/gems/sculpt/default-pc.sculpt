@@ -10,7 +10,7 @@ import: pkg/drivers_managed-pc pkg/pc_wifi src/pc_nic_drv
 launcher: vm_fs shared_fs usb_devices_rom
 
 # selection of accepted depot-package providers
-depot: genodelabs cnuke alex-ab mstein nfeske cproc chelmuth jschlatow
+depot: genodelabs cnuke alex-ab mstein nfeske cproc chelmuth jschlatow cproc_test
 depot: ssumpf skalk
 
 # preconfigured example scenarios
