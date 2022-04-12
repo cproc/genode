@@ -255,10 +255,7 @@ class Timed_semaphore
 			 * waiting for getting woken up from another thread
 			 * calling 'up()' or by the timeout handler.
 			 */
-			return queue_element.block().convert<Down_result>(
-				[&] (Down_ok) { return Down_ok(); },
-				[&] (Down_timed_out) { return Down_timed_out();	}
-			);
+			return queue_element.block();
 		}
 
 	public:
