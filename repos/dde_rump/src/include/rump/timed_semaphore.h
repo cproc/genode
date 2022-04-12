@@ -187,8 +187,9 @@ class Timed_semaphore
 		 * Note: currently it is assumed that the constructor is called
 		 *       by the ep thread.
 		 */
-		Timed_semaphore(Genode::Env &env, Timer::Connection &timer, int n = 0)
-		: _env(env), _ep_thread_ptr(Genode::Thread::myself()),
+		Timed_semaphore(Genode::Env &env, Genode::Thread const *ep_thread_ptr,
+		                Timer::Connection &timer, int n = 0)
+		: _env(env), _ep_thread_ptr(ep_thread_ptr),
 		  _timer(timer), _cnt(n) { }
 
 		~Timed_semaphore()

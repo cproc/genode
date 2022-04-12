@@ -215,6 +215,7 @@ struct Cond
 	int                     num_signallers;
 	Genode::Mutex           counter_mutex;
 	Timed_semaphore         signal_sem { Rump::env().env(),
+	                                     Rump::env().ep_thread(),
 	                                     Rump::env().timer() };
 	Genode::Semaphore       handshake_sem;
 
