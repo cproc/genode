@@ -323,9 +323,7 @@ int rumpuser_clock_sleep(int enum_rumpclock, int64_t sec, long nsec)
 			break;
 	}
 
-	try {
-		Rump::env().sleep_sem().down(true, Genode::Microseconds(msec * 1000));
-	} catch (Timed_semaphore::Timeout_exception) { }
+	Rump::env().sleep_sem().down(true, Genode::Microseconds(msec * 1000));
 
 	rumpkern_sched(nlocks, 0);
 	return 0;
