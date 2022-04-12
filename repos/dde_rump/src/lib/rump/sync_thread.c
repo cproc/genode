@@ -11,9 +11,10 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <sys/cpu.h>
 #include <sys/param.h>
-#include <rump/rumpuser.h>
 #include <sys/vfs_syscalls.h>
+#include <rump/rumpuser.h>
 
 extern void rump_io_backend_sync();
 
