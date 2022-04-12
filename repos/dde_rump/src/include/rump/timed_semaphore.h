@@ -110,6 +110,12 @@ class Timed_semaphore_thread_blockade : public Timed_semaphore_blockade
 
 class Timed_semaphore
 {
+	public:
+
+		struct Down_ok { };
+		struct Down_timed_out { };
+		using Down_result = Genode::Attempt<Down_ok, Down_timed_out>;
+
 	private:
 
 		Genode::Env &_env;
@@ -117,65 +123,146 @@ class Timed_semaphore
 		Timer::Connection &_timer;
 
 		int           _cnt;
-		Genode::Mutex _meta_lock { };
+		Genode::Mutex _meta_mutex { };
 
 		struct Element : Genode::Fifo<Element>::Element
 		{
 			Timed_semaphore_blockade &blockade;
+			int                      &cnt;
+			Genode::Mutex            &meta_mutex;
+			Genode::Fifo<Element>    &queue;
+
+			Genode::Mutex            destruct_mutex { };
 			Timer::One_shot_timeout<Element> timeout;
-			bool timed_out = false;
+			bool wakeup_called { false };
 
 			void handle_timeout(Genode::Duration)
 			{
-				timed_out = true;
+				{
+					Genode::Mutex::Guard guard(meta_mutex);
+
+					/*
+					 * If 'wakeup()' was called, 'Timed_semaphore::up()'
+					 * has already taken care of this.
+					 */
+
+					if (!wakeup_called) {
+
+						cnt++;
+
+						/*
+						 * Remove element from queue so that a future 'up()'
+						 * does not select it for wakeup.
+						 */
+						queue.remove(*this);
+					}
+				}
+
+				/*
+				 * Protect the 'blockade' member from destruction
+				 * until 'blockade.wakeup()' has returned.
+				 */
+				Genode::Mutex::Guard guard(destruct_mutex);
+
 				blockade.wakeup();
 			}
 
 			Element(Timed_semaphore_blockade &blockade,
+			        int &cnt,
+			        Genode::Mutex &meta_mutex,
+			        Genode::Fifo<Element> &queue,
 			        Timer::Connection &timer,
 			        bool use_timeout = false,
 			        Genode::Microseconds timeout_us = Genode::Microseconds(0))
 			: blockade(blockade),
+			  cnt(cnt),
+			  meta_mutex(meta_mutex),
+			  queue(queue),
 			  timeout(timer, *this, &Element::handle_timeout)
 			{
-				if (use_timeout) {
+				if (use_timeout)
 					timeout.schedule(timeout_us);
-				}
+			}
+
+			~Element()
+			{
+				/*
+				 * Synchronize destruction with unfinished
+				 * 'handle_timeout()' or 'wakeup()'
+				 */
+				Genode::Mutex::Guard guard(destruct_mutex);
+			}
+
+			Down_result block()
+			{
+				blockade.block();
+
+				if (wakeup_called)
+					return Down_ok();
+				else
+					return Down_timed_out();
+			}
+
+			/* meta_mutex must be acquired when calling and is released */
+			void wakeup()
+			{
+				/*
+				 * It is possible that 'handle_timeout()' is already being
+				 * called and waiting for the meta_mutex, so in addition to
+				 * discarding the timeout, the 'wakeup_called' variable is
+				 * set for 'handle_timeout()' (and for 'block()').
+				 */
+
+				wakeup_called = true;
+
+				meta_mutex.release();
+
+				/*
+				 * 'timeout.discard()' waits until an ongoing signal
+				 * handler execution is finished, so meta_mutex must
+				 * be released at this point.
+				 */
+				timeout.discard();
+
+				/*
+				 * Protect the 'blockade' member from destruction
+				 * until 'blockade.wakeup()' has returned.
+				 */
+				Genode::Mutex::Guard guard(destruct_mutex);
+
+				blockade.wakeup();
 			}
 		};
 
 		Genode::Fifo<Element> _queue { };
 
-		/* _meta_lock must be acquired when calling and is released */
-		void _down_internal(Timed_semaphore_blockade &blockade,
-		                    bool use_timeout, Genode::Microseconds timeout_us)
+		/* _meta_mutex must be acquired when calling and is released */
+		Down_result _down_internal(Timed_semaphore_blockade &blockade,
+		                           bool use_timeout,
+		                           Genode::Microseconds timeout_us)
 		{
 			/*
 			 * Create semaphore queue element representing the thread
-			 * in the wait queue and release _meta_lock.
+			 * in the wait queue and release _meta_mutex.
 			 */
-			Element queue_element { blockade, _timer, use_timeout, timeout_us };
+			Element queue_element { blockade, _cnt, _meta_mutex, _queue,
+			                        _timer, use_timeout, timeout_us };
 			_queue.enqueue(queue_element);
-			_meta_lock.release();
+			_meta_mutex.release();
 
 			/*
 			 * The thread is going to block now,
-			 * waiting for getting waked from another thread
-			 * calling 'up()'
-			 * */
-			queue_element.blockade.block();
-
-			if (queue_element.timed_out) {
-				Genode::Mutex::Guard guard(_meta_lock);
-				_queue.remove(queue_element);
-
-				throw Timeout_exception();
-			}
+			 * waiting for getting woken up from another thread
+			 * calling 'up()' or by the timeout handler.
+			 */
+			return queue_element.block().convert<Down_result>(
+				[&] (Down_ok) { return Down_ok(); },
+				[&] (Down_timed_out) { return Down_timed_out();	}
+			);
 		}
 
 	public:
 
-		class Timeout_exception : public Genode::Exception { };
 
 		/**
 		 * Constructor
@@ -195,7 +282,7 @@ class Timed_semaphore
 		~Timed_semaphore()
 		{
 			/* synchronize destruction with unfinished 'up()' */
-			try { _meta_lock.acquire(); } catch (...) { }
+			try { _meta_mutex.acquire(); } catch (...) { }
 		}
 
 		/**
@@ -208,49 +295,53 @@ class Timed_semaphore
 		{
 			Element * element = nullptr;
 
-			{
-				Genode::Mutex::Guard guard(_meta_lock);
+			_meta_mutex.acquire();
 
-				if (++_cnt > 0)
-					return;
-
-				/*
-				 * Remove element from queue and wake up the corresponding
-				 * blocking thread
-				 */
-				_queue.dequeue([&element] (Element &head) {
-					element = &head; });
+			if (++_cnt > 0) {
+				_meta_mutex.release();
+				return;
 			}
 
-			/* do not hold the lock while unblocking a waiting thread */
-			if (element) element->blockade.wakeup();
+			/*
+			 * Remove element from queue and wake up the corresponding
+			 * blocking thread
+			 */
+			_queue.dequeue([&element] (Element &head) {
+				element = &head; });
+
+			if (element) {
+				/* 'element->wakeup()' releases the _meta_mutex */
+				element->wakeup();
+			} else
+				_meta_mutex.release();
 		}
 
 		/**
 		 * Decrement semaphore counter, block if the counter reaches zero
 		 */
-		void down(bool use_timeout = false,
-		          Genode::Microseconds timeout_us = Genode::Microseconds(0))
+		Down_result down(bool use_timeout = false,
+		                 Genode::Microseconds timeout_us = Genode::Microseconds(0))
 		{
 			if (use_timeout && (timeout_us.value == 0))
-				throw Timeout_exception();
+				return Down_timed_out();
 
-			_meta_lock.acquire();
+			_meta_mutex.acquire();
 
 			if (--_cnt < 0) {
 
-				/* _down_internal() releases _meta_lock */
+				/* _down_internal() releases _meta_mutex */
 
 				if (Genode::Thread::myself() == _ep_thread_ptr) {
 					Timed_semaphore_ep_blockade blockade { _env.ep() };
-					_down_internal(blockade, use_timeout, timeout_us);
+					return _down_internal(blockade, use_timeout, timeout_us);
 				} else {
 					Timed_semaphore_thread_blockade blockade;
-					_down_internal(blockade, use_timeout, timeout_us);
+					return _down_internal(blockade, use_timeout, timeout_us);
 				}
 
 			} else {
-				_meta_lock.release();
+				_meta_mutex.release();
+				return Down_ok();
 			}
 		}
 };

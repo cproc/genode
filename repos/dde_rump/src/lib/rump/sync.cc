@@ -241,11 +241,11 @@ struct Cond
 
 			Genode::Microseconds timeout_us =
 				Genode::Microseconds(timeout_ms(currtime, *abstime) * 1000);
-			try {
-				signal_sem.down(true, timeout_us);
-			} catch (Timed_semaphore::Timeout_exception) {
-				result = -2;
-			}
+	
+			signal_sem.down(true, timeout_us).with_result(
+				[&] (Timed_semaphore::Down_ok) { },
+				[&] (Timed_semaphore::Down_timed_out) { result = -2; }
+			);
 		}
 	
 		counter_mutex.acquire();
