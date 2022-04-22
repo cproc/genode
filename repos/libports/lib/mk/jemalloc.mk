@@ -1,11 +1,11 @@
+include $(REP_DIR)/lib/import/import-libc.mk
+
 JEMALLOC_DIR = $(call select_from_ports,jemalloc)/src/lib/jemalloc
 
 INC_DIR += $(REP_DIR)/include/jemalloc
 
 INC_DIR += $(REP_DIR)/src/lib/jemalloc/include
 INC_DIR += $(JEMALLOC_DIR)/include
-
-LIBS += libc
 
 SRC_C = \
         jemalloc.c \

@@ -1,4 +1,4 @@
-content: include lib/symbols/jemalloc LICENSE
+content: include lib/symbols/jemalloc2 LICENSE
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/jemalloc)
 
@@ -7,7 +7,7 @@ include:
 #	cp -r $(PORT_DIR)/include/jemalloc/* $@/
 	cp -r $(REP_DIR)/include/jemalloc $@/
 
-lib/symbols/jemalloc:
+lib/symbols/jemalloc2:
 	$(mirror_from_rep_dir)
 
 LICENSE:
