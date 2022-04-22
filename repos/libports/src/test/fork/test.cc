@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/mman.h>
 #include <sys/wait.h>
 
 enum { MAX_COUNT = 100 };
@@ -25,6 +26,12 @@ int main(int, char **argv)
 	char       * const message_on_heap    = (char *)malloc(MSG_SIZE);
 	char const * const message_about_heap = "message stored on the heap";
 	strncpy(message_on_heap, message_about_heap, MSG_SIZE - 1);
+
+	char       * const message_in_mmap_area =
+		(char*)mmap(0, MSG_SIZE, PROT_READ | PROT_WRITE,
+	                MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	char const * const message_about_mmap_area = "message stored in mmap area";
+	strncpy(message_in_mmap_area, message_about_mmap_area, MSG_SIZE - 1);
 
 	enum { ARGV0_SIZE = 100 };
 	static char parent_argv0[ARGV0_SIZE];
@@ -67,6 +74,12 @@ int main(int, char **argv)
 		printf("heap: %s\n", message_on_heap);
 		if (strcmp(message_on_heap, message_about_heap)) {
 			printf("Error: unexpected content on the child's heap\n");
+			return -1;
+		}
+
+		printf("mmap: %s\n", message_in_mmap_area);
+		if (strcmp(message_in_mmap_area, message_about_mmap_area)) {
+			printf("Error: unexpected content in the child's mmap area\n");
 			return -1;
 		}
 
