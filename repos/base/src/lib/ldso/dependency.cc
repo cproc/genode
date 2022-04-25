@@ -28,6 +28,7 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 	_root(root),
 	_md_alloc(&md_alloc)
 {
+Genode::log("Dependency(", Genode::Cstring(path), "): this: ", this);
 	deps.enqueue(*this);
 	load_needed(env, *_md_alloc, deps, keep);
 }
@@ -35,11 +36,28 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 
 Linker::Dependency::~Dependency()
 {
-	if (!_unload_on_destruct)
+/*
+ * Skip log for first execution because of error
+ * "Missing call of init_log".
+ */
+static int count = 0;
+count++;
+if (count > 1) {
+Genode::log("~Dependency(): this: ", this);
+}
+	if (!_unload_on_destruct) {
+if (count > 1) {
+Genode::log("~Dependency(): !_unload_on_destruct");
+}
 		return;
+	}
 
-	if (!_obj.unload())
+	if (!_obj.unload()) {
+if (count > 1) {
+Genode::log("~Dependency(): !_obj.unload()");
+}
 		return;
+	}
 
 	if (verbose_loading)
 		log("Destroy: ", _obj.name());
@@ -64,12 +82,14 @@ bool Linker::Dependency::in_dep(char const *file, Fifo<Dependency> const &dep)
 void Linker::Dependency::_load(Env &env, Allocator &alloc, char const *path,
                                Fifo<Dependency> &deps, Keep keep)
 {
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), ")");
 	if (!in_dep(Linker::file(path), deps))
 		new (alloc) Dependency(env, alloc, path, _root, deps, keep);
 
 	/* re-order initializer list, if needed object has been already added */
 	else if (Object *o = Init::list()->contains(Linker::file(path)))
 		Init::list()->reorder(o);
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), ") finished");
 }
 
 

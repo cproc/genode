@@ -25,10 +25,10 @@
 			<service name="PD"/>
 		</parent-provides>
 		<start name="test-execve" caps="300">
-			<resource name="RAM" quantum="1G"/>
+			<resource name="RAM" quantum="2M"/>
 			<config ld_verbose="yes">
 				<arg value="name_of_executeable"/>
-				<arg value="100"/>
+				<arg value="10000"/>
 				<libc stdin="/null" stdout="/log" stderr="/log"/>
 				<vfs> <rom name="test-execve"/> <null/> <log/> </vfs>
 			</config>
