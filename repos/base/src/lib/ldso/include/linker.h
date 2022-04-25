@@ -311,7 +311,9 @@ class Linker::Dependency : public Fifo<Dependency>::Element, Noncopyable
 		Dependency(Object &obj, Root_object *root)
 		:
 			_obj(obj), _root(root), _unload_on_destruct(false)
-		{ }
+		{
+			Genode::raw("Dependency(): this: ", this);
+		}
 
 		Dependency(Env &, Allocator &, char const *path, Root_object *,
 		           Fifo<Dependency> &, Keep);
@@ -358,14 +360,19 @@ class Linker::Root_object
 	public:
 
 		/* main root */
-		Root_object(Allocator &md_alloc) : _md_alloc(md_alloc) { };
+		Root_object(Allocator &md_alloc) : _md_alloc(md_alloc)
+		{
+Genode::log("Root_object(): this: ", this);
+		};
 
 		/* runtime loaded root components */
 		Root_object(Env &, Allocator &, char const *path, Bind, Keep);
 
 		~Root_object()
 		{
+Genode::log("~Root_object(): this: ", this);
 			_deps.dequeue_all([&] (Dependency &d) {
+Genode::log("~Root_object(): this: ", this, ", dequeued Dependency object: ", Genode::Cstring(d.obj().name()), ", keep: ", d.obj().keep());
 				destroy(_md_alloc, &d); });
 		}
 

@@ -28,6 +28,7 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 	_root(root),
 	_md_alloc(&md_alloc)
 {
+Genode::log("Dependency(", Genode::Cstring(path), "): this: ", this);
 	deps.enqueue(*this);
 	load_needed(env, *_md_alloc, deps, keep);
 }
@@ -35,11 +36,17 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 
 Linker::Dependency::~Dependency()
 {
-	if (!_unload_on_destruct)
-		return;
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): this: ", this);
+	if (!_unload_on_destruct) {
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): !_unload_on_destruct");
 
-	if (!_obj.unload())
 		return;
+	}
+
+	if (!_obj.unload()) {
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): !_obj.unload()");
+		return;
+	}
 
 	if (verbose_loading)
 		log("Destroy: ", _obj.name());
@@ -64,12 +71,21 @@ bool Linker::Dependency::in_dep(char const *file, Fifo<Dependency> const &dep)
 void Linker::Dependency::_load(Env &env, Allocator &alloc, char const *path,
                                Fifo<Dependency> &deps, Keep keep)
 {
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), ")");
+
+	if (in_dep(Linker::file(path), deps)) {
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), "): already in deps");
+	}
+
 	if (!in_dep(Linker::file(path), deps))
 		new (alloc) Dependency(env, alloc, path, _root, deps, keep);
 
 	/* re-order initializer list, if needed object has been already added */
-	else if (Object *o = Init::list()->contains(Linker::file(path)))
+	else if (Object *o = Init::list()->contains(Linker::file(path))) {
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), "): found in init list, reordering");
 		Init::list()->reorder(o);
+	}
+Genode::log("Linker::Dependency::_load(", Genode::Cstring(path), ") finished");
 }
 
 
@@ -110,6 +126,7 @@ Linker::Root_object::Root_object(Env &env, Allocator &md_alloc,
 :
 	_md_alloc(md_alloc)
 {
+Genode::log("Linker::Root_object(", Genode::Cstring(path), ")");
 	/*
 	 * The life time of 'Dependency' objects is managed via reference
 	 * counting. Hence, we don't need to remember them here.
