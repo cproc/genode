@@ -357,9 +357,12 @@ struct Linker::Binary : private Root_object, public Elf_object
 		           *new (md_alloc) Dependency(*this, this), DONT_KEEP),
 		_check_ctors(config.check_ctors)
 	{
+Genode::log("Binary(", Genode::Cstring(name), ")");
 		/* create dep for binary and linker */
 		Dependency *binary = const_cast<Dependency *>(&dynamic().dep());
 		Root_object::enqueue(*binary);
+Genode::log("Binary(", Genode::Cstring(name), "): creating Dependency object for ld.lib.so");
+
 		Dependency *linker = new (md_alloc) Dependency(Ld::linker(), this);
 		Root_object::enqueue(*linker);
 
@@ -371,8 +374,12 @@ struct Linker::Binary : private Root_object, public Elf_object
 		/* preload libraries specified in the configuration */
 		binary->preload(env, md_alloc, deps(), config);
 
+Genode::log("Binary(", Genode::Cstring(name), "): loading dependencies");
+
 		/* load dependencies */
 		binary->load_needed(env, md_alloc, deps(), DONT_KEEP);
+
+Genode::log("Binary(", Genode::Cstring(name), "): finished loading dependencies");
 
 		/* relocate and call constructors */
 		Init::list()->initialize(config.bind, STAGE_BINARY);
@@ -750,13 +757,21 @@ void *Dynamic_linker::_respawn(Env &env, char const *binary, char const *entry_n
 {
 	Object::Name const name(binary);
 
+Genode::log("Dynamic_linker::_respawn(): destructing Binary object");
+
 	/* unload original binary */
 	binary_ptr->~Binary();
 
+Genode::log("Dynamic_linker::_respawn(): finished destructing Binary object");
+
 	Config const config(env);
+
+Genode::log("Dynamic_linker::_respawn(): reconstructing Binary object");
 
 	/* load new binary */
 	construct_at<Binary>(binary_ptr, env, *heap(), config, name.string());
+
+Genode::log("Dynamic_linker::_respawn(): finished reconstructing Binary object");
 
 	/* move to front of link map */
 	binary_ptr->link_map_make_first();
@@ -791,7 +806,9 @@ void Component::construct(Genode::Env &env)
 
 	/* load binary and all dependencies */
 	try {
+Genode::log("Component::construct(): constructing Binary object");
 		static Binary binary { env, *heap(), config, binary_name() };
+Genode::log("Component::construct(): finished constructing Binary object");
 		binary_ptr = &binary;
 	} catch(Linker::Not_found &symbol) {
 		error("LD: symbol not found: '", symbol, "'");
