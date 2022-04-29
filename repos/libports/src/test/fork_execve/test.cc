@@ -1,0 +1,170 @@
+/*
+ * \brief  Simple fork test
+ * \author Norman Feske
+ * \date   2012-02-14
+ */
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+
+enum { MAX_COUNT = 100 };
+
+int main(int argc, char **argv)
+{
+	if (argc <= 1)
+		return -1;
+
+	printf("--- test-fork_execve started ---\n");
+
+	int const count = atoi(argv[1]);
+
+	printf("count %d\n", count);
+
+	if (count <= 0)
+		return 0;
+
+	enum { MSG_SIZE = 100 };
+	static char message_in_rw_segment[MSG_SIZE];
+	char const * const message_about_rw_segment = "message stored in rw segment";
+	strncpy(message_in_rw_segment, message_about_rw_segment, MSG_SIZE);
+
+	char       * const message_on_heap    = (char *)malloc(MSG_SIZE);
+	char const * const message_about_heap = "message stored on the heap";
+	strncpy(message_on_heap, message_about_heap, MSG_SIZE - 1);
+#if 1
+	char       * const message_in_mmap_area =
+		(char*)mmap(0, MSG_SIZE, PROT_READ | PROT_WRITE,
+	                MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	char const * const message_about_mmap_area = "message stored in mmap area";
+	strncpy(message_in_mmap_area, message_about_mmap_area, MSG_SIZE - 1);
+#endif
+	enum { ARGV0_SIZE = 100 };
+	static char parent_argv0[ARGV0_SIZE];
+	strncpy(parent_argv0, argv[0], ARGV0_SIZE - 1);
+printf("calling fork()\n");
+	pid_t fork_ret = fork();
+	if (fork_ret < 0) {
+		printf("Error: fork returned %d, errno=%d\n", fork_ret, errno);
+		return -1;
+	}
+
+	printf("pid %d: fork returned %d\n", getpid(), fork_ret);
+
+	/* check the consistency of known environment variable in both processes */
+	if (!getenv("WIZARD") || strcmp(getenv("WIZARD"), "gandalf") != 0) {
+		printf("Error: inheritance of environment variable failed\n");
+		return -1;
+	}
+
+	/* child */
+	if (fork_ret == 0) {
+		printf("pid %d: child says hello\n", getpid());
+
+		/*
+		 * Validate that the child's heap and RW segment correspond to the
+		 * the state of the parent.
+		 */
+		printf("RW segment: %s\n", message_in_rw_segment);
+		if (strcmp(message_in_rw_segment, message_about_rw_segment)) {
+			printf("Error: unexpected content of the child's RW segment\n");
+			return -1;
+		}
+
+		printf("argv0: %s\n", argv[0]);
+		if (!argv[0] || strcmp(argv[0], parent_argv0)) {
+			printf("Error: unexpected content of the child's args buffer\n");
+			return -1;
+		}
+
+		printf("heap: %s\n", message_on_heap);
+		if (strcmp(message_on_heap, message_about_heap)) {
+			printf("Error: unexpected content on the child's heap\n");
+			return -1;
+		}
+
+#if 1
+		printf("mmap: %s\n", message_in_mmap_area);
+		if (strcmp(message_in_mmap_area, message_about_mmap_area)) {
+			printf("Error: unexpected content in the child's mmap area\n");
+			return -1;
+		}
+#endif
+
+#if 0
+		{
+			char c = 0;
+			if (read(3, &c, 1) == 1) {
+				printf("read character '%c' from FD 3\n", c);
+				if (c != '5') {
+					printf("Error: read unexpected value from FD 3\n");
+					return -1;
+				}
+			}
+		}
+#endif
+		{
+			char argv0[20];
+			char argv1[20];
+
+			snprintf(argv0, sizeof(argv0), "test-fork_execve");
+			snprintf(argv1, sizeof(argv1), "%d", count - 1);
+
+			char *argv[] { argv0, argv1, NULL };
+
+
+			char env0[20];
+			snprintf(env0, sizeof(env0), "WIZARD=gandalf");
+			char *env[] { env0, NULL };
+
+			printf("calling execve()\n");
+
+			execve("test-fork_execve", argv, env);
+		}
+
+#if 0
+		pid_t fork_ret = fork();
+		if (fork_ret < 0) {
+			printf("Error: fork returned %d, errno=%d\n", fork_ret, errno);
+			return -1;
+		}
+
+		printf("pid %d: fork returned %d\n", getpid(), fork_ret);
+
+		/* grand child */
+		if (fork_ret == 0) {
+			printf("pid %d: grand child says hello\n", getpid());
+
+			for (int k = 0; k < MAX_COUNT; k++) {
+				printf("pid %d: grand child k = %d\n", getpid(), k);
+			}
+
+			return 0;
+		};
+
+		for (int j = 0; j < MAX_COUNT; j++) {
+			printf("pid %d: child       j = %d\n", getpid(), j);
+		}
+
+		if (fork_ret != 0) {
+			printf("pid %d: child waits for grand-child exit\n", getpid());
+			waitpid(fork_ret, nullptr, 0);
+		}
+#endif
+
+		return 0;
+	}
+
+	printf("pid %d: parent received child pid %d\n",
+	       getpid(), fork_ret);
+
+	printf("pid %d: parent waits for child exit\n", getpid());
+	waitpid(fork_ret, nullptr, 0);
+
+	printf("--- parent done ---\n");
+	return 0;
+}
