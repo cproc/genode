@@ -47,8 +47,10 @@ void Component::construct(Genode::Env &env)
 	Libc::sysctl_init(env);
 
 	Libc::Kernel &kernel = *unmanaged_singleton<Libc::Kernel>(env, heap);
-
+//Genode::log("1");
 	Libc::libc_config_init(kernel.libc_env().libc_config());
+//Genode::log("2");
+//wait_for_continue();
 
 	/*
 	 * XXX The following two steps leave us with the dilemma that we don't know
@@ -63,12 +65,14 @@ void Component::construct(Genode::Env &env)
 
 	/* finish static construction of component and libraries */
 	Libc::with_libc([&] () { env.exec_static_constructors(); });
+Genode::log("3");
 
 	/* initialize plugins that require Genode::Env */
 	auto init_plugin = [&] (Libc::Plugin &plugin) {
 		plugin.init(env);
 	};
 	Libc::plugin_registry()->for_each_plugin(init_plugin);
+Genode::log("4");
 
 	/* construct libc component on kernel stack */
 	Libc::Component::construct(kernel.libc_env());

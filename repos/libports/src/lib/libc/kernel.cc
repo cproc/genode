@@ -310,6 +310,7 @@ void Libc::Kernel::_handle_user_interrupt()
 
 void Libc::Kernel::_clone_state_from_parent()
 {
+Genode::log(__func__, ": ", _libc_env.config());
 	struct Range { void *at; size_t size; };
 
 	auto range_attr = [&] (Xml_node node)
@@ -379,6 +380,7 @@ void Libc::Kernel::_clone_state_from_parent()
 		/* clone application stack */
 		if (node.type() == "stack") {
 			Range stack_range = range_attr(node);
+			Genode::log(&stack_range, ": user stack: ", stack_range.at);
 			copy_from_parent(stack_range);
 
 			/* clone main Pthread object */
@@ -421,6 +423,7 @@ void Libc::Kernel::_clone_state_from_parent()
 	_cloned_mem_alloc_exec_ranges.for_each([&] (Cloned_mem_alloc_range &mem_alloc_range) {
 		mem_alloc_exec->update_cloned_ds_cap(mem_alloc_range.local_addr, mem_alloc_range.ds);
 	});
+Genode::log(__func__, " finished");
 }
 
 

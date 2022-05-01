@@ -291,7 +291,7 @@ struct Linker::Ld : private Dependency, Elf_object
 	static Elf::Addr jmp_slot(Dependency const &dep, Elf::Size index) asm("jmp_slot");
 };
 
-
+extern "C" void wait_for_continue();
 Elf::Addr Ld::jmp_slot(Dependency const &dep, Elf::Size index)
 {
 	try {
@@ -299,9 +299,18 @@ Elf::Addr Ld::jmp_slot(Dependency const &dep, Elf::Size index)
 
 		if (verbose_relocation)
 			log("LD: SLOT ", &dep.obj(), " ", Hex(index));
-
+if (index == 5) {
+log("LD: ", &dep, ", ", &dep.obj(), ": ", index);
+wait_for_continue();
+log("LD: ", Genode::Cstring(dep.obj().name()));
+wait_for_continue();
+}
 		Reloc_jmpslot slot(dep, dep.obj().dynamic().pltrel_type(), 
 		                   dep.obj().dynamic().pltrel(), index);
+if (index == 5) {
+log("LD ok: ", Genode::Cstring(dep.obj().name()), ", ", index);
+wait_for_continue();
+}
 		return slot.target_addr();
 	} catch (Linker::Not_found &symbol) {
 		error("LD: jump slot relocation failed for symbol: '", symbol, "'");

@@ -131,9 +131,10 @@ void Libc::Pthread::clone_main_pthread(Clone_connection &clone_connection,
 {
 	addr_t stack_virtual_base = (addr_t)stack_address &
 			                    _stack_virtual_base_mask;
-	Pthread **main_pthread = (Pthread**)(stack_virtual_base +
-	                                     _tls_pointer_offset);
+	Pthread **main_pthread = (Pthread**)(stack_virtual_base + _tls_pointer_offset);
+	Genode::log("main_pthread: ", main_pthread);
 	clone_connection.object_content(*main_pthread);
+	Genode::log("*main_pthread: ", *main_pthread);
 	if (*main_pthread)
 		clone_connection.object_content(**main_pthread);
 }
@@ -144,7 +145,10 @@ Pthread *Libc::Pthread::myself()
 	int stack_variable;
 	addr_t stack_virtual_base = (addr_t)&stack_variable &
 	                            _stack_virtual_base_mask;
-	return *(Pthread**)(stack_virtual_base + _tls_pointer_offset);
+	Pthread *result = *(Pthread**)(stack_virtual_base + _tls_pointer_offset);
+//Genode::log(__func__, ": addr: ", Genode::Hex(stack_virtual_base + _tls_pointer_offset));
+//Genode::log(__func__, ": ", result);
+	return result;
 }
 
 
@@ -600,6 +604,7 @@ extern "C" {
 		try {
 			*key = key_allocator().alloc_key();
 			key_destructors[*key] = destructor;
+Genode::log("pthread_key_create(): key: ", *key, ", destructor: ", destructor);
 			return 0;
 		} catch (Key_allocator::Out_of_indices) {
 			return EAGAIN;

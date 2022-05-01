@@ -47,7 +47,7 @@ class Linker::Config : Noncopyable
 		Bind const _bind = _config.attribute_value("ld_bind_now", false)
 		                 ? BIND_NOW : BIND_LAZY;
 
-		bool const _verbose     = _config.attribute_value("ld_verbose",     false);
+		bool const _verbose     = _config.attribute_value("ld_verbose",     true);
 		bool const _check_ctors = _config.attribute_value("ld_check_ctors", true);
 
 	public:

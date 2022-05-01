@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 
 enum { MAX_COUNT = 100 };
-
+extern "C" void wait_for_continue();
 int main(int, char **argv)
 {
 	printf("--- test-fork started ---\n");
@@ -54,7 +54,7 @@ int main(int, char **argv)
 	/* child */
 	if (fork_ret == 0) {
 		printf("pid %d: child says hello\n", getpid());
-
+wait_for_continue();
 		/*
 		 * Validate that the child's heap and RW segment correspond to the
 		 * the state of the parent.
@@ -106,16 +106,16 @@ int main(int, char **argv)
 		if (fork_ret == 0) {
 			printf("pid %d: grand child says hello\n", getpid());
 
-			for (int k = 0; k < MAX_COUNT; k++) {
-				printf("pid %d: grand child k = %d\n", getpid(), k);
-			}
+//			for (int k = 0; k < MAX_COUNT; k++) {
+//				printf("pid %d: grand child k = %d\n", getpid(), k);
+//			}
 
 			return 0;
 		};
 
-		for (int j = 0; j < MAX_COUNT; j++) {
-			printf("pid %d: child       j = %d\n", getpid(), j);
-		}
+//		for (int j = 0; j < MAX_COUNT; j++) {
+//			printf("pid %d: child       j = %d\n", getpid(), j);
+//		}
 
 		if (fork_ret != 0) {
 			printf("pid %d: child waits for grand-child exit\n", getpid());
@@ -128,9 +128,9 @@ int main(int, char **argv)
 	printf("pid %d: parent received child pid %d, starts counting...\n",
 	       getpid(), fork_ret);
 
-	for (int i = 0; i < MAX_COUNT; ) {
-		printf("pid %d: parent      i = %d\n", getpid(), i++);
-	}
+//	for (int i = 0; i < MAX_COUNT; ) {
+//		printf("pid %d: parent      i = %d\n", getpid(), i++);
+//	}
 
 	printf("pid %d: parent waits for child exit\n", getpid());
 	waitpid(fork_ret, nullptr, 0);
