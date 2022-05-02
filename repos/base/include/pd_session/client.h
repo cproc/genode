@@ -19,7 +19,7 @@
 
 namespace Genode { struct Pd_session_client; }
 
-
+extern "C" void wait_for_continue();
 struct Genode::Pd_session_client : Rpc_client<Pd_session>
 {
 	explicit Pd_session_client(Pd_session_capability session)
@@ -73,12 +73,24 @@ struct Genode::Pd_session_client : Rpc_client<Pd_session>
 	Cap_quota cap_quota() const override { return call<Rpc_cap_quota>(); }
 	Cap_quota used_caps() const override { return call<Rpc_used_caps>(); }
 
+	size_t allocated { 0 };
+
 	Alloc_result try_alloc(size_t size, Cache cache = CACHED) override
 	{
+allocated += Genode::max(size, 4096UL);
+Genode::log(&size, ": try_alloc(): ", Genode::max(size, 4096UL), ", allocated: ", allocated);
+//if (size == 131072) {
+//	wait_for_continue();
+//}
 		return call<Rpc_try_alloc>(size, cache);
 	}
 
-	void free(Ram_dataspace_capability ds) override { call<Rpc_free>(ds); }
+	void free(Ram_dataspace_capability ds) override
+	{
+allocated -= Dataspace_client(ds).size();
+Genode::log(&ds, ": free(): ", Dataspace_client(ds).size(), ", allocated: ", allocated);
+		call<Rpc_free>(ds);
+	}
 
 	size_t dataspace_size(Ram_dataspace_capability ds) const override
 	{
