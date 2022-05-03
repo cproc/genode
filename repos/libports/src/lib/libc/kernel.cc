@@ -16,6 +16,7 @@
 /* libc-internal includes */
 #include <internal/kernel.h>
 #include <internal/file_operations.h>
+#include <internal/mem_alloc.h>
 
 Libc::Kernel * Libc::Kernel::_kernel_ptr;
 
@@ -356,6 +357,20 @@ void Libc::Kernel::_clone_state_from_parent()
 				Registered<Cloned_malloc_heap_range>(_cloned_heap_ranges,
 				                                     _env.ram(), _env.rm(),
 				                                     range); });
+
+		libc.for_each_sub_node("mem_alloc", [&] (Xml_node node) {
+			Range const range = range_attr(node);
+			new (_heap)
+				Registered<Cloned_mem_alloc_range>(_cloned_mem_alloc_ranges,
+				                                   _env.ram(), _env.rm(),
+				                                   range); });
+
+		libc.for_each_sub_node("mem_alloc_exec", [&] (Xml_node node) {
+			Range const range = range_attr(node);
+			new (_heap)
+				Registered<Cloned_mem_alloc_range>(_cloned_mem_alloc_exec_ranges,
+				                                   _env.ram(), _env.rm(),
+				                                   range); });
 	});
 
 	_clone_connection.construct(_env);
@@ -363,6 +378,12 @@ void Libc::Kernel::_clone_state_from_parent()
 	/* fetch heap content */
 	_cloned_heap_ranges.for_each([&] (Cloned_malloc_heap_range &heap_range) {
 		heap_range.import_content(*_clone_connection); });
+
+	/* fetch Mem_alloc content */
+	_cloned_mem_alloc_ranges.for_each([&] (Cloned_mem_alloc_range &mem_alloc_range) {
+		mem_alloc_range.import_content(*_clone_connection); });
+	_cloned_mem_alloc_exec_ranges.for_each([&] (Cloned_mem_alloc_range &mem_alloc_range) {
+		mem_alloc_range.import_content(*_clone_connection); });
 
 	/* value of global environ pointer (the env vars are already on the heap) */
 	_clone_connection->memory_content(&environ, sizeof(environ));
@@ -407,6 +428,20 @@ void Libc::Kernel::_clone_state_from_parent()
 	/* import application-heap state from parent */
 	_clone_connection->object_content(_malloc_heap);
 	init_malloc_cloned(*_clone_connection);
+
+	Mem_alloc_impl *mem_alloc = static_cast<Mem_alloc_impl*>(Libc::mem_alloc(false));
+	_clone_connection->object_content(*mem_alloc);
+	mem_alloc->reassign_resources(&_env.ram(), &_env.rm());
+	_cloned_mem_alloc_ranges.for_each([&] (Cloned_mem_alloc_range &mem_alloc_range) {
+		mem_alloc->update_cloned_ds_cap(mem_alloc_range.range, mem_alloc_range.ds);
+	});
+
+	Mem_alloc_impl *mem_alloc_exec = static_cast<Mem_alloc_impl*>(Libc::mem_alloc(true));
+	_clone_connection->object_content(*mem_alloc_exec);
+	mem_alloc_exec->reassign_resources(&_env.ram(), &_env.rm());
+	_cloned_mem_alloc_exec_ranges.for_each([&] (Cloned_mem_alloc_range &mem_alloc_range) {
+		mem_alloc_exec->update_cloned_ds_cap(mem_alloc_range.range, mem_alloc_range.ds);
+	});
 }
 
 
@@ -500,8 +535,10 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 		init_malloc(*_malloc_heap);
 	}
 
-	init_fork(_env, _fd_alloc, _libc_env, _heap, *_malloc_heap, _config.pid, *this,
-	          _signal, _binary_name);
+	init_fork(_env, _fd_alloc, _libc_env, _heap, *_malloc_heap,
+	          *static_cast<Mem_alloc_impl*>(mem_alloc(false)),
+	          *static_cast<Mem_alloc_impl*>(mem_alloc(true)),
+	          _config.pid, *this, _signal, _binary_name);
 	init_execve(_env, _heap, _user_stack, *this, _binary_name, _fd_alloc);
 	init_plugin(*this);
 	init_sleep(*this);
