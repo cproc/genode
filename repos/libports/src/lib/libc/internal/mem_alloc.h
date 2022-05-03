@@ -68,6 +68,7 @@ namespace Libc {
 
 					Ram_allocator *_ram;          /* RAM session for backing store */
 					Env::Local_rm *_local_rm;     /* region map of address space   */
+					Range_allocator &_alloc;        /* allocator backed by the dataspaces */
 					bool const     _executable;   /* whether to allocate executable dataspaces */
 
 				public:
@@ -75,10 +76,13 @@ namespace Libc {
 					/**
 					 * Constructor
 					 */
-					Dataspace_pool(Ram_allocator *ram, Env::Local_rm *rm,
+					Dataspace_pool(Ram_allocator *ram,
+					               Env::Local_rm *rm,
+					               Range_allocator &alloc,
 					               bool executable)
 					:
-						_ram(ram), _local_rm(rm), _executable(executable)
+						_ram(ram), _local_rm(rm), _alloc(alloc),
+						_executable(executable)
 					{ }
 
 					/**
@@ -90,14 +94,11 @@ namespace Libc {
 					 * Expand dataspace by specified size
 					 *
 					 * \param size      number of bytes to add to the dataspace pool
-					 * \param md_alloc  allocator to expand. This allocator is also
-					 *                  used for meta data allocation (only after
-					 *                  being successfully expanded).
 					 * \throw           Region_map::Invalid_dataspace,
 					 *                  Region_map::Region_conflict
 					 * \return          0 on success or negative error code
 					 */
-					int expand(size_t size, Range_allocator *alloc);
+					int expand(size_t size);
 
 					void reassign_resources(Ram_allocator *ram,
 					                        Env::Local_rm *rm)
@@ -129,9 +130,9 @@ namespace Libc {
 			};
 
 			Mutex  mutable _mutex;
+			Allocator_avl  _alloc { 0 };  /* local allocator    */
 			Dataspace_pool _ds_pool;      /* list of dataspaces */
-			Allocator_avl  _alloc;        /* local allocator    */
-			size_t         _chunk_size;
+			size_t         _chunk_size { MIN_CHUNK_SIZE };
 
 			/**
 			 * Try to allocate block at our local allocator
@@ -147,11 +148,7 @@ namespace Libc {
 
 			Mem_alloc_impl(Env::Local_rm &rm, Ram_allocator &ram,
 			               bool executable = false)
-			:
-				_ds_pool(&ram, &rm, executable),
-				_alloc(0),
-				_chunk_size(MIN_CHUNK_SIZE)
-			{ }
+			: _ds_pool(&ram, &rm, _alloc, executable) { }
 
 			void *alloc(size_t size, size_t align_log2);
 			void free(void *ptr);
