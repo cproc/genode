@@ -22,6 +22,7 @@
 
 /* libc includes */
 #include <errno.h>
+#include <sys/mman.h>
 
 /* libc-internal includes */
 #include <internal/plugin.h>
@@ -45,14 +46,15 @@ class Libc::Mmap_registry
 		struct Entry : Avl_node<Entry>
 		{
 			void                     * const start  { nullptr };
+			size_t                     length;
 			Plugin                   * plugin { nullptr };
 			Ram_dataspace_capability   cap { Ram_dataspace_capability() };
 
-			Entry(void *start, Plugin *plugin)
-			: start(start), plugin(plugin) { }
+			Entry(void *start, size_t length, Plugin *plugin)
+			: start(start), length(length), plugin(plugin) { }
 
-			Entry(void *start, Ram_dataspace_capability cap)
-			: start(start), cap(cap) { }
+			Entry(void *start, size_t length, Ram_dataspace_capability cap)
+			: start(start), length(length), cap(cap) { }
 
 			bool higher(Entry *other)
 			{
@@ -99,7 +101,7 @@ class Libc::Mmap_registry
 
 	public:
 
-		void insert(void *start, size_t len, Plugin *plugin)
+		void insert(void *start, size_t length, Plugin *plugin)
 		{
 			Mutex::Guard guard(_mutex);
 
@@ -109,10 +111,10 @@ class Libc::Mmap_registry
 				return;
 			}
 
-			_tree.insert(new (&_md_alloc) Entry(start, plugin));
+			_tree.insert(new (&_md_alloc) Entry(start, length, plugin));
 		}
 
-		void insert(void *start, size_t len, Ram_dataspace_capability cap)
+		void insert(void *start, size_t length, Ram_dataspace_capability cap)
 		{
 			Mutex::Guard guard(_mutex);
 
@@ -122,7 +124,7 @@ class Libc::Mmap_registry
 				return;
 			}
 
-			_tree.insert(new (&_md_alloc) Entry(start, cap));
+			_tree.insert(new (&_md_alloc) Entry(start, length, cap));
 		}
 
 		Plugin *lookup_plugin_by_addr(void *start) const
@@ -162,6 +164,12 @@ class Libc::Mmap_registry
 
 			_tree.remove(e);
 			destroy(&_md_alloc, e);
+		}
+
+		void reset()
+		{
+			while (Entry *e = _tree.first())
+				munmap(e->start, e->length);
 		}
 };
 
