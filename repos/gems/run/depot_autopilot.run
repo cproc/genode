@@ -411,7 +411,7 @@ proc prepare_to_run_genode { } {
 		</start>
 
 		<start name="dynamic" caps="8000" priority="-1">
-			<resource name="RAM" quantum="286M"/>
+			<resource name="RAM" quantum="400M"/>
 			<binary name="init"/>
 			<route>
 
@@ -646,6 +646,62 @@ if {[expr ![have_spec x86] && \
 # ! find . -type d -wholename *recipes/pkg/test-* -printf '%f\n' | sort
 #
 set default_test_pkgs {
+	test-jemalloc_a0
+	test-jemalloc_aligned_alloc
+	test-jemalloc_allocated
+	test-jemalloc_arena_reset
+	test-jemalloc_atomic
+	test-jemalloc_base
+	test-jemalloc_bitmap
+	test-jemalloc_bit_util
+	test-jemalloc_ckh
+	test-jemalloc_div
+	test-jemalloc_emitter
+	test-jemalloc_extent
+	test-jemalloc_extent_quantize
+	test-jemalloc_extent_util
+	test-jemalloc_hash
+	test-jemalloc_hook
+	test-jemalloc_hookbench
+	test-jemalloc_huge
+	test-jemalloc_junk
+	test-jemalloc_junk_alloc
+	test-jemalloc_junk_free
+	test-jemalloc_mallctl
+	test-jemalloc_malloc
+	test-jemalloc_malloc_io
+	test-jemalloc_mallocx
+	test-jemalloc_MALLOCX_ARENA
+	test-jemalloc_microbench
+	test-jemalloc_nstime
+	test-jemalloc_overflow
+	test-jemalloc_pack
+	test-jemalloc_pages
+	test-jemalloc_ph
+	test-jemalloc_posix_memalign
+	test-jemalloc_prng
+	test-jemalloc_ql
+	test-jemalloc_qr
+	test-jemalloc_rallocx
+	test-jemalloc_rb
+	test-jemalloc_retained
+	test-jemalloc_rtree
+	test-jemalloc_sc
+	test-jemalloc_sdallocx
+	test-jemalloc_seq
+	test-jemalloc_size_classes
+	test-jemalloc_slab
+	test-jemalloc_smoothstep
+	test-jemalloc_spin
+	test-jemalloc_stats
+	test-jemalloc_stats_print
+	test-jemalloc_test_hooks
+	test-jemalloc_thread_arena
+	test-jemalloc_ticker
+	test-jemalloc_xallocx
+}
+
+set default_test_pkgs2 {
 	test-spark
 	test-spark_exception
 	test-spark_secondary_stack
@@ -767,7 +823,7 @@ set skip_test(test-spark_exception) [expr [have_spec arm]]
 set skip_test(test-tcp_bulk_lwip)   [expr ![have_spec x86] && ![have_include "power_on/qemu"]]
 set skip_test(test-tcp_bulk_lxip)   [expr ![have_spec x86] && ![have_include "power_on/qemu"]]
 
-if {[have_spec riscv]} {
+if {[have_spec linux]} {
 	set skip_test(gcov)                              true
 	set skip_test(test-libc_connect_lxip)            true
 	set skip_test(test-libc_connect_vfs_server_lxip) true
@@ -883,8 +939,8 @@ while {1} {
 				incr previous_succeeded
 			} else {
 				puts "Error: malformed test result"
-				puts $last_test_result
-				exit -1
+#				puts $last_test_result
+#				exit -1
 			}
 			if {$previous_results != ""} {
 				append previous_results \012
