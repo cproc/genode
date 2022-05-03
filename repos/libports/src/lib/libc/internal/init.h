@@ -28,6 +28,7 @@
 /* libc-internal includes */
 #include <internal/types.h>
 #include <internal/config.h>
+#include <internal/mem_alloc.h>
 
 namespace Libc {
 
@@ -130,7 +131,10 @@ namespace Libc {
 	 */
 	void init_fork(Genode::Env &, File_descriptor_allocator &,
 	               Config_accessor const &, Genode::Allocator &heap,
-	               Heap &malloc_heap, int pid, Monitor &, Signal &,
+	               Heap &malloc_heap,
+	               Mem_alloc_impl &mem_alloc,
+	               Mem_alloc_impl &mem_alloc_exec,
+	               int pid, Monitor &, Signal &,
 	               Binary_name const &);
 
 	struct Reset_malloc_heap : Interface
