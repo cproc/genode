@@ -22,6 +22,7 @@
 #include <rm_session/rm_session.h>
 
 /* libc-internal includes */
+#include <internal/clone_session.h>
 #include <internal/types.h>
 
 namespace Libc {
@@ -100,6 +101,28 @@ namespace Libc {
 
 					void reassign_resources(Ram_allocator *ram, Region_map *rm) {
 						_ram = ram, _region_map = rm; }
+
+					void update_cloned_ds_cap(Range const range, Ram_dataspace_capability cap)
+					{
+						for (Dataspace *ds = first(); ds; ds = ds->next()) {
+							if (ds->range.start == range.start) {
+								/*
+								 * Clear the cloned capability without
+								 * triggering reference counting.
+								 */
+								construct_at<Ram_dataspace_capability>(&ds->cap);
+								ds->cap = cap;
+								return;
+							}
+						}
+					}
+
+					template <typename FN>
+					void for_each_region(FN const &fn) const {
+						for (Dataspace const *ds = first(); ds; ds = ds->next())  {
+							fn(ds->range);
+						}
+					}
 			};
 
 			Mutex  mutable _mutex;
@@ -130,6 +153,19 @@ namespace Libc {
 			void *alloc(size_t size, size_t align_log2);
 			void free(void *ptr);
 			Size_at_result size_at(void const *ptr) const;
+
+			void reassign_resources(Ram_allocator *ram, Region_map *rm)
+			{ _ds_pool.reassign_resources(ram, rm); }
+
+			void update_cloned_ds_cap(Range const range, Ram_dataspace_capability cap)
+			{
+				_ds_pool.update_cloned_ds_cap(range, cap);
+			}
+
+			template <typename FN>
+			void for_each_region(FN const &fn) const {
+				_ds_pool.for_each_region(fn);
+			}
 	};
 }
 
