@@ -1,0 +1,459 @@
+jet_a0dalloc T
+jet_a0malloc T
+jet_aligned_alloc T
+jet_arena_alloc_junk_small T
+jet_arena_basic_stats_merge T
+jet_arena_bin_choose_lock T
+jet_arena_boot T
+jet_arena_choose_hard T
+jet_arena_choose_huge T
+jet_arena_cleanup T
+jet_arena_dalloc_bin_junked_locked T
+jet_arena_dalloc_junk_small D 8
+jet_arena_dalloc_promoted T
+jet_arena_dalloc_small T
+jet_arena_decay T
+jet_arena_destroy T
+jet_arena_dirty_decay_ms_default_get T
+jet_arena_dirty_decay_ms_default_set T
+jet_arena_dirty_decay_ms_get T
+jet_arena_dirty_decay_ms_set T
+jet_arena_dss_prec_get T
+jet_arena_dss_prec_set T
+jet_arena_extent_alloc_large T
+jet_arena_extent_dalloc_large_prep T
+jet_arena_extent_ralloc_large_expand T
+jet_arena_extent_ralloc_large_shrink T
+jet_arena_extent_sn_next T
+jet_arena_extents_dirty_dalloc T
+jet_arena_init T
+jet_arena_init_huge T
+jet_arena_is_huge T
+jet_arena_malloc_hard T
+jet_arena_migrate T
+jet_arena_mutex_names D 72
+jet_arena_muzzy_decay_ms_default_get T
+jet_arena_muzzy_decay_ms_default_set T
+jet_arena_muzzy_decay_ms_get T
+jet_arena_muzzy_decay_ms_set T
+jet_arena_new T
+jet_arena_nthreads_dec T
+jet_arena_nthreads_get T
+jet_arena_nthreads_inc T
+jet_arena_palloc T
+jet_arena_postfork_child T
+jet_arena_postfork_parent T
+jet_arena_prefork0 T
+jet_arena_prefork1 T
+jet_arena_prefork2 T
+jet_arena_prefork3 T
+jet_arena_prefork4 T
+jet_arena_prefork5 T
+jet_arena_prefork6 T
+jet_arena_prefork7 T
+jet_arena_prof_promote T
+jet_arena_ralloc T
+jet_arena_ralloc_no_move T
+jet_arena_reset T
+jet_arena_retain_grow_limit_get_set T
+jet_arena_set T
+jet_arena_slab_regind T
+jet_arena_stats_merge T
+jet_arena_tcache_fill_small T
+jet_arena_tdata_get_hard T
+jet_arenas B 32760
+jet_arenas_lock B 80
+jet_arenas_tdata_cleanup T
+jet_b0get T
+jet_background_thread_boot0 T
+jet_background_thread_boot1 T
+jet_background_thread_create T
+jet_background_thread_ctl_init T
+jet_background_thread_enabled_state B 1
+jet_background_thread_info B 8
+jet_background_thread_interval_check T
+jet_background_thread_lock B 80
+jet_background_thread_postfork_child T
+jet_background_thread_postfork_parent T
+jet_background_thread_prefork0 T
+jet_background_thread_prefork1 T
+jet_background_thread_stats_read T
+jet_background_threads_disable T
+jet_background_threads_enable T
+jet_base_alloc T
+jet_base_alloc_extent T
+jet_base_boot T
+jet_base_delete T
+jet_base_extent_hooks_get T
+jet_base_extent_hooks_set T
+jet_base_new T
+jet_base_postfork_child T
+jet_base_postfork_parent T
+jet_base_prefork T
+jet_base_stats_get T
+jet_bin_boot T
+jet_bin_infos B 1440
+jet_bin_init T
+jet_bin_postfork_child T
+jet_bin_postfork_parent T
+jet_bin_prefork T
+jet_bin_shard_sizes_boot T
+jet_bin_update_shard_size T
+jet_bitmap_info_init T
+jet_bitmap_init T
+jet_bitmap_size T
+jet_bootstrap_calloc T
+jet_bootstrap_free T
+jet_bootstrap_malloc T
+jet_bt2gctx_mtx B 80
+jet_bt_init T
+jet_buferror T
+jet_calloc T
+jet_ckh_count T
+jet_ckh_delete T
+jet_ckh_insert T
+jet_ckh_iter T
+jet_ckh_new T
+jet_ckh_pointer_hash T
+jet_ckh_pointer_keycomp T
+jet_ckh_remove T
+jet_ckh_search T
+jet_ckh_string_hash T
+jet_ckh_string_keycomp T
+jet_ctl_boot T
+jet_ctl_bymib T
+jet_ctl_byname T
+jet_ctl_nametomib T
+jet_ctl_postfork_child T
+jet_ctl_postfork_parent T
+jet_ctl_prefork T
+jet_dallocx T
+jet_div_init T
+jet_dss_prec_names D 32
+jet_extent_alloc T
+jet_extent_alloc_dss T
+jet_extent_alloc_mmap T
+jet_extent_alloc_wrapper T
+jet_extent_avail_any T
+jet_extent_avail_empty T
+jet_extent_avail_first T
+jet_extent_avail_insert T
+jet_extent_avail_new T
+jet_extent_avail_remove T
+jet_extent_avail_remove_any T
+jet_extent_avail_remove_first T
+jet_extent_boot T
+jet_extent_commit_wrapper T
+jet_extent_dalloc T
+jet_extent_dalloc_gap T
+jet_extent_dalloc_mmap T
+jet_extent_dalloc_wrapper T
+jet_extent_decommit_wrapper T
+jet_extent_destroy_wrapper T
+jet_extent_dss_boot T
+jet_extent_dss_mergeable T
+jet_extent_dss_prec_get T
+jet_extent_dss_prec_set T
+jet_extent_heap_any T
+jet_extent_heap_empty T
+jet_extent_heap_first T
+jet_extent_heap_insert T
+jet_extent_heap_new T
+jet_extent_heap_remove T
+jet_extent_heap_remove_any T
+jet_extent_heap_remove_first T
+jet_extent_hooks_default D 72
+jet_extent_hooks_get T
+jet_extent_hooks_set T
+jet_extent_in_dss T
+jet_extent_merge_wrapper T
+jet_extent_mutex_pool B 20480
+jet_extent_purge_forced_wrapper T
+jet_extent_purge_lazy_wrapper T
+jet_extent_size_quantize_ceil T
+jet_extent_size_quantize_floor T
+jet_extent_split_wrapper T
+jet_extent_util_stats_get T
+jet_extent_util_stats_verbose_get T
+jet_extents_alloc T
+jet_extents_dalloc T
+jet_extents_evict T
+jet_extents_init T
+jet_extents_nbytes_get T
+jet_extents_nextents_get T
+jet_extents_npages_get T
+jet_extents_postfork_child T
+jet_extents_postfork_parent T
+jet_extents_prefork T
+jet_extents_rtree B 2097232
+jet_extents_state_get T
+jet_free T
+jet_free_default T
+jet_global_mutex_names D 24
+jet_h_steps R 1600
+jet_hook_boot T
+jet_hook_install T
+jet_hook_invoke_alloc T
+jet_hook_invoke_dalloc T
+jet_hook_invoke_expand T
+jet_hook_remove T
+jet_iarena_cleanup T
+jet_init_system_thp_mode B 4
+jet_je_sdallocx_noflags T
+jet_jemalloc_postfork_child T
+jet_jemalloc_postfork_parent T
+jet_jemalloc_prefork T
+jet_large_dalloc T
+jet_large_dalloc_finish T
+jet_large_dalloc_junk D 8
+jet_large_dalloc_maybe_junk D 8
+jet_large_dalloc_prep_junked_locked T
+jet_large_malloc T
+jet_large_palloc T
+jet_large_prof_alloc_time_get T
+jet_large_prof_alloc_time_set T
+jet_large_prof_tctx_get T
+jet_large_prof_tctx_reset T
+jet_large_prof_tctx_set T
+jet_large_ralloc T
+jet_large_ralloc_no_move T
+jet_large_salloc T
+jet_lg_prof_sample B 8
+jet_log_init_done B 1
+jet_log_var_names B 1
+jet_log_var_update_state T
+jet_mallctl T
+jet_mallctlbymib T
+jet_mallctlnametomib T
+jet_malloc T
+jet_malloc_conf V
+jet_malloc_cprintf T
+jet_malloc_default T
+jet_malloc_initialized T
+jet_malloc_message B 8
+jet_malloc_mutex_boot T
+jet_malloc_mutex_init T
+jet_malloc_mutex_lock_slow T
+jet_malloc_mutex_postfork_child T
+jet_malloc_mutex_postfork_parent T
+jet_malloc_mutex_prefork T
+jet_malloc_mutex_prof_data_reset T
+jet_malloc_printf T
+jet_malloc_slow D 1
+jet_malloc_snprintf T
+jet_malloc_stats_print T
+jet_malloc_strtoumax T
+jet_malloc_tsd_boot0 T
+jet_malloc_tsd_boot1 T
+jet_malloc_tsd_cleanup_register T
+jet_malloc_tsd_dalloc T
+jet_malloc_tsd_malloc T
+jet_malloc_usable_size T
+jet_malloc_vcprintf T
+jet_malloc_vsnprintf T
+jet_malloc_write T
+jet_mallocx T
+jet_manual_arena_base B 4
+jet_max_background_threads B 8
+jet_memalign T
+jet_metadata_thp_mode_names D 24
+jet_mutex_pool_init T
+jet_n_background_threads B 8
+jet_nallocx T
+jet_narenas_auto B 4
+jet_narenas_total_get T
+jet_ncpus B 4
+jet_nhbins B 4
+jet_nstime_add T
+jet_nstime_compare T
+jet_nstime_copy T
+jet_nstime_divide T
+jet_nstime_iadd T
+jet_nstime_idivide T
+jet_nstime_imultiply T
+jet_nstime_init T
+jet_nstime_init2 T
+jet_nstime_isubtract T
+jet_nstime_monotonic D 8
+jet_nstime_msec T
+jet_nstime_ns T
+jet_nstime_nsec T
+jet_nstime_sec T
+jet_nstime_subtract T
+jet_nstime_update D 8
+jet_opt_abort B 1
+jet_opt_abort_conf B 1
+jet_opt_background_thread B 1
+jet_opt_confirm_conf B 1
+jet_opt_dirty_decay_ms D 8
+jet_opt_dss D 8
+jet_opt_junk D 8
+jet_opt_junk_alloc B 1
+jet_opt_junk_free B 1
+jet_opt_lg_extent_max_active_fit D 8
+jet_opt_lg_prof_interval D 8
+jet_opt_lg_prof_sample D 8
+jet_opt_lg_tcache_max D 8
+jet_opt_max_background_threads D 8
+jet_opt_metadata_thp B 4
+jet_opt_muzzy_decay_ms B 8
+jet_opt_narenas B 4
+jet_opt_oversize_threshold D 8
+jet_opt_percpu_arena D 4
+jet_opt_prof B 1
+jet_opt_prof_accum B 1
+jet_opt_prof_active D 1
+jet_opt_prof_final B 1
+jet_opt_prof_gdump B 1
+jet_opt_prof_leak B 1
+jet_opt_prof_log B 1
+jet_opt_prof_prefix B 1
+jet_opt_prof_thread_active_init D 1
+jet_opt_retain D 1
+jet_opt_stats_print B 1
+jet_opt_stats_print_opts B 10
+jet_opt_tcache D 1
+jet_opt_thp B 4
+jet_opt_utrace B 1
+jet_opt_xmalloc B 1
+jet_opt_zero B 1
+jet_oversize_threshold D 8
+jet_pages_boot T
+jet_pages_commit T
+jet_pages_decommit T
+jet_pages_dodump T
+jet_pages_dontdump T
+jet_pages_huge T
+jet_pages_map T
+jet_pages_nohuge T
+jet_pages_purge_forced T
+jet_pages_purge_lazy T
+jet_pages_set_thp_state T
+jet_pages_unmap T
+jet_percpu_arena_mode_names D 40
+jet_posix_memalign T
+jet_prof_accum_init T
+jet_prof_active B 1
+jet_prof_active_get T
+jet_prof_active_set T
+jet_prof_alloc_rollback T
+jet_prof_backtrace T
+jet_prof_boot0 T
+jet_prof_boot1 T
+jet_prof_boot2 T
+jet_prof_bt_count T
+jet_prof_cnt_all T
+jet_prof_dump_header D 8
+jet_prof_dump_open D 8
+jet_prof_free_sampled_object T
+jet_prof_gdump T
+jet_prof_gdump_get T
+jet_prof_gdump_set T
+jet_prof_gdump_val B 1
+jet_prof_idump T
+jet_prof_interval B 8
+jet_prof_log_alloc_count T
+jet_prof_log_bt_count T
+jet_prof_log_dummy_set T
+jet_prof_log_is_logging T
+jet_prof_log_rep_check T
+jet_prof_log_start T
+jet_prof_log_stop T
+jet_prof_log_thr_count T
+jet_prof_logging_state B 4
+jet_prof_lookup T
+jet_prof_malloc_sample_object T
+jet_prof_mdump T
+jet_prof_postfork_child T
+jet_prof_postfork_parent T
+jet_prof_prefork0 T
+jet_prof_prefork1 T
+jet_prof_reset T
+jet_prof_sample_threshold_update T
+jet_prof_tdata_cleanup T
+jet_prof_tdata_count T
+jet_prof_tdata_init T
+jet_prof_tdata_reinit T
+jet_prof_thread_active_get T
+jet_prof_thread_active_init_get T
+jet_prof_thread_active_init_set T
+jet_prof_thread_active_set T
+jet_prof_thread_name_get T
+jet_prof_thread_name_set T
+jet_rallocx T
+jet_realloc T
+jet_rtree_ctx_data_init T
+jet_rtree_delete T
+jet_rtree_leaf_alloc D 8
+jet_rtree_leaf_dalloc D 8
+jet_rtree_leaf_elm_lookup_hard T
+jet_rtree_new T
+jet_rtree_node_alloc D 8
+jet_rtree_node_dalloc D 8
+jet_safety_check_fail T
+jet_safety_check_set_abort T
+jet_sallocx T
+jet_sc_boot T
+jet_sc_data_global B 6576
+jet_sc_data_init T
+jet_sc_data_update_slab_size T
+jet_sdallocx T
+jet_sdallocx_default T
+jet_stats_print T
+jet_sz_boot T
+jet_sz_index2size_tab B 1856
+jet_sz_pind2sz_tab B 1600
+jet_sz_size2index_tab B 513
+jet_tcache_alloc_small_hard T
+jet_tcache_arena_associate T
+jet_tcache_arena_reassociate T
+jet_tcache_bin_flush_large T
+jet_tcache_bin_flush_small T
+jet_tcache_bin_info B 8
+jet_tcache_boot T
+jet_tcache_cleanup T
+jet_tcache_create_explicit T
+jet_tcache_event_hard T
+jet_tcache_flush T
+jet_tcache_maxclass B 8
+jet_tcache_postfork_child T
+jet_tcache_postfork_parent T
+jet_tcache_prefork T
+jet_tcache_salloc T
+jet_tcache_stats_merge T
+jet_tcaches B 8
+jet_tcaches_create T
+jet_tcaches_destroy T
+jet_tcaches_flush T
+jet_test_hooks_arena_new_hook B 8
+jet_test_hooks_libc_hook B 8
+jet_thp_mode_names D 32
+jet_tsd_boot_wrapper D 6240
+jet_tsd_booted B 1
+jet_tsd_cleanup T
+jet_tsd_fetch_slow T
+jet_tsd_global_slow T
+jet_tsd_global_slow_dec T
+jet_tsd_global_slow_inc T
+jet_tsd_init_check_recursion T
+jet_tsd_init_finish T
+jet_tsd_init_head B 88
+jet_tsd_postfork_child T
+jet_tsd_postfork_parent T
+jet_tsd_prefork T
+jet_tsd_slow_update T
+jet_tsd_state_set T
+jet_tsd_tcache_data_init T
+jet_tsd_tcache_enabled_data_init T
+jet_tsd_tsd B 4
+jet_valloc T
+jet_witness_depth_error D 8
+jet_witness_init T
+jet_witness_lock_error D 8
+jet_witness_not_owner_error D 8
+jet_witness_owner_error D 8
+jet_witness_postfork_child T
+jet_witness_postfork_parent T
+jet_witness_prefork T
+jet_witnesses_cleanup T
+jet_xallocx T
