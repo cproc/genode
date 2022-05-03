@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 #if 1
 	for (int i = 0; i < 50; i++) {
 		for (size_t size = 1; size <= 4096; size++) {
-			char *p = (char*)jemalloc(size);
+			char *p = (char*)malloc(size);
 			if (!p)
 				printf("Error: allocation failed");
 			allocated += size;
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 	uint64_t ts_diff_ms = (ts2 - ts1) / tsc_khz;
 	printf("allocated: %lu, milliseconds: %lu\n", allocated, ts_diff_ms);
 
-	//jemalloc_stats_print(NULL, NULL, NULL);
+//	malloc_stats_print(NULL, NULL, NULL);
 
 	return 0;
 }
