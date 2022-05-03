@@ -246,54 +246,9 @@ extern "C" void *libc_malloc(size_t size)
 }
 
 
-extern "C" __attribute__((weak)) void *malloc(size_t size)
-{
-	return libc_malloc(size);
-}
-
-
-extern "C" __attribute__((weak)) void *calloc(size_t nmemb, size_t size)
-{
-	void *addr = malloc(nmemb*size);
-	if (addr)
-		Genode::memset(addr, 0, nmemb*size);
-	return addr;
-}
-
-
 extern "C" void libc_free(void *ptr)
 {
 	if (ptr) mallocator->free(ptr);
-}
-
-
-extern "C" __attribute__((weak)) void free(void *ptr)
-{
-	libc_free(ptr);
-}
-
-
-extern "C" __attribute__((weak)) void *realloc(void *ptr, size_t size)
-{
-	if (!ptr) return malloc(size);
-
-	if (!size) {
-		free(ptr);
-		return nullptr;
-	}
-
-	return mallocator->realloc(ptr, size);
-}
-
-
-extern "C" __attribute__((weak)) int posix_memalign(void **memptr, size_t alignment, size_t size)
-{
-	*memptr = mallocator->alloc(size, alignment);
-
-	if (!*memptr)
-		return Errno(ENOMEM);
-
-	return 0;
 }
 
 
