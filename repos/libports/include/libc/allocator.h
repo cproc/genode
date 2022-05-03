@@ -20,8 +20,13 @@
 /* libc includes */
 #include <stdlib.h>
 
-namespace Libc { struct Allocator; }
+namespace Libc {
+	struct Allocator;
+	struct Old_allocator;
+}
 
+extern "C" void *libc_malloc(size_t);
+extern "C" void libc_free(void *);
 
 struct Libc::Allocator : Genode::Allocator
 {
@@ -35,6 +40,24 @@ struct Libc::Allocator : Genode::Allocator
 	void _free(Allocation &a) override { ::free(a.ptr); }
 
 	void free(void *addr, size_t size) override { ::free(addr); }
+
+	bool need_size_for_free() const override { return false; }
+
+	size_t overhead(size_t size) const override { return 0; }
+};
+
+
+struct Libc::Old_allocator : Genode::Allocator
+{
+	typedef Genode::size_t size_t;
+
+	Alloc_result try_alloc(size_t size) override {
+		return { *this, { libc_malloc(size), size } };
+	}
+
+	void _free(Allocation &a) override { libc_free(a.ptr); }
+
+	void free(void *addr, size_t size) override { libc_free(addr); }
 
 	bool need_size_for_free() const override { return false; }
 
