@@ -15,6 +15,7 @@
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs"/>
 		<rom label="test-fork_execve"/>
+		<rom label="dummy.lib.so"/>
 	</content>
 
 	<config verbose="yes">
