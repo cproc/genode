@@ -40,6 +40,7 @@ MIRROR_FROM_LIBPORTS := \
 	lib/mk/spec/x86_64/qemu-usb.mk \
 	src/lib/libc/internal/call_func.h \
 	src/lib/libc/internal/config.h \
+	src/lib/libc/internal/clone_session.h \
 	src/lib/libc/internal/init.h \
 	src/lib/libc/internal/mem_alloc.h \
 	src/lib/libc/internal/monitor.h \
