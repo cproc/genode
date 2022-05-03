@@ -30,6 +30,7 @@
 #include <internal/init.h>
 #include <internal/errno.h>
 #include <internal/file_operations.h>
+#include <internal/mmap_registry.h>
 
 using namespace Genode;
 
@@ -420,6 +421,12 @@ extern "C" int execve(char const *filename,
 	/* purge line buffers, which may be allocated at the application heap */
 	setvbuf(stdout, nullptr, _IONBF, 0);
 	setvbuf(stderr, nullptr, _IONBF, 0);
+
+	/*
+	 * Reconstruct mmap backend
+	 */
+	Libc::mmap_registry()->reset();
+	Libc::init_mem_alloc(*_env_ptr);
 
 	/*
 	 * Reconstruct malloc heap for application-owned data
