@@ -1,5 +1,6 @@
 base
 genode_c_api
+jemalloc
 net
 os
 so
