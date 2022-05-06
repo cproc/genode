@@ -22,13 +22,14 @@
 			<service name="RM"/>
 			<service name="CPU"/>
 			<service name="LOG"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 		<default caps="100"/>
 		<start name="vfs_block">
-			<resource name="RAM" quantum="2M"/>
+			<resource name="RAM" quantum="3M"/>
 			<provides> <service name="Block"/> </provides>
 			<config>
 				<vfs>
@@ -42,7 +43,7 @@
 			</config>
 		</start>
 		<start name="test-libc_vfs_block">
-			<resource name="RAM" quantum="4M"/>
+			<resource name="RAM" quantum="16M"/>
 			<config>
 				<vfs> <dir name="dev"> <block/> </dir> </vfs>
 				<libc/>

@@ -21,13 +21,14 @@
 			<service name="PD"/>
 			<service name="ROM"/>
 			<service name="CPU"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> </any-service>
 		</default-route>
 		<default caps="100"/>
 		<start name="test-stdcxx">
-			<resource name="RAM" quantum="10M"/>
+			<resource name="RAM" quantum="16M"/>
 			<config>
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
 				<libc stdout="/dev/log"/>

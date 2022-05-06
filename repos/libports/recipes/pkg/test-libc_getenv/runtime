@@ -26,13 +26,14 @@
 			<service name="PD"/>
 			<service name="RM"/>
 			<service name="ROM"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 		<default caps="100"/>
 		<start name="test-libc_getenv">
-			<resource name="RAM" quantum="4M"/>
+			<resource name="RAM" quantum="16M"/>
 			<config>
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
 				<libc stdout="/dev/log"/>

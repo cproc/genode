@@ -72,7 +72,7 @@
 
 							<start name="echo">
 								<binary name="test-libc_fifo_pipe"/>
-								<resource name="RAM" quantum="3M"/>
+								<resource name="RAM" quantum="16M"/>
 								<config type="echo">
 									<vfs>
 										<dir name="dev">
@@ -119,7 +119,7 @@
 
 		<start name="fifo-pipe-test">
 			<binary name="test-libc_fifo_pipe"/>
-			<resource name="RAM" quantum="8M"/>
+			<resource name="RAM" quantum="17M"/>
 			<config iterations="15">
 				<vfs>
 					<dir name="ro">
@@ -147,7 +147,7 @@
 		</start>
 
 		<start name="init" caps="250">
-			<resource name="RAM" quantum="16M"/>
+			<resource name="RAM" quantum="17M"/>
 			<route>
 				<service name="ROM" label="config">    <child name="report_rom" label="init.config"/> </service>
 				<service name="File_system">           <child name="vfs"/> </service>

@@ -11,7 +11,6 @@
 		<rom label="ld.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libm.lib.so"/>
-		<rom label="jemalloc.lib.so"/>
 		<rom label="posix.lib.so"/>
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs"/>

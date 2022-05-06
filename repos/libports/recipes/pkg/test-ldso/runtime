@@ -122,13 +122,14 @@
 			<service name="CPU"/>
 			<service name="LOG"/>
 			<service name="PD"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> </any-service>
 		</default-route>
 		<default caps="100"/>
 		<start name="test-ldso">
-			<resource name="RAM" quantum="3M"/>
+			<resource name="RAM" quantum="16M"/>
 			<config ld_bind_now="no" ld_verbose="no">
 				<vfs> <dir name="dev"> <log/> </dir> </vfs>
 				<libc stdout="/dev/log"/>

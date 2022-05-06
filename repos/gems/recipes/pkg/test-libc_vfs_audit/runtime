@@ -22,6 +22,7 @@
 			<service name="RM"/>
 			<service name="CPU"/>
 			<service name="LOG"/>
+			<service name="Timer"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -39,7 +40,7 @@
 			</config>
 		</start>
 		<start name="test-libc_vfs">
-			<resource name="RAM" quantum="4M"/>
+			<resource name="RAM" quantum="16M"/>
 			<config>
 				<iterations value="1"/>
 				<write-read size="1M" buffer_size="8K"/>
