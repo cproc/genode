@@ -20,7 +20,7 @@
 #include <timer_session/connection.h>
 
 namespace Libc { struct Kernel_timer_accessor; }
-
+extern "C" void wait_for_continue();
 struct Libc::Kernel_timer_accessor : Timer_accessor
 {
 	Genode::Env &_env;
@@ -38,6 +38,8 @@ struct Libc::Kernel_timer_accessor : Timer_accessor
 
 	Timer &timer() override
 	{
+Genode::log("*** timer()");
+wait_for_continue();
 		Mutex::Guard guard(_mutex);
 
 		if (!_timer.constructed())
