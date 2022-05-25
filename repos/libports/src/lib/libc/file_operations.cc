@@ -223,6 +223,7 @@ extern "C" int access(const char *path, int amode)
 		resolve_symlinks(path, resolved_path);
 		FNAME_FUNC_WRAPPER(access, resolved_path.base(), amode);
 	} catch (Symlink_resolve_error) {
+Genode::error("access(", Genode::Cstring(path), ")");
 		errno = ENOENT;
 		return -1;
 	}
@@ -520,9 +521,10 @@ __SYS_(int, msync, (void *start, ::size_t len, int flags),
 	return ret;
 })
 
-
+extern "C" void wait_for_continue();
 __SYS_(int, open, (const char *pathname, int flags, ...),
 {
+Genode::log("open(", Genode::Cstring(pathname), ")");
 	if (!pathname)
 		return Errno(EFAULT);
 
@@ -534,6 +536,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	try {
 		resolve_symlinks_except_last_element(pathname, resolved_path);
 	} catch (Symlink_resolve_error) {
+Genode::error("open(", Genode::Cstring(pathname), ")");
 		return -1;
 	}
 
@@ -542,6 +545,7 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 		try {
 			resolve_symlinks(resolved_path.base(), resolved_path);
 		} catch (Symlink_resolve_error) {
+Genode::error("open(", Genode::Cstring(pathname), ")");
 			if (errno == ENOENT) {
 				if (!(flags & O_CREAT))
 					return -1;
@@ -558,12 +562,15 @@ __SYS_(int, open, (const char *pathname, int flags, ...),
 	}
 
 	new_fdo = plugin->open(resolved_path.base(), flags);
-	if (!new_fdo)
+	if (!new_fdo) {
+Genode::error("open(", Genode::Cstring(pathname), ")");
 		return -1;
+	}
 	new_fdo->path(resolved_path.base());
 
 	if (flags & O_APPEND)
 		lseek(new_fdo->libc_fd, 0, SEEK_END);
+Genode::log("open(", Genode::Cstring(pathname), "): ", new_fdo->libc_fd);
 
 	return new_fdo->libc_fd;
 })
@@ -714,6 +721,7 @@ extern "C" int stat(const char *path, struct stat *buf)
 		resolved_path.remove_trailing('/');
 		FNAME_FUNC_WRAPPER(stat, resolved_path.base(), buf);
 	} catch(Symlink_resolve_error) {
+Genode::error("stat(", Genode::Cstring(path), ")");
 		return -1;
 	}
 }

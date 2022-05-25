@@ -1,7 +1,9 @@
 source ${genode_dir}/repos/libports/run/qt5_common.inc
 
-import_from_depot [depot_user]/src/qt5_component \
+import_from_depot [depot_user]/raw/test-qt_quick \
+                  [depot_user]/src/qt5_component \
                   [depot_user]/src/qt5_declarative \
+                  [depot_user]/src/qt5_quickcontrols2 \
                   [depot_user]/src/test-qt_quick
 
 #
@@ -34,6 +36,8 @@ append config {
 				<tar name="qt5_declarative_qml.tar"/>
 				<tar name="qt5_dejavusans.tar"/>
 				<tar name="qt5_libqgenode.tar"/>
+				<tar name="qt5_quickcontrols2_qml.tar"/>
+				<tar name="test-qt_quick.tar"/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe" rtc="/dev/rtc"/>
 		</config>

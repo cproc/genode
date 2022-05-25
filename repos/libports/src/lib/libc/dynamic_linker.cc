@@ -51,9 +51,13 @@ static Shared_object *to_object(void *handle)
 	return static_cast<Shared_object *>(handle);
 }
 
-
+extern "C" void wait_for_continue();
 void *dlopen(const char *name, int mode)
 {
+Genode::log("dlopen(", Genode::Cstring(name), ")");
+//if (Genode::strcmp(name, "/qt/plugins/imageformats/libqjpeg.lib.so") == 0) {
+//	wait_for_continue();
+//}
 	int supported = RTLD_LAZY | RTLD_NOW | RTLD_LOCAL | RTLD_GLOBAL | RTLD_NODELETE;
 
 	/* error on unsupported mode values */

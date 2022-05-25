@@ -261,9 +261,12 @@ int Libc::Vfs_plugin::access(const char *path, int amode)
 			succeeded = true;
 		return Fn::COMPLETE;
 	});
-	if (succeeded)
+	if (succeeded) {
+Genode::log("access(", Genode::Cstring(path), ")");
 		return 0;
+	}
 
+Genode::error("access(", Genode::Cstring(path), ")");
 	errno = ENOENT;
 	return -1;
 }
@@ -782,10 +785,11 @@ int Libc::Vfs_plugin::stat_from_kernel(const char *path, struct stat *buf)
 	Vfs::Directory_service::Stat stat;
 
 	switch (_root_fs.stat(path, stat)) {
-	case Result::STAT_ERR_NO_ENTRY: errno = ENOENT; return -1;
-	case Result::STAT_ERR_NO_PERM:  errno = EACCES; return -1;
+	case Result::STAT_ERR_NO_ENTRY: errno = ENOENT; Genode::error("stat(", Genode::Cstring(path), ")"); return -1;
+	case Result::STAT_ERR_NO_PERM:  errno = EACCES; Genode::error("stat(", Genode::Cstring(path), ")"); return -1;
 	case Result::STAT_OK:                           break;
 	}
+Genode::log("stat(", Genode::Cstring(path), ")");
 
 	vfs_stat_to_libc_stat_struct(stat, buf);
 	return 0;
