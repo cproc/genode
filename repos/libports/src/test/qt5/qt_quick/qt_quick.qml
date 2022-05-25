@@ -5,28 +5,31 @@
  */
 
 import QtQuick 2.0
+import QtQuick.Controls 2.13
 
 Rectangle {
     width: 200
     height: 100
-    color: "red"
 
-    Text {
-        anchors.centerIn: parent
-        text: "Hello, World!"
-    }
+//	Item {
 
-    MouseArea {
-        anchors.fill: parent
-        onClicked: parent.color = "blue"
-    }
+		Action {
+			id: copyAction
+//			text: qsTr("&Copy")
+			icon.source: "file://redstone.png"
+		}
 
-    focus: true
-    Keys.onPressed: {
-        if (event.key == Qt.Key_Return) {
-            color = "green";
-            event.accepted = true;
-        }
-    }
+		ToolButton {
+			id: toolButton
+			action: copyAction
+		}
+
+//		Image {
+//	        id: img
+//			anchors.fill: parent
+//			source: "redStone.png"
+//		}
+
+//	}
 }
 
