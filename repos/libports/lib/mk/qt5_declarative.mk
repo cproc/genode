@@ -43,11 +43,26 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)cd $(CURDIR)/install/qt/qml/Qt/labs/folderlistmodel && \
 		$(STRIP) libqmlfolderlistmodelplugin.lib.so -o libqmlfolderlistmodelplugin.lib.so.stripped
 
+	$(VERBOSE)cd $(CURDIR)/install/qt/qml/Qt/labs/qmlmodels && \
+		$(STRIP) liblabsmodelsplugin.lib.so -o liblabsmodelsplugin.lib.so.stripped
+
+	$(VERBOSE)cd $(CURDIR)/install/qt/qml/Qt/labs/settings && \
+		$(STRIP) libqmlsettingsplugin.lib.so -o libqmlsettingsplugin.lib.so.stripped
+
+	$(VERBOSE)cd $(CURDIR)/install/qt/qml/Qt/labs/wavefrontmesh && \
+		$(STRIP) libqmlwavefrontmeshplugin.lib.so -o libqmlwavefrontmeshplugin.lib.so.stripped
+
+	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtQml/Models.2 && \
+		$(STRIP) libmodelsplugin.lib.so -o libmodelsplugin.lib.so.stripped
+
 	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtQuick.2 && \
 		$(STRIP) libqtquick2plugin.lib.so -o libqtquick2plugin.lib.so.stripped
 
 	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtQuick/Layouts && \
 		$(STRIP) libqquicklayoutsplugin.lib.so -o libqquicklayoutsplugin.lib.so.stripped
+
+	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtQuick/Shapes && \
+		$(STRIP) libqmlshapesplugin.lib.so -o libqmlshapesplugin.lib.so.stripped
 
 	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtQuick/Window.2 && \
 		$(STRIP) libwindowplugin.lib.so -o libwindowplugin.lib.so.stripped
@@ -61,8 +76,13 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5QuickWidgets.lib.so.stripped $(PWD)/bin/libQt5QuickWidgets.lib.so
 
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/folderlistmodel/libqmlfolderlistmodelplugin.lib.so.stripped $(PWD)/bin/libqmlfolderlistmodelplugin.lib.so
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/qmlmodels/liblabsmodelsplugin.lib.so.stripped $(PWD)/bin/liblabsmodelsplugin.lib.so
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/settings/libqmlsettingsplugin.lib.so.stripped $(PWD)/bin/libqmlsettingsplugin.lib.so
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/wavefrontmesh/libqmlwavefrontmeshplugin.lib.so.stripped $(PWD)/bin/libqmlwavefrontmeshplugin.lib.so
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQml/Models.2/libmodelsplugin.lib.so.stripped $(PWD)/bin/libmodelsplugin.lib.so
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick.2/libqtquick2plugin.lib.so.stripped $(PWD)/bin/libqtquick2plugin.lib.so
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Layouts/libqquicklayoutsplugin.lib.so.stripped $(PWD)/bin/libqquicklayoutsplugin.lib.so
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Shapes/libqmlshapesplugin.lib.so.stripped $(PWD)/bin/libqmlshapesplugin.lib.so
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Window.2/libwindowplugin.lib.so.stripped $(PWD)/bin/libwindowplugin.lib.so
 
 	@#
@@ -74,8 +94,13 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5QuickWidgets.lib.so $(PWD)/debug/
 
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/folderlistmodel/libqmlfolderlistmodelplugin.lib.so $(PWD)/debug/
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/qmlmodels/liblabsmodelsplugin.lib.so $(PWD)/debug/
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/settings/libqmlsettingsplugin.lib.so $(PWD)/debug/
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/Qt/labs/wavefrontmesh/libqmlwavefrontmeshplugin.lib.so $(PWD)/debug/
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQml/Models.2/libmodelsplugin.lib.so $(PWD)/debug/
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick.2/libqtquick2plugin.lib.so $(PWD)/debug/
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Layouts/libqquicklayoutsplugin.lib.so $(PWD)/debug/
+	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Shapes/libqmlshapesplugin.lib.so $(PWD)/debug/
 	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtQuick/Window.2/libwindowplugin.lib.so $(PWD)/debug/
 
 	@#
