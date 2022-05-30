@@ -161,6 +161,9 @@ qmake_root/lib/%.lib.a: qmake_root/lib
 qmake_root/mkspecs: qmake_root
 	$(VERBOSE)mkdir -p $@
 	$(VERBOSE)ln -sf $(QT_API_DIR)/mkspecs/* $@/
+	$(VERBOSE)rm -f $@/modules
+	$(VERBOSE)mkdir $@/modules
+	$(VERBOSE)ln -snf $(QT_API_DIR)/mkspecs/modules/* $@/modules/
 	$(VERBOSE)ln -sf $(QMAKE_PLATFORM)/qconfig.pri $@/
 	$(VERBOSE)ln -sf $(QMAKE_PLATFORM)/qmodule.pri $@/
 
