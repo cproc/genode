@@ -14,6 +14,8 @@
   </index>
 
   <index name="Tools">
+    <pkg path="morph_browser"   info="Qt5-based web browser"/>
+    <pkg path="morph_browser-software" info="Qt5-based web browser"/>
     <pkg path="system_shell"    info="command-line interface to the system"/>
     <pkg path="system_clock-pc" info="real-time-clock service" arch="x86_64"/>
     <pkg path="qt5_textedit"    info="Qt5-based text editor"/>
