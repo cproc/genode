@@ -2039,7 +2039,7 @@ class Lwip::File_system final : public Vfs::File_system, public Lwip::Directory
 		 */
 		bool queue_read(Vfs_handle *vfs_handle, file_size) override
 		{
-			if (_netif.ready())
+//			if (_netif.ready())
 				return true;
 
 			/* handle must be woken up when the interface comes up */
