@@ -85,6 +85,7 @@ set qt5_event_filter_config {
 						<input name="ps2"/>
 						<input name="usb"/>
 						<input name="sdl"/>
+						<input name="touch"/>
 					</merge>
 				</remap>
 				<mod1>
@@ -109,6 +110,7 @@ append qt5_event_filter_config {
 		<policy label="ps2" input="ps2"/>
 		<policy label="usb" input="usb"/>
 		<policy label="sdl" input="sdl"/>
+		<policy label="touch" input="touch"/>
 	</config>}
 
 set fd [open bin/qt5_event_filter.config w]
@@ -193,7 +195,7 @@ proc qt5_start_nodes { } {
 
 				<domain name="pointer" layer="1" label="no" content="client" origin="pointer" />
 				<domain name="default" layer="2" label="no" content="client"
-				        focus="click" hover="always" width="1024" height="768"/>
+				        focus="click" hover="always"/>
 
 				<policy label_prefix="pointer" domain="pointer"/>
 				<default-policy domain="default"/>
