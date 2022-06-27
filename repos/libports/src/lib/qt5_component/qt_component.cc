@@ -24,12 +24,17 @@
 /* initial environment for the FreeBSD libc implementation */
 extern char **environ;
 
+/* needed for mesa-lima */
+Genode::Env *genode_env;
+
 /* provided by the application */
 extern "C" int main(int argc, char **argv, char **envp);
 extern "C" void wait_for_continue();
 void Libc::Component::construct(Libc::Env &env)
 {
 	Libc::with_libc([&] {
+
+		genode_env = &env;
 
 		qpa_init(env);
 
