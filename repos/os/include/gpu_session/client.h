@@ -40,6 +40,18 @@ class Gpu::Session_client : public Genode::Rpc_client<Session>
 		Genode::Dataspace_capability info_dataspace() const override {
 			return call<Rpc_info_dataspace>(); }
 
+		Gpu::Ctx_id create_ctx() override {
+			return call<Rpc_create_ctx>(); }
+
+		void free_ctx(Gpu::Ctx_id id) override {
+			call<Rpc_free_ctx>(id); }
+
+		Gpu::Syncobj_id create_syncobj() override {
+			return call<Rpc_create_syncobj>(); }
+
+		void destroy_syncobj(Gpu::Syncobj_id id) override {
+			call<Rpc_destroy_syncobj>(id); }
+
 		Gpu::Sequence_number exec_buffer(Buffer_id id,
 		                                 Genode::size_t size) override {
 			return call<Rpc_exec_buffer>(id, size); }
@@ -75,6 +87,9 @@ class Gpu::Session_client : public Genode::Rpc_client<Session>
 
 		void unmap_buffer_ppgtt(Buffer_id id, Gpu::addr_t va) override {
 			call<Rpc_unmap_buffer_ppgtt>(id, va); }
+
+		Gpu::addr_t query_buffer_ppgtt(Gpu::Buffer_id id) override {
+			return call<Rpc_query_buffer_ppgtt>(id); }
 
 		bool set_tiling(Buffer_id id, unsigned mode) override {
 			return call<Rpc_set_tiling>(id, mode); }

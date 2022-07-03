@@ -50,6 +50,8 @@ namespace Gpu {
 	};
 
 	struct Sequence_number;
+	struct Ctx_id;
+	struct Syncobj_id;
 	struct Session;
 }
 
@@ -59,6 +61,20 @@ namespace Gpu {
 struct Gpu::Sequence_number
 {
 	Genode::uint64_t value;
+};
+
+
+struct Gpu::Ctx_id
+{
+	Genode::uint32_t value;
+	bool valid;
+};
+
+
+struct Gpu::Syncobj_id
+{
+	Genode::uint32_t value;
+	bool valid;
 };
 
 
@@ -87,6 +103,42 @@ struct Gpu::Session : public Genode::Session
 	 * Get GPU information dataspace
 	 */
 	virtual Genode::Dataspace_capability info_dataspace() const = 0;
+
+	/**
+	 * Allocate context
+	 *
+	 * \throw Out_of_ram
+	 * \throw Out_of_caps
+	 *
+	 * \return valid id if ctx could be created, otherwise a
+	 *         invalid ctx is returned
+	 */
+	virtual Gpu::Ctx_id create_ctx() = 0;
+
+	/**
+	 * Free context
+	 *
+	 * \param ctx_id  context id
+	 */
+	virtual void free_ctx(Gpu::Ctx_id) = 0;
+
+	/**
+	 * Allocate sync object
+	 *
+	 * \throw Out_of_ram
+	 * \throw Out_of_caps
+	 *
+	 * \return valid id if sync object could be created, otherwise a
+	 *         invalid object is returned
+	 */
+	virtual Gpu::Syncobj_id create_syncobj() = 0;
+
+	/**
+	 * Desotry sync object
+	 *
+	 * \param sync_id  sync object id
+	 */
+	virtual void destroy_syncobj(Gpu::Syncobj_id) = 0;
 
 	/**
 	 * Execute commands from given buffer
@@ -197,7 +249,14 @@ struct Gpu::Session : public Genode::Session
 	 *
 	 * \param id  buffer id
 	 */
-	virtual void unmap_buffer_ppgtt(Buffer_id id, Gpu::addr_t) = 0;
+	virtual void unmap_buffer_ppgtt(Buffer_id id, Gpu::addr_t va) = 0;
+
+	/**
+	 * Get virtual address of buffer in the PPGTT
+	 *
+	 * \param id  buffer id to be associated with the buffer
+	 */
+	virtual Gpu::addr_t query_buffer_ppgtt(Buffer_id) = 0;
 
 	/**
 	 * Set tiling for buffer
@@ -212,6 +271,12 @@ struct Gpu::Session : public Genode::Session
 	 *******************/
 
 	GENODE_RPC(Rpc_info_dataspace, Genode::Dataspace_capability, info_dataspace);
+	GENODE_RPC_THROW(Rpc_create_ctx, Gpu::Ctx_id, create_ctx,
+	                 GENODE_TYPE_LIST(Out_of_caps, Out_of_ram));
+	GENODE_RPC(Rpc_free_ctx, void, free_ctx, Gpu::Ctx_id);
+	GENODE_RPC_THROW(Rpc_create_syncobj, Gpu::Syncobj_id, create_syncobj,
+	                 GENODE_TYPE_LIST(Out_of_caps, Out_of_ram));
+	GENODE_RPC(Rpc_destroy_syncobj, void, destroy_syncobj, Gpu::Syncobj_id);
 	GENODE_RPC_THROW(Rpc_exec_buffer, Gpu::Sequence_number, exec_buffer,
 	                 GENODE_TYPE_LIST(Invalid_state),
 	                 Gpu::Buffer_id, Genode::size_t);
@@ -237,14 +302,16 @@ struct Gpu::Session : public Genode::Session
 	                 Gpu::Buffer_id, Gpu::addr_t);
 	GENODE_RPC(Rpc_unmap_buffer_ppgtt, void, unmap_buffer_ppgtt,
 	           Gpu::Buffer_id, Gpu::addr_t);
+	GENODE_RPC(Rpc_query_buffer_ppgtt, Gpu::addr_t, query_buffer_ppgtt, Gpu::Buffer_id);
 	GENODE_RPC(Rpc_set_tiling, bool, set_tiling,
 	           Gpu::Buffer_id, unsigned);
 
-	GENODE_RPC_INTERFACE(Rpc_info_dataspace, Rpc_exec_buffer,
-	                     Rpc_complete, Rpc_completion_sigh, Rpc_alloc_buffer,
+	GENODE_RPC_INTERFACE(Rpc_info_dataspace, Rpc_create_ctx, Rpc_free_ctx,
+	                     Rpc_create_syncobj, Rpc_destroy_syncobj,
+	                     Rpc_exec_buffer, Rpc_complete, Rpc_completion_sigh, Rpc_alloc_buffer,
 	                     Rpc_free_buffer, Rpc_export_buffer, Rpc_import_buffer,
 	                     Rpc_map_buffer, Rpc_unmap_buffer,
-	                     Rpc_map_buffer_ppgtt, Rpc_unmap_buffer_ppgtt,
+	                     Rpc_map_buffer_ppgtt, Rpc_unmap_buffer_ppgtt, Rpc_query_buffer_ppgtt,
 	                     Rpc_set_tiling);
 };
 
