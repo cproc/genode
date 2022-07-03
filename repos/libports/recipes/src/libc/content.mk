@@ -1,18 +1,28 @@
-content: include/libc-plugin src/lib/libc/target.mk lib/mk LICENSE
+content: include/libc-plugin include/jemalloc src/lib/libc/target.mk src/lib/jemalloc lib/mk LICENSE
 
-LIBC_PORT_DIR := $(call port_dir,$(REP_DIR)/ports/libc)
-LIBM_PORT_DIR := $(LIBC_PORT_DIR)
+LIBC_PORT_DIR     := $(call port_dir,$(REP_DIR)/ports/libc)
+LIBM_PORT_DIR     := $(LIBC_PORT_DIR)
+JEMALLOC_PORT_DIR := $(call port_dir,$(REP_DIR)/ports/jemalloc)
 
 src/lib/libc:
 	mkdir -p $@
 	cp -r $(LIBC_PORT_DIR)/src/lib/libc/* $@
 	cp -r $(REP_DIR)/src/lib/libc/* $@
 
+src/lib/jemalloc:
+	mkdir -p $@
+	cp -r $(JEMALLOC_PORT_DIR)/src/lib/jemalloc/* $@
+	cp -r $(REP_DIR)/src/lib/jemalloc/* $@
+
 # target.mk for triggering the build of both libraries libc and libm
 src/lib/libc/target.mk: src/lib/libc
 	echo "LIBS += libc libm" > $@
 
-include/libc-plugin include/libc/sys/ucontext.h:
+# target.mk for triggering the build of library jemalloc
+#src/lib/jemalloc/target.mk: src/lib/jemalloc
+#	echo "LIBS += jemalloc" > $@
+
+include/libc-plugin include/libc/sys/ucontext.h include/jemalloc:
 	$(mirror_from_rep_dir)
 
 lib/mk:
