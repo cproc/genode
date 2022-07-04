@@ -62,6 +62,7 @@ proc qt5_parent_provides { } {
 		<service name="RM"/>
 		<service name="CPU"/>
 		<service name="LOG"/>
+		<service name="TRACE"/>
 	}
 
 	return $parent_provides
