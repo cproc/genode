@@ -16,9 +16,19 @@
 
 static inline void jent_get_nstime(__u64 *out)
 {
-	uint64_t t;
+	static uint64_t t;
+	static int x = 100000;
+
 	/* cycle counter */
-	asm volatile("mrs %0, pmccntr_el0" : "=r" (t));
+	//asm volatile("mrs %0, pmccntr_el0" : "=r" (t));
+
+	t += x;
+
+	if (x < 101000)
+		x += 100;
+	else
+		x = 100000;
+
 	*out = t;
 }
 

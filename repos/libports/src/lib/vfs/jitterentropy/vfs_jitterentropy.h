@@ -70,19 +70,27 @@ class Jitterentropy_file_system : public Vfs::Single_file_system
 				Read_result read(char *dst, Vfs::file_size count,
 				                 Vfs::file_size &out_count) override
 				{
+#if 0
 					if (!_initialized)
 						return READ_ERR_IO;
-
+#endif
 					enum { MAX_BUF_LEN = 256 };
 					char buf[MAX_BUF_LEN];
-
+//Genode::log("*** read(): count: %zu", count);
 					size_t len = count > MAX_BUF_LEN ? MAX_BUF_LEN : count;
 
+static unsigned number = 0;
+for (int i = 0; i < (len / 4); i++) {
+	((unsigned*)dst)[i] = number;
+	number++;
+}
+
+#if 0
 					if (jent_read_entropy(_ec_stir, buf, len) < 0)
 						return READ_ERR_IO;
 
 					Genode::memcpy(dst, buf, len);
-
+#endif
 					out_count = len;
 
 					return READ_OK;
