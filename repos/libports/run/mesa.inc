@@ -25,6 +25,7 @@ lappend imports [depot_user]/src/report_rom
 import_from_depot $imports
 
 set build_components {
+	lib/vfs/gpu
 	drivers/gpu/intel
 	lib/mesa/softpipe
 	core init timer
@@ -33,6 +34,7 @@ set build_components {
 lappend_if $use_iris    build_components lib/mesa/iris
 lappend_if $use_etnaviv build_components lib/mesa/etnaviv
 lappend_if $use_etnaviv build_components drivers/gpu/etnaviv
+lappend_if $use_lima    build_components drivers/gpu/lima
 lappend build_components $demo_component
 
 build $build_components
@@ -103,6 +105,7 @@ set config {
 set backend_library mesa_gpu-softpipe.lib.so
 if {$use_iris}    { set backend_library mesa_gpu-iris.lib.so }
 if {$use_etnaviv} { set backend_library mesa_gpu-etnaviv.lib.so }
+if {$use_lima}    { set backend_library mesa_gpu-lima.lib.so }
 
 append config "
 	<start name=\"$demo_binary\" caps=\"$demo_caps\">
@@ -147,6 +150,18 @@ append_if $use_etnaviv config {
 		</route>
 	</start>}
 
+append_if $use_lima config {
+	<start name="lima_gpu_drv" caps="200">
+		<resource name="RAM" quantum="64M"/>
+		<provides> <service name="Gpu"/> </provides>
+		<route>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Platform"> <child name="drivers"/> </service>
+			<service name="ROM" label_last="dtb"> <parent label="lima-pine_a64lts.dtb"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>}
+
 append config {
 </config>}
 
@@ -167,8 +182,12 @@ append_if $use_iris boot_modules {
 
 append_if $use_etnaviv boot_modules {
 	mesa_gpu-etnaviv.lib.so libdrm.lib.so
-
 	imx8q_gpu_drv
+}
+
+append_if $use_lima boot_modules {
+	mesa_gpu-lima.lib.so libdrm.lib.so
+	lima_gpu_drv lima-pine_a64lts.dtb
 }
 
 append boot_modules $demo_modules
