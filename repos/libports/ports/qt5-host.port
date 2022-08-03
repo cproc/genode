@@ -1,15 +1,15 @@
 LICENSE := GPL
-VERSION := 5.13.2
+VERSION := 5.14.2
 
 QTBASE  := qtbase-everywhere-src-${VERSION}
 QTTOOLS := qttools-everywhere-src-${VERSION}
 
 DOWNLOADS := ${QTBASE}.archive $(QTTOOLS).archive
 
-URL(${QTBASE}) := https://download.qt.io/archive/qt/5.13/$(VERSION)/submodules/$(QTBASE).tar.xz
-SHA(${QTBASE}) := 26b6b686d66a7ad28eaca349e55e2894e5a735f3831e45f2049e93b1daa92121
+URL(${QTBASE}) := https://download.qt.io/archive/qt/5.14/$(VERSION)/submodules/$(QTBASE).tar.xz
+SHA(${QTBASE}) := 48b9e79220941665a9dd827548c6428f7aa3052ccba8f4f7e039a94aa1d2b28a
 DIR(${QTBASE}) := src/lib/qtbase
 
-URL(${QTTOOLS}) := https://download.qt.io/archive/qt/5.13/$(VERSION)/submodules/$(QTTOOLS).tar.xz
-SHA(${QTTOOLS}) := 919a2713b6d2d7873a09ad85bd93cf4282606e5bf84d5884250f665a253ec06e
+URL(${QTTOOLS}) := https://download.qt.io/archive/qt/5.14/$(VERSION)/submodules/$(QTTOOLS).tar.xz
+SHA(${QTTOOLS}) := 5bb0cf7832b88eb6bc9d4289f98307eb14b16a453ad6cf42cca13c4fe1a053c5
 DIR(${QTTOOLS}) := src/lib/qttools
