@@ -1,0 +1,33 @@
+#!/bin/sh
+
+export LC_ALL=C
+
+#tool/ports/prepare_port expat freetype icu jpeg libc libpng mesa openssl qoost pcre qt5 stdcxx zlib
+
+PLATFORMS="arm_v7a arm_v8a x86_32 x86_64"
+
+#for platform in $PLATFORMS; do
+#	tool/create_builddir $platform
+#	echo 'REPOSITORIES += $(GENODE_DIR)/repos/libports' >> build/$platform/etc/build.conf
+#	echo 'MAKE += -j32' >> build/$platform/etc/build.conf
+#done
+#
+#echo 'CROSS_DEV_PREFIX=genode-aarch64-' > build/arm_v8a/etc/tools.conf
+#echo 'CROSS_DEV_PREFIX=genode-arm-'     > build/arm_v7a/etc/tools.conf
+#echo 'CROSS_DEV_PREFIX=genode-x86-'     > build/x86_32/etc/tools.conf
+#echo 'CROSS_DEV_PREFIX=genode-x86-'     > build/x86_64/etc/tools.conf
+
+for platform in $PLATFORMS; do
+	while read lib; do
+		make -C build/$platform VERBOSE= LIB=$lib
+		./abi_symbols_qt5 build/$platform/bin/$lib.lib.so > build/$platform/$lib
+	done < qt5_libraries.txt
+done
+
+while read lib
+do
+	cat build/arm_v7a/$lib build/arm_v8a/$lib | sort | uniq | ./unify_qt5_symbols - | \
+		cat - build/arm_v8a/$lib | sort | uniq | ./unify_qt5_symbols - | \
+			cat - build/x86_32/$lib | sort | uniq | ./unify_qt5_symbols - | \
+				cat - build/x86_64/$lib | sort | uniq | ./unify_qt5_symbols - > $lib
+done < qt5_libraries.txt
