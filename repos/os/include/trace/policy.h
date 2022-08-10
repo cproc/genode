@@ -21,7 +21,7 @@ namespace Genode {
 	struct Signal_context;
 }
 
-extern "C" size_t max_event_size ();
+extern "C" size_t max_event_size   ();
 extern "C" size_t checkpoint       (char *dst, char const *name, unsigned long, void *, unsigned char);
 extern "C" size_t log_output       (char *dst, char const *log_message, size_t len);
 extern "C" size_t rpc_call         (char *dst, char const *rpc_name, Genode::Msgbuf_base const &);
