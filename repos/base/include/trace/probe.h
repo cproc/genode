@@ -23,6 +23,7 @@ namespace Genode { namespace Trace {
 	class Duration
 	{
 		private:
+
 			char          const *_name;
 			unsigned long const  _data;
 
@@ -31,6 +32,7 @@ namespace Genode { namespace Trace {
 			Duration & operator = (Duration const &) = delete;
 
 		public:
+
 			Duration(char const * name, unsigned long data)
 			: _name(name), _data(data)
 			{ Checkpoint(_name, _data, nullptr, Checkpoint::Type::START); }
