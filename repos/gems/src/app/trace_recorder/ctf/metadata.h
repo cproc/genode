@@ -103,4 +103,4 @@ class Ctf::Metadata
 };
 
 
-#endif /* _METADATA_H_ */
+#endif /* _CTF__METADATA_H_ */

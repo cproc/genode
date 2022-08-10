@@ -87,4 +87,4 @@ class Pcapng::Backend : Trace_recorder::Backend_base
 };
 
 
-#endif /* _CTF__BACKEND_H_ */
+#endif /* _PCAPNG__BACKEND_H_ */

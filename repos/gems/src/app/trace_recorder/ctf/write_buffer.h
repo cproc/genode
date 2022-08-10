@@ -11,8 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _WRITE_BUFFER_H_
-#define _WRITE_BUFFER_H_
+#ifndef _CTF__WRITE_BUFFER_H_
+#define _CTF__WRITE_BUFFER_H_
 
 /* local includes */
 #include <subject_info.h>
@@ -79,4 +79,4 @@ class Ctf::Write_buffer
 };
 
 
-#endif /* _PACKET_BUFFER_H_ */
+#endif /* _CTF__WRITE_BUFFER_H_ */
