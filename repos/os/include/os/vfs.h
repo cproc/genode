@@ -713,7 +713,7 @@ class Genode::New_file : Noncopyable
 			Vfs::Directory_service::Stat stat { };
 			if (!append)
 				handle_ptr->fs().ftruncate(handle_ptr, 0);
-			else if(handle_ptr->ds().stat(path.string(), stat) == Vfs::Directory_service::STAT_OK)
+			else if (handle_ptr->ds().stat(path.string(), stat) == Vfs::Directory_service::STAT_OK)
 				handle_ptr->seek(stat.size);
 
 			return *handle_ptr;
@@ -726,7 +726,7 @@ class Genode::New_file : Noncopyable
 		 *
 		 * \throw Create_failed
 		 */
-		New_file(Directory &dir, Directory::Path const &path, bool append=false)
+		New_file(Directory &dir, Directory::Path const &path, bool append = false)
 		:
 			_ep(dir._ep), _alloc(dir._alloc), _fs(dir._fs),
 			_handle(_init_handle(dir, path, append))
