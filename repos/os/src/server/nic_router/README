@@ -778,7 +778,10 @@ This is how you can configure whether to trace packets (default values shown):
 !     <domain trace_packets="no" ... />
 ! </config>
 
-If enabled, 'trace_eth_packet()' is called for every packet.
+If enabled, 'trace_eth_packet()' is called for every packet received or sent by
+the router. The attribute in the <domain> tag applies only for packets
+received and sent by that domain. The attribute in the <config> tag sets the
+default value for all <domain> tags without a local setting.
 
 
 Other configuration attributes
