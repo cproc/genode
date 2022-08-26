@@ -62,9 +62,70 @@
 			<service name="File_system" label="fonts">  <child name="fonts_fs"/> </service>
 		</route>
 	</start>
-
+<!--
 	<start name="sticks_blue_backdrop"/>
 	<start name="nano3d"/>
 	<start name="system_shell"/>
+-->
+	<start name="system_clock-dummy" pkg="system_clock-dummy"/>
+
+	<start name="black_hole" pkg="black_hole">
+		<config>
+			<audio_in/>
+			<audio_out/>
+			<capture/>
+			<nic/>
+		</config>
+	</start>
+
+	<start name="gpu_drv" pkg="a64_lima_gpu_drv-pinephone">
+		<route>
+			<service name="Platform"> <parent label="gpu"/> </service>
+		</route>
+	</start>
+
+	<start name="morph_browser" pkg="morph_browser">
+		<route>
+			<service name="Nic">
+				<child name="nic_router"/>
+			</service>
+			<service name="File_system" label="config">
+				<child name="default_fs_rw"/>
+			</service>
+			<service name="File_system" label="downloads">
+				<child name="default_fs_rw"/>
+			</service>
+			<service name="Gui">
+				<child name="wm"/>
+			</service>
+			<service name="Report" label="morph_browser -> shape">
+				<child name="wm"/>
+			</service>
+			<service name="Report" label="clipboard">
+				<child name="wm"/>
+			</service>
+			<service name="ROM" label="clipboard">
+				<child name="wm"/>
+			</service>
+			<service name="Rtc">
+				<child name="system_clock-dummy"/>
+			</service>
+			<service name="Audio_out">
+				<child name="black_hole"/>
+			</service>
+			<service name="Audio_in">
+				<child name="black_hole"/>
+			</service>
+			<service name="Capture">
+				<child name="black_hole"/>
+			</service>
+			<service name="Gpu">
+				<child name="gpu_drv"/>
+			</service>
+			<service name="ROM" label="mesa_gpu_drv.lib.so">
+				<parent label="mesa_gpu-lima.lib.so"/>
+			</service>
+		</route>
+	</start>
 
 </config>
