@@ -38,7 +38,9 @@ struct Cpu_burn : Thread
 		while (true) {
 			_block.block();
 
-			while (!_stop) { }
+			while (!_stop) {
+				_env.pd().ram_quota();
+			}
 
 			_stop = false;
 		}
