@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Genode Labs GmbH
+ * Copyright (C) 2010-2022 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -147,52 +147,107 @@ static int selscan(int nfds,
                    fd_set *in_readfds,  fd_set *in_writefds,  fd_set *in_exceptfds,
                    fd_set *out_readfds, fd_set *out_writefds, fd_set *out_exceptfds)
 {
+	if (nfds > FD_SETSIZE)
+		return Libc::Errno(EINVAL);
+
 	int nready = 0;
-
-	 /* zero timeout for polling of the plugins' select() functions */
-	struct timeval tv_0 = { 0, 0 };
-
-	/* temporary fd sets that are passed to the plugins */
-	int    plugin_nready;
-	fd_set plugin_readfds;
-	fd_set plugin_writefds;
-	fd_set plugin_exceptfds;
 
 	/* clear fd sets */
 	if (out_readfds)   FD_ZERO(out_readfds);
 	if (out_writefds)  FD_ZERO(out_writefds);
 	if (out_exceptfds) FD_ZERO(out_exceptfds);
 
-	if (nfds > FD_SETSIZE)
-		return Libc::Errno(EINVAL);
+	/* calculate the actual number of select fds */
+
+	int actual_nfds = 0;
+
+	for (int fd = 0; fd < nfds; fd++) {
+
+		bool fd_in_readfds = FD_ISSET(fd, in_readfds);
+		bool fd_in_writefds = FD_ISSET(fd, in_writefds);
+
+		if (fd_in_readfds || fd_in_writefds)
+			actual_nfds++;
+	}
+
+	/* convert to 'Pollfd' objects */
+
+	Plugin::Pollfd pollfds[actual_nfds];
+
+	for (int fd = 0, pollfd_index = 0; fd < nfds; fd++) {
+
+		bool fd_in_readfds = FD_ISSET(fd, in_readfds);
+		bool fd_in_writefds = FD_ISSET(fd, in_writefds);
+
+		if (!fd_in_readfds && !fd_in_writefds)
+			continue;
+
+		pollfds[pollfd_index].fdo =
+			file_descriptor_allocator()->find_by_libc_fd(fd);
+
+		if (fd_in_readfds)
+			pollfds[pollfd_index].events |= POLLIN;
+
+		if (fd_in_writefds)
+			pollfds[pollfd_index].events |= POLLOUT;
+
+		pollfd_index++;
+	}
 
 	for (Plugin *plugin = plugin_registry()->first();
 	     plugin;
 	     plugin = plugin->next()) {
-		if (plugin->supports_select(nfds, in_readfds, in_writefds, in_exceptfds, &tv_0)) {
 
-			plugin_readfds = *in_readfds;
-			plugin_writefds = *in_writefds;
-			plugin_exceptfds = *in_exceptfds;
+		if (!plugin->supports_poll())
+			continue;
 
-			plugin_nready = plugin->select(nfds, &plugin_readfds, &plugin_writefds, &plugin_exceptfds, &tv_0);
+		/* calculate number of pollfds for this plugin */
 
-			if (plugin_nready > 0) {
-				for (int libc_fd = 0; libc_fd < nfds; libc_fd++) {
-					if (out_readfds && FD_ISSET(libc_fd, &plugin_readfds)) {
-						FD_SET(libc_fd, out_readfds);
-					}
-					if (out_writefds && FD_ISSET(libc_fd, &plugin_writefds)) {
-						FD_SET(libc_fd, out_writefds);
-					}
-					if (out_exceptfds && FD_ISSET(libc_fd, &plugin_exceptfds)) {
-						FD_SET(libc_fd, out_exceptfds);
-					}
-				}
-				nready += plugin_nready;
-			} else if (plugin_nready < 0) {
-				error("plugin->select() returned error value ", plugin_nready);
+		int plugin_nfds = 0;
+
+		for (int pollfd_index = 0; pollfd_index < actual_nfds; pollfd_index++)
+			if (pollfds[pollfd_index].fdo->plugin == plugin)
+				plugin_nfds++;
+
+		if (plugin_nfds == 0)
+			continue;
+
+		Plugin::Pollfd plugin_pollfds[plugin_nfds];
+
+		/* copy pollfds belonging to this plugin to plugin-specific array */
+
+		for (int pollfd_index = 0, plugin_pollfd_index = 0;
+		     pollfd_index < actual_nfds;
+		     pollfd_index++) {
+
+			if (pollfds[pollfd_index].fdo->plugin == plugin) {
+				plugin_pollfds[plugin_pollfd_index] = pollfds[pollfd_index];
+				plugin_pollfd_index++;
 			}
+		}
+
+		int plugin_nready = plugin->poll(plugin_pollfds, plugin_nfds);
+
+		if (plugin_nready > 0) {
+			for (int plugin_pollfd_index = 0;
+			     plugin_pollfd_index < plugin_nfds;
+			     plugin_pollfd_index++) {
+
+				if (out_readfds && (plugin_pollfds[plugin_pollfd_index].revents & POLLIN)) {
+					FD_SET(plugin_pollfds[plugin_pollfd_index].fdo->libc_fd, out_readfds);
+					nready++;
+				}
+				if (out_writefds && (plugin_pollfds[plugin_pollfd_index].revents & POLLOUT)) {
+					FD_SET(plugin_pollfds[plugin_pollfd_index].fdo->libc_fd, out_writefds);
+					nready++;
+				}
+				if (out_exceptfds && (plugin_pollfds[plugin_pollfd_index].revents & POLLERR)) {
+					FD_SET(plugin_pollfds[plugin_pollfd_index].fdo->libc_fd, out_exceptfds);
+					nready++;
+				}
+			}
+		} else if (plugin_nready < 0) {
+			error("plugin->poll() returned error value ", plugin_nready);
 		}
 	}
 
