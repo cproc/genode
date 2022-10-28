@@ -1,0 +1,56 @@
+if { [get_cmd_switch --autopilot] } {
+	if {[have_include "power_on/qemu"]} {
+		puts "\nRun script does not support Qemu.\n"
+		exit 0
+	}
+}
+
+build "core init timer test/memcpy/linux"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+
+	<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
+	<default caps="200"/>
+
+	<start name="timer">
+	    <resource name="RAM" quantum="10M"/>
+	    <provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="test-libc_memcpy">
+		<resource name="RAM" quantum="40M"/>
+		<config>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<null/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init timer test-libc_memcpy
+	ld.lib.so libc.lib.so libm.lib.so posix.lib.so vfs.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until forever
