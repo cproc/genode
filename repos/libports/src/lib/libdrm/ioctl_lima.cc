@@ -828,12 +828,14 @@ static void dump_ioctl(unsigned long request)
 
 int lima_drm_ioctl(unsigned long request, void *arg)
 {
+#if 0
 	static pthread_mutex_t ioctl_mutex = PTHREAD_MUTEX_INITIALIZER;
 	int const err = pthread_mutex_lock(&ioctl_mutex);
 	if (err) {
 		Genode::error("could not lock ioctl mutex: ", err);
 		return -1;
 	}
+#endif
 
 	if (verbose_ioctl)
 		dump_ioctl(request);
