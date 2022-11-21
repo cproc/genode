@@ -828,14 +828,12 @@ static void dump_ioctl(unsigned long request)
 
 int lima_drm_ioctl(unsigned long request, void *arg)
 {
-#if 0
 	static pthread_mutex_t ioctl_mutex = PTHREAD_MUTEX_INITIALIZER;
 	int const err = pthread_mutex_lock(&ioctl_mutex);
 	if (err) {
 		Genode::error("could not lock ioctl mutex: ", err);
 		return -1;
 	}
-#endif
 
 	if (verbose_ioctl)
 		dump_ioctl(request);
@@ -846,8 +844,12 @@ int lima_drm_ioctl(unsigned long request, void *arg)
 		if (verbose_ioctl)
 			Genode::log("returned ", ret);
 
+		pthread_mutex_unlock(&ioctl_mutex);
+
 		return ret;
 	} catch (...) { }
+
+	pthread_mutex_unlock(&ioctl_mutex);
 
 	return -1;
 }
@@ -868,16 +870,15 @@ int lima_drm_munmap(void *addr)
 
 int lima_drm_poll(int fd)
 {
-#if 0
 	static pthread_mutex_t poll_mutex = PTHREAD_MUTEX_INITIALIZER;
 	int const err = pthread_mutex_lock(&poll_mutex);
 	if (err) {
 		Genode::error("could not lock poll mutex: ", err);
 		return -1;
 	}
-#endif
 
 	int const handle = fd - Lima::Call::SYNC_FD;
 	_drm->wait_for_syncobj((unsigned)handle);
+	pthread_mutex_unlock(&poll_mutex);
 	return 0;
 }
