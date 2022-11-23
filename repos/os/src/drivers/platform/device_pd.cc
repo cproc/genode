@@ -76,7 +76,7 @@ addr_t Device_pd::_dma_addr(addr_t const phys_addr,
 	if (!_iommu) return phys_addr;
 
 	/*
-	 * 1:1 mapping (remove from DMA memory allocator)
+	 * 1:1 mapping (allocate at specified range from DMA memory allocator)
 	 */
 	if (force_phys_addr) {
 		return _dma_alloc.alloc_addr(size, phys_addr).convert<addr_t>(
