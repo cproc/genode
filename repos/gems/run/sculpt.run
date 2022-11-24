@@ -237,7 +237,12 @@ install_config {
 		<resource name="CPU" quantum="5"/>
 		<provides><service name="Timer"/></provides>
 	</start>
-
+<!--
+	<start name="top" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<config period_ms="10000"/>
+	</start>
+-->
 	<start name="report_rom" priority="0">
 		<binary name="report_rom"/>
 		<resource name="RAM" quantum="2M"/>
@@ -983,8 +988,8 @@ close $fd
 ## Create boot image
 ##
 
-build [ingredients_of_type build]
+build "[ingredients_of_type build] app/top"
 
-append boot_modules [build_artifacts]
+append boot_modules "[build_artifacts] top"
 
 build_boot_image $boot_modules
