@@ -197,7 +197,6 @@ class Vfs_server::Session_component : private Session_resources,
 				{
 					drop_packet_from_submit_queue();
 					packet.succeeded(false);
-					Genode::log("consume_and_ack_invalid_packet");
 					_stream.try_ack_packet(packet);
 
 					overall_progress      = true;
@@ -278,12 +277,7 @@ class Vfs_server::Session_component : private Session_resources,
 				}
 
 				if (node.acknowledgement_pending()) {
-					auto packet = node.dequeue_acknowledgement();
-
-					if (!packet.succeeded())
-						Genode::warning("_try_acknowledge_jobs failed packet");
-
-					_stream.try_ack_packet(packet);
+					_stream.try_ack_packet(node.dequeue_acknowledgement());
 					progress = true;
 				}
 
