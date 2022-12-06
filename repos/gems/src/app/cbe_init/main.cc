@@ -307,6 +307,7 @@ class Main
 				}
 			}
 			_blk.tx()->wakeup();
+			_vfs_env.deferred_wakeups().trigger();
 		}
 
 	public:
