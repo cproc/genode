@@ -17,6 +17,7 @@
 
 /* Genode includes */
 #include <base/log.h>
+#include <trace/probe.h>
 
 /* Genode-specific libc interfaces */
 #include <libc-plugin/fd_alloc.h>
@@ -39,18 +40,39 @@ static inline Libc::File_descriptor *libc_fd_to_fd(int libc_fd, const char *func
 	return fd;
 }
 
+struct Libc_trace_checkpoint
+{
+	Genode::String<128> _checkpoint_string;
+	Genode::Trace::Timestamp _start { Genode::Trace::timestamp_ms() };
+
+	Libc_trace_checkpoint(char const *func, char const *path = nullptr)
+	: _checkpoint_string("libc: ", func,
+	                     ": ", Genode::Cstring(path ? path : ""))
+	{
+		using namespace Genode;
+		Trace::Checkpoint(_checkpoint_string.string(), 0, nullptr, Trace::Checkpoint::Type::START);
+	}
+
+	~Libc_trace_checkpoint()
+	{
+		using namespace Genode;
+		Trace::Timestamp end = Trace::timestamp_ms();
+		Trace::Checkpoint(_checkpoint_string.string(), (end - _start), nullptr, Trace::Checkpoint::Type::END);
+	}
+};
 
 /**
  * Generate body of wrapper function taking a file descriptor as first argument
  */
 #define FD_FUNC_WRAPPER_GENERIC(result_stm, result_err_val, func_name, libc_fd, ...)	\
-{																		\
-	File_descriptor *fd = libc_fd_to_fd(libc_fd, #func_name);			\
-	if (!fd || !fd->plugin) {											\
-		errno = EBADF;													\
+{																			\
+	File_descriptor *fd = libc_fd_to_fd(libc_fd, #func_name);				\
+	Libc_trace_checkpoint trace_checkpoint(#func_name, fd ? fd->fd_path : nullptr);\
+	if (!fd || !fd->plugin) {												\
+		errno = EBADF;														\
 		result_stm result_err_val;											\
-	} else																\
-		result_stm fd->plugin->func_name(fd, ##__VA_ARGS__ ); 			\
+	} else																	\
+		result_stm fd->plugin->func_name(fd, ##__VA_ARGS__ ); 				\
 }
 
 #define FD_FUNC_WRAPPER(func_name, libc_fd, ...) \
@@ -61,6 +83,7 @@ static inline Libc::File_descriptor *libc_fd_to_fd(int libc_fd, const char *func
  */
 #define FNAME_FUNC_WRAPPER_GENERIC(result_stm, func_name, path, ...)						\
 {																							\
+	Libc_trace_checkpoint trace_checkpoint(#func_name, path);						\
 	Plugin *plugin  = plugin_registry()->get_plugin_for_##func_name(path, ##__VA_ARGS__);	\
 	if (!plugin) {																			\
 		Genode::error("no plugin found for ", #func_name, "(\"", Genode::Cstring(path), "\")");\
