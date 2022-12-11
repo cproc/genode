@@ -12,6 +12,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <base/entrypoint.h>
 #include <base/component.h>
@@ -181,6 +183,15 @@ void Entrypoint::_process_incoming_signals()
 
 bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 {
+Genode::uint64_t now_ms = Genode::Trace::timestamp_ms();
+static Genode::uint64_t last_ms = now_ms;
+Genode::uint64_t diff_ms = now_ms - last_ms;
+last_ms = now_ms;
+
+if (diff_ms >= 10) {
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "_wait_and_dispatch_one_io_signal(): >=10 ms between calls");
+}
+
 	if (!_rpc_ep->is_myself())
 		warning(__func__, " called from non-entrypoint thread \"",
 		       Thread::myself()->name(), "\"");

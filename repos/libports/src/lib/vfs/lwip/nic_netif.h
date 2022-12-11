@@ -25,6 +25,8 @@
 #error lwip/nic_netif.h is a C++ only header
 #endif
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <lwip_genode_init.h>
 #include <nic/packet_allocator.h>
@@ -161,6 +163,17 @@ class Lwip::Nic_netif
 
 		void handle_rx_packets()
 		{
+
+Genode::uint64_t now_ms = Genode::Trace::timestamp_ms();
+static Genode::uint64_t last_ms = now_ms;
+Genode::uint64_t diff_ms = now_ms - last_ms;
+last_ms = now_ms;
+
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "handle_rx_packets()");
+
+if (diff_ms >= 100) {
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "handle_rx_packets() xxx");
+}
 			auto &rx = *_nic.rx();
 
 			bool progress = false;
@@ -190,6 +203,7 @@ class Lwip::Nic_netif
 
 			if (progress)
 				_wakeup_scheduler.schedule_nic_server_wakeup();
+GENODE_TRACE_CHECKPOINT_NAMED(0, "handle_rx_packets() finished");
 		}
 
 		/**

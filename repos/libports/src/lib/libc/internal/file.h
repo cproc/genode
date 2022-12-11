@@ -67,7 +67,7 @@ struct Libc_trace_checkpoint
 #define FD_FUNC_WRAPPER_GENERIC(result_stm, result_err_val, func_name, libc_fd, ...)	\
 {																			\
 	File_descriptor *fd = libc_fd_to_fd(libc_fd, #func_name);				\
-	Libc_trace_checkpoint trace_checkpoint(#func_name, fd ? fd->fd_path : nullptr);\
+	/*Libc_trace_checkpoint trace_checkpoint(#func_name, fd ? fd->fd_path : nullptr);*/\
 	if (!fd || !fd->plugin) {												\
 		errno = EBADF;														\
 		result_stm result_err_val;											\
@@ -83,7 +83,7 @@ struct Libc_trace_checkpoint
  */
 #define FNAME_FUNC_WRAPPER_GENERIC(result_stm, func_name, path, ...)						\
 {																							\
-	Libc_trace_checkpoint trace_checkpoint(#func_name, path);						\
+	/*Libc_trace_checkpoint trace_checkpoint(#func_name, path);*/						\
 	Plugin *plugin  = plugin_registry()->get_plugin_for_##func_name(path, ##__VA_ARGS__);	\
 	if (!plugin) {																			\
 		Genode::error("no plugin found for ", #func_name, "(\"", Genode::Cstring(path), "\")");\
