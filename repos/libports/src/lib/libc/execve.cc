@@ -31,6 +31,7 @@
 #include <internal/errno.h>
 #include <internal/file_operations.h>
 #include <internal/cpu_local_storage.h>
+#include <internal/mmap_registry.h>
 
 using namespace Genode;
 
@@ -426,6 +427,12 @@ extern "C" int execve(char const *filename,
 
 	/* free CPU-local storage allocated with malloc */
 	Libc::cpu_local_storage_registry().reset();
+
+	/*
+	 * Reconstruct mmap backend
+	 */
+	Libc::mmap_registry()->reset();
+	Libc::init_mem_alloc(*_env_ptr);
 
 	/*
 	 * Reconstruct malloc heap for application-owned data
