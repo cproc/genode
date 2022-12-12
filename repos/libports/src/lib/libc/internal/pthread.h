@@ -27,6 +27,7 @@
 #include <pthread.h>
 
 /* libc-internal includes */
+#include <internal/clone_session.h>
 #include <internal/types.h>
 #include <internal/monitor.h>
 #include <internal/timer.h>
@@ -234,6 +235,9 @@ struct Libc::Pthread : Noncopyable
 		        Cpu_local_storage &cls);
 
 		static void init_tls_support();
+
+		static void clone_main_pthread(Clone_connection &clone_connection,
+		                               void *stack_address);
 
 		void start() { _thread.start(); }
 
