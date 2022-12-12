@@ -166,7 +166,8 @@ _next_version = $(eval FOUND := $(if $(call _version_higher_than_recipe,$1,$2),\
                            $(eval FOUND := $(call suffixed_version,$1,$2 $C)))))\
                 $(if $(FOUND),$(FOUND),$(addsuffix -x,$(RECIPE_VERSION)))
 
-next_version = $(strip $(call _next_version,$(VERSION_CMD)))
+#next_version = $(strip $(call _next_version,$(VERSION_CMD)))
+next_version = dummy
 
 #
 # Message presented to the user whenever a recipe hash is out of date
