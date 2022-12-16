@@ -11,6 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <vfs/directory_service.h>
 #include <vfs/file_io_service.h>
@@ -864,6 +866,32 @@ class Lwip::Udp_socket_dir final :
 			try {
 				Packet *pkt = new (_packet_slab) Packet(addr, port, buf);
 				_packet_queue.enqueue(*pkt);
+
+#if 0
+unsigned char ucbuf[8];
+pkt->peek(ucbuf, sizeof(ucbuf));
+
+bool rtp_opus = false;
+
+unsigned short seq = 0;
+
+if ((ucbuf[0] == 0x90) &&
+    ((ucbuf[1] == 0xef) || (ucbuf[1] == 0x6f))) {
+
+	rtp_opus = true;
+	seq = ((unsigned short)(ucbuf[2]) << 8) | ucbuf[3];
+
+} else if ((ucbuf[4] == 0x90) &&
+           ((ucbuf[5] == 0xef) || (ucbuf[5] == 0x6f))) {
+
+	rtp_opus = true;
+	seq = ((unsigned short)(ucbuf[6]) << 8) | ucbuf[7];
+}
+
+if (rtp_opus) {
+	GENODE_TRACE_CHECKPOINT_NAMED(seq, "queue(): audio: seq");
+}
+#endif
 			} catch (...) {
 				Genode::warning("failed to queue UDP packet, dropping");
 				pbuf_free(buf);

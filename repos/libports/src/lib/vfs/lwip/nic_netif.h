@@ -25,6 +25,8 @@
 #error lwip/nic_netif.h is a C++ only header
 #endif
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <lwip_genode_init.h>
 #include <nic/packet_allocator.h>
@@ -161,6 +163,7 @@ class Lwip::Nic_netif
 
 		void handle_rx_packets()
 		{
+
 			auto &rx = *_nic.rx();
 
 			bool progress = false;
@@ -182,6 +185,44 @@ class Lwip::Nic_netif
 					packet.size());
 				LINK_STATS_INC(link.recv);
 
+GENODE_TRACE_CHECKPOINT_NAMED(0, "handle_rx_packets()");
+
+unsigned char *ucbuf = (unsigned char*)p->payload;
+
+bool rtp_opus = false;
+
+unsigned short seq = 0;
+
+if ((ucbuf[42] == 0x90) &&
+    ((ucbuf[43] == 0xef) || (ucbuf[43] == 0x6f))) {
+
+	rtp_opus = true;
+	seq = ((unsigned short)(ucbuf[44]) << 8) | ucbuf[45];
+
+} else if ((ucbuf[46] == 0x90) &&
+           ((ucbuf[47] == 0xef) || (ucbuf[47] == 0x6f))) {
+
+	rtp_opus = true;
+	seq = ((unsigned short)(ucbuf[48]) << 8) | ucbuf[49];
+}
+
+if (rtp_opus) {
+
+Genode::uint64_t now_ms = Genode::Trace::timestamp_ms();
+static Genode::uint64_t last_ms = now_ms;
+Genode::uint64_t diff_ms = now_ms - last_ms;
+last_ms = now_ms;
+
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "handle_rx_packets(): audio: ms");
+
+GENODE_TRACE_CHECKPOINT_NAMED(seq, "handle_rx_packets(): audio: seq");
+
+if (diff_ms >= 100) {
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "handle_rx_packets(): audio: xxx");
+}
+
+}
+
 				if (_netif.input(p, &_netif) != ERR_OK) {
 					Genode::error("error forwarding Nic packet to lwIP");
 					pbuf_free(p);
@@ -190,6 +231,7 @@ class Lwip::Nic_netif
 
 			if (progress)
 				_wakeup_scheduler.schedule_nic_server_wakeup();
+GENODE_TRACE_CHECKPOINT_NAMED(0, "handle_rx_packets() finished");
 		}
 
 		/**

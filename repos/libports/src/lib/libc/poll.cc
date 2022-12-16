@@ -93,11 +93,12 @@ extern "C" int
 __attribute__((weak))
 poll(struct pollfd pollfds[], nfds_t nfds, int timeout_ms)
 {
-	Libc_trace_checkpoint trace_checkpoint("poll");
+//	Libc_trace_checkpoint trace_checkpoint("poll");
 
 	Plugin::Pollfd plugins_pollfds[nfds];
 
 	for (nfds_t pollfd_index = 0; pollfd_index < nfds; pollfd_index++) {
+//GENODE_TRACE_CHECKPOINT_NAMED(pollfds[pollfd_index].fd, "poll(): fd");
 		pollfds[pollfd_index].revents = 0;
 		plugins_pollfds[pollfd_index].fdo =
 			file_descriptor_allocator()->find_by_libc_fd(pollfds[pollfd_index].fd);
