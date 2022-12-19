@@ -89,34 +89,46 @@ void Trace_recorder::Monitor::start(Xml_node config)
 	_trace.for_each_subject_info([&] (Trace::Subject_id   const &id,
 	                                  Trace::Subject_info const &info) {
 		try {
+log("1");
 			/* skip dead subjects */
 			if (info.state() == Trace::Subject_info::DEAD)
 				return;
+log("2");
 
 			/* check if there is a matching policy in the XML config */
 			Session_policy session_policy = _session_policy(info, config);
+log("3");
 
 			if (!session_policy.has_attribute("policy"))
 				return;
+log("4");
 
 			Number_of_bytes buffer_sz =
 				session_policy.attribute_value("buffer", Number_of_bytes(DEFAULT_BUFFER_SIZE));
+log("5");
 
 			/* find and assign policy; create/insert if not present */
 			Policy::Name  const policy_name = session_policy.attribute_value("policy", Policy::Name());
 			bool const create =
 				_policies.with_element(policy_name,
 					[&] /* match */ (Policy & policy) {
+log("calling trace()");
 						_trace.trace(id, policy.id(), buffer_sz);
+log("trace() returned");
 						return false;
 					},
 					[&] /* no_match */ { return true; }
 				);
+log("6");
 
 			/* create policy if it did not exist */
 			if (create) {
+log("create");
+
 				Policy &policy = *new (_alloc) Policy(_env, _trace, policy_name, _policies);
+log("calling trace()");
 				_trace.trace(id, policy.id(), buffer_sz);
+log("trace() returned");
 			}
 
 			log("Inserting trace policy \"", policy_name, "\" into ",
@@ -128,6 +140,7 @@ void Trace_recorder::Monitor::start(Xml_node config)
 			                                                        _trace.buffer(id),
 			                                                        info,
 			                                                        id);
+log("7");
 
 			/* create and register writers at trace buffer */
 			session_policy.for_each_sub_node([&] (Xml_node & node) {
@@ -152,7 +165,10 @@ void Trace_recorder::Monitor::start(Xml_node config)
 		}
 		catch (Session_policy::No_policy_defined) { return; }
 		catch (...) { return; }
+log("8");
+
 	});
+log("9");
 
 	/* register timeout */
 	unsigned period_ms { 0 };
