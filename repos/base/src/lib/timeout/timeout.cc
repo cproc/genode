@@ -11,6 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <timer/timeout.h>
 #include <timer_session/connection.h>
@@ -61,10 +63,15 @@ bool Timeout::scheduled() { return _handler != nullptr; }
 
 void Timeout_scheduler::handle_timeout(Duration curr_time)
 {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::handle_timeout()");
+
 	List<List_element<Timeout> > pending_timeouts { };
 	{
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::handle_timeout(): trying to get mutex");
 		/* acquire scheduler and update stored current time */
 		Mutex::Guard const scheduler_guard(_mutex);
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::handle_timeout(): got mutex");
+
 		if (_destructor_called) {
 			return;
 		}
@@ -72,6 +79,8 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 
 		/* apply rate limit to the handling of timeouts */
 		if (_current_time.value < _rate_limit_deadline.value) {
+
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::handle_timeout(): calling set_timeout()");
 
 			_time_source.set_timeout(
 				Microseconds { _rate_limit_deadline.value -
@@ -82,6 +91,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 		}
 		_rate_limit_deadline.value = _current_time.value +
 		                             _rate_limit_period.value;
+GENODE_TRACE_CHECKPOINT_NAMED(0, "1");
 
 		/*
 		 * Filter out all pending timeouts to a local list first. The
@@ -99,6 +109,8 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 			_timeouts.remove(timeout);
 			pending_timeouts.insert(&timeout->_pending_timeouts_le);
 		}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2");
+
 		/*
 		 * Do the framework-internal processing of the pending timeouts and
 		 * then release their mutexes.
@@ -109,6 +121,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 
 			Timeout &timeout { *elem->object() };
 			if (!timeout._in_discard_blockade) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.1.1");
 
 				/*
 				 * Remember the handler in an extra member that is altered
@@ -124,6 +137,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 				timeout._pending_handler = timeout._handler;
 
 			} else {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.1.2");
 
 				/*
 				 * Another thread, that wants to discard the timeout, has been
@@ -135,12 +149,16 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 				 */
 				pending_timeouts.remove(elem);
 			}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.2");
+
 			if (timeout._period.value == 0) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.3.1");
 
 				/* discard one-shot timeouts */
 				timeout._handler = nullptr;
 
 			} else {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.3.2");
 
 				/* determine new timeout deadline */
 				uint64_t const nr_of_periods {
@@ -157,8 +175,12 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 				timeout._deadline = Microseconds { deadline_us };
 				_insert_into_timeouts_list(timeout);
 			}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "2.4");
+
 			timeout._mutex.release();
 		}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::handle_timeout(): calling _set_time_source_timeout()");
+
 		_set_time_source_timeout();
 	}
 	/* call the handler of each pending timeout */
@@ -251,6 +273,8 @@ void Timeout_scheduler::_set_time_source_timeout()
 
 void Timeout_scheduler::_set_time_source_timeout(uint64_t duration_us)
 {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timeout_scheduler::_set_time_source_timeout()");
+
 	if (duration_us < _rate_limit_period.value) {
 		duration_us = _rate_limit_period.value;
 	}

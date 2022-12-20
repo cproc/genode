@@ -12,6 +12,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <base/entrypoint.h>
 #include <base/component.h>
@@ -43,10 +45,21 @@ static char const *initial_ep_name() { return "ep"; }
 
 void Entrypoint::Signal_proxy_component::signal()
 {
+Genode::uint64_t now_ms = Genode::Trace::timestamp_ms();
+static Genode::uint64_t last_ms = now_ms;
+Genode::uint64_t diff_ms = now_ms - last_ms;
+last_ms = now_ms;
+
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "Signal_proxy_component::signal()");
+
 	/* signal delivered successfully */
 	ep._signal_proxy_delivers_signal = false;
 
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): calling _process_deferred_signals()");
+
 	ep._process_deferred_signals();
+
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): _process_deferred_signals() returned");
 
 	bool io_progress = false;
 
@@ -59,7 +72,10 @@ void Entrypoint::Signal_proxy_component::signal()
 	Signal sig = ep._sig_rec->pending_signal();
 
 	if (sig.valid()) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): calling _dispatch_signal()");
+
 		ep._dispatch_signal(sig);
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): _dispatch_signal() returned");
 
 		if (sig.context()->level() == Signal_context::Level::Io) {
 			/* trigger the progress handler */
@@ -67,8 +83,13 @@ void Entrypoint::Signal_proxy_component::signal()
 		}
 	}
 
-	if (io_progress)
+	if (io_progress) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): calling handle_io_progress()");
 		ep._handle_io_progress();
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal(): handle_io_progress() returned");
+	}
+
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Signal_proxy_component::signal() finished");
 }
 
 
@@ -181,6 +202,17 @@ void Entrypoint::_process_incoming_signals()
 
 bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 {
+Genode::uint64_t now_ms = Genode::Trace::timestamp_ms();
+static Genode::uint64_t last_ms = now_ms;
+Genode::uint64_t diff_ms = now_ms - last_ms;
+last_ms = now_ms;
+
+GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "_wait_and_dispatch_one_io_signal()");
+
+//if (diff_ms >= 10) {
+//GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "_wait_and_dispatch_one_io_signal(): >=10 ms between calls");
+//}
+
 	if (!_rpc_ep->is_myself())
 		warning(__func__, " called from non-entrypoint thread \"",
 		       Thread::myself()->name(), "\"");
@@ -197,12 +229,16 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 				continue;
 			}
 
+GENODE_TRACE_CHECKPOINT_NAMED(0, "_wait_and_dispatch_one_io_signal(): dispatching");
+
 			_dispatch_signal(sig);
 			break;
 		}
 
-		if (dont_block)
+		if (dont_block) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "_wait_and_dispatch_one_io_signal() finished, no signal");
 			return false;
+		}
 
 		{
 			/*
@@ -230,8 +266,11 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 			 */
 			if (_signal_proxy_delivers_signal)
 				_signal_proxy_delivers_signal = false;
-			else
+			else {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "_wait_and_dispatch_one_io_signal(): calling block_for_signal()");
 				_sig_rec->block_for_signal();
+GENODE_TRACE_CHECKPOINT_NAMED(0, "_wait_and_dispatch_one_io_signal(): block_for_signal() returned");
+			}
 		}
 	}
 
@@ -243,6 +282,7 @@ bool Entrypoint::_wait_and_dispatch_one_io_signal(bool const dont_block)
 			                                   &Entrypoint::_handle_deferred_signals);
 		Signal_transmitter(*_deferred_signal_handler).submit();
 	}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "_wait_and_dispatch_one_io_signal() finished");
 
 	return true;
 }

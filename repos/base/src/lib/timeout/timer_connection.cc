@@ -11,6 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <timer_session/connection.h>
 #include <base/internal/globals.h>
@@ -96,11 +98,16 @@ Genode::Duration Timer::Connection::_update_interpolated_time(Duration &interpol
 
 void Timer::Connection::_handle_timeout()
 {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timer::Connection::_handle_timeout()");
+
 	uint64_t const us = elapsed_us();
 	if (us - _us > REAL_TIME_UPDATE_PERIOD_US) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timer::Connection::_handle_timeout(): calling _update_real_time()");
 		_update_real_time();
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timer::Connection::_handle_timeout(): _update_real_time() returned");
 	}
 	if (_handler) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Timer::Connection::_handle_timeout(): calling handler");
 		_handler->handle_timeout(curr_time());
 	}
 }
