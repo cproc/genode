@@ -287,6 +287,11 @@ void Thread::_become_active()
 
 void Thread::_become_inactive(State const s)
 {
+#if 0
+if (s == AWAITS_IPC) {
+	Genode::raw(this, ": bi: ", (int)s);
+}
+#endif
 	if (_state == ACTIVE && !_paused) { _deactivate_used_shares(); }
 	_state = s;
 }
@@ -372,6 +377,10 @@ void Thread::_call_resume_thread()
 
 void Thread::_call_stop_thread()
 {
+if (Genode::strcmp(_label, "pthread.0") == 0) {
+	Genode::raw(this, ": Thread::_call_stop_thread()");
+}
+//Genode::raw(this, ": s");
 	assert(_state == ACTIVE);
 	_become_inactive(AWAITS_RESTART);
 }
@@ -392,12 +401,23 @@ void Thread::_call_restart_thread()
 		_die();
 		return;
 	}
+//if ((thread._state != ACTIVE) && (thread._state != AWAITS_RESTART)) {
+//	Genode::raw(this, ": cr: ", thread_ptr, ": ", (int)thread._state);
+//}
+
+if (Genode::strcmp(thread._label, "pthread.0") == 0) {
+	Genode::raw(this, ": ", Genode::Cstring(_label), ": Thread::_call_restart_thread()");
+}
 	user_arg_0(thread._restart());
 }
 
 
 bool Thread::_restart()
 {
+//if ((_state != ACTIVE) && (_state != AWAITS_RESTART)) {
+if (Genode::strcmp(_label, "pthread.0") == 0) {
+	Genode::raw(this, ": Thread::_restart(): ", Genode::Cstring(_label), ": ", (int)_state, ", ip: ", (void*)regs->ip);
+}
 	assert(_state == ACTIVE || _state == AWAITS_RESTART);
 	if (_state != AWAITS_RESTART) { return false; }
 	_become_active();
@@ -546,6 +566,10 @@ void Thread::_call_send_request_msg()
 		_ipc_capid    = oir ? oir->capid() : cap_id_invalid();
 		_ipc_node.send(dst->_ipc_node, help);
 	}
+
+if (Genode::strcmp(_label, "pthread.0") == 0) {
+	Genode::raw(this, ": ", Genode::Cstring(_label), ": Thread::_call_send_request_msg()");
+}
 
 	_state = AWAITS_IPC;
 	if (!help || !dst->own_share_active()) { _deactivate_used_shares(); }
@@ -878,6 +902,9 @@ void Thread::_call()
 
 void Thread::_mmu_exception()
 {
+if (Genode::strcmp(_label, "pthread.0") == 0) {
+	Genode::raw("Thread::mmu_exception()");
+}
 	_become_inactive(AWAITS_RESTART);
 	Cpu::mmu_fault(*regs, _fault);
 	_fault.ip = regs->ip;

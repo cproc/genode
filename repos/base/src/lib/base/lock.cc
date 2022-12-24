@@ -72,6 +72,13 @@ void Lock::lock(Applicant &myself)
 {
 	spinlock_lock(&_spinlock_state);
 
+#if 0
+int dummy;
+if ((unsigned long)&dummy < 0xffffff0000000000) {
+Genode::raw(&dummy, ": Lock::lock(): ", __builtin_return_address(0));
+}
+#endif
+
 	if (cmpxchg(&_state, UNLOCKED, LOCKED)) {
 
 		/* we got the lock */

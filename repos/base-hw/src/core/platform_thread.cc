@@ -224,5 +224,19 @@ void Platform_thread::state(Thread_state thread_state)
 
 void Platform_thread::restart()
 {
+#if 0
+if (Genode::strcmp(_label.string(), "pthread.0") == 0) {
+	Genode::raw("Platform_thread::restart()");
+}
+#endif
+//Genode::raw(this, ": ", _label, ": 1");
+
 	Kernel::restart_thread(Capability_space::capid(_kobj.cap()));
+
+#if 0
+if (Genode::strcmp(_label.string(), "pthread.0") == 0) {
+	Genode::raw("Platform_thread::restart() finished");
+}
+#endif
+//Genode::raw(this, ": ", _label, ": 2");
 }

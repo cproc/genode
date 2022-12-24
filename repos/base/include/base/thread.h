@@ -428,6 +428,8 @@ class Genode::Thread
 		 * Thread affinity
 		 */
 		Affinity::Location affinity() const { return _affinity; }
+
+		int stop_level { 0 };
 };
 
 #endif /* _INCLUDE__BASE__THREAD_H_ */

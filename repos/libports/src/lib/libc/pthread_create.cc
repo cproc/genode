@@ -214,6 +214,7 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 extern "C" int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                               void *(*start_routine) (void *), void *arg)
 {
+Genode::log("pthread_create(): ret: ", __builtin_return_address(0));
 	return Libc::pthread_create(thread, attr, start_routine, arg, nullptr);
 }
 

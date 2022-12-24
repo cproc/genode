@@ -14,6 +14,8 @@
 #ifndef _INCLUDE__BASE__RPC_CLIENT_H_
 #define _INCLUDE__BASE__RPC_CLIENT_H_
 
+#include <trace/probe.h>
+
 #include <base/ipc.h>
 #include <base/trace/events.h>
 
@@ -145,6 +147,11 @@ namespace Genode {
 		{
 			Trace::Rpc_call trace_event(IF::name(), call_buf);
 		}
+Genode::Thread *t = Genode::Thread::myself();
+if (t && (Genode::strcmp(t->name().string(), "pthread.0") == 0)) {
+Genode::raw(__PRETTY_FUNCTION__);
+}
+		GENODE_TRACE_DURATION_NAMED(0, "Rpc_call");
 
 		/* perform RPC, unmarshal return value */
 		Rpc_exception_code const exception_code =

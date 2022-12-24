@@ -44,7 +44,10 @@ void Rpc_entrypoint::_dissolve(Rpc_object_base *obj)
 
 void Rpc_entrypoint::_block_until_cap_valid()
 {
+int dummy;
+Genode::log(&dummy, ": Rpc_entrypoint::_block_until_cap_valid()");
 	_cap_valid.block();
+Genode::log(&dummy, ": Rpc_entrypoint::_block_until_cap_valid() finished");
 }
 
 

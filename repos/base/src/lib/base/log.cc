@@ -15,8 +15,11 @@
 #include <base/log.h>
 #include <base/thread.h>
 
+#include <base/internal/spin_lock.h>
+
 using namespace Genode;
 
+static int volatile _spinlock = SPINLOCK_UNLOCKED;
 
 void Log::_acquire(Type type)
 {
@@ -46,10 +49,11 @@ void Log::_release()
 
 void Raw::_acquire()
 {
+spinlock_lock(&_spinlock);
 	/*
 	 * Mark raw output with distinct color
 	 */
-	_output().out_string("\033[32mKernel: ");
+//	_output().out_string("\033[32mKernel: ");
 }
 
 
@@ -58,7 +62,9 @@ void Raw::_release()
 	/*
 	 * Reset color and add newline
 	 */
-	_output().out_string("\033[0m\n");
+	//_output().out_string("\033[0m\n");
+	_output().out_string("\n");
+spinlock_unlock(&_spinlock);
 }
 
 

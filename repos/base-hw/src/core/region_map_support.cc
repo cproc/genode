@@ -70,7 +70,8 @@ void Pager_entrypoint::entry()
 					.type       = _mapping.io_mem ? Hw::DEVICE : Hw::RAM,
 					.cacheable  = _mapping.cached ? Genode::CACHED : Genode::UNCACHED
 				};
-
+//Genode::raw("pf: ", Genode::Hex(_mapping.dst_addr), ", ", _mapping.size_log2);
+Genode::raw("pf: ", _fault);
 				as->insert_translation(_mapping.dst_addr, _mapping.src_addr,
 				                       1UL << _mapping.size_log2, flags);
 			}
