@@ -28,6 +28,11 @@ namespace Genode { namespace Trace {
 		asm volatile("mrs %0, pmccntr_el0" : "=r" (t));
 		return t;
 	}
+
+	static inline Timestamp timestamp_ms()
+	{
+		return timestamp() / 816000;
+	}
 } }
 
 #endif /* _INCLUDE__SPEC__ARM_64__TRACE__TIMESTAMP_H_ */
