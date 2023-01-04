@@ -11,6 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/probe.h>
+
 /* Genode includes */
 #include <base/lock.h>
 #include <cpu/memory_barrier.h>
@@ -78,6 +80,8 @@ void Lock::lock(Applicant &myself)
 		spinlock_unlock(&_spinlock_state);
 		return;
 	}
+
+GENODE_TRACE_DURATION_NAMED(0, "lock");
 
 	/*
 	 * We failed to grab the lock, lets add ourself to the
@@ -147,6 +151,8 @@ void Lock::unlock()
 			_last_applicant = &_owner;
 
 		spinlock_unlock(&_spinlock_state);
+
+GENODE_TRACE_CHECKPOINT_NAMED(0, "unlock");
 
 		owner.wake_up();
 
