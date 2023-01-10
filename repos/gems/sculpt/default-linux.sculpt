@@ -6,5 +6,9 @@ ram_fs:  depot
 # selection of launcher-menu entries
 launcher: sticks_blue_backdrop nano3d system_shell
 
+presets: nano3d system_shell
+
+build: app/sculpt_manager
+
 # supplemental depot content added to the system image
 import: pkg/drivers_interactive-linux
