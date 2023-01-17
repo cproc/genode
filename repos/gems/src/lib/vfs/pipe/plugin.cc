@@ -587,9 +587,8 @@ class Vfs_pipe::File_system : public Vfs::File_system
 
 		bool read_ready(Vfs_handle const &vfs_handle) const override
 		{
-			if (Pipe_handle const *handle = dynamic_cast<Pipe_handle const *>(&vfs_handle))
-				return handle->read_ready();
-			return true;
+			Pipe_handle const *handle = static_cast<Pipe_handle const *>(&vfs_handle);
+			return handle->read_ready();
 		}
 
 		bool write_ready(Vfs_handle const &vfs_handle) const override
@@ -601,9 +600,8 @@ class Vfs_pipe::File_system : public Vfs::File_system
 
 		bool notify_read_ready(Vfs_handle *vfs_handle) override
 		{
-			if (Pipe_handle *handle = dynamic_cast<Pipe_handle*>(vfs_handle))
-				return handle->notify_read_ready();
-			return false;
+			Pipe_handle *handle = static_cast<Pipe_handle*>(vfs_handle);
+			return handle->notify_read_ready();
 		}
 
 		Ftruncate_result ftruncate(Vfs_handle*, file_size) override {
