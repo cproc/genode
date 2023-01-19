@@ -770,6 +770,23 @@ close $fd
 file copy [initial_config_file VERSION] [run_dir]/genode/VERSION
 
 
+#
+# Generate build info as boot module
+#
+
+proc build_date { } { return [clock format [clock seconds] -format %Y-%m-%d] }
+
+set    build_info "<build_info"
+append build_info " date=\"[build_date]\""
+append build_info " depot_user=\"[depot_user]\""
+append build_info " board=\"$board_var\"/"
+append build_info ">"
+
+set fd [open [run_dir]/genode/build_info w]
+puts $fd $build_info
+close $fd
+
+
 ##
 # Return list of 'pkg' attribute values found in 'type' nodes in an XML file
 #
