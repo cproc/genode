@@ -16,6 +16,7 @@
 		<config> <default-policy path_prefix="/recall" writeable="yes"/> </config>
 	</start>
 
+<!--
 	<start name="wm" pkg="wm">
 		<route>
 			<service name="ROM"    label_last="clipboard"> <parent/>               </service>
@@ -47,6 +48,7 @@
 			<service name="Gui">                       <child name="wm"/> </service>
 		</route>
 	</start>
+	-->
 
 	<start name="fonts_fs" pkg="fonts_fs">
 		<route>
@@ -55,16 +57,13 @@
 		</route>
 	</start>
 
-	<start name="touch_keyboard" pkg="touch_keyboard">
-		<route>
-			<service name="Gui">   <parent/> </service>
-			<service name="Event"> <parent label="global"/> </service>
-			<service name="File_system" label="fonts">  <child name="fonts_fs"/> </service>
-		</route>
-	</start>
+	<start name="touch_keyboard"/>
 
-	<start name="sticks_blue_backdrop"/>
+<!--	<start name="sticks_blue_backdrop"/> -->
+
 <!--	<start name="nano3d"/>
 	<start name="system_shell"/> -->
+
+	<start name="direct_system_shell"/>
 
 </config>
