@@ -3,6 +3,8 @@
 
 using namespace Genode;
 
+static bool rpc_call_enabled = false;
+
 enum { MAX_EVENT_SIZE = 64 };
 
 size_t max_event_size()
@@ -27,10 +29,14 @@ size_t log_output(char *dst, char const *log_message, size_t len)
 
 size_t rpc_call(char *dst, char const *rpc_name, Msgbuf_base const &)
 {
-	size_t len = strlen(rpc_name);
+	if (rpc_call_enabled) {
+		size_t len = strlen(rpc_name);
 
-	memcpy(dst, (void*)rpc_name, len);
-	return len;
+		memcpy(dst, (void*)rpc_name, len);
+		return len;
+	}
+
+	return 0;
 }
 
 size_t rpc_returned(char *dst, char const *rpc_name, Msgbuf_base const &)
@@ -65,4 +71,9 @@ size_t signal_submit(char *dst, unsigned const)
 size_t signal_receive(char *dst, Signal_context const &, unsigned)
 {
 	return 0;
+}
+
+void enable_rpc_call()
+{
+	rpc_call_enabled = true;
 }
