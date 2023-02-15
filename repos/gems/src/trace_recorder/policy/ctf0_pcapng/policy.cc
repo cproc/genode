@@ -31,6 +31,21 @@ size_t checkpoint(char *dst, char const *name, unsigned long data, void *addr, u
 	return len + sizeof(Checkpoint);
 }
 
+size_t lock_locked(char *dst, void const *lock)
+{
+	return 0;
+}
+
+size_t lock_wait(char *dst, void const *lock)
+{
+	return 0;
+}
+
+size_t lock_unlock(char *dst, void const *lock)
+{
+	return 0;
+}
+
 size_t log_output(char *dst, char const *log_message, size_t len) {
 	return 0;
 }
@@ -44,6 +59,8 @@ size_t rpc_call(char *dst, char const *rpc_name, Msgbuf_base const &)
 
 		return len + sizeof(Rpc_call);
 	}
+
+	return 0;
 }
 
 size_t rpc_returned(char *dst, char const *rpc_name, Msgbuf_base const &)

@@ -30,6 +30,9 @@ namespace Ctf {
 	struct Signal_submit;
 	struct Signal_receive;
 	struct Checkpoint;
+	struct Lock_locked;
+	struct Lock_wait;
+	struct Lock_unlock;
 }
 
 
@@ -110,6 +113,39 @@ struct Ctf::Checkpoint : Trace_recorder::Ctf_event
 	  _addr((uint64_t)addr),
 	  _type(type),
 	  _named(name, len)
+	{ }
+} __attribute__((packed));
+
+
+struct Ctf::Lock_locked : Trace_recorder::Ctf_event
+{
+	uint64_t _lock;
+
+	Lock_locked(void const *lock)
+	: Trace_recorder::Ctf_event(8),
+	  _lock((uint64_t)lock)
+	{ }
+} __attribute__((packed));
+
+
+struct Ctf::Lock_wait : Trace_recorder::Ctf_event
+{
+	uint64_t _lock;
+
+	Lock_wait(void const *lock)
+	: Trace_recorder::Ctf_event(9),
+	  _lock((uint64_t)lock)
+	{ }
+} __attribute__((packed));
+
+
+struct Ctf::Lock_unlock : Trace_recorder::Ctf_event
+{
+	uint64_t _lock;
+
+	Lock_unlock(void const *lock)
+	: Trace_recorder::Ctf_event(10),
+	  _lock((uint64_t)lock)
 	{ }
 } __attribute__((packed));
 
