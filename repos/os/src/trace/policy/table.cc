@@ -21,6 +21,9 @@ extern "C" {
 		max_event_size,
 		trace_eth_packet,
 		checkpoint,
+		lock_locked,
+		lock_wait,
+		lock_unlock,
 		log_output,
 		rpc_call,
 		rpc_returned,
@@ -29,6 +32,7 @@ extern "C" {
 		signal_submit,
 		signal_receive,
 
-		enable_rpc_call,
+		/*enable_rpc_call,*/
+		false,
 	};
 }
