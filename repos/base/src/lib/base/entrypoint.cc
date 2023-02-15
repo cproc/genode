@@ -299,12 +299,11 @@ namespace {
 
 		void construct()
 		{
-			/* enable tracing support */
-			Genode::inhibit_tracing = false;
+			Genode::init_tracing(env);
 
 			Genode::call_global_static_constructors();
+
 			Genode::init_signal_transmitter(env);
-			Genode::init_tracing(env);
 
 			/*
 			 * Now, as signaling is available, initialize the asynchronous
@@ -313,6 +312,9 @@ namespace {
 			init_parent_resource_requests(env);
 
 			init_heartbeat_monitoring(env);
+
+			/* enable tracing support */
+			Genode::inhibit_tracing = false;
 
 			Component::construct(env);
 		}
