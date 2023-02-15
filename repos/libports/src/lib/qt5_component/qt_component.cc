@@ -16,6 +16,7 @@
 #include <libc/component.h>
 
 /* libc includes */
+#include <pthread.h>
 #include <stdlib.h> /* 'exit'    */
 
 /* qt5_component includes */
@@ -26,6 +27,19 @@ extern char **environ;
 
 /* provided by the application */
 extern "C" int main(int argc, char **argv, char **envp);
+extern "C" void wait_for_continue();
+
+static int argc    = 0;
+static char **argv = nullptr;
+static char **envp = nullptr;
+
+static char default_argv0[] { "qt5_component" };
+static char *default_argv[] { default_argv0, nullptr };
+
+void *pthread_main(void *)
+{
+	exit(main(argc, argv, envp));
+}
 
 void Libc::Component::construct(Libc::Env &env)
 {
@@ -33,16 +47,9 @@ void Libc::Component::construct(Libc::Env &env)
 
 		qpa_init(env);
 
-		int argc    = 0;
-		char **argv = nullptr;
-		char **envp = nullptr;
-
 		populate_args_and_env(env, argc, argv, envp);
 
 		/* at least the executable name is required */
-
-		char default_argv0[] { "qt5_component" };
-		char *default_argv[] { default_argv0, nullptr };
 
 		if (argc == 0) {
 			argc = 1;
@@ -51,6 +58,13 @@ void Libc::Component::construct(Libc::Env &env)
 
 		environ = envp;
 
-		exit(main(argc, argv, envp));
+		bool run_main_in_pthread = true;
+
+		if (run_main_in_pthread) {
+			pthread_t main_pthread;
+			pthread_create(&main_pthread, nullptr, pthread_main, nullptr);
+		} else {
+			exit(main(argc, argv, envp));
+		}
 	});
 }
