@@ -119,3 +119,31 @@ event {
 		string _name;
 	};
 };
+
+event {
+	name = "Lock_locked";
+	id = 8;
+	stream_id = 0;
+	fields := struct {
+		uint64_t _lock;
+	};
+};
+
+event {
+	name = "Lock_wait";
+	id = 9;
+	stream_id = 0;
+	fields := struct {
+		uint64_t _lock;
+	};
+};
+
+event {
+	name = "Lock_unlock";
+	id = 10;
+	stream_id = 0;
+	fields := struct {
+		uint64_t _lock;
+	};
+};
+

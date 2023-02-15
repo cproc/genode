@@ -27,6 +27,9 @@ namespace Genode { namespace Trace {
 	struct Signal_received;
 	struct Checkpoint;
 	struct Ethernet_packet;
+	struct Lock_locked;
+	struct Lock_wait;
+	struct Lock_unlock;
 } }
 
 
@@ -184,5 +187,40 @@ struct Genode::Trace::Ethernet_packet
 		return policy.trace_eth_packet(dst, name, direction == Direction::SENT, data, length); }
 };
 
+
+struct Genode::Trace::Lock_locked
+{
+	void const *lock;
+
+	Lock_locked(void *lock) : lock(lock)
+	{ Thread::trace(this); }
+
+	size_t generate(Policy_module &policy, char *dst) const {
+		return policy.lock_locked(dst, lock); }
+};
+
+
+struct Genode::Trace::Lock_wait
+{
+	void const *lock;
+
+	Lock_wait(void *lock) : lock(lock)
+	{ Thread::trace(this); }
+
+	size_t generate(Policy_module &policy, char *dst) const {
+		return policy.lock_wait(dst, lock); }
+};
+
+
+struct Genode::Trace::Lock_unlock
+{
+	void const *lock;
+
+	Lock_unlock(void *lock) : lock(lock)
+	{ Thread::trace(this); }
+
+	size_t generate(Policy_module &policy, char *dst) const {
+		return policy.lock_unlock(dst, lock); }
+};
 
 #endif /* _INCLUDE__BASE__TRACE__EVENTS_H_ */
