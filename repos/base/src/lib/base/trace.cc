@@ -227,7 +227,7 @@ Trace::Logger *Thread::_logger()
 
 		Cpu_session &cpu = myself ? *myself->_cpu_session : _env().cpu();
 
-		if (!myself)
+		if (!myself || !myself->_trace_control)
 			if (!main_trace_control) {
 				Dataspace_capability ds = _env().cpu().trace_control();
 				if (ds.valid())
@@ -235,7 +235,9 @@ Trace::Logger *Thread::_logger()
 			}
 
 		logger.init(thread_cap, &cpu,
-		            myself ? myself->_trace_control : main_trace_control);
+		            (myself && myself->_trace_control) ?
+		            myself->_trace_control :
+		            main_trace_control);
 	}
 
 	return &logger;

@@ -787,7 +787,7 @@ void Child::_try_construct_env_dependent_members()
 	Process::Type const type = _policy.forked()
 	                         ? Process::TYPE_FORKED : Process::TYPE_LOADED;
 	try {
-		_initial_thread.construct(_cpu.session(), _pd.cap(), _policy.name());
+		_initial_thread.construct(_cpu.session(), _pd.cap(), "main");
 		_process.construct(type, _linker_dataspace(), _pd.session(),
 		                   *_initial_thread, _local_rm,
 		                   Child_address_space(_pd.session(), _policy).region_map(),
