@@ -6,6 +6,8 @@
 using namespace Genode;
 using namespace Ctf;
 
+static bool rpc_call_enabled = false;
+
 enum { MAX_CAPTURE_LEN = 100 };
 
 size_t max_event_size() {
@@ -35,11 +37,13 @@ size_t log_output(char *dst, char const *log_message, size_t len) {
 
 size_t rpc_call(char *dst, char const *rpc_name, Msgbuf_base const &)
 {
-	size_t len = strlen(rpc_name) + 1;
+	if (rpc_call_enabled) {
+		size_t len = strlen(rpc_name) + 1;
 
-	new (dst) Rpc_call(rpc_name, len);
+		new (dst) Rpc_call(rpc_name, len);
 
-	return len + sizeof(Rpc_call);
+		return len + sizeof(Rpc_call);
+	}
 }
 
 size_t rpc_returned(char *dst, char const *rpc_name, Msgbuf_base const &)
@@ -80,4 +84,9 @@ size_t signal_receive(char *dst, Signal_context const & context, unsigned num)
 {
 	new (dst) Signal_receive(num, (void*)&context);
 	return 0;
+}
+
+void enable_rpc_call()
+{
+	rpc_call_enabled = true;
 }
