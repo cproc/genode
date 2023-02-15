@@ -18,6 +18,8 @@
 /* base-internal includes */
 #include <base/internal/spin_lock.h>
 
+#include <trace/probe.h>
+
 using namespace Genode;
 
 
@@ -75,9 +77,12 @@ void Lock::lock(Applicant &myself)
 		/* we got the lock */
 		_owner          =  myself;
 		_last_applicant = &_owner;
+Genode::Trace::Lock_locked(this);
 		spinlock_unlock(&_spinlock_state);
 		return;
 	}
+
+Genode::Trace::Lock_wait(this);
 
 	/*
 	 * We failed to grab the lock, lets add ourself to the
@@ -102,6 +107,9 @@ void Lock::lock(Applicant &myself)
 		if (!applicants)
 			_last_applicant = &myself;
 	} else {
+//int dummy;
+//Genode::raw(&dummy, ": _owner: ", _owner.thread_base()->stack_base());
+//Genode::raw(&dummy, ": _owner: ", Genode::Cstring(_owner.thread_base()->name().string()));
 		if (_last_applicant)
 			_last_applicant->applicant_to_wake_up(&myself);
 		_last_applicant = &myself;
@@ -126,12 +134,16 @@ void Lock::lock(Applicant &myself)
 	 * !   thread_yield();
 	 */
 	thread_stop_myself(myself.thread_base());
+
+Genode::Trace::Lock_locked(this);
 }
 
 
 void Lock::unlock()
 {
 	spinlock_lock(&_spinlock_state);
+
+Genode::Trace::Lock_unlock(this);
 
 	Applicant *next_owner = _owner.applicant_to_wake_up();
 

@@ -24,6 +24,21 @@ size_t checkpoint(char *dst, char const *, unsigned long, void *, unsigned char)
 	return 0;
 }
 
+size_t lock_locked(char *dst, void const *lock)
+{
+	return 0;
+}
+
+size_t lock_wait(char *dst, void const *lock)
+{
+	return 0;
+}
+
+size_t lock_unlock(char *dst, void const *lock)
+{
+	return 0;
+}
+
 size_t log_output(char *dst, char const *log_message, size_t len)
 {
 	return 0;
