@@ -39,7 +39,7 @@ class Trace_recorder::Monitor
 {
 	private:
 		enum { DEFAULT_BUFFER_SIZE      = 64 * 1024 };
-		enum { TRACE_SESSION_RAM        = 1024 * 1024 };
+		enum { TRACE_SESSION_RAM        = 900 * 1024 * 1024 };
 		enum { TRACE_SESSION_ARG_BUFFER = 128 * 1024 };
 
 		class Trace_directory
