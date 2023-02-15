@@ -1,9 +1,12 @@
 #include <util/string.h>
+#include <base/trace/policy.h>
 #include <trace/policy.h>
 #include <trace_recorder_policy/ctf_stream0.h>
 
 using namespace Genode;
 using namespace Ctf;
+
+//static bool rpc_call_enabled = false;
 
 enum { MAX_EVENT_SIZE = 64 };
 
@@ -78,3 +81,9 @@ size_t signal_receive(char *dst, Signal_context const & context, unsigned num)
 	new (dst) Signal_receive(num, (void*)&context);
 	return 0;
 }
+#if 0
+void enable_rpc_call()
+{
+	rpc_call_enabled = true;
+}
+#endif

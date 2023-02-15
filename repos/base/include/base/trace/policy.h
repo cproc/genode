@@ -41,6 +41,8 @@ struct Genode::Trace::Policy_module
 	size_t (*rpc_reply)        (char *, char const *);
 	size_t (*signal_submit)    (char *, unsigned const);
 	size_t (*signal_received)  (char *, Signal_context const &, unsigned const);
+//	void   (*enable_rpc_call)  ();
+	bool   rpc_call_enabled;
 };
 
 #endif /* _INCLUDE__BASE__TRACE__POLICY_H_ */

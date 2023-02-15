@@ -31,3 +31,4 @@ extern "C" size_t rpc_dispatch     (char *dst, char const *rpc_name);
 extern "C" size_t rpc_reply        (char *dst, char const *rpc_name);
 extern "C" size_t signal_submit    (char *dst, unsigned const);
 extern "C" size_t signal_receive   (char *dst, Genode::Signal_context const &, unsigned);
+extern "C" void   enable_rpc_call  ();
