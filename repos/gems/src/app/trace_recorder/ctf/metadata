@@ -135,6 +135,7 @@ event {
 	stream_id = 0;
 	fields := struct {
 		uint64_t _lock;
+		string   _owner;
 	};
 };
 
@@ -144,6 +145,7 @@ event {
 	stream_id = 0;
 	fields := struct {
 		uint64_t _lock;
+		string   _next_owner;
 	};
 };
 
