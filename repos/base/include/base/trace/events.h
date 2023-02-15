@@ -42,7 +42,11 @@ struct Genode::Trace::Rpc_call
 	}
 
 	size_t generate(Policy_module &policy, char *dst) const {
-		return policy.rpc_call(dst, rpc_name, msg); }
+		if (policy.rpc_call_enabled)
+			return policy.rpc_call(dst, rpc_name, msg);
+
+		return 0;
+	}
 };
 
 

@@ -27,6 +27,9 @@ extern "C" {
 		rpc_dispatch,
 		rpc_reply,
 		signal_submit,
-		signal_receive
+		signal_receive,
+
+		/*enable_rpc_call*/
+		false,
 	};
 }

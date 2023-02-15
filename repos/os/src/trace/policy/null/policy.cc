@@ -52,3 +52,5 @@ size_t signal_receive(char *dst, Signal_context const &, unsigned)
 	return 0;
 }
 
+void enable_rpc_call() { }
+
