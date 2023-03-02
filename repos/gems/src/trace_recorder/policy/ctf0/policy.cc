@@ -8,7 +8,7 @@ using namespace Ctf;
 
 //static bool rpc_call_enabled = false;
 
-enum { MAX_EVENT_SIZE = 64 };
+enum { MAX_EVENT_SIZE = 256 };
 
 size_t max_event_size()
 {
@@ -28,9 +28,16 @@ size_t checkpoint(char *dst, char const *name, unsigned long data, void *addr, u
 #if 1
 	size_t len = strlen(name) + 1;
 
+	size_t total_len = len + sizeof(Checkpoint);
+
+	if (total_len > max_event_size()) {
+		new (dst) Checkpoint("error", 6, total_len, nullptr, 0);
+		return 6 + sizeof(Checkpoint);
+	}
+
 	new (dst) Checkpoint(name, len, data, addr, type);
 
-	return len + sizeof(Checkpoint);
+	return total_len;
 #endif
 }
 
