@@ -48,7 +48,7 @@ class Genode::Mutex : Noncopyable
 
 		Mutex() { }
 
-		void acquire();
+		void acquire(char const *caller_name_for_tracing = nullptr);
 		void release();
 
 		class Guard
@@ -59,7 +59,8 @@ class Genode::Mutex : Noncopyable
 
 			public:
 
-				explicit Guard(Mutex &mutex) : _mutex(mutex) { _mutex.acquire(); }
+				explicit Guard(Mutex &mutex, char const *caller_name_for_tracing = nullptr)
+				: _mutex(mutex) { _mutex.acquire(caller_name_for_tracing); }
 
 				~Guard() { _mutex.release(); }
 		};

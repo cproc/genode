@@ -58,7 +58,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
                                                   Plugin_context *context,
                                                   int libc_fd)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator::alloc()");
 
 	bool const any_fd = (libc_fd < 0);
 	Id_space::Id id {(unsigned)libc_fd};
@@ -77,7 +77,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 
 void File_descriptor_allocator::free(File_descriptor *fdo)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator::free()");
 
 	if (fdo->fd_path)
 		_alloc.free((void *)fdo->fd_path, ::strlen(fdo->fd_path) + 1);
@@ -96,7 +96,7 @@ void File_descriptor_allocator::preserve(int fd)
 
 File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator::find_by_libc_fd");
 
 	if (libc_fd < 0)
 		return nullptr;

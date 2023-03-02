@@ -62,13 +62,13 @@ void Lock::Applicant::wake_up()
  ** Lock lock **
  ***************/
 
-void Lock::lock()
+void Lock::lock(char const *caller_name_for_tracing)
 {
 	Applicant myself(Thread::myself());
-	lock(myself);
+	lock(myself, caller_name_for_tracing);
 }
 
-void Lock::lock(Applicant &myself)
+void Lock::lock(Applicant &myself, char const *caller_name_for_tracing)
 {
 	spinlock_lock(&_spinlock_state);
 
@@ -83,10 +83,14 @@ void Lock::lock(Applicant &myself)
 		return;
 	}
 
+if (caller_name_for_tracing) {
+Trace::Checkpoint(caller_name_for_tracing, 0, nullptr, Trace::Checkpoint::Type::START);
+}
+
 //{ Genode::Trace::Checkpoint checkpoint("lock_wait", 0, this); }
 //Genode::Trace::Lock_wait(this);
 if (_owner.thread_base()) {
-Genode::Trace::Lock_wait(this, _owner.thread_base()->name().string());
+Trace::Lock_wait(this, _owner.thread_base()->name().string());
 }
 
 	/*
@@ -142,6 +146,11 @@ Genode::Trace::Lock_wait(this, _owner.thread_base()->name().string());
 
 //{ Genode::Trace::Checkpoint checkpoint("lock_acquired", 0, this); }
 //Genode::Trace::Lock_locked(this);
+
+if (caller_name_for_tracing) {
+Trace::Checkpoint(caller_name_for_tracing, 0, nullptr, Trace::Checkpoint::Type::END);
+}
+
 }
 
 
@@ -157,7 +166,7 @@ void Lock::unlock()
 	if (next_owner) {
 
 if (next_owner->thread_base()) {
-Genode::Trace::Lock_unlock(this, next_owner->thread_base()->name().string());
+Trace::Lock_unlock(this, next_owner->thread_base()->name().string());
 }
 		/* transfer lock ownership to next applicant and wake him up */
 		_owner = *next_owner;

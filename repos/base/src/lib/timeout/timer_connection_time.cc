@@ -147,8 +147,8 @@ void Timer::Connection::_update_real_time()
 Genode::Duration Timer::Connection::curr_time()
 {
 	_switch_to_timeout_framework_mode();
-
-	Reconstructible<Mutex::Guard> mutex_guard(_real_time_mutex);
+	Reconstructible<Mutex::Guard> mutex_guard(_real_time_mutex,
+	                                          "Timer::Connection::curr_time()");
 	Duration                      interpolated_time(_real_time);
 
 	/*

@@ -159,7 +159,7 @@ class Libc::Malloc
 
 		void * alloc(size_t size, size_t align = DEFAULT_ALIGN)
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Malloc::alloc()");
 
 			size_t   const real_size = size + _room(align);
 			unsigned const msb       = _slab_log2(real_size);
@@ -212,7 +212,7 @@ class Libc::Malloc
 
 		void free(void *ptr)
 		{
-			Mutex::Guard lock_guard(_mutex);
+			Mutex::Guard lock_guard(_mutex, "Malloc::free()");
 
 			Metadata *md = (Metadata *)ptr - 1;
 

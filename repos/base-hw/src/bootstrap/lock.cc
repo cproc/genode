@@ -26,14 +26,14 @@ void Genode::Lock::unlock()
 }
 
 
-void Genode::Lock::lock()
+void Genode::Lock::lock(char const *)
 {
 	assert(_state == UNLOCKED);
 	_state = LOCKED;
 }
 
 
-void Genode::Mutex::acquire()
+void Genode::Mutex::acquire(char const *)
 {
 	_lock.lock();
 }

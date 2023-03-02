@@ -38,7 +38,7 @@ struct Libc::Kernel_timer_accessor : Timer_accessor
 
 	Timer &timer() override
 	{
-		Mutex::Guard guard(_mutex);
+		Mutex::Guard guard(_mutex, "timer()");
 
 		if (!_timer.constructed())
 			_timer.construct(_env);

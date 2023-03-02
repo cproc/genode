@@ -15,14 +15,14 @@
 #include <base/log.h>
 #include <base/thread.h>
 
-void Genode::Mutex::acquire()
+void Genode::Mutex::acquire(char const *caller_name_for_tracing)
 {
 	Lock::Applicant myself(Thread::myself());
 	if (_lock.lock_owner(myself))
 		Genode::error("deadlock ahead, mutex=", this, ", return ip=",
 		              __builtin_return_address(0));
 
-	_lock.lock(myself);
+	_lock.lock(myself, caller_name_for_tracing);
 }
 
 void Genode::Mutex::release()

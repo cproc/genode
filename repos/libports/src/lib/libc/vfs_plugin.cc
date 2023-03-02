@@ -47,7 +47,7 @@
 #include <internal/init.h>
 #include <internal/monitor.h>
 #include <internal/current_time.h>
-
+#include <internal/file.h>
 
 static Libc::Monitor      *_monitor_ptr;
 static Genode::Region_map *_region_map_ptr;
@@ -853,10 +853,13 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 
 	if (fd->flags & O_NONBLOCK) {
 		monitor().monitor([&] {
+Libc_trace_checkpoint trace_checkpoint("vfs_write nb", fd->fd_path);
+
 			out_result = handle->fs().write(handle, src, out_count);
 			return Fn::COMPLETE;
 		});
 	} else {
+
 		Vfs::file_size const initial_seek { handle->seek() };
 
 		/* TODO clean this up */
@@ -888,6 +891,8 @@ ssize_t Libc::Vfs_plugin::write(File_descriptor *fd, const void *buf,
 
 		monitor().monitor([&]
 		{
+Libc_trace_checkpoint trace_checkpoint("vfs_write", fd->fd_path);
+
 			for (;;) {
 
 				/* number of bytes written in one iteration */
@@ -994,6 +999,8 @@ ssize_t Libc::Vfs_plugin::read(File_descriptor *fd, void *buf,
 	Result   out_result;
 
 	monitor().monitor([&] {
+Libc_trace_checkpoint trace_checkpoint("vfs_read", fd->fd_path);
+
 		Byte_range_ptr const dst { (char *)buf, count };
 		out_result = handle->fs().complete_read(handle, dst, out_count);
 		return out_result != Result::READ_QUEUED ? Fn::COMPLETE : Fn::INCOMPLETE;

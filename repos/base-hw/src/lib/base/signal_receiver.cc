@@ -26,6 +26,8 @@
 #include <base/internal/capability_space.h>
 #include <base/internal/globals.h>
 
+#include <trace/probe.h>
+
 using namespace Genode;
 
 static Pd_session *_pd_ptr;
@@ -126,11 +128,16 @@ Signal_context_capability Signal_receiver::manage(Signal_context * const c)
 
 void Signal_receiver::block_for_signal()
 {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Kernel::await_signal()");
+
 	/* wait for a signal */
 	if (Kernel::await_signal(Capability_space::capid(_cap))) {
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Kernel::await_signal() finished");
+
 		/* canceled */
 		return;
 	}
+GENODE_TRACE_CHECKPOINT_NAMED(0, "Kernel::await_signal() finished");
 
 	/* read signal data */
 	Signal::Data * const data =

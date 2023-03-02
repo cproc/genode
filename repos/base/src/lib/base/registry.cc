@@ -28,7 +28,7 @@ Registry_base::Element::Element(Registry_base &registry, void *obj)
 Registry_base::Element::~Element()
 {
 	{
-		Mutex::Guard guard(_mutex);
+		Mutex::Guard guard(_mutex, "Registry_base::Element::~Element()");
 		if (_notify_ptr && _registry._curr == this) {
 
 			/*
@@ -57,7 +57,7 @@ Registry_base::Element::~Element()
 
 void Registry_base::_insert(Element &element)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Registry_base::_insert()");
 
 	_elements.insert(&element);
 }
@@ -65,7 +65,7 @@ void Registry_base::_insert(Element &element)
 
 void Registry_base::_remove(Element &element)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Registry_base::_remove()");
 
 	_elements.remove(&element);
 }
@@ -82,7 +82,7 @@ Registry_base::Element *Registry_base::_processed(Notify &notify,
 		return at;
 
 	/* make sure that the critical section of '~Element' is completed */
-	Mutex::Guard guard(e._mutex);
+	Mutex::Guard guard(e._mutex, "Registry_base::_processed()");
 
 	/* here we know that 'e' still exists */
 	e._notify_ptr = nullptr;
@@ -106,7 +106,7 @@ Registry_base::Element *Registry_base::_processed(Notify &notify,
 
 void Registry_base::_for_each(Untyped_functor &functor)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Registry_base::_for_each()");
 
 	/* insert position in list of processed elements */
 	Element *at = nullptr;
@@ -118,7 +118,7 @@ void Registry_base::_for_each(Untyped_functor &functor)
 		Notify notify(Notify::Keep::KEEP, Thread::myself());
 		{
 			/* tell the element where to report its status */
-			Mutex::Guard guard(e->_mutex);
+			Mutex::Guard guard(e->_mutex, "Registry_base::_for_each()");
 			_curr = e;
 			e->_notify_ptr = &notify;
 		}
