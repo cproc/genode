@@ -29,12 +29,14 @@ Directory::Path Trace_recorder::Monitor::Trace_directory::subject_path(::Subject
 
 void Trace_recorder::Monitor::Attached_buffer::process_events(Trace_directory &trace_directory)
 {
+//Genode::raw("process_events(", info().thread_name(), ")");
 	/* start iteration for every writer */
 	_writers.for_each([&] (Writer_base &writer) {
 		writer.start_iteration(trace_directory.root(),
 		                       trace_directory.subject_path(info()),
 		                       info());
 	});
+//Genode::raw("process_events(", info().thread_name(), "): check 1");
 
 	/* iterate entries and pass each entry to every writer */
 	_buffer.for_each_new_entry([&] (Trace::Buffer::Entry &entry) {
@@ -48,8 +50,11 @@ void Trace_recorder::Monitor::Attached_buffer::process_events(Trace_directory &t
 		return true;
 	});
 
+//Genode::raw("process_events(", info().thread_name(), "): check 2");
+
 	/* end iteration for every writer */
 	_writers.for_each([&] (Writer_base &writer) { writer.end_iteration(); });
+//Genode::raw("process_events(", info().thread_name(), ") finished");
 }
 
 
@@ -72,9 +77,11 @@ Session_policy Trace_recorder::Monitor::_session_policy(Trace::Subject_info cons
 
 void Trace_recorder::Monitor::_handle_timeout()
 {
+Genode::raw("_handle_timeout()");
 	_trace_buffers.for_each([&] (Attached_buffer &buf) {
 		buf.process_events(*_trace_directory);
 	});
+Genode::raw("_handle_timeout() finished");
 }
 
 

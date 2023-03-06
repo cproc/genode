@@ -26,6 +26,7 @@ using namespace Genode;
 
 void Trace::Partitioned_buffer::init(size_t size)
 {
+//Genode::raw("Partitioned_buffer::init(): ", size);
 	/* compute number of bytes available for partitions */
 	size_t const header_size  = (addr_t)&_primary - (addr_t)this;
 	size_t const avail_size   = size - header_size;
@@ -48,6 +49,7 @@ void Trace::Partitioned_buffer::init(size_t size)
 
 Trace::Simple_buffer const &Trace::Partitioned_buffer::_switch_consumer()
 {
+//Genode::raw("Partitioned_buffer::_switch_consumer()");
 	/* first switch atomically */
 	bool switched = false;
 	while (!switched)
@@ -61,14 +63,20 @@ Trace::Simple_buffer const &Trace::Partitioned_buffer::_switch_consumer()
 	/* use spin lock to wait if producer is currently wrapping */
 
 	spinlock_unlock(&_consumer_lock);
+//Genode::raw("Partitioned_buffer::_switch_consumer() finished");
+
 	return _consumer();
 }
 
 
 Trace::Simple_buffer &Trace::Partitioned_buffer::_switch_producer()
 {
+bool blocked = false;
+//Genode::raw(&blocked, ": _switch_producer()");
 	/* stops consumer from reading after switching */
 	_consumer_lock = SPINLOCK_LOCKED;
+
+Trace::Timestamp ts1 = Trace::timestamp_ms();
 
 	bool switched = false;
 	while (!switched) {
@@ -77,12 +85,24 @@ Trace::Simple_buffer &Trace::Partitioned_buffer::_switch_producer()
 		if (State::Producer::get(old_state) == State::Consumer::get(old_state))
 			switched = cmpxchg(&_state, old_state, State::toggle_producer(old_state));
 		else {
+
+#if 1
+if (!blocked) {
+	Genode::raw(&blocked, ": _switch_producer(): blocking");
+}
+blocked = true;
+#endif
+
+#if 0
 			/**
 			 * consumer may still switch partitions at this point but not continue
 			 * reading until we set the new head entry
 			 */
 			_lost_entries += _producer()._num_entries;
+Genode::raw("XXXXX Partitioned_buffer::_switch_producer(): lost entries: ", _lost_entries);
+//wait_for_continue();
 			switched = true;
+#endif
 		}
 	}
 
@@ -97,12 +117,19 @@ Trace::Simple_buffer &Trace::Partitioned_buffer::_switch_producer()
 	Genode::memory_barrier();
 	_consumer_lock = SPINLOCK_UNLOCKED;
 
+if (blocked) {
+	Trace::Timestamp ts2 = Trace::timestamp_ms();
+	Genode::raw(&blocked, ": Partitioned_buffer::_switch_producer() finished: ", ts2 - ts1, " ms");
+}
+
 	return current;
 }
 
 
 char *Trace::Partitioned_buffer::reserve(size_t len)
 {
+//Genode::raw("Partitioned_buffer::reserve(): ", len);
+//wait_for_continue();
 	return _producer()._reserve(len, [&] () -> char* {
 		return _switch_producer()._head_entry()->data;
 	});
@@ -110,4 +137,5 @@ char *Trace::Partitioned_buffer::reserve(size_t len)
 
 
 void Trace::Partitioned_buffer::commit(size_t len) {
+//Genode::raw("Partitioned_buffer::commit(): ", len);
 	_producer()._commit(len, [&] () { _switch_producer(); }); }
