@@ -22,6 +22,8 @@ namespace Genode { struct Irq_connection; }
 
 struct Genode::Irq_connection : Connection<Irq_session>, Irq_session_client
 {
+	static constexpr Ram_quota RAM_QUOTA { 6*1024 };
+
 	/**
 	 * Constructor
 	 *
@@ -35,7 +37,7 @@ struct Genode::Irq_connection : Connection<Irq_session>, Irq_session_client
 	               Polarity     polarity = Irq_session::POLARITY_UNCHANGED,
 	               addr_t       device_config_phys = 0)
 	:
-		Connection<Irq_session>(env, label, Ram_quota { 6*1024 },
+		Connection<Irq_session>(env, label, RAM_QUOTA,
 		                        Args("irq_number=",         label, ", "
 		                             "irq_trigger=",        unsigned(trigger),  ", "
 		                             "irq_polarity=",       unsigned(polarity), ", "

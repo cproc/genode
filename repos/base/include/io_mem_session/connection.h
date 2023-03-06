@@ -22,6 +22,8 @@ namespace Genode { struct Io_mem_connection; }
 
 struct Genode::Io_mem_connection : Connection<Io_mem_session>, Io_mem_session_client
 {
+	static constexpr Ram_quota RAM_QUOTA { 6*1024 };
+
 	/**
 	 * Constructor
 	 *
@@ -31,7 +33,7 @@ struct Genode::Io_mem_connection : Connection<Io_mem_session>, Io_mem_session_cl
 	 */
 	Io_mem_connection(Env &env, addr_t base, size_t size, bool write_combined = false)
 	:
-		Connection<Io_mem_session>(env, Label(), Ram_quota { 6*1024 },
+		Connection<Io_mem_session>(env, Label(), RAM_QUOTA,
 		                           Args("base=", Hex(base), ", "
 		                                "size=", Hex(size), ", "
 		                                "wc=",   write_combined ? "yes" : "no")),

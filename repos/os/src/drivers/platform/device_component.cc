@@ -172,8 +172,8 @@ Device_component::Device_component(Registry<Device_component> & registry,
 		                         Irq_session::Trigger  mode,
 		                         bool                  shared)
 		{
-			session.ram_quota_guard().withdraw(Ram_quota{Irq_session::RAM_QUOTA});
-			_ram_quota += Irq_session::RAM_QUOTA;
+			session.ram_quota_guard().withdraw(Irq_connection::RAM_QUOTA);
+			_ram_quota += Irq_connection::RAM_QUOTA.value;
 			session.cap_quota_guard().withdraw(Cap_quota{Irq_session::CAP_QUOTA});
 			_cap_quota += Irq_session::CAP_QUOTA;
 			new (session.heap()) Irq(_irq_registry, idx, nr, type, polarity,
@@ -183,8 +183,8 @@ Device_component::Device_component(Registry<Device_component> & registry,
 		device.for_each_io_mem([&] (unsigned idx, Range range,
 		                            Device::Pci_bar bar, bool pf)
 		{
-			session.ram_quota_guard().withdraw(Ram_quota{Io_mem_session::RAM_QUOTA});
-			_ram_quota += Io_mem_session::RAM_QUOTA;
+			session.ram_quota_guard().withdraw(Io_mem_connection::RAM_QUOTA);
+			_ram_quota += Io_mem_connection::RAM_QUOTA.value;
 			session.cap_quota_guard().withdraw(Cap_quota{Io_mem_session::CAP_QUOTA});
 			_cap_quota += Io_mem_session::CAP_QUOTA;
 			new (session.heap()) Io_mem(_io_mem_registry, bar, idx, range, pf);
@@ -193,8 +193,8 @@ Device_component::Device_component(Registry<Device_component> & registry,
 		device.for_each_io_port_range([&] (unsigned idx, Io_port_range::Range range,
 		                                   Device::Pci_bar)
 		{
-			session.ram_quota_guard().withdraw(Ram_quota{Io_port_session::RAM_QUOTA});
-			_ram_quota += Io_port_session::RAM_QUOTA;
+			session.ram_quota_guard().withdraw(Io_port_connection::RAM_QUOTA);
+			_ram_quota += Io_port_connection::RAM_QUOTA.value;
 			session.cap_quota_guard().withdraw(Cap_quota{Io_port_session::CAP_QUOTA});
 			_cap_quota += Io_port_session::CAP_QUOTA;
 			new (session.heap()) Io_port_range(_io_port_range_registry, idx, range);
@@ -202,8 +202,8 @@ Device_component::Device_component(Registry<Device_component> & registry,
 
 		device.for_pci_config([&] (Device::Pci_config const & cfg)
 		{
-			session.ram_quota_guard().withdraw(Ram_quota{Io_mem_session::RAM_QUOTA});
-			_ram_quota += Io_mem_session::RAM_QUOTA;
+			session.ram_quota_guard().withdraw(Io_mem_connection::RAM_QUOTA);
+			_ram_quota += Io_mem_connection::RAM_QUOTA.value;
 			session.cap_quota_guard().withdraw(Cap_quota{Io_mem_session::CAP_QUOTA});
 			_cap_quota += Io_mem_session::CAP_QUOTA;
 			_pci_config.construct(cfg.addr);
@@ -211,8 +211,8 @@ Device_component::Device_component(Registry<Device_component> & registry,
 
 		device.for_each_reserved_memory([&] (unsigned idx, Range range)
 		{
-			session.ram_quota_guard().withdraw(Ram_quota{Io_mem_session::RAM_QUOTA});
-			_ram_quota += Io_mem_session::RAM_QUOTA;
+			session.ram_quota_guard().withdraw(Io_mem_connection::RAM_QUOTA);
+			_ram_quota += Io_mem_connection::RAM_QUOTA.value;
 			session.cap_quota_guard().withdraw(Cap_quota{Io_mem_session::CAP_QUOTA});
 			_cap_quota += Io_mem_session::CAP_QUOTA;
 			Io_mem & iomem = *(new (session.heap())

@@ -23,6 +23,8 @@ namespace Genode { struct Io_port_connection; }
 struct Genode::Io_port_connection : Connection<Io_port_session>,
                                     Io_port_session_client
 {
+	static constexpr Ram_quota RAM_QUOTA { 6*1024 };
+
 	/**
 	 * Constructor
 	 *
@@ -31,7 +33,7 @@ struct Genode::Io_port_connection : Connection<Io_port_session>,
 	 */
 	Io_port_connection(Env &env, unsigned base, unsigned size)
 	:
-		Connection<Io_port_session>(env, Label(), Ram_quota { 6*1024 },
+		Connection<Io_port_session>(env, Label(), RAM_QUOTA,
 		                            Args("io_port_base=", base, ", "
 		                                 "io_port_size=", size)),
 		Io_port_session_client(cap())
