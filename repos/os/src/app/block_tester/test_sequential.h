@@ -33,7 +33,7 @@ struct Test::Sequential : Test_base
 
 	Block::Operation::Type const _op_type = _node.attribute_value("write", false)
 	                                      ? Block::Operation::Type::WRITE
-	                                      : Block::Operation::Type::READ;
+	                                      : Block::Operation::Type::SYNC;
 
 	using Test_base::Test_base;
 
