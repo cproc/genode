@@ -80,7 +80,10 @@ class Trace_recorder::Timestamp_calibrator
 			/* measure frequency using timer */
 			Trace::Timestamp start = Trace::timestamp();
 			timer.msleep(1000);
-			return (Trace::timestamp() - start);
+			uint64_t measured_hz = (Trace::timestamp() - start);
+
+			log("Timestamp frequency (measured) is ", measured_hz, "Hz");
+			return 816000000UL;
 		}
 
 		uint64_t _current_epoch_us(Rtc::Connection &rtc)
