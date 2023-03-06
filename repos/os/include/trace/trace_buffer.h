@@ -17,7 +17,6 @@
 /* Genode includes */
 #include <base/trace/buffer.h>
 
-
 /**
  * Wrapper for Trace::Buffer that adds some convenient functionality
  */
@@ -42,12 +41,16 @@ class Trace_buffer
 		{
 			using namespace Genode;
 
-			if (!_buffer.initialized())
+//Genode::raw("for_each_new_entry()");
+
+			if (!_buffer.initialized()) {
+//Genode::raw("for_each_new_entry() finished (error)");
 				return;
+			}
 
 			bool lost = _buffer.lost_entries() != _lost_count;
 			if (lost) {
-				warning("lost ", _buffer.lost_entries() - _lost_count,
+				raw("XXXXX lost ", _buffer.lost_entries() - _lost_count,
 				        ", entries; you might want to raise buffer size");
 				_lost_count = (unsigned)_buffer.lost_entries();
 			}
@@ -63,21 +66,31 @@ class Trace_buffer
 			 * if the 'last' entry of the buffer (highest address) was reached.
 			 */
 			for (; !entry.head(); entry = _buffer.next(entry)) {
+//Genode::raw("for_each_new_entry(): found entry");
+
 				/* continue at first entry if we hit the end of the buffer */
-				if (entry.last())
+				if (entry.last()) {
+//Genode::raw("for_each_new_entry(): entry.last() -> getting first entry");
 					entry = _buffer.first();
+				}
 
 				/* skip empty entries */
-				if (entry.empty())
+				if (entry.empty()) {
+//Genode::raw("for_each_new_entry(): entry.empty() -> continue");
 					continue;
+				}
 
 				/* functor may return false to continue processing later on */
-				if (!functor(entry))
+				if (!functor(entry)) {
+//Genode::raw("for_each_new_entry(): functor returned false -> break");
 					break;
+				}
 			}
 
 			/* remember the next to be processed entry in _curr */
 			if (update) _curr = entry;
+
+//Genode::raw("for_each_new_entry() finished");
 		}
 
 		void * address() const { return &_buffer; }

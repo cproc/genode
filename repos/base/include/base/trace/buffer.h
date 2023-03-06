@@ -163,8 +163,10 @@ class Genode::Trace::Simple_buffer
 		template <typename WRAP_FUNC>
 		char *_reserve(size_t len, WRAP_FUNC && wrap)
 		{
+//Genode::raw("Simple_buffer::_reserve(): len: ", len, ", free: ", _size - _head_offset);
 			if (_head_offset + sizeof(_Entry) + len <= _size)
 				return _head_entry()->data;
+//Genode::raw("Simple_buffer::_reserve(): wrap");
 
 			/* mark unused space as padding */
 			if (_head_offset + sizeof(_Entry) <= _size)
@@ -176,6 +178,13 @@ class Genode::Trace::Simple_buffer
 		template <typename WRAP_FUNC>
 		void _commit(size_t len, WRAP_FUNC && wrap)
 		{
+//Genode::raw("Simple_buffer::_commit(): len: ", len, ", free: ", _size - _head_offset);
+//return;
+
+if (_size - _head_offset < len) {
+Genode::raw("XXX");
+//wait_for_continue();
+}
 			/* omit empty entries */
 			if (len == 0)
 				return;
@@ -207,6 +216,7 @@ class Genode::Trace::Simple_buffer
 
 		void init(size_t size)
 		{
+//Genode::raw("Simple_buffer::init(): ", size);
 			_head_offset = 0;
 
 			/* compute number of bytes available for tracing data */
@@ -219,7 +229,7 @@ class Genode::Trace::Simple_buffer
 
 			_num_entries = 0;
 		}
-
+#if 0
 		char *reserve(size_t len)
 		{
 			return _reserve(len, [&] () -> char* {
@@ -231,7 +241,7 @@ class Genode::Trace::Simple_buffer
 
 		void commit(size_t len) {
 			return _commit(len, [&] () { _buffer_wrapped(); }); }
-
+#endif
 
 		/********************************************
 		 ** Functions called from the TRACE client **
@@ -271,7 +281,11 @@ class Genode::Trace::Simple_buffer
 		};
 
 		/* Return whether buffer has been initialized. */
-		bool initialized() const { return _size && _head_offset <= _size; }
+		bool initialized() const
+		{
+//Genode::raw("Simple_buffer::initialized(): ", _size, ", ", _head_offset);
+			return _size && _head_offset <= _size;
+		}
 
 		/* Return the very first entry at the start of the buffer. */
 		Entry first() const
@@ -293,15 +307,22 @@ class Genode::Trace::Simple_buffer
 		 */
 		Entry next(Entry entry) const
 		{
-			if (entry.last() || entry._padding())
+//Genode::raw("Simple_buffer::next()");
+			if (entry.last() || entry._padding()) {
+//Genode::raw("Simple_buffer::next(): entry.last() || entry._padding()");
 				return Entry::invalid();
+			}
 
-			if (entry.head())
+			if (entry.head()) {
+//Genode::raw("Simple_buffer::next(): entry.head() -> returning same entry");
 				return entry;
+			}
 
 			addr_t const offset = (addr_t)entry.data() - (addr_t)_entries;
 			if (offset + entry.length() + sizeof(_Entry) > _size)
 				return Entry::invalid();
+
+//Genode::raw("Simple_buffer::next(): returning next entry");
 
 			return Entry((_Entry const *)((addr_t)entry.data() + entry.length()));
 		}
@@ -351,17 +372,21 @@ class Genode::Trace::Partitioned_buffer
 
 		Simple_buffer &_producer()
 		{
-			if (State::Producer::get(_state) == PRIMARY)
+			if (State::Producer::get(_state) == PRIMARY) {
+//Genode::raw("Partitioned_buffer::_producer(): primary");
 				return *_primary;
-
+			}
+//Genode::raw("Partitioned_buffer::_producer(): secondary");
 			return *_secondary();
 		}
 
 		Simple_buffer const &_consumer() const
 		{
-			if (State::Consumer::get(_state) == PRIMARY)
+			if (State::Consumer::get(_state) == PRIMARY) {
+//Genode::raw("Partitioned_buffer::_consumer(): primary");
 				return *_primary;
-
+			}
+//Genode::raw("Partitioned_buffer::_consumer(): secondary");
 			return *_secondary();
 		}
 
@@ -402,7 +427,12 @@ class Genode::Trace::Partitioned_buffer
 		unsigned long long lost_entries() const { return _lost_entries; }
 
 		Entry first()       const { return _consumer().first(); }
-		bool  initialized() const { return _secondary_offset > 0 && _consumer().initialized(); }
+		bool  initialized() const
+		{
+//Genode::raw("Partitioned_buffer::initialized(): ", _secondary_offset,
+//            ", ", _consumer().initialized());
+			return _secondary_offset > 0 && _consumer().initialized();
+		}
 
 		/**
 		 * Return the entry that follows the given entry.
@@ -414,6 +444,7 @@ class Genode::Trace::Partitioned_buffer
 		 */
 		Entry next(Entry entry)
 		{
+//Genode::raw("Partitioned_buffer::next()");
 			Entry e = _consumer().next(entry);
 			if (e.last())
 				return _switch_consumer().first();

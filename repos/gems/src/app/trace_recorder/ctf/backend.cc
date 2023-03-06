@@ -20,6 +20,7 @@ void Writer::start_iteration(Directory             &root,
                              Directory::Path const &path,
                              ::Subject_info  const &info)
 {
+//Genode::raw("Writer::start_iteration()");
 	_file_path = Directory::join(path, info.thread_name());
 
 	try {
@@ -34,6 +35,7 @@ void Writer::start_iteration(Directory             &root,
 
 void Writer::process_event(Trace_recorder::Trace_event_base const &trace_event, size_t length)
 {
+//Genode::raw("Writer::process_event()");
 	if (!_dst_file.constructed()) return;
 
 	if (trace_event.type() != Trace_recorder::Event_type::CTF) return;
@@ -52,8 +54,10 @@ void Writer::process_event(Trace_recorder::Trace_event_base const &trace_event, 
 
 void Writer::end_iteration()
 {
+//Genode::raw("Writer::end_iteration()");
 	/* write buffer to file */
 	_packet_buffer.write_to_file(*_dst_file, _file_path);
-
+//Genode::raw("Writer::end_iteration(): check");
 	_dst_file.destruct();
+//Genode::raw("Writer::end_iteration() finished");
 }
