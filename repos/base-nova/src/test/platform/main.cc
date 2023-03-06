@@ -15,9 +15,7 @@
 #include <base/heap.h>
 #include <base/thread.h>
 #include <base/log.h>
-#include <base/snprintf.h>
 #include <base/component.h>
-
 #include <util/touch.h>
 #include <util/retry.h>
 #include <rm_session/connection.h>
