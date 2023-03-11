@@ -856,6 +856,17 @@ extern "C" {
 		__attribute__((alias("pthread_attr_getstacksize")));
 
 
+	int pthread_attr_setname_np(pthread_attr_t *attr, char const *name)
+	{
+		if (!attr || !*attr || !name)
+			return EINVAL;
+
+		(*attr)->name = name;
+
+		return 0;
+	}
+
+
 	int pthread_attr_get_np(pthread_t pthread, pthread_attr_t *attr)
 	{
 		if (!attr)
