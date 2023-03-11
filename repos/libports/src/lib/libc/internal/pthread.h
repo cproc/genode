@@ -66,6 +66,13 @@ extern "C" {
 		void   *stack_addr   { nullptr };
 		size_t  stack_size   { Libc::Component::stack_size() };
 		int     detach_state { PTHREAD_CREATE_JOINABLE };
+		/*
+		 * The final name passed to the 'Thread' constructor will
+		 * have a dot and a pthread id appended to this name, so
+		 * this name must be a few characters shorter than the
+		 * maximum 'Thread::Name' length.
+		 */
+		Genode::String<Genode::Thread::Name::size() - 4> name { "pthread" };
 	};
 
 	/*

@@ -190,7 +190,9 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	unsigned const id { pthread_id() };
 	unsigned const cpu = placement_policy().placement(id);
 
-	String<32> const pthread_name { "pthread.", id };
+	Cpu_session::Name const pthread_name {
+		(attr && *attr) ? (*attr)->name.string() : "pthread",
+		".", id	};
 	Affinity::Space space { _cpu_session->affinity_space() };
 	Affinity::Location location { space.location_of_index(cpu) };
 
