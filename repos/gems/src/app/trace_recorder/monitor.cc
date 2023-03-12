@@ -78,6 +78,8 @@ Session_policy Trace_recorder::Monitor::_session_policy(Trace::Subject_info cons
 void Trace_recorder::Monitor::_handle_timeout()
 {
 Genode::raw("_handle_timeout()");
+	_add_new_subjects();
+
 	_trace_buffers.for_each([&] (Attached_buffer &buf) {
 		buf.process_events(*_trace_directory);
 	});
@@ -85,14 +87,8 @@ Genode::raw("_handle_timeout() finished");
 }
 
 
-void Trace_recorder::Monitor::start(Xml_node config)
+void Trace_recorder::Monitor::_add_new_subjects()
 {
-	stop();
-
-	/* create new trace directory */
-	_trace_directory.construct(_env, _alloc, config, _rtc);
-
-	/* find matching subjects according to config and start tracing */
 	_trace.for_each_subject_info([&] (Trace::Subject_id   const &id,
 	                                  Trace::Subject_info const &info) {
 		try {
@@ -100,8 +96,17 @@ void Trace_recorder::Monitor::start(Xml_node config)
 			if (info.state() == Trace::Subject_info::DEAD)
 				return;
 
+			/* skip already traced subjects */
+			bool already_traced = false;
+			_trace_buffers.for_each([&] (Attached_buffer &buf) {
+				if (buf.subject_id() == id)
+					already_traced = true;
+			});
+			if (already_traced)
+				return;
+
 			/* check if there is a matching policy in the XML config */
-			Session_policy session_policy = _session_policy(info, config);
+			Session_policy session_policy = _session_policy(info, _config->xml());
 
 			if (!session_policy.has_attribute("policy"))
 				return;
@@ -160,6 +165,20 @@ void Trace_recorder::Monitor::start(Xml_node config)
 		catch (Session_policy::No_policy_defined) { return; }
 		catch (...) { return; }
 	});
+}
+
+
+void Trace_recorder::Monitor::start(Xml_node config)
+{
+	stop();
+
+	_config.construct(_alloc, config);
+
+	/* create new trace directory */
+	_trace_directory.construct(_env, _alloc, config, _rtc);
+
+	/* find matching subjects according to config and start tracing */
+	_add_new_subjects();
 
 	/* register timeout */
 	unsigned period_ms { 0 };
