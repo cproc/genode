@@ -231,7 +231,7 @@ class Genode::Session_policy : public Xml_node
 					result = policy; },
 
 				[&] () {
-					warning("no policy defined for label '", label, "'");
+					//warning("no policy defined for label '", label, "'");
 					throw No_policy_defined(); });
 
 			return result;
