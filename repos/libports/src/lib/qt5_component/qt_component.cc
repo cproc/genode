@@ -17,6 +17,7 @@
 
 /* libc includes */
 #include <pthread.h>
+#include <pthread_np.h>
 #include <stdlib.h> /* 'exit'    */
 
 /* qt5_component includes */
@@ -62,7 +63,10 @@ void Libc::Component::construct(Libc::Env &env)
 
 		if (run_main_in_pthread) {
 			pthread_t main_pthread;
-			pthread_create(&main_pthread, nullptr, pthread_main, nullptr);
+			pthread_attr_t attr;
+			pthread_attr_init(&attr);
+			pthread_attr_setname_np(&attr, "Qt main");
+			pthread_create(&main_pthread, &attr, pthread_main, nullptr);
 		} else {
 			exit(main(argc, argv, envp));
 		}
