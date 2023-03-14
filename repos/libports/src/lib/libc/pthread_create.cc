@@ -34,20 +34,37 @@ using namespace Genode;
 
 struct Placement_policy
 {
-	struct Placement : Interface
+	struct Placement_by_id : Interface
 	{
 		unsigned pthread_id;
 		unsigned cpu;
 
-		Placement (unsigned id, unsigned cpu)
+		Placement_by_id (unsigned id, unsigned cpu)
 		: pthread_id(id), cpu(cpu) { }
 	};
 
-	Registry<Registered<Placement> > _policies { };
+	struct Placement_by_name : Interface
+	{
+		Thread::Name pthread_name;
+		unsigned cpu;
+
+		Placement_by_name (Thread::Name name, unsigned cpu)
+		: pthread_name(name), cpu(cpu) { }
+	};
+
+	Registry<Registered<Placement_by_id> >   _id_policies { };
+	Registry<Registered<Placement_by_name> > _name_policies { };
 
 	enum class Policy { ALL, SINGLE, MANUAL };
 
 	Policy _policy { Policy::ALL };
+
+	/*
+	 * Default CPU used with manual placement if configured in the policy with
+	 * a <thread> node without id or name, otherwise Policy::ALL is applied.
+	 */
+	unsigned _manual_default_cpu { 0 };
+	bool     _manual_default_cpu_set { false };
 
 	void policy(String<32> const &policy_name)
 	{
@@ -59,7 +76,8 @@ struct Placement_policy
 			_policy = Policy::ALL;
 	}
 
-	unsigned placement(unsigned const pthread_id) const
+	unsigned placement(unsigned const pthread_id,
+	                   Thread::Name const pthread_name) const
 	{
 		switch (_policy) {
 		case Policy::SINGLE:
@@ -67,14 +85,30 @@ struct Placement_policy
 		case Policy::MANUAL: {
 			unsigned cpu   = 0U;
 			bool     found = false;
-			_policies.for_each([&](auto const &policy) {
+
+			_id_policies.for_each([&](auto const &policy) {
 				if (policy.pthread_id == pthread_id) {
 					cpu = policy.cpu;
 					found = true;
 				}
 			});
-			/* if no entry is found, Policy::ALL is applied */
-			return found ? cpu : pthread_id;
+
+			if (found)
+				return cpu;
+
+			_name_policies.for_each([&](auto const &policy) {
+				if (policy.pthread_name == pthread_name) {
+					cpu = policy.cpu;
+					found = true;
+				}
+			});
+
+			/*
+			 * If no entry is found and no default CPU is set, Policy::ALL is
+			 * applied.
+			 */
+			return found ? cpu :
+			       (_manual_default_cpu_set ? _manual_default_cpu : pthread_id);
 		}
 		case Policy::ALL:
 		default:
@@ -82,9 +116,23 @@ struct Placement_policy
 		}
 	}
 
-	void add_placement(Genode::Allocator &alloc, unsigned pthread, unsigned cpu)
+	void add_placement(Genode::Allocator &alloc, unsigned pthread_id,
+	                   unsigned cpu)
 	{
-		new (alloc) Registered<Placement> (_policies, pthread, cpu);
+		new (alloc) Registered<Placement_by_id> (_id_policies, pthread_id,
+		                                         cpu);
+	}
+
+	void add_placement(Genode::Allocator &alloc, Thread::Name pthread_name,
+	                   unsigned cpu)
+	{
+		new (alloc) Registered<Placement_by_name> (_name_policies,
+		                                           pthread_name, cpu);
+	}
+
+	void set_manual_default_cpu(unsigned cpu) {
+		_manual_default_cpu = cpu;
+		_manual_default_cpu_set = true;
 	}
 };
 
@@ -114,14 +162,30 @@ void Libc::init_pthread_support(Cpu_session &cpu_session,
 
 	node.for_each_sub_node("thread", [&](Xml_node &policy) {
 
-		if (policy.has_attribute("id") && policy.has_attribute("cpu")) {
-			unsigned const id  = policy.attribute_value("id", 0U);
+		if (policy.has_attribute("cpu")) {
+
 			unsigned const cpu = policy.attribute_value("cpu", 0U);
 
-			if (_verbose)
-				log("pthread.", id, " -> cpu ", cpu);
+			if (policy.has_attribute("id")) {
+				unsigned const id = policy.attribute_value("id", 0U);
 
-			placement_policy().add_placement(alloc, id, cpu);
+				if (_verbose)
+					log("pthread with id ", id, " -> cpu ", cpu);
+
+				placement_policy().add_placement(alloc, id, cpu);
+			} else if (policy.has_attribute("name")) {
+				Thread::Name const name = policy.attribute_value("name",
+				                                                 Thread::Name());
+				if (_verbose)
+					log("pthread with name ", name, " -> cpu ", cpu);
+
+				placement_policy().add_placement(alloc, name, cpu);
+			} else {
+				if (_verbose)
+					log("pthread default -> cpu ", cpu);
+
+				placement_policy().set_manual_default_cpu(cpu);
+			}
 		}
 	});
 }
@@ -187,22 +251,22 @@ int Libc::pthread_create(pthread_t *thread, const pthread_attr_t *attr,
 	                        ? (*attr)->stack_size
 	                        : Libc::Component::stack_size();
 
-	unsigned const id { pthread_id() };
-	unsigned const cpu = placement_policy().placement(id);
+	Thread::Name const pthread_name {
+		(attr && *attr) ? (*attr)->name.string() : "pthread" };
 
-	Cpu_session::Name const pthread_name {
-		(attr && *attr) ? (*attr)->name.string() : "pthread",
-		".", id	};
+	unsigned const id { pthread_id() };
+	unsigned const cpu = placement_policy().placement(id, pthread_name);
+	Thread::Name const pthread_name_with_id { pthread_name, ".", id };
 	Affinity::Space space { _cpu_session->affinity_space() };
 	Affinity::Location location { space.location_of_index(cpu) };
 
 	if (_verbose)
-		log("create ", pthread_name, " -> cpu ", cpu);
+		log("create ", pthread_name_with_id, " -> cpu ", cpu);
 
 	int result =
 		Libc::pthread_create_from_session(thread, start_routine, arg,
 	                                      stack_size,
-	                                      name ? : pthread_name.string(),
+	                                      name ? : pthread_name_with_id.string(),
 	                                      _cpu_session, location);
 
 	if ((result == 0) && attr && *attr &&
