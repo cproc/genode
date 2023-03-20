@@ -41,7 +41,8 @@ class Vfs_capture::Data_file_system : public Single_file_system
 
 		Genode::Env &_env;
 
-		Capture::Area const _capture_area { 640, 480 };
+		Capture::Area const _capture_area;
+
 		Constructible<Capture::Connection> _capture { };
 		Constructible<Attached_dataspace>  _capture_ds { };
 
@@ -97,11 +98,12 @@ class Vfs_capture::Data_file_system : public Single_file_system
 
 		Data_file_system(Name        const &name,
 		                 Label       const &label,
-		                 Genode::Env       &env)
+		                 Genode::Env       &env,
+		                 Capture::Area     capture_area)
 		:
 			Single_file_system(Node_type::TRANSACTIONAL_FILE, name.string(),
 			                   Node_rwx::rw(), Node()),
-			_name(name), _label(label), _env(env)
+			_name(name), _label(label), _env(env), _capture_area(capture_area)
 		{ }
 
 		static const char *name()   { return "data"; }
@@ -182,7 +184,30 @@ struct Vfs_capture::Local_factory : File_system_factory
 
 	Genode::Env &_env;
 
-	Data_file_system _data_fs { _name, _label, _env };
+	struct Info
+	{
+		Capture::Area size;
+
+		Info(Capture::Area size) : size(size) { }
+
+		void print(Genode::Output &out) const
+		{
+			char buf[128] { };
+			Genode::Generator::generate({ buf, sizeof(buf) }, "capture",
+				[&] (Genode::Generator &g) {
+					g.attribute("width",  size.w);
+					g.attribute("height", size.h);
+			}).with_error([] (Genode::Buffer_error) {
+				Genode::warning("VFS-capture info exceeds maximum buffer size");
+			});
+
+			Genode::print(out, Genode::Cstring(buf));
+		}
+	} _info;
+
+	Readonly_value_file_system<Info> _info_fs { "info", _info };
+
+	Data_file_system _data_fs { _name, _label, _env, _info.size };
 
 	static Name name(Node const &config)
 	{
@@ -193,12 +218,16 @@ struct Vfs_capture::Local_factory : File_system_factory
 	:
 		_label(config.attribute_value("label", Label(""))),
 		_name(name(config)),
-		_env(env.env())
+		_env(env.env()),
+		_info(Capture::Area::from_node(config))
 	{ }
 
 	Vfs::File_system *create(Vfs::Env&, Node const &node) override
 	{
-		return node.has_type("data") ? &_data_fs : nullptr;
+		if (node.has_type("data")) return &_data_fs;
+		if (node.has_type("info")) return &_info_fs;
+
+		return nullptr;
 	}
 };
 
@@ -223,7 +252,10 @@ class Vfs_capture::File_system : private Local_factory,
 			Genode::Generator::generate({ buf, sizeof(buf) }, "compound",
 				[&] (Genode::Generator &g) {
 					g.node("data", [&] { g.attribute("name", name); });
-					g.node("dir",  [&] { g.attribute("name", Name(".", name)); });
+					g.node("dir",  [&] {
+						g.attribute("name", Name(".", name));
+						g.node("info", [&] () {});
+					});
 			}).with_error([] (Genode::Buffer_error) {
 				Genode::warning("VFS-capture compound exceeds maximum buffer size");
 			});
