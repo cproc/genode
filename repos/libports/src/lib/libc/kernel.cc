@@ -457,8 +457,8 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 	atexit(close_file_descriptors_on_exit);
 
 	init_semaphore_support(_timer_accessor);
-	init_pthread_support(*this, _timer_accessor);
-	init_pthread_support(env.cpu(), _pthread_config(), _heap);
+	init_pthread_support(env, *this, _timer_accessor);
+	init_pthread_support(env, env.cpu(), _pthread_config(), _heap);
 
 	_env.ep().register_io_progress_handler(*this);
 

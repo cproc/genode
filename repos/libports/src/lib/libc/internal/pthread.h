@@ -32,13 +32,65 @@
 #include <internal/timer.h>
 
 namespace Libc {
-
+	struct Cpu_local_storage;
 	struct Pthread;
 	struct Pthread_blockade;
 	struct Pthread_cleanup;
 	struct Pthread_job;
 	struct Pthread_mutex;
 }
+
+
+class Libc::Cpu_local_storage : public Genode::Avl_node<Libc::Cpu_local_storage>
+{
+	private:
+
+		Genode::Env &_env;
+
+		Genode::Affinity::Location _location;
+
+		/* One timer connection per CPU. */
+		Genode::Constructible<Libc::Timer> _timer;
+
+		/*
+		 * The '_timer' is constructed by whatever thread (main thread
+		 * or pthread) that uses a time-related function first. Hence,
+		 * the construction must be protected by a mutex.
+		 */
+		Genode::Mutex _timer_construct_mutex;
+
+	public:
+
+		Cpu_local_storage(Genode::Env &env, Genode::Affinity::Location location)
+		: _env(env), _location(location) { }
+
+
+		Genode::Affinity::Location location() const
+		{
+			return _location;
+		}
+
+
+		Libc::Timer &timer()
+		{
+			if (!_timer.constructed()) {
+				Genode::Mutex::Guard guard(_timer_construct_mutex);
+				if (!_timer.constructed())
+					_timer.construct(_env);
+			}
+
+			return *_timer;
+		}
+
+		/* Avl_node interface */
+
+		bool higher(Cpu_local_storage *other);
+
+		Cpu_local_storage *find_by_location(Genode::Affinity::Location location);
+};
+
+
+Genode::Avl_tree<Libc::Cpu_local_storage> &cpu_local_storage_registry();
 
 
 class Libc::Pthread_cleanup
@@ -154,6 +206,8 @@ struct Libc::Pthread : Noncopyable
 		void   *_stack_addr = nullptr;
 		size_t  _stack_size = 0;
 
+		Cpu_local_storage &_cls;
+
 		/* cleanup handlers */
 
 		class Cleanup_handler : public List<Cleanup_handler>::Element
@@ -198,11 +252,13 @@ struct Libc::Pthread : Noncopyable
 		 */
 		Pthread(start_routine_t start_routine,
 		        void *arg, size_t stack_size, char const * name,
-		        Cpu_session * cpu, Affinity::Location location)
+		        Cpu_session * cpu, Affinity::Location location,
+		        Cpu_local_storage &cls)
 		:
 			_thread(_construct_thread_object(name, stack_size, cpu, location,
 			                                 start_routine, arg,
-			                                 _stack_addr, _stack_size, this))
+			                                 _stack_addr, _stack_size, this)),
+			_cls(cls)
 		{
 			pthread_cleanup().cleanup();
 		}
@@ -225,7 +281,8 @@ struct Libc::Pthread : Noncopyable
 		 *   the wrong stack for those threads
 		 *
 		 */
-		Pthread(Thread &existing_thread, void *stack_address);
+		Pthread(Thread &existing_thread, void *stack_address,
+		        Cpu_local_storage &cls);
 
 		static void init_tls_support();
 
@@ -260,6 +317,8 @@ struct Libc::Pthread : Noncopyable
 
 		void   *stack_addr() const { return _stack_addr; }
 		size_t  stack_size() const { return _stack_size; }
+
+		Libc::Timer &timer() { return _cls.timer(); }
 
 		static Pthread *myself();
 

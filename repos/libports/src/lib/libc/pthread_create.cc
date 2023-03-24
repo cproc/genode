@@ -137,6 +137,7 @@ struct Placement_policy
 };
 
 
+static Env              *_env_ptr     { nullptr };
 static Cpu_session      *_cpu_session { nullptr };
 static bool              _verbose     { false };
 
@@ -148,10 +149,13 @@ Placement_policy &placement_policy()
 }
 
 
-void Libc::init_pthread_support(Cpu_session &cpu_session,
+void Libc::init_pthread_support(Genode::Env &env,
+                                Cpu_session &cpu_session,
                                 Xml_node const &node,
                                 Genode::Allocator &alloc)
 {
+	_env_ptr = &env;
+
 	_cpu_session = &cpu_session;
 
 	_verbose = node.attribute_value("verbose", false);
@@ -212,9 +216,20 @@ int Libc::pthread_create_from_session(pthread_t *thread,
                                       Affinity::Location location)
 {
 	Libc::Allocator alloc { };
+
+	Cpu_local_storage *cls =
+		cpu_local_storage_registry().first() ?
+		cpu_local_storage_registry().first()->find_by_location(location) :
+		nullptr;
+
+	if (!cls) {
+		cls = new (alloc) Cpu_local_storage(*_env_ptr, location);
+		cpu_local_storage_registry().insert(cls);
+	}
+
 	pthread_t thread_obj = new (alloc)
 	                       pthread(start_routine, arg,
-	                               stack_size, name, cpu, location);
+	                               stack_size, name, cpu, location, *cls);
 	if (!thread_obj)
 		return EAGAIN;
 
@@ -230,7 +245,17 @@ int Libc::pthread_create_from_thread(pthread_t *thread, Thread &t, void *stack_a
 {
 	Libc::Allocator alloc { };
 
-	pthread_t thread_obj = new (alloc) pthread(t, stack_address);
+	Cpu_local_storage *cls =
+		cpu_local_storage_registry().first() ?
+		cpu_local_storage_registry().first()->find_by_location(t.affinity()) :
+		nullptr;
+
+	if (!cls) {
+		cls = new (alloc) Cpu_local_storage(*_env_ptr, t.affinity());
+		cpu_local_storage_registry().insert(cls);
+	}
+
+	pthread_t thread_obj = new (alloc) pthread(t, stack_address, *cls);
 
 	if (!thread_obj)
 		return EAGAIN;

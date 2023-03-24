@@ -39,13 +39,15 @@
 using namespace Libc;
 
 
+static Genode::Env    *_env_ptr;
 static Thread         *_main_thread_ptr;
 static Monitor        *_monitor_ptr;
 static Timer_accessor *_timer_accessor_ptr;
 
 
-void Libc::init_pthread_support(Monitor &monitor, Timer_accessor &timer_accessor)
+void Libc::init_pthread_support(Genode::Env &env, Monitor &monitor, Timer_accessor &timer_accessor)
 {
+	_env_ptr            = &env;
 	_main_thread_ptr    = Thread::myself();
 	_monitor_ptr        = &monitor;
 	_timer_accessor_ptr = &timer_accessor;
@@ -63,6 +65,52 @@ static Libc::Monitor & monitor()
 }
 
 namespace { using Fn = Libc::Monitor::Function_result; }
+
+
+/***********************
+ ** CPU-local storage **
+ ***********************/
+
+/* Affinity location comparison operators for AVL tree */
+
+static bool operator==(Affinity::Location l1, Affinity::Location l2)
+{
+	return ((l1.xpos() == l2.xpos()) &&
+	        (l1.ypos() == l2.ypos()));
+}
+
+
+static bool operator>=(Affinity::Location l1, Affinity::Location l2)
+{
+	return ((l1.xpos() > l2.xpos()) ||
+	        ((l1.xpos() == l2.xpos()) &&
+	         (l1.ypos() >= l2.ypos())));
+}
+
+
+bool Libc::Cpu_local_storage::higher(Cpu_local_storage *other)
+{
+	return other->location() >= this->location();
+}
+
+
+Libc::Cpu_local_storage *Libc::Cpu_local_storage::find_by_location(Affinity::Location location)
+{
+	if (location == this->location())
+		return this;
+
+	bool side = location >= this->location();
+	Cpu_local_storage *e = Avl_node<Cpu_local_storage>::child(side);
+	return e ? e->find_by_location(location) : 0;
+}
+
+
+Avl_tree<Libc::Cpu_local_storage> &cpu_local_storage_registry()
+{
+	static Avl_tree<Libc::Cpu_local_storage> inst;
+	return inst;
+}
+
 
 /*************
  ** Pthread **
@@ -96,9 +144,11 @@ void Libc::Pthread::_tls_pointer(void *stack_address, Pthread *pthread)
 }
 
 
-Libc::Pthread::Pthread(Thread &existing_thread, void *stack_address)
+Libc::Pthread::Pthread(Thread &existing_thread, void *stack_address,
+                       Cpu_local_storage &cls)
 :
-	_thread(existing_thread)
+	_thread(existing_thread),
+	_cls(cls)
 {
 	/* 
 	 * Obtain stack attributes for 'pthread_attr_get_np()'
@@ -751,7 +801,22 @@ extern "C" {
 		 * destruction of the pthread object would also destruct the 'Thread'
 		 * of the main thread.
 		 */
-		return unmanaged_singleton<pthread>(*Thread::myself(), &pthread_myself);
+
+		Libc::Allocator alloc;
+
+		Thread &myself = *Thread::myself();
+
+		Cpu_local_storage *cls =
+			cpu_local_storage_registry().first() ?
+			cpu_local_storage_registry().first()->find_by_location(myself.affinity()) :
+			nullptr;
+
+		if (!cls) {
+			cls = new (alloc) Cpu_local_storage(*_env_ptr, myself.affinity());
+			cpu_local_storage_registry().insert(cls);
+		}
+
+		return unmanaged_singleton<pthread>(myself, &pthread_myself, *cls);
 	}
 
 	typeof(pthread_self) _pthread_self
