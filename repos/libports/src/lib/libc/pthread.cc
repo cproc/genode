@@ -821,7 +821,8 @@ extern "C" {
 		 * of the main thread.
 		 */
 
-		Libc::Allocator alloc;
+		/* used during jemalloc initialization */
+		Libc::Old_allocator alloc;
 
 		Thread &myself = *Thread::myself();
 
