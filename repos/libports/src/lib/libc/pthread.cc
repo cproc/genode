@@ -995,8 +995,7 @@ extern "C" {
 		if (!attr)
 			return EINVAL;
 
-		/* used during jemalloc initialization */
-		Libc::Old_allocator alloc { };
+		Libc::Allocator alloc { };
 		*attr = new (alloc) pthread_mutex_attr { PTHREAD_MUTEX_NORMAL };
 
 		return 0;
@@ -1011,7 +1010,7 @@ extern "C" {
 		if (!attr || !*attr)
 			return EINVAL;
 
-		Libc::Old_allocator alloc { };
+		Libc::Allocator alloc { };
 		destroy(alloc, *attr);
 		*attr = nullptr;
 
@@ -1042,8 +1041,7 @@ extern "C" {
 		if (!mutex)
 			return EINVAL;
 
-		/* used during jemalloc initialization */
-		Libc::Old_allocator alloc { };
+		Libc::Allocator alloc { };
 
 		pthread_mutextype const type = (!attr || !*attr)
 		                             ? PTHREAD_MUTEX_NORMAL : (*attr)->type;
@@ -1070,7 +1068,7 @@ extern "C" {
 		if ((!mutex) || (*mutex == PTHREAD_MUTEX_INITIALIZER))
 			return EINVAL;
 
-		Libc::Old_allocator alloc { };
+		Libc::Allocator alloc { };
 		destroy(alloc, *mutex);
 		*mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -1138,6 +1136,53 @@ extern "C" {
 
 	typeof(pthread_mutex_unlock) _pthread_mutex_unlock
 		__attribute__((alias("pthread_mutex_unlock")));
+
+
+	/*
+	 * Versions of 'pthread_mutex_*()' that can be used
+	 * by jemalloc without causing 'malloc()' recursion.
+	 *
+	 * The current jemalloc version does not destroy mutexes.
+	 */
+
+	int genode_jemalloc_pthread_mutex_init(pthread_mutex_t *mutex)
+	{
+		Libc::Old_allocator alloc;
+
+		*mutex = new (alloc) Pthread_mutex_normal;
+
+		return 0;
+	}
+
+
+	int genode_jemalloc_pthread_mutex_lock(pthread_mutex_t *mutex)
+	{
+		if (!mutex)
+			return EINVAL;
+
+		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
+			genode_jemalloc_pthread_mutex_init(mutex);
+
+		return (*mutex)->lock();
+	}
+
+
+	int genode_jemalloc_pthread_mutex_trylock(pthread_mutex_t *mutex)
+	{
+		if (!mutex)
+			return EINVAL;
+
+		if (*mutex == PTHREAD_MUTEX_INITIALIZER)
+			genode_jemalloc_pthread_mutex_init(mutex);
+
+		return (*mutex)->trylock();
+	}
+
+
+	int genode_jemalloc_pthread_mutex_unlock(pthread_mutex_t *mutex)
+	{
+		return pthread_mutex_unlock(mutex);
+	}
 
 
 	/* Condition variable */
