@@ -35,6 +35,7 @@ using namespace Libc;
 
 static Allocator *_alloc_ptr;
 
+static File_descriptor *fds[MAX_NUM_FDS];
 
 void Libc::init_fd_alloc(Allocator &alloc) { _alloc_ptr = &alloc; }
 
@@ -70,7 +71,9 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 			_id_allocator.alloc_addr(addr_t(libc_fd));
 		}
 
-		return new (_alloc) File_descriptor(_id_space, *plugin, *context, id);
+		File_descriptor *fd = new (_alloc) File_descriptor(_id_space, *plugin, *context, id);
+		fds[id.value] = fd;
+		return fd;
 	} catch (...) { return nullptr; }
 }
 
@@ -82,6 +85,7 @@ void File_descriptor_allocator::free(File_descriptor *fdo)
 	if (fdo->fd_path)
 		_alloc.free((void *)fdo->fd_path, ::strlen(fdo->fd_path) + 1);
 
+	fds[fdo->libc_fd] = nullptr;
 	_id_allocator.free(fdo->libc_fd);
 	destroy(_alloc, fdo);
 }
@@ -98,9 +102,10 @@ File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 {
 	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::find_by_libc_fd");
 
-	if (libc_fd < 0)
+	if ((libc_fd < 0) || (libc_fd >= MAX_NUM_FDS))
 		return nullptr;
 
+#if 0
 	File_descriptor *result = nullptr;
 
 	try {
@@ -110,6 +115,9 @@ File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 	} catch (Id_space::Unknown_id) { }
 
 	return result;
+#endif
+
+	return fds[libc_fd];
 }
 
 
