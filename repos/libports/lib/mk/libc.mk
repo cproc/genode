@@ -25,7 +25,8 @@ SRC_CC = atexit.cc dummies.cc rlimit.cc sysctl.cc \
 # Pthreads
 #
 SRC_CC += semaphore.cc rwlock.cc \
-          pthread.cc pthread_create.cc
+          pthread.cc pthread_create.cc \
+          cpu_local_storage.cc
 
 #
 # FreeBSD headers use the C99 restrict keyword
