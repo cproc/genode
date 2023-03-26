@@ -459,6 +459,7 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 	init_semaphore_support(_timer_accessor);
 	init_pthread_support(*this, _timer_accessor);
 	init_pthread_support(env.cpu(), _pthread_config(), _heap);
+	init_cpu_local_storage_support(env);
 
 	_env.ep().register_io_progress_handler(*this);
 

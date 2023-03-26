@@ -212,9 +212,12 @@ int Libc::pthread_create_from_session(pthread_t *thread,
                                       Affinity::Location location)
 {
 	Libc::Allocator alloc { };
+
+	Cpu_local_storage &cls = Libc::cpu_local_storage_registry().get(location);
+
 	pthread_t thread_obj = new (alloc)
 	                       pthread(start_routine, arg,
-	                               stack_size, name, cpu, location);
+	                               stack_size, name, cpu, location, cls);
 	if (!thread_obj)
 		return EAGAIN;
 
@@ -230,7 +233,9 @@ int Libc::pthread_create_from_thread(pthread_t *thread, Thread &t, void *stack_a
 {
 	Libc::Allocator alloc { };
 
-	pthread_t thread_obj = new (alloc) pthread(t, stack_address);
+	Cpu_local_storage &cls = Libc::cpu_local_storage_registry().get(t.affinity());
+
+	pthread_t thread_obj = new (alloc) pthread(t, stack_address, cls);
 
 	if (!thread_obj)
 		return EAGAIN;
