@@ -1,0 +1,45 @@
+build "core init timer app/top test/scheduling_ep_sleeps_and_one_thread_burns_and_two_threads_use_mutex"
+
+create_boot_directory
+
+append config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="CPU"/>
+			<service name="IO_PORT"/>
+			<service name="IRQ"/>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="TRACE"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<default caps="200"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+		<start name="top">
+			<resource name="RAM" quantum="2M"/>
+			<config period_ms="2000"/>
+		</start>
+
+		<start name="test-scheduling_ep_sleeps_and_one_thread_burns_and_two_threads_use_mutex">
+			<resource name="RAM" quantum="10M"/>
+		</start>
+
+	</config>
+}
+
+install_config $config
+
+build_boot_image "core ld.lib.so init timer top test-scheduling_ep_sleeps_and_one_thread_burns_and_two_threads_use_mutex"
+
+append qemu_args "-nographic "
+
+run_genode_until forever
+
