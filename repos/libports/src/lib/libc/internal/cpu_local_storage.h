@@ -89,7 +89,8 @@ class Libc::Cpu_local_storage_registry
 		Genode::Env                               &_env;
 		Genode::Avl_tree<Libc::Cpu_local_storage>  _tree  { };
 		Mutex                                      _mutex { };
-		Libc::Allocator                            _alloc { };
+		/* used during jemalloc initialization */
+		Libc::Old_allocator                        _alloc { };
 
 	public:
 
