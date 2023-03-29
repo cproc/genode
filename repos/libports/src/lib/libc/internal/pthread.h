@@ -30,6 +30,7 @@
 #include <internal/types.h>
 #include <internal/monitor.h>
 #include <internal/timer.h>
+#include <internal/cpu_local_storage.h>
 
 namespace Libc {
 
@@ -154,6 +155,8 @@ struct Libc::Pthread : Noncopyable
 		void   *_stack_addr = nullptr;
 		size_t  _stack_size = 0;
 
+		Cpu_local_storage &_cls;
+
 		/* cleanup handlers */
 
 		class Cleanup_handler : public List<Cleanup_handler>::Element
@@ -198,11 +201,13 @@ struct Libc::Pthread : Noncopyable
 		 */
 		Pthread(start_routine_t start_routine,
 		        void *arg, size_t stack_size, char const * name,
-		        Cpu_session * cpu, Affinity::Location location)
+		        Cpu_session * cpu, Affinity::Location location,
+		        Cpu_local_storage &cls)
 		:
 			_thread(_construct_thread_object(name, stack_size, cpu, location,
 			                                 start_routine, arg,
-			                                 _stack_addr, _stack_size, this))
+			                                 _stack_addr, _stack_size, this)),
+			_cls(cls)
 		{
 			pthread_cleanup().cleanup();
 		}
@@ -225,7 +230,8 @@ struct Libc::Pthread : Noncopyable
 		 *   the wrong stack for those threads
 		 *
 		 */
-		Pthread(Thread &existing_thread, void *stack_address);
+		Pthread(Thread &existing_thread, void *stack_address,
+		        Cpu_local_storage &cls);
 
 		static void init_tls_support();
 
@@ -260,6 +266,8 @@ struct Libc::Pthread : Noncopyable
 
 		void   *stack_addr() const { return _stack_addr; }
 		size_t  stack_size() const { return _stack_size; }
+
+		Libc::Timer &timer() { return _cls.timer(); }
 
 		static Pthread *myself();
 

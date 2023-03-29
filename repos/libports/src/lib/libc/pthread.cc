@@ -96,9 +96,11 @@ void Libc::Pthread::_tls_pointer(void *stack_address, Pthread *pthread)
 }
 
 
-Libc::Pthread::Pthread(Thread &existing_thread, void *stack_address)
+Libc::Pthread::Pthread(Thread &existing_thread, void *stack_address,
+                       Cpu_local_storage &cls)
 :
-	_thread(existing_thread)
+	_thread(existing_thread),
+	_cls(cls)
 {
 	/* 
 	 * Obtain stack attributes for 'pthread_attr_get_np()'
@@ -751,7 +753,12 @@ extern "C" {
 		 * destruction of the pthread object would also destruct the 'Thread'
 		 * of the main thread.
 		 */
-		return unmanaged_singleton<pthread>(*Thread::myself(), &pthread_myself);
+
+		Thread &myself = *Thread::myself();
+
+		Cpu_local_storage &cls = Libc::cpu_local_storage_registry().get(myself.affinity());
+
+		return unmanaged_singleton<pthread>(myself, &pthread_myself, cls);
 	}
 
 	typeof(pthread_self) _pthread_self
