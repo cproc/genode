@@ -142,7 +142,7 @@ GENODE_TRACE_DURATION_NAMED(0, "monitor()");
 //Genode::log(index, ": monitor(): ", &job);
 
 			{
-				Genode::Mutex::Guard guard(_jobs_new[index].mutex);
+				Genode::Mutex::Guard guard(_jobs_new[index].mutex, "monitor()");
 				_jobs_new[index].job = &job;
 			}
 
@@ -155,7 +155,7 @@ GENODE_TRACE_DURATION_NAMED(0, "monitor()");
 			job.wait_for_completion();
 
 			if (!job.completed()) {
-				Genode::Mutex::Guard guard(_jobs_new[index].mutex);
+				Genode::Mutex::Guard guard(_jobs_new[index].mutex, "monitor()");
 				_jobs_new[index].job = nullptr;
 			}
 
@@ -175,7 +175,7 @@ GENODE_TRACE_DURATION_NAMED(0, "monitor()");
 //Genode::log("execute_monitors()");
 			for (int i = 0; i < 256; i++) {
 
-				Genode::Mutex::Guard(_jobs_new[i].mutex);
+				Genode::Mutex::Guard(_jobs_new[i].mutex, "execute_monitors()");
 
 				Job *job = _jobs_new[i].job;
 
