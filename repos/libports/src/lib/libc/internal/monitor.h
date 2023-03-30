@@ -122,6 +122,13 @@ struct Libc::Monitor::Pool
 		Monitor       &_monitor;
 		Registry<Job>  _jobs;
 
+		struct Job_element {
+			Genode::Mutex  mutex { };
+			Job           *job   { nullptr };
+		};
+
+		Job_element _jobs_new[256] { };
+
 	public:
 
 		Pool(Monitor &monitor) : _monitor(monitor) { }
@@ -130,11 +137,29 @@ struct Libc::Monitor::Pool
 		void monitor(Job &job)
 		{
 GENODE_TRACE_DURATION_NAMED(0, "monitor()");
-			Registry<Job>::Element element { _jobs, job };
+			int dummy;
+			unsigned char index = (((addr_t)&dummy) >> 20) & 0xff;
+//Genode::log(index, ": monitor(): ", &job);
+
+			{
+				Genode::Mutex::Guard guard(_jobs_new[index].mutex);
+				_jobs_new[index].job = &job;
+			}
+
+//			Registry<Job>::Element element { _jobs, job };
+//Genode::log(index, ": monitor(): calling trigger_monitor_examination()");
 
 			_monitor.trigger_monitor_examination();
+//Genode::log(index, ": monitor(): trigger_monitor_examination() returned");
 
 			job.wait_for_completion();
+
+			if (!job.completed()) {
+				Genode::Mutex::Guard guard(_jobs_new[index].mutex);
+				_jobs_new[index].job = nullptr;
+			}
+
+//Genode::log(index, ": monitor() finished: ", job.completed());
 		}
 
 		enum class State { JOBS_PENDING, ALL_COMPLETE };
@@ -146,19 +171,33 @@ GENODE_TRACE_DURATION_NAMED(0, "monitor()");
 
 			State result = State::ALL_COMPLETE;
 
-			_jobs.for_each([&] (Job &job) {
+//			_jobs.for_each([&] (Job &job) {
+//Genode::log("execute_monitors()");
+			for (int i = 0; i < 256; i++) {
 
-				if (!job.completed() && !job.expired()) {
+				Genode::Mutex::Guard(_jobs_new[i].mutex);
 
-					bool const completed = job.execute();
+				Job *job = _jobs_new[i].job;
 
-					if (completed)
-						job.complete();
+//Genode::log("execute_monitors(): ", i);
+
+				if (job && !job->completed() && !job->expired()) {
+//Genode::log("execute_monitors(): found job: ", i);
+
+					bool const completed = job->execute();
+
+					if (completed) {
+						_jobs_new[i].job = nullptr;
+						job->complete();
+					}
 
 					if (!completed)
 						result = State::JOBS_PENDING;
 				}
-			});
+
+			}
+//			});
+//Genode::log("execute_monitors() finished");
 
 			return result;
 		}
