@@ -41,13 +41,14 @@ size_t lock_locked(char *dst, void const *lock)
 	return sizeof(Lock_locked);
 }
 
-size_t lock_wait(char *dst, void const *lock, char const *owner)
+size_t lock_wait(char *dst, void const *lock, char const *owner, char const *name)
 {
-	size_t len = strlen(owner) + 1;
+	size_t owner_len = strlen(owner) + 1;
+	size_t name_len = strlen(name) + 1;
 
-	new (dst) Lock_wait(lock, owner, len);
+	new (dst) Lock_wait(lock, owner, owner_len, name, name_len);
 
-	return len + sizeof(Lock_wait);
+	return owner_len + name_len + sizeof(Lock_wait);
 }
 
 size_t lock_unlock(char *dst, void const *lock, char const *next_owner)

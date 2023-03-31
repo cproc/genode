@@ -28,7 +28,15 @@ struct Ctf::Named_event
 	char _name[0];
 
 	Named_event(const char *name, size_t len) {
-		Genode::copy_cstring(_name, name, len); }
+		Genode::copy_cstring(_name, name, len);
+	}
+
+	Named_event(const char *name1, size_t len1,
+	            const char *name2, size_t len2) {
+		Genode::copy_cstring(_name, name1, len1);
+		Genode::copy_cstring(&_name[len1], name2, len2);
+	}
+
 } __attribute__((packed));
 
 #endif /* _CTF__EVENTS__NAMED_H_ */

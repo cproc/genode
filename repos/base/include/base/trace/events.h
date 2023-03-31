@@ -204,13 +204,14 @@ struct Genode::Trace::Lock_wait
 {
 	void const *lock;
 	char const *owner;
+	char const *name;
 
-	Lock_wait(void *lock, char const *owner)
-	: lock(lock), owner(owner)
+	Lock_wait(void *lock, char const *owner, char const *name)
+	: lock(lock), owner(owner), name(name)
 	{ Thread::trace(this); }
 
 	size_t generate(Policy_module &policy, char *dst) const {
-		return policy.lock_wait(dst, lock, owner); }
+		return policy.lock_wait(dst, lock, owner, name); }
 };
 
 

@@ -71,7 +71,7 @@ class Genode::Lock
 		bool lock_owner(Applicant &myself) {
 			return (_state == LOCKED) && (_owner == myself); }
 
-		void lock(Applicant &);
+		void lock(Applicant &, char const *name = nullptr, char const *caller = nullptr);
 
 		enum State { LOCKED, UNLOCKED };
 
@@ -83,7 +83,7 @@ class Genode::Lock
 		/**
 		 * Try to acquire the lock and block while the lock is not free.
 		 */
-		void lock();
+		void lock(char const *name = nullptr, char const *caller = nullptr);
 
 		/**
 		 * Release lock
