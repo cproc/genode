@@ -131,12 +131,13 @@ struct Ctf::Lock_locked : Trace_recorder::Ctf_event
 struct Ctf::Lock_wait : Trace_recorder::Ctf_event
 {
 	uint64_t         _lock;
-    Ctf::Named_event _owner;
+    Ctf::Named_event _owner_and_name;
 
-	Lock_wait(void const *lock, char const *owner, size_t len)
+	Lock_wait(void const *lock, char const *owner, size_t owner_len,
+	          char const *name, size_t name_len)
 	: Trace_recorder::Ctf_event(9),
 	  _lock((uint64_t)lock),
-	  _owner(owner, len)
+	  _owner_and_name(owner, owner_len, name, name_len)
 	{ }
 } __attribute__((packed));
 
