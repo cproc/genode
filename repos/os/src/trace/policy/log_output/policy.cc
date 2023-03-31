@@ -25,12 +25,12 @@ size_t lock_locked(char *dst, void const *lock)
 	return 0;
 }
 
-size_t lock_wait(char *dst, void const *lock)
+size_t lock_wait(char *dst, void const *lock, char const *owner)
 {
 	return 0;
 }
 
-size_t lock_unlock(char *dst, void const *lock)
+size_t lock_unlock(char *dst, void const *lock, char const *next_owner)
 {
 	return 0;
 }
