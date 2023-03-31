@@ -254,6 +254,7 @@ struct Libc::Pthread : Noncopyable
 			_detach_blockade.block("Pthread", "Pthread::_exit()");
 
 			pthread_cleanup().cleanup(this);
+
 			sleep_forever();
 		}
 
