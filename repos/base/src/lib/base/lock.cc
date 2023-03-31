@@ -77,12 +77,15 @@ void Lock::lock(Applicant &myself)
 		/* we got the lock */
 		_owner          =  myself;
 		_last_applicant = &_owner;
-Genode::Trace::Lock_locked(this);
+//Genode::Trace::Lock_locked(this);
 		spinlock_unlock(&_spinlock_state);
 		return;
 	}
 
-Genode::Trace::Lock_wait(this);
+//Genode::Trace::Lock_wait(this);
+if (_owner.thread_base()) {
+Genode::Trace::Lock_wait(this, _owner.thread_base()->name().string());
+}
 
 	/*
 	 * We failed to grab the lock, lets add ourself to the
@@ -143,12 +146,15 @@ void Lock::unlock()
 {
 	spinlock_lock(&_spinlock_state);
 
-Genode::Trace::Lock_unlock(this);
+//Genode::Trace::Lock_unlock(this);
 
 	Applicant *next_owner = _owner.applicant_to_wake_up();
 
 	if (next_owner) {
 
+if (next_owner->thread_base()) {
+Genode::Trace::Lock_unlock(this, next_owner->thread_base()->name().string());
+}
 		/* transfer lock ownership to next applicant and wake him up */
 		_owner = *next_owner;
 

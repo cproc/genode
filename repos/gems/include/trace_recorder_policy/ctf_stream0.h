@@ -130,22 +130,26 @@ struct Ctf::Lock_locked : Trace_recorder::Ctf_event
 
 struct Ctf::Lock_wait : Trace_recorder::Ctf_event
 {
-	uint64_t _lock;
+	uint64_t         _lock;
+    Ctf::Named_event _owner;
 
-	Lock_wait(void const *lock)
+	Lock_wait(void const *lock, char const *owner, size_t len)
 	: Trace_recorder::Ctf_event(9),
-	  _lock((uint64_t)lock)
+	  _lock((uint64_t)lock),
+	  _owner(owner, len)
 	{ }
 } __attribute__((packed));
 
 
 struct Ctf::Lock_unlock : Trace_recorder::Ctf_event
 {
-	uint64_t _lock;
+	uint64_t         _lock;
+	Ctf::Named_event _next_owner;
 
-	Lock_unlock(void const *lock)
+	Lock_unlock(void const *lock, char const *next_owner, size_t len)
 	: Trace_recorder::Ctf_event(10),
-	  _lock((uint64_t)lock)
+	  _lock((uint64_t)lock),
+	  _next_owner(next_owner, len)
 	{ }
 } __attribute__((packed));
 
