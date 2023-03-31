@@ -36,7 +36,7 @@ size_t lock_locked(char *dst, void const *lock)
 	return 0;
 }
 
-size_t lock_wait(char *dst, void const *lock, char const *owner)
+size_t lock_wait(char *dst, void const *lock, char const *owner, char const *name)
 {
 	return 0;
 }

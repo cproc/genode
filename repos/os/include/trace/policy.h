@@ -25,7 +25,7 @@ extern "C" size_t max_event_size   ();
 extern "C" size_t trace_eth_packet (char *dst, char const *name, bool out, char *data, size_t len);
 extern "C" size_t checkpoint       (char *dst, char const *name, unsigned long, void *, unsigned char);
 extern "C" size_t lock_locked      (char *dst, void const *lock);
-extern "C" size_t lock_wait        (char *dst, void const *lock, char const *owner);
+extern "C" size_t lock_wait        (char *dst, void const *lock, char const *owner, char const *name);
 extern "C" size_t lock_unlock      (char *dst, void const *lock, char const *next_owner);
 extern "C" size_t log_output       (char *dst, char const *log_message, size_t len);
 extern "C" size_t rpc_call         (char *dst, char const *rpc_name, Genode::Msgbuf_base const &);

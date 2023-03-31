@@ -35,7 +35,7 @@ struct Genode::Trace::Policy_module
 	size_t (*trace_eth_packet) (char *, char const *, bool, char *, size_t);
 	size_t (*checkpoint)       (char *, char const *, unsigned long, void *, unsigned char);
 	size_t (*lock_locked)      (char *, void const *);
-	size_t (*lock_wait)        (char *, void const *, char const *);
+	size_t (*lock_wait)        (char *, void const *, char const *, char const *);
 	size_t (*lock_unlock)      (char *, void const *, char const *);
 	size_t (*log_output)       (char *, char const *, size_t);
 	size_t (*rpc_call)         (char *, char const *, Msgbuf_base const &);
