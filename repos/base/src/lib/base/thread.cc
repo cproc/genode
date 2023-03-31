@@ -24,6 +24,8 @@
 #include <base/internal/stack_allocator.h>
 #include <base/internal/globals.h>
 
+#include <trace/probe.h>
+
 using namespace Genode;
 
 
@@ -245,6 +247,8 @@ Thread::~Thread()
 		      "tried to self de-struct - sleeping forever.");
 		sleep_forever();
 	}
+
+Trace::Checkpoint checkpoint(name().string(), 0, nullptr, Trace::Checkpoint::THREAD_DESTROY);
 
 	_deinit_platform_thread();
 	_free_stack(_stack);

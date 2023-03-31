@@ -139,6 +139,7 @@ struct Genode::Trace::Checkpoint
 		OBJ_NEW   = 0x10,
 		OBJ_DEL   = 0x11,
 		OBJ_STATE = 0x12,
+		THREAD_DESTROY = 0x20,
 		EXCEPTION = 0xfe,
 		FAILURE   = 0xff
 	};

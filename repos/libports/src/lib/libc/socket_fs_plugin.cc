@@ -20,6 +20,7 @@
 #include <vfs/types.h>
 #include <util/string.h>
 #include <libc/allocator.h>
+#include <trace/probe.h>
 
 /* libc includes */
 #include <netinet/in.h>
@@ -835,7 +836,44 @@ extern "C" ssize_t socket_fs_recvfrom(int libc_fd, void *buf, ::size_t len, int 
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	if (!fd) return Errno(EBADF);
 
-	return do_recvfrom(fd, buf, len, flags, src_addr, src_addrlen);
+	ssize_t res = do_recvfrom(fd, buf, len, flags, src_addr, src_addrlen);
+#if 1
+if (res >= 8) {
+
+	unsigned char const *ucbuf = (unsigned char const *)buf;
+
+	int dummy;
+
+#if 0
+	Genode::log(&dummy, ": socket_fs_recvfrom(", libc_fd, "): ",
+	            Genode::Hex(((char*)buf)[0]), ", ",
+	            Genode::Hex(((char*)buf)[1])); 
+#endif
+
+	bool rtp_opus = false;
+
+	unsigned short seq = 0;
+
+	if (((ucbuf[0] == 0x90) || (ucbuf[0] == 0xb0)) &&
+	    ((ucbuf[1] == 0xef) || (ucbuf[1] == 0x6f))) {
+
+		rtp_opus = true;
+		seq = ((unsigned short)(ucbuf[2]) << 8) | ucbuf[3];
+
+	} else if (((ucbuf[4] == 0x90) || (ucbuf[4] == 0xb0)) &&
+	           ((ucbuf[5] == 0xef) || (ucbuf[5] == 0x6f))) {
+
+		rtp_opus = true;
+		seq = ((unsigned short)(ucbuf[6]) << 8) | ucbuf[7];
+	}
+
+	if (rtp_opus) {
+//		GENODE_TRACE_CHECKPOINT_NAMED(libc_fd, "socket_fs_recvfrom(): audio: fd");
+		GENODE_TRACE_DURATION_NAMED(seq, "socket_fs_recvfrom(): audio: seq");
+	}
+}
+#endif
+	return res;
 }
 
 
@@ -987,10 +1025,94 @@ static ssize_t do_sendto(File_descriptor *fd,
 extern "C" ssize_t socket_fs_sendto(int libc_fd, void const *buf, ::size_t len, int flags,
                                     sockaddr const *dest_addr, socklen_t dest_addrlen)
 {
+#if 1
+
+#if 0
+int dummy;
+//Genode::log(&dummy, ": socket_fs_sendto(", libc_fd, "): len: ", len);
+
+//GENODE_TRACE_CHECKPOINT_NAMED(len, "socket_fs_sendto(): len");
+
+static constexpr unsigned int khz = 1296000;
+//static constexpr unsigned int khz = 3500000;
+::uint64_t now_ms = Genode::Trace::timestamp() / khz;
+#endif
+
+if (len >= 8) {
+
+	unsigned char const *ucbuf = (unsigned char const *)buf;
+
+#if 0
+	Genode::log(&dummy, ": socket_fs_sendto(", libc_fd, "): ", len, ", ",
+	            Genode::Hex(ucbuf[0]), ", ",
+	            Genode::Hex(ucbuf[1]), ", ",
+	            Genode::Hex(ucbuf[2]), ", ",
+	            Genode::Hex(ucbuf[3]), ", ",
+	            Genode::Hex(ucbuf[4]), ", ",
+	            Genode::Hex(ucbuf[5]), ", ",
+	            Genode::Hex(ucbuf[6]), ", ",
+	            Genode::Hex(ucbuf[7]));
+#endif
+
+	bool rtp_opus = false;
+
+	unsigned short seq = 0;
+
+	if (((ucbuf[0] == 0x90) || (ucbuf[0] == 0xb0)) &&
+	    ((ucbuf[1] == 0xef) || (ucbuf[1] == 0x6f))) {
+
+		rtp_opus = true;
+		seq = ((unsigned short)(ucbuf[2]) << 8) | ucbuf[3];
+
+	} else if (((ucbuf[4] == 0x90) || (ucbuf[4] == 0xb0)) &&
+	           ((ucbuf[5] == 0xef) || (ucbuf[5] == 0x6f))) {
+
+		rtp_opus = true;
+		seq = ((unsigned short)(ucbuf[6]) << 8) | ucbuf[7];
+	}
+
+	if (rtp_opus) {
+
+		GENODE_TRACE_DURATION_NAMED(seq, "socket_fs_sendto(): audio: seq");
+
+#if 0
+		static ::uint64_t last_ms = now_ms;
+		::uint64_t diff_ms = now_ms - last_ms;
+		last_ms = now_ms;
+		static ::uint64_t total_diff_ms = 0;
+		total_diff_ms += diff_ms;
+		static int count = 0;
+		::uint64_t avg_diff_ms = (count > 0) ? total_diff_ms / count : 0;
+
+
+		if (diff_ms >= 100) {
+//			GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "socket_fs_sendto(): audio: ms: xxx");
+			//Genode::log(count, ": socket_fs_sendto(", libc_fd, "): audio: len: ", len, ", seq: ", seq, ", ms: ", diff_ms);
+			count++;
+		} else {
+//			GENODE_TRACE_CHECKPOINT_NAMED(diff_ms, "socket_fs_sendto(): audio: ms");
+		}
+
+		//Genode::log(&dummy, ": *** socket_fs_sendto(", libc_fd, "): audio: ", avg_diff_ms);
+		//Genode::log(&dummy, ": *** socket_fs_sendto(", libc_fd, "): audio: seq: ", seq);
+		//wait_for_continue();
+		//count++;
+#endif
+	}
+}
+#endif
+
 	File_descriptor *fd = file_descriptor_allocator()->find_by_libc_fd(libc_fd);
 	if (!fd) return Errno(EBADF);
 
-	return do_sendto(fd, buf, len, flags, dest_addr, dest_addrlen);
+	ssize_t res = do_sendto(fd, buf, len, flags, dest_addr, dest_addrlen);
+
+#if 0
+	::uint64_t t2_ms = Genode::Trace::timestamp() / khz;
+
+//	GENODE_TRACE_CHECKPOINT_NAMED(t2_ms - now_ms, "socket_fs_sendto(): finished");
+#endif
+	return res;
 }
 
 
@@ -1294,6 +1416,7 @@ int Socket_fs::Plugin::poll(Pollfd fds[], int nfds)
 					if (context->read_ready()) {
 						*fds[pollfd_index].revents |= POLLIN;
 						fd_ready = true;
+//GENODE_TRACE_CHECKPOINT_NAMED(fds[pollfd_index].fdo->libc_fd, "poll(): read ready: fd");
 					}
 				} catch (Socket_fs::Context::Inaccessible) { }
 			}

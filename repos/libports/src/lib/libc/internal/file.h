@@ -83,7 +83,7 @@ struct Libc_trace_checkpoint
  */
 #define FNAME_FUNC_WRAPPER_GENERIC(result_stm, func_name, path, ...)						\
 {																							\
-	Libc_trace_checkpoint trace_checkpoint(#func_name, path);						\
+	Libc_trace_checkpoint trace_checkpoint(#func_name, path);							\
 	Plugin *plugin  = plugin_registry()->get_plugin_for_##func_name(path, ##__VA_ARGS__);	\
 	if (!plugin) {																			\
 		Genode::error("no plugin found for ", #func_name, "(\"", Genode::Cstring(path), "\")");\

@@ -21,6 +21,8 @@
 /* libc-internal includes */
 #include <internal/types.h>
 
+#include <trace/probe.h>
+
 namespace Libc { class Blockade; };
 
 
@@ -127,6 +129,7 @@ struct Libc::Monitor::Pool
 		/* called by monitor-user context */
 		void monitor(Job &job)
 		{
+GENODE_TRACE_DURATION_NAMED(0, "monitor()");
 			Registry<Job>::Element element { _jobs, job };
 
 			_monitor.trigger_monitor_examination();
@@ -139,6 +142,8 @@ struct Libc::Monitor::Pool
 		/* called by the monitor context itself */
 		State execute_monitors()
 		{
+//GENODE_TRACE_DURATION_NAMED(0, "execute_monitors()");
+
 			State result = State::ALL_COMPLETE;
 
 			_jobs.for_each([&] (Job &job) {
