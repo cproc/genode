@@ -203,24 +203,28 @@ struct Genode::Trace::Lock_locked
 struct Genode::Trace::Lock_wait
 {
 	void const *lock;
+	char const *owner;
 
-	Lock_wait(void *lock) : lock(lock)
+	Lock_wait(void *lock, char const *owner)
+	: lock(lock), owner(owner)
 	{ Thread::trace(this); }
 
 	size_t generate(Policy_module &policy, char *dst) const {
-		return policy.lock_wait(dst, lock); }
+		return policy.lock_wait(dst, lock, owner); }
 };
 
 
 struct Genode::Trace::Lock_unlock
 {
 	void const *lock;
+	char const *next_owner;
 
-	Lock_unlock(void *lock) : lock(lock)
+	Lock_unlock(void *lock, char const *next_owner)
+	: lock(lock), next_owner(next_owner)
 	{ Thread::trace(this); }
 
 	size_t generate(Policy_module &policy, char *dst) const {
-		return policy.lock_unlock(dst, lock); }
+		return policy.lock_unlock(dst, lock, next_owner); }
 };
 
 #endif /* _INCLUDE__BASE__TRACE__EVENTS_H_ */
