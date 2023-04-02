@@ -78,7 +78,7 @@ uint64_t Timer::Connection::_ts_to_us_ratio(Timestamp ts,
 }
 
 
-Duration Timer::Connection::_update_interpolated_time(Duration &interpolated_time)
+Genode::Duration Timer::Connection::_update_interpolated_time(Duration &interpolated_time)
 {
 	/*
 	 * The new interpolated time value may be smaller than a

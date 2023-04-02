@@ -146,6 +146,8 @@ void Timer::Connection::_update_real_time()
 
 Duration Timer::Connection::curr_time()
 {
+return Genode::Duration(Genode::Microseconds(Trace::timestamp_us()));
+#if 0
 	_switch_to_timeout_framework_mode();
 	Reconstructible<Mutex::Guard> mutex_guard(_real_time_mutex,
 	                                          "Timer::Connection", "Timer::Connection::curr_time()");
@@ -186,4 +188,5 @@ Duration Timer::Connection::curr_time()
 		mutex_guard.destruct();
 	}
 	return _update_interpolated_time(interpolated_time);
+#endif
 }
