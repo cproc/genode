@@ -279,7 +279,7 @@ class pthread_mutex : Genode::Noncopyable
 
 			_data_mutex.release();
 
-			blockade.block();
+			blockade.block("pthread_mutex", "pthread_mutex::_applicant_for_mutex()");
 
 			_data_mutex.acquire("pthread_mutex", "pthread_mutex::_applicant_for_mutex()");
 

@@ -104,7 +104,7 @@ struct sem : Genode::Noncopyable
 
 			_data_mutex.release();
 
-			blockade.block();
+			blockade.block("sem", "sem::_applicant_for_semaphore()");
 
 			_data_mutex.acquire("sem", "sem::_applicant_for_semaphore()");
 
