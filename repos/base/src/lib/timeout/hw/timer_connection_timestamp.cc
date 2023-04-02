@@ -16,6 +16,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
+#include <trace/timestamp.h>
+
 /* Genode includes */
 #include <kernel/interface.h>
 #include <timer_session/connection.h>
@@ -25,5 +27,6 @@ using namespace Genode;
 
 Trace::Timestamp Timer::Connection::_timestamp()
 {
-	return (Trace::Timestamp)Kernel::time();
+//	return (Trace::Timestamp)Kernel::time();
+	return Trace::timestamp();
 }

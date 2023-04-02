@@ -16,6 +16,8 @@
 #ifndef _INCLUDE__TIMER_SESSION__CLIENT_H_
 #define _INCLUDE__TIMER_SESSION__CLIENT_H_
 
+#include <trace/timestamp.h>
+
 #include <timer_session/capability.h>
 #include <base/rpc_client.h>
 
@@ -33,9 +35,15 @@ struct Timer::Session_client : Genode::Rpc_client<Session>
 
 	void sigh(Signal_context_capability sigh) override { call<Rpc_sigh>(sigh); }
 
-	uint64_t elapsed_ms() const override { return call<Rpc_elapsed_ms>(); }
+	uint64_t elapsed_ms() const override {
+		//return call<Rpc_elapsed_ms>();
+		return Genode::Trace::timestamp_ms();
+	}
 
-	uint64_t elapsed_us() const override { return call<Rpc_elapsed_us>(); }
+	uint64_t elapsed_us() const override {
+		//return call<Rpc_elapsed_us>();
+		return Genode::Trace::timestamp_us();
+	}
 };
 
 #endif /* _INCLUDE__TIMER_SESSION__CLIENT_H_ */
