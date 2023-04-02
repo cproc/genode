@@ -38,7 +38,7 @@ class Genode::Blockade : Noncopyable
 
 		Blockade() : _lock(Lock::LOCKED) { }
 
-		void block() { _lock.lock(); }
+		void block(char const *name = nullptr, char const *caller = nullptr) { _lock.lock(name, caller); }
 
 		void wakeup() { _lock.unlock(); }
 };

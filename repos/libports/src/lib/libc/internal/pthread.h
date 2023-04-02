@@ -251,7 +251,7 @@ struct Libc::Pthread : Noncopyable
 			 * register the thread for destruction if it is in detached state.
 			 */
 
-			_detach_blockade.block();
+			_detach_blockade.block("Pthread", "Pthread::_exit()");
 
 			pthread_cleanup().cleanup(this);
 			sleep_forever();
@@ -329,7 +329,7 @@ class Libc::Pthread_blockade : public Blockade, public Timeout_handler
 			}
 		}
 
-		void block() override { _blockade.block(); }
+		void block(char const *name, char const *caller) override { _blockade.block("Pthread_blockade", "Pthread_blockade::block()"); }
 
 		void wakeup() override
 		{

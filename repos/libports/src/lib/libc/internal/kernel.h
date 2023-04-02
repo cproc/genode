@@ -71,7 +71,7 @@ class Libc::Main_blockade : public Blockade
 
 		Main_blockade(uint64_t timeout_ms) : _timeout_ms(timeout_ms) { }
 
-		void block() override;
+		void block(char const *name, char const *caller) override;
 		void wakeup() override;
 };
 
