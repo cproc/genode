@@ -33,6 +33,12 @@ namespace Genode { namespace Trace {
 	{
 		return timestamp() / 816000;
 	}
+
+	static inline Timestamp timestamp_us()
+	{
+		return timestamp() / 816;
+	}
+
 } }
 
 #endif /* _INCLUDE__SPEC__ARM_64__TRACE__TIMESTAMP_H_ */
