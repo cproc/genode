@@ -561,6 +561,7 @@ pthread_create W
 pthread_detach T
 pthread_equal T
 pthread_exit T
+pthread_get_name_np T
 pthread_getspecific T
 pthread_join T
 pthread_key_create T
