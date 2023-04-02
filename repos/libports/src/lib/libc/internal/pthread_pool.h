@@ -86,7 +86,7 @@ struct Libc::Pthread_pool
 		}
 
 		if (check.suspend())
-			myself.blockade.block();
+			myself.blockade.block("Pthread_pool", "Pthread_pool::suspend_myself()");
 
 		{
 			Mutex::Guard g(mutex, "Pthread_pool", "Pthread_pool::suspend_myself()");

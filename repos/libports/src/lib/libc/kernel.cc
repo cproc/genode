@@ -26,7 +26,7 @@ extern char **environ;
  * Blockade for main context
  */
 
-inline void Libc::Main_blockade::block()
+inline void Libc::Main_blockade::block(char const *name, char const *caller)
 {
 	Check check { _woken_up };
 

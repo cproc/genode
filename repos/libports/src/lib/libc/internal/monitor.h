@@ -36,7 +36,7 @@ class Libc::Blockade
 		bool woken_up() const { return _woken_up; }
 		bool expired()  const { return _expired; }
 
-		virtual void block()  = 0;
+		virtual void block(char const *name, char const *caller)  = 0;
 		virtual void wakeup() = 0;
 };
 
@@ -108,7 +108,7 @@ struct Libc::Monitor::Job
 		bool completed() const { return _blockade.woken_up(); }
 		bool expired()   const { return _blockade.expired(); }
 
-		void wait_for_completion() { _blockade.block(); }
+		void wait_for_completion() { _blockade.block("Monitor::Job", "Monitor::Job::wait_for_completion()"); }
 		void complete()            { _blockade.wakeup(); }
 };
 
