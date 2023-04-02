@@ -867,6 +867,16 @@ extern "C" {
 	}
 
 
+	void pthread_get_name_np(pthread_t, char *buf, size_t size)
+	{
+		Thread *myself = Thread::myself();
+		if (myself)
+			myself->name(buf, size);
+		else
+			buf[0] = '\0';
+	}
+
+
 	int pthread_attr_get_np(pthread_t pthread, pthread_attr_t *attr)
 	{
 		if (!attr)
