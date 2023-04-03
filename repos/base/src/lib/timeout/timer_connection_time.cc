@@ -21,7 +21,7 @@ using namespace Genode::Trace;
 
 void Timer::Connection::_update_real_time()
 {
-	Mutex::Guard guard(_real_time_mutex);
+	Mutex::Guard guard(_real_time_mutex, "Timer::Connection", "Timer::Connection::_update_real_time()");
 
 
 	/*
@@ -147,8 +147,8 @@ void Timer::Connection::_update_real_time()
 Duration Timer::Connection::curr_time()
 {
 	_switch_to_timeout_framework_mode();
-
-	Reconstructible<Mutex::Guard> mutex_guard(_real_time_mutex);
+	Reconstructible<Mutex::Guard> mutex_guard(_real_time_mutex,
+	                                          "Timer::Connection", "Timer::Connection::curr_time()");
 	Duration                      interpolated_time(_real_time);
 
 	/*

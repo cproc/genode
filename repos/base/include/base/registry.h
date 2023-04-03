@@ -130,7 +130,7 @@ struct Genode::Registry : private Registry_base
 	template <typename FUNC>
 	void for_each(FUNC const &fn) const
 	{
-		Mutex::Guard guard(_mutex);
+		Mutex::Guard guard(_mutex, "Registry", "Registry::for_each()");
 
 		Registry_base::Element const *e = _elements.first(), *next = nullptr;
 		for ( ; e; e = next) {
