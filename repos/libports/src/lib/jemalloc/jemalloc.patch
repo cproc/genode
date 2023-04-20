@@ -124,6 +124,24 @@ index 261d81c..593f98d 100644
  fi
  
  dnl ============================================================================
+diff --git a/include/jemalloc/internal/mutex.h b/include/jemalloc/internal/mutex.h
+index 7c24f07..c646ad2 100644
+--- a/include/jemalloc/internal/mutex.h
++++ b/include/jemalloc/internal/mutex.h
+@@ -87,6 +87,13 @@ struct malloc_mutex_s {
+ #    define MALLOC_MUTEX_LOCK(m)    os_unfair_lock_lock(&(m)->lock)
+ #    define MALLOC_MUTEX_UNLOCK(m)  os_unfair_lock_unlock(&(m)->lock)
+ #    define MALLOC_MUTEX_TRYLOCK(m) (!os_unfair_lock_trylock(&(m)->lock))
++#elif defined(__GENODE__)
++	 extern int genode_jemalloc_pthread_mutex_lock(pthread_mutex_t *);
++	 extern int genode_jemalloc_pthread_mutex_unlock(pthread_mutex_t *);
++	 extern int genode_jemalloc_pthread_mutex_trylock(pthread_mutex_t *);
++#    define MALLOC_MUTEX_LOCK(m)    genode_jemalloc_pthread_mutex_lock(&(m)->lock)
++#    define MALLOC_MUTEX_UNLOCK(m)  genode_jemalloc_pthread_mutex_unlock(&(m)->lock)
++#    define MALLOC_MUTEX_TRYLOCK(m) (genode_jemalloc_pthread_mutex_trylock(&(m)->lock) != 0)
+ #else
+ #    define MALLOC_MUTEX_LOCK(m)    pthread_mutex_lock(&(m)->lock)
+ #    define MALLOC_MUTEX_UNLOCK(m)  pthread_mutex_unlock(&(m)->lock)
 diff --git a/src/background_thread.c b/src/background_thread.c
 index 57b9b25..e935ed0 100644
 --- a/src/background_thread.c
@@ -144,8 +162,35 @@ index 57b9b25..e935ed0 100644
  #endif
  	return false;
  }
+diff --git a/src/jemalloc.c b/src/jemalloc.c
+index ed13718..10973a8 100644
+--- a/src/jemalloc.c
++++ b/src/jemalloc.c
+@@ -1736,6 +1736,7 @@ malloc_init_hard(void) {
+ #if defined(_WIN32) && _WIN32_WINNT < 0x0600
+ 	_init_init_lock();
+ #endif
++
+ 	malloc_mutex_lock(TSDN_NULL, &init_lock);
+ 
+ #define UNLOCK_RETURN(tsdn, ret, reentrancy)		\
+diff --git a/src/mutex.c b/src/mutex.c
+index 3f920f5..c3f0c62 100644
+--- a/src/mutex.c
++++ b/src/mutex.c
+@@ -156,6 +156,10 @@ malloc_mutex_init(malloc_mutex_t *mutex, const char *name,
+ 			return true;
+ 		}
+ 	}
++#elif defined(__GENODE__)
++	extern int genode_jemalloc_pthread_mutex_init(pthread_mutex_t *mutex);
++	if (genode_jemalloc_pthread_mutex_init(&mutex->lock) != 0)
++		return true;
+ #else
+ 	pthread_mutexattr_t attr;
+ 
 diff --git a/src/pages.c b/src/pages.c
-index 13de27a..46c1bcb 100644
+index 13de27a..c62a578 100644
 --- a/src/pages.c
 +++ b/src/pages.c
 @@ -194,7 +194,10 @@ pages_map(void *addr, size_t size, size_t alignment, bool *commit) {
