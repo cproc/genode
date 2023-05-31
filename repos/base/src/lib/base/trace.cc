@@ -12,6 +12,7 @@
  */
 
 /* Genode includes */
+#include <base/attached_rom_dataspace.h>
 #include <base/env.h>
 #include <base/thread.h>
 #include <base/trace/policy.h>
@@ -47,11 +48,20 @@ static Env &_env()
 
 bool Trace::Logger::_evaluate_control()
 {
+//int dummy;
+//Genode::raw(&dummy, ": Trace::Logger::_evaluate_control(): inhibit_tracing: ", inhibit_tracing);
+//Genode::raw(&dummy, ": Trace::Logger::_evaluate_control(): control: ", control);
+//if (control) {
+//	Genode::raw(&dummy, ": Trace::Logger::_evaluate_control(): control->tracing_inhibited(): ", control->tracing_inhibited());
+//}
+
 	/* check process-global and thread-specific tracing condition */
 	if (inhibit_tracing || !control || control->tracing_inhibited())
 		return false;
 
 	if (control->state_changed()) {
+
+//Genode::log(&dummy, ": Trace::Logger::_evaluate_control() Inhibit_guard");
 
 		/* suppress tracing during initialization */
 		Control::Inhibit_guard guard(*control);
@@ -83,6 +93,8 @@ bool Trace::Logger::_evaluate_control()
 
 	bool const new_policy = policy_version != control->policy_version();
 	if (enabled && (new_policy || policy_module == 0)) {
+
+//Genode::log(&dummy, ": Trace::Logger::_evaluate_control() Inhibit_guard 2");
 
 		/* suppress tracing during policy change */
 		Control::Inhibit_guard guard(*control);
@@ -136,15 +148,28 @@ bool Trace::Logger::_evaluate_control()
 
 		policy_version = control->policy_version();
 	}
+//Genode::log(&dummy, ": Trace::Logger::_evaluate_control() finished: ", enabled && policy_module);
 
 	return enabled && policy_module;
+}
+
+
+void Trace::Logger::_handle_trace_start()
+{
+int dummy;
+Genode::log(&dummy, ": Trace::Logger::_handle_trace_start()");
+	Cpu_thread_client(thread_cap).trace_start_sigh(Signal_context_capability());
+	trace_start_blockade.wakeup();
 }
 
 
 __attribute__((optimize("-fno-delete-null-pointer-checks")))
 void Trace::Logger::log(char const *msg, size_t len)
 {
+//int dummy;
+//Genode::log(&dummy, ": Trace::Logger::log()");
 	if (!this || !_evaluate_control()) return;
+//Genode::log(&dummy, ": Trace::Logger::log(): ok");
 
 	memcpy(buffer->reserve(len), msg, len);
 	buffer->commit(len);
@@ -181,6 +206,41 @@ void Trace::Logger::init(Thread_capability thread, Cpu_session *cpu_session,
 	}
 
 	control = attached_control + index;
+
+int dummy;
+
+	if (!control->to_be_enabled()) {
+
+		Attached_rom_dataspace config(_env(), "config");
+
+		bool const sync_trace =
+			config.xml().attribute_value("sync_trace", false);
+
+Genode::log(&dummy, ": Trace::Logger::init(): sync_trace: ", sync_trace);
+
+		if (!sync_trace)
+			return;
+
+		Io_signal_handler<Trace::Logger>
+			trace_start_handler(_env().ep(),
+		                        *this,
+		                        &Trace::Logger::_handle_trace_start);
+		Cpu_thread_client(thread).trace_start_sigh(trace_start_handler);
+		if (_env().ep().rpc_ep().is_myself()) {
+			while (!control->to_be_enabled()) {
+Genode::log(&dummy, ": Trace::Logger::init(): calling wait_and_dispatch_one_io_signal()");
+				_env().ep().wait_and_dispatch_one_io_signal();
+Genode::log(&dummy, ": Trace::Logger::init(): wait_and_dispatch_one_io_signal() returned");
+			}
+		} else {
+Genode::log(&dummy, ": Trace::Logger::init(): calling trace_start_blockade.block()");
+			trace_start_blockade.block();
+Genode::log(&dummy, ": Trace::Logger::init(): trace_start_blockade.block() returned");
+		}
+	}
+
+Genode::log(&dummy, ": Trace::Logger::init(): enabled");
+
 }
 
 
@@ -206,8 +266,18 @@ static Trace::Control *main_trace_control;
 
 Trace::Logger *Thread::_logger()
 {
-	if (inhibit_tracing)
+int dummy;
+
+	if (inhibit_tracing) {
+//Genode::log(&dummy, ": Thread::_logger(): inhibit_tracing");
 		return nullptr;
+	} else {
+//Genode::log(&dummy, ": Thread::_logger(): !inhibit_tracing");
+	}
+
+//static int _logger_calls;
+//_logger_calls++;
+//Genode::log(&dummy, ": Thread::_logger(): calls: ", _logger_calls);
 
 	Thread * const myself = Thread::myself();
 
@@ -218,8 +288,11 @@ Trace::Logger *Thread::_logger()
 	if (logger.init_pending())
 		return &logger;
 
+
 	/* lazily initialize trace object */
 	if (!logger.initialized()) {
+Genode::log(&dummy, ": Thread::_logger(): initializing");
+
 		logger.init_pending(true);
 
 		Thread_capability thread_cap = myself ? myself->_thread_cap

@@ -60,6 +60,9 @@ struct Genode::Cpu_thread_client : Rpc_client<Cpu_thread>
 
 	Dataspace_capability trace_policy() override {
 		return call<Rpc_trace_policy>(); }
+
+	void trace_start_sigh(Signal_context_capability handler) override{
+		call<Rpc_trace_start_sigh>(handler); }
 };
 
 #endif /* _INCLUDE__CPU_THREAD__CLIENT_H_ */

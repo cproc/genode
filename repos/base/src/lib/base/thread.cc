@@ -205,6 +205,7 @@ Thread::Thread(size_t weight, const char *name, size_t stack_size,
 	_trace_control(nullptr),
 	_stack(_alloc_stack(stack_size, name, type == MAIN))
 {
+Genode::log("Thread(): ", Genode::Cstring(name));
 	_init_platform_thread(weight, type);
 }
 

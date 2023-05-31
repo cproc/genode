@@ -105,3 +105,7 @@ Dataspace_capability Cpu_thread_component::trace_policy()
 	return _trace_source.policy();
 }
 
+void Cpu_thread_component::trace_start_sigh(Signal_context_capability sigh)
+{
+	_trace_source.trace_start_sigh(sigh);
+}

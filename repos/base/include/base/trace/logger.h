@@ -41,8 +41,10 @@ struct Genode::Trace::Logger
 		Buffer            *buffer         { nullptr };
 		size_t             max_event_size { 0 };
 		bool               pending_init   { false };
+		Blockade           trace_start_blockade { };
 
 		bool _evaluate_control();
+		void _handle_trace_start();
 
 		/*
 		 * Noncopyable

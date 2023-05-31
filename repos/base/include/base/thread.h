@@ -405,24 +405,25 @@ class Genode::Thread
 		 *
 		 * \return true if trace is really put to buffer
 		 */
-		static bool trace_captured(char const *cstring)
+		static bool trace_captured(char const */*cstring*/)
 		{
-			return _logger()->log_captured(cstring, strlen(cstring));
+			//return _logger()->log_captured(cstring, strlen(cstring));
+			return false;
 		}
 
 		/**
 		 * Log binary data as trace event
 		 */
-		static void trace(char const *data, size_t len)
+		static void trace(char const */*data*/, size_t /*len*/)
 		{
-			_logger()->log(data, len);
+			//_logger()->log(data, len);
 		}
 
 		/**
 		 * Log trace event as defined in base/trace/events.h
 		 */
 		template <typename EVENT>
-		static void trace(EVENT const *event) { _logger()->log(event); }
+		static void trace(EVENT const */*event*/) { /*_logger()->log(event);*/ }
 
 		/**
 		 * Thread affinity

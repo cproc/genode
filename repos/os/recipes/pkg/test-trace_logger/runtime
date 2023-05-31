@@ -5,16 +5,7 @@
 	<events>
 		<timeout meaning="failed" sec="20" />
 		<log meaning="succeeded">
-			[init -> trace_logger] Report *
-			[init -> trace_logger] PD "init -> dynamic -> test-trace_logger -> cpu_burner.*"*
-			[init -> trace_logger]  Thread "ep" at (0,0)  TRACED total:* recent:*
-			[init -> trace_logger] PD "init -> dynamic -> test-trace_logger -> dynamic_rom"*
-			[init -> trace_logger]  Thread "ep" at (0,0)  TRACED total:* recent:*
-			[init -> trace_logger] PD "init -> dynamic -> test-trace_logger -> test-trace_logger"*
-			[init -> trace_logger]  Thread "ep" at (0,0)  TRACED total:* recent:*
-			[init -> trace_logger]   100 *
-			[init -> trace_logger]   trigger_once
-			[init -> trace_logger]   trigger_once
+			[init -> trace_logger]   main 1000 *
 		</log>
 	</events>
 
@@ -53,25 +44,21 @@
 					session_ram="10M"
 					session_parent_levels="1"
 					session_arg_buffer="64K"
-					period_sec="3"
+					period_sec="1"
 					default_policy="null"
 					default_buffer="1K">
 
-				<policy label_prefix="init -> dynamic -> test-trace_logger -> cpu_burner"
-				        thread="ep"/>
-
 				<policy label="init -> dynamic -> test-trace_logger -> test-trace_logger"
-				        thread="ep"
 				        buffer="4K"
-				        policy="rpc_name"/>
+				        policy="null"/>
 
-				<policy label="init -> dynamic -> test-trace_logger -> dynamic_rom"
-				        thread="ep"
-				        buffer="8K"
-				        policy="log_output"/>
+				<policy label="init -> test -> test-trace_logger"
+				        buffer="4K"
+				        policy="null"/>
+
 			</config>
 		</start>
-
+<!--
 		<start name="dynamic_rom">
 			<resource name="RAM" quantum="4M"/>
 			<provides><service name="ROM"/></provides>
@@ -98,11 +85,12 @@
 				</rom>
 			</config>
 		</start>
-
+-->
 		<start name="test-trace_logger" >
 			<resource name="RAM" quantum="1M"/>
+			<config sync_trace="yes"/>
 		</start>
-
+<!--
 		<start name="cpu_burner.1">
 			<binary name="cpu_burner"/>
 			<resource name="RAM" quantum="1280K"/>
@@ -122,5 +110,6 @@
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
+-->
 	</config>
 </runtime>
