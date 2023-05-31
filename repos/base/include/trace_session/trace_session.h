@@ -15,6 +15,7 @@
 #define _INCLUDE__TRACE_SESSION__TRACE_SESSION_H_
 
 #include <base/exception.h>
+#include <base/signal.h>
 #include <base/trace/types.h>
 #include <dataspace/capability.h>
 #include <session/session.h>
@@ -79,6 +80,11 @@ struct Genode::Trace::Session : Genode::Session
 	virtual void resume(Subject_id) = 0;
 
 	/**
+	 * Register subjects changed signal handler
+	 */
+	virtual void subjects_changed_sigh(Signal_context_capability sigh) = 0;
+
+	/**
 	 * Obtain trace buffer of given subject
 	 *
 	 * \throw Nonexistent_subject
@@ -126,6 +132,8 @@ struct Genode::Trace::Session : Genode::Session
 	                 GENODE_TYPE_LIST(Out_of_ram, Out_of_caps));
 	GENODE_RPC_THROW(Rpc_subject_infos, size_t, subject_infos,
 	                 GENODE_TYPE_LIST(Out_of_ram, Out_of_caps));
+	GENODE_RPC(Rpc_subjects_changed_sigh, void, subjects_changed_sigh,
+	           Signal_context_capability);
 	GENODE_RPC_THROW(Rpc_buffer, Dataspace_capability, buffer,
 	                 GENODE_TYPE_LIST(Nonexistent_subject, Subject_not_traced),
 	                 Subject_id);
@@ -134,8 +142,8 @@ struct Genode::Trace::Session : Genode::Session
 
 	GENODE_RPC_INTERFACE(Rpc_dataspace, Rpc_alloc_policy, Rpc_policy,
 	                     Rpc_unload_policy, Rpc_trace, Rpc_pause,
-	                     Rpc_resume, Rpc_subjects, Rpc_buffer,
-	                     Rpc_free, Rpc_subject_infos);
+	                     Rpc_resume, Rpc_subjects, Rpc_subject_infos,
+	                     Rpc_subjects_changed_sigh, Rpc_buffer, Rpc_free);
 };
 
 #endif /* _INCLUDE__TRACE_SESSION__TRACE_SESSION_H_ */

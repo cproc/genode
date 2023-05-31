@@ -38,6 +38,8 @@ class Genode::Trace::Control
 
 		bool volatile _inhibit;
 
+		bool volatile _wait_for_trace;
+
 	public:
 
 		/*************************************************
@@ -95,13 +97,23 @@ class Genode::Trace::Control
 		 */
 		bool to_be_enabled() const
 		{
-			return state_changed() && (_designated_state == ENABLED);
+			bool res = state_changed() && (_designated_state == ENABLED);
+//int dummy;
+//Genode::raw(&dummy, ": ", this, ": to_be_enabled(): state_changed: ", state_changed());
+//Genode::raw(&dummy, ": ", this, ": to_be_enabled(): _designated_state: ", (int)_designated_state);
+//Genode::raw(&dummy, ": ", this, ": to_be_enabled(): _acknowledged_state: ", (int)_acknowledged_state);
+//Genode::raw(&dummy, ": ", this, ": to_be_enabled(): ", res);
+			return res;
 		}
 
 		/**
 		 * Confirm that the CPU client has enabled the tracing
 		 */
-		void acknowledge_enabled() { _acknowledged_state = ENABLED; };
+		void acknowledge_enabled() {
+//int dummy;
+//Genode::raw(&dummy, ": ", this, ": acknowledge_enabled()");
+			_acknowledged_state = ENABLED;
+		};
 
 		/**
 		 * Confirm that the CPU client has disabled the tracing
@@ -122,6 +134,11 @@ class Genode::Trace::Control
 		 */
 		bool tracing_inhibited() const { return _inhibit; }
 
+		/**
+		 * Return true if the corresponding thread should wait
+		 * until a trace monitor is attached.
+		 */
+		bool wait_for_trace() const { return _wait_for_trace; }
 
 		/*****************************************
 		 ** Accessors called by the CPU service **
@@ -173,6 +190,12 @@ class Genode::Trace::Control
 		 * \deprecated  use 'enabled' instead
 		 */
 		bool is_enabled() const { return enabled(); }
+
+		/**
+		 * State if the corresponding thread should wait
+		 * until a trace monitor is attached.
+		 */
+		void wait_for_trace(bool wait) { _wait_for_trace = wait; }
 };
 
 #endif /* _INCLUDE__BASE__INTERNAL__TRACE_CONTROL_H_ */

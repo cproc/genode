@@ -145,6 +145,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		                     Pd_session_component      &pd,
 		                     Trace::Control_area       &trace_control_area,
 		                     Trace::Source_registry    &trace_sources,
+		                     bool                       wait_for_trace,
 		                     Cpu_session::Weight        weight,
 		                     size_t                     quota,
 		                     Affinity::Location         location,
@@ -172,6 +173,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 
 			_address_space_region_map.add_client(_rm_client);
 			_platform_thread.pager(_rm_client);
+			_trace_control_slot.control().wait_for_trace(wait_for_trace);
 			_trace_sources.insert(&_trace_source);
 		}
 
@@ -231,6 +233,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		unsigned trace_control_index() override;
 		Dataspace_capability trace_buffer() override;
 		Dataspace_capability trace_policy() override;
+		void trace_start_sigh(Signal_context_capability) override;
 };
 
 #endif /* _CORE__INCLUDE__CPU_THREAD_COMPONENT_H_ */
