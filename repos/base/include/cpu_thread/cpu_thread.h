@@ -127,6 +127,14 @@ struct Genode::Cpu_thread : Interface
 	 */
 	virtual Dataspace_capability trace_policy() = 0;
 
+    /**
+      * Register trace start signal handler
+      *
+      * The client can wait for this signal if it is important that
+      * all trace events are captured.
+      */
+    virtual void trace_start_sigh(Signal_context_capability handler) = 0;
+
 
 	/*********************
 	 ** RPC declaration **
@@ -147,12 +155,13 @@ struct Genode::Cpu_thread : Interface
 	GENODE_RPC(Rpc_trace_control_index, unsigned, trace_control_index);
 	GENODE_RPC(Rpc_trace_buffer, Dataspace_capability, trace_buffer);
 	GENODE_RPC(Rpc_trace_policy, Dataspace_capability, trace_policy);
+	GENODE_RPC(Rpc_trace_start_sigh, void, trace_start_sigh, Signal_context_capability);
 
 	GENODE_RPC_INTERFACE(Rpc_utcb, Rpc_start, Rpc_pause, Rpc_resume,
 	                     Rpc_set_state, Rpc_get_state,
 	                     Rpc_exception_sigh, Rpc_single_step, Rpc_affinity,
 	                     Rpc_trace_control_index, Rpc_trace_buffer,
-	                     Rpc_trace_policy);
+	                     Rpc_trace_policy, Rpc_trace_start_sigh);
 };
 
 #endif /* _INCLUDE__CPU_THREAD__CPU_THREAD_H_ */

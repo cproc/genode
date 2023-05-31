@@ -231,6 +231,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		unsigned trace_control_index() override;
 		Dataspace_capability trace_buffer() override;
 		Dataspace_capability trace_policy() override;
+		void trace_start_sigh(Signal_context_capability) override;
 };
 
 #endif /* _CORE__INCLUDE__CPU_THREAD_COMPONENT_H_ */
