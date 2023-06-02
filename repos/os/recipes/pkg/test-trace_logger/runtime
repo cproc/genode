@@ -60,7 +60,7 @@
 				<policy label_prefix="init -> dynamic -> test-trace_logger -> cpu_burner"
 				        thread="ep"/>
 
-				<policy label="init -> dynamic -> test-trace_logger -> test-trace_logger"
+				<policy label="init -> test -> test-trace_logger"
 				        thread="ep"
 				        buffer="4K"
 				        policy="rpc_name"/>
@@ -71,7 +71,7 @@
 				        policy="log_output"/>
 			</config>
 		</start>
-
+<!--
 		<start name="dynamic_rom">
 			<resource name="RAM" quantum="4M"/>
 			<provides><service name="ROM"/></provides>
@@ -98,11 +98,12 @@
 				</rom>
 			</config>
 		</start>
-
+-->
 		<start name="test-trace_logger" >
 			<resource name="RAM" quantum="1M"/>
+			<config/>
 		</start>
-
+<!--
 		<start name="cpu_burner.1">
 			<binary name="cpu_burner"/>
 			<resource name="RAM" quantum="1280K"/>
@@ -122,5 +123,6 @@
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
+-->
 	</config>
 </runtime>

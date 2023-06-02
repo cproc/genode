@@ -47,6 +47,12 @@ static Env &_env()
 
 bool Trace::Logger::_evaluate_control()
 {
+thread_local int count = 0;
+count++;
+// base-linux: count < 110 = right before 'attach()' message
+if (count < 110) {
+return false;
+}
 	/* check process-global and thread-specific tracing condition */
 	if (inhibit_tracing || !control || control->tracing_inhibited())
 		return false;
