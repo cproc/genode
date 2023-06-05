@@ -29,6 +29,7 @@
     <pkg path="terminal_crosslink" info="terminal service connecting two clients"/>
     <pkg path="socat_tcp"       info="socat connecting a terminal over TCP"/>
     <pkg path="falkon"          info="Qt5-based web browser"/>
+    <pkg path="morph_browser"   info="Qt5-based web browser"/>
   </index>
 
   <index name="Demos">
