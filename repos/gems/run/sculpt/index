@@ -45,4 +45,12 @@
     <pkg path="mesa_gpu-intel" info="Intel GPU driver (IRIS)" arch="x86_64"/>
   </index>
 
+  <index name="Web browsers">
+    <pkg path="falkon"          info="Qt5-based web browser"/>
+  </index>
+
+  <index name="Web browsers (staging)">
+    <pkg path="falkon"          info="Qt5-based web browser"/>
+  </index>
+
 </index>
