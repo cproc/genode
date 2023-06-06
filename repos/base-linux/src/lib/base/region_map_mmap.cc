@@ -120,7 +120,7 @@ addr_t Region_map_mmap::_reserve_local(bool           use_local_addr,
 }
 
 
-void *Region_map_mmap::_map_local(Dataspace_capability ds,
+void *Region_map_mmap::_map_local(int const            fd,
                                   Genode::size_t       size,
                                   addr_t               offset,
                                   bool                 use_local_addr,
@@ -129,9 +129,6 @@ void *Region_map_mmap::_map_local(Dataspace_capability ds,
                                   bool                 overmap,
                                   bool                 writeable)
 {
-	writeable = _dataspace_writeable(ds) && writeable;
-
-	int  const  fd        = _dataspace_fd(ds);
 	int  const  flags     = MAP_SHARED | (overmap ? MAP_FIXED : 0);
 	int  const  prot      = PROT_READ
 	                      | (writeable  ? PROT_WRITE : 0)
@@ -196,9 +193,7 @@ Region_map::Local_addr Region_map_mmap::attach(Dataspace_capability ds,
                                                Region_map::Local_addr local_addr,
                                                bool executable, bool writeable)
 {
-	Mutex::Guard mutex_guard(mutex());
-
-	Inhibit_tracing_guard it_guard { };
+//	Inhibit_tracing_guard it_guard { };
 
 	/* only support attach_at for sub RM sessions */
 	if (_sub_rm && !use_local_addr) {
@@ -239,6 +234,16 @@ Region_map::Local_addr Region_map_mmap::attach(Dataspace_capability ds,
 	if (_sub_rm) {
 
 		/*
+		 * These RPCs must be called before the critical section to avoid
+		 * a potential deadlock if RPC trace points cause
+		 * 'Trace::Logger::_evaluate_control()' to attach dataspaces.
+		 */
+		int const fd = _dataspace_fd(ds);
+		writeable = _dataspace_writeable(ds) && writeable;
+
+		Mutex::Guard mutex_guard(mutex());
+
+		/*
 		 * Case 4
 		 */
 		if (is_sub_rm_session(ds)) {
@@ -266,13 +271,15 @@ Region_map::Local_addr Region_map_mmap::attach(Dataspace_capability ds,
 		 * argument as the region was reserved by a PROT_NONE mapping.
 		 */
 		if (_is_attached())
-			_map_local(ds, region_size, offset, true, _base + (addr_t)local_addr, executable, true, writeable);
+			_map_local(fd, region_size, offset, true, _base + (addr_t)local_addr, executable, true, writeable);
 
 		return (void *)local_addr;
 
 	} else {
 
 		if (is_sub_rm_session(ds)) {
+
+			Mutex::Guard mutex_guard(mutex());
 
 			Dataspace *ds_if = Local_capability<Dataspace>::deref(ds);
 
@@ -315,9 +322,12 @@ Region_map::Local_addr Region_map_mmap::attach(Dataspace_capability ds,
 				 * We have to enforce the mapping via the 'overmap' argument as
 				 * the region was reserved by a PROT_NONE mapping.
 				 */
-				_map_local(region.dataspace(), region.size(), region.offset(),
+// XXX: move before the critical section
+				int const fd = _dataspace_fd(region.dataspace());
+				bool const map_writeable = _dataspace_writeable(region.dataspace()) && writeable;
+				_map_local(fd, region.size(), region.offset(),
 				           true, rm->_base + region.start() + region.offset(),
-				           executable, true, writeable);
+				           executable, true, map_writeable);
 			}
 
 			return rm->_base;
@@ -325,12 +335,22 @@ Region_map::Local_addr Region_map_mmap::attach(Dataspace_capability ds,
 		} else {
 
 			/*
+			 * These RPCs must be called before the critical section to avoid
+			 * a potential deadlock if RPC trace points cause
+			 * 'Trace::Logger::_evaluate_control()' to attach dataspaces.
+			 */
+			int const fd = _dataspace_fd(ds);
+			writeable = _dataspace_writeable(ds) && writeable;
+
+			Mutex::Guard mutex_guard(mutex());
+
+			/*
 			 * Case 1
 			 *
 			 * Boring, a plain dataspace is attached to a root RM session.
 			 * Note, we do not overmap.
 			 */
-			void *addr = _map_local(ds, region_size, offset, use_local_addr,
+			void *addr = _map_local(fd, region_size, offset, use_local_addr,
 			                        local_addr, executable, false, writeable);
 
 			_add_to_rmap(Region((addr_t)addr, offset, ds, region_size));
@@ -345,7 +365,7 @@ void Region_map_mmap::detach(Region_map::Local_addr local_addr)
 {
 	Mutex::Guard mutex_guard(mutex());
 
-	Inhibit_tracing_guard it_guard { };
+//	Inhibit_tracing_guard it_guard { };
 
 	/*
 	 * Cases

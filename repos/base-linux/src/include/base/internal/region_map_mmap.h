@@ -72,7 +72,7 @@ class Genode::Region_map_mmap : public Region_map, public Dataspace
 		/**
 		 * Map dataspace into local address space
 		 */
-		void *_map_local(Dataspace_capability ds,
+		void *_map_local(int const            fd,
 		                 size_t               size,
 		                 addr_t               offset,
 		                 bool                 use_local_addr,
