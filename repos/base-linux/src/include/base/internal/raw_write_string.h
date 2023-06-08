@@ -21,7 +21,8 @@ namespace Genode {
 
 	void raw_write_string(const char *str)
 	{
-		lx_syscall(SYS_write, (int)1, str, strlen(str));
+		String<256> tid { lx_gettid(), ": ", Genode::Cstring(str)};
+		lx_syscall(SYS_write, (int)1, tid.string(), tid.length());
 	}
 }
 
