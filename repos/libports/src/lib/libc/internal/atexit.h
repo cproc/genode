@@ -65,7 +65,7 @@ struct Libc::Atexit : Noncopyable
 
 		void register_cxa_handler(void (*func)(void*), void *arg, void *dso)
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Atexit", "Atexit::register_cxa_handler()");
 
 			_handlers.insert(
 				new (_alloc) Handler { .type     = Handler::Type::CXA,
@@ -77,7 +77,7 @@ struct Libc::Atexit : Noncopyable
 
 		void register_std_handler(void (*func)())
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Atexit", "Atexit::register_std_handler()");
 
 			_handlers.insert(
 				new (_alloc) Handler { .type     = Handler::Type::STD,
@@ -100,7 +100,7 @@ struct Libc::Atexit : Noncopyable
 
 				/* search matching handler */
 				{
-					Mutex::Guard guard(_mutex);
+					Mutex::Guard guard(_mutex, "Atexit", "Atexit::execute_handlers()");
 
 					handler_ptr = _handlers.first();
 					while (handler_ptr && dso && (handler_ptr->dso != dso)) {

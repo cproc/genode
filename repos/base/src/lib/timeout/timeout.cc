@@ -64,7 +64,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 	List<List_element<Timeout> > pending_timeouts { };
 	{
 		/* acquire scheduler and update stored current time */
-		Mutex::Guard const scheduler_guard(_mutex);
+		Mutex::Guard const scheduler_guard(_mutex, "Timeout_scheduler", "Timeout_scheduler::handle_timeout()");
 		if (_destructor_called) {
 			return;
 		}
@@ -91,7 +91,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 		 */
 		while (Timeout *timeout = _timeouts.first()) {
 
-			timeout->_mutex.acquire();
+			timeout->_mutex.acquire("Timeout", "Timeout_scheduler::handle_timeout() 2");
 			if (timeout->_deadline.value > _current_time.value) {
 				timeout->_mutex.release();
 				break;
@@ -184,7 +184,7 @@ void Timeout_scheduler::handle_timeout(Duration curr_time)
 		 * the timeout and got blocked at the timeout's '_discard_blockade'.
 		 * If this is the case, we have to unblock the other thread.
 		 */
-		Mutex::Guard timeout_guard(timeout._mutex);
+		Mutex::Guard timeout_guard(timeout._mutex, "Timeout", "Timeout_scheduler::handle_timeout() 3");
 		timeout._pending_handler = nullptr;
 		if (timeout._in_discard_blockade) {
 			timeout._discard_blockade.wakeup();
@@ -210,7 +210,7 @@ Timeout_scheduler::~Timeout_scheduler()
 	 * function to ease debugging in case that someone accesses a dangling
 	 * scheduler pointer.
 	 */
-	_mutex.acquire();
+	_mutex.acquire("Timeout_scheduler", "~Timeout_scheduler()");
 
 	/*
 	 * The function 'Timeout_scheduler::_discard_timeout_unsynchronized' may
@@ -224,7 +224,7 @@ Timeout_scheduler::~Timeout_scheduler()
 
 	/* discard all scheduled timeouts */
 	while (Timeout *timeout = _timeouts.first()) {
-		Mutex::Guard const timeout_guard { timeout->_mutex };
+		Mutex::Guard const timeout_guard { timeout->_mutex, "Timeout", "~Timeout_scheduler()" };
 		_discard_timeout_unsynchronized(*timeout);
 	}
 }
@@ -232,7 +232,7 @@ Timeout_scheduler::~Timeout_scheduler()
 
 void Timeout_scheduler::_enable()
 {
-	Mutex::Guard const scheduler_guard { _mutex };
+	Mutex::Guard const scheduler_guard { _mutex , "Timeout_scheduler", "Timeout_scheduler::_enable()"};
 	if (_destructor_called) {
 		return;
 	}
@@ -289,11 +289,11 @@ void Timeout_scheduler::_schedule_timeout(Timeout         &timeout,
                                           Timeout_handler &handler)
 {
 	/* acquire scheduler and timeout mutex */
-	Mutex::Guard const scheduler_guard { _mutex };
+	Mutex::Guard const scheduler_guard { _mutex, "Timeout_scheduler", "Timeout_scheduler::_schedule_timeout()" };
 	if (_destructor_called) {
 		return;
 	}
-	Mutex::Guard const timeout_guard(timeout._mutex);
+	Mutex::Guard const timeout_guard(timeout._mutex, "Timeout", "Timeout_scheduler::_schedule_timeout() 2");
 
 	/* prevent inserting a timeout twice */
 	if (timeout._handler != nullptr) {
@@ -348,22 +348,22 @@ void Timeout_scheduler::_insert_into_timeouts_list(Timeout &timeout)
 
 void Timeout_scheduler::_discard_timeout(Timeout &timeout)
 {
-	Mutex::Guard const scheduler_mutex { _mutex };
-	Mutex::Guard const timeout_mutex { timeout._mutex };
+	Mutex::Guard const scheduler_mutex { _mutex, "Timeout_scheduler", "Timeout_scheduler::_discard_timeout()" };
+	Mutex::Guard const timeout_mutex { timeout._mutex, "Timeout", "Timeout_scheduler::discard_timeout() 2" };
 	_discard_timeout_unsynchronized(timeout);
 }
 
 
 void Timeout_scheduler::_destruct_timeout(Timeout &timeout)
 {
-	Mutex::Guard const scheduler_mutex { _mutex };
+	Mutex::Guard const scheduler_mutex { _mutex, "Timeout_scheduler", "Timeout_scheduler::_destruct_timeout()" };
 
 	/*
 	 * Acquire the timeout mutex and don't release it at the end of this
 	 * function to ease debugging in case that someone accesses a dangling
 	 * timeout pointer.
 	 */
-	timeout._mutex.acquire();
+	timeout._mutex.acquire("Timeout", "Timeout_scheduler::_destruct_timeout()");
 	_discard_timeout_unsynchronized(timeout);
 }
 
@@ -389,8 +389,8 @@ void Timeout_scheduler::_discard_timeout_unsynchronized(Timeout &timeout)
 
 		timeout._discard_blockade.block();
 
-		_mutex.acquire();
-		timeout._mutex.acquire();
+		_mutex.acquire("Timeout_scheduler", "Timeout_scheduler::_discard_timeout_unsynchronized()");
+		timeout._mutex.acquire("Timeout", "Timeout_scheduler::_discard_timeout_unsynchronized() 2");
 		timeout._in_discard_blockade = false;
 	}
 	_timeouts.remove(&timeout);
@@ -400,7 +400,7 @@ void Timeout_scheduler::_discard_timeout_unsynchronized(Timeout &timeout)
 
 Duration Timeout_scheduler::curr_time()
 {
-	Mutex::Guard const scheduler_guard { _mutex };
+	Mutex::Guard const scheduler_guard { _mutex, "Timeout_scheduler", "Timeout_scheduler::curr_time()" };
 	if (_destructor_called) {
 		return Duration { Microseconds { 0 } };
 	}

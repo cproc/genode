@@ -86,7 +86,7 @@ class Libc::Mmap_registry
 
 		void insert(void *start, size_t len, Plugin *plugin)
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Mmap_registry", "Mmap_registry::insert()");
 
 			if (_lookup_by_addr_unsynchronized(start)) {
 				warning(__func__, ": mmap region at ", start, " "
@@ -99,7 +99,7 @@ class Libc::Mmap_registry
 
 		Plugin *lookup_plugin_by_addr(void *start) const
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Mmap_registry", "Mmap_registry::lookup_plugin_by_addr()");
 
 			Entry const * const e = _lookup_by_addr_unsynchronized(start);
 			return e ? e->plugin : 0;
@@ -107,14 +107,14 @@ class Libc::Mmap_registry
 
 		bool registered(void *start) const
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Mmap_registry", "Mmap_registry::registered()");
 
 			return _lookup_by_addr_unsynchronized(start) != 0;
 		}
 
 		void remove(void *start)
 		{
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Mmap_registry", "Mmap_registry::remove()");
 
 			Entry *e = _lookup_by_addr_unsynchronized(start);
 

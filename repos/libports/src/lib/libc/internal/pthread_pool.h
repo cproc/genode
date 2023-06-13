@@ -69,7 +69,7 @@ struct Libc::Pthread_pool
 
 	void resume_all()
 	{
-		Mutex::Guard g(mutex);
+		Mutex::Guard g(mutex, "Pthread_pool", "Pthread_pool::resume_all()");
 
 		for (Pthread *p = pthreads; p; p = p->next)
 			p->blockade.wakeup();
@@ -79,7 +79,7 @@ struct Libc::Pthread_pool
 	{
 		Pthread myself { timer_accessor, timeout_ms };
 		{
-			Mutex::Guard g(mutex);
+			Mutex::Guard g(mutex, "Pthread_pool", "Pthread_pool::suspend_myself()");
 
 			myself.next = pthreads;
 			pthreads    = &myself;
@@ -89,7 +89,7 @@ struct Libc::Pthread_pool
 			myself.blockade.block();
 
 		{
-			Mutex::Guard g(mutex);
+			Mutex::Guard g(mutex, "Pthread_pool", "Pthread_pool::suspend_myself()");
 
 			/* address of pointer to next pthread allows to change the head */
 			for (Pthread **next = &pthreads; *next; next = &(*next)->next) {

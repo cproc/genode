@@ -88,7 +88,7 @@ int Libc::Mem_alloc_impl::Dataspace_pool::expand(size_t size, Range_allocator *a
 void *Libc::Mem_alloc_impl::alloc(size_t size, size_t align_log2)
 {
 	/* serialize access of heap functions */
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Libc::Mem_alloc_impl", "Libc::Mem_alloc_impl::alloc()");
 
 	void *out_addr = nullptr;
 
@@ -136,7 +136,7 @@ void *Libc::Mem_alloc_impl::alloc(size_t size, size_t align_log2)
 void Libc::Mem_alloc_impl::free(void *addr)
 {
 	/* serialize access of heap functions */
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Libc::Mem_alloc_impl", "Libc::Mem_alloc_impl::free()");
 
 	/* forward request to our local allocator */
 	_alloc.free(addr);
@@ -146,7 +146,7 @@ void Libc::Mem_alloc_impl::free(void *addr)
 Libc::Mem_alloc::Size_at_result Libc::Mem_alloc_impl::size_at(void const *addr) const
 {
 	/* serialize access of heap functions */
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "Libc::Mem_alloc_impl", "Libc::Mem_alloc_impl::size_at()");
 
 	/* forward request to our local allocator */
 	return _alloc.size_at(addr);

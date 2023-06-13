@@ -58,7 +58,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
                                                   Plugin_context *context,
                                                   int libc_fd)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::alloc()");
 
 	bool const any_fd = (libc_fd < 0);
 	Id_space::Id id {(unsigned)libc_fd};
@@ -77,7 +77,7 @@ File_descriptor *File_descriptor_allocator::alloc(Plugin *plugin,
 
 void File_descriptor_allocator::free(File_descriptor *fdo)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::free()");
 
 	if (fdo->fd_path)
 		_alloc.free((void *)fdo->fd_path, ::strlen(fdo->fd_path) + 1);
@@ -96,7 +96,7 @@ void File_descriptor_allocator::preserve(int fd)
 
 File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::find_by_libc_fd");
 
 	if (libc_fd < 0)
 		return nullptr;
@@ -115,7 +115,7 @@ File_descriptor *File_descriptor_allocator::find_by_libc_fd(int libc_fd)
 
 File_descriptor *File_descriptor_allocator::any_cloexec_libc_fd()
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::any_cloexec_libc_fd()");
 
 	File_descriptor *result = nullptr;
 
@@ -129,7 +129,7 @@ File_descriptor *File_descriptor_allocator::any_cloexec_libc_fd()
 
 void File_descriptor_allocator::update_append_libc_fds()
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::update_append_libc_fds()");
 
 	_id_space.for_each<File_descriptor>([&] (File_descriptor &fd) {
 		if (fd.flags & O_APPEND)
@@ -140,7 +140,7 @@ void File_descriptor_allocator::update_append_libc_fds()
 
 int File_descriptor_allocator::any_open_fd()
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::any_open_fd()");
 
 	int result = -1;
 	_id_space.apply_any<File_descriptor>([&] (File_descriptor &fd) {
@@ -152,7 +152,7 @@ int File_descriptor_allocator::any_open_fd()
 
 void File_descriptor_allocator::generate_info(Xml_generator &xml)
 {
-	Mutex::Guard guard(_mutex);
+	Mutex::Guard guard(_mutex, "File_descriptor_allocator", "File_descriptor_allocator::generate_info()");
 
 	_id_space.for_each<File_descriptor>([&] (File_descriptor &fd) {
 		xml.node("fd", [&] () {

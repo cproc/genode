@@ -106,7 +106,7 @@ struct sem : Genode::Noncopyable
 
 			blockade.block();
 
-			_data_mutex.acquire();
+			_data_mutex.acquire("sem", "sem::_applicant_for_semaphore()");
 
 			if (blockade.woken_up()) {
 				return true;
@@ -160,14 +160,14 @@ struct sem : Genode::Noncopyable
 
 		int trydown()
 		{
-			Mutex::Guard guard(_data_mutex);
+			Mutex::Guard guard(_data_mutex, "sem", "sem::trydown()");
 
 			return _try_down();
 		}
 
 		int down()
 		{
-			Mutex::Guard guard(_data_mutex);
+			Mutex::Guard guard(_data_mutex, "sem", "sem::down()");
 
 			/* fast path */
 			if (_try_down() == 0)
@@ -180,7 +180,7 @@ struct sem : Genode::Noncopyable
 
 		int down_timed(timespec const &abs_timeout)
 		{
-			Mutex::Guard guard(_data_mutex);
+			Mutex::Guard guard(_data_mutex, "sem", "sem::down_timed()");
 
 			/* fast path */
 			if (_try_down() == 0)
@@ -202,7 +202,7 @@ struct sem : Genode::Noncopyable
 
 		int up()
 		{
-			Mutex::Guard guard(_data_mutex);
+			Mutex::Guard guard(_data_mutex, "sem", "sem::up()");
 
 			_count_up();
 
