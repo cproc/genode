@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+
+	<pattern version="1" id="genode.jitsi_audio_handle_rx_packets_interval_pattern">
+		<head>
+			<label value="Jitsi audio handle_rx_packets()) Interval"/>
+			<viewLabelPrefix value="Jitsi audio handle_rx_packets() Interval"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="event_match_condition">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+   
+			<action id="set_prev_checkpoint_timestamp">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="prev_checkpoint_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+			</action>
+
+			<action id="create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="interval"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="prev_checkpoint_timestamp"/>
+						</begin>
+
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="interval" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint" cond="event_match_condition" action="set_prev_checkpoint_timestamp" target="first_checkpoint_received"/>
+				</state>
+
+				<state id="first_checkpoint_received">
+ 					<transition event="Checkpoint" cond="event_match_condition" action="create_interval_segment:set_prev_checkpoint_timestamp" target="first_checkpoint_received"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_receive_pattern">
+		<head>
+			<label value="Jitsi audio packet receive duration"/>
+			<viewLabelPrefix value="Jitsi audio packet receive duration"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::OnRtpPacket() async"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="receive"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_receive_pattern_phase_1">
+		<head>
+			<label value="Jitsi audio packet receive duration phase 1"/>
+			<viewLabelPrefix value="Jitsi audio packet receive duration phase 1"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="socket_fs_recvfrom(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="receive"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_receive_pattern_phase_2">
+		<head>
+			<label value="Jitsi audio packet receive duration phase 2"/>
+			<viewLabelPrefix value="Jitsi audio packet receive duration phase 2"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="socket_fs_recvfrom(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::OnRtpPacket(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="receive"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_receive_pattern_phase_3">
+		<head>
+			<label value="Jitsi audio packet receive duration phase 3"/>
+			<viewLabelPrefix value="Jitsi audio packet receive duration phase 3"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="BaseChannel::OnRtpPacket(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<!-- <stateValue type="string" value="NetEqImpl::InsertPacketInternal(): seq"/>-->
+							<stateValue type="string" value="BaseChannel::OnRtpPacket() async"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="receive"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_send_pattern">
+		<head>
+			<label value="Jitsi audio packet send duration"/>
+			<viewLabelPrefix value="Jitsi audio packet send duration"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="RtpSenderAudio::SendAudio(): seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="socket_fs_sendto(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="send"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_send_pattern_phase_1">
+		<head>
+			<label value="Jitsi audio packet send duration phase 1"/>
+			<viewLabelPrefix value="Jitsi audio packet send duration phase 1"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="RtpSenderAudio::SendAudio(): seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 1: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="send"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_send_pattern_phase_2">
+		<head>
+			<label value="Jitsi audio packet send duration phase 2"/>
+			<viewLabelPrefix value="Jitsi audio packet send duration phase 2"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 1: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 2: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="send"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+	<pattern version="1" id="genode.jitsi_audio_packet_send_pattern_phase_3">
+		<head>
+			<label value="Jitsi audio packet send duration phase 3"/>
+			<viewLabelPrefix value="Jitsi audio packet send duration phase 3"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="test_start">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 2: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+   
+			<action id="action_start">
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="start_timestamp"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="#CurrentScenario"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_end">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="socket_fs_sendto(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="data"/>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="sequence_number"/>
+							</stateValue>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_create_interval_segment">
+
+				<segment>
+					<segType>
+						<segName>
+							<stateValue type="string" value="send"/>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="#CurrentScenario"/>
+								<stateAttribute type="constant" value="start_timestamp"/>
+						</begin>
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+				</segment>
+
+			</action>
+
+			<fsm id="receive" initial="start">
+
+				<state id="start">
+					<transition event="Checkpoint"
+					            cond="test_start"
+					            action="action_start"
+					            target="started"/>
+				</state>
+
+				<state id="started">
+ 					<transition event="Checkpoint"
+ 					            cond="test_end" 
+ 					            action="action_create_interval_segment"
+ 					            target="start"/>
+				</state>
+
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+</tmfxml>
