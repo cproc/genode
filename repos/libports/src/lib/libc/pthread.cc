@@ -140,7 +140,7 @@ Pthread *Libc::Pthread::myself()
 void Libc::Pthread::join(void **retval)
 {
 	monitor().monitor([&] {
-		Genode::Mutex::Guard guard(_mutex);
+		Genode::Mutex::Guard guard(_mutex, "Pthread", "Pthread::join()");
 
 		if (!_exiting)
 			return Fn::INCOMPLETE;
@@ -161,7 +161,7 @@ int Libc::Pthread::detach()
 
 void Libc::Pthread::cancel()
 {
-	Genode::Mutex::Guard guard(_mutex);
+	Genode::Mutex::Guard guard(_mutex, "Pthread", "Pthread::cancel()");
 
 	_exiting = true;
 
@@ -176,7 +176,7 @@ void Libc::Pthread::cancel()
 void Libc::Pthread_cleanup::cleanup(Pthread *new_cleanup_thread)
 {
 	static Mutex cleanup_mutex;
-	Mutex::Guard guard(cleanup_mutex);
+	Mutex::Guard guard(cleanup_mutex, "Pthread_cleanup", "Pthread_cleanup::cleanup()");
 
 	if (_cleanup_thread) {
 		Libc::Allocator alloc { };
@@ -281,7 +281,7 @@ class pthread_mutex : Genode::Noncopyable
 
 			blockade.block();
 
-			_data_mutex.acquire();
+			_data_mutex.acquire("pthread_mutex", "pthread_mutex::_applicant_for_mutex()");
 
 			if (blockade.woken_up()) {
 				return true;
@@ -351,7 +351,7 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_normal", "Pthread_mutex_normal::lock()");
 
 		/* fast path without lock contention */
 		if (_try_lock(myself) == 0)
@@ -366,7 +366,7 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_normal", "Pthread_mutex_normal::timedlock()");
 
 		/* fast path without lock contention - does not check abstimeout according to spec */
 		if (_try_lock(myself) == 0)
@@ -389,14 +389,14 @@ struct Libc::Pthread_mutex_normal : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_normal", "Pthread_mutex_normal::trylock()");
 
 		return _try_lock(myself);
 	}
 
 	int unlock() override final
 	{
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_normal", "Pthread_mutex_normal::unlock()");
 
 		if (_owner != pthread_self())
 			return EPERM;
@@ -425,7 +425,7 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_errorcheck", "Pthread_mutex_errorcheck::lock()");
 
 		/* fast path without lock contention (or deadlock) */
 		int const result = _try_lock(myself);
@@ -447,14 +447,14 @@ struct Libc::Pthread_mutex_errorcheck : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_errorcheck", "Pthread_mutex_errorcheck::trylock()");
 
 		return _try_lock(myself);
 	}
 
 	int unlock() override final
 	{
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_errorcheck", "Pthread_mutex_errorcheck::unlock()");
 
 		if (_owner != pthread_self())
 			return EPERM;
@@ -488,7 +488,7 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_recursive", "Pthread_mutex_recursive::lock()");
 
 		/* fast path without lock contention */
 		if (_try_lock(myself) == 0)
@@ -508,14 +508,14 @@ struct Libc::Pthread_mutex_recursive : pthread_mutex
 	{
 		pthread_t const myself = pthread_self();
 
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_recursive", "Pthread_mutex_recursive::trylock()");
 
 		return _try_lock(myself);
 	}
 
 	int unlock() override final
 	{
-		Mutex::Guard guard(_data_mutex);
+		Mutex::Guard guard(_data_mutex, "Pthread_mutex_recursive", "Pthread_mutex_recursive::unlock()");
 
 		if (_owner != pthread_self())
 			return EPERM;
@@ -1102,7 +1102,7 @@ extern "C" {
 			return EINVAL;
 
 		try {
-			Mutex::Guard guard(condattr_init_mutex);
+			Mutex::Guard guard(condattr_init_mutex, "pthread_condattr_init()", "pthread_condattr_init()");
 			Libc::Allocator alloc { };
 			*attr = new (alloc) pthread_cond_attr;
 			return 0;
@@ -1146,7 +1146,7 @@ extern "C" {
 			return EINVAL;
 
 		try {
-			Mutex::Guard guard(cond_init_mutex);
+			Mutex::Guard guard(cond_init_mutex, "cond_init()", "cond_init()");
 			Libc::Allocator alloc { };
 			*cond = attr && *attr ? new (alloc) pthread_cond((*attr)->clock_id)
 			                      : new (alloc) pthread_cond(CLOCK_REALTIME);
@@ -1319,7 +1319,7 @@ extern "C" {
 
 			{
 				static Mutex mutex;
-				Mutex::Guard guard(mutex);
+				Mutex::Guard guard(mutex, "pthread_once()", "pthread_once()");
 
 				if (!once->mutex) {
 					once->mutex = p;

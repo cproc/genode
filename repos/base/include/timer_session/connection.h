@@ -306,7 +306,7 @@ class Timer::Connection : public  Genode::Connection<Session>,
 				return;
 
 			/* serialize sleep calls issued by different threads */
-			Mutex::Guard guard(_mutex);
+			Mutex::Guard guard(_mutex, "Timer::Connection", "Timer::Connection::usleep()");
 
 			/* temporarily install to the default signal handler */
 			if (_custom_sigh_cap.valid())

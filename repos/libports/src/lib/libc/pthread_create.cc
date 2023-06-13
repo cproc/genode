@@ -133,7 +133,7 @@ static unsigned pthread_id()
 
 	static unsigned id = 0;
 
-	Mutex::Guard guard(mutex);
+	Mutex::Guard guard(mutex, "pthread_id()", "pthread_id()");
 
 	return id++;
 }
