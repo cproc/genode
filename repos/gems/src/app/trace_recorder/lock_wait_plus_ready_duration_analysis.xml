@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+
+	<pattern version="1" id="genode.lock_wait_plus_ready_duration">
+		<head>
+			<label value="lock_wait_plus_ready duration"/>
+			<viewLabelPrefix value="lock_wait_plus_ready duration"/>
+		</head>
+
+		<patternHandler>
+
+			<test id="cond_lock_wait">
+				<if>
+					<and>
+<!--
+						<condition>
+							<stateValue type="eventField" value="context.thread_name"/>
+							<stateValue type="string" value="NetworkService.15"/>
+						</condition>
+-->
+<!--
+						<condition>
+							<stateValue type="eventField" value="lock"/>
+							<stateValue type="int" value="12345678"/>
+						</condition>
+-->
+
+						<not>
+							<condition>
+								<stateValue type="eventField" value="context.thread_name"/>
+								<stateValue type="eventField" value="owner"/>
+							</condition>
+						</not>
+
+						<!-- dummy condition to satisfy the xsd requirements if the conditions above are commented out -->
+						<not>
+							<condition>
+								<stateValue type="eventField" value="context.thread_name"/>
+								<stateValue type="null"/>
+							</condition>
+						</not>
+
+					</and>
+				</if>
+			</test>
+
+			<action id="action_lock_wait">
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="eventField" value="lock"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="lock_name"/>
+					<stateValue type="eventField" value="name"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="start_time"/>
+					<stateValue type="eventField" value="timestamp"/>
+				</stateChange>
+				<stateChange>
+					<if>
+						<condition>
+							<stateValue type="eventField" value="context.thread_name"/>
+							<stateValue type="eventField" value="owner"/>
+						</condition>
+					</if>
+					<then>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="lock_type"/>
+						<stateValue type="string" value="blockade"/>
+					</then>
+					<else>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="lock_type"/>
+						<stateValue type="string" value="mutex"/>
+					</else>
+				</stateChange>
+			</action>
+
+			<test id="cond_lock_locked">
+				<if>
+					<not>
+						<condition>
+							<stateAttribute type="constant" value="Thread"/>
+							<stateAttribute type="eventField" value="context.thread_name"/>
+							<stateAttribute type="constant" value="start_time"/>
+							<stateValue type="null"/>
+						</condition>
+					</not>
+				</if>
+			</test>
+
+			<action id="action_lock_locked">
+
+				<segment>
+
+					<segType>
+						<segName>
+							<stateValue type="query">
+								<stateAttribute type="constant" value="Thread"/>
+								<stateAttribute type="eventField" value="context.thread_name"/>
+								<stateAttribute type="constant" value="lock_name"/>
+							</stateValue>
+						</segName>
+					</segType>
+
+					<segTime>
+						<begin type="query">
+								<stateAttribute type="constant" value="Thread"/>
+								<stateAttribute type="eventField" value="context.thread_name"/>
+								<stateAttribute type="constant" value="start_time"/>
+						</begin>
+
+						<end type="eventField" value="timestamp"/>
+					</segTime>
+
+					<segContent>
+						<segField name="thread" type="string">
+							<stateValue type="eventField" value="context.thread_name"/>
+						</segField>
+						<segField name="type" type="string">
+							<stateValue type="query">
+									<stateAttribute type="constant" value="Thread"/>
+									<stateAttribute type="eventField" value="context.thread_name"/>
+									<stateAttribute type="constant" value="lock_type"/>
+							</stateValue>
+						</segField>
+					</segContent>
+
+				</segment>
+
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="null"/>
+				</stateChange>
+
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="start_time"/>
+					<stateValue type="null"/>
+				</stateChange>
+
+			</action>
+
+			<action id="action_reset_lock_wait">
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="null"/>
+				</stateChange>
+
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="start_time"/>
+					<stateValue type="null"/>
+				</stateChange>
+
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="lock_name"/>
+					<stateValue type="null"/>
+				</stateChange>
+
+				<stateChange>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="lock_type"/>
+					<stateValue type="null"/>
+				</stateChange>
+			</action>
+
+			<fsm id="lock_wait_plus_ready_duration" initial="initial">
+				<state id="initial">
+					<transition event="Lock_wait"
+					            cond="cond_lock_wait"
+					            action="action_lock_wait"
+					            target="initial"/>
+
+					<transition event="Lock_unlock"
+					            target="initial"/>
+
+					<transition event="Lock_locked"
+					            cond="cond_lock_locked"
+					            action="action_lock_locked"
+					            target="initial"/>
+
+					<!-- handle missing unlock events -->
+					<transition action="action_reset_lock_wait"
+					            target="initial"/>
+				</state>
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+</tmfxml>
