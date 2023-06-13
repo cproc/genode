@@ -1,0 +1,1415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+
+	<pattern version="1" id="genode.lockpattern">
+		<head>
+			<label value="Jitsi thread state" />
+			<viewLabelPrefix value="Jitsi thread state"/>
+		</head>
+
+		<patternHandler>
+
+			<!-- reset thread state -->
+
+			<action id="action_reset_thread_state">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="requested_lock"/>
+					<stateValue type="null"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="null"/>
+				</stateChange>
+			</action>
+
+			<!-- save/restore thread state -->
+
+			<action id="action_save_thread_state">
+				<!-- move 'prev/3' to 'prev/4' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="3"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="3"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- move 'prev/2' to 'prev/3' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="2"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="2"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- move 'prev/1' to 'prev/2' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="1"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="1"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- save current state in 'prev/1' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+			</action>
+
+			<action id="action_restore_thread_state">
+				<stateChange>
+					<if>
+						<not>
+							<condition>
+								<stateAttribute type="eventField" value="context.session_label"/>
+								<stateAttribute type="constant" value="Thread"/>
+								<stateAttribute type="eventField" value="context.thread_name"/>
+								<stateAttribute type="constant" value="prev"/>
+								<stateAttribute type="constant" value="1"/>
+								<stateValue type="null"/>
+							</condition>
+						</not>
+					</if>
+					<then>
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateValue type="query">
+							<stateAttribute type="eventField" value="context.session_label"/>
+							<stateAttribute type="constant" value="Thread"/>
+							<stateAttribute type="eventField" value="context.thread_name"/>
+							<stateAttribute type="constant" value="prev"/>
+							<stateAttribute type="constant" value="1"/>
+						</stateValue>
+					</then>
+					<else>
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateValue type="string" value=""/>
+					</else>
+				</stateChange>
+				<stateChange>
+					<if>
+						<not>
+							<condition>
+								<stateAttribute type="eventField" value="context.session_label"/>
+								<stateAttribute type="constant" value="Thread"/>
+								<stateAttribute type="eventField" value="context.thread_name"/>
+								<stateAttribute type="constant" value="prev"/>
+								<stateAttribute type="constant" value="1"/>
+								<stateValue type="null"/>
+							</condition>
+						</not>
+					</if>
+					<then>
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="color"/>
+						<stateValue type="query">
+							<stateAttribute type="eventField" value="context.session_label"/>
+							<stateAttribute type="constant" value="Thread"/>
+							<stateAttribute type="eventField" value="context.thread_name"/>
+							<stateAttribute type="constant" value="prev"/>
+							<stateAttribute type="constant" value="1"/>
+							<stateAttribute type="constant" value="color"/>
+						</stateValue>
+					</then>
+					<else>
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="color"/>
+						<stateValue type="string" value="#a0a0a0"/>
+					</else>
+				</stateChange>
+				<!-- move 'prev/2' to 'prev/1' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="2"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="1"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="2"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- move 'prev/3' to 'prev/2' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="3"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="2"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="3"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- move 'prev/4' to 'prev/3' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="4"/>
+					</stateValue>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="3"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="query">
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateAttribute type="constant" value="prev"/>
+						<stateAttribute type="constant" value="4"/>
+						<stateAttribute type="constant" value="color"/>
+					</stateValue>
+				</stateChange>
+				<!-- clear 'prev/4' -->
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateValue type="string" value=""/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="prev"/>
+					<stateAttribute type="constant" value="4"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+			</action>
+
+			<!-- thread destroyed -->
+
+			<test id="test_thread_destroyed">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="type"/>
+						<stateValue type="int" value="32"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_thread_destroyed">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="name"/>
+					<stateValue type="null"/>
+				</stateChange>
+			</action>
+
+			<!-- RPC -->
+
+			<action id="action_rpc_call">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="eventField" value="name"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#e0e0e0"/>
+				</stateChange>
+			</action>
+
+			<action id="action_rpc_reply">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="rpc_wait"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#e0e0e0"/>
+				</stateChange>
+			</action>
+
+			<action id="action_rpc_dispatch">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="eventField" value="name"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+			</action>
+
+			<!-- lock -->
+
+			<test id="test_lock_wait_with_missing_unlock_event">
+				<if>
+					<condition>
+						<stateAttribute type="eventField" value="context.session_label"/>
+						<stateAttribute type="constant" value="Thread"/>
+						<stateAttribute type="eventField" value="context.thread_name"/>
+						<stateValue type="string" value="lock_wait"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_lock_wait">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="lock_wait"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#e0e0e0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="requested_lock"/>
+					<stateValue type="eventField" value="lock"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Lock"/>
+					<stateAttribute type="eventField" value="lock"/>
+					<stateValue type="eventField" value="owner"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Lock"/>
+					<stateAttribute type="eventField" value="lock"/>
+					<stateAttribute type="constant" value="unlocker"/>
+					<stateValue type="null"/>
+				</stateChange>
+			</action>
+
+			<action id="action_lock_unlock">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Lock"/>
+					<stateAttribute type="eventField" value="lock"/>
+					<stateValue type="eventField" value="next_owner"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Lock"/>
+					<stateAttribute type="eventField" value="lock"/>
+					<stateAttribute type="constant" value="unlocker"/>
+					<stateValue type="eventField" value="context.thread_name"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="next_owner"/>
+					<stateValue type="string" value="lock_ready"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="next_owner"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="next_owner"/>
+					<stateAttribute type="constant" value="requested_lock"/>
+					<stateValue type="null"/>
+				</stateChange>
+			</action>
+
+			<!-- Kernel::await_signal() -->
+
+			<test id="test_kernel_await_signal">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="Kernel::await_signal()"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_kernel_await_signal">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="signal_wait"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#e0e0e0"/>
+				</stateChange>
+			</action>
+
+			<test id="test_kernel_await_signal_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="Kernel::await_signal() finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- checkpoint duration -->
+
+			<test id="test_checkpoint_duration">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="type"/>
+						<stateValue type="int" value="1"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_checkpoint_duration">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="eventField" value="name"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+			</action>
+
+			<test id="test_checkpoint_duration_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="type"/>
+						<stateValue type="int" value="2"/>
+					</condition>
+				</if>
+			</test>
+
+
+			<!--  Jitsi-specific -->
+
+
+			<!-- handle_rx_packets -->
+
+			<test id="test_handle_rx_packets">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets()"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_handle_rx_packets">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="handle_rx_packets"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+			</action>
+						
+			<test id="test_handle_rx_packets_audio">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_handle_rx_packets_audio">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="handle_rx_packets: audio"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_handle_rx_packets_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="handle_rx_packets() finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- recvfrom() -->
+
+			<test id="test_socket_fs_recvfrom">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="socket_fs_recvfrom(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_socket_fs_recvfrom">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="socket_fs_recvfrom()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_socket_fs_recvfrom_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="socket_fs_recvfrom() finished"/>
+					</condition>
+				</if>
+			</test>
+			
+			<!-- BaseChannel::OnRtpPacket() -->
+
+			<test id="test_base_channel_on_rtp_packet">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="BaseChannel::OnRtpPacket(): audio: seq"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_base_channel_on_rtp_packet">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="OnRtpPacket()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_base_channel_on_rtp_packet_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="BaseChannel::OnRtpPacket() finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- BaseChannel::OnRtpPacket() async -->
+
+			<test id="test_base_channel_on_rtp_packet_async">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="BaseChannel::OnRtpPacket() async"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_base_channel_on_rtp_packet_async">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="OnRtpPacket() async"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_base_channel_on_rtp_packet_async_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="BaseChannel::OnRtpPacket() async finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- NetEqImpl::InsertPacket() -->
+
+			<test id="test_neteqimpl_insert_packet_internal">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="NetEqImpl::InsertPacketInternal(): seq"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_neteqimpl_insert_packet_internal">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="NetEqImpl::InsertPacketInternal()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_neteqimpl_insert_packet_internal_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="NetEqImpl::InsertPacketInternal() finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- NetEqImpl::ExtractPackets() -->
+
+			<test id="test_neteqimpl_extract_packets">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="NetEqImpl::ExtractPackets(): seq"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_neteqimpl_extract_packets">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="NetEqImpl::ExtractPackets()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#0000ff"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_neteqimpl_extract_packets_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="NetEqImpl::ExtractPackets() finished"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- RtpSenderAudio::SendAudio() -->
+
+			<test id="test_rtp_sender_audio_send_audio">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="RtpSenderAudio::SendAudio(): seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_rtp_sender_audio_send_audio">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="RtpSenderAudio::SendAudio()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#00ff00"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_rtp_sender_audio_send_audio_finished">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="RtpSenderAudio::SendAudio(): seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<!-- BaseChannel::SendPacket() thread 1-->
+
+			<test id="test_base_channel_send_packet">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 1: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_base_channel_send_packet">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="BaseChannel::SendPacket()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#00ff00"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_base_channel_send_packet_finished">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 1: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<!-- BaseChannel::SendPacket() thread 2 -->
+
+			<test id="test_base_channel_send_packet_2">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 2: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_base_channel_send_packet_2">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="BaseChannel::SendPacket() thread 2"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#00ff00"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_base_channel_send_packet_2_finished">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="BaseChannel::SendPacket() thread 2: audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<!-- socket_fs_sendto() -->
+
+			<test id="test_socket_fs_sendto">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="socket_fs_sendto(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="1"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<action id="action_socket_fs_sendto">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="socket_fs_sendto()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#00ff00"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="sequence_number"/>
+					<stateValue type="eventField" value="data"/>
+				</stateChange>
+			</action>
+
+			<test id="test_socket_fs_sendto_finished">
+				<if>
+					<and>
+						<condition>
+							<stateValue type="eventField" value="name"/>
+							<stateValue type="string" value="socket_fs_sendto(): audio: seq"/>
+						</condition>
+						<condition>
+							<stateValue type="eventField" value="type"/>
+							<stateValue type="int" value="2"/>
+						</condition>
+					</and>
+				</if>
+			</test>
+
+			<!-- TimedWait() -->
+
+			<test id="test_timed_wait">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="MessagePumpDefault::Run(): calling TimedWait()"/>
+					</condition>
+				</if>
+			</test>
+
+			<action id="action_timed_wait">
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateValue type="string" value="TimedWait()"/>
+				</stateChange>
+				<stateChange>
+					<stateAttribute type="eventField" value="context.session_label"/>
+					<stateAttribute type="constant" value="Thread"/>
+					<stateAttribute type="eventField" value="context.thread_name"/>
+					<stateAttribute type="constant" value="color"/>
+					<stateValue type="string" value="#a0a0a0"/>
+				</stateChange>
+			</action>
+
+			<test id="test_timed_wait_finished">
+				<if>
+					<condition>
+						<stateValue type="eventField" value="name"/>
+						<stateValue type="string" value="MessagePumpDefault::Run(): TimedWait() returned"/>
+					</condition>
+				</if>
+			</test>
+
+			<!-- fsm -->
+
+			<fsm id="blocking" initial="initial">
+				<state id="initial">
+
+					<!-- thread destroyed -->
+
+					<transition event="Checkpoint"
+					            cond="test_thread_destroyed"
+					            action="action_thread_destroyed"
+					            target="initial"/>
+
+					<!-- RPC -->
+
+					<transition event="Rpc_call"
+					            action="action_save_thread_state:action_rpc_call"
+					            target="initial"/>
+
+					<transition event="Rpc_returned"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<transition event="Rpc_reply"
+					            action="action_rpc_reply"
+					            target="initial"/>
+
+					<transition event="Rpc_dispatch"
+					            action="action_rpc_dispatch"
+					            target="initial"/>
+
+					<!-- lock -->
+
+					<transition event="Lock_wait"
+								cond="test_lock_wait_with_missing_unlock_event"
+					            action="action_reset_thread_state:action_save_thread_state:action_lock_wait"
+					            target="initial"/>
+
+					<transition event="Lock_wait"
+					            action="action_save_thread_state:action_lock_wait"
+					            target="initial"/>
+
+					<transition event="Lock_unlock"
+					            action="action_lock_unlock"
+					            target="initial"/>
+
+					<transition event="Lock_locked"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- Kernel::await_signal() -->
+
+					<transition event="Checkpoint"
+					            cond="test_kernel_await_signal"
+					            action="action_save_thread_state:action_kernel_await_signal"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_kernel_await_signal_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+
+					<!-- Jitsi-specific -->
+
+
+					<!-- handle_rx_packets() -->
+
+					<transition event="Checkpoint"
+					            cond="test_handle_rx_packets"
+					            action="action_save_thread_state:action_handle_rx_packets"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_handle_rx_packets_audio"
+					            action="action_handle_rx_packets_audio"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_handle_rx_packets_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- socket_fs_recvfrom() -->
+
+					<transition event="Checkpoint"
+					            cond="test_socket_fs_recvfrom"
+					            action="action_save_thread_state:action_socket_fs_recvfrom"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_socket_fs_recvfrom_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- BaseChannel::OnRtpPacket() -->
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_on_rtp_packet"
+					            action="action_save_thread_state:action_base_channel_on_rtp_packet"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_on_rtp_packet_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- BaseChannel::OnRtpPacket() async -->
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_on_rtp_packet_async"
+					            action="action_save_thread_state:action_base_channel_on_rtp_packet_async"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_on_rtp_packet_async_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- NetEqImpl::InsertPacketInternal() -->
+
+					<transition event="Checkpoint"
+					            cond="test_neteqimpl_insert_packet_internal"
+					            action="action_save_thread_state:action_neteqimpl_insert_packet_internal"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_neteqimpl_insert_packet_internal_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- NetEqImpl::ExtractPackets() -->
+
+					<transition event="Checkpoint"
+					            cond="test_neteqimpl_extract_packets"
+					            action="action_save_thread_state:action_neteqimpl_extract_packets"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_neteqimpl_extract_packets_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- send direction -->
+
+					<!-- RtpSenderAudio::SendAudio() -->
+
+					<transition event="Checkpoint"
+					            cond="test_rtp_sender_audio_send_audio"
+					            action="action_save_thread_state:action_rtp_sender_audio_send_audio"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_rtp_sender_audio_send_audio_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- BaseChannel::SendPacket() -->
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_send_packet"
+					            action="action_save_thread_state:action_base_channel_send_packet"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_send_packet_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- BaseChannel::SendPacket() thread 2 -->
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_send_packet_2"
+					            action="action_save_thread_state:action_base_channel_send_packet_2"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_base_channel_send_packet_2_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- socket_fs_sendto() -->
+
+					<transition event="Checkpoint"
+					            cond="test_socket_fs_sendto"
+					            action="action_save_thread_state:action_socket_fs_sendto"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_socket_fs_sendto_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+					<!-- TimedWait() -->
+
+					<transition event="Checkpoint"
+					            cond="test_timed_wait"
+					            action="action_save_thread_state:action_timed_wait"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_timed_wait_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+
+					<!-- not Jitsi-specific -->
+
+
+					<!-- checkpoint duration -->
+
+					<transition event="Checkpoint"
+					            cond="test_checkpoint_duration"
+					            action="action_save_thread_state:action_checkpoint_duration"
+					            target="initial"/>
+
+					<transition event="Checkpoint"
+					            cond="test_checkpoint_duration_finished"
+					            action="action_restore_thread_state"
+					            target="initial"/>
+
+				</state>
+			</fsm>
+
+		</patternHandler>
+
+	</pattern>
+
+</tmfxml>
