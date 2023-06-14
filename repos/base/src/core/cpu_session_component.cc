@@ -61,7 +61,8 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
 		thread = new (&_thread_alloc)
 			Cpu_thread_component(
 				cap(), _thread_ep, _pager_ep, *pd, _trace_control_area,
-				_trace_sources, weight, _weight_to_quota(weight.value),
+				_trace_sources, _wait_for_trace,
+				weight, _weight_to_quota(weight.value),
 				_thread_affinity(affinity), _label, thread_name,
 				_priority, utcb);
 	};
@@ -267,6 +268,7 @@ Cpu_session_component::Cpu_session_component(Rpc_entrypoint         &session_ep,
 	_quota(quota), _ref(0),
 	_native_cpu(*this, args)
 {
+//Genode::log("Cpu_session_component(): args: ", Genode::Cstring(args));
 	Arg a = Arg_string::find_arg(args, "priority");
 	if (a.valid()) {
 		_priority = (unsigned)a.ulong_value(0);
@@ -274,6 +276,10 @@ Cpu_session_component::Cpu_session_component(Rpc_entrypoint         &session_ep,
 		/* clamp priority value to valid range */
 		_priority = min((unsigned)(PRIORITY_LIMIT - 1), _priority);
 	}
+
+	Arg wait_for_trace_arg = Arg_string::find_arg(args, "wait_for_trace");
+	if (wait_for_trace_arg.valid())
+		_wait_for_trace = true;
 }
 
 

@@ -64,6 +64,9 @@ class Main
 		Timer::Periodic_timeout<Main> _period {
 			_timer, *this, &Main::_handle_period, _config.period_us };
 
+		Signal_handler<Main> _subjects_changed_handler {
+			_env.ep(), *this, &Main::_handle_subjects_changed };
+
 		Heap          _heap            { _env.ram(), _env.rm() };
 		Monitor_tree  _monitors_0      { };
 		Monitor_tree  _monitors_1      { };
@@ -203,8 +206,6 @@ class Main
 
 		void _handle_period(Duration)
 		{
-			_update_monitors();
-
 			Monitor_tree &monitors = _monitors_switch ? _monitors_1 : _monitors_0;
 
 			log("\nReport ", _report_id++, "\n");
@@ -214,13 +215,25 @@ class Main
 			_print_monitors(_heap, monitors, detail);
 		}
 
+		void _handle_subjects_changed()
+		{
+Genode::log("_handle_subjects_changed()");
+			_update_monitors();
+		}
+
 	public:
 
 		Main(Env &env) : _env(env)
 		{
+//Timer::Connection timer(env);
+//timer.msleep(10000);
+
+			_trace.subjects_changed_sigh(_subjects_changed_handler);
+
 			/*
-			 * We skip the initial monitor update as the periodic timeout triggers
-			 * the update immediately for the first time.
+			 * We skip the initial monitor update as the "subjects changed"
+			 * signal handler triggers the update immediately for the first
+			 * time.
 			 */
 		}
 };
