@@ -671,6 +671,13 @@ void Sandbox::Child::filter_session_args(Service::Name const &service,
 		if (!permitted)
 			Arg_string::remove_arg(args, "managing_system");
 	}
+
+	/*
+	 * Request to set the 'wait' flag in the trace control area if
+	 * configured in the '<start>' node.
+	 */
+	if ((service == Cpu_session::service_name()) && _wait_for_trace)
+		Arg_string::set_arg(args, args_len, "wait_for_trace", "yes");
 }
 
 

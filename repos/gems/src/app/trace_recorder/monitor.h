@@ -119,11 +119,17 @@ class Trace_recorder::Monitor
 		                                                   TRACE_SESSION_ARG_BUFFER,
 		                                                   0 };
 
+		Signal_handler<Monitor>        _subjects_changed_handler { _env.ep(),
+		                                                           *this,
+		                                                           &Monitor::_handle_subjects_changed };
+
 		Signal_handler<Monitor>        _timeout_handler  { _env.ep(),
 		                                                   *this,
 		                                                   &Monitor::_handle_timeout };
 
 		Timestamp_calibrator           _ts_calibrator    { _env, _rtc, _timer };
+
+		bool                           _enabled          { false };
 
 		/* built-in backends */
 		Ctf::Backend                   _ctf_backend      { _env,   _ts_calibrator, _backends };
@@ -131,6 +137,7 @@ class Trace_recorder::Monitor
 
 		/* methods */
 		Session_policy _session_policy(Trace::Subject_info const &info, Xml_node config);
+		void           _handle_subjects_changed();
 		void           _handle_timeout();
 		void           _add_new_subjects();
 
@@ -140,6 +147,7 @@ class Trace_recorder::Monitor
 		: _env(env),
 		  _alloc(alloc)
 		{
+			_trace.subjects_changed_sigh(_subjects_changed_handler);
 			_timer.sigh(_timeout_handler);
 		}
 

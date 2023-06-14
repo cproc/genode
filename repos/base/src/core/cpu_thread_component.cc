@@ -41,7 +41,31 @@ void Cpu_thread_component::session_exception_sigh(Signal_context_capability sigh
 
 void Cpu_thread_component::start(addr_t ip, addr_t sp)
 {
-	_platform_thread.start((void *)ip, (void *)sp);
+	if (_wait_for_trace && 0) {
+		_start_ip = ip;
+		_start_sp = sp;
+		_waiting_for_trace = true;
+Genode::raw("start(): ", (void*)_start_ip, ", ", (void*)_start_sp);
+	} else
+		_platform_thread.start((void *)ip, (void *)sp);
+}
+
+
+void Cpu_thread_component::start_by_trace_monitor()
+{
+Genode::raw("start_by_trace_monitor(): ", _wait_for_trace, ", ", _waiting_for_trace, ", ", (void*)_start_ip, ", ", (void*)_start_sp);
+
+	if (_wait_for_trace) {
+
+		_wait_for_trace = false;
+		_trace_control_slot.control().wait_for_trace(false);
+
+		if (_waiting_for_trace) {
+			/* 'start()' has been called already */
+			_waiting_for_trace = false;
+			_platform_thread.start((void *)_start_ip, (void *)_start_sp);
+		}
+	}
 }
 
 
@@ -105,3 +129,7 @@ Dataspace_capability Cpu_thread_component::trace_policy()
 	return _trace_source.policy();
 }
 
+void Cpu_thread_component::trace_start_sigh(Signal_context_capability sigh)
+{
+	_trace_source.trace_start_sigh(sigh);
+}
