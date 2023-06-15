@@ -19,6 +19,7 @@
 #include <dataspace/client.h>
 #include <util/construct_at.h>
 #include <cpu_thread/client.h>
+#include <trace/probe.h>
 
 /* local includes */
 #include <base/internal/trace_control.h>
@@ -264,7 +265,8 @@ Genode::raw(&dummy, ": Trace::Logger::init(): trace_start_blockade.block() retur
 
 //Genode::raw(&dummy, ": Trace::Logger::init(): enabled");
 
-Thread::trace("first");
+//Thread::trace("first");
+GENODE_TRACE_CHECKPOINT_NAMED(0, "first");
 
 }
 
