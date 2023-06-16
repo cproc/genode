@@ -61,7 +61,14 @@ struct Main_thread : Thread
 	Main_thread()
 	:
 		Thread(Weight::DEFAULT_WEIGHT, "main", MAIN_THREAD_STACK_SIZE, Type::MAIN)
-	{ }
+	{
+		/* initialize trace control (except in core) */
+		if (_cpu_session) {
+			Dataspace_capability ds = _cpu_session->trace_control();
+			if (ds.valid())
+				_trace_control = env_deprecated()->rm_session()->attach(ds);
+		}
+	}
 
 	/**********************
 	 ** Thread interface **
