@@ -31,6 +31,13 @@
 #include <region_map.h>
 #include <config.h>
 
+/*
+ * XXX move declaration to base-internal header
+ */
+namespace Genode {
+	extern bool inhibit_tracing;
+}
+
 using namespace Linker;
 
 namespace Linker {
@@ -817,6 +824,13 @@ void Component::construct(Genode::Env &env)
 		error("LD: exception during program load: '", Current_exception(), "'");
 		throw;
 	}
+
+	/*
+	 * Tracing had to be inhibited until the binary got attached
+	 * at its fixed location to avoid region conflicts with tracing-
+	 * related dataspaces.
+	 */
+	Genode::inhibit_tracing = false;
 
 	/* print loaded object information */
 	try {

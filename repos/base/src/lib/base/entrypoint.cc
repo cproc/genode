@@ -29,7 +29,6 @@ using namespace Genode;
  */
 namespace Genode {
 
-	extern bool inhibit_tracing;
 	void call_global_static_constructors();
 	void destroy_signal_thread();
 }
@@ -299,9 +298,6 @@ namespace {
 
 		void construct()
 		{
-			/* enable tracing support */
-			Genode::inhibit_tracing = false;
-
 			Genode::call_global_static_constructors();
 			Genode::init_signal_transmitter(env);
 			Genode::init_tracing(env);
