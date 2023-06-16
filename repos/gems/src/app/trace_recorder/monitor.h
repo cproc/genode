@@ -24,6 +24,7 @@
 
 /* Genode includes */
 #include <base/registry.h>
+#include <os/buffered_xml.h>
 #include <os/session_policy.h>
 #include <os/vfs.h>
 #include <trace/trace_buffer.h>
@@ -105,6 +106,7 @@ class Trace_recorder::Monitor
 
 		Env                           &_env;
 		Allocator                     &_alloc;
+		Constructible<Buffered_xml>    _config           { };
 		Registry<Attached_buffer>      _trace_buffers    { };
 		Policies                       _policies         { };
 		Backends                       _backends         { };
@@ -130,6 +132,7 @@ class Trace_recorder::Monitor
 		/* methods */
 		Session_policy _session_policy(Trace::Subject_info const &info, Xml_node config);
 		void           _handle_timeout();
+		void           _add_new_subjects();
 
 	public:
 
