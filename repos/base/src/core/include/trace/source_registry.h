@@ -71,14 +71,24 @@ class Core::Trace::Source
 			virtual Info trace_source_info() const = 0;
 		};
 
+		/**
+		 * Interface for starting a thread
+		 */
+		struct Thread_starter : Interface
+		{
+			virtual void start_by_trace_monitor() = 0;
+		};
+
 	private:
 
-		unsigned      const  _unique_id;
-		Info_accessor const &_info;
-		Control             &_control;
-		Dataspace_capability _policy { };
-		Dataspace_capability _buffer { };
-		Source_owner  const *_owner_ptr = nullptr;
+		unsigned            const  _unique_id;
+		Info_accessor       const &_info;
+		Control                   &_control;
+		Dataspace_capability       _policy { };
+		Dataspace_capability       _buffer { };
+		Source_owner        const *_owner_ptr = nullptr;
+		Thread_starter            *_thread_starter { };
+		Signal_context_capability  _trace_start_sigh { };
 
 		static unsigned _alloc_unique_id();
 
@@ -109,9 +119,18 @@ class Core::Trace::Source
 
 		void trace(Dataspace_capability policy, Dataspace_capability buffer)
 		{
+Genode::raw("trace()");
 			_buffer = buffer;
 			_policy = policy;
 			_control.trace();
+#if 1
+			if (_trace_start_sigh.valid()) {
+Genode::raw("trace(): submitting signal");
+				Signal_transmitter(_trace_start_sigh).submit();
+			}
+#endif
+			if (_thread_starter)
+				_thread_starter->start_by_trace_monitor();
 		}
 
 		void enable()  { _control.enable(); }
@@ -145,6 +164,22 @@ class Core::Trace::Source
 		Dataspace_capability buffer()    const { return _buffer; }
 		Dataspace_capability policy()    const { return _policy; }
 		unsigned             unique_id() const { return _unique_id; }
+
+		void thread_starter(Thread_starter *thread_starter)
+		{
+			_thread_starter = thread_starter;
+		}
+
+		void trace_start_sigh(Signal_context_capability sigh)
+		{
+Genode::raw("trace_start_sigh()");
+			_trace_start_sigh = sigh;
+
+			if (_trace_start_sigh.valid() && _control.to_be_enabled()) {
+Genode::raw("trace_start_sigh(): submitting signal");
+				Signal_transmitter(_trace_start_sigh).submit();
+			}
+		}
 };
 
 
@@ -155,10 +190,25 @@ class Core::Trace::Source
  */
 class Core::Trace::Source_registry
 {
+	public:
+
+		struct Observer : List<Observer>::Element
+		{
+			Signal_context_capability sigh { };
+		};
+
 	private:
 
-		Mutex        _mutex   { };
-		List<Source> _entries { };
+		Mutex          _mutex     { };
+		List<Source>   _entries   { };
+		List<Observer> _observers { };
+
+		void _notify_observers()
+		{
+			for (Observer *observer = _observers.first();
+			     observer; observer = observer->next())
+				Signal_transmitter(observer->sigh).submit();
+		}
 
 	public:
 
@@ -171,12 +221,15 @@ class Core::Trace::Source_registry
 			Mutex::Guard guard(_mutex);
 
 			_entries.insert(entry);
+			_notify_observers();
 		}
 
 		void remove(Source *entry)
 		{
 			Mutex::Guard guard(_mutex);
+
 			_entries.remove(entry);
+			_notify_observers();
 		}
 
 
@@ -194,6 +247,18 @@ class Core::Trace::Source_registry
 				}
 		}
 
+		void add_observer(Observer *observer)
+		{
+			_observers.insert(observer);
+
+			/* send initial signal */
+			Signal_transmitter(observer->sigh).submit();
+		}
+
+		void remove_observer(Observer *observer)
+		{
+			_observers.remove(observer);
+		}
 };
 
 #endif /* _CORE__INCLUDE__TRACE__SOURCE_REGISTRY_H_ */

@@ -13,18 +13,56 @@
 
 /* Genode includes */
 #include <base/component.h>
+#include <base/sleep.h>
 #include <timer_session/connection.h>
 #include <trace/timestamp.h>
 
 using namespace Genode;
 
 
+struct Test_thread : Genode::Thread
+{
+	Test_thread(Genode::Env &env) : Thread(env, "thread", 8192) { }
+
+	void entry() override
+	{
+int dummy;
+Genode::raw(&dummy, ": entry()");
+		for (unsigned i = 0; i <= 100; i++) {
+			Thread::trace(String<32>("thread ", i, " ").string());
+		}
+	}
+};
+
+extern "C" void wait_for_continue();
+
 void Component::construct(Genode::Env &env)
 {
-	Timer::Connection timer(env);
-	for (unsigned i = 0; ; i++) {
-		timer.msleep(100);
-		Thread::trace(String<32>(i, " ").string());
+//wait_for_continue();
+
+int dummy;
+Genode::raw(&dummy, ": Component::construct()");
+
+//	Thread::trace("sync main thread first");
+
+//	static Timer::Connection timer(env);
+
+	static Test_thread t(env);
+	t.start();
+
+Genode::raw("Component::construct(): calling wait_and_dispatch_one_io_signal()");
+
+	/* handle trace start signal of thread */
+//	env.ep().wait_and_dispatch_one_io_signal();
+
+Genode::raw("Component::construct(): wait_and_dispatch_one_io_signal() returned");
+
+	for (unsigned i = 0; i <= 100; i++) {
+//		Genode::log("main ", i);
+		Thread::trace(String<32>("main ", i, " ").string());
+//		timer.msleep(100);
 	}
+
+	Genode::sleep_forever();
 	env.parent().exit(0);
 }

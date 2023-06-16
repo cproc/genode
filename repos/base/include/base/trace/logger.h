@@ -32,17 +32,20 @@ struct Genode::Trace::Logger
 {
 	private:
 
-		Thread_capability  thread_cap     { };
-		Cpu_session       *cpu            { nullptr };
-		Control           *control        { nullptr };
-		bool               enabled        { false };
-		unsigned           policy_version { 0 };
-		Policy_module     *policy_module  { 0 };
-		Buffer            *buffer         { nullptr };
-		size_t             max_event_size { 0 };
-		bool               pending_init   { false };
+		Thread_capability  thread_cap             { };
+		Cpu_session       *cpu                    { nullptr };
+		Control           *control                { nullptr };
+		bool               enabled                { false };
+		unsigned           policy_version         { 0 };
+		Policy_module     *policy_module          { 0 };
+		Buffer            *buffer                 { nullptr };
+		size_t             max_event_size         { 0 };
+		bool               pending_init           { false };
+		Blockade           trace_start_blockade   { };
+		bool               _ignore_wait_for_trace { false };
 
 		bool _evaluate_control();
+		void _handle_trace_start();
 
 		/*
 		 * Noncopyable
@@ -61,6 +64,8 @@ struct Genode::Trace::Logger
 		void init_pending(bool val) { pending_init = val; }
 
 		void init(Thread_capability, Cpu_session*, Control*);
+
+		void ignore_wait_for_trace() { _ignore_wait_for_trace = true; }
 
 		/**
 		 * Log binary data to trace buffer

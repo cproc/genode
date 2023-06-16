@@ -58,6 +58,11 @@ class Signal_handler_thread : Thread, Blockade
 		Signal_handler_thread(Env &env)
 		: Thread(env, "signal handler", STACK_SIZE)
 		{
+			/*
+			 * This thread cannot wait for the trace start signal.
+			 */
+			_trace_logger.ignore_wait_for_trace();
+
 			start();
 
 			/*

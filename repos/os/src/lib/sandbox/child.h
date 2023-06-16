@@ -145,6 +145,9 @@ class Sandbox::Child : Child_policy, Routed_service::Wakeup
 		 */
 		bool const _use_ld = _start_node->xml().attribute_value("ld", true);
 
+		bool const _wait_for_trace =
+			_start_node->xml().attribute_value("wait_for_trace", false);
+
 		Default_route_accessor &_default_route_accessor;
 		Default_caps_accessor  &_default_caps_accessor;
 		Ram_limit_accessor     &_ram_limit_accessor;

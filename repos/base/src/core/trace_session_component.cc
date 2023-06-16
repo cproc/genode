@@ -49,6 +49,20 @@ size_t Session_component::subject_infos()
 }
 
 
+void Session_component::subjects_changed_sigh(Signal_context_capability sigh)
+{
+	Genode::raw("subjects_changed_sigh");
+
+	if (_sources_observer.sigh.valid())
+		_sources.remove_observer(&_sources_observer);
+
+	_sources_observer.sigh = sigh;
+
+	if (_sources_observer.sigh.valid())
+		_sources.add_observer(&_sources_observer);
+}
+
+
 Policy_id Session_component::alloc_policy(size_t size)
 {
 	if (size > _argument_buffer.size())
@@ -151,4 +165,7 @@ Session_component::Session_component(Rpc_entrypoint  &ep,
 Session_component::~Session_component()
 {
 	_policies.destroy_policies_owned_by(*this);
+
+	if (_sources_observer.sigh.valid())
+		_sources.remove_observer(&_sources_observer);
 }

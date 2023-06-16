@@ -70,10 +70,17 @@ Session_policy Trace_recorder::Monitor::_session_policy(Trace::Subject_info cons
 }
 
 
+void Trace_recorder::Monitor::_handle_subjects_changed()
+{
+	if (!_enabled)
+		return;
+
+	_add_new_subjects();
+}
+
+
 void Trace_recorder::Monitor::_handle_timeout()
 {
-	_add_new_subjects();
-
 	_trace_buffers.for_each([&] (Attached_buffer &buf) {
 		buf.process_events(*_trace_directory);
 	});
@@ -171,7 +178,7 @@ void Trace_recorder::Monitor::start(Xml_node config)
 	_trace_directory.construct(_env, _alloc, config, _rtc);
 
 	/* find matching subjects according to config and start tracing */
-	_add_new_subjects();
+//	_add_new_subjects();
 
 	/* register timeout */
 	unsigned period_ms { 0 };
@@ -181,11 +188,15 @@ void Trace_recorder::Monitor::start(Xml_node config)
 		period_ms = config.attribute_value("period_ms", period_ms);
 
 	_timer.trigger_periodic(period_ms * 1000);
+
+	_enabled = true;
 }
 
 
 void Trace_recorder::Monitor::stop()
 {
+	_enabled = false;
+
 	_timer.trigger_periodic(0);
 
 	_trace_buffers.for_each([&] (Attached_buffer &buf) {

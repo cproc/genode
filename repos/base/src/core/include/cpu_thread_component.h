@@ -33,7 +33,8 @@ namespace Core { class Cpu_thread_component; }
 
 class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
                                    private List<Cpu_thread_component>::Element,
-                                   public  Trace::Source::Info_accessor
+                                   public  Trace::Source::Info_accessor,
+                                   public  Trace::Source::Thread_starter
 {
 	public:
 
@@ -52,6 +53,10 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		Thread_name         const _name;
 		Platform_thread           _platform_thread;
 		bool                const _bound_to_pd;
+		bool                      _wait_for_trace { };
+		bool                      _waiting_for_trace { };
+		addr_t                    _start_ip { };
+		addr_t                    _start_sp { };
 
 		bool _bind_to_pd(Pd_session_component &pd)
 		{
@@ -145,6 +150,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		                     Pd_session_component      &pd,
 		                     Trace::Control_area       &trace_control_area,
 		                     Trace::Source_registry    &trace_sources,
+		                     bool                       wait_for_trace,
 		                     Cpu_session::Weight        weight,
 		                     size_t                     quota,
 		                     Affinity::Location         location,
@@ -159,6 +165,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 			_session_label(label), _name(name),
 			_platform_thread(quota, name.string(), priority, location, utcb),
 			_bound_to_pd(_bind_to_pd(pd)),
+			_wait_for_trace(wait_for_trace),
 			_trace_control_slot(trace_control_area),
 			_trace_sources(trace_sources),
 			_managed_thread_cap(_ep, *this),
@@ -172,6 +179,8 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 
 			_address_space_region_map.add_client(_rm_client);
 			_platform_thread.pager(_rm_client);
+			_trace_control_slot.control().wait_for_trace(_wait_for_trace);
+			_trace_source.thread_starter(this);
 			_trace_sources.insert(&_trace_source);
 		}
 
@@ -195,6 +204,12 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 			         _platform_thread.affinity() };
 		}
 
+
+		/*********************************************
+		 ** Trace::Source::Thread_starter interface **
+		 *********************************************/
+
+		void start_by_trace_monitor() override;
 
 		/************************
 		 ** Accessor functions **
@@ -231,6 +246,7 @@ class Core::Cpu_thread_component : public  Rpc_object<Cpu_thread>,
 		unsigned trace_control_index() override;
 		Dataspace_capability trace_buffer() override;
 		Dataspace_capability trace_policy() override;
+		void trace_start_sigh(Signal_context_capability) override;
 };
 
 #endif /* _CORE__INCLUDE__CPU_THREAD_COMPONENT_H_ */

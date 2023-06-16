@@ -27,7 +27,7 @@ struct Genode::Trace::Connection : Genode::Connection<Genode::Trace::Session>,
 	template <typename FUNC>
 	auto _retry(FUNC func) -> decltype(func())
 	{
-		return retry_with_upgrade(Ram_quota{8*1024}, Cap_quota{2}, func);
+		return retry_with_upgrade(Ram_quota{8*1024}, Cap_quota{10}, func);
 	}
 
 	/**

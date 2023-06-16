@@ -140,9 +140,9 @@ class Genode::Thread
 		 */
 		enum Type { NORMAL, MAIN };
 
-	private:
-
 		Trace::Logger _trace_logger { };
+
+	private:
 
 		/**
 		 * Return 'Trace::Logger' instance of calling thread

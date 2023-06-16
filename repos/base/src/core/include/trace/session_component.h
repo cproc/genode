@@ -46,6 +46,7 @@ class Core::Trace::Session_component
 		Subject_registry             _subjects;
 		unsigned                     _policy_cnt { 0 };
 		Attached_ram_dataspace       _argument_buffer;
+		Source_registry::Observer    _sources_observer { };
 
 	public:
 
@@ -73,6 +74,7 @@ class Core::Trace::Session_component
 		Dataspace_capability dataspace();
 		size_t subjects();
 		size_t subject_infos();
+		void subjects_changed_sigh(Signal_context_capability) override;
 
 		Policy_id alloc_policy(size_t) override;
 		Dataspace_capability policy(Policy_id) override;

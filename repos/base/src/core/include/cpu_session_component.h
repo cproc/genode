@@ -56,6 +56,7 @@ class Core::Cpu_session_component : public  Session_object<Cpu_session>,
 		                                                       session */
 		Trace::Source_registry    &_trace_sources;
 		Trace::Control_area        _trace_control_area;
+		bool                       _wait_for_trace { false };
 
 		/*
 		 * Members for quota accounting
