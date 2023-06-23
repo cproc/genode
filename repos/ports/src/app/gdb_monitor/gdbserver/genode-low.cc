@@ -618,13 +618,13 @@ extern "C" int initial_breakpoint_handler(CORE_ADDR addr)
 void genode_set_initial_breakpoint_at(unsigned long addr)
 {
 	/*
-	 * 'current_thread' must be valid for 'set_breakpoint_at()',
+	 * 'current_process()' must be valid for 'set_breakpoint_at()',
 	 * so we use the first thread in any case.
 	 */
-	struct thread_info *saved_thread = current_thread;
-	current_thread = get_first_thread();
+	process_info *saved_process = current_process();
+	switch_to_process(get_first_process());
 	set_breakpoint_at(addr, initial_breakpoint_handler);
-	current_thread = saved_thread;
+	switch_to_process(saved_process);
 }
 
 
