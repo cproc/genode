@@ -33,8 +33,8 @@ void test_thread_sigsegv()
 
 void *test_thread_start(void*)
 {
-	test_thread_step();
-	test_thread_sigsegv();
+//	test_thread_step();
+//	test_thread_sigsegv();
 	return nullptr;
 }
 
@@ -73,11 +73,14 @@ int func1()
 
 int main()
 {
-	func1();
+//	func1();
 
-	pthread_t test_thread;
-	pthread_create(&test_thread, nullptr, test_thread_start, nullptr);
-	pthread_join(test_thread, nullptr);
+	for (;;) {
+		pthread_t test_thread;
+		pthread_create(&test_thread, nullptr, test_thread_start, nullptr);
+		pthread_join(test_thread, nullptr);
+//		for (;;);
+	}
 
 	return 0;
 }
