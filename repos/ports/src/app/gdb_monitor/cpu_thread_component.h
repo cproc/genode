@@ -20,7 +20,6 @@
 #include <cpu_thread/client.h>
 
 #include "config.h"
-#include "append_list.h"
 #include "cpu_session_component.h"
 
 extern "C" int delete_gdb_breakpoint_at(long long where);
@@ -28,11 +27,11 @@ extern "C" int delete_gdb_breakpoint_at(long long where);
 namespace Gdb_monitor { class Cpu_thread_component; }
 
 class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
-                                          public Append_list<Cpu_thread_component>::Element
+                                          public Registry<Cpu_thread_component>::Element
 {
 	private:
 
-		static constexpr bool  _verbose = false;
+		static constexpr bool  _verbose = /*false*/true;
 
 		Cpu_session_component &_cpu_session_component;
 		Cpu_thread_client      _parent_cpu_thread;
@@ -52,6 +51,14 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 		Signal_handler<Cpu_thread_component> _exception_handler;
 		Signal_handler<Cpu_thread_component> _sigstop_handler;
 		Signal_handler<Cpu_thread_component> _sigint_handler;
+		Signal_handler<Cpu_thread_component> _sigsegv_handler;
+
+		/*
+		 * This signal handler is called from 'wait_and_dispatch_one_io_signal()'
+		 * and it is the only IO signal expected to occur in the target
+		 * entrypoint.
+		 */
+		Io_signal_handler<Cpu_thread_component> _sigchld_handler;
 
 		int  _pipefd[2];
 		bool _initial_sigtrap_pending = true;
@@ -65,38 +72,29 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 		bool _set_breakpoint_at_first_instruction(addr_t ip);
 		void _remove_breakpoint_at_first_instruction();
 
+		void _deliver_signal(int signo);
+
 		void _handle_exception();
 		void _handle_sigstop();
 		void _handle_sigint();
+		void _handle_sigchld();
+		void _handle_sigsegv();
 
 	public:
 
-		Cpu_thread_component(Cpu_session_component   &cpu_session_component,
-		                     Capability<Pd_session>   pd,
-		                     Cpu_session::Name const &name,
-		                     Affinity::Location       affinity,
-		                     Cpu_session::Weight      weight,
-		                     addr_t                   utcb,
-		                     int const                new_thread_pipe_write_end,
-		                     int const                breakpoint_len,
-		                     unsigned char const     *breakpoint_data);
+		Cpu_thread_component(Registry<Cpu_thread_component> &registry,
+		                     Cpu_session_component          &cpu_session_component,
+		                     Capability<Pd_session>          pd,
+		                     Cpu_session::Name const        &name,
+		                     Affinity::Location              affinity,
+		                     Cpu_session::Weight             weight,
+		                     addr_t                          utcb,
+		                     int const                       new_thread_pipe_write_end,
+		                     int const                       breakpoint_len,
+		                     unsigned char const            *breakpoint_data,
+		                     Entrypoint                     &signal_ep);
 
 		~Cpu_thread_component();
-
-		Signal_context_capability exception_signal_context_cap()
-		{
-			return _exception_handler;
-		}
-
-		Signal_context_capability sigstop_signal_context_cap()
-		{
-			return _sigstop_handler;
-		}
-
-		Signal_context_capability sigint_signal_context_cap()
-		{
-			return _sigint_handler;
-		}
 
 		Thread_capability thread_cap() { return cap(); }
 		unsigned long lwpid() { return _lwpid; }
@@ -119,8 +117,6 @@ class Gdb_monitor::Cpu_thread_component : public Rpc_object<Cpu_thread>,
 		}
 
 		int send_signal(int signo);
-
-		int deliver_signal(int signo);
 
 		/**************************
 		 ** CPU thread interface **

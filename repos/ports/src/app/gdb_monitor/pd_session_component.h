@@ -123,7 +123,7 @@ class Gdb_monitor::Pd_session_component : public Rpc_object<Pd_session>
 			_pd.ref_account(pd); }
 
 		void transfer_quota(Capability<Pd_session> pd, Cap_quota amount) override {
-			warning("Pd_session::transfer_quota not implemented"); }
+			_pd.transfer_quota(pd, amount); }
 
 		Cap_quota cap_quota() const override { return _pd.cap_quota(); }
 		Cap_quota used_caps() const override { return _pd.used_caps(); }
