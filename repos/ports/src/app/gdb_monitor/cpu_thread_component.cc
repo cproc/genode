@@ -19,6 +19,7 @@
 /* libc includes */
 #include <signal.h>
 #include <unistd.h>
+#include <libc/component.h>
 
 
 static unsigned long new_lwpid = GENODE_MAIN_LWPID;
@@ -57,32 +58,53 @@ void Cpu_thread_component::_remove_breakpoint_at_first_instruction()
 
 void Cpu_thread_component::_handle_exception()
 {
-	deliver_signal(SIGTRAP);
+Genode::log("_handle_exception()");
+	_deliver_signal(SIGTRAP);
+Genode::log("_handle_exception() finished");
 }
 
 
 void Cpu_thread_component::_handle_sigstop()
 {
-	deliver_signal(SIGSTOP);
+Genode::log("_handle_sigstop()");
+
+	_deliver_signal(SIGSTOP);
 }
 
 
 void Cpu_thread_component::_handle_sigint()
 {
-	deliver_signal(SIGINT);
+Genode::log("_handle_sigint");
+	_deliver_signal(SIGINT);
 }
 
 
-Cpu_thread_component::Cpu_thread_component(Cpu_session_component   &cpu_session_component,
-		                                   Capability<Pd_session>   pd,
-                                           Cpu_session::Name const &name,
-                                           Affinity::Location       affinity,
-                                           Cpu_session::Weight      weight,
-                                           addr_t                   utcb,
-                                           int const                new_thread_pipe_write_end,
-                                           int const                breakpoint_len,
-                                           unsigned char const     *breakpoint_data)
-:
+void Cpu_thread_component::_handle_sigsegv()
+{
+Genode::log("_handle_sigsegv");
+	_deliver_signal(SIGSEGV);
+}
+
+
+void Cpu_thread_component::_handle_sigchld()
+{
+Genode::log("_handle_sigchld");
+	_deliver_signal(SIGCHLD);
+}
+
+
+Cpu_thread_component::Cpu_thread_component(Registry<Cpu_thread_component> &registry,
+                                           Cpu_session_component          &cpu_session_component,
+		                                   Capability<Pd_session>          pd,
+                                           Cpu_session::Name const        &name,
+                                           Affinity::Location              affinity,
+                                           Cpu_session::Weight             weight,
+                                           addr_t                          utcb,
+                                           int const                       new_thread_pipe_write_end,
+                                           int const                       breakpoint_len,
+                                           unsigned char const            *breakpoint_data,
+                                           Entrypoint                     &signal_ep)
+:   Registry<Cpu_thread_component>::Element(registry, *this),
 	_cpu_session_component(cpu_session_component),
 	_parent_cpu_thread(
 		_cpu_session_component.parent_cpu_session().create_thread(pd,
@@ -93,26 +115,32 @@ Cpu_thread_component::Cpu_thread_component(Cpu_session_component   &cpu_session_
 	_new_thread_pipe_write_end(new_thread_pipe_write_end),
 	_breakpoint_len(breakpoint_len),
 	_breakpoint_data(breakpoint_data),
-	_exception_handler(_cpu_session_component.signal_ep(), *this,
+	_lwpid(new_lwpid++),
+	_exception_handler(signal_ep, *this,
 	                   &Cpu_thread_component::_handle_exception),
-	_sigstop_handler(_cpu_session_component.signal_ep(), *this,
+	_sigstop_handler(signal_ep, *this,
 	                 &Cpu_thread_component::_handle_sigstop),
-	_sigint_handler(_cpu_session_component.signal_ep(), *this,
-	                &Cpu_thread_component::_handle_sigint)
+	_sigint_handler(signal_ep, *this,
+	                &Cpu_thread_component::_handle_sigint),
+	_sigsegv_handler(signal_ep, *this,
+	                 &Cpu_thread_component::_handle_sigsegv),
+	_sigchld_handler(signal_ep, *this,
+	                 &Cpu_thread_component::_handle_sigchld)
 {
-	_cpu_session_component.thread_ep().manage(this);
-
+Genode::log("Cpu_thread_component(", _lwpid, "): ", name);
 	if (pipe(_pipefd) != 0)
 		error("could not create pipe");
+Genode::log("Cpu_thread_component() finished");
 }
 
 
 Cpu_thread_component::~Cpu_thread_component()
 {
+Genode::log("~Cpu_thread_component(", _lwpid, ")");
 	close(_pipefd[0]);
+Genode::log("~Cpu_thread_component(", _lwpid, "): check 1");
 	close(_pipefd[1]);
-
-	_cpu_session_component.thread_ep().dissolve(this);
+Genode::log("~Cpu_thread_component(", _lwpid, ") finished");
 }
 
 
@@ -122,19 +150,34 @@ int Cpu_thread_component::send_signal(int signo)
 
 	switch (signo) {
 		case SIGSTOP:
-			Signal_transmitter(sigstop_signal_context_cap()).submit();
-			return 1;
+			if (_verbose)
+				Genode::log("send_signal(SIGSTOP)");
+			_sigstop_handler.local_submit();
+			return 0;
 		case SIGINT:
-			Signal_transmitter(sigint_signal_context_cap()).submit();
-			return 1;
+			if (_verbose)
+				Genode::log("send_signal(SIGINT)");
+			_sigint_handler.local_submit();
+			return 0;
+		case SIGCHLD:
+			if (_verbose)
+				Genode::log("send_signal(SIGCHLD)");
+			
+			_sigchld_handler.local_submit();
+			return 0;
+		case SIGSEGV:
+			if (_verbose)
+				Genode::log("send_signal(SIGSEGV)");
+			_sigsegv_handler.local_submit();
+			return 0;
 		default:
 			error("unexpected signal ", signo);
-			return 0;
+			return -1;
 	}
 }
 
 
-int Cpu_thread_component::deliver_signal(int signo)
+void Cpu_thread_component::_deliver_signal(int signo)
 {
 	if ((signo == SIGTRAP) && _initial_sigtrap_pending) {
 
@@ -192,6 +235,10 @@ int Cpu_thread_component::deliver_signal(int signo)
 				if (_lwpid != GENODE_MAIN_LWPID)
 					log("delivering initial SIGSTOP to thread ", _lwpid);
 			break;
+		case SIGCHLD:
+			if (_verbose)
+				log("delivering SIGCHLD to thread ", _lwpid);
+			break;
 		default:
 			error("unexpected signal ", signo);
 	}
@@ -207,47 +254,60 @@ int Cpu_thread_component::deliver_signal(int signo)
 	 */
 	if (signo == SIGINFO)
 		write(_new_thread_pipe_write_end, &_lwpid, sizeof(_lwpid));
-
-	return 0;
 }
 
 Dataspace_capability Cpu_thread_component::utcb()
 {
+Genode::log("Cpu_thread_component::utcb()");
 	return _parent_cpu_thread.utcb();
 }
 
 
 void Cpu_thread_component::start(addr_t ip, addr_t sp)
 {
-	_lwpid = new_lwpid++;
+Genode::log("Cpu_thread_component::start(", _lwpid, "): ip: ", Genode::Hex(ip), ", sp: ", Genode::Hex(sp));
 	_initial_ip = ip;
 
 	/* register the exception handler */
-	exception_sigh(exception_signal_context_cap());
+	exception_sigh(_exception_handler);
+Genode::log("Cpu_thread_component::start(", _lwpid, ") check 1");
 
 	/* set breakpoint at first instruction */
-	if (lwpid() == GENODE_MAIN_LWPID)
+
+	if (lwpid() == GENODE_MAIN_LWPID) {
+Genode::log("Cpu_thread_component::start(", _lwpid, ") check 1.1");
 		_set_breakpoint_at_first_instruction(ip);
-	else
+	} else {
+Genode::log("Cpu_thread_component::start(", _lwpid, ") check 1.2");
 		genode_set_initial_breakpoint_at(ip);
+	}
+
+Genode::log("Cpu_thread_component::start(", _lwpid, ") check 2");
 
 	_parent_cpu_thread.start(ip, sp);
+Genode::log("Cpu_thread_component::start(", _lwpid, ") finished");
 }
 
 
 void Cpu_thread_component::pause()
 {
+Genode::log("Cpu_thread_component::pause()");
+
 	unsigned loop_cnt = 0;
 
 	/* required semantic for gdb is that thread is paused with valid state */
 	for (;;) {
+Genode::log("Cpu_thread_component::pause() calling _parent_cpu_thread.pause()");
 
 		_parent_cpu_thread.pause();
+Genode::log("Cpu_thread_component::pause(): _parent_cpu_thread.pause() returned");
 
 		try {
+			Genode::log("Cpu_thread_component::pause(): calling _parent_cpu_thread.state()");
 			/* check if the thread state is valid */
 			_parent_cpu_thread.state();
 			/* the thread is paused */
+			Genode::log("Cpu_thread_component::pause(): _parent_cpu_thread.state() returned");
 			return;
 		} catch (State_access_failed) {
 			loop_cnt ++;
@@ -257,12 +317,15 @@ void Cpu_thread_component::pause()
 				                ". times, continue looping");
 		}
 	}
+Genode::log("Cpu_thread_component::pause() finished");
 }
 
 
 void Cpu_thread_component::resume()
 {
+Genode::log("Cpu_thread_component::resume(", _lwpid, ")");
 	_parent_cpu_thread.resume();
+Genode::log("Cpu_thread_component::resume(", _lwpid, ") finished");
 }
 
 
@@ -280,7 +343,10 @@ void Cpu_thread_component::state(Thread_state const &state)
 
 Thread_state Cpu_thread_component::state()
 {
-	return _parent_cpu_thread.state();
+//	Genode::log("Cpu_thread_component::state(): calling _parent_cpu_thread.state()");
+	Thread_state res = _parent_cpu_thread.state();
+//	Genode::log("Cpu_thread_component::state(): _parent_cpu_thread.state() returned");
+	return res;
 }
 
 
