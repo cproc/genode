@@ -24,9 +24,6 @@
 /* libc includes */
 #include <sys/signal.h>
 
-/* genode-low.cc */
-extern void genode_remove_thread(unsigned long lwpid);
-
 using namespace Genode;
 using namespace Gdb_monitor;
 
@@ -39,82 +36,7 @@ Cpu_session &Cpu_session_component::parent_cpu_session()
 
 Rpc_entrypoint &Cpu_session_component::thread_ep()
 {
-	return _ep;
-}
-
-
-Entrypoint &Cpu_session_component::signal_ep()
-{
-	return _signal_ep;
-}
-
-
-Thread_capability Cpu_session_component::thread_cap(unsigned long lwpid)
-{
-	Cpu_thread_component *cpu_thread = _thread_list.first();
-	while (cpu_thread) {
-		if (cpu_thread->lwpid() == lwpid)
-			return cpu_thread->thread_cap();
-		cpu_thread = cpu_thread->next();
-	}
-	return Thread_capability();
-}
-
-
-Cpu_thread_component *Cpu_session_component::lookup_cpu_thread(unsigned long lwpid)
-{
-	Cpu_thread_component *cpu_thread = _thread_list.first();
-	while (cpu_thread) {
-		if (cpu_thread->lwpid() == lwpid)
-			return cpu_thread;
-		cpu_thread = cpu_thread->next();
-	}
-	return nullptr;
-}
-
-
-Cpu_thread_component *Cpu_session_component::lookup_cpu_thread(Thread_capability thread_cap)
-{
-	Cpu_thread_component *cpu_thread = _thread_list.first();
-	while (cpu_thread) {
-		if (cpu_thread->thread_cap().local_name() == thread_cap.local_name())
-			return cpu_thread;
-		cpu_thread = cpu_thread->next();
-	}
-	return 0;
-}
-
-
-unsigned long Cpu_session_component::lwpid(Thread_capability thread_cap)
-{
-	return lookup_cpu_thread(thread_cap)->lwpid();
-}
-
-
-int Cpu_session_component::signal_pipe_read_fd(Thread_capability thread_cap)
-{
-	return lookup_cpu_thread(thread_cap)->signal_pipe_read_fd();
-}
-
-
-int Cpu_session_component::send_signal(Thread_capability thread_cap,
-                                       int signo)
-{
-	Cpu_thread_component *cpu_thread = lookup_cpu_thread(thread_cap);
-
-	cpu_thread->pause();
-
-	switch (signo) {
-		case SIGSTOP:
-			Signal_transmitter(cpu_thread->sigstop_signal_context_cap()).submit();
-			return 1;
-		case SIGINT:
-			Signal_transmitter(cpu_thread->sigint_signal_context_cap()).submit();
-			return 1;
-		default:
-			error("unexpected signal ", signo);
-			return 0;
-	}
+	return _env.ep().rpc_ep();
 }
 
 
@@ -126,23 +48,25 @@ int Cpu_session_component::send_signal(Thread_capability thread_cap,
 
 void Cpu_session_component::handle_unresolved_page_fault()
 {
+Genode::log("Cpu_session_component::handle_unresolved_page_fault()");
 	/*
 	 * It can happen that the thread state of the thread which caused the
 	 * page fault is not accessible yet. In that case, we'll retry until
 	 * it is accessible.
 	 */
 
-	while (1) {
+	bool found { false };
 
-		Thread_capability thread_cap = first();
+	do {
 
-		while (thread_cap.valid()) {
+		for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+
+			if (found)
+				return;
 
 			try {
 
-				Cpu_thread_component *cpu_thread = lookup_cpu_thread(thread_cap);
-
-				Thread_state thread_state = cpu_thread->state();
+				Thread_state thread_state = cpu_thread.state();
 
 				if (thread_state.unresolved_page_fault) {
 
@@ -150,18 +74,17 @@ void Cpu_session_component::handle_unresolved_page_fault()
 					 * On base-foc it is necessary to pause the thread before
 					 * IP and SP are available in the thread state.
 					 */
-					cpu_thread->pause();
-					cpu_thread->deliver_signal(SIGSEGV);
+					cpu_thread.pause();
+					cpu_thread.send_signal(SIGSEGV);
 
-					return;
+					found = true;
 				}
 
 			} catch (Cpu_thread::State_access_failed) { }
 
-			thread_cap = next(thread_cap);
-		}
+		});
 
-	}
+	} while (!found);
 }
 
 
@@ -185,13 +108,14 @@ Mutex &Cpu_session_component::stop_new_threads_mutex()
 
 int Cpu_session_component::handle_initial_breakpoint(unsigned long lwpid)
 {
-	Cpu_thread_component *cpu_thread = _thread_list.first();
-	while (cpu_thread) {
-		if (cpu_thread->lwpid() == lwpid)
-			return cpu_thread->handle_initial_breakpoint();
-		cpu_thread = cpu_thread->next();
-	}
-	return 0;
+	int result = 0;
+
+	for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+		if (cpu_thread.lwpid() == lwpid)
+			result = cpu_thread.handle_initial_breakpoint();
+	});
+
+	return result;
 }
 
 
@@ -201,12 +125,8 @@ void Cpu_session_component::pause_all_threads()
 
 	stop_new_threads(true);
 
-	for (Cpu_thread_component *cpu_thread = _thread_list.first();
-	     cpu_thread;
-		 cpu_thread = cpu_thread->next()) {
-
-		cpu_thread->pause();
-	}
+	for_each_thread([] (Cpu_thread_component &cpu_thread) {
+		cpu_thread.pause(); });
 }
 
 
@@ -216,33 +136,26 @@ void Cpu_session_component::resume_all_threads()
 
 	stop_new_threads(false);
 
-	for (Cpu_thread_component *cpu_thread = _thread_list.first();
-	     cpu_thread;
-		 cpu_thread = cpu_thread->next()) {
-
-		cpu_thread->single_step(false);
-		cpu_thread->resume();
-	}
+	for_each_thread([] (Cpu_thread_component &cpu_thread) {
+		cpu_thread.single_step(false);
+		cpu_thread.resume();
+	});
 }
 
 
-Thread_capability Cpu_session_component::first()
+void Cpu_session_component::destroy_thread(unsigned long lwpid)
 {
-	Cpu_thread_component *cpu_thread = _thread_list.first();
-	if (cpu_thread)
-		return cpu_thread->thread_cap();
-	else
-		return Thread_capability();
-}
+Genode::log("Cpu_session_component::destroy_thread(): ", lwpid);
+	for_each_thread([&] (Cpu_thread_component &cpu_thread) {
 
+		if (cpu_thread.lwpid() != lwpid)
+			return;
 
-Thread_capability Cpu_session_component::next(Thread_capability thread_cap)
-{
-	Cpu_thread_component *next_cpu_thread = lookup_cpu_thread(thread_cap)->next();
-	if (next_cpu_thread)
-		return next_cpu_thread->thread_cap();
-	else
-		return Thread_capability();
+		destroy(_md_alloc, &cpu_thread);
+	});
+Genode::log("Cpu_session_component::destroy_thread() finished");
+
+	_kill_thread_semaphore.up();
 }
 
 
@@ -252,33 +165,82 @@ Thread_capability Cpu_session_component::create_thread(Capability<Pd_session> pd
                                                        Weight weight,
                                                        addr_t utcb)
 {
+count++;
+Genode::log("Cpu_session_component::create_thread(", name, "): count: ", count);
 	Cpu_thread_component *cpu_thread =
-		new (_md_alloc) Cpu_thread_component(*this, _core_pd, name,
-		                                     affinity, weight, utcb,
+		new (_md_alloc) Cpu_thread_component(_thread_registry, *this, _core_pd,
+		                                     name, affinity, weight, utcb,
 		                                     _new_thread_pipe_write_end,
 		                                     _breakpoint_len,
-		                                     _breakpoint_data);
+		                                     _breakpoint_data,
+		                                     _env.ep());
 
-	_thread_list.append(cpu_thread);
+	_env.ep().manage(*cpu_thread);
 
-	return cpu_thread->cap();
+Genode::log("Cpu_session_component::create_thread() check 1");
+
+	Thread_capability cap = cpu_thread->cap();
+Genode::log("Cpu_session_component::create_thread() finished");
+	return cap;
 }
 
 
 void Cpu_session_component::kill_thread(Thread_capability thread_cap)
 {
-	Cpu_thread_component *cpu_thread = lookup_cpu_thread(thread_cap);
+	/*
+	 * The thread must be destroyed by the main entrypoint
+	 * to avoid deadlocks with the thread registry and
+	 * monitor jobs.
+	 */
+Genode::log("Cpu_session_component::kill_thread(): count: ", count);
+count--;
 
-	if (cpu_thread) {
-		if (cpu_thread->lwpid())
-			genode_remove_thread(cpu_thread->lwpid());
-		_thread_list.remove(cpu_thread);
-		destroy(_md_alloc, cpu_thread);
-	} else
-		error(__PRETTY_FUNCTION__, ": "
-		      "could not find thread info for the given thread capability");
+	Thread_capability parent_thread_cap;
 
-	_parent_cpu_session.kill_thread(thread_cap);
+	for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+
+		if (!(cpu_thread.thread_cap() == thread_cap))
+			return;
+
+		parent_thread_cap = cpu_thread.parent_thread_cap();
+
+		/*
+		 * Must be called by target ep to avoid a potential
+		 * deadlock on base-nova when 'cleanup_call()' would
+		 * do an IPC otherwise.
+		 */
+		_env.ep().dissolve(cpu_thread);
+
+		/*
+		 * The signal makes gdbserver remove its internal
+		 * thread representation and the 'Cpu_thread_component'
+		 * gets destroyed by the receiver as well.
+		 */
+		cpu_thread.send_signal(SIGCHLD);
+
+Genode::log("Cpu_session_component::kill_thread(): sent SIGCHLD");
+	});
+//Genode::log("Cpu_session_component::kill_thread(): check");
+
+	/*
+	 * Wait until the 'Cpu_thread_component' has been destroyed
+	 * to make sure that the parent thread capability is not used
+	 * anymore.
+	 */
+
+Genode::log("Cpu_session_component::kill_thread(): calling wait_and_dispatch_one_io_signal()");
+	_env.ep().wait_and_dispatch_one_io_signal();
+Genode::log("Cpu_session_component::kill_thread(): wait_and_dispatch_one_io_signal() returned");
+
+	_kill_thread_semaphore.down();
+
+Genode::log("Cpu_session_component::kill_thread(): calling _parent_cpu_session.kill_thread()");
+
+		_parent_cpu_session.kill_thread(parent_thread_cap);
+
+Genode::log("Cpu_session_component::kill_thread(): _parent_cpu_session.kill_thread() returned");
+
+Genode::log("Cpu_session_component::kill_thread() finished");
 }
 
 
@@ -307,41 +269,45 @@ Capability<Cpu_session::Native_cpu> Cpu_session_component::native_cpu()
 
 
 Cpu_session_component::Cpu_session_component(Env &env,
-                                             Rpc_entrypoint &ep,
                                              Allocator &md_alloc,
                                              Pd_session_capability core_pd,
-                                             Entrypoint &signal_ep,
                                              const char *args,
                                              Affinity const &affinity,
                                              int const new_thread_pipe_write_end,
                                              int const breakpoint_len,
                                              unsigned char const *breakpoint_data)
 : _env(env),
-  _ep(ep),
   _md_alloc(md_alloc),
   _core_pd(core_pd),
   _parent_cpu_session(env.session<Cpu_session>(_id_space_element.id(), args, affinity), *this),
-  _signal_ep(signal_ep),
   _new_thread_pipe_write_end(new_thread_pipe_write_end),
   _breakpoint_len(breakpoint_len),
   _breakpoint_data(breakpoint_data),
   _native_cpu_cap(_setup_native_cpu())
 {
-	_ep.manage(this);
+Genode::log("Cpu_session_component()");
+	_env.ep().manage(*this);
 }
 
 
 Cpu_session_component::~Cpu_session_component()
 {
-	for (Cpu_thread_component *cpu_thread = _thread_list.first();
-	     cpu_thread; cpu_thread = _thread_list.first()) {
-	     _thread_list.remove(cpu_thread);
-	     destroy(_md_alloc, cpu_thread);
-	}
+	/* 
+	 * This destructor is currently not expected to be
+	 * called and only partially implemented.
+	 *
+	 * TODO:
+	 *
+	 * - destroy all threads (see 'kill_thread()')
+	 * - make sure that the component is not accessible
+	 *   anymore via child resources
+	 */ 
+
+	Genode::error("~Cpu_session_component() called, not implemented yet");
 
 	_cleanup_native_cpu();
 
-	_ep.dissolve(this);
+	_env.ep().dissolve(*this);
 }
 
 
