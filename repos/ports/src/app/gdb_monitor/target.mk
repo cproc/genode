@@ -13,6 +13,8 @@ INC_DIR += $(GDB_CONTRIB_DIR)/include \
            $(PRG_DIR)/gdbsupport \
            $(PRG_DIR)
 
+INC_DIR += $(call select_from_repositories,src/lib/libc)
+
 LIBS    =  base stdcxx libc \
            gdbserver_platform gdbserver_libc_support
 
@@ -88,7 +90,6 @@ SRC_CC += genode-low.cc \
           cpu_session_component.cc \
           cpu_thread_component.cc \
           region_map_component.cc \
-          signal_handler_thread.cc \
           main.cc
 
 CC_OPT += -DGDBSERVER -DPKGVERSION="\"10.2\"" -DREPORT_BUGS_TO="\"\""

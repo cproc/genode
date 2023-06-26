@@ -23,7 +23,11 @@ int genode_fetch_register(int regno, unsigned long *value)
 {
 	Thread_state ts;
 
-	try { ts = get_current_thread_state(); }
+	try {
+//Genode::log("genode_fetch_register(): calling get_current_thread_state()");
+		ts = get_current_thread_state();
+//Genode::log("genode_fetch_register(): get_current_thread_state() returned");
+	}
 	catch (...) {
 		error(__PRETTY_FUNCTION__, ": could not get current thread state");
 		return -1;

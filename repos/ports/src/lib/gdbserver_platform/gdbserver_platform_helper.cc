@@ -11,9 +11,8 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#include <cpu_thread/client.h>
-
 #include "cpu_session_component.h"
+#include "cpu_thread_component.h"
 #include "genode_child_resources.h"
 
 #include "server.h"
@@ -35,9 +34,14 @@ Thread_state get_current_thread_state()
 
 	ptid_t ptid = current_thread->id;
 
-	Cpu_thread_client cpu_thread(csc.thread_cap(ptid.lwp()));
+	Thread_state state { };
 
-	return cpu_thread.state();
+	csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+		if (cpu_thread.lwpid() == ptid.lwp())
+			state = cpu_thread.state();
+	});
+
+	return state;
 }
 
 
@@ -47,9 +51,10 @@ void set_current_thread_state(Thread_state thread_state)
 
 	ptid_t ptid = current_thread->id;
 
-	Cpu_thread_client cpu_thread(csc.thread_cap(ptid.lwp()));
-
-	cpu_thread.state(thread_state);
+	csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+		if (cpu_thread.lwpid() == ptid.lwp())
+			cpu_thread.state(thread_state);
+	});
 }
 
 

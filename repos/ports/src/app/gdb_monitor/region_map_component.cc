@@ -55,6 +55,9 @@ Region_map_component::attach(Dataspace_capability ds_cap, size_t size,
                              Region_map::Local_addr local_addr,
                              bool executable, bool const writeable)
 {
+if (use_local_addr) {
+Genode::log("Region_map_component::attach(): ", (void*)local_addr, ", ", Genode::Hex(size));
+}
 	size_t ds_size = Dataspace_client(ds_cap).size();
 
 	if (offset < 0 || (size_t)offset >= ds_size) {
@@ -82,6 +85,7 @@ Region_map_component::attach(Dataspace_capability ds_cap, size_t size,
 
 void Region_map_component::detach(Region_map::Local_addr local_addr)
 {
+Genode::log("Region_map_component::detach(): ", (void*)local_addr);
 	_parent_region_map.detach(local_addr);
 
 	Mutex::Guard guard(_region_map_mutex);
