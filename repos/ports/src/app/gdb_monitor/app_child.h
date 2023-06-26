@@ -24,6 +24,9 @@
 /* sandbox library private includes */
 #include <sandbox/server.h>
 
+/* libc internal includes */
+#include <internal/thread_create.h>
+
 /* GDB monitor includes */
 #include "genode_child_resources.h"
 #include "cpu_session_component.h"
@@ -50,6 +53,27 @@ class Gdb_monitor::App_child : public Child_policy,
 		typedef Registry<Parent_service>          Parent_services;
 		typedef Registry<Sandbox::Routed_service> Child_services;
 
+		struct Target_ep : Genode::Entrypoint
+		{
+			Genode::Signal_handler<Target_ep> _pthread_reg_sigh;
+
+			void _handle_pthread_registration()
+			{
+				pthread_t pthread;
+				Genode::Thread *myself = Genode::Thread::myself();
+				Libc::pthread_create_from_thread(&pthread, *myself, &myself);
+			}
+
+			enum { STACK_SIZE = 4*1024*sizeof(addr_t) };
+
+			Target_ep(Genode::Env &env)
+			: Entrypoint(env, STACK_SIZE, "target_ep", Affinity::Location()),
+			  _pthread_reg_sigh(*this, *this, &Target_ep::_handle_pthread_registration)
+			{
+				_pthread_reg_sigh.local_submit();
+			}
+		};
+
 		/**
 		 * gdbserver blocks in 'select()', so a separate entrypoint is used.
 		 */
@@ -57,8 +81,7 @@ class Gdb_monitor::App_child : public Child_policy,
 		{
 			Genode::Env &genode_env;
 
-			Genode::Entrypoint  local_ep {
-				genode_env, 4*1024*sizeof(addr_t), "target_ep", Affinity::Location() };
+			Target_ep target_ep { genode_env };
 
 			Local_env(Env &genode_env) : genode_env(genode_env) { }
 
@@ -66,7 +89,7 @@ class Gdb_monitor::App_child : public Child_policy,
 			Cpu_session &cpu()                       override { return genode_env.cpu(); }
 			Region_map &rm()                         override { return genode_env.rm(); }
 			Pd_session &pd()                         override { return genode_env.pd(); }
-			Entrypoint &ep()                         override { return local_ep; }
+			Entrypoint &ep()                         override { return target_ep; }
 			Cpu_session_capability cpu_session_cap() override { return genode_env.cpu_session_cap(); }
 			Pd_session_capability pd_session_cap()   override { return genode_env.pd_session_cap(); }
 			Id_space<Parent::Client> &id_space()     override { return genode_env.id_space(); }
@@ -237,7 +260,6 @@ class Gdb_monitor::App_child : public Child_policy,
 		          char const          *unique_name,
 		          Ram_quota            ram_quota,
 		          Cap_quota            cap_quota,
-		          Entrypoint          &signal_ep,
 		          Xml_node             target_node,
 		          int const            new_thread_pipe_write_end,
 		          int const            breakpoint_len,
@@ -250,10 +272,10 @@ class Gdb_monitor::App_child : public Child_policy,
 			_ram_quota(ram_quota), _cap_quota(cap_quota),
 			_child_config(_env.ram(), _rm, target_node),
 			_config_policy("config", _child_config.dataspace(), &_env.ep().rpc_ep()),
-			_unresolved_page_fault_handler(signal_ep, *this,
+			_unresolved_page_fault_handler(_env.ep(), *this,
 			                               &App_child::_handle_unresolved_page_fault),
-			_cpu_factory(_env, _env.ep().rpc_ep(), _alloc, _pd.core_pd_cap(),
-			             signal_ep, new_thread_pipe_write_end,
+			_cpu_factory(_env, _alloc, _pd.core_pd_cap(),
+			             new_thread_pipe_write_end,
 			             breakpoint_len, breakpoint_data,
 			             &_genode_child_resources),
 			_rom_factory(_env, _env.ep().rpc_ep(), _alloc)
@@ -357,6 +379,11 @@ class Gdb_monitor::App_child : public Child_policy,
 			}
 
 			_env.parent().announce(service_name.string());
+		}
+
+		void resource_request(Parent::Resource_args const &args) override
+		{
+			error("target requests resources, not implemented yet (", args, ")");
 		}
 };
 

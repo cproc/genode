@@ -31,7 +31,7 @@
 #include "server.h"
 #include "linux-low.h"
 
-static bool verbose = false;
+static bool verbose = true;
 
 Genode::Env *genode_env;
 
@@ -238,15 +238,10 @@ static void genode_stop_thread(unsigned long lwpid)
 {
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
 
-	Cpu_thread_component *cpu_thread = csc.lookup_cpu_thread(lwpid);
-
-	if (!cpu_thread) {
-		error(__PRETTY_FUNCTION__, ": "
-		      "could not find CPU thread object for lwpid ", lwpid);
-		return;
-	}
-
-	cpu_thread->pause();
+	csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+		if (cpu_thread.lwpid() == lwpid)
+			cpu_thread.pause();
+	});
 }
 
 
@@ -259,7 +254,7 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
 
 	while(1) {
-
+Genode::log("my_waitpid(): while");
 		FD_ZERO (&readset);
 
 		if (remote_desc != -1)
@@ -269,28 +264,28 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 			FD_SET(_new_thread_pipe[0], &readset);
 
-			Thread_capability thread_cap = csc.first();
-
-			while (thread_cap.valid()) {
-				FD_SET(csc.signal_pipe_read_fd(thread_cap), &readset);
-				thread_cap = csc.next(thread_cap);
-			}
+			csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+				FD_SET(cpu_thread.signal_pipe_read_fd(), &readset); });
 
 		} else {
 
-			FD_SET(csc.signal_pipe_read_fd(csc.thread_cap(pid)), &readset);
+			csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+				if (cpu_thread.lwpid() == (unsigned long)pid)
+					FD_SET(cpu_thread.signal_pipe_read_fd(), &readset);
+			});
 		}
 
 		struct timeval wnohang_timeout = {0, 0};
 		struct timeval *timeout = (flags & WNOHANG) ? &wnohang_timeout : NULL;
+Genode::log("my_waitpid(): calling select()");
 
 		/* TODO: determine the highest fd in the set for optimization */
 		int res = select(FD_SETSIZE, &readset, 0, 0, timeout);
-
+Genode::log("my_waitpid(): select() returned: ", res);
 		if (res > 0) {
 
 			if ((remote_desc != -1) && FD_ISSET(remote_desc, &readset)) {
-
+Genode::log("input from GDB");
 				/* received input from GDB */
 
 				int cc;
@@ -298,7 +293,7 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 
 				cc = read (remote_desc, &c, 1);
 
-				if (cc == 1 && c == '\003' && current_thread != NULL) {
+				if (cc == 1 && c == '\003') {
 					/* this causes a SIGINT to be delivered to one of the threads */
 					the_target->request_interrupt();
 					continue;
@@ -341,37 +336,38 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 					*status |= (PTRACE_EVENT_CLONE << 16);
 					genode_stop_thread(GENODE_MAIN_LWPID);
 				}
-
+Genode::log("my_waitpid():initial SIGTRAP for lwpid ", _new_thread_lwpid);
 				return GENODE_MAIN_LWPID;
 
 			} else {
 
 				/* received a signal */
 
-				Thread_capability thread_cap = csc.first();
+				unsigned long lwpid { 0 };
+				int signal_pipe_read_fd { -1 };
 
-				while (thread_cap.valid()) {
-					if (FD_ISSET(csc.signal_pipe_read_fd(thread_cap), &readset))
-						break;
-					thread_cap = csc.next(thread_cap);
-				}
+				csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+					if (FD_ISSET(cpu_thread.signal_pipe_read_fd(), &readset)) {
+						lwpid = cpu_thread.lwpid();
+						signal_pipe_read_fd = cpu_thread.signal_pipe_read_fd();
+					}
+				});
 
-				if (!thread_cap.valid())
+				if (lwpid == 0)
 					continue;
 
 				int signal;
-				read(csc.signal_pipe_read_fd(thread_cap), &signal, sizeof(signal));
-
-				unsigned long lwpid = csc.lwpid(thread_cap);
+				read(signal_pipe_read_fd, &signal, sizeof(signal));
 
 				if (verbose)
 					log("thread ", lwpid, " received signal ", signal);
 
 				if (signal == SIGTRAP) {
-
+Genode::log("my_waitpid(): SIGTRAP");
 					_sigtrap_lwpid = lwpid;
 
 				} else if (signal == SIGSTOP) {
+Genode::log("my_waitpid(): received SIGSTOP for lwpid ", lwpid);
 
 					/*
 					 * Check if a SIGTRAP is pending
@@ -382,20 +378,29 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 					 * delivered first, otherwise gdbserver would single-step the thread again.
 					 */
 
-					Cpu_thread_component *cpu_thread = csc.lookup_cpu_thread(lwpid);
+					bool sigtrap_pending { false };
 
-					Thread_state thread_state = cpu_thread->state();
+					csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
 
-					if (thread_state.exception) {
-						/* resend the SIGSTOP signal */
-						csc.send_signal(cpu_thread->cap(), SIGSTOP);
+						if (cpu_thread.lwpid() != lwpid)
+							return;
+
+						Thread_state thread_state = cpu_thread.state();
+
+						if (thread_state.exception) {
+							/* resend the SIGSTOP signal */
+							cpu_thread.send_signal(SIGSTOP);
+							sigtrap_pending = true;
+						}
+					});
+
+					if (sigtrap_pending)
 						continue;
-					}
 
 				} else if (signal == SIGINFO) {
 
 					if (verbose)
-						log("received SIGINFO for new lwpid ", lwpid);
+						log("my_waitpid(): received SIGSTOP (SIGINFO) for new lwpid ", lwpid);
 
 					/*
 					 * First signal of a new thread. On Genode originally a
@@ -403,10 +408,43 @@ pid_t my_waitpid(pid_t pid, int *status, int flags)
 					 */
 
 					signal = SIGSTOP;
+
+				} else if (signal == SIGCHLD) {
+
+					if (verbose)
+						log("my_waitpid(): received SIGCHLD for lwpid ", lwpid);
+
+					/*
+					 * Now that the signal has been received, the
+					 * 'Cpu_thread_component' can finally get destroyed.
+					 */
+					csc.destroy_thread(lwpid);
+
+					WSETEXIT(*status, 0);
+
+					/* return here because of the special status */
+					return lwpid;
+
+				} else if (signal == SIGSEGV) {
+
+					if (verbose)
+						log("my_waitpid(): received SIGSEGV for lwpid ", lwpid);
+
+				} else if (signal == SIGINT) {
+
+					if (verbose)
+						log("my_waitpid(): received SIGINT for lwpid ", lwpid);
+
+				} else {
+
+					if (verbose)
+						Genode::warning("my_waitpid(): got unrecognized signal");
+
 				}
 
 				*status = W_STOPCODE(signal);
 
+Genode::log("my_waitpid() finished: ", lwpid);
 				return lwpid;
 			}
 
@@ -506,7 +544,7 @@ extern "C" int vfork()
 
 	Cap_quota const avail_cap_quota = genode_env->pd().avail_caps();
 
-	Genode::size_t const preserved_caps = 100;
+	Genode::size_t const preserved_caps = 400;
 
 	if (avail_cap_quota.value < preserved_caps) {
 		error("not enough available caps for preservation of ", preserved_caps);
@@ -519,10 +557,6 @@ extern "C" int vfork()
 
 	static Heap alloc(genode_env->ram(), genode_env->rm());
 
-	enum { SIGNAL_EP_STACK_SIZE = 2*1024*sizeof(addr_t) };
-	static Entrypoint signal_ep { *genode_env, SIGNAL_EP_STACK_SIZE,
-	                              "sig_handler", Affinity::Location() };
-
 	int breakpoint_len = 0;
 	unsigned char const *breakpoint_data =
 		the_target->sw_breakpoint_from_kind(0, &breakpoint_len);
@@ -532,7 +566,6 @@ extern "C" int vfork()
 	                                         filename.string(),
 	                                         Ram_quota{ram_quota},
 	                                         cap_quota,
-	                                         signal_ep,
 	                                         target_node,
 	                                         _new_thread_pipe[1],
 	                                         breakpoint_len,
@@ -556,19 +589,22 @@ extern "C" int vfork()
 
 extern "C" int kill(pid_t pid, int sig)
 {
+Genode::log("kill(): pid: ", pid, ", sig: ", sig);
+	int result = -1;
+
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
 
 	if (pid <= 0) pid = GENODE_MAIN_LWPID;
 
-	Thread_capability thread_cap = csc.thread_cap(pid);
+	csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
 
-	if (!thread_cap.valid()) {
-		error(__PRETTY_FUNCTION__, ": "
-		      "could not find thread capability for pid ", pid);
-		return -1;
-	}
+		if (cpu_thread.lwpid() != (unsigned long)pid)
+			return;
 
-	return csc.send_signal(thread_cap, sig);
+		result = cpu_thread.send_signal(sig);
+	});
+
+	return result;
 }
 
 
@@ -581,16 +617,14 @@ extern "C" int initial_breakpoint_handler(CORE_ADDR addr)
 
 void genode_set_initial_breakpoint_at(unsigned long addr)
 {
+	/*
+	 * 'current_thread' must be valid for 'set_breakpoint_at()',
+	 * so we use the first thread in any case.
+	 */
+	struct thread_info *saved_thread = current_thread;
+	current_thread = get_first_thread();
 	set_breakpoint_at(addr, initial_breakpoint_handler);
-}
-
-
-void genode_remove_thread(unsigned long lwpid)
-{
-	struct thread_info *thread_info =
-		find_thread_ptid(ptid_t(GENODE_MAIN_LWPID, lwpid, 0));
-	lwp_info *lwp = get_thread_lwp(thread_info);
-	the_linux_target->detach_one_lwp(lwp);
+	current_thread = saved_thread;
 }
 
 
@@ -635,15 +669,12 @@ void genode_continue_thread(unsigned long lwpid, int single_step)
 {
 	Cpu_session_component &csc = genode_child_resources().cpu_session_component();
 
-	Cpu_thread_component *cpu_thread = csc.lookup_cpu_thread(lwpid);
-
-	if (!cpu_thread) {
-		error(__func__, ": " "could not find CPU thread object for lwpid ", lwpid);
-		return;
-	}
-
-	cpu_thread->single_step(single_step);
-	cpu_thread->resume();
+	csc.for_each_thread([&] (Cpu_thread_component &cpu_thread) {
+		if (cpu_thread.lwpid() == lwpid) {
+			cpu_thread.single_step(single_step);
+			cpu_thread.resume();
+		}
+	});
 }
 
 

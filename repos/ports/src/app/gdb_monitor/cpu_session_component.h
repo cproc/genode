@@ -26,7 +26,6 @@
 #include <pd_session/capability.h>
 
 /* GDB monitor includes */
-#include "append_list.h"
 #include "genode_child_resources.h"
 
 namespace Gdb_monitor
@@ -53,10 +52,11 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		Id_space<Parent::Client>::Element const  _id_space_element
 		{ _parent_client, _env.id_space() };
 
-		Rpc_entrypoint                          &_ep;
 		Allocator                               &_md_alloc;
 
 		Pd_session_capability                    _core_pd;
+
+		int count { 0 };
 
 		struct Expanding_parent_cpu_session : Cpu_session_client
 		{
@@ -87,16 +87,17 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		};
 
 		Expanding_parent_cpu_session             _parent_cpu_session;
-		Entrypoint                              &_signal_ep;
 
 		int const                                _new_thread_pipe_write_end;
 		int const                                _breakpoint_len;
 		unsigned char const                     *_breakpoint_data;
 
-		Append_list<Cpu_thread_component>        _thread_list;
+		Registry<Cpu_thread_component>           _thread_registry;
 
 		bool                                     _stop_new_threads = true;
 		Mutex                                    _stop_new_threads_mutex;
+
+		Semaphore                                _kill_thread_semaphore;
 
 		Capability<Cpu_session::Native_cpu>      _native_cpu_cap;
 
@@ -109,10 +110,8 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		 * Constructor
 		 */
 		Cpu_session_component(Env                   &env,
-		                      Rpc_entrypoint        &ep,
 		                      Allocator             &md_alloc,
 		                      Pd_session_capability  core_pd,
-		                      Entrypoint            &signal_ep,
 		                      const char            *args,
 		                      Affinity const        &affinity,
 		                      int const              new_thread_pipe_write_end,
@@ -126,13 +125,6 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 
 		Cpu_session &parent_cpu_session();
 		Rpc_entrypoint &thread_ep();
-		Entrypoint &signal_ep();
-		Thread_capability thread_cap(unsigned long lwpid);
-		unsigned long lwpid(Thread_capability thread_cap);
-		Cpu_thread_component *lookup_cpu_thread(unsigned long lwpid);
-		Cpu_thread_component *lookup_cpu_thread(Thread_capability thread_cap);
-		int signal_pipe_read_fd(Thread_capability thread_cap);
-		int send_signal(Thread_capability thread_cap, int signo);
 		void handle_unresolved_page_fault();
 		void stop_new_threads(bool stop);
 		bool stop_new_threads();
@@ -140,6 +132,19 @@ class Gdb_monitor::Cpu_session_component : public Rpc_object<Cpu_session>
 		int handle_initial_breakpoint(unsigned long lwpid);
 		void pause_all_threads();
 		void resume_all_threads();
+		void destroy_thread(unsigned long lwpid);
+
+		/**
+		 * If this function is called from the target ep,
+		 * don't call functions that could block in a libc
+		 * monitor to avoid deadlocks.
+		 */
+		template <typename FUNC>
+		void for_each_thread(FUNC const &fn)
+		{
+			_thread_registry.for_each(fn);
+		}
+
 		Thread_capability first();
 		Thread_capability next(Thread_capability);
 
@@ -168,11 +173,9 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 	private:
 
 		Env                     &_env;
-		Rpc_entrypoint          &_ep;
 
 		Allocator               &_md_alloc;
 		Pd_session_capability    _core_pd;
-		Entrypoint              &_signal_ep;
 		int const                _new_thread_pipe_write_end;
 		int const                _breakpoint_len;
 		unsigned char const     *_breakpoint_data;
@@ -182,18 +185,15 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 	public:
 
 		Local_cpu_factory(Env                    &env,
-		                  Rpc_entrypoint         &ep,
 		                  Allocator              &md_alloc,
 		                  Pd_session_capability   core_pd,
-		                  Entrypoint             &signal_ep,
 		                  int                     new_thread_pipe_write_end,
 		                  int const               breakpoint_len,
 		                  unsigned char const    *breakpoint_data,
 		                  Genode_child_resources *genode_child_resources)
-		: _env(env), _ep(ep),
+		: _env(env),
 		  _md_alloc(md_alloc),
 		  _core_pd(core_pd),
-		  _signal_ep(signal_ep),
 		  _new_thread_pipe_write_end(new_thread_pipe_write_end),
 		  _breakpoint_len(breakpoint_len),
 		  _breakpoint_data(breakpoint_data),
@@ -209,10 +209,8 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 			Cpu_session_component *cpu_session_component =
 				new (_md_alloc)
 					Cpu_session_component(_env,
-					                      _ep,
 					                      _md_alloc,
 					                      _core_pd,
-					                      _signal_ep,
 					                      args.string(),
 					                      affinity,
 					                      _new_thread_pipe_write_end,
@@ -226,7 +224,8 @@ class Gdb_monitor::Local_cpu_factory : public Cpu_service::Factory
 
 		void destroy(Cpu_session_component &session) override
 		{
-			Genode::destroy(_md_alloc, &session);
+			/* not supported yet, see '~Cpu_session_component()' */
+			//Genode::destroy(_md_alloc, &session);
 		}
 };
 
