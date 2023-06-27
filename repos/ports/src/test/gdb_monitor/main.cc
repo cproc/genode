@@ -73,10 +73,14 @@ int func1()
 
 int main()
 {
+	printf("main()\n");
+
 //	func1();
 
 	for (;;) {
 		pthread_t test_thread;
+		static int count = 0;
+printf("calling pthread_create(%d)\n", count++);
 		pthread_create(&test_thread, nullptr, test_thread_start, nullptr);
 		pthread_join(test_thread, nullptr);
 //		for (;;);
