@@ -73,10 +73,36 @@ struct Monitor::Gdb::State : Noncopyable
 
 	Constructible<Current> _current { };
 
+	bool non_stop_mode { false };
+
+	/**
+	 * Only one stop notification is sent directly, then
+	 * additional stop replies are sent as response to 'vStopped'.
+	 */
+	bool notification_in_progress { false };
+
 	void flush(Inferior_pd &pd)
 	{
 		if (_current.constructed() && _current->pd.id() == pd.id())
 			_current.destruct();
+	}
+
+	void flush(Monitored_thread &thread)
+	{
+		if (_current.constructed() &&
+		    _current->thread.constructed() &&
+		    (&_current->thread->thread == &thread))
+			_current->thread.destruct();
+	}
+
+	size_t read_memory(Inferior_pd &pd, Memory_accessor::Virt_addr at, Byte_range_ptr const &dst)
+	{
+		return _memory_accessor.read(pd, at, dst);
+	}
+
+	size_t write_memory(Inferior_pd &pd, Memory_accessor::Virt_addr at, Const_byte_range_ptr const &src)
+	{
+		return _memory_accessor.write(pd, at, src);
 	}
 
 	size_t read_memory(Memory_accessor::Virt_addr at, Byte_range_ptr const &dst)
@@ -99,19 +125,44 @@ struct Monitor::Gdb::State : Noncopyable
 
 	bool current_defined() const { return _current.constructed(); }
 
+	/**
+	 * Select current inferior and thread (id == 0 means any).
+	 *
+	 * GDB initially sends a Hgp0.0 command but assumes that inferior 1
+	 * is current. Avoid losing the default current inferior as set by
+	 * 'Main::_create_session' by keeping the previously chosen inferior.
+	 */
 	void current(Inferiors::Id pid, Threads::Id tid)
 	{
+		if ((pid.value == 0) && _current.constructed()) {
+
+			pid.value = _current->pd.id();
+
+			if ((tid.value == 0) && _current->thread.constructed()) {
+				/* keep the current thread */
+				return;
+			}
+		}
+
 		_current.destruct();
 
 		inferiors.for_each<Inferior_pd &>([&] (Inferior_pd &inferior) {
-			if (inferior.id() != pid.value)
+
+			if ((_current.constructed() &&
+			     _current->thread.constructed()) ||
+			    ((pid.value > 0) && (inferior.id() != pid.value)))
 				return;
 
 			_current.construct(inferior);
 
 			inferior._threads.for_each<Monitored_thread &>([&] (Monitored_thread &thread) {
-				if (thread.id() == tid.value)
-					_current->thread.construct(thread); });
+
+				if (_current->thread.constructed() ||
+				    ((tid.value > 0) && (thread.id() != tid.value)))
+				    return;
+
+				_current->thread.construct(thread);
+			});
 		});
 	}
 
@@ -267,28 +318,26 @@ struct H : Command_without_separator
 	{
 		log("H command args: ", Cstring(args.start, args.num_bytes));
 
-		/* 'g' for other operations, 'p' as prefix of thread-id syntax */
-		with_skipped_prefix(args, "gp", [&] (Const_byte_range_ptr const &args) {
+		/* 'g' for other operations */
+		with_skipped_prefix(args, "g", [&] (Const_byte_range_ptr const &args) {
 
-			auto dot_separated_arg_value = [&] (unsigned i, auto &value)
-			{
-				with_argument(args, Sep { '.' }, i, [&] (Const_byte_range_ptr const &arg) {
-					with_null_terminated(arg, [&] (char const * const str) {
-						ascii_to(str, value); }); });
-			};
+			int pid = 0, tid = 0;
+			thread_id(args, pid, tid);
 
-			unsigned pid = 0, tid = 0;
+			if (pid == -1) {
+				Genode::error("pid -1 not supported");
+				gdb_error(out, 1);
+				return;
+			}
 
-			dot_separated_arg_value(0, pid);
-			dot_separated_arg_value(1, tid);
+			if (tid == -1) {
+				Genode::error("tid -1 not supported");
+				gdb_error(out, 1);
+				return;
+			}
 
-			/*
-			 * GDB initially sends a Hgp0.0 command but assumes that inferior 1
-			 * is current. Avoid losing the default current inferior as set by
-			 * 'Main::_create_session'.
-			 */
-			if (pid > 0)
-				state.current(Inferiors::Id { pid }, Threads::Id { tid });
+			state.current(Inferiors::Id { (unsigned)pid },
+			              Threads::Id { (unsigned)tid });
 
 			gdb_ok(out);
 		});
@@ -306,9 +355,15 @@ struct QNonStop : Command_with_separator
 {
 	QNonStop(Commands &commands) : Command_with_separator(commands, "QNonStop") { }
 
-	void execute(State &, Const_byte_range_ptr const &args, Output &out) const override
+	void execute(State &state, Const_byte_range_ptr const &args, Output &out) const override
 	{
 		log("QNonStop command args: ", Cstring(args.start, args.num_bytes));
+
+		with_null_terminated(args, [&] (char const * const str) {
+			unsigned non_stop_mode { 0 };
+			ascii_to(str, non_stop_mode);
+			state.non_stop_mode = non_stop_mode;
+		});
 
 		gdb_ok(out);
 	}
@@ -397,12 +452,56 @@ struct ask : Command_without_separator
 {
 	ask(Commands &c) : Command_without_separator(c, "?") { }
 
-	void execute(State &, Const_byte_range_ptr const &args, Output &out) const override
+	void execute(State &state, Const_byte_range_ptr const &args, Output &out) const override
 	{
 		log("? command args: ", Cstring(args.start, args.num_bytes));
 
-		gdb_response(out, [&] (Output &out) {
-			print(out, "T05"); });
+		bool handled = false;
+
+//		if (state.non_stop_mode) {
+
+		/* check current thread first */
+		if (state._current.constructed() &&
+			state._current->thread.constructed() &&
+			state._current->thread->thread.stopped_status_pending) {
+			Genode::log("?: current thread is stopped");
+			Inferior_pd &inferior = state._current->pd;
+			Monitored_thread &thread = state._current->thread->thread;
+			thread.stopped_status_pending = false;
+			long unsigned int pid = inferior.id();
+			long unsigned int tid = thread.id();
+			Genode::log("?: current thread: ", pid, ".", tid);
+			gdb_response(out, [&] (Output &out) {
+				print(out, "T", Gdb_hex((uint8_t)thread.stop_reason),
+				           "thread:p", Gdb_hex(pid), ".", Gdb_hex(tid), ";");
+			});
+			return;
+		}
+
+		state.inferiors.for_each<Inferior_pd const &>([&] (Inferior_pd const &inferior) {
+			inferior.for_each_thread([&] (Monitored_thread &thread) {
+
+				if (handled)
+					return;
+
+				if (!thread.stopped_status_pending)
+					return;
+
+				thread.stopped_status_pending = false;
+				long unsigned int pid = inferior.id();
+				long unsigned int tid = thread.id();
+				Genode::log("?: found stopped thread: ", pid, ".", tid);
+				gdb_response(out, [&] (Output &out) {
+					print(out, "T", Gdb_hex((uint8_t)thread.stop_reason),
+					           "thread:p", Gdb_hex(pid), ".", Gdb_hex(tid), ";");
+				});
+
+				handled = true;
+			});
+		});
+
+		if (!handled)
+			gdb_ok(out);
 	}
 };
 
@@ -475,6 +574,8 @@ struct X : Command_without_separator
 		addr_t const addr = comma_separated_hex_value(args, 0, addr_t(0));
 		size_t const len  = comma_separated_hex_value(args, 1, 0UL);
 
+Genode::log("X: addr: ", Genode::Hex(addr), ", len: ", len);
+
 		if (len == 0) {
 			/* packet support probing */
 			gdb_ok(out);
@@ -484,7 +585,8 @@ struct X : Command_without_separator
 		size_t written_num_bytes { 0 };
 
 		with_argument(args, Sep {':'}, 1, [&] (Const_byte_range_ptr const &arg) {
-
+			Genode::log("X: start: ", (void*)arg.start);
+			Genode::log("X: num_bytes: ", arg.num_bytes);
 			if (arg.num_bytes != len)
 				return;
 
@@ -525,10 +627,264 @@ struct D : Command_with_separator
 
 	void execute(State &, Const_byte_range_ptr const &, Output &out) const override
 	{
+		/* TODO: resume all threads */
 		gdb_ok(out);
 	}
 };
 
+
+/**
+ * Enable extended mode
+ */
+struct bang : Command_without_separator
+{
+	bang(Commands &c) : Command_without_separator(c, "!") { }
+
+	void execute(State &, Const_byte_range_ptr const &args, Output &out) const override
+	{
+		log("! command args: ", Cstring(args.start, args.num_bytes));
+
+		gdb_ok(out);
+	}
+};
+
+
+/**
+ * Report stopped threads in non-stop mode
+ */
+struct vStopped : Command_without_separator
+{
+	vStopped(Commands &c) : Command_without_separator(c, "vStopped") { }
+
+	void execute(State &state, Const_byte_range_ptr const &args, Output &out) const override
+	{
+		log("vStopped command args: ", Cstring(args.start, args.num_bytes));
+
+		bool handled = false;
+
+		/* check current thread first */
+		if (state._current.constructed() &&
+			state._current->thread.constructed() &&
+			state._current->thread->thread.stopped_status_pending) {
+			Genode::log("vStopped: current thread is stopped");
+			Inferior_pd &inferior = state._current->pd;
+			Monitored_thread &thread = state._current->thread->thread;
+			state._current->thread->thread.stopped_status_pending = false;
+			long unsigned int pid = inferior.id();
+			long unsigned int tid = thread.id();
+			Genode::log("vStopped: current thread: ", pid, ".", tid);
+			gdb_response(out, [&] (Output &out) {
+				print(out, "T", Gdb_hex((uint8_t)thread.stop_reason),
+				           "thread:p", Gdb_hex(pid), ".", Gdb_hex(tid), ";");
+			});
+			return;
+		}
+
+		state.inferiors.for_each<Inferior_pd const &>([&] (Inferior_pd const &inferior) {
+			inferior.for_each_thread([&] (Monitored_thread &thread) {
+
+				if (handled)
+					return;
+
+				if (!thread.stopped_status_pending)
+					return;
+
+				thread.stopped_status_pending = false;
+				long unsigned int pid = inferior.id();
+				long unsigned int tid = thread.id();
+				Genode::log("vStopped: found stopped thread: ", pid, ".", tid);
+				gdb_response(out, [&] (Output &out) {
+					print(out, "T", Gdb_hex((uint8_t)thread.stop_reason),
+					           "thread:p", Gdb_hex(pid), ".", Gdb_hex(tid), ";");
+				});
+
+				handled = true;
+			});
+		});
+
+		if (!handled) {
+			state.notification_in_progress = false;
+			gdb_ok(out);
+		}
+	}
+};
+
+
+/**
+ * Resume the inferior
+ */
+struct vCont : Command_without_separator
+{
+	vCont(Commands &c) : Command_without_separator(c, "vCont") { }
+
+	void execute(State &state, Const_byte_range_ptr const &args, Output &out) const override
+	{
+		log("vCont command args: ", Cstring(args.start, args.num_bytes));
+
+		bool handled = false;
+
+		with_skipped_prefix(args, "?", [&] (Const_byte_range_ptr const &) {
+
+			gdb_response(out, [&] (Output &out) {
+				print(out, "vCont;c;t"); });
+
+			handled = true;
+		});
+
+		with_skipped_prefix(args, ";", [&] (Const_byte_range_ptr const &args) {
+
+			for_each_argument(args, Sep { ';' }, [&] (Const_byte_range_ptr const &arg) {
+				log("vCont argument length: ", arg.num_bytes);
+				log("vCont argument: ", Cstring(arg.start, arg.num_bytes));
+
+				with_skipped_prefix(arg, "t", [&] (Const_byte_range_ptr const &arg) {
+
+					log("vCont argument t: ", Cstring(arg.start, arg.num_bytes));
+					int pid = -1;
+					int tid = -1;
+
+					with_skipped_prefix(arg, ":", [&] (Const_byte_range_ptr const &arg) {
+						thread_id(arg, pid, tid); });
+
+					log("vCont;t: pid: ", pid, ", tid: ", tid);
+
+					if ((pid == -1) && state._current.constructed())
+						pid = (int)state._current->pd.id();
+
+					handled = true;
+
+					state.inferiors.for_each<Inferior_pd const &>([&] (Inferior_pd const &inferior) {
+
+						if (inferior.id() != (unsigned)pid)
+							return;
+
+						inferior.for_each_thread([&] (Monitored_thread &thread) {
+
+							if ((tid != -1) && (thread.id() != (unsigned)tid))
+								return;
+
+							if (!thread.stopped) {
+								thread.pause();
+								if (!state.notification_in_progress) {
+									state.notification_in_progress = true;
+									thread.stopped_status_pending = false;
+									gdb_notification(out, [&] (Output &out) {
+										print(out, "Stop:T",
+										           Gdb_hex((uint8_t)thread.stop_reason),
+										           "thread:p",
+										           Gdb_hex(inferior.id()),
+										           ".",
+										           Gdb_hex(thread.id()),
+										           ";");
+									});
+								}
+							}
+						});
+					});
+				});
+
+				with_skipped_prefix(arg, "c", [&] (Const_byte_range_ptr const &arg) {
+
+					log("vCont argument c: ", Cstring(arg.start, arg.num_bytes));
+					int pid = -1;
+					int tid = -1;
+
+					with_skipped_prefix(arg, ":", [&] (Const_byte_range_ptr const &arg) {
+						thread_id(arg, pid, tid); });
+
+					log("vCont;c: pid: ", pid, ", tid: ", tid);
+
+					if ((pid == -1) && state._current.constructed())
+						pid = (int)state._current->pd.id();
+
+					handled = true;
+
+					state.inferiors.for_each<Inferior_pd const &>([&] (Inferior_pd const &inferior) {
+
+						if (inferior.id() != (unsigned)pid)
+							return;
+
+						inferior.for_each_thread([&] (Monitored_thread &thread) {
+
+							if ((tid != -1) && (thread.id() != (unsigned)tid))
+								return;
+
+							if (thread.stopped)
+								thread.resume();
+						});
+					});
+				});
+
+			});
+		});
+
+		if (handled) {
+			gdb_ok(out);
+			return;
+		}
+
+		warning("GDB ", name, " command unsupported: ", Cstring(args.start, args.num_bytes));
+	}
+};
+
+
+/**
+ * Read value of register
+ */
+struct p : Command_without_separator
+{
+	p(Commands &c) : Command_without_separator(c, "p") { }
+
+	void execute(State &/*state*/, Const_byte_range_ptr const &args, Output &out) const override
+	{
+		log("p command args: ", Cstring(args.start, args.num_bytes));
+
+		/* currently not supported */
+		gdb_response(out, [&] (Output &) { });
+	}
+};
+
+
+/**
+ * Read value of register
+ */
+struct vCtrlC : Command_without_separator
+{
+	vCtrlC(Commands &c) : Command_without_separator(c, "vCtrlC") { }
+
+	void execute(State &state, Const_byte_range_ptr const &args, Output &out) const override
+	{
+		log("vCtrlC command args: ", Cstring(args.start, args.num_bytes));
+
+		if (state._current.constructed() &&
+		    state._current->thread.constructed()) {
+
+			Inferior_pd &inferior = state._current->pd;
+		    Monitored_thread &thread = state._current->thread->thread;
+
+			if (!thread.stopped) {
+				thread.pause();
+				if (!state.notification_in_progress) {
+					state.notification_in_progress = true;
+					thread.stopped_status_pending = false;
+					gdb_notification(out, [&] (Output &out) {
+						print(out, "Stop:T",
+					               Gdb_hex((uint8_t)thread.stop_reason),
+					               "thread:p",
+					               Gdb_hex(inferior.id()),
+					               ".",
+					               Gdb_hex(thread.id()),
+					               ";");
+					});
+				}
+			}
+			gdb_ok(out);
+			return;
+		}
+
+		gdb_error(out, 1);
+	}
+};
 
 } /* namespace Cmd */ } /* namespace Gdb */ } /* namespace Monitor */
 
@@ -575,7 +931,12 @@ struct Monitor::Gdb::Supported_commands : Commands
 		Cmd::D,
 		Cmd::T,
 		Cmd::ask,
-		Cmd::X
+		Cmd::X,
+		Cmd::bang,
+		Cmd::vStopped,
+		Cmd::vCont,
+		Cmd::p,
+		Cmd::vCtrlC
 		> _instances { *this };
 };
 

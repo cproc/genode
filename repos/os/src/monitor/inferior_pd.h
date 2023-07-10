@@ -146,7 +146,7 @@ struct Monitor::Inferior_pd : Monitored_pd_session
 
 	void for_each_thread(auto const &fn) const
 	{
-		_threads.for_each<Monitored_thread const &>(fn);
+		_threads.for_each<Monitored_thread /*const*/ &>(fn);
 	}
 
 	static void with_inferior_pd(Entrypoint &ep, Capability<Pd_session> pd_cap,

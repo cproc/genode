@@ -20,6 +20,9 @@
 
 namespace Monitor { namespace Gdb {
 
+	static constexpr char   breakpoint_instruction[] { '\xCC' };
+	static constexpr size_t breakpoint_len { sizeof(breakpoint_instruction) };
+
 	void print_registers(Output &out, Cpu_state const &cpu);
 } }
 

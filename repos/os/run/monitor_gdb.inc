@@ -59,7 +59,7 @@ install_config {
 			<default caps="100"/>
 
 			<monitor>
-				<policy label="first-test-log" wx="yes"/>
+				<policy label="first-test-log" wait="yes" wx="yes"/>
 			</monitor>
 
 			<start name="first-test-log">
@@ -101,5 +101,6 @@ append qemu_args " -serial stdio "
 append qemu_args " -serial chardev:uart "
 append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait,ipv4 "
 
-run_genode_until {.*\[init -> monitor -> first-test-log\].*} 30
+#run_genode_until {.*\[init -> monitor -> first-test-log\].*} 30
+run_genode_until {.*response:*} 30
 set genode_id [output_spawn_id]
