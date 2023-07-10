@@ -67,7 +67,40 @@ struct Monitor::Inferior_pd : Monitored_pd_session
 
 	unsigned _page_fault_count = 0;
 
-	void _handle_page_fault() { _page_fault_count++; }
+	void _handle_page_fault()
+	{
+Genode::warning(this, ": _handle_page_fault()");
+		bool thread_found = false;
+
+		for_each_thread([&] (Monitored_thread &thread) {
+Genode::log("_handle_page_fault(): checking thread ", thread.id());
+			if (thread.stop_state != Monitored_thread::Stop_state::RUNNING)
+				return;
+
+			try {
+				Thread_state thread_state = thread.state();
+				if (thread_state.unresolved_page_fault) {
+Genode::warning("_handle_page_fault(): found thread ", thread.id());
+					thread.handle_page_fault();
+					thread_found = true;
+				}
+			} catch (Cpu_thread::State_access_failed) {
+				/* this exception occurs for running threads */
+Genode::warning("State_access_failed for thread ", thread.id());
+			}
+		});
+
+		if (!thread_found) {
+			/*
+			 * Fault caused by memory accessor
+			 *
+			 * If both an inferior thread and the memory accessor
+			 * caused a page fault, this case is not detected here
+			 * and handled by the watchdog timeout,
+			 */
+			_page_fault_count++;
+		}
+	}
 
 	/**
 	 * Keep track of allocated RAM dataspaces for wiping when freed
@@ -146,7 +179,7 @@ struct Monitor::Inferior_pd : Monitored_pd_session
 
 	void for_each_thread(auto const &fn) const
 	{
-		_threads.for_each<Monitored_thread const &>(fn);
+		_threads.for_each<Monitored_thread /*const*/ &>(fn);
 	}
 
 	static void with_inferior_pd(Entrypoint &ep, Capability<Pd_session> pd_cap,
