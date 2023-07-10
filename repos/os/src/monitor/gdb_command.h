@@ -144,6 +144,28 @@ struct Monitor::Gdb::Command : private Commands::Element, Interface
 				ascii_to_unsigned<T>(str, result, 16); }); });
 		return result;
 	}
+
+	static void thread_id(Const_byte_range_ptr const &args, int &pid, int &tid)
+	{
+		with_skipped_prefix(args, "p", [&] (Const_byte_range_ptr const &args) {
+
+			auto dot_separated_arg_value = [&] (unsigned i, auto &value)
+			{
+				with_argument(args, Sep { '.' }, i, [&] (Const_byte_range_ptr const &arg) {
+					with_null_terminated(arg, [&] (char const * const str) {
+						if (strcmp(str, "-1") == 0)
+							value = -1;
+						else
+							ascii_to_unsigned(str, value, 16);
+					});
+				});
+			};
+
+			dot_separated_arg_value(0, pid);
+			dot_separated_arg_value(1, tid);
+		});
+	};
+
 };
 
 
