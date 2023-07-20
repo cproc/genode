@@ -110,8 +110,8 @@ class Net::Network_interface
 				{
 					void *pkt_base { _source.packet_content(pkt) };
 					generate_pkt(Byte_range_ptr { (char *)pkt_base, pkt_size });
-					Size_guard size_guard1(pkt_size);
-					log_if(_verbose, "[", _label, "] snd ", Ethernet_frame::cast_from(pkt_base, size_guard1));
+					Size_guard size_guard(pkt_size);
+					log_if(_verbose, "[", _label, "] snd ", Ethernet_frame::cast_from(pkt_base, size_guard));
 					_source.try_submit_packet(pkt);
 				},
 				[&] (Packet_stream_source::Alloc_packet_error)
@@ -135,9 +135,11 @@ class Net::Network_interface
 				if (!_sink.try_ack_packet(pkt))
 					log_if(_verbose, "[", _label, "] failed to ack packet");
 			}
-			_source.wakeup();
-			_sink.wakeup();
 		}
+
+		void wakeup_source() { _source.wakeup(); };
+
+		void wakeup_sink() { _sink.wakeup(); }
 };
 
 
@@ -182,6 +184,10 @@ class Net::Uplink_session_component
 		                         Main &main);
 
 		void forward_packet(Byte_range_ptr const &src) { _net_if.forward_packet(src); }
+
+		void wakeup_source() { _net_if.wakeup_source(); };
+
+		void wakeup_sink() { _net_if.wakeup_sink(); }
 
 
 		/***************
@@ -265,6 +271,10 @@ class Net::Nic_session_component
 		void forward_packet(Byte_range_ptr const &src) { _net_if.forward_packet(src); }
 
 		void submit_link_state_signal();
+
+		void wakeup_source() { _net_if.wakeup_source(); };
+
+		void wakeup_sink() { _net_if.wakeup_sink(); }
 
 
 		/******************
@@ -432,6 +442,12 @@ void Net::Nic_session_component::_handle_pkt_stream_signal()
 			uplink_session.forward_packet(src);
 		});
 	});
+	_main.with_uplink_session([&] (Uplink_session_component &uplink_session,
+	                               Mac_address const &)
+	{
+		uplink_session.wakeup_source();
+	});
+	wakeup_sink();
 }
 
 
@@ -517,6 +533,11 @@ void Net::Uplink_session_component::_handle_pkt_stream_signal()
 			nic_session.forward_packet(src);
 		});
 	});
+	_main.for_each_nic_session([&] (Nic_session_component &nic_session)
+	{
+		nic_session.wakeup_source();
+	});
+	wakeup_sink();
 }
 
 
