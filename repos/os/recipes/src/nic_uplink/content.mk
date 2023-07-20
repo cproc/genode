@@ -3,7 +3,7 @@ MIRROR_FROM_REP_DIR := \
 		communication_buffer.cc \
 		communication_buffer.h \
 		session_env.h \
-		create_session_guard.h \
+		session_creation.h \
 		list.h \
 	)
 
