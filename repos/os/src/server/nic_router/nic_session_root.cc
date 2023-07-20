@@ -16,7 +16,7 @@
 
 /* local includes */
 #include <nic_session_root.h>
-#include <create_session_guard.h>
+#include <session_creation.h>
 #include <configuration.h>
 
 using namespace Net;
@@ -305,9 +305,9 @@ Net::Nic_session_root::Nic_session_root(Env               &env,
 
 Nic_session_component *Net::Nic_session_root::_create_session(char const *args)
 {
-	Create_session_guard guard { };
+	Session_creation<Nic_session_component> session_creation { };
 	try {
-		return guard.create_session<Nic_session_component>(
+		return session_creation.execute(
 			_env, _shared_quota, args,
 			[&] (Session_env &session_env, void *session_at, Ram_dataspace_capability ram_ds)
 			{

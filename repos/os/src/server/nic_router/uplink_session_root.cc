@@ -17,7 +17,7 @@
 /* local includes */
 #include <uplink_session_root.h>
 #include <configuration.h>
-#include <create_session_guard.h>
+#include <session_creation.h>
 
 using namespace Net;
 using namespace Genode;
@@ -137,9 +137,9 @@ Net::Uplink_session_root::Uplink_session_root(Env               &env,
 Uplink_session_component *
 Net::Uplink_session_root::_create_session(char const *args)
 {
-	Create_session_guard guard { };
+	Session_creation<Uplink_session_component> session_creation { };
 	try {
-		return guard.create_session<Uplink_session_component>(
+		return session_creation.execute(
 			_env, _shared_quota, args,
 			[&] (Session_env &session_env, void *session_at, Ram_dataspace_capability ram_ds)
 			{
