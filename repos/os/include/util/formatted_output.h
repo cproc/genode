@@ -173,7 +173,7 @@ class Genode::Hex_dump
 
 	public:
 
-		Hex_dump(Byte_range_ptr const &range)
+		Hex_dump(auto const &range)
 		: _base { (uint8_t *)range.start }, _size { range.num_bytes } { }
 
 		void print(Output &out) const
