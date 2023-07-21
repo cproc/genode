@@ -125,6 +125,14 @@ class Core::Platform_thread : Noncopyable
 		~Platform_thread();
 
 		/**
+		 * Return information about current exception state
+		 */
+		Kernel::Thread::Exception_state exception_state()
+		{
+			return _kobj->exception_state();
+		}
+
+		/**
 		 * Return information about current fault
 		 */
 		Kernel::Thread_fault fault_info() { return _kobj->fault(); }
@@ -163,7 +171,14 @@ class Core::Platform_thread : Noncopyable
 		/**
 		 * Resume this thread
 		 */
-		void resume() { Kernel::resume_thread(*_kobj); }
+		void resume()
+		{
+			if (exception_state() !=
+			    Kernel::Thread::Exception_state::NO_EXCEPTION)
+				restart();
+
+			Kernel::resume_thread(*_kobj);
+		}
 
 		/**
 		 * Set CPU quota of the thread to 'quota'
