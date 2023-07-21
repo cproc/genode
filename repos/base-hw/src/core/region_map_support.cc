@@ -43,6 +43,12 @@ void Pager_entrypoint::entry()
 			continue;
 		}
 
+		if (pt->exception_state() ==
+		    Kernel::Thread::Exception_state::EXCEPTION) {
+			po->submit_exception_signal();
+			continue;
+		}
+
 		_fault = pt->fault_info();
 
 		/* try to resolve fault directly via local region managers */
