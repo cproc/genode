@@ -104,6 +104,8 @@ struct Core::Cpu : Hw::Arm_64_cpu
 
 	static void mmu_fault(Context &, Kernel::Thread_fault &);
 
+	static void single_step(Context &, bool) { };
+
 	/**
 	 * Return kernel name of the executing CPU
 	 */
