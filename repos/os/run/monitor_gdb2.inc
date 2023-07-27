@@ -111,5 +111,5 @@ append qemu_args " -serial stdio "
 append qemu_args " -serial chardev:uart "
 append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait,ipv4 "
 
-run_genode_until {.*_handle_terminal_read_avail*} 30
+run_genode_until {.*monitor ready*} 30
 set genode_id [output_spawn_id]

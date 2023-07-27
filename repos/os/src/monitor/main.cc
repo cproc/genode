@@ -45,7 +45,8 @@ namespace Monitor {
 
 namespace Monitor { struct Main; }
 
-struct Monitor::Main : Sandbox::State_handler
+struct Monitor::Main : Sandbox::State_handler,
+                       Thread_monitor
 {
 	struct Local_pd_session : Connection<Pd_connection>, Inferior_pd
 	{
@@ -58,10 +59,13 @@ struct Monitor::Main : Sandbox::State_handler
 
 	struct Local_cpu_session : Connection<Cpu_connection>, Inferior_cpu
 	{
-		Local_cpu_session(Env &env, Session::Label const &label, Priority priority, Allocator &alloc)
+		Local_cpu_session(Env &env, Session::Label const &label,
+		                  Priority priority, Allocator &alloc,
+		                  Thread_monitor &thread_monitor)
 		:
 			Connection<Cpu_connection>(env, label, priority.value),
-			Inferior_cpu(env.ep(), _connection.cap(), label, alloc)
+			Inferior_cpu(env.ep(), _connection.cap(), label, alloc,
+			             thread_monitor)
 		{ }
 	};
 
@@ -129,6 +133,9 @@ struct Monitor::Main : Sandbox::State_handler
 				Terminal::Connection &_terminal;
 				void operator () (char const *str)
 				{
+//if (strlen(str) > 0) {
+//Genode::log("response: ", Genode::Cstring(str));
+//}
 					for (;;) {
 						size_t const num_bytes = strlen(str);
 						size_t const written_bytes = _terminal.write(str, num_bytes);
@@ -145,13 +152,16 @@ struct Monitor::Main : Sandbox::State_handler
 
 		void _handle_terminal_read_avail()
 		{
+//Genode::log("_handle_terminal_read_avail()");
 			Terminal_output output { ._write_fn { _terminal } };
 
 			for (;;) {
 				char buffer[1024] { };
 				size_t const num_bytes = _terminal.read(buffer, sizeof(buffer));
+//Genode::log("_handle_terminal_read_avail(): num_bytes: ", num_bytes);
 				if (!num_bytes)
 					return;
+//Genode::log("command: ", Genode::Cstring(buffer));
 
 				_packet_handler.execute(_state, _commands,
 				                        Const_byte_range_ptr { buffer, num_bytes },
@@ -165,11 +175,45 @@ struct Monitor::Main : Sandbox::State_handler
 			_memory_accessor.flush();
 		}
 
+		void flush(Monitored_thread &thread)
+		{
+			_state.flush(thread);
+		}
+
+		void thread_stopped(Inferior_pd &inferior, Monitored_thread &thread)
+		{
+//Genode::log("Gdb_stub::thread_stopped()");
+
+			if (_state.gdb_connected && !_state.notification_in_progress) {
+
+				_state.notification_in_progress = true;
+
+				using Stop_state = Monitored_thread::Stop_state;
+				using Stop_reply_signal = Monitored_thread::Stop_reply_signal;
+
+				thread.stop_state = Stop_state::STOPPED_REPLY_SENT;
+
+				Terminal_output output { ._write_fn { _terminal } };
+				gdb_notification(output.buffered, [&] (Output &out) {
+					print(out, "Stop:T",
+					           Gdb_hex((uint8_t)thread.stop_reply_signal),
+					           "thread:p",
+					           Gdb_hex(inferior.id()),
+					           ".",
+					           Gdb_hex(thread.id()),
+					           ";");
+					if (thread.stop_reply_signal == Stop_reply_signal::TRAP)
+						print(out, "swbreak:;");
+				});
+			}
+		}
+
 		Gdb_stub(Env &env, Inferiors &inferiors)
 		:
 			_env(env), _state(inferiors, _memory_accessor)
 		{
 			_terminal.read_avail_sigh(_terminal_read_avail_handler);
+//Genode::log("Gdb_stub(): calling _handle_terminal_read_avail()");
 			_handle_terminal_read_avail();
 		}
 	};
@@ -243,7 +287,8 @@ struct Monitor::Main : Sandbox::State_handler
 	Local_cpu_session &_create_session(Cpu_service &, Session_request const &request)
 	{
 		Local_cpu_session &session = *new (_heap)
-			Local_cpu_session(_env, request.label, _priority_from_args(request.args), _heap);
+			Local_cpu_session(_env, request.label,
+			                  _priority_from_args(request.args), _heap, *this);
 
 		session.init_native_cpu(_kernel);
 
@@ -349,6 +394,82 @@ struct Monitor::Main : Sandbox::State_handler
 		_env.parent().resource_avail_sigh(_resource_avail_handler);
 
 		_handle_config();
+
+		/* cue for run scripts to start GDB */
+		log("monitor ready");
+	}
+
+	/**
+	 * Thread_monitor interface
+	 */
+
+	void set_initial_breakpoint(Capability<Pd_session> pd,
+	                            addr_t addr,
+	                            char original_instruction[]) override
+	{
+//Genode::log("set_initial_breakpoint()");
+
+		if (!_gdb_stub.constructed()) {
+			Genode::error("set_initial_breakpoint() called without monitor config");
+			return;
+		}
+
+		Inferior_pd::with_inferior_pd(_env.ep(), pd,
+		                              [&] (Inferior_pd &inferior) {
+			_gdb_stub->_state.read_memory(inferior,
+				Memory_accessor::Virt_addr { addr },
+				Byte_range_ptr { original_instruction,
+				                 Gdb::breakpoint_instruction_len() });
+
+			_gdb_stub->_state.write_memory(inferior,
+				Memory_accessor::Virt_addr { addr },
+				Const_byte_range_ptr { Gdb::breakpoint_instruction(),
+				                       Gdb::breakpoint_instruction_len() });
+		}, [] { });
+	}
+
+	void remove_initial_breakpoint(Capability<Pd_session> pd,
+	                               addr_t addr,
+	                               char const original_instruction[]) override
+	{
+//Genode::log("remove_initial_breakpoint()");
+
+		if (!_gdb_stub.constructed()) {
+			Genode::error("remove_initial_breakpoint() called without monitor config");
+			return;
+		}
+
+		Inferior_pd::with_inferior_pd(_env.ep(), pd,
+		                              [&] (Inferior_pd &inferior) {
+			_gdb_stub->_state.write_memory(inferior,
+				Memory_accessor::Virt_addr { addr },
+				Const_byte_range_ptr { original_instruction,
+				                       Gdb::breakpoint_instruction_len() });
+		}, [] { });
+	}
+
+	void flush(Monitored_thread &thread) override
+	{
+		if (!_gdb_stub.constructed()) {
+			Genode::error("flush_thread() called without monitor config");
+			return;
+		}
+
+		_gdb_stub->flush(thread);
+	}
+
+	void thread_stopped(Capability<Pd_session> pd, Monitored_thread &thread) override
+	{
+		if (!_gdb_stub.constructed()) {
+			Genode::error("thread_stopped() called without monitor config");
+			return;
+		}
+		Inferior_pd::with_inferior_pd(_env.ep(), pd,
+		                              [&] (Inferior_pd &inferior) {
+			_gdb_stub->thread_stopped(inferior, thread);
+		}, [] { });
+
+//Genode::log("thread_stopped()");
 	}
 };
 
