@@ -166,7 +166,10 @@ class Core::Platform_thread : Noncopyable
 		/**
 		 * Enable/disable single stepping
 		 */
-		void single_step(bool) { }
+		void single_step(bool on)
+		{
+			Cpu::single_step(*_kobj->regs, on);
+		}
 
 		/**
 		 * Resume this thread
