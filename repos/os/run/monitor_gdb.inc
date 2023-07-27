@@ -1,6 +1,6 @@
 proc platform_supported { } {
 	if {[have_spec x86_64] && [have_board pc]} {
-		if {![have_spec linux] && ![have_spec foc] && ![have_spec sel4]} {
+		if {[have_spec nova] || [have_spec hw]} {
 			return 1 } }
 	return 0
 }
@@ -10,7 +10,7 @@ if {![platform_supported]} {
 	exit 0
 }
 
-build { core lib/ld init timer monitor drivers/uart test/log }
+build { core lib/ld init timer monitor drivers/uart test/monitor_gdb test/log }
 
 create_boot_directory
 
@@ -59,29 +59,29 @@ install_config {
 			<default caps="100"/>
 
 			<monitor>
-				<policy label="first-test-log" wx="yes"/>
+				<policy label="test-monitor_gdb" wait="yes" wx="yes"/>
 			</monitor>
 
-			<start name="first-test-log">
-				<resource name="RAM" quantum="2M"/>
-				<binary name="test-log"/>
+			<start name="test-monitor_gdb" caps="300">
+				<resource name="RAM" quantum="10M"/>
+				<config>
+					<vfs> <dir name="dev"> <log/> </dir> </vfs>
+					<libc stdout="/dev/log" stderr="/dev/log"/>
+				</config>
 				<route>
 					<service name="PD">  <local/> </service>
 					<service name="CPU"> <local/> </service>
 					<any-service> <parent/> </any-service>
 				</route>
 			</start>
-
-			<start name="second-test-log">
+			<start name="test-log">
 				<resource name="RAM" quantum="2M"/>
-				<binary name="test-log"/>
 				<route>
 					<service name="PD">  <local/> </service>
 					<service name="CPU"> <local/> </service>
 					<any-service> <parent/> </any-service>
 				</route>
 			</start>
-
 		</config>
 	</start>
 </config>
@@ -101,5 +101,12 @@ append qemu_args " -serial stdio "
 append qemu_args " -serial chardev:uart "
 append qemu_args " -chardev socket,id=uart,port=$local_port,host=localhost,server,nowait,ipv4 "
 
-run_genode_until {.*\[init -> monitor -> first-test-log\].*} 30
+run_genode_until {.*monitor ready*} 30
 set genode_id [output_spawn_id]
+
+# GDB loads symbols from 'debug/ld.lib.so'
+if { [have_spec nova] } {
+	exec ln -sf ld-nova.lib.so debug/ld.lib.so
+} elseif { [have_spec hw] } {
+	exec ln -sf ld-hw.lib.so debug/ld.lib.so
+}
