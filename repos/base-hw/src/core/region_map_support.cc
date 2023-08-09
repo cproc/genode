@@ -45,7 +45,11 @@ void Pager_entrypoint::entry()
 
 		if (pt->exception_state() ==
 		    Kernel::Thread::Exception_state::EXCEPTION) {
-			po->submit_exception_signal();
+			if (!po->submit_exception_signal())
+				warning("unresolvable exception: "
+				        "pd='",     pt->pd()->label(), "', "
+				        "thread='", pt->label(),       "', "
+				        "ip=",      Hex(pt->state().ip));
 			continue;
 		}
 

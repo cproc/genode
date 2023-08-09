@@ -144,12 +144,13 @@ class Core::Pager_object : private Object_pool<Pager_object>::Entry,
 		/**
 		 * Notify exception handler about the occurrence of an exception
 		 */
-		void submit_exception_signal()
+		bool submit_exception_signal()
 		{
-			if (!_exception_sigh.valid()) return;
+			if (!_exception_sigh.valid()) return false;
 
 			Signal_transmitter transmitter(_exception_sigh);
 			transmitter.submit();
+			return true;
 		}
 
 		/**
