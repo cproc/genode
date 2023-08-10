@@ -27,10 +27,10 @@ struct Genode::Cpu_state
 		BREAKPOINT    = 0x3c,
 	};
 
-	uint64_t r[31]  { 0 }; /* general purpose register 0...30 */
-	uint64_t sp     { 0 }; /* stack pointer                   */
-	uint64_t ip     { 0 }; /* instruction pointer             */
-	uint64_t ec     { 0 }; /* exception class                 */
+	addr_t r[31] { 0 }; /* general purpose register 0...30 */
+	addr_t sp    { 0 }; /* stack pointer                   */
+	addr_t ip    { 0 }; /* instruction pointer             */
+	addr_t ec    { 0 }; /* exception class                 */
 };
 
 #endif /* _INCLUDE__SPEC__ARM_64__CPU__CPU_STATE_H_ */
