@@ -7,7 +7,7 @@ of records blocks.
  #define AUDIO_DEV_AUDIO		0	/* minor of /dev/audio0 */
  #define AUDIO_DEV_AUDIOCTL	0xc0	/* minor of /dev/audioctl */
 -#define AUDIO_BUFSZ		65536	/* buffer size in bytes */
-+#define AUDIO_BUFSZ		4096	/* buffer size in bytes */
++#define AUDIO_BUFSZ		8192	/* buffer size in bytes */
  
  /*
   * mixer entries added by the audio(4) layer
