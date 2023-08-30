@@ -133,6 +133,9 @@ struct Monitor::Main : Sandbox::State_handler,
 				Terminal::Connection &_terminal;
 				void operator () (char const *str)
 				{
+if (strlen(str) > 0) {
+Genode::log("response: ", Genode::Cstring(str));
+}
 					size_t const num_bytes = strlen(str);
 					size_t const written_bytes = _terminal.write(str, num_bytes);
 					if (written_bytes != num_bytes)
@@ -153,6 +156,7 @@ struct Monitor::Main : Sandbox::State_handler,
 				size_t const num_bytes = _terminal.read(buffer, sizeof(buffer));
 				if (!num_bytes)
 					return;
+Genode::log("command: ", Genode::Cstring(buffer));
 
 				_packet_handler.execute(_state, _commands,
 				                        Const_byte_range_ptr { buffer, num_bytes },
