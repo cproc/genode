@@ -626,6 +626,19 @@ Core::Platform::Platform()
 	}
 
 	/*
+	 * ACPI quirk for 12th Gen Framework laptop and Thinkpad X1 Nano Gen2
+	 *
+	 * Although this RAM page is not marked as reserved, it apparently plays a
+	 * special role because ACPICA explicitly requests this physical range.
+	 */
+	{
+		addr_t const start = 0x10bf00000, size = 0x1000;
+
+		_io_mem_alloc.add_range(start, size);
+		ram_alloc().remove_range(start, size);
+	}
+
+	/*
 	 * From now on, it is save to use the core allocators...
 	 */
 
