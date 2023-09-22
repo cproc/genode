@@ -35,6 +35,10 @@ Vm::Vm(Irq::Pool              & user_irq_pool,
 	_vcpu_context(cpu)
 {
 	affinity(cpu);
+	/* once constructed, exit with a startup exception */
+	pause();
+	_state.cpu_exception = 0xfe;
+	_context.submit(1);
 }
 
 
