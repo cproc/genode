@@ -45,19 +45,18 @@ Vm_base::Vm_base(Env                &env,
 	_env(env), _kernel(kernel), _cmdline(cmdline), _kernel_off(kernel_off),
 	_machine(machine), _board(board), _ram(env, ram_base, ram_size),
 	_vcpu(_vm, alloc, handler, _exit_config)
-{
-	state().irq_injection = 0;
-}
+{ }
 
 void Vm_base::start()
 {
 	memset((void*)&state(), 0, sizeof(Vm_state));
 	_load_kernel();
 	_load_kernel_surroundings();
-	state().cpsr = 0x93; /* SVC mode and IRQs disabled */
-	state().r0   = 0;
-	state().r1   = _machine.value;
-	state().r2   = _ram.base() + _board_info_offset();
+	state().cpsr          = 0x93; /* SVC mode and IRQs disabled */
+	state().r0            = 0;
+	state().r1            = _machine.value;
+	state().r2            = _ram.base() + _board_info_offset();
+	state().irq_injection = 0;
 }
 
 
