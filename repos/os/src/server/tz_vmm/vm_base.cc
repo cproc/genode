@@ -63,8 +63,11 @@ void Vm_base::start()
 
 void Vm_base::inject_irq(unsigned irq)
 {
-	if (state().irq_injection) { throw Inject_irq_failed(); }
-	state().irq_injection = irq;
+	with_state([this,irq](Vcpu_state &state) {
+		if (state.irq_injection) { throw Inject_irq_failed(); }
+		state.irq_injection = irq;
+		return true;
+	});
 }
 
 
