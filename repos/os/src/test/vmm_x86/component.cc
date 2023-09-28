@@ -2,12 +2,13 @@
  * \brief  VM session interface test for x86
  * \author Alexander Boettcher
  * \author Christian Helmuth
+ * \author Benjamin Lamowski
  * \date   2018-09-26
  *
  */
 
 /*
- * Copyright (C) 2018-2021 Genode Labs GmbH
+ * Copyright (C) 2018-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
