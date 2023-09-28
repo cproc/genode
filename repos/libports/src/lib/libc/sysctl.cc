@@ -1,11 +1,12 @@
 /*
  * \brief  Sysctl facade
  * \author Emery Hemingway
+ * \author Benjamin Lamowski
  * \date   2016-04-27
  */
 
 /*
- * Copyright (C) 2016-2019 Genode Labs GmbH
+ * Copyright (C) 2016-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
