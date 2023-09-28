@@ -1,11 +1,11 @@
 /*
- * \brief   Kernel backend for x86 virtual machines
- * \author  Benjamin Lamowski
- * \date    2022-10-14
+ * \brief  Kernel backend for x86 virtual machines
+ * \author Benjamin Lamowski
+ * \date   2022-10-14
  */
 
 /*
- * Copyright (C) 2022 Genode Labs GmbH
+ * Copyright (C) 2022-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
