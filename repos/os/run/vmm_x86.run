@@ -1,8 +1,8 @@
 #
 # \brief  rudimentary x86 virtual-machine monitor interface test
 # \author Alexander Boettcher
+# \author Benjamin Lamowski
 # \date   2018-08-26
-#
 
 assert_spec x86
 
