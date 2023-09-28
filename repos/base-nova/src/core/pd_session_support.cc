@@ -15,6 +15,8 @@
 #include <pd_session_component.h>
 #include <assertion.h>
 
+#include <nova_util.h> /* kernel_hip */
+
 using namespace Core;
 
 
@@ -165,6 +167,12 @@ System_control & Core::init_system_control(Allocator &alloc, Rpc_entrypoint &)
 	enum { ENTRYPOINT_STACK_SIZE = 20 * 1024 };
 
 	platform_specific().for_each_location([&](Affinity::Location const &location) {
+
+		unsigned const kernel_cpu_id = platform_specific().kernel_cpu_id(location);
+
+		if (!kernel_hip().is_cpu_enabled(kernel_cpu_id))
+			return;
+
 		auto ep = new (alloc) Rpc_entrypoint (nullptr, ENTRYPOINT_STACK_SIZE,
 		                                      "system_control", location);
 
