@@ -19,6 +19,7 @@
 #include <cpu/cpu_state.h>
 
 namespace Genode {
+
 	enum { VCPU_EXCEPTION_STARTUP = 0xfe };
 
 	/**

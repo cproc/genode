@@ -93,7 +93,7 @@ class Main
 					switch (_vm.state().cpu_exception) {
 					case Cpu_state::DATA_ABORT:      _handle_data_abort(); break;
 					case Cpu_state::SUPERVISOR_CALL: _handle_smc();        break;
-					case VCPU_EXCEPTION_STARTUP: _vm.start();          break;
+					case VCPU_EXCEPTION_STARTUP:     _vm.start();          break;
 					default:
 						error("unknown exception ", _vm.state().cpu_exception);
 						throw Vm::Exception_handling_failed();
