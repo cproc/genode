@@ -2,6 +2,7 @@
  * \brief  Connection to a VM service
  * \author Stefan Kalkowski
  * \author Christian Helmuth
+ * \author Benjamin Lamowski
  * \date   2012-10-02
  *
  * The VM connection is the API for VM and vCPU handling and implemented
