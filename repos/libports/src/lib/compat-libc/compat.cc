@@ -1,6 +1,7 @@
 /*
  * \brief  FreeBSD-11 function versions
  * \author Sebastian Sumpf
+ * \author Benjamin Lamowski
  * \date   2023-06-12
  */
 
