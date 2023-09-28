@@ -3,11 +3,12 @@
  * \author Norman Feske
  * \author Sebastian Sumpf
  * \author Alexander Boettcher
+ * \author Benjamin Lamowski
  * \date   2009-12-27
  */
 
 /*
- * Copyright (c) 2009-2022 Genode Labs
+ * Copyright (c) 2009-2023 Genode Labs
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
