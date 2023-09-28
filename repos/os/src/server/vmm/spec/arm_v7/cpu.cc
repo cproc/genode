@@ -1,11 +1,12 @@
 /*
  * \brief  VMM cpu object
  * \author Stefan Kalkowski
+ * \author Benjamin Lamowski
  * \date   2019-07-18
  */
 
 /*
- * Copyright (C) 2019 Genode Labs GmbH
+ * Copyright (C) 2019-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -77,7 +78,7 @@ void Cpu_base::handle_exception(State & state)
 	case Cpu::FIQ:          [[fallthrough]];
 	case Cpu::IRQ:          _handle_irq(state);  break;
 	case Cpu::TRAP:         _handle_sync(state); break;
-	case Cpu::STARTUP:      _handle_startup(state); break;
+	case VCPU_EXCEPTION_STARTUP: _handle_startup(state); break;
 	default:
 		throw Exception("Curious exception ",
 		                state.cpu_exception, " occured");

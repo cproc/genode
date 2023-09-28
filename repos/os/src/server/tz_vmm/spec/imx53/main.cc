@@ -2,11 +2,12 @@
  * \brief  Virtual Machine Monitor
  * \author Stefan Kalkowski
  * \author Martin Stein
+ * \author Benjamin Lamowski
  * \date   2012-06-25
  */
 
 /*
- * Copyright (C) 2008-2017 Genode Labs GmbH
+ * Copyright (C) 2008-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -92,7 +93,7 @@ class Main
 					switch (_vm.state().cpu_exception) {
 					case Cpu_state::DATA_ABORT:      _handle_data_abort(); break;
 					case Cpu_state::SUPERVISOR_CALL: _handle_smc();        break;
-					case 0xfe:                       _vm.start();          break;
+					case VCPU_EXCEPTION_STARTUP: _vm.start();          break;
 					default:
 						error("unknown exception ", _vm.state().cpu_exception);
 						throw Vm::Exception_handling_failed();
