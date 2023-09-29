@@ -1,0 +1,11 @@
+<runtime ram="200M" caps="2000" binary="test-monitor_gdb">
+
+	<requires/>
+
+	<content>
+		<rom label="test-monitor_gdb"/>
+	</content>
+
+	<config/>
+
+</runtime>
