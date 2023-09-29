@@ -293,7 +293,7 @@ void Graph::click(Clicked_at const &at, Action &action)
 			return result;
 		};
 
-		action.toggle_launcher_selector(popup_anchor(at._location));
+		action.open_popup_dialog(popup_anchor(at._location));
 	});
 
 	_ram_fs_dialog       .propagate(at, _sculpt_partition, action);

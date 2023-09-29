@@ -95,7 +95,6 @@
 					<default-policy domain="default"/>
 					<capture/>
 					<event/>
-					<report clicked="yes"/>
 				</config>
 				<route>
 					<service name="Input">             <child name="gui_fb"/> </service>
@@ -119,7 +118,6 @@
 					<policy label="decorator -> pointer"         report="wm -> pointer"/>
 					<policy label="manager -> window_list"       report="wm -> window_list"/>
 					<policy label="manager -> decorator_margins" report="decorator -> decorator_margins"/>
-					<policy label="manager -> clicked"           report="nitpicker -> clicked"/>
 					<policy label="nitpicker -> focus"           report="manager -> focus"/>
 					<policy label="runtime -> leitzentrale -> diag_view -> dialog"
 					        report="manager -> diag_dialog"/>
@@ -259,7 +257,6 @@
 					<service name="ROM" label_suffix="_hover">     <child name="report_rom"/> </service>
 					<service name="ROM" label="window_list">       <child name="report_rom"/> </service>
 					<service name="ROM" label="decorator_margins"> <child name="report_rom"/> </service>
-					<service name="ROM" label="clicked">           <child name="report_rom"/> </service>
 					<service name="Gui"> <parent/> </service>
 					<any-service> <parent/> </any-service>
 				</route>

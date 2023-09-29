@@ -661,22 +661,6 @@ struct Sculpt::Main : Input_event_handler,
 
 	Dialog::Distant_runtime _dialog_runtime { _env };
 
-	/*
-	 * Track nitpicker's "clicked" report to reliably detect clicks outside
-	 * any menu view (closing the popup window).
-	 */
-
-	Attached_rom_dataspace _clicked_rom { _env, "clicked" };
-
-	Signal_handler<Main> _clicked_handler {
-		_env.ep(), *this, &Main::_handle_clicked };
-
-	void _handle_clicked()
-	{
-		_clicked_rom.update();
-		_try_handle_click();
-	}
-
 	Keyboard_focus _keyboard_focus { _env, _network.dialog, _network.wpa_passphrase,
 	                                 *this, _system_dialog, _system_visible };
 
@@ -690,41 +674,15 @@ struct Sculpt::Main : Input_event_handler,
 
 		Input::Seq_number const seq = *_clicked_seq_number;
 
-		auto click_outside_popup = [&] ()
-		{
-			Xml_node const clicked = _clicked_rom.xml();
+		/* used to detect clicks outside the popup dialog (for closing it) */
+		bool       popup_dialog_clicked = false;
+		bool const popup_opened = (_popup_opened_seq_number.value == seq.value);
 
-			if (!clicked.has_attribute("seq"))
-				return false;
-
-			if (clicked.attribute_value("seq", 0u) != seq.value)
-				return false;
-
-			Label const popup_label { "wm -> runtime -> leitzentrale -> popup_view" };
-
-			if (clicked.attribute_value("label", Label()) == popup_label)
-				return false;
-
-			return true;
-		};
-
-		/* remove popup dialog when clicking somewhere outside */
-		if (click_outside_popup() && _popup.state == Popup::VISIBLE) {
-
-			_popup.state = Popup::OFF;
-			_popup_dialog.reset();
-			discard_construction();
-
-			/* de-select '+' button */
-			_graph_view.refresh();
-
-			/* remove popup window from window layout */
-			_handle_window_layout();
-		}
-		else if (_popup_menu_view.hovered(seq)) {
+		if (_popup_menu_view.hovered(seq)) {
 			_popup_dialog.click(*this);
 			_popup_menu_view.generate();
 			_clicked_seq_number.destruct();
+			popup_dialog_clicked = true;
 		}
 		else if (_settings_menu_view.hovered(seq)) {
 			_settings_dialog.click(*this);
@@ -744,6 +702,20 @@ struct Sculpt::Main : Input_event_handler,
 		else if (_file_browser_menu_view.hovered(seq)) {
 			_file_browser_dialog.click(*this);
 			_file_browser_menu_view.generate();
+			_clicked_seq_number.destruct();
+		}
+
+		/* remove popup dialog when clicking somewhere outside */
+		if (!popup_dialog_clicked && !_popup_menu_view._hovered && !popup_opened) {
+			_popup.state = Popup::OFF;
+			_popup_dialog.reset();
+			discard_construction();
+
+			/* de-select '+' button */
+			_graph_view.refresh();
+
+			/* remove popup window from window layout */
+			_handle_window_layout();
 			_clicked_seq_number.destruct();
 		}
 	}
@@ -797,6 +769,7 @@ struct Sculpt::Main : Input_event_handler,
 		Keyboard_focus_guard focus_guard { *this };
 
 		Dialog::Event::Seq_number const seq_number { _global_input_seq_number.value };
+
 		_dialog_runtime.route_input_event(seq_number, ev);
 
 		if (ev.key_press(Input::BTN_LEFT) || ev.touch()) {
@@ -927,14 +900,21 @@ struct Sculpt::Main : Input_event_handler,
 		}
 	}
 
+	/* used to prevent closing the popup immediatedly after opened */
+	Input::Seq_number _popup_opened_seq_number { };
+
 	/*
 	 * Graph::Action interface
 	 */
-	void toggle_launcher_selector(Rect anchor) override
+	void open_popup_dialog(Rect anchor) override
 	{
+		if (_popup.state == Popup::VISIBLE)
+			return;
+
+		_popup_opened_seq_number = _global_input_seq_number;
 		_popup_menu_view.generate();
 		_popup.anchor = anchor;
-		_popup.toggle();
+		_popup.state = Popup::VISIBLE;
 		_graph_view.refresh();
 		_handle_window_layout();
 	}
@@ -1477,7 +1457,6 @@ struct Sculpt::Main : Input_event_handler,
 		_blueprint_rom       .sigh(_blueprint_handler);
 		_image_index_rom     .sigh(_image_index_handler);
 		_editor_saved_rom    .sigh(_editor_saved_handler);
-		_clicked_rom         .sigh(_clicked_handler);
 
 		/*
 		 * Generate initial configurations
@@ -1492,7 +1471,6 @@ struct Sculpt::Main : Input_event_handler,
 		_storage.handle_storage_devices_update();
 		_handle_pci_devices();
 		_handle_runtime_config();
-		_handle_clicked();
 
 		/*
 		 * Read static platform information
