@@ -38,7 +38,7 @@ Vm::Vm(Irq::Pool              & user_irq_pool,
 	affinity(cpu);
 	/* once constructed, exit with a startup exception */
 	pause();
-	_state.cpu_exception = 0xfe;
+	_state.cpu_exception = Genode::VCPU_EXCEPTION_STARTUP;
 	_context.submit(1);
 }
 
