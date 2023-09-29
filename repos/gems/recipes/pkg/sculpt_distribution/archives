@@ -23,3 +23,5 @@ _/pkg/trace_logger
 _/pkg/mixer
 _/pkg/dynamic_rom
 _/pkg/unconfigured_nano3d
+_/pkg/test-monitor_gdb
+_/pkg/socat_tcp

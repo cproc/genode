@@ -400,6 +400,8 @@ void Depot_deploy::Child::gen_start_node(Xml_generator          &xml,
 
 	Xml_node const start_xml = _start_xml->xml();
 
+Genode::log("gen_start_node(): ", start_xml);
+
 	xml.node("start", [&] () {
 
 		xml.attribute("name", _name);
