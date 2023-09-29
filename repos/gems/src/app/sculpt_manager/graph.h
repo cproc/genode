@@ -94,7 +94,7 @@ struct Sculpt::Graph : Widget<Depgraph>
 	{
 		virtual void remove_deployed_component(Start_name const &) = 0;
 		virtual void restart_deployed_component(Start_name const &) = 0;
-		virtual void toggle_launcher_selector(Rect) = 0;
+		virtual void open_popup_dialog(Rect) = 0;
 	};
 
 	void click(Clicked_at const &, Action &);
