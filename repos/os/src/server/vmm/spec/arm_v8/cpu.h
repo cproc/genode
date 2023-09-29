@@ -1,11 +1,12 @@
 /*
  * \brief  VMM cpu object
  * \author Stefan Kalkowski
+ * \author Benjamin Lamowski
  * \date   2019-07-18
  */
 
 /*
- * Copyright (C) 2019 Genode Labs GmbH
+ * Copyright (C) 2019-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -41,7 +42,6 @@ class Vmm::Cpu : public Vmm::Cpu_base
 			AARCH32_FIQ    = 0x700,
 			AARCH32_SERROR = 0x780,
 			NO_EXCEPTION   = 0xffff,
-			STARTUP        = 0xfe
 		};
 
 		void setup_state(State & state) override;
