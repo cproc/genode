@@ -26,6 +26,7 @@
     <pkg path="mixer"           info="audio mixer"/>
     <pkg path="terminal"        info="graphical terminal"/>
     <pkg path="gdb_x86"         info="GNU debugger" arch="x86_64"/>
+    <pkg path="terminal_crosslink" info="terminal service connecting two clients"/>
   </index>
 
   <index name="Demos">
