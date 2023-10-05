@@ -27,6 +27,7 @@
     <pkg path="terminal"        info="graphical terminal"/>
     <pkg path="terminal_crosslink" info="terminal service connecting two clients"/>
     <pkg path="socat_tcp"       info="socat connecting a terminal over TCP"/>
+    <pkg path="gdb_x86"         info="GNU debugger" arch="x86_64"/>
   </index>
 
   <index name="Demos">
