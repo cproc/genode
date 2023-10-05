@@ -28,3 +28,4 @@ _/pkg/window_layouter
 _/pkg/wm
 _/src/vfs_oss
 _/pkg/terminal_crosslink
+_/pkg/socat_tcp
