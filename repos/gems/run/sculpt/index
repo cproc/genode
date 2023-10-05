@@ -25,6 +25,7 @@
     <pkg path="bsd_audio_drv"   info="audio driver" arch="x86_64"/>
     <pkg path="mixer"           info="audio mixer"/>
     <pkg path="terminal"        info="graphical terminal"/>
+    <pkg path="terminal_crosslink" info="terminal service connecting two clients"/>
   </index>
 
   <index name="Demos">
