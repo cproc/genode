@@ -24,3 +24,4 @@ _/pkg/mixer
 _/pkg/dynamic_rom
 _/pkg/unconfigured_nano3d
 _/pkg/terminal_crosslink
+_/pkg/socat_tcp
