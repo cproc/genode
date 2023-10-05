@@ -26,6 +26,7 @@
     <pkg path="mixer"           info="audio mixer"/>
     <pkg path="terminal"        info="graphical terminal"/>
     <pkg path="terminal_crosslink" info="terminal service connecting two clients"/>
+    <pkg path="socat_tcp"       info="socat connecting a terminal over TCP"/>
   </index>
 
   <index name="Demos">
