@@ -52,6 +52,7 @@ REP_DIR       := $(RECIPE_DIR:/recipes/src/$(ARCHIVE)=)
 DEPOT_API_DIR := $(DEPOT_DIR)/$(USER)/api
 DEPOT_SRC_DIR := $(DEPOT_DIR)/$(USER)/src
 DEPOT_BIN_DIR := $(DEPOT_DIR)/$(USER)/bin
+DEPOT_DBG_DIR := $(DEPOT_DIR)/$(USER)/dbg
 
 
 #
@@ -119,8 +120,9 @@ endif
 # Define build-directory location
 #
 
-DEPOT_ARCHIVE_DIR       := $(DEPOT_BIN_DIR)/$(SPEC)/$(VERSIONED_ARCHIVE)
-DEPOT_ARCHIVE_BUILD_DIR := $(addsuffix .build,$(DEPOT_ARCHIVE_DIR))
+DEPOT_BIN_ARCHIVE_DIR   := $(DEPOT_BIN_DIR)/$(SPEC)/$(VERSIONED_ARCHIVE)
+DEPOT_DBG_ARCHIVE_DIR   := $(DEPOT_DBG_DIR)/$(SPEC)/$(VERSIONED_ARCHIVE)
+DEPOT_ARCHIVE_BUILD_DIR := $(addsuffix .build,$(DEPOT_BIN_ARCHIVE_DIR))
 
 
 #
@@ -208,16 +210,21 @@ $(DEPOT_ARCHIVE_BUILD_DIR)/bin: $(BUILD_CONF) $(SPECS_CONF) $(TOOLS_CONF) $(BUIL
 	$(VERBOSE)$(MAKE) -C $(DEPOT_ARCHIVE_BUILD_DIR) $(BUILD_ARG) ||\
 	          ( $(RM_BUILD_DIR_CMD); false )
 
+$(DEPOT_ARCHIVE_BUILD_DIR)/debug: $(DEPOT_ARCHIVE_BUILD_DIR)/bin
 
 #
 # Extract build results from build directory into binary-archive directory
 #
 
-$(DEPOT_ARCHIVE_DIR): $(DEPOT_ARCHIVE_BUILD_DIR)/bin
+$(DEPOT_BIN_ARCHIVE_DIR): $(DEPOT_ARCHIVE_BUILD_DIR)/bin
 	$(VERBOSE)mkdir -p $@
 	$(VERBOSE)find $< -maxdepth 0 -not -empty -exec cp -rL $</* $@/ \;
 
-$(TARGET): $(DEPOT_ARCHIVE_DIR)
+$(DEPOT_DBG_ARCHIVE_DIR): $(DEPOT_ARCHIVE_BUILD_DIR)/debug
+	$(VERBOSE)mkdir -p $@
+	$(VERBOSE)find $< -maxdepth 0 -not -empty -exec cp -rL $</* $@/ \;
+
+$(TARGET): $(DEPOT_BIN_ARCHIVE_DIR) $(DEPOT_DBG_ARCHIVE_DIR)
 	@$(ECHO) "$(DARK_COL)created$(DEFAULT_COL) $(USER)/bin/$(SPEC)/$(VERSIONED_ARCHIVE)"
 
 
@@ -227,7 +234,7 @@ $(TARGET): $(DEPOT_ARCHIVE_DIR)
 
 ifeq ($(KEEP_BUILD_DIR),)
 $(TARGET): remove_build_dir_when_done
-remove_build_dir_when_done: $(DEPOT_ARCHIVE_DIR)
+remove_build_dir_when_done: $(DEPOT_BIN_ARCHIVE_DIR) $(DEPOT_DBG_ARCHIVE_DIR)
 	$(VERBOSE)$(RM_BUILD_DIR_CMD)
 endif
 
