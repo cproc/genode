@@ -564,6 +564,18 @@ struct Libc::Kernel final : Vfs::Read_ready_response_handler,
 		{
 			if (_main_context()) {
 
+				if (_main_monitor_job.constructed()) {
+					/*
+					 * This can happen when a POSIX signal handler
+					 * is executed during a suspended 'monitor()'
+					 * call and calls 'monitor()' itself.
+					 */
+					Main_job job(fn, timeout_ms);
+					_monitors.monitor(job);
+					return job.completed() ? Monitor::Result::COMPLETE
+					                       : Monitor::Result::TIMEOUT;
+				}
+
 				_main_monitor_job.construct(fn, timeout_ms);
 
 				_monitors.monitor(*_main_monitor_job);
