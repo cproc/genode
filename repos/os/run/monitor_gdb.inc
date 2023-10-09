@@ -20,9 +20,11 @@ create_boot_directory
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/init \
                   [depot_user]/src/sandbox \
-                  [depot_user]/src/monitor
+                  [depot_user]/src/monitor \
+                  [depot_user]/src/test-monitor_gdb
 
-set build_components { lib/ld test/monitor_gdb test/log }
+#set build_components { lib/ld test/monitor_gdb test/log }
+set build_components { lib/ld test/log }
 
 if {[have_include power_on/qemu]} {
 	append build_components { drivers/uart }
