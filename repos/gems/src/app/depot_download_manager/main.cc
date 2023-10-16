@@ -242,7 +242,7 @@ struct Depot_download_manager::Main : Import::Download_progress
 
 		uint64_t _started_ms = _timer.elapsed_ms();
 
-		enum { PERIOD_SECONDS = 10UL };
+		enum { PERIOD_SECONDS = 5UL };
 
 		void _handle()
 		{
