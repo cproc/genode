@@ -706,7 +706,7 @@ struct Sculpt::Main : Input_event_handler,
 		}
 
 		/* remove popup dialog when clicking somewhere outside */
-		if (_popup.state == Popup::VISIBLE && !popup_dialog_clicked && !_popup_menu_view._hovered && !popup_opened) {
+		if (!popup_dialog_clicked && !_popup_menu_view._hovered && !popup_opened) {
 			_popup.state = Popup::OFF;
 			_popup_dialog.reset();
 			discard_construction();
