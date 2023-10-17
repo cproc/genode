@@ -161,6 +161,18 @@ static void gen_bash_start(Xml_generator &xml)
 
 	xml.node("config", [&] () {
 
+		/*
+		 * Make sure that the essential POSIX libraries are
+		 * always loaded first and in the same order to avoid
+		 * fork/execve problems if the 'DT_NEEDED' order in
+		 * binaries differs.
+		 */
+		xml.node("ld", [&] () {
+			xml.node("library", [&] () {
+				xml.attribute("rom", "posix.lib.so");
+			});
+		});
+
 		xml.node("libc", [&] () {
 			xml.attribute("stdout", "/dev/terminal");
 			xml.attribute("stderr", "/dev/terminal");
