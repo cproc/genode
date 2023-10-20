@@ -17,6 +17,7 @@
 /* Genode includes */
 #include <util/xml_node.h>
 #include <util/xml_generator.h>
+#include <util/list_model.h>
 #include <base/registry.h>
 #include <base/allocator.h>
 
@@ -37,26 +38,66 @@ class Depot_download_manager::Import
 		 */
 		struct Download_progress : Interface
 		{
-			struct Info
+			struct Info : List_model<Info>::Element
 			{
-				typedef String<32> Bytes;
-				Bytes total, now;
+				Url const url;
 
-				bool complete() const
+				uint64_t total_bytes      = 0;
+				uint64_t downloaded_bytes = 0;
+				bool     complete         = false;
+				unsigned percent          = 0;
+
+				Info(Url const &url) : url(url) { };
+
+				static Url url_from_xml(Xml_node const &node)
 				{
-					/* fetchurl did not return valid download info */
-					if (total == "")
-						return false;
+					return node.attribute_value("url", Url());
+				}
 
-					/* fetchurl has not yet determined the file size */
-					if (total == "0.0")
-						return false;
+				void update(Xml_node const &node)
+				{
+					auto complete_from_xml = [&]
+					{
+						using Bytes = String<32>;
+						Bytes const total = node.attribute_value("total", Bytes()),
+						            now   = node.attribute_value("now",   Bytes());
 
-					return now == total;
+						/* fetchurl did not return valid download info */
+						if (total == "")
+							return false;
+
+						/* fetchurl has not yet determined the file size */
+						if (total == "0.0")
+							return false;
+
+						return now == total;
+					};
+
+					total_bytes      = node.attribute_value("total", 0ULL);
+					downloaded_bytes = node.attribute_value("now",   0ULL);
+					complete         = complete_from_xml();
+					percent          = unsigned((downloaded_bytes*100)/total_bytes);
+				}
+
+				bool matches(Xml_node const &node) const
+				{
+					return url_from_xml(node) == url;
+				}
+
+				static bool type_matches(Xml_node const &node)
+				{
+					return node.has_type("fetch") && url_from_xml(node).valid();
+				}
+
+				void gen_attr(Xml_generator &xml) const
+				{
+					xml.attribute("total", total_bytes);
+					xml.attribute("now",   downloaded_bytes);
 				}
 			};
 
-			virtual Info download_progress(Archive::Path const &) const = 0;
+			virtual bool download_complete(Archive::Path const &) const = 0;
+			virtual void gen_download_attr(Xml_generator &, Archive::Path const &) const = 0;
 		};
 
 	private:
@@ -318,7 +359,7 @@ class Depot_download_manager::Import
 			_items.for_each([&] (Item &item) {
 
 				if (item.state == Item::DOWNLOAD_IN_PROGRESS
-				 && progress.download_progress(item.path).complete()) {
+				 && progress.download_complete(item.path)) {
 
 					item.state = Item::DOWNLOAD_COMPLETE;
 				}
@@ -362,12 +403,8 @@ class Depot_download_manager::Import
 					xml.attribute("path",  item.path);
 					xml.attribute("state", item.state_text());
 
-					if (item.state == Item::DOWNLOAD_IN_PROGRESS) {
-						Download_progress::Info const info =
-							progress.download_progress(item.path);
-						xml.attribute("total", info.total);
-						xml.attribute("now",   info.now);
-					}
+					if (item.state == Item::DOWNLOAD_IN_PROGRESS)
+						progress.gen_download_attr(xml, item.path);
 				});
 			});
 		}
