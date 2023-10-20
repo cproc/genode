@@ -76,7 +76,7 @@ class Depot_download_manager::Import
 					total_bytes      = node.attribute_value("total", 0ULL);
 					downloaded_bytes = node.attribute_value("now",   0ULL);
 					complete         = complete_from_xml();
-					percent          = unsigned((downloaded_bytes*100)/total_bytes);
+					percent          = unsigned((downloaded_bytes*100)/(total_bytes+1));
 				}
 
 				bool matches(Xml_node const &node) const
