@@ -112,8 +112,8 @@ void Sculpt::gen_prepare_bash_start(Xml_generator &xml)
 	xml.node("config", [&] () {
 
 		xml.node("libc", [&] () {
-			xml.attribute("stdout", "/dev/null");
-			xml.attribute("stderr", "/dev/null");
+			xml.attribute("stdout", "/dev/log");
+			xml.attribute("stderr", "/dev/log");
 			xml.attribute("stdin",  "/dev/null");
 			xml.attribute("pipe",   "/dev/pipe");
 			xml.attribute("rtc",    "/dev/rtc");
