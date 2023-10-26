@@ -30,6 +30,7 @@
 #include <internal/init.h>
 #include <internal/errno.h>
 #include <internal/file_operations.h>
+#include <internal/cpu_local_storage.h>
 
 using namespace Genode;
 
@@ -425,6 +426,9 @@ extern "C" int execve(char const *filename,
 
 	/* reset atexit handlers */
 	_reset_atexit_ptr->reset_atexit();
+
+	/* free CPU-local storage allocated with malloc */
+	Libc::cpu_local_storage_registry().reset();
 
 	/*
 	 * Reconstruct malloc heap for application-owned data

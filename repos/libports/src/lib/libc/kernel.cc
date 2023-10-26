@@ -497,6 +497,8 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 	_with_libc_sub_config("pthread", [&] (Node const &pthread_config) {
 		init_pthread_support(env, pthread_config, _heap); });
 
+	init_cpu_local_storage_support(env);
+
 	_env.ep().register_io_progress_handler(*this);
 
 	if (_config.cloned) {

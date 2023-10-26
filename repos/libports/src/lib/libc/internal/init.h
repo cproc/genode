@@ -114,11 +114,12 @@ namespace Libc {
 	void init_socket_operations(File_descriptor_allocator &, Config const &);
 
 	/**
-	 * Pthread/semaphore support
+	 * Pthread/semaphore/CPU-local-storage support
 	 */
 	void init_pthread_support(Monitor &, Timer_accessor &);
 	void init_pthread_support(Genode::Env &, Node const &, Genode::Allocator &);
 	void init_semaphore_support(Timer_accessor &);
+	void init_cpu_local_storage_support(Genode::Env &env);
 
 	/**
 	 * Fork mechanism
