@@ -19,31 +19,20 @@
 #include <base/mutex.h>
 #include <timer_session/connection.h>
 
+/* libc includes */
+#include <internal/pthread.h>
+
 namespace Libc { struct Kernel_timer_accessor; }
 
 struct Libc::Kernel_timer_accessor : Timer_accessor
 {
 	Genode::Env &_env;
 
-	/*
-	 * The '_timer' is constructed by whatever thread (main thread
-	 * of pthread) that uses a time-related function first. Hence,
-	 * the construction must be protected by a mutex.
-	 */
-	Mutex _mutex;
-
-	Constructible<Timer> _timer;
-
 	Kernel_timer_accessor(Genode::Env &env) : _env(env) { }
 
 	Timer &timer() override
 	{
-		Mutex::Guard guard(_mutex);
-
-		if (!_timer.constructed())
-			_timer.construct(_env);
-
-		return *_timer;
+		return pthread_self()->timer();
 	}
 };
 
