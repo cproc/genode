@@ -115,12 +115,13 @@ namespace Libc {
 	void init_socket_fs(Suspend &, Monitor &);
 
 	/**
-	 * Pthread/semaphore support
+	 * Pthread/semaphore/CPU-local-storage support
 	 */
 	void init_pthread_support(Monitor &, Timer_accessor &);
 	void init_pthread_support(Genode::Cpu_session &, Xml_node const &,
 	                          Genode::Allocator &);
 	void init_semaphore_support(Timer_accessor &);
+	void init_cpu_local_storage_support(Genode::Env &env);
 
 	struct Config_accessor : Interface
 	{

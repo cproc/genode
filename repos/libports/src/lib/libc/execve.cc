@@ -30,6 +30,7 @@
 #include <internal/init.h>
 #include <internal/errno.h>
 #include <internal/file_operations.h>
+#include <internal/cpu_local_storage.h>
 
 using namespace Genode;
 
@@ -422,6 +423,9 @@ extern "C" int execve(char const *filename,
 	/* purge line buffers, which may be allocated at the application heap */
 	setvbuf(stdout, nullptr, _IONBF, 0);
 	setvbuf(stderr, nullptr, _IONBF, 0);
+
+	/* free CPU-local storage allocated with malloc */
+	Libc::cpu_local_storage_registry().reset();
 
 	/*
 	 * Reconstruct malloc heap for application-owned data

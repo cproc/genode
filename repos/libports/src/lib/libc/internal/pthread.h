@@ -30,6 +30,7 @@
 #include <internal/types.h>
 #include <internal/monitor.h>
 #include <internal/timer.h>
+#include <internal/cpu_local_storage.h>
 
 namespace Libc {
 
@@ -260,6 +261,11 @@ struct Libc::Pthread : Noncopyable
 
 		void   *stack_addr() const { return _stack_addr; }
 		size_t  stack_size() const { return _stack_size; }
+
+		Libc::Timer &timer()
+		{
+			return Libc::cpu_local_storage_registry().get(_thread.affinity()).timer();
+		}
 
 		static Pthread *myself();
 
