@@ -1,7 +1,7 @@
 /*
  * \brief  Dummy definitions of Linux Kernel functions
  * \author Automatically generated file - do no edit
- * \date   2023-10-27
+ * \date   2023-11-01
  */
 
 #include <lx_emul.h>
@@ -396,14 +396,6 @@ void seq_printf(struct seq_file * m,const char * f,...)
 }
 
 
-#include <linux/string.h>
-
-char * skip_spaces(const char * str)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/smp.h>
 
 void smp_call_function_many(const struct cpumask * mask,smp_call_func_t func,void * info,bool wait)
@@ -425,25 +417,9 @@ int smp_call_function_single(int cpu,smp_call_func_t func,void * info,int wait)
 bool static_key_initialized;
 
 
-#include <linux/string_helpers.h>
-
-int string_escape_mem(const char * src,size_t isz,char * dst,size_t osz,unsigned int flags,const char * only)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/sysctl.h>
 
 const int sysctl_vals[] = {};
-
-
-#include <linux/string.h>
-
-bool sysfs_streq(const char * s1,const char * s2)
-{
-	lx_emul_trace_and_stop(__func__);
-}
 
 
 #include <linux/task_work.h>

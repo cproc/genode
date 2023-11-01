@@ -787,14 +787,6 @@ int software_node_notify(struct device * dev,unsigned long action)
 }
 
 
-#include <linux/kernel.h>
-
-int get_option(char ** str,int * pint)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/pinctrl/devinfo.h>
 
 int pinctrl_bind_pins(struct device * dev)

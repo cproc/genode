@@ -255,23 +255,6 @@ acpi_status acpi_evaluate_object(acpi_handle handle, acpi_string pathname,
 }
 
 
-#include <linux/kernel.h>
-
-int get_option(char ** str,int * pint)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
-
-#include <linux/kernel.h>
-
-char * strreplace(char * s,char old,char new)
-{
-	lx_emul_trace_and_stop(__func__);
-}
-
-
 #include <linux/property.h>
 
 int software_node_notify(struct device * dev,unsigned long action)
