@@ -43,6 +43,7 @@ void Dataspace_component::detach_from_rm_sessions()
 		 * and thereby removes the current region from the '_regions' list.
 		 */
 		_mutex.release();
+		r->keep_reserved_on_detach(true);
 		r->rm().detach((void *)r->base());
 		_mutex.acquire();
 	}

@@ -98,6 +98,9 @@ class Core::Rm_region : public List<Rm_region>::Element
 
 		Attr const _attr;
 
+		bool _keep_reserved_on_detach { false };
+		bool _reserved                { false };
+
 	public:
 
 		Rm_region(Dataspace_component &dsc, Region_map_detach &rm, Attr attr)
@@ -113,6 +116,15 @@ class Core::Rm_region : public List<Rm_region>::Element
 		bool                       dma() const { return _attr.dma;   }
 		Dataspace_component &dataspace() const { return _dsc; }
 		Region_map_detach          &rm() const { return _rm;  }
+
+		void keep_reserved_on_detach(bool keep_reserved)
+		{ _keep_reserved_on_detach = keep_reserved; };
+
+		bool keep_reserved_on_detach() const
+		{ return _keep_reserved_on_detach; }
+
+		void reserved(bool reserved) { _reserved = reserved; }
+		bool reserved() const        { return _reserved; }
 
 		Addr_range range() const { return { .start = _attr.base,
 		                                    .end   = _attr.base + _attr.size - 1 }; }
@@ -422,7 +434,7 @@ class Core::Region_map_component : private Weak_object<Region_map_component>,
 				return Result::REFLECTED;  /* omit diagnostics */
 			};
 
-			if (!region_ptr)
+			if (!region_ptr || region_ptr->reserved())
 				return reflect_fault(Result::NO_REGION);
 
 			Rm_region const &region = *region_ptr;

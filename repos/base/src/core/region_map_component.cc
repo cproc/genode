@@ -408,6 +408,12 @@ void Region_map_component::detach(Local_addr local_addr)
 		warning("detach: ", static_cast<void *>(local_addr), " is not "
 		        "the beginning of the region ", Hex(region_ptr->base()));
 
+	if (region_ptr->reserved()) {
+		/* dataspace is already unmapped */
+		_map.free(reinterpret_cast<void *>(region_ptr->base()));
+		return;
+	}
+
 	Dataspace_component &dsc = region_ptr->dataspace();
 
 	/* inform dataspace about detachment */
@@ -424,7 +430,10 @@ void Region_map_component::detach(Local_addr local_addr)
 	 * make sure that page faults occurring immediately after the unmap
 	 * refer to an empty region not to the dataspace, which we just removed.
 	 */
-	_map.free(reinterpret_cast<void *>(region.base()));
+	if (!region_ptr->keep_reserved_on_detach())
+		_map.free(reinterpret_cast<void *>(region.base()));
+	else
+		region_ptr->reserved(true);
 
 	if (!platform().supports_direct_unmap()) {
 
