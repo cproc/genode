@@ -96,7 +96,7 @@ generate_skip:
 	  echo "$(LIB).lib.a $(LIB).lib.so:"; \
 	  echo "") >> $(LIB_DEP_FILE)
 
-generate:
+generate: $(call deps_for_libs,$(LIBS))
 ifdef SHARED_LIB
 ifeq ($(SYMBOLS),)  # if no symbols exist, the shared object is the ABI
 	@(echo "SO_NAME($(LIB)) := $(LIB).lib.so"; \

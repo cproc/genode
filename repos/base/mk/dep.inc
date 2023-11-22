@@ -19,9 +19,6 @@ include $(LIB_PROGRESS_LOG)
 # Categorize LIBS into ABIs and actual libraries. Dependencies of libraries
 # must be recursively discovered whereas ABIs don't have any dependencies.
 #
-LIBS_TO_VISIT := $(filter-out $(LIBS_READY),$(LIBS))
-ABIS_TO_VISIT := $(foreach L,$(LIBS_TO_VISIT),$(if $(call _symbol_file,$L),$L))
-LIBS_TO_VISIT := $(filter-out $(ABIS_TO_VISIT),$(LIBS_TO_VISIT))
 
 #
 # Pattern rules for generating ABI and library dependencies for var/libdeps
@@ -46,8 +43,13 @@ generate_dep_lists:
 log_progress:
 
 generate: log_progress
-generate: $(addprefix generate_abi_dep.,$(ABIS_TO_VISIT))
-generate: $(addprefix generate_lib_dep.,$(LIBS_TO_VISIT))
-generate: generate_missing_ports $(if $(LIBS),generate_dep_lists)
+generate: generate_missing_ports
+
+_unvisited_libs = $(filter-out $(LIBS_READY),$1)
+_abis_to_visit  = $(foreach L,$(call _unvisited_libs,$1),$(if $(call _symbol_file,$L),$L))
+_libs_to_visit  = $(filter-out $(call _abis_to_visit,$1),$(call _unvisited_libs,$1))
+deps_for_libs   = $(addprefix generate_abi_dep.,$(call _abis_to_visit,$1)) \
+                  $(addprefix generate_lib_dep.,$(call _libs_to_visit,$1)) \
+                  $(if $1,generate_dep_lists)
 
 UNSATISFIED_REQUIREMENTS = $(filter-out $(SPECS),$(REQUIRES))

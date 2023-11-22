@@ -76,7 +76,7 @@ all: $(if $(WARNING_SKIP),generate_skip,generate)
 generate_skip:
 	@echo $(WARNING_SKIP)
 
-generate:
+generate: $(call deps_for_libs,$(LIBS))
 	@(echo "$(TARGET).prg: check_ports $(addsuffix .lib.a,$(LIBS)) $(addsuffix .abi.so,$(LIBS))"; \
 	  echo "	\$$(VERBOSE)\$$(call _prepare_prg_step,$(PRG_REL_DIR)/$(TARGET),$(BUILD_ARTIFACTS))"; \
 	  echo "	\$$(VERBOSE_MK)\$$(MAKE) $(VERBOSE_DIR) -C $(PRG_REL_DIR) -f \$$(BASE_DIR)/mk/prg.mk \\"; \
