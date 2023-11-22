@@ -36,6 +36,7 @@ else
 all: $(ABI_SO)
 endif
 
+include $(SPEC_FILES)
 include $(BASE_DIR)/mk/global.mk
 include $(BASE_DIR)/mk/generic.mk
 
