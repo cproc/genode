@@ -30,5 +30,6 @@ generate:
 	  echo "	\$$(VERBOSE_MK)\$$(MAKE) \$$(VERBOSE_DIR) -C \$$(LIB_CACHE_DIR)/$(LIB) -f \$$(BASE_DIR)/mk/abi.mk \\"; \
 	  echo "	     SYMBOLS=$(SYMBOLS) \\"; \
 	  echo "	     LIB=$(LIB) \\"; \
+	  echo "	     BUILD_BASE_DIR=$(BUILD_BASE_DIR) \\"; \
 	  echo "	     SHELL=$(SHELL)"; \
 	  echo "") >> $(LIB_DEP_FILE)
