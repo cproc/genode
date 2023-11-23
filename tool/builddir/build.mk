@@ -259,7 +259,7 @@ init_libdep_file: $(dir $(LIB_DEP_FILE))
 	  echo ""; \
 	  echo "export MK_BUILD_STAGE := 1"; \
 	  echo ""; \
-	  echo "_log_artifacts = \$$(foreach A,\$$1,echo -e \"\\n# Build artifact \$$A\" >> \$$(PROGRESS_LOG);)"; \
+	  echo "_log_artifacts = \$$(foreach A,\$$1,echo -e \"\\nBUILD_ARTIFACTS += \$$A\" >> \$$(PROGRESS_LOG);)"; \
 	  echo ""; \
 	  echo "# args: target file, libname, artifacts"; \
 	  echo "_prepare_lib_step = ( echo -e \"  \$$(DARK_COL)Library\$$(DEFAULT_COL) \$$1\"; \\"; \
