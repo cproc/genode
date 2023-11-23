@@ -98,6 +98,9 @@ endif
 LIB_TAG := $(addsuffix .lib.tag,$(LIB))
 all: $(LIB_TAG)
 
+$(LIB_TAG):
+	@touch $@
+
 #
 # Trigger the build of host tools
 #
@@ -112,8 +115,14 @@ $(LIB_TAG) $(OBJECTS): $(HOST_TOOLS)
 #
 $(LIB_TAG): $(CUSTOM_TARGET_DEPS)
 
+#
+# Don't link shared object it BUILD_ARTIFACTS are declared as empty (ld.lib.so)
+#
+BUILD_ARTIFACTS ?= $(LIB).lib.so
+
+ifneq ($(BUILD_ARTIFACTS),)
 $(LIB_TAG): $(LIB_SO) $(LIB_CHECKED) $(INSTALL_SO) $(DEBUG_SO) $(DEBUG_SO_DEBUG)
-	@touch $@
+endif
 
 #
 # Link ldso-support library to each shared library to provide local hook
