@@ -16,4 +16,5 @@ _/src/chroot
 _/src/libarchive
 _/src/liblzma
 _/src/vfs
+_/src/vfs_lxip
 _/raw/depot_download

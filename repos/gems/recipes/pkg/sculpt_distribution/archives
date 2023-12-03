@@ -28,3 +28,4 @@ _/pkg/terminal_crosslink
 _/pkg/socat_tcp
 _/pkg/test-monitor_gdb
 _/pkg/gdb_files
+_/pkg/dbg_download
