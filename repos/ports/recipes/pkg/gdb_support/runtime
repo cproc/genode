@@ -1,0 +1,165 @@
+<runtime ram="128M" caps="3000" binary="init">
+
+	<requires>
+		<file_system label="system_config" writeable="no"/>
+		<file_system label="public" writeable="yes"/>
+		<file_system label="depot" writeable="yes"/>
+		<rom label="build_info"/>
+		<nic/>
+		<rm/>
+		<timer/>
+	</requires>
+
+	<content>
+		<rom label="init"/>
+		<rom label="depot_download.config"/>
+		<rom label="report_rom"/>
+		<rom label="vfs"/>
+		<rom label="chroot"/>
+		<rom label="depot_download_manager"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_lxip.lib.so"/>
+		<rom label="lxip.lib.so"/>
+		<rom label="depot_query"/>
+		<rom label="fs_rom"/>
+		<rom label="fetchurl"/>
+		<rom label="curl.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libssh.lib.so"/>
+		<rom label="libcrypto.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="libssl.lib.so"/>
+		<rom label="verify"/>
+		<rom label="extract"/>
+		<rom label="libarchive.lib.so"/>
+		<rom label="liblzma.lib.so"/>
+		<rom label="gdb_support"/>
+		<rom label="ld.lib.so"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="ROM"/>
+			<service name="File_system"/>
+			<service name="Timer"/>
+			<service name="Report"/>
+			<service name="Nic"/>
+		</parent-provides>
+
+		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
+
+		<default caps="100"/>
+
+		<start name="report_rom">
+			<binary name="report_rom"/>
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config verbose="yes">
+				<policy label="depot_download -> installation"
+				        report="gdb_support -> installation"/>
+			</config>
+			<route>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="depot_rw">
+			<binary name="chroot"/>
+			<resource name="RAM" quantum="2M" />
+			<provides> <service name="File_system"/> </provides>
+			<config> <default-policy path="/depot" writeable="yes"/> </config>
+			<route>
+				<service name="File_system"> <parent label="depot"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="vfs" caps="150">
+			<resource name="RAM" quantum="12M"/>
+			<provides><service name="File_system"/></provides>
+			<config>
+				<vfs>
+					<dir name="depot">
+						<fs label="depot"/>
+					</dir>
+					<dir name="debug">
+						<ram/>
+					</dir>
+				</vfs>
+				<policy label_suffix="depot" root="/depot" writeable="yes"/>
+				<policy label_prefix="gdb_support" root="/debug" writeable="yes"/>
+				<default-policy root="/" writeable="no"/>
+			</config>
+			<route>
+				<service name="File_system" label="depot">
+					<child name="depot_rw"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="vfs_rom">
+			<resource name="RAM" quantum="10M"/>
+			<binary name="fs_rom"/>
+			<provides> <service name="ROM"/> </provides>
+			<config/>
+			<route>
+				<service name="File_system"> <child name="vfs"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="depot_download" caps="2000">
+			<binary name="init"/>
+			<resource name="RAM" quantum="70M"/>
+			<route>
+				<service name="ROM" label="config">
+					<parent label="depot_download.config"/>
+				</service>
+				<service name="ROM" label_suffix="installation">
+					<child name="report_rom" label="depot_download -> installation"/>
+				</service>
+				<service name="File_system" label="depot">
+					<child name="vfs"/>
+				</service>
+				<service name="File_system" label="public">
+					<parent label="public"/>
+				</service>
+				<service name="Report">
+					<child name="report_rom"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="gdb_support">
+			<resource name="RAM" quantum="16M"/>
+			<config>
+				<vfs>
+					<dir name="config"> <fs label="config"/> </dir>
+					<fs/>
+				</vfs>
+			</config>
+			<route>
+				<service name="File_system" label="config">
+					<parent label="system_config"/>
+				</service>
+				<service name="File_system">
+					<child name="vfs"/>
+				</service>
+				<service name="Report">
+					<child name="report_rom"/>
+				</service>
+				<service name="ROM" label="build_info">
+					<parent label="build_info"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+
+</runtime>
