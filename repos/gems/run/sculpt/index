@@ -29,8 +29,7 @@
     <pkg path="socat_tcp"       info="socat connecting a terminal over TCP"/>
     <pkg path="gdb_x86"         info="GNU debugger" arch="x86_64"/>
     <pkg path="test-monitor_gdb" info="Debug monitor test"/>
-    <pkg path="gdb_files"       info="GDB target files provider (wip)"/>
-    <pkg path="dbg_download"    info="dbg archive downloader (wip)"/>
+    <pkg path="gdb_support"    info="GDB support (wip)"/>
   </index>
 
   <index name="Demos">
