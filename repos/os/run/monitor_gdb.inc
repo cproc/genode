@@ -23,8 +23,8 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/monitor \
                   [depot_user]/src/test-monitor_gdb
 
-#set build_components { lib/ld test/monitor_gdb test/log }
-set build_components { lib/ld test/log }
+set build_components { lib/ld test/monitor_gdb test/log }
+#set build_components { lib/ld test/log }
 
 if {[have_include power_on/qemu]} {
 	append build_components { drivers/uart }
@@ -171,7 +171,7 @@ append config {
 				<service name="ROM"/>
 			</parent-provides>
 			<default caps="100"/>
-
+<!--
 			<monitor>
 				<policy label="test-monitor_gdb" wait="yes" wx="yes"/>
 			</monitor>
@@ -188,6 +188,7 @@ append config {
 					<any-service> <parent/> </any-service>
 				</route>
 			</start>
+-->
 			<start name="test-log">
 				<resource name="RAM" quantum="2M"/>
 				<route>
