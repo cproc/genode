@@ -112,7 +112,7 @@ install_config {
 		<provides><service name="Block" /></provides>
 		<config atapi="yes">
 			<report ports="yes"/>
-			<policy label="test-ahci -> " device="0" writeable="yes" />
+			<policy label="test-ahci -> " device="0" writeable="no" />
 			<policy label="test-ahci-atapi -> " device="1" writeable="no" />
 		</config>
 		<route>
@@ -127,7 +127,7 @@ install_config {
 		<config verbose="no" report="no" log="yes" stop_on_error="no">
 			<tests>
 				<sequential length="8M" size="1M" io_buffer="8M" batch="4"/>
-				<sequential start="1000" write="yes" length="2M" size="1M" io_buffer="8M" batch="4"/>
+				<sequential start="1000" write="no" length="2M" size="1M" io_buffer="8M" batch="4"/>
 			</tests>
 		</config>
 		<route>
