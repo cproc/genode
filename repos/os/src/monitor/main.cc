@@ -168,6 +168,31 @@ Genode::log("command: ", Genode::Cstring(buffer));
 		{
 			_state.flush(pd);
 			_memory_accessor.flush();
+
+			/* Try to notify GDB about the vanished inferior */
+
+			if (!_state.notification_in_progress) {
+
+				_state.notification_in_progress = true;
+
+				using Stop_reply_signal = Monitored_thread::Stop_reply_signal;
+
+				Terminal_output output { ._write_fn { _terminal } };
+
+				gdb_notification(output.buffered, [&] (Output &out) {
+					print(out, "Stop:X",
+					      Gdb_hex((uint8_t)Stop_reply_signal::KILL),
+					      ";process:", Gdb_hex(pd.id()));
+				});
+			} else {
+				/*
+				 * Only one notification can be in flight and we don't want
+				 * to keep exit information in the monitor for later because
+				 * GDB might never consume it. There will be another
+				 * notification attempt when GDB calls 'vCont' for the vanished
+				 * inferior.
+				 */
+			}
 		}
 
 		void flush(Monitored_thread &thread)
