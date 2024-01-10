@@ -31,7 +31,7 @@ namespace Monitor { namespace Gdb {
 
 struct Monitor::Gdb::Command : private Commands::Element, Interface
 {
-	static constexpr bool _verbose = false;
+	static constexpr bool _verbose = true;
 
 	using Name = String<32>;
 
