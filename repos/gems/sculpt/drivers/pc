@@ -188,7 +188,7 @@
 			<service name="Usb">   <child name="usb_drv"/> </service>
 		</route>
 	</start>
-
+<!--
 	<start name="ps2_drv">
 		<resource name="RAM" quantum="1M"/>
 		<config capslock_led="rom" numlock_led="rom" system="yes"/>
@@ -205,7 +205,7 @@
 			<service name="Timer"> <parent/> </service>
 		</route>
 	</start>
-
+-->
 	<!-- toggle key mappings depending on the numlock state -->
 	<start name="numlock_remap_rom">
 		<binary name="rom_filter"/>
