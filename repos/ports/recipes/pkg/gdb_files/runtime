@@ -1,0 +1,70 @@
+<runtime ram="80M" caps="1000" binary="init">
+
+	<requires>
+		<file_system label="system_config" writeable="no"/>
+		<file_system label="depot" writeable="no"/>
+	</requires>
+
+	<content>
+		<rom label="gdb_files"/>
+		<rom label="init"/>
+		<rom label="vfs"/>
+		<rom label="ld.lib.so"/>
+		<rom label="vfs.lib.so"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="File_system"/>
+		</parent-provides>
+
+		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
+
+		<default caps="100"/>
+
+		<start name="vfs" caps="150">
+			<resource name="RAM" quantum="12M"/>
+			<provides><service name="File_system"/></provides>
+			<config>
+				<vfs>
+					<dir name="depot"> <fs label="depot"/> </dir>
+					<dir name="debug">
+						<rom name="ld.lib.so"/>
+						<ram/>
+					</dir>
+				</vfs>
+				<policy label_prefix="gdb_files" root="/debug" writeable="yes"/>
+				<default-policy root="/" writeable="no"/>
+			</config>
+			<route>
+				<service name="File_system" label="depot"> <parent label="depot"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="gdb_files">
+			<resource name="RAM" quantum="16M"/>
+			<config>
+				<vfs>
+					<dir name="config"> <fs label="config"/> </dir>
+					<fs/>
+				</vfs>
+			</config>
+			<route>
+				<service name="File_system" label="config">
+					<parent label="system_config"/>
+				</service>
+				<service name="File_system">
+					<child name="vfs"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+
+</runtime>
