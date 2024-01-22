@@ -25,6 +25,7 @@
 #include "audio_out.h"
 #include "capture.h"
 #include "event.h"
+#include "log.h"
 #include "nic.h"
 #include "uplink.h"
 #include "report.h"
@@ -49,6 +50,7 @@ struct Black_hole::Main
 	Genode::Constructible<Audio_out::Root> audio_out_root { };
 	Genode::Constructible<Capture::Root>   capture_root   { };
 	Genode::Constructible<Event_root>      event_root     { };
+	Genode::Constructible<Log_root>        log_root       { };
 	Genode::Constructible<Nic_root>        nic_root       { };
 	Genode::Constructible<Uplink_root>     uplink_root    { };
 	Genode::Constructible<Report_root>     report_root    { };
@@ -75,6 +77,10 @@ struct Black_hole::Main
 		if (_config_rom.xml().has_sub_node("event")) {
 			event_root.construct(env, heap);
 			env.parent().announce(env.ep().manage(*event_root));
+		}
+		if (_config_rom.xml().has_sub_node("log")) {
+			log_root.construct(env, heap);
+			env.parent().announce(env.ep().manage(*log_root));
 		}
 		if (_config_rom.xml().has_sub_node("nic")) {
 			nic_root.construct(env, heap);
