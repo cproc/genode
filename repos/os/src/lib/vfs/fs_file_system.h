@@ -434,6 +434,7 @@ class Vfs::Fs_file_system : public File_system, private Remote_io
 			friend Genode::Id_space<::File_system::Node>;
 
 			::File_system::Watch_handle const  fs_handle;
+			bool                               triggered { false };
 
 			Fs_vfs_watch_handle(Vfs::File_system            &fs,
 			                    Allocator                   &alloc,
@@ -537,8 +538,19 @@ class Vfs::Fs_file_system : public File_system, private Remote_io
 
 				try {
 					if (packet.operation() == Packet_descriptor::CONTENT_CHANGED) {
+						/*
+						 * Watch handlers should not be executed in the
+						 * context of this 'Io_signal_handler' to avoid
+						 * potential deadlocks in combination with
+						 * 'wait_and_dispatch_one_io_signal()', so we just
+						 * mark the handle as triggered and send a local
+						 * signal for an application-level handler which
+						 * executes the watch handlers.
+						 */
 						_watch_handle_space.apply<Fs_vfs_watch_handle>(id, [&] (Fs_vfs_watch_handle &handle) {
-							handle.watch_response(); });
+							handle.triggered = true;
+							_watch_signal_handler.local_submit();
+						});
 					} else {
 						_handle_space.apply<Fs_vfs_handle>(id, handle_fn);
 					}
@@ -554,8 +566,46 @@ class Vfs::Fs_file_system : public File_system, private Remote_io
 				_env.user().wakeup_vfs_user();
 		}
 
+		void _handle_watch()
+		{
+			Fs_vfs_watch_handle *triggered_handle = nullptr;
+
+			do {
+
+				triggered_handle = nullptr;
+
+				/*
+				 * The watch response handler might call
+				 * 'wait_and_dispatch_one_io_signal()', which could lead to a
+				 * call of '_watch_handle_space.apply()', which would cause a
+				 * deadlock in the 'Id_space' if the watch response handler
+				 * was called from '_watch_handle_space.for_each()'. So the
+				 * watch response handler is called outside instead.
+				 */
+				_watch_handle_space.for_each<Fs_vfs_watch_handle>([&] (Fs_vfs_watch_handle &handle) {
+
+					if (triggered_handle) {
+						/* already found a triggered handle */
+						return;
+					}
+
+					if (handle.triggered)
+						triggered_handle = &handle;
+				});
+
+				if (triggered_handle) {
+					triggered_handle->triggered = false;
+					triggered_handle->watch_response();
+				}
+
+			} while (triggered_handle);
+		}
+
 		Genode::Io_signal_handler<Fs_file_system> _signal_handler {
 			_env.env().ep(), *this, &Fs_file_system::_handle_ack };
+
+		Genode::Signal_handler<Fs_file_system> _watch_signal_handler {
+			_env.env().ep(), *this, &Fs_file_system::_handle_watch };
 
 		static size_t buffer_size(Genode::Xml_node const &config)
 		{
