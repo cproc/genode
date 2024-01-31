@@ -133,16 +133,22 @@ class Genode::Path_base
 			unsigned i;
 			while ((i = find_double_dot_dir(path))) {
 
-				/* skip slash prepending the double dot */
-				unsigned cut_start = i - 1;
+				/*
+				 * Skip slash prepending the double dot unless it is
+				 * the only slash.
+				 */
+				unsigned cut_start = (i > 1) ? (i - 1) : i;
 				unsigned cut_end   = i + 2;
 
 				/* skip previous path element */
 				while (cut_start > 0 && path[cut_start - 1] != '/')
 					cut_start--;
 
-				/* skip slash in front of the pair of dots */
-				if (cut_start > 0)
+				/*
+				 * Skip slash in front of the previous path element
+				 * unless it is the only slash.
+				 */
+				if (cut_start > 1)
 					cut_start--;
 
 				strip(path + cut_start, cut_end - cut_start);
