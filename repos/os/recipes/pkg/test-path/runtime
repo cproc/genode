@@ -1,45 +1,45 @@
-<runtime ram="10M" caps="1000" binary="init">
+<runtime ram="10M" caps="100" binary="test-path">
 
 	<requires> <timer/> </requires>
 
 	<fail after_seconds="10"/>
 
 	<succeed>
-			[init -> test-path] --- 'Genode::Path' test ---
-			[init -> test-path] 
-			[init -> test-path] testing removal of superfluous slashes
-			[init -> test-path] 
-			[init -> test-path] '//dir1///' -> '/dir1/'
-			[init -> test-path] 
-			[init -> test-path] testing removal of superfluous dot-slashes
-			[init -> test-path] 
-			[init -> test-path] '/./dir1/././' -> '/dir1/'
-			[init -> test-path] './dir1/././' -> './dir1/'
-			[init -> test-path] 
-			[init -> test-path] testing removal of double dot dirs
-			[init -> test-path] 
-			[init -> test-path] '/..' -> '/'
-			[init -> test-path] '/dir1/..' -> '/'
-			[init -> test-path] '/dir1/../..' -> '/'
-			[init -> test-path] '/dir1/dir2/..' -> '/dir1'
-			[init -> test-path] '/dir1/../dir2' -> '/dir2'
-			[init -> test-path] '/../dir1' -> '/dir1'
-			[init -> test-path] '/../../dir1' -> '/dir1'
-			[init -> test-path] '/../dir1/..' -> '/'
-			[init -> test-path] '..' -> ''
-			[init -> test-path] 'dir1/..' -> ''
-			[init -> test-path] 'dir1/../..' -> ''
-			[init -> test-path] 'dir1/dir2/..' -> 'dir1'
-			[init -> test-path] 'dir1/../dir2' -> 'dir2'
-			[init -> test-path] '../dir1' -> 'dir1'
-			[init -> test-path] '../../dir1' -> 'dir1'
-			[init -> test-path] '../dir1/..' -> ''
-			[init -> test-path] 
-			[init -> test-path] testing removal of trailing dot
-			[init -> test-path] 
-			[init -> test-path] '/dir1/.' -> '/dir1/'
-			[init -> test-path] 
-			[init -> test-path] --- 'Genode::Path' test finished ---
+			[init] --- 'Genode::Path' test ---
+			[init] 
+			[init] testing removal of superfluous slashes
+			[init] 
+			[init] '//dir1///' -> '/dir1/'
+			[init] 
+			[init] testing removal of superfluous dot-slashes
+			[init] 
+			[init] '/./dir1/././' -> '/dir1/'
+			[init] './dir1/././' -> './dir1/'
+			[init] 
+			[init] testing removal of double dot dirs
+			[init] 
+			[init] '/..' -> '/'
+			[init] '/dir1/..' -> '/'
+			[init] '/dir1/../..' -> '/'
+			[init] '/dir1/dir2/..' -> '/dir1'
+			[init] '/dir1/../dir2' -> '/dir2'
+			[init] '/../dir1' -> '/dir1'
+			[init] '/../../dir1' -> '/dir1'
+			[init] '/../dir1/..' -> '/'
+			[init] '..' -> ''
+			[init] 'dir1/..' -> ''
+			[init] 'dir1/../..' -> ''
+			[init] 'dir1/dir2/..' -> 'dir1'
+			[init] 'dir1/../dir2' -> 'dir2'
+			[init] '../dir1' -> 'dir1'
+			[init] '../../dir1' -> 'dir1'
+			[init] '../dir1/..' -> ''
+			[init] 
+			[init] testing removal of trailing dot
+			[init] 
+			[init] '/dir1/.' -> '/dir1/'
+			[init] 
+			[init] --- 'Genode::Path' test finished ---
 	</succeed>
 
 	<content>
@@ -47,23 +47,6 @@
 		<rom label="test-path"/>
 	</content>
 
-	<config>
-		<parent-provides>
-			<service name="ROM"/>
-			<service name="CPU"/>
-			<service name="RM"/>
-			<service name="PD"/>
-			<service name="IRQ"/>
-			<service name="IO_PORT"/>
-			<service name="IO_MEM"/>
-			<service name="LOG"/>
-			<service name="Timer"/>
-		</parent-provides>
-		<default-route>
-			<any-service> <parent/> <any-child/> </any-service>
-		</default-route>
-		<start name="test-path" caps="100">
-			<resource name="RAM" quantum="2M"/>
-		</start>
-	</config>
+	<config/>
+
 </runtime>
