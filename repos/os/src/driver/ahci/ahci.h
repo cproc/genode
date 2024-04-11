@@ -904,7 +904,7 @@ struct Ahci::Port : private Port_base
 	void reinit()
 	{
 		_with_port_mmio([&](Port_mmio &mmio) {
-			reset(mmio);
+			//reset(mmio);
 
 			if (!enable(mmio))
 				throw 1;
