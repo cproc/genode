@@ -6,7 +6,7 @@ _/src/intel_gpu_drv
 _/src/nvme_drv
 _/src/pci_decode
 _/src/pc_intel_fb_drv
-_/src/pc_nic_drv
+_/src/ipxe_nic_drv
 _/src/pc_platform_drv
 _/src/pc_usb_host_drv
 _/src/ps2_drv
