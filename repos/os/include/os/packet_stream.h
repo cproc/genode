@@ -84,9 +84,9 @@ namespace Genode {
 
 	class Packet_descriptor;
 
-	template <typename, int> class Packet_descriptor_queue;
-	template <typename>      class Packet_descriptor_transmitter;
-	template <typename>      class Packet_descriptor_receiver;
+	template <typename, unsigned> class Packet_descriptor_queue;
+	template <typename>           class Packet_descriptor_transmitter;
+	template <typename>           class Packet_descriptor_receiver;
 
 	class Packet_stream_base;
 
@@ -154,10 +154,32 @@ class Genode::Packet_descriptor
  *
  * This class is private to the packet-stream interface.
  */
-template <typename PACKET_DESCRIPTOR, int QUEUE_SIZE>
+template <typename PACKET_DESCRIPTOR, unsigned QUEUE_SIZE>
 class Genode::Packet_descriptor_queue
 {
 	private:
+
+		template <typename T>
+		class Atomic
+		{
+			private:
+
+				T _var;
+
+			public:
+
+				Atomic &operator=(T val)
+				{
+					__atomic_store_n(&_var, val, __ATOMIC_SEQ_CST);
+					return *this;
+				}
+
+				operator T() const
+				{
+					return __atomic_load_n(&_var, __ATOMIC_SEQ_CST);
+				}
+		};
+
 
 		/*
 		 * The anonymous struct is needed to skip the initialization of the
@@ -165,8 +187,8 @@ class Genode::Packet_descriptor_queue
 		 */
 		struct
 		{
-			unsigned volatile _head;
-			unsigned volatile _tail;
+			Atomic<unsigned> _head;
+			Atomic<unsigned> _tail;
 			PACKET_DESCRIPTOR _queue[QUEUE_SIZE];
 		};
 
