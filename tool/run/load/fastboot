@@ -47,7 +47,7 @@ proc run_load { } {
 	set load_spawn_id $spawn_id
 	set timeout 80
 	expect {
-		"finished. total time:"  { return true; }
+		"Finished. Total time:"  { return true; }
 		eof     {
 			puts stderr "fastboot command process died unexpectedly";
 			return false;
