@@ -213,6 +213,15 @@ set driver_routes(mnt_pocket) {
     + service ROM | label: usb.dtb           | + parent | label: imx8m_usb_host-mnt_pocket.dtb
 }
 
+set driver_routes(imx8q_evk) {
+    + service ROM | label: fb                | + parent | label: imx8mq_fb
+    + service ROM | label: fb.dtb            | + parent | label: imx8mq_fb-imx8q_evk.dtb
+    + service ROM | label: nic               | + parent | label: fec_nic
+    + service ROM | label: nic.dtb           | + parent | label: fec_nic-imx8q_evk.dtb
+    + service ROM | label: usb               | + parent | label: imx8m_usb_host
+    + service ROM | label: usb.dtb           | + parent | label: imx8m_usb_host-imx8q_evk.dtb
+}
+
 set driver_routes(pinephone) {
     + service ROM | label: mmc               | + parent | label: a64_sd_card
     + service ROM | label: mmc.dtb           | + parent | label: sd_card-pinephone.dtb
