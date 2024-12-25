@@ -352,6 +352,9 @@ Allocator_avl_base::_allocate(size_t const size, unsigned align, Range range,
 Allocator::Alloc_result
 Allocator_avl_base::alloc_aligned(size_t size, unsigned align, Range range)
 {
+if (size > 8000000) {
+Genode::log("Allocator_avl_base::alloc_aligned(): size: ", size, ", align: ", align, ", avail: ", avail());
+}
 	return _allocate(size, align, range, [&] (Block &first) {
 			return first.find_best_fit(size, align, range); });
 }

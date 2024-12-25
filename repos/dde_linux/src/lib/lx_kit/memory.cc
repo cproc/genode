@@ -61,6 +61,8 @@ Genode::Dataspace_capability Lx_kit::Mem_allocator::attached_dataspace_cap(void 
 void * Lx_kit::Mem_allocator::alloc(size_t const size, size_t const align,
                                     void (*new_range_cb)(void const *, unsigned long))
 {
+Genode::log("Lx_kit::Mem_allocator::alloc(): ", size, ", align: ", align);
+
 	if (!size)
 		return nullptr;
 
@@ -93,6 +95,8 @@ void * Lx_kit::Mem_allocator::alloc(size_t const size, size_t const align,
 			Buffer & buffer = alloc_buffer(max(size + 1, min_buffer_size));
 
 			_mem.add_range(buffer.virt_addr(), buffer.size() - 1);
+
+Genode::log("Lx_kit::Mem_allocator::alloc() first attempt failed, retrying with ", buffer.size() - 1, " bytes added");
 
 			/* re-try allocation */
 			void * const virt_addr = _mem.alloc_aligned(size, (unsigned)log2(align)).convert<void *>(
