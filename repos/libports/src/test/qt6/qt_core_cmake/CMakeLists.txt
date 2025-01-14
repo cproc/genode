@@ -7,9 +7,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 COMPONENTS Core REQUIRED)
+find_package(Qt6 COMPONENTS SvgWidgets REQUIRED)
 
 add_executable(test-qt_core_cmake
     main.cpp
 )
 
 target_link_libraries(test-qt_core_cmake Qt6::Core)
+target_link_libraries(test-qt_core_cmake Qt6::SvgWidgets)

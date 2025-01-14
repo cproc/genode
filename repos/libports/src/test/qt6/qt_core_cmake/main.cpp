@@ -5,8 +5,11 @@
  */
 
 #include <QtCore>
+#include <QtSvgWidgets/QSvgWidget>
 
 int main(int argc, char *argv[])
 {
+	QSvgWidget svg_widget;
+
 	qInfo() << "Test done.";
 }
