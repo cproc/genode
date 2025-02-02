@@ -43,7 +43,7 @@ namespace {
 
 	struct Local_capability_space
 	:
-		Capability_space_tpl<4*1024, Native_capability::Data>
+		Capability_space_tpl<64*1024, Native_capability::Data>
 	{ };
 
 	static Local_capability_space &local_capability_space()
