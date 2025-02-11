@@ -90,7 +90,7 @@ void * Lx_kit::Mem_allocator::alloc(size_t const size, size_t const align,
 			 * and physical addresses of a multi-page allocation are always
 			 * contiguous.
 			 */
-			Buffer & buffer = alloc_buffer(max(size + 1, min_buffer_size));
+			Buffer & buffer = alloc_buffer(max(size + align + 1, min_buffer_size));
 
 			_mem.add_range(buffer.virt_addr(), buffer.size() - 1);
 
