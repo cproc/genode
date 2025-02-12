@@ -44,11 +44,15 @@ class Libc::Mmap_registry
 
 		struct Entry : Avl_node<Entry>
 		{
-			void   * const start;
-			Plugin * const plugin;
+			void                     * const start  { nullptr };
+			Plugin                   * plugin { nullptr };
+			Ram_dataspace_capability   cap { Ram_dataspace_capability() };
 
 			Entry(void *start, Plugin *plugin)
 			: start(start), plugin(plugin) { }
+
+			Entry(void *start, Ram_dataspace_capability cap)
+			: start(start), cap(cap) { }
 
 			bool higher(Entry *other)
 			{
@@ -108,12 +112,33 @@ class Libc::Mmap_registry
 			_tree.insert(new (&_md_alloc) Entry(start, plugin));
 		}
 
+		void insert(void *start, size_t len, Ram_dataspace_capability cap)
+		{
+			Mutex::Guard guard(_mutex);
+
+			if (_lookup_by_addr_unsynchronized(start)) {
+				warning(__func__, ": mmap region at ", start, " "
+				        "is already registered");
+				return;
+			}
+
+			_tree.insert(new (&_md_alloc) Entry(start, cap));
+		}
+
 		Plugin *lookup_plugin_by_addr(void *start) const
 		{
 			Mutex::Guard guard(_mutex);
 
 			Entry const * const e = _lookup_by_addr_unsynchronized(start);
 			return e ? e->plugin : 0;
+		}
+
+		Ram_dataspace_capability lookup_cap_by_addr(void *start) const
+		{
+			Mutex::Guard guard(_mutex);
+
+			Entry const * const e = _lookup_by_addr_unsynchronized(start);
+			return e ? e->cap : Ram_dataspace_capability();
 		}
 
 		bool registered(void *start) const
