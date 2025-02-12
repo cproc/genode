@@ -67,9 +67,13 @@ Libc::Mmap_registry *Libc::mmap_registry()
 
 static Cwd          *_cwd_ptr;
 static unsigned int  _mmap_align_log2 { PAGE_SHIFT };
+static Ram_allocator *_ram;
+static Region_map    *_rm;
 
 void Libc::init_file_operations(Cwd &cwd, File_descriptor_allocator &fd_alloc,
-                                Config_accessor const &config_accessor)
+                                Config_accessor const &config_accessor,
+                                Ram_allocator &ram,
+                                Region_map &rm)
 {
 	_fd_alloc_ptr = &fd_alloc;
 	_cwd_ptr      = &cwd;
@@ -80,6 +84,9 @@ void Libc::init_file_operations(Cwd &cwd, File_descriptor_allocator &fd_alloc,
 			                                        (unsigned int)PAGE_SHIFT);
 		});
 	});
+
+	_ram = &ram;
+	_rm = &rm;
 }
 
 
@@ -454,8 +461,59 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 			errno = EINVAL;
 			return MAP_FAILED;
 		}
+//Genode::log("mmap(): addr: ", addr, ", length: ", length);
+		length = align_addr(length, PAGE_SHIFT);
 
 		bool const executable = prot & PROT_EXEC;
+
+		Ram_dataspace_capability cap = _ram->alloc(length);
+
+		if (!cap.valid()) {
+//Genode::error("mmap(): allocation of ", length, "bytes failed");
+			errno = ENOMEM;
+			return MAP_FAILED;
+		}
+
+		for (int i = 0; i < 2; i++) {
+
+			int result = 0;
+
+			Region_map::Range const range = _rm->attach(cap, {
+			  .size       = { },
+			  .offset     = { },
+			  .use_at     = addr ? true : false,
+			  .at         = (Genode::addr_t)addr,
+			  .executable = executable,
+			  .writeable  = true
+			}).convert<Region_map::Range>(
+				[&] (Region_map::Range range) { return range; },
+				[&] (Region_map::Attach_error e) {
+					switch (e) {
+					case Region_map::Attach_error::OUT_OF_RAM:        result = -2; break;
+					case Region_map::Attach_error::OUT_OF_CAPS:       result = -4; break;
+					case Region_map::Attach_error::INVALID_DATASPACE: result = -6; break;
+					case Region_map::Attach_error::REGION_CONFLICT:   break;
+					}
+					result = -7;
+					return Region_map::Range { };
+			});
+
+			if (result == 0) {
+				void *start = (void*)range.start;
+				mmap_registry()->insert(start, length, cap);
+//Genode::log("mmap() finished: ", start, " - ", Genode::Hex((addr_t)start + length - 1));
+				return start;
+			}
+
+			addr = nullptr;
+		}
+
+//Genode::error("mmap(): attach() failed.");
+		_ram->free(cap);
+		errno = ENOMEM;
+		return MAP_FAILED;
+
+#if 0
 		void *start = mem_alloc(executable)->alloc(length, _mmap_align_log2);
 		if (!start) {
 			errno = ENOMEM;
@@ -463,7 +521,9 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		}
 		::memset(start, 0, align_addr(length, PAGE_SHIFT));
 		mmap_registry()->insert(start, length, 0);
+
 		return start;
+#endif
 	}
 
 	/* lookup plugin responsible for file descriptor */
@@ -498,6 +558,8 @@ extern "C" int munmap(void *start, ::size_t length)
 	 */
 	Plugin *plugin = mmap_registry()->lookup_plugin_by_addr(start);
 
+	Ram_dataspace_capability cap = mmap_registry()->lookup_cap_by_addr(start);
+
 	/*
 	 * Remove registry entry before unmapping to avoid double insertion error
 	 * if another thread gets the same start address immediately after unmapping.
@@ -508,10 +570,15 @@ extern "C" int munmap(void *start, ::size_t length)
 	if (plugin)
 		ret = plugin->munmap(start, length);
 	else {
+#if 0
 		bool const executable = true;
 		/* XXX another metadata handling required to track anonymous memory */
 		mem_alloc(!executable)->free(start);
 		mem_alloc(executable)->free(start);
+#endif
+//Genode::log("munmap(", start, ", ", length, ")");
+		_rm->detach((Genode::addr_t)start);
+		_ram->free(cap);
 	}
 
 	return ret;
