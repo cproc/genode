@@ -528,7 +528,15 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 			errno = EINVAL;
 			return MAP_FAILED;
 		}
-//Genode::log("mmap(): addr: ", addr, ", length: ", length);
+
+		int alignment_log2 = (flags & MAP_ALIGNMENT_MASK) >>
+		                     MAP_ALIGNMENT_SHIFT;
+
+		if (alignment_log2 == 0)
+			alignment_log2 = _mmap_align_log2;
+
+//Genode::log("mmap(): addr: ", addr, ", length: ", length, ", alignment: ", alignment_log2);
+
 		length = align_addr(length, PAGE_SHIFT);
 
 		bool const executable = prot & PROT_EXEC;
@@ -638,7 +646,8 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 			return MAP_FAILED;
 		}
 
-		void *start = mem_alloc(executable)->alloc(length, _mmap_align_log2);
+		void *start = mem_alloc(executable)->alloc(length, alignment_log2);
+
 		if (!start) {
 			errno = ENOMEM;
 			return MAP_FAILED;
