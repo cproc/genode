@@ -2433,7 +2433,8 @@ void *Libc::Vfs_plugin::mmap(void *addr_in, ::size_t length, int prot, int flags
 		});
 
 		if (!ds_cap.valid()) {
-			Genode::error("mmap got invalid dataspace capability");
+			Genode::error("mmap got invalid dataspace capability for file ",
+			              Genode::Cstring(fd->fd_path));
 			monitor().monitor([&] {
 				reference_handle->close();
 				return Fn::COMPLETE;
