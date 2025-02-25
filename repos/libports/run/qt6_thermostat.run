@@ -1,0 +1,52 @@
+source ${genode_dir}/repos/libports/run/qt6_common.inc
+
+import_from_depot [depot_user]/src/qt6_component \
+                  [depot_user]/src/qt6_charts \
+                  [depot_user]/src/qt6_declarative \
+                  [depot_user]/src/qt6_svg \
+                  [depot_user]/src/qt6_thermostat
+
+install_config {
+<config>
+	<parent-provides>
+		} [qt6_parent_provides] {
+	</parent-provides>
+	<default caps="100"/>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	} [qt6_start_nodes] {
+	<start name="ThermostatApp" caps="700" ram="300M">
+		<config ld_verbose="yes">
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<tar name="qt6_declarative_qml.tar"/>
+				<tar name="qt6_charts_qml.tar"/>
+				<tar name="qt6_dejavusans.tar"/>
+				<tar name="qt6_libqgenode.tar"/>
+				<tar name="qt6_libqsvg.tar"/>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe" rtc="/dev/rtc"/>
+			<env key="QT_QUICK_BACKEND" value="software"/>
+		</config>
+		<route>
+			<service name="Gui"> <child name="wm"/> </service>
+			<service name="Report" label="shape">
+				<child name="pointer" label="wm -> ThermostatApp -> shape"/>
+			</service>
+			<service name="ROM" label="mesa_gpu.lib.so">
+				<parent label="mesa_gpu-softpipe.lib.so" />
+			</service>
+			<any-service> <parent /> <any-child/> </any-service>
+		</route>
+	</start>
+</config>
+}
+
+build_boot_image [qt6_boot_modules]
+
+run_genode_until forever
