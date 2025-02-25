@@ -44,4 +44,10 @@
     <pkg path="mesa_gpu-intel" info="Intel GPU driver (IRIS)" arch="x86_64"/>
   </index>
 
+  <index name="Qt6 demos">
+    <pkg path="qt6_qmloscilloscope" info="Qt6 Qml Oscilloscope example"/>
+    <pkg path="qt6_qmlweather" info="Qt6 Qml Weather example"/>
+    <pkg path="qt6_thermostat" info="Qt6 Thermostat example"/>
+  </index>
+
 </index>
