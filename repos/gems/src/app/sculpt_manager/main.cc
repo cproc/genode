@@ -92,6 +92,7 @@ struct Sculpt::Main : Input_event_handler,
 	bool const _mnt_reform = (_build_info.board == "mnt_reform2");
 	bool const _mnt_pocket = (_build_info.board == "mnt_pocket");
 	bool const _armstone   = (_build_info.board == "imx8mp_armstone");
+	bool const _imx8q_evk  = (_build_info.board == "imx8q_evk");
 
 	Registry<Child_state> _child_states { };
 
@@ -295,13 +296,13 @@ struct Sculpt::Main : Input_event_handler,
 	 **********************/
 
 	Board_info::Soc _soc {
-		.fb    = _mnt_reform || _mnt_pocket || _armstone,
+		.fb    = _mnt_reform || _mnt_pocket || _armstone || _imx8q_evk,
 		.touch = false,
 		.wifi  = _mnt_pocket, /* initialized via PCI on Reform */
-		.usb   = _mnt_reform || _mnt_pocket || _armstone,
+		.usb   = _mnt_reform || _mnt_pocket || _armstone || _imx8q_evk,
 		.mmc   = _mnt_reform || _mnt_pocket || _armstone,
 		.modem = false,
-		.nic   = _mnt_reform || _mnt_pocket || _armstone,
+		.nic   = _mnt_reform || _mnt_pocket || _armstone || _imx8q_evk,
 
 		.fb_on_dedicated_cpu = _mnt_pocket
 	};
@@ -311,7 +312,7 @@ struct Sculpt::Main : Input_event_handler,
 	Drivers::Resumed _resumed = _drivers.resumed();
 
 	Board_info::Options _driver_options {
-		.display = _mnt_reform || _mnt_pocket || _armstone,
+		.display = _mnt_reform || _mnt_pocket || _armstone || _imx8q_evk,
 		.usb_net = false,
 		.nic     = false,
 		.wifi    = _mnt_pocket,
