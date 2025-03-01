@@ -26,8 +26,8 @@ CC_OPT          += -pipe \
                    -fno-stack-protector -fvisibility-inlines-hidden \
                    -fno-asynchronous-unwind-tables -std=gnu++0x -mgeneral-regs-only
 # kernel memory: 28M minimum dynamic or 10 pro mill of the system memory
-CC_OPT          += -DCONFIG_MEMORY_DYN_MIN=0x1c00000 \
-                   -DCONFIG_MEMORY_DYN_PER_MILL=10
+CC_OPT          += -DCONFIG_MEMORY_DYN_MIN=0x4000000 \
+                   -DCONFIG_MEMORY_DYN_PER_MILL=0
 CC_OPT_PIC      :=
 ifeq ($(filter-out $(SPECS),32bit),)
 override CC_MARCH = -m32
