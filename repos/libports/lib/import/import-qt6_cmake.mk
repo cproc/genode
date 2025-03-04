@@ -20,6 +20,7 @@ GENODE_CMAKE_CFLAGS += \
 	-D__GENODE__ \
 	-ffunction-sections \
 	-fno-strict-aliasing \
+	-D_GTHREAD_USE_MUTEX_INIT_FUNC \
 	$(CC_OPT_NOSTDINC) \
 	$(CC_MARCH) \
 	$(CC_OPT_PIC) \
