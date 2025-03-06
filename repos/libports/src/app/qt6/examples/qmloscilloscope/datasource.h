@@ -23,8 +23,12 @@ public slots:
 
 private:
     QQuickView *m_appViewer = nullptr;
+#if 0
     QList<QList<QPointF>> m_data;
     int m_index = -1;
+#endif
+
+    int _width = 1024;
 };
 
 #endif

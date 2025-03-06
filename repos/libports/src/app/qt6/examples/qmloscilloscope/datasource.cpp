@@ -25,6 +25,35 @@ DataSource::DataSource(QQuickView *appViewer, QObject *parent)
 
 void DataSource::update(QAbstractSeries *series)
 {
+    if (!series)
+        return;
+
+    static double apos = 0;
+    static double bpos = 0;
+    static double cpos = 0;
+
+    auto xySeries = static_cast<QXYSeries *>(series);
+
+    QList<QPointF> points;
+
+    points.reserve(_width);
+
+    for (int x = 0; x < _width; x += 20) {
+        double a = sin((3.14 * x + apos) / (_width / 2));
+        double b = sin((2.8 * x + bpos) / (_width / 3));
+        double c = sin((0.77 * x + cpos) / (_width / 5));
+        double y = 0.3 * a + 0.3 * b + 0.3 * c;
+        points.append(QPointF(x, y));
+    }
+
+    apos -= 9.3;
+    bpos += 15.1;
+    cpos += 15.12;
+
+    // Use replace instead of clear + append, it's optimized for performance
+    xySeries->replace(points);
+
+#if 0
     if (series) {
         auto xySeries = static_cast<QXYSeries *>(series);
         m_index++;
@@ -35,10 +64,14 @@ void DataSource::update(QAbstractSeries *series)
         // Use replace instead of clear + append, it's optimized for performance
         xySeries->replace(points);
     }
+#endif
 }
 
 void DataSource::generateData(int type, int rowCount, int colCount)
 {
+    _width = colCount;
+
+#if 0
     // Remove previous data
     m_data.clear();
 
@@ -68,4 +101,5 @@ void DataSource::generateData(int type, int rowCount, int colCount)
         }
         m_data.append(points);
     }
+#endif
 }

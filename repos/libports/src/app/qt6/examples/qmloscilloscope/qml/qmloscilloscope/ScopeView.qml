@@ -61,7 +61,7 @@ ChartView {
     //![2]
     Timer {
         id: refreshTimer
-        interval: 1 / 60 * 1000 // 60 Hz
+        interval: 1 / 24 * 1000 // 24 Hz
         running: true
         repeat: true
         onTriggered: {
