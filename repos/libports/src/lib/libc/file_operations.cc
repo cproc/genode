@@ -17,6 +17,8 @@
 /* Genode includes */
 #include <base/env.h>
 #include <os/path.h>
+#include <region_map/client.h>
+#include <rm_session/connection.h>
 #include <util/token.h>
 
 /* compiler includes */
@@ -64,29 +66,89 @@ Libc::Mmap_registry *Libc::mmap_registry()
 	return &registry;
 }
 
+static Constructible<Rm_connection> &_rm_connection()
+{
+	static Constructible<Rm_connection> _inst;
+	return _inst;
+}
 
-static Cwd          *_cwd_ptr;
-static unsigned int  _mmap_align_log2 { PAGE_SHIFT };
-static Ram_allocator *_ram;
-static Region_map    *_rm;
+static Constructible<Region_map_client> &_mmap_rm()
+{
+	static Constructible<Region_map_client> _inst;
+	return _inst;
+}
+
+static Range_allocator &_mmap_alloc()
+{
+	static Libc::Allocator md_alloc;
+	static Allocator_avl _inst(&md_alloc);
+	return _inst;
+}
+
+static Genode::Mutex &_mmap_alloc_mutex()
+{
+	static Genode::Mutex _inst;
+	return _inst;
+}
+
+static Cwd            *_cwd_ptr;
+static bool            _mmap_use_managed_ds { false };
+static unsigned int    _mmap_align_log2 { PAGE_SHIFT };
+static Ram_allocator  *_ram;
+static Genode::addr_t  _mmap_range_start;
+static Genode::addr_t  _mmap_range_end;
 
 void Libc::init_file_operations(Cwd &cwd, File_descriptor_allocator &fd_alloc,
                                 Config_accessor const &config_accessor,
                                 Ram_allocator &ram,
-                                Region_map &rm)
+                                Region_map &rm, Genode::Env &env)
 {
 	_fd_alloc_ptr = &fd_alloc;
 	_cwd_ptr      = &cwd;
+	_ram          = &ram;
 
 	config_accessor.config().with_optional_sub_node("libc", [&] (Xml_node libc) {
 		libc.with_optional_sub_node("mmap", [&] (Xml_node mmap) {
+
+			_mmap_use_managed_ds = true;
+
+			_rm_connection().construct(env);
+			Capability<Region_map> mmap_rm_cap = _rm_connection()->create(1UL << 34);
+			_mmap_rm().construct(mmap_rm_cap);
+
+			int result = 0;
+			Region_map::Range const range = rm.attach(_mmap_rm()->dataspace(), {
+				.size       = { },
+				.offset     = { },
+				.use_at     = { },
+				.at         = { },
+				.executable = true,
+				.writeable  = true
+			}).convert<Region_map::Range>(
+				[&] (Region_map::Range range) { return range; },
+				[&] (Region_map::Attach_error e) {
+					switch (e) {
+					case Region_map::Attach_error::OUT_OF_RAM:        result = -2; break;
+					case Region_map::Attach_error::OUT_OF_CAPS:       result = -4; break;
+					case Region_map::Attach_error::INVALID_DATASPACE: result = -6; break;
+					case Region_map::Attach_error::REGION_CONFLICT:   break;
+					}
+					result = -7;
+					return Region_map::Range { };
+				});
+
+			_mmap_range_start = range.start;
+			_mmap_range_end = range.start + range.num_bytes - 1;
+
+//Genode::log("Libc::init_file_operations(): range: ", Genode::Hex(_mmap_range_start), "-", Genode::Hex(_mmap_range_end));
+
+			_mmap_alloc().add_range(range.start, range.num_bytes);
+
+
 			_mmap_align_log2 = mmap.attribute_value("align_log2",
 			                                        (unsigned int)PAGE_SHIFT);
 		});
 	});
-
-	_ram = &ram;
-	_rm = &rm;
 }
 
 
@@ -466,54 +528,102 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 		bool const executable = prot & PROT_EXEC;
 
-		Ram_dataspace_capability cap = _ram->alloc(length);
+		if (_mmap_use_managed_ds) {
 
-		if (!cap.valid()) {
-//Genode::error("mmap(): allocation of ", length, "bytes failed");
+			Ram_dataspace_capability cap = _ram->alloc(length);
+
+			if (!cap.valid()) {
+				Genode::error("mmap(): allocation of ", length, "bytes failed");
+				errno = ENOMEM;
+				return MAP_FAILED;
+			}
+
+			if (addr) {
+				Mutex::Guard guard(_mmap_alloc_mutex());
+				if (((Genode::addr_t)addr < _mmap_range_start) ||
+				    ((Genode::addr_t)addr + length >= _mmap_range_end) ||
+					_mmap_alloc().alloc_addr(length, Genode::addr_t(addr)).failed())
+					addr = nullptr;
+			}
+
+			if (!addr) {
+
+				size_t align_log2 = Genode::log2(length);
+
+				if ((1UL << align_log2) != length)
+					align_log2++;
+
+				bool alloc_ok = true;
+
+				{
+					Mutex::Guard guard(_mmap_alloc_mutex());
+
+					_mmap_alloc().alloc_aligned(length, align_log2).with_result(
+						[&] (void *ptr) { addr = ptr; },
+						[&] (Genode::Allocator::Alloc_error) { alloc_ok = false; });
+				}
+
+				if (!alloc_ok) {
+					Genode::error("mmap(): rm alloc failed.");
+					_ram->free(cap);
+					errno = ENOMEM;
+					return MAP_FAILED;
+				}
+			}
+
+			int result = 0;
+			bool retry = false;
+			Region_map::Range range { };
+
+			do {
+
+				retry = false;
+
+				range = _mmap_rm()->attach(cap, {
+				  .size       = { },
+				  .offset     = { },
+				  .use_at     = true,
+				  .at         = (Genode::addr_t)addr - _mmap_range_start,
+				  .executable = executable,
+				  .writeable  = true
+				}).convert<Region_map::Range>(
+					[&] (Region_map::Range range) { return range; },
+					[&] (Region_map::Attach_error e) {
+						switch (e) {
+						case Region_map::Attach_error::OUT_OF_RAM:
+							_rm_connection()->upgrade_ram(4096);
+							retry = true;
+							break;
+						case Region_map::Attach_error::OUT_OF_CAPS:
+							_rm_connection()->upgrade_caps(2);
+							retry = true;
+							break;
+						case Region_map::Attach_error::INVALID_DATASPACE:
+							result = -1;
+							break;
+						case Region_map::Attach_error::REGION_CONFLICT:
+							result = -2;
+							break;
+						}
+						return Region_map::Range { };
+				});
+			} while (retry);
+
+			if (result == 0) {
+				if ((_mmap_range_start + range.start) != (Genode::addr_t)addr) {
+					Genode::error("address mismatch: addr: ", addr, ", range: ", Genode::Hex(_mmap_range_start + range.start));
+				}
+				mmap_registry()->insert(addr, range.num_bytes, cap);
+//Genode::log("mmap() finished: ", addr, " - ", Genode::Hex((addr_t)addr + length - 1));
+				return addr;
+			}
+
+			Genode::error("mmap(): attach() failed: ", result, ", addr: ", addr);
+			_ram->free(cap);
 			errno = ENOMEM;
 			return MAP_FAILED;
 		}
 
-		for (int i = 0; i < 2; i++) {
-
-			int result = 0;
-
-			Region_map::Range const range = _rm->attach(cap, {
-			  .size       = { },
-			  .offset     = { },
-			  .use_at     = addr ? true : false,
-			  .at         = (Genode::addr_t)addr,
-			  .executable = executable,
-			  .writeable  = true
-			}).convert<Region_map::Range>(
-				[&] (Region_map::Range range) { return range; },
-				[&] (Region_map::Attach_error e) {
-					switch (e) {
-					case Region_map::Attach_error::OUT_OF_RAM:        result = -2; break;
-					case Region_map::Attach_error::OUT_OF_CAPS:       result = -4; break;
-					case Region_map::Attach_error::INVALID_DATASPACE: result = -6; break;
-					case Region_map::Attach_error::REGION_CONFLICT:   break;
-					}
-					result = -7;
-					return Region_map::Range { };
-			});
-
-			if (result == 0) {
-				void *start = (void*)range.start;
-				mmap_registry()->insert(start, length, cap);
-//Genode::log("mmap() finished: ", start, " - ", Genode::Hex((addr_t)start + length - 1));
-				return start;
-			}
-
-			addr = nullptr;
-		}
-
-//Genode::error("mmap(): attach() failed.");
-		_ram->free(cap);
-		errno = ENOMEM;
-		return MAP_FAILED;
-
-#if 0
 		void *start = mem_alloc(executable)->alloc(length, _mmap_align_log2);
 		if (!start) {
 			errno = ENOMEM;
@@ -523,7 +633,6 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 		mmap_registry()->insert(start, length, 0);
 
 		return start;
-#endif
 	}
 
 	/* lookup plugin responsible for file descriptor */
@@ -545,8 +654,9 @@ __SYS_(void *, mmap, (void *addr, ::size_t length,
 
 extern "C" int munmap(void *start, ::size_t length)
 {
+
 	if (!mmap_registry()->registered(start)) {
-		warning("munmap: could not lookup plugin for address ", start);
+		warning("munmap: could not lookup plugin for address ", start, ", length ", length);
 		errno = EINVAL;
 		return -1;
 	}
@@ -570,15 +680,20 @@ extern "C" int munmap(void *start, ::size_t length)
 	if (plugin)
 		ret = plugin->munmap(start, length);
 	else {
-#if 0
-		bool const executable = true;
-		/* XXX another metadata handling required to track anonymous memory */
-		mem_alloc(!executable)->free(start);
-		mem_alloc(executable)->free(start);
-#endif
 //Genode::log("munmap(", start, ", ", length, ")");
-		_rm->detach((Genode::addr_t)start);
-		_ram->free(cap);
+		if (_mmap_use_managed_ds) {
+			_mmap_rm()->detach((Genode::addr_t)start - _mmap_range_start);
+			{
+				Mutex::Guard guard(_mmap_alloc_mutex());
+				_mmap_alloc().free(start);
+			}
+			_ram->free(cap);
+		} else {
+			bool const executable = true;
+			/* XXX another metadata handling required to track anonymous memory */
+			mem_alloc(!executable)->free(start);
+			mem_alloc(executable)->free(start);
+		}
 	}
 
 	return ret;

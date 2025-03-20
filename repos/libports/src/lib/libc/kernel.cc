@@ -509,7 +509,7 @@ Libc::Kernel::Kernel(Genode::Env &env, Genode::Allocator &heap)
 	init_plugin(*this);
 	init_sleep(*this);
 	init_vfs_plugin(*this, _env.rm());
-	init_file_operations(*this, _fd_alloc, _libc_env, _env.ram(), _env.rm());
+	init_file_operations(*this, _fd_alloc, _libc_env, _env.ram(), _env.rm(), _env);
 	init_pread_pwrite(_fd_alloc);
 	init_time(*this, *this);
 	init_alarm(_timer_accessor, _signal);
