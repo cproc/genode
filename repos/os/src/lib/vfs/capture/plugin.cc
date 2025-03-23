@@ -75,8 +75,27 @@ class Vfs_capture::Data_file_system : public Single_file_system
 
 				size_t const len = min(dst.num_bytes, _capture_ds->size());
 
-				Genode::memcpy(dst.start, _capture_ds->local_addr<char>(), len);
+#if 1
+				static uint32_t val = 0xff000000;
+				for (file_size i = 0; i < len/sizeof(uint32_t); i++) {
+					((uint32_t*)dst.start)[i] = val;
+					val++;
+				}
+#endif
 
+#if 0
+				for (file_size i = 0; i < len/sizeof(uint32_t); i++) {
+					uint32_t val = _capture_ds->local_addr<uint32_t>()[i];
+
+					if (val != 0) {
+						Genode::log(Genode::Hex(val));
+					}
+
+					((uint32_t*)dst)[i] = val;
+				}
+#else
+//				Genode::memcpy(dst.start, _capture_ds->local_addr<char>(), len);
+#endif
 				out_count = len;
 
 				return READ_OK;
