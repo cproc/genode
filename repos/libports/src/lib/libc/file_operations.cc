@@ -80,7 +80,7 @@ static Constructible<Region_map_client> &_mmap_rm()
 
 static Range_allocator &_mmap_alloc()
 {
-	static Libc::Allocator md_alloc;
+	static Libc::Old_allocator md_alloc;
 	static Allocator_avl _inst(&md_alloc);
 	return _inst;
 }
