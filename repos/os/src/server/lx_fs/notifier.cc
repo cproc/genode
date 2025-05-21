@@ -216,10 +216,10 @@ Lx_fs::Notifier::Notifier(Env &env)
 {
 	_fd = inotify_init();
 
-	if (0 > _fd)
-		throw Init_notify_failed { };
+//	if (0 > _fd)
+//		throw Init_notify_failed { };
 
-	start();
+//	start();
 }
 
 
