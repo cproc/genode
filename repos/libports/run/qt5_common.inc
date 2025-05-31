@@ -39,17 +39,26 @@ proc qt5_layouter_config { } {
 
 proc qt5_decorator_binary { } { return "decorator" }
 
+#proc qt5_decorator_config { } {
+#	return {
+#		<config>
+#			<!-- this is an example config for the themed decorator
+#			<vfs>
+#				<tar name="plain_decorator_theme.tar"/>
+#			</vfs>
+#			<libc/>
+#			-->
+#			<default-policy/>
+#		</config>}
+#}
+
 proc qt5_decorator_config { } {
 	return {
 		<config>
-			<!-- this is an example config for the themed decorator
-			<vfs>
-				<tar name="plain_decorator_theme.tar"/>
-			</vfs>
-			<libc/>
-			-->
+			<controls> <maximizer/> <title/> </controls>
 			<default-policy/>
-		</config>}
+		</config>
+	}
 }
 
 proc qt5_parent_provides { } {
