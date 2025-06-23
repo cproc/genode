@@ -57,6 +57,10 @@ struct Vfs::Watch_response_handler : Genode::Interface
 
 class Vfs::Vfs_handle
 {
+	public:
+
+		static constexpr unsigned long INVALID_CONTEXT_ID = ~0UL;
+
 	private:
 
 		Directory_service &_ds;
@@ -64,6 +68,7 @@ class Vfs::Vfs_handle
 		Genode::Allocator &_alloc;
 		file_size          _seek = 0;
 		int                _status_flags;
+		unsigned long      _context_id { INVALID_CONTEXT_ID };
 
 		Read_ready_response_handler *_handler_ptr = nullptr;
 
@@ -72,6 +77,10 @@ class Vfs::Vfs_handle
 		 */
 		Vfs_handle(Vfs_handle const &);
 		Vfs_handle &operator = (Vfs_handle const &);
+
+	protected:
+
+		void context_id(unsigned long id) { _context_id = id; }
 
 	public:
 
@@ -120,6 +129,8 @@ class Vfs::Vfs_handle
 
 		int status_flags() const { return _status_flags; }
 		void status_flags(int flags) { _status_flags = flags; }
+
+		unsigned long context_id() const { return _context_id; }
 
 		/**
 		 * Return seek offset in bytes
