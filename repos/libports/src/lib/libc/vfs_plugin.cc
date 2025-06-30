@@ -79,12 +79,6 @@ static Genode::Env::Local_rm &local_rm()
 namespace { using Fn = Libc::Monitor::Function_result; }
 
 
-static Vfs::Vfs_handle *vfs_handle(Libc::File_descriptor *fd)
-{
-	return reinterpret_cast<Vfs::Vfs_handle *>(fd->context);
-}
-
-
 static Libc::Plugin_context *vfs_context(Vfs::Vfs_handle *vfs_handle)
 {
 	return reinterpret_cast<Libc::Plugin_context *>(vfs_handle);
@@ -552,6 +546,13 @@ int Libc::Vfs_plugin::close(File_descriptor *fd)
 		if ((fd->modified) || (fd->flags & O_CREAT))
 			if (!sync.complete())
 				return Fn::INCOMPLETE;
+
+		/* remove from _cached_ioctl_info */
+		if (fd->fd_path) {
+			Absolute_path path { ioctl_dir(*fd) };
+			path.append_element("info");
+			_cached_ioctl_info.remove_file(path);
+		}
 
 		handle->close();
 		_fd_alloc.free(fd);
