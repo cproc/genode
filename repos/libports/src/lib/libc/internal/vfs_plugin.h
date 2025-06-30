@@ -35,6 +35,12 @@
 namespace Libc { class Vfs_plugin; }
 
 
+static Genode::Vfs::Vfs_handle *vfs_handle(Libc::File_descriptor const *fd)
+{
+	return reinterpret_cast<Genode::Vfs::Vfs_handle *>(fd->context);
+}
+
+
 class Libc::Vfs_plugin final : public Plugin
 {
 	public:
@@ -66,6 +72,12 @@ class Libc::Vfs_plugin final : public Plugin
 
 			path.strip_last_element();
 			path.append_element(ioctl_dir_name.string());
+
+			Vfs::Vfs_handle *handle = vfs_handle(&fd);
+			if (handle->context_id() != Vfs::Vfs_handle::INVALID_CONTEXT_ID) {
+				String<64> const context_id_dir_name("/", handle->context_id());
+				path.append(context_id_dir_name.string());
+			}
 
 			return path;
 		}
@@ -114,6 +126,15 @@ class Libc::Vfs_plugin final : public Plugin
 
 				if (path == _path && _file.constructed())
 					fn(*_file);
+			}
+
+			void remove_file(Absolute_path const &path)
+			{
+				if (path == _path) {
+					_path = "";
+					if (_file.constructed())
+						_file.destruct();
+				}
 			}
 
 			Cached_ioctl_info(Vfs_plugin &vfs_plugin) : _vfs_plugin(vfs_plugin) { }

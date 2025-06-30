@@ -563,6 +563,13 @@ int Libc::Vfs_plugin::close(File_descriptor *fd)
 			if (!sync.complete())
 				return Fn::INCOMPLETE;
 
+		/* remove from _cached_ioctl_info */
+		if (fd->fd_path) {
+			Absolute_path path { ioctl_dir(*fd) };
+			path.append_element("info");
+			_cached_ioctl_info.remove_file(path);
+		}
+
 		handle->close();
 		_fd_alloc.free(fd);
 
