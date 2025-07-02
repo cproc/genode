@@ -1,0 +1,73 @@
+tmp_no_random_hint.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../partition_allocator/page_allocator.cc          |    6 ++++++
+ .../src/3rdparty/chromium/v8/src/heap/spaces.cc    |    5 ++++-
+ .../chromium/v8/src/wasm/wasm-code-manager.cc      |    3 ++-
+ 3 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc b/qtwebengine/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+index b9d7fa6c53..9fdebdbaae 100644
+--- a/qtwebengine/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
++++ b/qtwebengine/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+@@ -131,8 +131,12 @@ void* AllocPages(void* address,
+   // aligned address derived from the value of |ret|.
+   constexpr int kExactSizeTries = 2;
+ #else
++#if 0
+   // On 64 bit systems, try 3 random aligned addresses.
+   constexpr int kExactSizeTries = 3;
++#else
++  constexpr int kExactSizeTries = 1;
++#endif
+ #endif
+ 
+   for (int i = 0; i < kExactSizeTries; ++i) {
+@@ -157,10 +161,12 @@ void* AllocPages(void* address,
+         (reinterpret_cast<uintptr_t>(ret) + align_offset_mask) &
+         align_base_mask);
+ #else  // defined(ARCH_CPU_64_BITS)
++#if 0
+     // Keep trying random addresses on systems that have a large address space.
+     address = GetRandomPageBase();
+     address = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(address) &
+                                       align_base_mask);
++#endif
+ #endif
+   }
+ 
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc b/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
+index a7aec2ff1f..b3f29ef448 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
+@@ -897,8 +897,11 @@ MemoryChunk* MemoryAllocator::AllocateChunk(size_t reserve_area_size,
+   Address area_start = kNullAddress;
+   Address area_end = kNullAddress;
+   void* address_hint =
++#if 0
+       AlignedAddress(heap->GetRandomMmapAddr(), MemoryChunk::kAlignment);
+-
++#else
++      nullptr;
++#endif
+   //
+   // MemoryChunk layout:
+   //
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc b/qtwebengine/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
+index 99cf484b17..ebf74d20ca 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
+@@ -1554,8 +1554,9 @@ VirtualMemory WasmCodeManager::TryAllocate(size_t size, void* hint) {
+   size_t allocate_page_size = page_allocator->AllocatePageSize();
+   size = RoundUp(size, allocate_page_size);
+   if (!BackingStore::ReserveAddressSpace(size)) return {};
++#if 0
+   if (hint == nullptr) hint = page_allocator->GetRandomMmapAddr();
+-
++#endif
+   VirtualMemory mem(page_allocator, size, hint, allocate_page_size);
+   if (!mem.IsReserved()) {
+     BackingStore::ReleaseReservation(size);

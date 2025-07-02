@@ -1,0 +1,25 @@
+tmp_v8_runtime_stringsplit_limit.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../chromium/v8/src/runtime/runtime-regexp.cc      |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/3rdparty/chromium/v8/src/runtime/runtime-regexp.cc b/src/3rdparty/chromium/v8/src/runtime/runtime-regexp.cc
+index 52cc7f653..07e54af48 100644
+--- a/src/3rdparty/chromium/v8/src/runtime/runtime-regexp.cc
++++ b/src/3rdparty/chromium/v8/src/runtime/runtime-regexp.cc
+@@ -805,6 +805,11 @@ RUNTIME_FUNCTION(Runtime_StringSplit) {
+   Handle<String> subject = args.at<String>(0);
+   Handle<String> pattern = args.at<String>(1);
+   uint32_t limit = NumberToUint32(args[2]);
++
++  // XXX: find out why limit is 0 when loading jitsi
++  if (limit == 0)
++    limit = 0xFFFFFFFFu;
++
+   CHECK_LT(0, limit);
+ 
+   int subject_length = subject->length();

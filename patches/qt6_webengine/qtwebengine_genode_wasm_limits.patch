@@ -1,0 +1,25 @@
+qtwebengine_genode_wasm_limits.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ src/3rdparty/chromium/v8/src/wasm/wasm-limits.h |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/3rdparty/chromium/v8/src/wasm/wasm-limits.h b/src/3rdparty/chromium/v8/src/wasm/wasm-limits.h
+index 5b8201215..3f82fd1a1 100644
+--- a/src/3rdparty/chromium/v8/src/wasm/wasm-limits.h
++++ b/src/3rdparty/chromium/v8/src/wasm/wasm-limits.h
+@@ -41,7 +41,11 @@ constexpr size_t kV8MaxWasmDataSegments = 100000;
+ // kSpecMaxMemory{32,64}Pages for that.
+ constexpr size_t kV8MaxWasmMemory32Pages = kSystemPointerSize == 4
+                                                ? 32767   // = 2 GiB - 64Kib
++#if 0
+                                                : 65536;  // = 4 GiB
++#else
++                                               : 2048;  // = 128 MiB
++#endif
+ constexpr size_t kV8MaxWasmMemory64Pages = kSystemPointerSize == 4
+                                                ? 32767    // = 2 GiB - 64Kib
+                                                : 262144;  // = 16 GiB
