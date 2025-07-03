@@ -1,0 +1,104 @@
+tmp_no_random_hint.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../partition_allocator/page_allocator.cc          |    8 ++++++++
+ .../chromium/v8/src/heap/memory-allocator.cc       |    2 ++
+ .../chromium/v8/src/init/isolate-allocator.cc      |    4 ++++
+ .../chromium/v8/src/wasm/wasm-code-manager.cc      |    3 ++-
+ 4 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc b/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+index 045013721..f12317cd1 100644
+--- a/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
++++ b/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+@@ -189,10 +189,12 @@ uintptr_t AllocPagesWithAlignOffset(
+   uintptr_t align_base_mask = ~align_offset_mask;
+   PA_DCHECK(!address || (address & align_offset_mask) == align_offset);
+ 
++#if 0
+   // If the client passed null as the address, choose a good one.
+   if (!address) {
+     address = (GetRandomPageBase() & align_base_mask) + align_offset;
+   }
++#endif
+ 
+   // First try to force an exact-size, aligned allocation from our random base.
+ #if defined(ARCH_CPU_32_BITS)
+@@ -200,8 +202,12 @@ uintptr_t AllocPagesWithAlignOffset(
+   // aligned address derived from the value of |ret|.
+   constexpr int kExactSizeTries = 2;
+ #else
++#if 0
+   // On 64 bit systems, try 3 random aligned addresses.
+   constexpr int kExactSizeTries = 3;
++#else
++  constexpr int kExactSizeTries = 10;
++#endif
+ #endif
+ 
+   for (int i = 0; i < kExactSizeTries; ++i) {
+@@ -242,8 +248,10 @@ uintptr_t AllocPagesWithAlignOffset(
+ #endif
+ 
+   do {
++#if 0
+     // Continue randomizing only on POSIX.
+     address = internal::kHintIsAdvisory ? GetRandomPageBase() : 0;
++#endif
+     ret =
+         AllocPagesIncludingReserved(address, try_length, accessibility,
+                                     page_tag, file_descriptor_for_shared_alloc);
+diff --git a/src/3rdparty/chromium/v8/src/heap/memory-allocator.cc b/src/3rdparty/chromium/v8/src/heap/memory-allocator.cc
+index 0fe950323..2fdc4d05c 100644
+--- a/src/3rdparty/chromium/v8/src/heap/memory-allocator.cc
++++ b/src/3rdparty/chromium/v8/src/heap/memory-allocator.cc
+@@ -354,6 +354,7 @@ MemoryAllocator::AllocateUninitializedChunkAt(BaseSpace* space,
+                                               Address hint,
+                                               PageSize page_size) {
+ #ifndef V8_COMPRESS_POINTERS
++#if 0
+   // When pointer compression is enabled, spaces are expected to be at a
+   // predictable address (see mkgrokdump) so we don't supply a hint and rely on
+   // the deterministic behaviour of the BoundedPageAllocator.
+@@ -361,6 +362,7 @@ MemoryAllocator::AllocateUninitializedChunkAt(BaseSpace* space,
+     hint = reinterpret_cast<Address>(AlignedAddress(
+         isolate_->heap()->GetRandomMmapAddr(), MemoryChunk::kAlignment));
+   }
++#endif
+ #endif
+ 
+   VirtualMemory reservation;
+diff --git a/src/3rdparty/chromium/v8/src/init/isolate-allocator.cc b/src/3rdparty/chromium/v8/src/init/isolate-allocator.cc
+index 435c02048..621851a2d 100644
+--- a/src/3rdparty/chromium/v8/src/init/isolate-allocator.cc
++++ b/src/3rdparty/chromium/v8/src/init/isolate-allocator.cc
+@@ -51,7 +51,11 @@ struct PtrComprCageReservationParams
+     page_size =
+         RoundUp(size_t{1} << kPageSizeBits, page_allocator->AllocatePageSize());
+     requested_start_hint =
++#if 0
+         reinterpret_cast<Address>(page_allocator->GetRandomMmapAddr());
++#else
++        0;
++#endif
+     jit = JitPermission::kNoJit;
+   }
+ };
+diff --git a/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc b/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
+index 751981a42..eb6017185 100644
+--- a/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
++++ b/src/3rdparty/chromium/v8/src/wasm/wasm-code-manager.cc
+@@ -1848,8 +1848,9 @@ VirtualMemory WasmCodeManager::TryAllocate(size_t size, void* hint) {
+   DCHECK_GT(size, 0);
+   size_t allocate_page_size = page_allocator->AllocatePageSize();
+   size = RoundUp(size, allocate_page_size);
++#if 0
+   if (hint == nullptr) hint = page_allocator->GetRandomMmapAddr();
+-
++#endif
+   // When we start exposing Wasm in jitless mode, then the jitless flag
+   // will have to determine whether we set kMapAsJittable or not.
+   DCHECK(!v8_flags.jitless);

@@ -1,0 +1,6 @@
+# This series applies on GIT commit 752e43a50af05955c90d319b9f866d8d69a4ff95
+qtwebengine_genode_no_o_nonblock.patch
+qtwebengine_genode_capture.patch
+qtwebengine_genode_wasm_limits.patch
+tmp_no_random_hint.diff
+tmp_no_random_hint2.diff

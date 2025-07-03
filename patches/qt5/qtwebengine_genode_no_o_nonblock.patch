@@ -1,0 +1,40 @@
+qtwebengine_genode_no_o_nonblock.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../chromium/base/files/file_util_posix.cc         |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/base/files/file_util_posix.cc b/qtwebengine/src/3rdparty/chromium/base/files/file_util_posix.cc
+index eb7fa79ac8..0cff04ec84 100644
+--- a/qtwebengine/src/3rdparty/chromium/base/files/file_util_posix.cc
++++ b/qtwebengine/src/3rdparty/chromium/base/files/file_util_posix.cc
+@@ -240,8 +240,13 @@ bool DoCopyDirectory(const FilePath& from_path,
+       continue;
+     }
+ 
++#if defined(OS_GENODE)
++    /* O_NONBLOCK could cause unhandled EWOULDBLOCK with regular files */
++    File infile(open(current.value().c_str(), O_RDONLY));
++#else
+     // Add O_NONBLOCK so we can't block opening a pipe.
+     File infile(open(current.value().c_str(), O_RDONLY | O_NONBLOCK));
++#endif
+     if (!infile.IsValid()) {
+       DPLOG(ERROR) << "CopyDirectory() couldn't open file: " << current.value();
+       return false;
+@@ -268,7 +273,12 @@ bool DoCopyDirectory(const FilePath& from_path,
+     if (open_exclusive)
+       open_flags |= O_EXCL;
+     else
++#if defined(OS_GENODE)
++      /* O_NONBLOCK could cause unhandled EWOULDBLOCK with regular files */
++      open_flags |= O_TRUNC;
++#else
+       open_flags |= O_TRUNC | O_NONBLOCK;
++#endif
+     // Each platform has different default file opening modes for CopyFile which
+     // we want to replicate here. On OS X, we use copyfile(3) which takes the
+     // source file's permissions into account. On the other platforms, we just
