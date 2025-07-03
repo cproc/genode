@@ -1,0 +1,8 @@
+# This series applies on GIT commit 32b2ff6165c7dae3c146cfa448350efd73bf2dc2
+qtwebengine_genode_no_o_nonblock.patch
+wasm_limits.diff
+tmp_no_random_hint.diff
+qtwebengine_genode_v8_stack_size.patch
+qtwebengine_genode_no_partial_munmap.diff
+tmp_amount_of_physical_memory.diff
+gcc14.diff

@@ -1,0 +1,21 @@
+gcc14.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/3rdparty/chromium/base/debug/profiler.h    |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/base/debug/profiler.h b/qtwebengine/src/3rdparty/chromium/base/debug/profiler.h
+index 1229e06234..c7ed55e70f 100644
+--- a/qtwebengine/src/3rdparty/chromium/base/debug/profiler.h
++++ b/qtwebengine/src/3rdparty/chromium/base/debug/profiler.h
+@@ -5,6 +5,7 @@
+ #ifndef BASE_DEBUG_PROFILER_H_
+ #define BASE_DEBUG_PROFILER_H_
+ 
++#include <cstdint>
+ #include <stddef.h>
+ 
+ #include <string>

@@ -1,0 +1,76 @@
+qtwebengine_genode_v8_stack_size.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+Fix a crash during the JetStream 2 benchmark related to
+recursive calls and a mismatched stack overflow check limit.
+---
+ .../renderer/bindings/core/v8/v8_initializer.cc    |    5 +++++
+ .../src/3rdparty/chromium/v8/src/common/globals.h  |   17 +++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc b/qtwebengine/src/3rdparty/chromium/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc
+index 696a6170a5..9395510594 100644
+--- a/qtwebengine/src/3rdparty/chromium/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc
++++ b/qtwebengine/src/3rdparty/chromium/third_party/blink/renderer/bindings/core/v8/v8_initializer.cc
+@@ -730,10 +730,15 @@ static void ReportFatalErrorInWorker(const char* location,
+   LOG(FATAL);
+ }
+ 
++#ifdef V8_OS_GENODE
++// default stack size for pthreads is currently 256K
++static const int kWorkerMaxStackSize = 250 * 1024;
++#else
+ // Stack size for workers is limited to 500KB because default stack size for
+ // secondary threads is 512KB on Mac OS X. See GetDefaultThreadStackSize() in
+ // base/threading/platform_thread_mac.mm for details.
+ static const int kWorkerMaxStackSize = 500 * 1024;
++#endif
+ 
+ void V8Initializer::InitializeWorker(v8::Isolate* isolate) {
+   InitializeV8Common(isolate);
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/common/globals.h b/qtwebengine/src/3rdparty/chromium/v8/src/common/globals.h
+index 9c9632d0bd..1fe1104a23 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/common/globals.h
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/common/globals.h
+@@ -72,12 +72,22 @@ constexpr int GB = MB * 1024;
+ // Set stack limit lower for ARM than for other architectures because
+ // stack allocating MacroAssembler takes 120K bytes.
+ // See issue crbug.com/405338
++#ifdef V8_OS_GENODE
++// default stack size on Genode is currently 256K
++#define V8_DEFAULT_STACK_SIZE_KB (250 - 120)
++#else
+ #define V8_DEFAULT_STACK_SIZE_KB 864
++#endif
++#else
++#ifdef V8_OS_GENODE
++// default stack size on Genode is currently 256K
++#define V8_DEFAULT_STACK_SIZE_KB 250
+ #else
+ // Slightly less than 1MB, since Windows' default stack size for
+ // the main execution thread is 1MB for both 32 and 64-bit.
+ #define V8_DEFAULT_STACK_SIZE_KB 984
+ #endif
++#endif
+ 
+ // Minimum stack size in KB required by compilers.
+ constexpr int kStackSpaceRequiredForCompilation = 40;
+@@ -88,10 +98,17 @@ constexpr int kStackSpaceRequiredForCompilation = 40;
+ // stack frame sizes <= slack` can simply emit the simple stack check.
+ constexpr int kStackLimitSlackForDeoptimizationInBytes = 256;
+ 
++#ifdef V8_OS_GENODE
++// default stack size on Genode is currently 256K
++static_assert(V8_DEFAULT_STACK_SIZE_KB * KB +
++                  kStackLimitSlackForDeoptimizationInBytes <=
++              256*KB);
++#else
+ // Sanity-check, assuming that we aim for a real OS stack size of at least 1MB.
+ STATIC_ASSERT(V8_DEFAULT_STACK_SIZE_KB* KB +
+                   kStackLimitSlackForDeoptimizationInBytes <=
+               MB);
++#endif
+ 
+ // Determine whether double field unboxing feature is enabled.
+ #if V8_TARGET_ARCH_64_BIT && !defined(V8_COMPRESS_POINTERS)
