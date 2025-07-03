@@ -1,0 +1,30 @@
+tmp_textedit.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ qtbase/src/widgets/widgets/qwidgettextcontrol.cpp |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/qtbase/src/widgets/widgets/qwidgettextcontrol.cpp b/qtbase/src/widgets/widgets/qwidgettextcontrol.cpp
+index 40b8af663c..c550913e48 100644
+--- a/qtbase/src/widgets/widgets/qwidgettextcontrol.cpp
++++ b/qtbase/src/widgets/widgets/qwidgettextcontrol.cpp
+@@ -2375,6 +2375,16 @@ QMenu *QWidgetTextControl::createStandardContextMenu(const QPointF &pos, QWidget
+         a->setEnabled(!d->doc->isEmpty());
+         a->setObjectName(QStringLiteral("select-all"));
+         setActionIcon(a, QStringLiteral("edit-select-all"));
++
++QMenu *sub = new QMenu("Sub", menu);
++QMenu *sub2 = new QMenu("Sub 2", sub);
++QMenu *sub3 = new QMenu("Sub 3", sub2);
++sub3->addAction(a);
++
++sub2->addMenu(sub3);
++sub->addMenu(sub2);
++menu->addMenu(sub);
++
+     }
+ 
+     if ((d->interactionFlags & Qt::TextEditable) && QGuiApplication::styleHints()->useRtlExtensions()) {

@@ -1,0 +1,59 @@
+qtwebengine_genode_no_partial_munmap.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../src/3rdparty/chromium/v8/src/heap/heap.cc      |    2 ++
+ .../chromium/v8/src/heap/read-only-heap.cc         |    2 ++
+ .../src/3rdparty/chromium/v8/src/heap/spaces.cc    |    2 ++
+ 3 files changed, 6 insertions(+)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/heap/heap.cc b/qtwebengine/src/3rdparty/chromium/v8/src/heap/heap.cc
+index d79408fc9c..e8e2470c9c 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/heap/heap.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/heap/heap.cc
+@@ -5289,7 +5289,9 @@ int Heap::NextStressMarkingLimit() {
+ void Heap::NotifyDeserializationComplete() {
+   PagedSpaceIterator spaces(this);
+   for (PagedSpace* s = spaces.Next(); s != nullptr; s = spaces.Next()) {
++#if !defined(V8_OS_GENODE)
+     if (isolate()->snapshot_available()) s->ShrinkImmortalImmovablePages();
++#endif
+ #ifdef DEBUG
+     // All pages right after bootstrapping must be marked as never-evacuate.
+     for (Page* p : *s) {
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/heap/read-only-heap.cc b/qtwebengine/src/3rdparty/chromium/v8/src/heap/read-only-heap.cc
+index 91d5549ef3..34e80d792b 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/heap/read-only-heap.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/heap/read-only-heap.cc
+@@ -100,7 +100,9 @@ ReadOnlyHeap* ReadOnlyHeap::CreateAndAttachToIsolate(Isolate* isolate) {
+ 
+ void ReadOnlyHeap::InitFromIsolate(Isolate* isolate) {
+   DCHECK(!init_complete_);
++#if !defined(V8_OS_GENODE)
+   read_only_space_->ShrinkImmortalImmovablePages();
++#endif
+ #ifdef V8_SHARED_RO_HEAP
+   void* const isolate_ro_roots = reinterpret_cast<void*>(
+       isolate->roots_table().read_only_roots_begin().address());
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc b/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
+index b3f29ef448..b079ab94f5 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/heap/spaces.cc
+@@ -4240,6 +4240,7 @@ void LargeObjectSpace::FreeUnmarkedObjects() {
+     DCHECK(!marking_state->IsGrey(object));
+     size_t size = static_cast<size_t>(object.Size());
+     if (marking_state->IsBlack(object)) {
++#if !defined(V8_OS_GENODE)
+       Address free_start;
+       surviving_object_size += size;
+       if ((free_start = current->GetAddressToShrink(object.address(), size)) !=
+@@ -4254,6 +4255,7 @@ void LargeObjectSpace::FreeUnmarkedObjects() {
+         size_ -= bytes_to_free;
+         AccountUncommitted(bytes_to_free);
+       }
++#endif
+     } else {
+       RemovePage(current, size);
+       heap()->memory_allocator()->Free<MemoryAllocator::kPreFreeAndQueue>(

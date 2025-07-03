@@ -1,0 +1,33 @@
+tmp_no_random_hint2.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../partition_allocator/page_allocator.cc          |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc b/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+index f12317cd1..05acc29a4 100644
+--- a/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
++++ b/src/3rdparty/chromium/base/allocator/partition_allocator/page_allocator.cc
+@@ -206,7 +206,7 @@ uintptr_t AllocPagesWithAlignOffset(
+   // On 64 bit systems, try 3 random aligned addresses.
+   constexpr int kExactSizeTries = 3;
+ #else
+-  constexpr int kExactSizeTries = 10;
++  constexpr int kExactSizeTries = 1;
+ #endif
+ #endif
+ 
+@@ -233,8 +233,10 @@ uintptr_t AllocPagesWithAlignOffset(
+     // but the next matching address.
+     address = ((ret + align_offset_mask) & align_base_mask) + align_offset;
+ #else  // defined(ARCH_CPU_64_BITS)
++#if 0
+     // Keep trying random addresses on systems that have a large address space.
+     address = NextAlignedWithOffset(GetRandomPageBase(), align, align_offset);
++#endif
+ #endif
+   }
+ 
