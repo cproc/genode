@@ -1,0 +1,41 @@
+wasm_limits.diff
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ .../chromium/v8/src/wasm/module-decoder.cc         |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/qtwebengine/src/3rdparty/chromium/v8/src/wasm/module-decoder.cc b/qtwebengine/src/3rdparty/chromium/v8/src/wasm/module-decoder.cc
+index 58be26f845..18440cb96c 100644
+--- a/qtwebengine/src/3rdparty/chromium/v8/src/wasm/module-decoder.cc
++++ b/qtwebengine/src/3rdparty/chromium/v8/src/wasm/module-decoder.cc
+@@ -1551,14 +1551,27 @@ class ModuleDecoderImpl : public Decoder {
+       pos = pc();
+       *maximum = consume_u32v("maximum size");
+       if (*maximum > max_maximum) {
++#if 0
+         errorf(
+             pos,
+             "maximum %s size (%u %s) is larger than implementation limit (%u)",
+             name, *maximum, units, max_maximum);
++#else
++        fprintf(stderr, "WASM: warning: "
++            "maximum %s size (%u %s) is larger than implementation limit (%u)\n",
++            name, *maximum, units, max_maximum);
++        *maximum = max_maximum;
++#endif
+       }
+       if (*maximum < *initial) {
++#if 0
+         errorf(pos, "maximum %s size (%u %s) is less than initial (%u %s)",
+                name, *maximum, units, *initial, units);
++#else
++        fprintf(stderr, "WASM: warning: maximum %s size (%u %s) is less than initial (%u %s)\n",
++               name, *maximum, units, *initial, units);
++        *initial = *maximum;
++#endif
+       }
+     } else {
+       *has_max = false;
