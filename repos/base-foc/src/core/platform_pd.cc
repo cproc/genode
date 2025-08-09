@@ -134,7 +134,8 @@ Platform_pd::Platform_pd(Core_cap_index &ci)
 { }
 
 
-Platform_pd::Platform_pd(Allocator &, char const *)
+Platform_pd::Platform_pd(Rpc_entrypoint &, Ram_allocator  &,
+                         Local_rm &, Allocator &, char const *)
 :
 	_task(true, TASK_CAP), _debug(debug_cap(), DEBUG_CAP)
 {

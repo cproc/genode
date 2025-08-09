@@ -51,9 +51,6 @@ class Core::Vm_session_component
 {
 	private:
 
-		using Vm_page_table_array = typename TABLE::Array;
-
-
 		/*
 		 * Noncopyable
 		 */
@@ -91,14 +88,13 @@ class Core::Vm_session_component
 		Local_rm                           &_local_rm;
 		Heap                                _heap;
 		Phys_allocated<TABLE>               _table;
-		Phys_allocated<Vm_page_table_array> _table_array;
+		Page_table_allocator                _table_alloc;
 		Guest_memory                        _memory;
 		Vmid_allocator                     &_vmid_alloc;
 		uint8_t                             _remaining_print_count { 10 };
 
 		using Constructed = Attempt<Ok, Alloc_error>;
-		Constructed const constructed =
-			_table.constructed.ok() ? _table.constructed : _table_array.constructed;
+		Constructed const constructed = _table.constructed;
 
 		Kernel::Vcpu::Identity _id {
 			_vmid_alloc.alloc().convert<unsigned>(
@@ -110,10 +106,8 @@ class Core::Vm_session_component
 		void _detach_at(addr_t addr)
 		{
 			_memory.detach_at(addr, [&](addr_t vm_addr, size_t size) {
-				_table_array.obj([&] (Vm_page_table_array &array) {
-					_table.obj([&] (TABLE &table) {
-						table.remove(vm_addr, size, array.alloc());
-					});
+				_table.obj([&] (TABLE &table) {
+					table.remove(vm_addr, size, _table_alloc);
 				});
 			});
 		}
@@ -121,10 +115,8 @@ class Core::Vm_session_component
 		void _reserve_and_flush(addr_t addr)
 		{
 			_memory.reserve_and_flush(addr, [&](addr_t vm_addr, size_t size) {
-				_table_array.obj([&] (Vm_page_table_array &array) {
-					_table.obj([&] (TABLE &table) {
-						table.remove(vm_addr, size, array.alloc());
-					});
+				_table.obj([&] (TABLE &table) {
+					table.remove(vm_addr, size, _table_alloc);
 				});
 			});
 		}
@@ -148,12 +140,7 @@ class Core::Vm_session_component
 			_local_rm(local_rm),
 			_heap(_accounted_ram_alloc, local_rm),
 			_table(_ep, _accounted_ram_alloc, _local_rm),
-			_table_array(_ep, _accounted_ram_alloc, _local_rm,
-					[] (Phys_allocated<Vm_page_table_array> &table_array, auto *obj_ptr) {
-						construct_at<Vm_page_table_array>(obj_ptr, [&] (void *virt) {
-						return table_array.phys_addr() + ((addr_t) obj_ptr - (addr_t)virt);
-						});
-					}),
+			_table_alloc(_ep, _accounted_ram_alloc, _local_rm, _heap),
 			_memory(_accounted_ram_alloc, local_rm),
 			_vmid_alloc(vmid_alloc)
 		{
@@ -192,17 +179,15 @@ class Core::Vm_session_component
 
 			auto const &map_fn = [&](addr_t vm_addr, addr_t phys_addr, size_t size) {
 				Page_flags const pflags { RW, EXEC, USER, NO_GLOBAL, RAM, CACHED };
-				_table_array.obj([&] (Vm_page_table_array &array) {
-					_table.obj([&] (TABLE &table) {
-						Hw::Page_table::Result result =
-							table.insert(vm_addr, phys_addr, size, pflags,
-							             array.alloc());
-						result.with_error([&] (Hw::Page_table_error e) {
-							if (e == Hw::Page_table_error::INVALID_RANGE)
-								invalid_mapping = true;
-							else
-								out_of_tables = true;
-						});
+				_table.obj([&] (TABLE &table) {
+					Hw::Page_table::Result result =
+						table.insert(vm_addr, phys_addr, size, pflags,
+						             _table_alloc);
+					result.with_error([&] (Hw::Page_table_error e) {
+						if (e == Hw::Page_table_error::INVALID_RANGE)
+							invalid_mapping = true;
+						else
+							out_of_tables = true;
 					});
 				});
 			};
@@ -253,10 +238,8 @@ class Core::Vm_session_component
 		void detach(addr_t guest_phys, size_t size) override
 		{
 			_memory.detach(guest_phys, size, [&](addr_t vm_addr, size_t size) {
-				_table_array.obj([&] (Vm_page_table_array &array) {
-					_table.obj([&] (TABLE &table) {
-						table.remove(vm_addr, size, array.alloc()); });
-				});
+				_table.obj([&] (TABLE &table) {
+						table.remove(vm_addr, size, _table_alloc); });
 			});
 		}
 

@@ -153,7 +153,8 @@ void Platform_pd::flush(addr_t virt_addr, size_t size, Core_local_addr)
 }
 
 
-Platform_pd::Platform_pd(Allocator &md_alloc, char const *label)
+Platform_pd::Platform_pd(Rpc_entrypoint &, Ram_allocator  &,
+                         Local_rm &, Allocator &, char const *label)
 :
 	_page_table_registry(md_alloc)
 {

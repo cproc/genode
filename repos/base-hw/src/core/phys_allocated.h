@@ -67,23 +67,15 @@ class Core::Phys_allocated : Genode::Noncopyable
 					[&] (Ram::Allocation const &) { return Alloc_error::DENIED; },
 					[&] (Alloc_error e) { return e; }); });
 
-		Phys_allocated(Rpc_entrypoint &ep,
-		               Ram_allocator  &ram,
-		               Local_rm       &rm)
-		:
-			_ep(ep), _ram(ram), _rm(rm)
-		{
-			obj([&] (T &o) { construct_at<T>(&o); });
-		}
-
+		template <typename... ARGS>
 		Phys_allocated(Rpc_entrypoint &ep,
 		               Ram_allocator  &ram,
 		               Local_rm       &rm,
-		               auto const     &construct_fn)
+		               ARGS &&... args)
 		:
 			_ep(ep), _ram(ram), _rm(rm)
 		{
-			obj([&] (T &o) { construct_fn(*this, &o); });
+			obj([&] (T &o) { construct_at<T>(&o, args...); });
 		}
 
 		~Phys_allocated()

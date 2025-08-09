@@ -79,7 +79,8 @@ class Core::Platform_pd : public Address_space
 		/**
 		 * Constructor for all tasks except core.
 		 */
-		Platform_pd(Allocator &, char const *label);
+		Platform_pd(Rpc_entrypoint &, Ram_allocator &, Local_rm &,
+		            Allocator &, char const *name);
 
 		/**
 		 * Destructor
