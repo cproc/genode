@@ -52,6 +52,13 @@ class Board::Vcpu_state
 
 		Core::Phys_allocated<Vm_hw_context> _hw_context;
 
+		/**
+		 * physical address of hardware context needed by kernel,
+		 * cannot be called by kernel directly for now, therefore
+		 * cache it in this variable
+		 */
+		addr_t _hw_context_phys_addr { _hw_context.phys_addr() };
+
 		Genode::Vcpu_state *_state { nullptr };
 
 	public:
@@ -69,7 +76,7 @@ class Board::Vcpu_state
 		~Vcpu_state();
 
 		addr_t vmc_addr() const { return (addr_t)&_hw_context.obj; };
-		addr_t vmc_phys_addr() const { return _hw_context.phys_addr(); }
+		addr_t vmc_phys_addr() const { return _hw_context_phys_addr; }
 
 		void with_state(auto const fn) {
 			if (_state != nullptr) fn(*_state); }
