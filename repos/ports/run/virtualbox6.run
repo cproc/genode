@@ -1,8 +1,8 @@
 assert {[have_spec x86_64]}
 
-set use_net 0
+set use_net 1
 set use_overlay 0
-set use_serial 1
+set use_serial 0
 set use_top 0
 
 create_boot_directory
@@ -28,6 +28,11 @@ lappend depot_archives [depot_user]/src/libdrm
 lappend depot_archives [depot_user]/src/libyuv
 lappend depot_archives [depot_user]/src/vfs_gpu
 
+lappend depot_archives [depot_user]/src/sandbox
+lappend depot_archives [depot_user]/src/monitor
+lappend depot_archives [depot_user]/src/tcp_terminal
+lappend depot_archives [depot_user]/src/vfs_lwip
+
 lappend_if [expr $use_net] depot_archives [depot_user]/src/pc_nic
 lappend_if [expr $use_net] depot_archives [depot_user]/src/nic_router
 
@@ -35,8 +40,11 @@ import_from_depot $depot_archives
 
 
 set build_components {
-	lib/libc lib/vfs lib/libiconv lib/stdcxx
+	lib/ld lib/libc lib/vfs lib/libiconv lib/stdcxx
 	lib/qemu-usb lib/virtualbox6-shaderlib
+	lib/libm lib/libyuv lib/jpeg lib/mesa lib/expat
+	lib/glapi lib/libdrm lib/vfs_gpu lib/zlib
+	lib/vfs_pipe lib/egl
 	driver/audio
 	virtualbox6
 }
@@ -83,13 +91,14 @@ append_if [expr $use_top] config {
 	</start>}
 
 append config {
-	<start name="drivers" caps="1500" ram="64M" managing_system="yes" priority="-1">
+	<start name="drivers" caps="1500" ram="128M" managing_system="yes" priority="-1">
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer">   <child name="timer"/> </service>
 			<service name="Capture"> <child name="nitpicker"/> </service>
 			<service name="Event">   <child name="nitpicker"/> </service>
+			<service name="Uplink">   <child name="nic_router"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -107,14 +116,16 @@ append_if [expr $use_net] config {
 			<service name="Uplink"/>
 		</provides>
 		<config verbose_domain_state="yes">
-			<policy label_prefix="vbox" domain="downlink"/>
-			<policy label_prefix="nic"  domain="uplink"/>
+			<policy label_prefix="terminal" domain="downlink"/>
+			<policy label_prefix="drivers -> nic"  domain="uplink"/>
 
 			<domain name="uplink">
 				<nat domain="downlink"
 				     tcp-ports="16384"
 				     udp-ports="16384"
 				     icmp-ids="16384"/>
+
+				<tcp-forward port="5555" domain="downlink" to="10.0.3.100"/>
 			</domain>
 
 			<domain name="downlink" interface="10.0.3.1/24" verbose_packets="no">
@@ -128,7 +139,7 @@ append_if [expr $use_net] config {
 			</domain>
 		</config>
 	</start>
-
+<!--
 	<start name="nic" ram="8M" priority="-1">
 		<binary name="pc_nic"/>
 		<route>
@@ -136,7 +147,9 @@ append_if [expr $use_net] config {
 			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
-	</start>}
+	</start>
+-->
+}
 
 append_if [expr $use_serial] config {
 	<start name="log_terminal" ram="2M" priority="-1">
@@ -215,6 +228,53 @@ append config {
 		</route>
 	</start>
 
+	<start name="terminal" caps="200">
+		<binary name="tcp_terminal"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Terminal"/> </provides>
+		<config>
+			<policy label_prefix="monitor" port="5555"/>
+			<vfs>
+				<dir name="dev"> <log/> </dir>
+				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+				<dir name="pipe"> <pipe/> </dir>
+			</vfs>
+			<libc stdout="/dev/log" socket="/socket" pipe="/pipe"/>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="monitor" caps="10000">
+		<resource name="RAM" quantum="4000M"/>
+		<config prio_levels="4" verbose="yes">
+			<parent-provides>
+				<service name="ROM"/>
+				<service name="IRQ"/>
+				<service name="IO_MEM"/>
+				<service name="IO_PORT"/>
+				<service name="PD"/>
+				<service name="RM"/>
+				<service name="CPU"/>
+				<service name="LOG"/>
+				<service name="VM"/>
+				<service name="Rtc"/>
+				<service name="Terminal"/>
+				<service name="Timer"/>
+				<service name="Report"/>
+				<service name="Gui"/>
+			</parent-provides>
+			<default-route>
+				<any-service> <parent/> <any-child/> </any-service>
+			</default-route>
+			<default caps="100"/>
+
+			<monitor max_response="8K">
+				<policy label="vbox1" wait="no" stop="no" wx="yes" />
+			</monitor>
+
 	<start name="vbox1" priority="-2" caps="1800" ram="3000M">
 		<binary name="virtualbox6"/>
 		<config vbox_file="virtualbox6.vbox" vm_name="TestVM" ld_verbose="yes">
@@ -248,6 +308,16 @@ append config {
 			<env name="VBOX_RELEASE_LOG_DEST">file=/dev/log</env>
 			<env name="VBOX_RELEASE_LOG">-*.e.l.f</env>
 		</config>
+
+		<route>
+			<service name="PD">  <local/> </service>
+			<service name="CPU"> <local/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+
+		</start>
+		</config>
+
 		<route>
 			<service name="Nic"> <child name="nic_router"/> </service>
 			<service name="Gui"> <child name="wm"/> </service>
