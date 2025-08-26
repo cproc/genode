@@ -17,6 +17,7 @@
 #include <base/ipc.h>
 #include <base/sleep.h>
 #include <base/trace/events.h>
+#include <os/backtrace.h>
 
 namespace Genode {
 
@@ -155,6 +156,7 @@ namespace Genode {
 
 		if (exception_code.value == Rpc_exception_code::INVALID_OBJECT) {
 			error("attempt of IPC call to an invalid object");
+			backtrace();
 			sleep_forever();
 		}
 
