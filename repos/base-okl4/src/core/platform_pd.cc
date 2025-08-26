@@ -301,7 +301,8 @@ Platform_pd::Platform_pd(bool) : _space_pager(0)
 }
 
 
-Platform_pd::Platform_pd(Allocator &, char const *)
+Platform_pd::Platform_pd(Rpc_entrypoint &, Ram_allocator  &,
+                         Local_rm &, Allocator &, char const *)
 {
 	_init_threads();
 

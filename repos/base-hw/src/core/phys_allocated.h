@@ -79,6 +79,16 @@ class Core::Phys_allocated : Genode::Noncopyable
 		Phys_allocated(Rpc_entrypoint &ep,
 		               Ram_allocator  &ram,
 		               Local_rm       &rm,
+		               T              &oth)
+		:
+			_ep(ep), _ram(ram), _rm(rm)
+		{
+			obj([&] (T &o) { construct_at<T>(&o, oth); });
+		}
+
+		Phys_allocated(Rpc_entrypoint &ep,
+		               Ram_allocator  &ram,
+		               Local_rm       &rm,
 		               auto const     &construct_fn)
 		:
 			_ep(ep), _ram(ram), _rm(rm)

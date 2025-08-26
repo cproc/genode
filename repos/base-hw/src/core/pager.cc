@@ -155,7 +155,7 @@ void Pager_entrypoint::Thread::entry()
 				continue;
 			}
 
-			Hw_address_space * as = static_cast<Hw_address_space*>(&*locked_ptr);
+			Platform_pd &pd = static_cast<Platform_pd&>(*locked_ptr);
 
 			Cache cacheable = Genode::CACHED;
 			if (!_mapping.cached)
@@ -172,8 +172,8 @@ void Pager_entrypoint::Thread::entry()
 				.cacheable  = cacheable
 			};
 
-			as->insert_translation(_mapping.dst_addr, _mapping.src_addr,
-			                       1UL << _mapping.size_log2, flags);
+			pd.map(_mapping.dst_addr, _mapping.src_addr,
+			       1UL << _mapping.size_log2, flags);
 		}
 
 		pt->fault_resolved(cap, true);

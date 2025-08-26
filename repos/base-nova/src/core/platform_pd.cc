@@ -28,7 +28,8 @@ void Platform_pd::assign_parent(Native_capability parent)
 }
 
 
-Platform_pd::Platform_pd(Allocator &, char const *label, signed, bool)
+Platform_pd::Platform_pd(Rpc_entrypoint &, Ram_allocator &, Local_rm &,
+                         Allocator &, char const *label, signed, bool)
 :
 	_pd_sel(cap_map().insert()), _label(label)
 {
