@@ -171,8 +171,7 @@ class Core::Platform_pd : public Address_space
 		 * Constructors
 		 */
 		Platform_pd(bool core);
-		Platform_pd(Rpc_entrypoint &, Ram_allocator &, Local_rm &,
-		            Allocator &, char const *);
+		Platform_pd(Allocator &, char const *);
 
 		/**
 		 * Destructor

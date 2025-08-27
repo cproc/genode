@@ -30,8 +30,7 @@ namespace Core {
 
 struct Core::Platform_pd
 {
-	Platform_pd(Rpc_entrypoint &, Ram_allocator &, Local_rm &,
-	            Allocator &, char const *) { }
+	Platform_pd(Allocator &, char const *) { }
 
 	void assign_parent(Capability<Parent>) { }
 };

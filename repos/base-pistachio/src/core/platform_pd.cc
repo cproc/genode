@@ -246,9 +246,7 @@ Platform_pd::Platform_pd(bool) : _l4_task_id(L4_MyGlobalId())
 }
 
 
-Platform_pd::Platform_pd(Rpc_entrypoint &, Ram_allocator  &,
-                         Local_rm &, Allocator &, char const *,
-                         signed pd_id, bool create)
+Platform_pd::Platform_pd(Allocator &, char const *, signed pd_id, bool create)
 {
 	if (!create)
 		panic("create must be true.");

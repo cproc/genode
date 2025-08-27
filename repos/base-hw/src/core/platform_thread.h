@@ -34,10 +34,10 @@
 #include <kernel/thread.h>
 
 namespace Core {
+
 	class Pager_object;
 	class Rm_client;
 	class Platform_thread;
-	class Platform_pd_interface;
 	class Platform_pd;
 }
 
@@ -115,7 +115,7 @@ class Core::Platform_thread : Noncopyable
 		};
 
 		Label              const _label;
-		Platform_pd_interface   &_pd;
+		Platform_pd             &_pd;
 		Weak_ptr<Address_space>  _address_space { };
 		Pager_object *           _pager;
 		Utcb                     _utcb;
@@ -152,7 +152,7 @@ class Core::Platform_thread : Noncopyable
 			return Cpu_session::scale_priority(p, virt_prio, false);
 		}
 
-		Platform_pd_interface & _core_platform_pd();
+		Platform_pd &_kernel_main_get_core_platform_pd();
 
 	public:
 
@@ -301,9 +301,9 @@ class Core::Platform_thread : Noncopyable
 
 		Pager_object &pager();
 
-		Ram_dataspace_capability utcb() const { return _utcb.ds_cap(); }
+		Platform_pd &pd() const { return _pd; }
 
-		Platform_pd_interface & pd() { return _pd; }
+		Ram_dataspace_capability utcb() const { return _utcb.ds_cap(); }
 };
 
 #endif /* _CORE__PLATFORM_THREAD_H_ */

@@ -138,8 +138,7 @@ class Core::Platform_pd : public Address_space
 		/**
 		 * Constructor
 		 */
-		Platform_pd(Rpc_entrypoint &, Ram_allocator &, Local_rm &,
-		            Allocator &, char const *name);
+		Platform_pd(Allocator &md_alloc, char const *name);
 
 		/**
 		 * Constructor used for core's PD

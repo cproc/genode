@@ -167,8 +167,7 @@ class Core::Pd_session_component : public Session_object<Pd_session>
 			_managing_system(managing_system)
 		{
 			if (platform().core_needs_platform_pd() || label != "core") {
-				_pd.construct(ep, _accounted_md_ram_alloc, local_rm,
-				              _sliced_heap, _label.string());
+				_pd.construct(_sliced_heap, _label.string());
 				_address_space.address_space(&*_pd);
 			}
 		}
