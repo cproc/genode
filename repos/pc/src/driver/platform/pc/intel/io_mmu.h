@@ -717,7 +717,7 @@ class Intel::Io_mmu_factory : public Driver::Io_mmu_factory
 					irq_number = nbr;
 			});
 
-			device.for_each_io_mem([&] (unsigned idx, Range range, Device::Pci_bar, bool, bool)
+			device.for_each_io_mem([&] (unsigned idx, Range range, Device::Pci_bar, bool)
 			{
 				try {
 					if (idx == 0)
