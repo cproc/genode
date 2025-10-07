@@ -135,6 +135,7 @@ void Driver::Device::generate(Generator &g, bool info) const
 					return;
 				g.attribute("phys_addr", String<16>(Hex(io_mem.range.start)));
 				g.attribute("size",      String<16>(Hex(io_mem.range.size)));
+				g.attribute("wc",        io_mem.write_combined);
 			});
 		});
 		_irq_list.for_each([&] (Irq const &irq) {
