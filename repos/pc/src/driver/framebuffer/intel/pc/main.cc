@@ -41,8 +41,6 @@ namespace Framebuffer {
 
 struct Framebuffer::Driver
 {
-	using Attached_rom_system = Constructible<Attached_rom_dataspace>;
-
 	Env                    &env;
 	Heap                    heap     { env.ram(), env.rm() };
 	Attached_rom_dataspace  config   { env, "config" };

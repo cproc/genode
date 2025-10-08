@@ -77,7 +77,7 @@ proc display_config { } {
 	return {
 		<start name="intel_fb" caps="1000" ram="60M">
 			<binary name="pc_intel_fb"/>
-			<config ld_verbose="yes" width="1024" height="768" system="yes">
+			<config ld_verbose="yes" width="1024" height="768">
 				<report connectors="yes"/>
 			</config>
 			<route>
