@@ -180,7 +180,7 @@ System_control & Core::init_system_control(Runtime &runtime,
 
 		auto ep = new (alloc) Rpc_entrypoint (runtime, "system_control",
 		                                      Thread::Stack_size { 20*1024 },
-		                                      Thread::Location { });
+		                                      location);
 
 		system_instance().manage(*ep, location);
 	});
