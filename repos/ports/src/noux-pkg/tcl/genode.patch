@@ -1,0 +1,55 @@
+genode.patch
+
+diff --git a/unix/Makefile.in b/unix/Makefile.in
+index 29c051d..602bd29 100644
+--- a/unix/Makefile.in
++++ b/unix/Makefile.in
+@@ -232,7 +232,7 @@ COMPAT_DIR		= $(TOP_DIR)/compat
+ TOOL_DIR		= $(TOP_DIR)/tools
+ UNIX_DIR		= $(TOP_DIR)/unix
+ MAC_OSX_DIR		= $(TOP_DIR)/macosx
+-PKGS_DIR		= $(TOP_DIR)/pkgs
++#PKGS_DIR		= $(TOP_DIR)/pkgs
+ # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
+ DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
+ # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
+diff --git a/unix/configure b/unix/configure
+index 3d7fbf4..c902f2f 100755
+--- a/unix/configure
++++ b/unix/configure
+@@ -7578,12 +7578,12 @@ fi
+ 	FreeBSD-*)
+ 	    # This configuration from FreeBSD Ports.
+ 	    SHLIB_CFLAGS="-fPIC"
+-	    SHLIB_LD="${CC} -shared"
++	    SHLIB_LD="${CC} -shared $LDFLAGS"
+ 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$@"
+-	    SHLIB_SUFFIX=".so"
++	    SHLIB_SUFFIX=".lib.so"
+ 	    DL_OBJS="tclLoadDl.o"
+ 	    DL_LIBS=""
+-	    LDFLAGS=""
++	    LDFLAGS="$LDFLAGS"
+ 	    if test $doRpath = yes; then
+ 
+ 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+diff --git a/unix/tcl.m4 b/unix/tcl.m4
+index 6ca2047..47ae80e 100644
+--- a/unix/tcl.m4
++++ b/unix/tcl.m4
+@@ -1514,12 +1514,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
+ 	FreeBSD-*)
+ 	    # This configuration from FreeBSD Ports.
+ 	    SHLIB_CFLAGS="-fPIC"
+-	    SHLIB_LD="${CC} -shared"
++	    SHLIB_LD="${CC} -shared $LDFLAGS"
+ 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
+-	    SHLIB_SUFFIX=".so"
++	    SHLIB_SUFFIX=".lib.so"
+ 	    DL_OBJS="tclLoadDl.o"
+ 	    DL_LIBS=""
+-	    LDFLAGS=""
++	    LDFLAGS="$LDFLAGS"
+ 	    AS_IF([test $doRpath = yes], [
+ 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+ 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
