@@ -1,0 +1,21 @@
+LICENSE   := GPLv3
+VERSION   := 5.45.4
+DOWNLOADS := expect.archive
+
+URL(expect) := https://prdownloads.sourceforge.net/expect/expect$(VERSION).tar.gz
+SHA(expect) := 49a7da83b0bdd9f46d04a04deec19c7767bb9a323e40c4781f89caf760b92c34
+DIR(expect) := src/noux-pkg/expect
+
+PATCHES   := src/noux-pkg/expect/configure.patch \
+             src/noux-pkg/expect/freebsd.patch \
+             src/noux-pkg/expect/genode.patch \
+             src/noux-pkg/expect/tclsh.patch
+PATCH_OPT := -p1 -d src/noux-pkg/expect
+
+$(call check_tool,autoconf)
+
+default: _patch
+	@#
+	@# Re-generate configure script
+	@#
+	$(VERBOSE)cd ${DIR(expect)}; autoconf -f
