@@ -90,10 +90,10 @@ void *dlopen(const char *name, int mode)
 	if (name) {
 		/* check if the file name ends with ".so" */
 
-		if (strlen(name) <= strlen(".so"))
+		if (::strlen(name) <= ::strlen(".so"))
 			return nullptr;
 
-		if (strcmp(name + strlen(name) - strlen(".so"), ".so") != 0)
+		if (::strcmp(name + ::strlen(name) - ::strlen(".so"), ".so") != 0)
 			return nullptr;
 	}
 
