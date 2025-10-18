@@ -14,6 +14,7 @@
 /* Genode includes */
 #include <base/registry.h>
 #include <base/signal.h>
+#include <os/buffered_xml.h>
 #include <os/vfs.h>
 #include <play_session/connection.h>
 #include <record_session/connection.h>
@@ -38,7 +39,12 @@ struct Vfs::Oss_file_system
 
 	struct Audio;
 
+	struct Context_factory;
+	struct Context_file_system;
+	struct Contexts_file_system;
+
 	struct Data_file_system;
+
 	struct Local_factory;
 	struct Compound_file_system;
 };
@@ -1051,149 +1057,12 @@ Vfs::Oss_file_system::Audio::Config::from_node(Node const &config)
 }
 
 
-class Vfs::Oss_file_system::Data_file_system : public Single_file_system
+/*
+ * An OSS context is comprised of an 'Audio' instance and the
+ * corresponding ioctl files.
+ */
+struct Vfs::Oss_file_system::Context_factory : File_system_factory
 {
-	private:
-
-		Data_file_system(Data_file_system const &);
-		Data_file_system &operator = (Data_file_system const &);
-
-		Entrypoint         &_ep;
-		Vfs::Env::User     &_vfs_user;
-		Audio              &_audio;
-
-		struct Oss_vfs_handle : public Single_vfs_handle
-		{
-			Audio &_audio;
-
-			bool _rd_or_rdwr() const
-			{
-				return status_flags() == STATUS_RDONLY
-				    || status_flags() == STATUS_RDWR;
-			}
-
-			bool _wr_or_rdwr() const
-			{
-				return status_flags() == STATUS_WRONLY
-				    || status_flags() == STATUS_RDWR;
-			}
-
-			Oss_vfs_handle(Directory_service &ds,
-			               File_io_service   &fs,
-			               Allocator         &alloc,
-			               Audio             &audio,
-			               int                flags)
-			:
-				Single_vfs_handle { ds, fs, alloc, flags },
-				_audio { audio }
-			{ }
-
-			~Oss_vfs_handle()
-			{
-				if (_rd_or_rdwr())
-					_audio.enable_input(false);
-
-				if (_wr_or_rdwr())
-					_audio.enable_output(false);
-			}
-
-			Read_result read(Byte_range_ptr const &dst,
-			                 size_t               &out_count) override {
-				return _audio.read(dst, out_count); }
-
-			Write_result write(Const_byte_range_ptr const &src,
-			                   size_t                     &out_count) override {
-				return _audio.write(src, out_count); }
-
-			bool read_ready() const override {
-				return _audio.read_ready(); }
-
-			bool write_ready() const override {
-				return _audio.write_ready(); }
-		};
-
-		using Registered_handle = Genode::Registered<Oss_vfs_handle>;
-		using Handle_registry   = Genode::Registry<Registered_handle>;
-
-		Handle_registry _handle_registry { };
-
-		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _play_timer {
-			_ep, *this, &Vfs::Oss_file_system::Data_file_system::_handle_play_timer };
-
-		void _handle_play_timer()
-		{
-			if (_audio.handle_play_timer())
-				_vfs_user.wakeup_vfs_user();
-		}
-
-		Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system> _record_timer {
-			_ep, *this, &Vfs::Oss_file_system::Data_file_system::_handle_record_timer };
-
-		void _handle_record_timer()
-		{
-			if (_audio.handle_record_timer())
-				_vfs_user.wakeup_vfs_user();
-		}
-
-	public:
-
-		Data_file_system(Genode::Entrypoint &ep,
-		                 Vfs::Env::User     &vfs_user,
-		                 Audio              &audio,
-		                 Name         const &name)
-		:
-			Single_file_system { Node_type::CONTINUOUS_FILE, name.string(),
-			                     Node_rwx::ro(), Node() },
-
-			_ep       { ep },
-			_vfs_user { vfs_user },
-			_audio    { audio }
-		{
-			_audio.play_timer_sigh(_play_timer);
-			_audio.record_timer_sigh(_record_timer);
-		}
-
-		static const char *name()   { return "data"; }
-		char const *type() override { return "data"; }
-
-		/*********************************
-		 ** Directory service interface **
-		 *********************************/
-
-		Open_result open(char const  *path, unsigned flags,
-		                 Vfs_handle **out_handle,
-		                 Allocator   &alloc) override
-		{
-			if (!_single_file(path)) {
-				return OPEN_ERR_UNACCESSIBLE;
-			}
-
-			try {
-				*out_handle = new (alloc)
-					Registered_handle(_handle_registry,
-					                  *this, *this,
-					                  alloc, _audio, flags);
-				return OPEN_OK;
-			}
-			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
-			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
-		}
-
-		/********************************
-		 ** File I/O service interface **
-		 ********************************/
-
-		Ftruncate_result ftruncate(Vfs_handle *, file_size) override {
-			return FTRUNCATE_OK; }
-};
-
-
-struct Vfs::Oss_file_system::Local_factory : File_system_factory
-{
-	using Label = Genode::String<64>;
-	Label const _label;
-	Name  const _name;
-
 	Vfs::Env &_env;
 
 	/* RO/RW files */
@@ -1230,65 +1099,65 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 
 	Audio _audio;
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _enable_input_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _enable_input_handler {
 		_enable_input_fs, "/enable_input",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_enable_input_changed };
+		&Vfs::Oss_file_system::Context_factory::_enable_input_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _halt_input_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _halt_input_handler {
 		_halt_input_fs, "/halt_input",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_halt_input_changed };
+		&Vfs::Oss_file_system::Context_factory::_halt_input_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _ifrag_total_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _ifrag_total_handler {
 		_ifrag_total_fs, "/ifrag_total",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_ifrag_total_changed };
+		&Vfs::Oss_file_system::Context_factory::_ifrag_total_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _ifrag_size_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _ifrag_size_handler {
 		_ifrag_size_fs, "/ifrag_size",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_ifrag_size_changed };
+		&Vfs::Oss_file_system::Context_factory::_ifrag_size_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _enable_output_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _enable_output_handler {
 		_enable_output_fs, "/enable_output",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_enable_output_changed };
+		&Vfs::Oss_file_system::Context_factory::_enable_output_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _halt_output_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _halt_output_handler {
 		_halt_output_fs, "/halt_output",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_halt_output_changed };
+		&Vfs::Oss_file_system::Context_factory::_halt_output_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _ofrag_total_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _ofrag_total_handler {
 		_ofrag_total_fs, "/ofrag_total",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_ofrag_total_changed };
+		&Vfs::Oss_file_system::Context_factory::_ofrag_total_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _ofrag_size_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _ofrag_size_handler {
 		_ofrag_size_fs, "/ofrag_size",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_ofrag_size_changed };
+		&Vfs::Oss_file_system::Context_factory::_ofrag_size_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _play_underruns_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _play_underruns_handler {
 		_play_underruns_fs, "/play_underruns",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_play_underruns_changed };
+		&Vfs::Oss_file_system::Context_factory::_play_underruns_changed };
 
-	Genode::Io::Watch_handler<Vfs::Oss_file_system::Local_factory> _sample_rate_handler {
+	Genode::Io::Watch_handler<Vfs::Oss_file_system::Context_factory> _sample_rate_handler {
 		_sample_rate_fs, "/sample_rate",
 		_env.alloc(),
 		*this,
-		&Vfs::Oss_file_system::Local_factory::_sample_rate_changed };
+		&Vfs::Oss_file_system::Context_factory::_sample_rate_changed };
 
 	/********************
 	 ** Watch handlers **
@@ -1425,25 +1294,14 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 			log("Sample rate changed to ", _info.sample_rate);
 	}
 
-	static Name name(Node const &config)
-	{
-		return config.attribute_value("name", Name("oss"));
-	}
-
-	Data_file_system _data_fs;
-
-	Local_factory(Vfs::Env &env, Node const &config)
+	Context_factory(Vfs::Env &env, Node const &config)
 	:
-		_label   { config.attribute_value("label", Label("")) },
-		_name    { name(config) },
 		_env     { env },
-		_audio  { _env, _info, _info_fs, config },
-		_data_fs { _env.env().ep(), env.user(), _audio, name(config) }
+		_audio  { _env, _info, _info_fs, config }
 	{ }
 
 	Vfs::File_system *create(Vfs::Env&, Node const &node) override
 	{
-		if (node.has_type("data")) return &_data_fs;
 		if (node.has_type("info")) return &_info_fs;
 
 		if (node.has_type(Readonly_value_file_system<unsigned>::type_name())) {
@@ -1474,6 +1332,731 @@ struct Vfs::Oss_file_system::Local_factory : File_system_factory
 
 		return nullptr;
 	}
+
+	Audio &audio() { return _audio; }
+};
+
+
+class Vfs::Oss_file_system::Context_file_system : private Id_space<Context_file_system>::Element,
+                                                  private Context_factory,
+                                                  public  Vfs::Dir_file_system
+{
+	private:
+
+		using Name = Oss_file_system::Name;
+
+		using Config = String<1024>;
+		static Config _config(Name const &name)
+		{
+			char buf[Config::capacity()] { };
+
+			Genode::Generator::generate({ buf, sizeof(buf) }, "dir",
+			                            [&] (Genode::Generator &g) {
+
+				g.attribute("name", Name(".", name));
+				g.node("info", [&] () { });
+
+				g.node("readonly_value", [&] {
+					g.attribute("name", "channels");
+				});
+
+				g.node("value", [&] {
+					 g.attribute("name", "sample_rate");
+				});
+
+				g.node("readonly_value", [&] {
+					g.attribute("name", "format");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "enable_input");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "enable_output");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "halt_input");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "halt_output");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "ifrag_total");
+				});
+
+				g.node("value", [&] {
+					 g.attribute("name", "ifrag_size");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "ifrag_avail");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "ifrag_bytes");
+				});
+
+				g.node("value", [&] {
+					g.attribute("name", "ofrag_total");
+				});
+
+				g.node("value", [&] {
+					 g.attribute("name", "ofrag_size");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "ofrag_avail");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "ofrag_bytes");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "optr_samples");
+				});
+
+				g.node("readonly_value", [&] {
+					 g.attribute("name", "optr_fifo_samples");
+				});
+
+				g.node("value", [&] {
+					 g.attribute("name", "play_underruns");
+				});
+
+			}).with_error([] (Genode::Buffer_error) {
+				Genode::warning("VFS-OSS compound exceeds maximum buffer size");
+			});
+
+			return Config(Genode::Cstring(buf));
+		}
+
+	public:
+
+		Context_file_system(Vfs::Env &vfs_env, Genode::Node const &config,
+		                    Contexts_file_system &contexts_fs);
+
+		unsigned long id()
+		{
+			return Id_space<Context_file_system>::Element::id().value;
+		}
+
+		static const char *name() { return "oss_context"; }
+		char const *type() override { return name(); }
+
+		using Context_factory::audio;
+};
+
+
+/*
+ * The 'Contexts_file_system' implements the directory which contains
+ * the individual 'Context_file_system' instances.
+ */
+class Vfs::Oss_file_system::Contexts_file_system : public Vfs::File_system
+{
+	private:
+
+		Contexts_file_system(Contexts_file_system const &);
+		Contexts_file_system &operator = (Contexts_file_system const &);
+
+		class Contexts_vfs_dir_handle : public Vfs::Vfs_handle
+		{
+			private:
+
+				/*
+				 * Noncopyable
+				 */
+				Contexts_vfs_dir_handle(Contexts_vfs_dir_handle const &);
+				Contexts_vfs_dir_handle &operator = (Contexts_vfs_dir_handle const &);
+
+			public:
+
+				Absolute_path path;
+				Vfs_handle *sub_dir_handle { nullptr };
+
+				Contexts_vfs_dir_handle(Directory_service &ds,
+				                        File_io_service   &fs,
+				                        Genode::Allocator &alloc,
+				                        char const *path,
+				                        Vfs_handle *sub_dir_handle)
+				: Vfs::Vfs_handle(ds, fs, alloc, 0),
+				  path(path),
+				  sub_dir_handle(sub_dir_handle) { }
+		};
+
+		Absolute_path const _path;
+
+		Id_space<Context_file_system> _id_space { };
+
+		bool _root(char const *path)
+		{
+			return (strcmp(path, "") == 0) || (strcmp(path, "/") == 0);
+		}
+
+	public:
+
+		Contexts_file_system(Name const &name)
+		: _path(name)
+		{ }
+
+		Id_space<Context_file_system> &id_space() { return _id_space; }
+
+
+		/*********************************
+		 ** Directory service interface **
+		 *********************************/
+
+		Dataspace_capability dataspace(char const *) override
+		{
+			return Dataspace_capability();
+		}
+
+		void release(char const *, Dataspace_capability) override { }
+
+		Stat_result stat(char const *path, Stat &out) override
+		{
+			out = Stat { };
+			out.device = (Genode::addr_t)this;
+			out.type = Node_type::DIRECTORY;
+
+			if (_root(path))
+				return STAT_OK;
+
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return STAT_ERR_NO_ENTRY;
+			local_path.import(local_path.string());
+
+			if (local_path == "/")
+				return STAT_OK;
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return STAT_ERR_NO_ENTRY;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) {
+					return context_fs.stat(local_path.string(), out); },
+				[&] { return STAT_ERR_NO_ENTRY; });
+		}
+
+		file_size num_dirent(char const *path) override
+		{
+			if (_root(path))
+				return 1;
+
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return 0;
+			local_path.import(local_path.string());
+
+			if (local_path == "/") {
+				int num_dirent = 0;
+				_id_space.for_each<Context_file_system>([&] (Context_file_system &) {
+					num_dirent++; });
+				return num_dirent;
+			}
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return 0;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) {
+					return context_fs.num_dirent(local_path.string()); },
+				[&] { return 0; });
+		}
+
+		bool directory(char const *path) override
+		{
+			if (_root(path))
+				return true;
+
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return false;
+			local_path.import(local_path.string());
+
+			if (local_path == "/")
+				return true;
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return false;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) {
+					return context_fs.directory(local_path.string()); },
+				[&] { return false; });
+		}
+
+		char const *leaf_path(char const *path) override
+		{
+			if (_root(path))
+				return path;
+
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return nullptr;
+			local_path.import(local_path.string());
+
+			if (local_path == "/")
+				return path;
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return nullptr;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) -> char const * {
+					if (context_fs.leaf_path(local_path.string()))
+						return path;
+					return nullptr;
+				},
+				[&] { return nullptr; });
+		}
+
+		Opendir_result opendir(char const  *path, bool create,
+		                       Vfs_handle **handle,
+		                       Allocator   &alloc) override
+		{
+			if (_root(path)) {
+
+				if (create)
+					return OPENDIR_ERR_PERMISSION_DENIED;
+
+				try {
+					*handle = new (alloc)
+						Contexts_vfs_dir_handle(*this, *this, alloc, path, nullptr);
+					return OPENDIR_OK;
+				}
+				catch (Genode::Out_of_ram)  { return OPENDIR_ERR_OUT_OF_RAM; }
+				catch (Genode::Out_of_caps) { return OPENDIR_ERR_OUT_OF_CAPS; }
+			}
+
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return OPENDIR_ERR_LOOKUP_FAILED;
+			local_path.import(local_path.string());
+
+			if (local_path == "/") {
+
+				if (create)
+					return OPENDIR_ERR_PERMISSION_DENIED;
+
+				try {
+					*handle = new (alloc) Contexts_vfs_dir_handle(*this, *this, alloc, path, nullptr);
+					return OPENDIR_OK;
+				}
+				catch (Genode::Out_of_ram)  { return OPENDIR_ERR_OUT_OF_RAM; }
+				catch (Genode::Out_of_caps) { return OPENDIR_ERR_OUT_OF_CAPS; }
+			}
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return OPENDIR_ERR_LOOKUP_FAILED;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) {
+					Vfs_handle *sub_dir_handle { nullptr };
+					Opendir_result result =
+						context_fs.opendir(local_path.string(), create, &sub_dir_handle, alloc);
+					if (result == OPENDIR_OK) {
+						try {
+							*handle = new (alloc)
+								Contexts_vfs_dir_handle(*this, *this, alloc, path, sub_dir_handle);
+							return OPENDIR_OK;
+						}
+						catch (Genode::Out_of_ram)  { return OPENDIR_ERR_OUT_OF_RAM; }
+						catch (Genode::Out_of_caps) { return OPENDIR_ERR_OUT_OF_CAPS; }
+					}
+					return result;
+				},
+				[&] { return OPENDIR_ERR_LOOKUP_FAILED; });
+		}
+
+		Open_result open(char const  *path, unsigned mode,
+		                 Vfs_handle **handle,
+		                 Allocator   &alloc) override
+		{
+			Absolute_path local_path(path);
+			if (!local_path.strip_prefix(_path.string()))
+				return Open_result::OPEN_ERR_UNACCESSIBLE;
+			local_path.import(local_path.string());
+
+			Absolute_path id_path(local_path);
+			while (!id_path.has_single_element())
+				id_path.strip_last_element();
+
+			unsigned long id;
+			if (ascii_to(id_path.last_element(), id) == 0)
+				return Open_result::OPEN_ERR_UNACCESSIBLE;
+
+			Id_space<Context_file_system>::Id context_fs_id { .value = id };
+
+			return _id_space.apply<Context_file_system>(context_fs_id,
+				[&] (Context_file_system &context_fs) {
+					return context_fs.open(local_path.string(), mode, handle, alloc); },
+				[&] { return Open_result::OPEN_ERR_UNACCESSIBLE; });
+		}
+
+		void close(Vfs_handle *vfs_handle) override
+		{
+			if (vfs_handle && (&vfs_handle->ds() == this))
+				destroy(vfs_handle->alloc(), vfs_handle);
+		}
+
+		Rename_result rename(char const *, char const *) override
+		{
+			return RENAME_ERR_NO_PERM;
+		}
+
+		Unlink_result unlink(char const *) override
+		{
+			return UNLINK_ERR_NO_ENTRY;
+		}
+
+
+		/************************
+		 ** File I/O interface **
+		 ************************/
+
+		Write_result write(Vfs_handle *, Const_byte_range_ptr const &, size_t &) override
+		{
+			return WRITE_ERR_INVALID;
+		}
+
+		bool queue_read(Vfs_handle *vfs_handle, size_t count) override
+		{
+			Contexts_vfs_dir_handle *handle =
+				dynamic_cast<Contexts_vfs_dir_handle*>(vfs_handle);
+
+			if (!handle)
+				return false;
+
+			if (handle->sub_dir_handle) {
+				handle->sub_dir_handle->seek(handle->seek());
+				return handle->sub_dir_handle->fs().queue_read(handle->sub_dir_handle, count);
+			}
+
+			return true;
+		}
+
+		Read_result complete_read(Vfs_handle *vfs_handle, Byte_range_ptr const &dst,
+		                          size_t &out_count) override
+		{
+			Contexts_vfs_dir_handle *handle =
+				dynamic_cast<Contexts_vfs_dir_handle*>(vfs_handle);
+
+			if (!handle)
+				return READ_ERR_INVALID;
+
+			if (handle->sub_dir_handle)
+				return handle->sub_dir_handle->fs().complete_read(handle->sub_dir_handle, dst, out_count);
+
+			out_count = 0;
+
+			if (dst.num_bytes < sizeof(Dirent))
+				return READ_ERR_INVALID;
+
+			file_size const index = handle->seek() / sizeof(Dirent);
+
+			Dirent &out = *(Dirent*)dst.start;
+
+			if (_root(handle->path.string())) {
+
+				if (index == 0) {
+
+					out = {
+						.fileno = (Genode::addr_t)this,
+						.type   = Dirent_type::DIRECTORY,
+						.rwx    = Node_rwx::ro(),
+						.name   = _path.string()
+					};
+
+				} else {
+
+					out = {
+						.fileno = (Genode::addr_t)this,
+						.type   = Dirent_type::END,
+						.rwx    = { },
+						.name   = { }
+					};
+
+				}
+
+				out_count = sizeof(Dirent);
+
+				return READ_OK;
+			}
+
+			out = {
+				.fileno = (Genode::addr_t)this,
+				.type   = Dirent_type::END,
+				.rwx    = { },
+				.name   = { }
+			};
+
+			file_size i = 0;
+			_id_space.for_each<Context_file_system>([&] (Context_file_system &context_fs) {
+				if (i == index)
+					out = {
+						.fileno = context_fs.id(),
+						.type   = Dirent_type::DIRECTORY,
+						.rwx    = Node_rwx::ro(),
+						.name   = { Name(context_fs.id()).string() }
+					};
+				i++;
+			});
+
+			out_count = sizeof(Dirent);
+
+			return READ_OK;
+		}
+
+		bool read_ready (Vfs_handle const &) const override { return true; }
+		bool write_ready(Vfs_handle const &) const override { return false; }
+
+		Ftruncate_result ftruncate(Vfs_handle *, file_size) override
+		{
+			return FTRUNCATE_ERR_NO_PERM;
+		}
+
+		/***************************
+		 ** File_system interface **
+		 ***************************/
+
+		static char const *name()   { return "oss_contexts"; }
+		char const *type() override { return name(); }
+};
+
+
+Vfs::Oss_file_system::Context_file_system::
+Context_file_system(Vfs::Env &vfs_env, Genode::Node const &config,
+                    Contexts_file_system &contexts_fs)
+:
+	Id_space<Context_file_system>::Element { *this, contexts_fs.id_space() },
+	Context_factory { vfs_env, config },
+	Vfs::Dir_file_system { vfs_env,
+	                       Node(_config(Name(id()))),
+	                       *this }
+{ }
+
+
+class Vfs::Oss_file_system::Data_file_system : public Single_file_system
+{
+	private:
+
+		Data_file_system(Data_file_system const &);
+		Data_file_system &operator = (Data_file_system const &);
+
+		Entrypoint           &_ep;
+		Vfs::Env             &_vfs_env;
+		Node           const &_config;
+		Contexts_file_system &_contexts_fs;
+
+		class Oss_vfs_handle : public Single_vfs_handle
+		{
+			private:
+
+				Vfs::Env::User      &_vfs_user;
+				Entrypoint          &_ep;
+				Context_file_system  _context_fs;
+				Audio               &_audio;
+
+				Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system::Oss_vfs_handle> _play_timer {
+					_ep, *this, &Vfs::Oss_file_system::Data_file_system::Oss_vfs_handle::_handle_play_timer };
+
+				void _handle_play_timer()
+				{
+					if (_audio.handle_play_timer())
+						_vfs_user.wakeup_vfs_user();
+				}
+
+				Genode::Io_signal_handler<Vfs::Oss_file_system::Data_file_system::Oss_vfs_handle> _record_timer {
+					_ep, *this, &Vfs::Oss_file_system::Data_file_system::Oss_vfs_handle::_handle_record_timer };
+
+				void _handle_record_timer()
+				{
+					if (_audio.handle_record_timer())
+						_vfs_user.wakeup_vfs_user();
+				}
+
+				bool _rd_or_rdwr() const
+				{
+					return status_flags() == STATUS_RDONLY
+					    || status_flags() == STATUS_RDWR;
+				}
+
+				bool _wr_or_rdwr() const
+				{
+					return status_flags() == STATUS_WRONLY
+					    || status_flags() == STATUS_RDWR;
+				}
+
+			public:
+
+				Oss_vfs_handle(Directory_service    &ds,
+				               File_io_service      &fs,
+				               Allocator            &alloc,
+				               int                   flags,
+				               Vfs::Env             &vfs_env,
+				               Entrypoint           &ep,
+				               Node           const &config,
+				               Contexts_file_system &contexts_fs)
+				:
+					Single_vfs_handle { ds, fs, alloc, flags },
+					_vfs_user { vfs_env.user() },
+					_ep { ep },
+					_context_fs { vfs_env, config, contexts_fs },
+					_audio { _context_fs.audio() }
+				{
+					context_id(_context_fs.id());
+					_audio.play_timer_sigh(_play_timer);
+					_audio.record_timer_sigh(_record_timer);
+				}
+
+				~Oss_vfs_handle()
+				{
+					if (_rd_or_rdwr())
+						_audio.enable_input(false);
+
+					if (_wr_or_rdwr())
+						_audio.enable_output(false);
+				}
+
+				Read_result read(Byte_range_ptr const &dst,
+				                 size_t               &out_count) override {
+					return _audio.read(dst, out_count); }
+
+				Write_result write(Const_byte_range_ptr const &src,
+				                   size_t                     &out_count) override {
+					return _audio.write(src, out_count); }
+
+				bool read_ready() const override {
+					return _audio.read_ready(); }
+
+				bool write_ready() const override {
+					return _audio.write_ready(); }
+		};
+
+		using Registered_handle = Genode::Registered<Oss_vfs_handle>;
+		using Handle_registry   = Genode::Registry<Registered_handle>;
+
+		Handle_registry _handle_registry { };
+
+
+	public:
+
+		Data_file_system(Genode::Entrypoint       &ep,
+		                 Vfs::Env                 &vfs_env,
+		                 Name               const &name,
+		                 Node               const &config,
+		                 Contexts_file_system &contexts_fs)
+		:
+			Single_file_system { Node_type::CONTINUOUS_FILE, name.string(),
+			                     Node_rwx::ro(), Genode::Node() },
+			_ep          { ep },
+			_vfs_env     { vfs_env },
+			_config      { config },
+			_contexts_fs { contexts_fs }
+		{ }
+
+		static const char *name()   { return "oss_data"; }
+		char const *type() override { return name(); }
+
+		/*********************************
+		 ** Directory service interface **
+		 *********************************/
+
+		Open_result open(char const  *path, unsigned flags,
+		                 Vfs_handle **out_handle,
+		                 Allocator   &alloc) override
+		{
+			if (!_single_file(path))
+				return OPEN_ERR_UNACCESSIBLE;
+
+			try {
+				*out_handle = new (alloc)
+					Registered_handle(_handle_registry,
+					                  *this, *this, alloc,
+					                  flags,
+					                  _vfs_env,
+					                  _ep,
+					                  _config,
+					                  _contexts_fs);
+				return OPEN_OK;
+			}
+			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
+			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
+		}
+
+		/********************************
+		 ** File I/O service interface **
+		 ********************************/
+
+		Ftruncate_result ftruncate(Vfs_handle *, file_size) override {
+			return FTRUNCATE_OK; }
+};
+
+
+struct Vfs::Oss_file_system::Local_factory : File_system_factory
+{
+	Contexts_file_system _contexts_fs;
+	Data_file_system     _data_fs;
+
+	static Name name(Node const &config)
+	{
+		return config.attribute_value("name", Name("oss"));
+	}
+
+	Local_factory(Vfs::Env &env, Node const &config)
+	:
+		_contexts_fs { Name(".", name(config)) },
+		_data_fs     { env.env().ep(), env,
+		               name(config), config, _contexts_fs }
+	{ }
+
+	Vfs::File_system *create(Vfs::Env&, Node const &node) override
+	{
+		if (node.has_type("oss_data")) return &_data_fs;
+		if (node.has_type("oss_contexts")) return &_contexts_fs;
+		return nullptr;
+	}
 };
 
 
@@ -1494,88 +2077,15 @@ class Vfs::Oss_file_system::Compound_file_system : private Local_factory,
 			 * 'Dir_file_system' in root mode, allowing multiple sibling nodes
 			 * to be present at the mount point.
 			 */
-			Genode::Generator::generate({ buf, sizeof(buf) }, "compound",
-			                            [&] (Genode::Generator &g) {
+			Genode::Xml_generator::generate({ buf, sizeof(buf) }, "compound",
+			                                [&] (Genode::Xml_generator &xml) {
 
-				g.node("data", [&] () {
-					g.attribute("name", name); });
+				xml.node("oss_data", [&] () {
+					xml.attribute("name", name); });
 
-				g.node("dir", [&] () {
-					g.attribute("name", Name(".", name));
-					g.node("info", [&] () { });
+				xml.node("oss_contexts", [&] () {
+					xml.attribute("name", Name(".", name)); });
 
-					g.node("readonly_value", [&] {
-						g.attribute("name", "channels");
-					});
-
-					g.node("value", [&] {
-						 g.attribute("name", "sample_rate");
-					});
-
-					g.node("readonly_value", [&] {
-						g.attribute("name", "format");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "enable_input");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "enable_output");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "halt_input");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "halt_output");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "ifrag_total");
-					});
-
-					g.node("value", [&] {
-						 g.attribute("name", "ifrag_size");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "ifrag_avail");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "ifrag_bytes");
-					});
-
-					g.node("value", [&] {
-						g.attribute("name", "ofrag_total");
-					});
-
-					g.node("value", [&] {
-						 g.attribute("name", "ofrag_size");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "ofrag_avail");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "ofrag_bytes");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "optr_samples");
-					});
-
-					g.node("readonly_value", [&] {
-						 g.attribute("name", "optr_fifo_samples");
-					});
-
-					g.node("value", [&] {
-						 g.attribute("name", "play_underruns");
-					});
-				});
 			}).with_error([] (Genode::Buffer_error) {
 				Genode::warning("VFS-OSS compound exceeds maximum buffer size");
 			});
@@ -1585,11 +2095,11 @@ class Vfs::Oss_file_system::Compound_file_system : private Local_factory,
 
 	public:
 
-		Compound_file_system(Vfs::Env &vfs_env, Node const &node)
+		Compound_file_system(Vfs::Env &vfs_env, Genode::Node const &config)
 		:
-			Local_factory { vfs_env, node },
+			Local_factory { vfs_env, config },
 			Vfs::Dir_file_system { vfs_env,
-			                       Node(_config(Local_factory::name(node))),
+			                       Node(_config(Local_factory::name(config))),
 			                       *this }
 		{ }
 
@@ -1605,8 +2115,10 @@ extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 	{
 		Vfs::File_system *create(Vfs::Env &env, Genode::Node const &config) override
 		{
+			static Genode::Buffered_node buffered_config(env.alloc(), config);
 			return new (env.alloc())
-				Vfs::Oss_file_system::Compound_file_system(env, config);
+				Vfs::Oss_file_system::Compound_file_system(env, buffered_config);
+
 		}
 	};
 
