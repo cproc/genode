@@ -1,4 +1,4 @@
-<runtime ram="8M" caps="400" binary="init" config="ntp_rtc.config">
+<runtime ram="9M" caps="400" binary="init" config="ntp_rtc.config">
 
 	<requires> <nic/> </requires>
 	<provides> <rtc/> </provides>
