@@ -49,6 +49,17 @@ void Libc::execute_atexit_handlers_in_application_context()
 }
 
 
+void Libc::reset_atexit_handlers()
+{
+	if (!_atexit_ptr) {
+		error(__func__, ": missing call of 'init_atexit'");
+		sleep_forever();
+	}
+
+	_atexit_ptr->reset_handlers();
+}
+
+
 /*********************
  ** CXA ABI support **
  *********************/

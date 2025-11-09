@@ -25,6 +25,7 @@
 #include <libc/allocator.h>
 
 /* libc-internal includes */
+#include <internal/atexit.h>
 #include <internal/fd_alloc.h>
 #include <internal/call_func.h>
 #include <internal/init.h>
@@ -420,6 +421,9 @@ extern "C" int execve(char const *filename,
 	/* purge line buffers, which may be allocated at the application heap */
 	setvbuf(stdout, nullptr, _IONBF, 0);
 	setvbuf(stderr, nullptr, _IONBF, 0);
+
+	/* reset atexit handlers */
+	Libc::reset_atexit_handlers();
 
 	/*
 	 * Reconstruct malloc heap for application-owned data
