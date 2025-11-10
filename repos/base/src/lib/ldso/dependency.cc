@@ -28,6 +28,7 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 	_root(root),
 	_md_alloc(&md_alloc)
 {
+Genode::log("Linker::Dependency::Dependency(", Genode::Cstring(path), "): this: ", this);
 	deps.enqueue(*this);
 	load_needed(env, *_md_alloc, deps, keep);
 }
