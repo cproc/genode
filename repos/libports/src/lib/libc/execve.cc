@@ -405,6 +405,8 @@ extern "C" int execve(char const *filename,
 		destroy(*_alloc_ptr, orig_saved_args);
 	}
 
+Genode::log("execve(", Genode::Cstring(filename), "): calling Dynamic_linker::respawn(", resolved_path, ")");
+
 	try {
 		_main_ptr = Dynamic_linker::respawn<main_fn_ptr>(*_env_ptr, resolved_path.string(), "main");
 	}
