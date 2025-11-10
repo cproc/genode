@@ -346,6 +346,7 @@ extern "C" int execve(char const *, char *const[], char *const[]) __attribute__(
 extern "C" int execve(char const *filename,
                       char *const argv[], char *const envp[])
 {
+Genode::log("execve(", Genode::Cstring(filename), ")");
 	if (!_env_ptr || !_alloc_ptr) {
 		error("missing call of 'init_execve'");
 		return Libc::Errno(EACCES);
