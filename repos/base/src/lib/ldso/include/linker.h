@@ -306,7 +306,9 @@ class Linker::Dependency : public Fifo<Dependency>::Element, Noncopyable
 		Dependency(Object &obj, Root_object *root)
 		:
 			_obj(obj), _root(root), _unload_on_destruct(false)
-		{ }
+		{
+Genode::raw("Dependency(): this: ", this);
+		}
 
 		Dependency(Env &, Allocator &, char const *path, Root_object *,
 		           Fifo<Dependency> &, Keep);

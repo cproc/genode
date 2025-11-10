@@ -28,6 +28,7 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 	_root(root),
 	_md_alloc(&md_alloc)
 {
+Genode::log("Dependency(", Genode::Cstring(path), "): this: ", this);
 	deps.enqueue(*this);
 	load_needed(env, *_md_alloc, deps, keep);
 }
@@ -35,11 +36,17 @@ Linker::Dependency::Dependency(Env &env, Allocator &md_alloc,
 
 Linker::Dependency::~Dependency()
 {
-	if (!_unload_on_destruct)
-		return;
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): this: ", this);
+	if (!_unload_on_destruct) {
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): !_unload_on_destruct");
 
-	if (!_obj.unload())
 		return;
+	}
+
+	if (!_obj.unload()) {
+Genode::raw("~Dependency(", Genode::Cstring(_obj.name()), "): !_obj.unload()");
+		return;
+	}
 
 	if (verbose_loading)
 		log("Destroy: ", _obj.name());
