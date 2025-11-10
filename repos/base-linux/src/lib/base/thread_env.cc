@@ -36,6 +36,8 @@ char **lx_environ;
  */
 int main_thread_futex_counter __attribute__((aligned(sizeof(addr_t))));
 
+extern "C" void wait_for_continue();
+
 /**
  * Signal handler for exceptions like segmentation faults
  */
@@ -58,7 +60,8 @@ void exception_signal_handler(int signum)
 	 * We reset the signal handler to SIG_DFL and trigger exception again,
 	 * i.e., terminate the process.
 	 */
-	lx_sigaction(signum, nullptr, false);
+wait_for_continue();
+//	lx_sigaction(signum, nullptr, false);
 	return;
 }
 
