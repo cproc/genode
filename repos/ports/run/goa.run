@@ -6,7 +6,6 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/bash \
                   [depot_user]/src/coreutils \
                   [depot_user]/src/diffutils \
-                  [depot_user]/src/expect \
                   [depot_user]/src/findutils \
                   [depot_user]/src/fs_rom \
                   [depot_user]/src/init \
@@ -16,7 +15,6 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/posix \
                   [depot_user]/src/sed \
                   [depot_user]/src/tar \
-                  [depot_user]/src/tcl \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_pipe \
                   [depot_user]/src/vim
@@ -155,6 +153,8 @@ install_config {
 set fd [open [run_dir]/genode/focus w]
 puts $fd "<focus label=\"terminal -> \" domain=\"default\"/>"
 close $fd
+
+build { lib/ld lib/libc lib/libm lib/vfs lib/posix noux-pkg/tcl noux-pkg/expect lib/libtcl8.6 lib/libexpect5454 }
 
 build_boot_image "[build_artifacts] goa.tar"
 
