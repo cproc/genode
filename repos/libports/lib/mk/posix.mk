@@ -1,6 +1,6 @@
 SRC_CC = construct.cc
 
-LIBS += libc
+LIBS += libc libm
 
 SHARED_LIB = yes
 
