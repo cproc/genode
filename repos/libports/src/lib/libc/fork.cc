@@ -110,8 +110,10 @@ struct Libc::Child_config
 					                    "config", [&] (Generator &g) {
 						_generate(g, config, fd_alloc); });
 
-				if (result.ok())
+				if (result.ok()) {
+//Genode::log(Genode::Cstring(_ds->local_addr<char>()));
 					break;
+				}
 			}
 		});
 	}
@@ -626,7 +628,7 @@ extern "C" pid_t __sys_fork(void)
 	
 	Stage         stage { Stage::FORK };
 	Forked_child *child { nullptr };
-
+Genode::log("fork()");
 	monitor().monitor([&] {
 		switch (stage) {
 		case Stage::FORK:
@@ -641,6 +643,7 @@ extern "C" pid_t __sys_fork(void)
 
 		return Fn::INCOMPLETE;
 	});
+//Genode::log("fork() result: ", fork_result);
 
 	return fork_result;
 }
