@@ -746,6 +746,27 @@ void Dynamic_linker::keep(Env &, char const *binary)
 }
 
 
+static void print_loaded_object_information()
+{
+	/* print loaded object information */
+	try {
+		if (verbose) {
+			using namespace Genode;
+			log("  ",   Hex(Thread::stack_area_virtual_base()),
+			    " .. ", Hex(Thread::stack_area_virtual_base() +
+			                Thread::stack_area_virtual_size() - 1),
+			    ": stack area");
+			Object::with_object_list([] (Object::Object_list &list) {
+				list.for_each([] (Object const &obj) {
+					dump_link_map(obj); });
+			});
+		}
+	} catch (...) {  }
+
+	Link_map::dump();
+}
+
+
 void *Dynamic_linker::_respawn(Env &env, char const *binary, char const *entry_name)
 {
 	Object::Name const name(binary);
@@ -760,6 +781,8 @@ void *Dynamic_linker::_respawn(Env &env, char const *binary, char const *entry_n
 
 	/* move to front of link map */
 	binary_ptr->link_map_make_first();
+
+	print_loaded_object_information();
 
 	try {
 		return (void *)binary_ptr->lookup_symbol(entry_name);
@@ -801,22 +824,7 @@ void Component::construct(Genode::Env &env)
 		throw;
 	}
 
-	/* print loaded object information */
-	try {
-		if (verbose) {
-			using namespace Genode;
-			log("  ",   Hex(Thread::stack_area_virtual_base()),
-			    " .. ", Hex(Thread::stack_area_virtual_base() +
-			                Thread::stack_area_virtual_size() - 1),
-			    ": stack area");
-			Object::with_object_list([] (Object::Object_list &list) {
-				list.for_each([] (Object const &obj) {
-					dump_link_map(obj); });
-			});
-		}
-	} catch (...) {  }
-
-	Link_map::dump();
+	print_loaded_object_information();
 
 	binary_ready_hook_for_gdb();
 
