@@ -114,6 +114,8 @@ class Genode::Capability_space_tpl : Noncopyable
 		Avl_tree<Tree_managed_data> _tree  { };
 		Mutex               mutable _mutex { };
 
+int _count { 0 };
+
 		/**
 		 * Calculate index into _caps_data for capability data object
 		 */
@@ -159,7 +161,10 @@ class Genode::Capability_space_tpl : Noncopyable
 					 */
 					if (data.rpc_obj_key().valid() && !data.dst.foreign)
 						_tree.insert(&data);
-
+_count++;
+if (this > (void*)0x50000000) {
+Genode::raw("Capability_space_tpl::_create_capability_unsynchronized(): allocated index ", _index(data), ", new count: ", _count);
+}
 					return data;
 				},
 				[&] (Bit_allocator<NUM_CAPS>::Error) {
@@ -200,7 +205,10 @@ class Genode::Capability_space_tpl : Noncopyable
 
 			_caps_data[index].dst = Rpc_destination::invalid();
 			_alloc.free(index);
-
+_count--;
+if (this > (void*)0x50000000) {
+Genode::raw("Capability_space_tpl::dec_ref(): freed index ", index, ", new count: ", _count);
+}
 			data = Tree_managed_data();
 		}
 

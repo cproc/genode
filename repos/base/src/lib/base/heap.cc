@@ -69,9 +69,11 @@ void Heap::Dataspace_pool::remove_and_free(Dataspace &ds)
 
 Heap::Dataspace_pool::~Dataspace_pool()
 {
+Genode::raw("Heap::Dataspace_pool::~Dataspace_pool()");
 	/* free all ram_dataspaces */
 	for (Dataspace *ds; (ds = first()); )
 		remove_and_free(*ds);
+Genode::raw("Heap::Dataspace_pool::~Dataspace_pool() finished");
 }
 
 
@@ -310,6 +312,7 @@ Heap::Heap(Ram_allocator *ram_alloc,
 	_quota_limit(quota_limit), _quota_used(0),
 	_chunk_size(MIN_CHUNK_SIZE)
 {
+Genode::raw("Heap()");
 	if (static_addr)
 		if (_alloc->add_range((addr_t)static_addr, static_size).failed())
 			warning("unable to add static range at heap-construction time");
@@ -318,6 +321,7 @@ Heap::Heap(Ram_allocator *ram_alloc,
 
 Heap::~Heap()
 {
+Genode::raw("~Heap()");
 	/*
 	 * Revert allocations of heap-internal 'Dataspace' objects. Otherwise, the
 	 * subsequent destruction of the 'Allocator_avl' would detect those blocks
@@ -339,4 +343,5 @@ Heap::~Heap()
 	 * the allocator would access no-longer-present backing store.
 	 */
 	_alloc.destruct();
+Genode::raw("~Heap() finished");
 }

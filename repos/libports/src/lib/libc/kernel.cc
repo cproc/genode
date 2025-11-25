@@ -47,15 +47,29 @@ inline void Libc::Main_blockade::wakeup()
 
 void Libc::Kernel::reset_malloc_heap()
 {
+Genode::log("Libc::Kernel::reset_malloc_heap()");
+
+#if 0
+Genode::log("Libc::Kernel::reset_malloc_heap(): calling _malloc_heap->~Heap()");
+	_malloc_heap->~Heap();
+Genode::log("Libc::Kernel::reset_malloc_heap(): _malloc_heap->~Heap() returned");
+#endif
+
+Genode::log("Libc::Kernel::reset_malloc_heap(): calling _malloc_ram.construct()");
 	_malloc_ram.construct(_heap, _env.ram());
+Genode::log("Libc::Kernel::reset_malloc_heap(): _malloc_ram.construct() returned");
 
 	_cloned_heap_ranges.for_each([&] (Registered<Cloned_malloc_heap_range> &r) {
 		destroy(_heap, &r); });
 
 	Heap &raw_malloc_heap = *_malloc_heap;
+
+Genode::log("Libc::Kernel::reset_malloc_heap(): calling construct_at<Heap>()");
 	construct_at<Heap>(&raw_malloc_heap, *_malloc_ram, _env.rm());
+Genode::log("Libc::Kernel::reset_malloc_heap(): construct_at<Heap>() returned");
 
 	reinit_malloc(raw_malloc_heap);
+Genode::log("Libc::Kernel::reset_malloc_heap() finished");
 }
 
 

@@ -48,12 +48,15 @@ struct Libc::Malloc_ram_allocator : Ram_allocator
 	}
 
 	Malloc_ram_allocator(Allocator &md_alloc, Ram_allocator &ram)
-	: _md_alloc(md_alloc), _ram(ram) { }
+	: _md_alloc(md_alloc), _ram(ram) { Genode::log("Malloc_ram_allocator()"); }
 
 	~Malloc_ram_allocator()
 	{
+Genode::log("~Malloc_ram_allocator()");
 		_dataspaces.for_each([&] (Registered<Dataspace> &ds) {
+Genode::log("~Malloc_ram_allocator(): calling _release()(", ds.cap, ")");
 			_release(ds); });
+Genode::log("~Malloc_ram_allocator() finished");
 	}
 
 	Alloc_result try_alloc(size_t size, Cache cache) override
@@ -72,6 +75,7 @@ struct Libc::Malloc_ram_allocator : Ram_allocator
 
 	void _free(Ram::Allocation &a) override
 	{
+Genode::log("Malloc_ram_allocator::_free(): ", a.cap);
 		_dataspaces.for_each([&] (Registered<Dataspace> &ds) {
 			if (a.cap == ds.cap)
 				_release(ds); });

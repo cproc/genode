@@ -428,7 +428,9 @@ Genode::log("execve(): calling Dynamic_linker::respawn(", resolved_path, ")");
 
 	Libc::Allocator app_heap { };
 
+Genode::log("execve(): calling new (app_heap) Libc::String_array()");
 	_env_vars_ptr = new (app_heap) Libc::String_array(app_heap, saved_env_vars->array);
+Genode::log("execve(): new (app_heap) Libc::String_array() returned");
 	_args_ptr     = new (app_heap) Libc::String_array(app_heap, saved_args->array);
 
 	/* register list of environment variables at libc 'environ' pointer */
