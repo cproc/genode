@@ -101,18 +101,13 @@ class Genode::Connection_base : Noncopyable, Interface
 				bool done = ret.template convert<bool>(
 					[&] (auto) { return true; },
 					[&] (auto error) {
-						switch (error) {
-						case decltype(error)::OUT_OF_CAPS:
-							{
-								upgrade_caps(caps.value);
-								return false;
-							}
-						case decltype(error)::OUT_OF_RAM:
-							{
-								upgrade_ram(ram.value);
-								return false;
-							}
-						default: break;
+						if (error == decltype(error)::OUT_OF_CAPS) {
+							upgrade_caps(caps.value);
+							return false;
+						}
+						if (error == decltype(error)::OUT_OF_RAM) {
+							upgrade_ram(ram.value);
+							return false;
 						}
 						return true;
 					});
