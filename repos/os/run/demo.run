@@ -208,7 +208,7 @@ build_boot_image [list {*}[build_artifacts] launchpad.config]
 if {[have_cmd_switch --autopilot]} {
 	# On machines in the CI with attached USB testing devices wait for the
 	# output of those, in order to see all critical output actually.
-	if {[have_board imx53_qsb]} {
+	if {[have_board imx53_qsb] || [have_board imx53_qsb_tz]} {
 		run_genode_until {\[init -> scout\] png is.*\n} 40
 	} else {
 		run_genode_until {\[init -> drivers -> usb_hid\] Disconnected device:.* } 30
