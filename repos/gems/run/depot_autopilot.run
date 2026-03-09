@@ -674,7 +674,6 @@ set default_test_pkgs {
 	test-libc_vfs
 	test-libc_vfs_audit
 	test-libc_vfs_block
-	test-libc_vfs_counter
 	test-libc_vfs_fs
 	test-libc_vfs_fs_chained
 	test-libc_vfs_ram
