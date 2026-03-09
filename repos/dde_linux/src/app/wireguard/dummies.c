@@ -291,3 +291,22 @@ int cpu_has_xfeatures(u64 xfeatures_needed, const char ** feature_name)
 	lx_emul_trace(__func__);
 	return 0;
 }
+
+
+bool irq_fpu_usable(void)
+{
+	lx_emul_trace(__func__);
+	return 0;
+}
+
+
+void kernel_fpu_begin_mask(unsigned int kfpu_mask)
+{
+	lx_emul_trace(__func__);
+}
+
+
+void kernel_fpu_end(void)
+{
+	lx_emul_trace(__func__);
+}
