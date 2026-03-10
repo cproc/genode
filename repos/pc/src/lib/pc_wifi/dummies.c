@@ -998,7 +998,8 @@ void scm_recv(struct socket * sock,struct msghdr * msg,struct scm_cookie * scm,i
 }
 
 
-//extern void __static_call_update(struct static_call_key *key, void *tramp, void *func);
+#ifdef CONFIG_HAVE_STATIC_CALL_INLINE
+
 void __static_call_update(struct static_call_key *key, void *tramp, void *func)
 {
 	lx_emul_trace(__func__);
@@ -1006,6 +1007,8 @@ void __static_call_update(struct static_call_key *key, void *tramp, void *func)
 	if (key)
 		WRITE_ONCE(key->func, func);
 }
+
+#endif
 
 
 /*
