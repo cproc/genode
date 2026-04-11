@@ -138,7 +138,7 @@ option
     + rom numlock  | + child report | label: global_keys/numlock
     + event        | + child event_filter | label: usb_hid
 
-+ child nic | binary: pc_nic | ram: 20M | caps: 300 | priority: -3 | enabled: no
++ child nic | binary: ipxe_nic | ram: 20M | caps: 300 | priority: -3 | enabled: no
   + config
   + connect
     + platform    | + child platform | label: nic
