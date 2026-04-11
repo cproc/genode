@@ -1,5 +1,5 @@
 option
-+ child nic | binary: pc_nic | ram: 20M | caps: 300 | priority: -3
++ child nic | binary: ipxe_nic | ram: 20M | caps: 300 | priority: -3
   + config
   + connect
     + platform    | + child platform   | label: nic
