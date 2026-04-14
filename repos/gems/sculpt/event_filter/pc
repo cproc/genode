@@ -14,6 +14,7 @@ config | managed: yes
     |   |   + vertical   | button: BTN_MIDDLE | speed_percent: -10
     |   |   + horizontal | button: BTN_MIDDLE | speed_percent: -10
     |   + input usb
+    | + key BTN_EXTRA | to: BTN_MIDDLE
     |
     + mod1
     | + key KEY_LEFTSHIFT
