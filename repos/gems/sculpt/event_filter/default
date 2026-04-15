@@ -6,6 +6,7 @@ config
       + key KEY_F12      | to: KEY_DASHBOARD
       + key KEY_LEFTMETA | to: KEY_SCREEN
       + key KEY_SYSRQ    | to: KEY_PRINT
+      + key BTN_EXTRA    | to: BTN_MIDDLE
       + include | rom: numlock.remap
       + merge
         + accelerate | max: 50 | sensitivity_percent: 1000 | curve: 127
