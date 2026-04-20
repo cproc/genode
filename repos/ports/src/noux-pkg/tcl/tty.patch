@@ -1,0 +1,19 @@
+tty.patch
+
+tty support caused the problem that "puts $fd ..."
+added CRLF instead of LF because 'isatty()' currently
+always returns 1.
+
+diff --git a/unix/tclUnixChan.c b/unix/tclUnixChan.c
+index b4b2739..d4c37b0 100644
+--- a/unix/tclUnixChan.c
++++ b/unix/tclUnixChan.c
+@@ -15,7 +15,7 @@
+ #include "tclIO.h"	/* To get Channel type declaration. */
+ 
+ #undef SUPPORTS_TTY
+-#if defined(HAVE_TERMIOS_H)
++#if defined(HAVE_TERMIOS_H) && 0
+ #   define SUPPORTS_TTY 1
+ #   include <termios.h>
+ #   ifdef HAVE_SYS_IOCTL_H
