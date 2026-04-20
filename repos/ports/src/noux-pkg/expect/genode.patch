@@ -1,0 +1,68 @@
+genode.patch
+
+diff --git a/Makefile.in b/Makefile.in
+index 9c3a82a..17ede56 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -394,6 +394,7 @@ expect:	exp_main_exp.o $(PKG_LIB_FILE)
+ 		-o expect exp_main_exp.o \
+ 		@EXP_BUILD_LIB_SPEC@ \
+ 		@TCL_LIB_SPEC@ \
++		@TCL_LIBS@ \
+ 		@TCL_DL_LIBS@ @PKG_LIBS@ @MATH_LIBS@ \
+ 		@TCL_CC_SEARCH_FLAGS@ \
+ 		@EXP_CC_SEARCH_FLAGS@
+diff --git a/configure.in b/configure.in
+index a1425b2..49aab5e 100755
+--- a/configure.in
++++ b/configure.in
+@@ -107,8 +107,8 @@ TEA_ENABLE_SYMBOLS
+ # link against the non-stubbed Tcl library.
+ #--------------------------------------------------------------------
+ 
+-AC_DEFINE(USE_TCL_STUBS)
+-AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
++#AC_DEFINE(USE_TCL_STUBS)
++#AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
+ 
+ #-------------------------------------------------------------------------
+ # Check for system header files.
+diff --git a/tclconfig/config.sub b/tclconfig/config.sub
+index 79657cd..2b2dea0 100755
+--- a/tclconfig/config.sub
++++ b/tclconfig/config.sub
+@@ -292,6 +292,7 @@ case $basic_machine in
+ 	# Recognize the basic CPU types with company name.
+ 	580-* \
+ 	| a29k-* \
++	| aarch64-* \
+ 	| alpha-* | alphaev[4-8]-* | alphaev56-* | alphaev6[78]-* \
+ 	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
+ 	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* \
+diff --git a/tclconfig/tcl.m4 b/tclconfig/tcl.m4
+index 614c986..e6b0dc0 100644
+--- a/tclconfig/tcl.m4
++++ b/tclconfig/tcl.m4
+@@ -1631,10 +1631,10 @@ dnl AC_CHECK_TOOL(AR, ar)
+ 	FreeBSD-*)
+ 	    # This configuration from FreeBSD Ports.
+ 	    SHLIB_CFLAGS="-fPIC"
+-	    SHLIB_LD="${CC} -shared"
++	    SHLIB_LD="${CC} -shared $LDFLAGS"
+ 	    TCL_SHLIB_LD_EXTRAS="-soname \$[@]"
+-	    SHLIB_SUFFIX=".so"
+-	    LDFLAGS=""
++	    SHLIB_SUFFIX=".lib.so"
++	    LDFLAGS="$LDFLAGS"
+ 	    AS_IF([test $doRpath = yes], [
+ 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+ 		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'])
+@@ -3235,7 +3235,7 @@ print("manifest needed")
+     else
+ 	RANLIB_STUB="${RANLIB}"
+ 	if test "${SHARED_BUILD}" = "1" ; then
+-	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} ${TCL_STUB_LIB_SPEC}"
++	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS}"
+ 	    if test x"${TK_BIN_DIR}" != x ; then
+ 		SHLIB_LD_LIBS="${SHLIB_LD_LIBS} ${TK_STUB_LIB_SPEC}"
+ 	    fi
