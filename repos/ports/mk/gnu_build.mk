@@ -92,7 +92,7 @@ ifeq ($(findstring x86, $(SPECS)), x86)
 CONFIGURE_ARGS += --host x86_64-pc-elf
 endif
 
-CONFIGURE_ARGS += --srcdir=$(PKG_DIR)
+#CONFIGURE_ARGS += --srcdir=$(PKG_DIR)
 CONFIGURE_ARGS += --prefix /
 
 CONFIG_GUESS_SCRIPT = $(PKG_DIR)/config.guess
