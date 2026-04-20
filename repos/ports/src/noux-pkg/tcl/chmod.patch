@@ -1,0 +1,73 @@
+chmod.patch
+
+diff --git a/unix/tclUnixFCmd.c b/unix/tclUnixFCmd.c
+index a1a409e..0bde9ba 100644
+--- a/unix/tclUnixFCmd.c
++++ b/unix/tclUnixFCmd.c
+@@ -866,7 +866,7 @@ DoRemoveDirectory(
+     int result;
+ 
+     path = Tcl_DStringValue(pathPtr);
+-
++#if 0
+     if (recursive != 0) {
+ 	/*
+ 	 * We should try to change permissions so this can be deleted.
+@@ -882,7 +882,7 @@ DoRemoveDirectory(
+ 	newPerm = oldPerm | (64+128+256);
+ 	chmod(path, (mode_t) newPerm);
+     }
+-
++#endif
+     if (rmdir(path) == 0) {				/* INTL: Native. */
+ 	return TCL_OK;
+     }
+@@ -906,7 +906,7 @@ DoRemoveDirectory(
+     if (result == TCL_OK) {
+ 	result = TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr, 1);
+     }
+-
++#if 0
+     if ((result != TCL_OK) && (recursive != 0)) {
+ 	/*
+ 	 * Try to restore permissions.
+@@ -914,6 +914,7 @@ DoRemoveDirectory(
+ 
+ 	chmod(path, oldPerm);
+     }
++#endif
+     return result;
+ }
+ 
+@@ -1294,6 +1295,7 @@ CopyFileAtts(
+     const Tcl_StatBuf *statBufPtr)
+ 				/* Stat info for source file */
+ {
++#if 0
+     struct utimbuf tval;
+     mode_t newMode;
+ 
+@@ -1323,6 +1325,7 @@ CopyFileAtts(
+     }
+ #ifdef MAC_OSX_TCL
+     TclMacOSXCopyFileAttributes(src, dst, statBufPtr);
++#endif
+ #endif
+     return TCL_OK;
+ }
+@@ -1633,6 +1636,7 @@ SetPermissionsAttribute(
+     Tcl_Obj *fileName,		/* The name of the file (UTF-8). */
+     Tcl_Obj *attributePtr)	/* The attribute to set. */
+ {
++#if 0
+     long mode;
+     mode_t newMode;
+     int result = TCL_ERROR;
+@@ -1700,6 +1704,7 @@ SetPermissionsAttribute(
+ 	}
+ 	return TCL_ERROR;
+     }
++#endif
+     return TCL_OK;
+ }
+ 
