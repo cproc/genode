@@ -56,4 +56,5 @@ index
 
 + index Goa Offline SDK
   + pkg | path: cproc/pkg/goa_offline_sdk/2026-04-20 | info: Goa Offline SDK | arch: x86_64
+  + pkg | path: cproc/pkg/goa_offline_testbed/2026-04-20 | info: Goa Offline Testbed | arch: x86_64
 -
