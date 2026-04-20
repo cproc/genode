@@ -53,4 +53,8 @@ index
   + pkg | path: falkon_qt6-jemalloc    | info: Qt5-based web browser
   + pkg | path: morph_browser          | info: Qt5-based web browser
   + pkg | path: morph_browser-jemalloc | info: Qt5-based web browser
+
++ index Goa Offline SDK
+  + pkg | path: cproc/pkg/goa_offline_sdk/2026-04-26     | info: Goa Offline SDK     | arch: x86_64
+  + pkg | path: cproc/pkg/goa_offline_testbed/2026-04-26 | info: Goa Offline Testbed | arch: x86_64
 -
