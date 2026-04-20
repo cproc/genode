@@ -552,10 +552,14 @@ class Vfs_server::Session_component : private Session_resources,
 			_assert_valid_path(path_str);
 
 			/* re-root the path */
-			Path const sub_path(path_str + 1, _root_path.base());
-			path_str = sub_path.base();
-			if (sub_path != "/" && !_vfs.leaf_path(path_str))
+			try {
+				Path const sub_path(path_str + 1, _root_path.base());
+				path_str = sub_path.base();
+				if (sub_path != "/" && !_vfs.leaf_path(path_str))
+					throw Lookup_failed();
+			} catch (Path::Path_too_long) {
 				throw Lookup_failed();
+			}
 
 			Node_base &node = *new (_alloc) Node_base(_node_space, path_str);
 
