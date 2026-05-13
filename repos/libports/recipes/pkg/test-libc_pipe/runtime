@@ -38,7 +38,7 @@ runtime | ram: 32M | caps: 1000 | binary: init
       + vfs | + pipe
       + default-policy | root: / | writeable: yes
 
-  + start sequence | ram: 4M
+  x start sequence | ram: 4M
     + config
       + start libc_pipe_local
       | + binary test-libc_pipe
@@ -54,4 +54,25 @@ runtime | ram: 32M | caps: 1000 | binary: init
           | + dir dev  | + log
           | + dir pipe | + fs
           + libc | stdout: /dev/log | stderr: /dev/log | pipe: /pipe
+
+  x start libc_pipe_local | ram: 4M
+    + binary test-libc_pipe
+    + config
+      + vfs
+      | + dir dev
+        | + log
+        | + null
+      | + dir pipe | + pipe
+      + libc | stdin: /dev/null | stdout: /dev/log | stderr: /dev/log | pipe: /pipe
+
+  + start libc_pipe_remote | ram: 4M
+    + binary test-libc_pipe
+    + config
+      + vfs
+      | + dir dev
+        | + log
+        | + null
+      | + dir pipe | + fs
+      + libc | stdin: /dev/null | stdout: /dev/log | stderr: /dev/log | pipe: /pipe
+
 -
