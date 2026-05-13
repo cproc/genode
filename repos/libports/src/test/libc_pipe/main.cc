@@ -13,77 +13,62 @@
 
 
 /* libc includes */
-#include <pthread.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 
-enum { BUF_SIZE = 16*1024 };
+enum { BUF_SIZE = 4*1024 };
 static char buf[BUF_SIZE];
 
 static int pipefd[2];
 
-static volatile bool reader_finished = false;
+static ssize_t bytes_written_total = 0;
+static ssize_t bytes_read_total = 0;
 
-void *read_pipe(void *arg)
+
+static void read_pipe()
 {
-	static char read_buf[BUF_SIZE];
+	fprintf(stderr, "reading up to %d bytes\n", BUF_SIZE);
 
-	ssize_t num_bytes_read = 0;
+	ssize_t bytes_read = read(pipefd[0], buf, BUF_SIZE);
 
-	while (num_bytes_read < BUF_SIZE) {
+	if (bytes_read > 0)
+		bytes_read_total += bytes_read;
 
-		ssize_t res = read(pipefd[0],
-		                   &read_buf[num_bytes_read],
-		                   BUF_SIZE - num_bytes_read);
+	fprintf(stderr, "read %zd bytes (buffered: %zd)\n", bytes_read, bytes_written_total - bytes_read_total);
 
-		if (res < 0) {
-			fprintf(stderr, "Error reading from pipe\n");
-			exit(1);
-		}
+	sleep(1);
+}
 
-		num_bytes_read += res;
-	}
 
-	if ((read_buf[0] != buf[0]) ||
-	    (read_buf[BUF_SIZE - 1] != buf[BUF_SIZE - 1])) {
-		fprintf(stderr, "Error: data mismatch\n");
-		exit(1);
-	}
+static void write_pipe()
+{
+	fprintf(stderr, "writing up to %d bytes\n", BUF_SIZE);
 
-	reader_finished = true;
+	ssize_t bytes_written = write(pipefd[1], buf, BUF_SIZE);
 
-	return 0;
+	if (bytes_written > 0)
+		bytes_written_total += bytes_written;
+
+	fprintf(stderr, "wrote %zd bytes (buffered: %zd)\n", bytes_written, bytes_written_total - bytes_read_total);
+
+	sleep(1);
 }
 
 
 int main(int argc, char *argv[])
 {
-	/* test values */
-	buf[0] = 1;
-	buf[BUF_SIZE - 1] = 255;
+	pipe2(pipefd, O_NONBLOCK);
 
-	int res = pipe(pipefd);
-	if (res != 0) {
-		fprintf(stderr, "Error creating pipe\n");
-		exit(1);
-	}
+	read_pipe();
 
-	pthread_t tid;
-	pthread_create(&tid, 0, read_pipe, 0);
+	for (int i = 0; i < 4; i++)
+		write_pipe();
 
-	ssize_t bytes_written = write(pipefd[1], buf, BUF_SIZE);
-
-	if (bytes_written != BUF_SIZE) {
-		fprintf(stderr, "Error writing to pipe (bytes_written=%zd, BUF_SIZE=%zd)\n",
-		        bytes_written, (size_t)BUF_SIZE);
-		exit(1);
-	}
-
-	pthread_join(tid, NULL);
-
-	printf("--- test finished ---\n");
+	for (int i = 0; i < 4; i++)
+		read_pipe();
 
 	return 0;
 }
